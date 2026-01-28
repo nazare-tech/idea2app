@@ -79,15 +79,20 @@ export async function POST(request: Request) {
       content: m.content,
     }))
 
-    const aiResponse = await chatCompletion(aiMessages, project.description)
+    const aiResult = await chatCompletion(aiMessages, project.description)
 
-    // Save assistant message
+    // Save assistant message with source/model metadata
     const { data: assistantMessage, error: assistantMsgError } = await supabase
       .from("messages")
       .insert({
         project_id: projectId,
         role: "assistant",
-        content: aiResponse,
+        content: aiResult.content,
+        metadata: {
+          source: aiResult.source,
+          model: aiResult.model,
+          responded_at: new Date().toISOString(),
+        },
       })
       .select()
       .single()
@@ -106,6 +111,8 @@ export async function POST(request: Request) {
         .update({ status: "active", updated_at: new Date().toISOString() })
         .eq("id", projectId)
     }
+
+    console.log(`[Chat] project=${projectId} source=${aiResult.source} model=${aiResult.model}`)
 
     return NextResponse.json({
       userMessage,

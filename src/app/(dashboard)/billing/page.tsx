@@ -152,7 +152,7 @@ export default function BillingPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Billing</h1>
+        <h1 className="text-3xl font-black tracking-tight">Billing</h1>
         <p className="text-muted-foreground mt-1">
           Manage your subscription and credits
         </p>
@@ -160,14 +160,19 @@ export default function BillingPage() {
 
       {/* Current Plan & Credits */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="group hover:border-[rgba(0,212,255,0.2)] transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Current Plan
-            </CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.1)]">
+                <CreditCard className="h-5 w-5 text-[#00d4ff]" />
+              </div>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Current Plan
+              </CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
+            <p className="text-2xl font-black tracking-tight">
               {subscription
                 ? plans.find((p) => p.id === subscription.plan_id)?.name || "Active"
                 : "Free"}
@@ -188,15 +193,22 @@ export default function BillingPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="group hover:border-[rgba(124,58,237,0.2)] transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Credit Balance
-            </CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#7c3aed]/20 to-[#f472b6]/20 border border-[rgba(124,58,237,0.15)] flex items-center justify-center shadow-[0_0_15px_rgba(124,58,237,0.1)]">
+                <Coins className="h-5 w-5 text-[#a78bfa]" />
+              </div>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Credit Balance
+              </CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
-              {credits >= 999999 ? "Unlimited" : credits.toLocaleString()}
+            <p className="text-2xl font-black tracking-tight">
+              {credits >= 999999 ? (
+                <span className="gradient-text">Unlimited</span>
+              ) : credits.toLocaleString()}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
               Credits are used for analyses and app generation
@@ -207,31 +219,47 @@ export default function BillingPage() {
 
       {/* Plans */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Available Plans</h2>
+        <h2 className="text-xl font-bold tracking-tight mb-4">Available Plans</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {plans.filter((p) => p.name !== "Internal Dev").map((plan) => {
             const Icon = getPlanIcon(plan.name)
             const isCurrentPlan = subscription?.plan_id === plan.id
             const isFree = plan.price_monthly === 0
+            const isPro = plan.name.toLowerCase() === "pro"
 
             return (
               <Card
                 key={plan.id}
-                className={`relative ${isCurrentPlan ? "border-primary" : ""}`}
+                className={`relative group transition-all duration-300 hover:-translate-y-1 ${
+                  isCurrentPlan
+                    ? "border-[rgba(0,212,255,0.4)] shadow-[0_0_25px_rgba(0,212,255,0.15)]"
+                    : isPro
+                    ? "border-[rgba(124,58,237,0.3)] shadow-[0_0_25px_rgba(124,58,237,0.1)] hover:shadow-[0_0_35px_rgba(124,58,237,0.2)]"
+                    : "hover:border-[rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,212,255,0.08)]"
+                }`}
               >
+                {isPro && !isCurrentPlan && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-gradient-to-r from-[#7c3aed] to-[#f472b6] text-white border-0 shadow-[0_0_15px_rgba(124,58,237,0.3)]">Most Popular</Badge>
+                  </div>
+                )}
                 {isCurrentPlan && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge>Current Plan</Badge>
+                    <Badge className="bg-gradient-to-r from-[#00d4ff] to-[#7c3aed] text-white border-0 shadow-[0_0_15px_rgba(0,212,255,0.3)]">Current Plan</Badge>
                   </div>
                 )}
                 <CardHeader>
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
-                    <Icon className="h-5 w-5 text-primary" />
+                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center mb-3 border shadow-lg ${
+                    isPro
+                      ? "bg-gradient-to-br from-[#7c3aed]/20 to-[#f472b6]/20 border-[rgba(124,58,237,0.2)] shadow-[0_0_20px_rgba(124,58,237,0.15)]"
+                      : "bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border-[rgba(0,212,255,0.15)] shadow-[0_0_15px_rgba(0,212,255,0.1)]"
+                  }`}>
+                    <Icon className={`h-6 w-6 ${isPro ? "text-[#a78bfa]" : "text-[#00d4ff]"}`} />
                   </div>
-                  <CardTitle>{plan.name}</CardTitle>
+                  <CardTitle className="font-bold">{plan.name}</CardTitle>
                   <CardDescription>{plan.description}</CardDescription>
                   <div className="mt-2">
-                    <span className="text-3xl font-bold">
+                    <span className={`text-3xl font-black tracking-tight ${isPro ? "gradient-text" : ""}`}>
                       {isFree ? "Free" : formatPrice(plan.price_monthly)}
                     </span>
                     {!isFree && (
@@ -240,10 +268,12 @@ export default function BillingPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
+                  <ul className="space-y-2.5">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <li key={i} className="flex items-center gap-2.5 text-sm">
+                        <div className="h-5 w-5 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-400/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                          <Check className="h-3 w-3 text-emerald-400" />
+                        </div>
                         {feature}
                       </li>
                     ))}
@@ -288,7 +318,7 @@ export default function BillingPage() {
           <CardDescription>How credits are consumed for each action</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
             {[
               { name: "Chat Message", credits: 1 },
               { name: "Competitive Analysis", credits: 5 },
@@ -302,10 +332,10 @@ export default function BillingPage() {
             ].map((item) => (
               <div
                 key={item.name}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] hover:border-[rgba(0,212,255,0.15)] hover:bg-[rgba(0,212,255,0.03)] transition-all duration-200"
               >
-                <span className="text-sm">{item.name}</span>
-                <Badge variant="outline">{item.credits} credits</Badge>
+                <span className="text-sm font-medium">{item.name}</span>
+                <Badge variant="outline" className="font-mono text-xs">{item.credits} credits</Badge>
               </div>
             ))}
           </div>

@@ -42,7 +42,7 @@ export default async function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Projects</h1>
+          <h1 className="text-3xl font-black tracking-tight">Projects</h1>
           <p className="text-muted-foreground mt-1">
             Manage your business ideas and analyses
           </p>
@@ -58,15 +58,15 @@ export default async function ProjectsPage() {
       {projects && projects.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
-            <Card key={project.id} className="group hover:border-primary/50 transition-colors">
+            <Card key={project.id} className="group hover:border-[rgba(0,212,255,0.2)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(0,212,255,0.06)] hover:-translate-y-0.5">
               <CardHeader className="flex flex-row items-start justify-between">
                 <Link href={`/projects/${project.id}`} className="flex-1">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Code className="h-5 w-5 text-primary" />
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center">
+                      <Code className="h-5 w-5 text-[#00d4ff]" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                      <CardTitle className="text-lg group-hover:text-[#00d4ff] transition-colors">
                         {project.name}
                       </CardTitle>
                       <Badge variant={getStatusColor(project.status || "draft")} className="mt-1">
@@ -81,14 +81,14 @@ export default async function ProjectsPage() {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="bg-[#0c0c14] border-[rgba(255,255,255,0.08)]">
                     <DropdownMenuItem asChild>
                       <Link href={`/projects/${project.id}`}>Open Project</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href={`/projects/${project.id}/settings`}>Settings</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem className="text-[#ff3b5c] focus:text-[#ff3b5c]">
                       Delete Project
                     </DropdownMenuItem>
                   </DropdownMenuContent>

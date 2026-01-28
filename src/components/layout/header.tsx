@@ -40,9 +40,9 @@ export function Header({ user }: HeaderProps) {
     .toUpperCase() || user?.email?.[0].toUpperCase() || "U"
 
   return (
-    <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
+    <header className="h-16 border-b border-[rgba(255,255,255,0.04)] bg-[rgba(8,8,14,0.6)] backdrop-blur-xl px-6 flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold">Dashboard</h1>
+        <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>
       </div>
 
       <div className="flex items-center gap-4">
@@ -55,23 +55,25 @@ export function Header({ user }: HeaderProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+              <Avatar className="border-2 border-[rgba(0,212,255,0.2)]">
                 <AvatarImage src={user?.avatar_url} alt={user?.full_name || "User"} />
-                <AvatarFallback>{initials}</AvatarFallback>
+                <AvatarFallback className="bg-gradient-to-br from-[#00d4ff] to-[#7c3aed] text-white text-xs font-bold">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuContent className="w-56 bg-[#0c0c14] border-[rgba(255,255,255,0.08)]" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.full_name || "User"}</p>
+                <p className="text-sm font-semibold leading-none">{user?.full_name || "User"}</p>
                 <p className="text-xs leading-none text-muted-foreground">
                   {user?.email}
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.06)]" />
             <DropdownMenuItem asChild>
               <Link href="/settings" className="flex items-center">
                 <User className="mr-2 h-4 w-4" />
@@ -84,8 +86,8 @@ export function Header({ user }: HeaderProps) {
                 <span>Settings</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+            <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.06)]" />
+            <DropdownMenuItem onClick={handleSignOut} className="text-[#ff3b5c] focus:text-[#ff3b5c]">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>

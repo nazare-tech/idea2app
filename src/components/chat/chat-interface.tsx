@@ -133,23 +133,23 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
             )}
           >
             {message.role !== "user" && (
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-1">
-                <Bot className="h-4 w-4 text-primary" />
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center shrink-0 mt-1">
+                <Bot className="h-4 w-4 text-[#00d4ff]" />
               </div>
             )}
 
             <div
               className={cn(
-                "rounded-xl px-4 py-3 max-w-[80%] relative",
+                "rounded-2xl px-4 py-3 max-w-[80%] relative",
                 message.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card border border-border"
+                  ? "bg-gradient-to-r from-[#00d4ff] to-[#7c3aed] text-white shadow-[0_0_15px_rgba(0,212,255,0.15)]"
+                  : "bg-[rgba(12,12,20,0.7)] backdrop-blur-sm border border-[rgba(255,255,255,0.06)]"
               )}
             >
               {message.role === "user" ? (
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               ) : (
-                <div className="prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary">
+                <div className="prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-[#00d4ff] [&_code]:text-[#00d4ff] [&_code]:bg-[rgba(0,212,255,0.08)]">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {message.content}
                   </ReactMarkdown>
@@ -160,12 +160,12 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
               <button
                 onClick={() => handleCopy(message.content, message.id)}
                 className={cn(
-                  "absolute -bottom-3 right-2 p-1 rounded bg-muted/80 opacity-0 group-hover:opacity-100 transition-opacity",
+                  "absolute -bottom-3 right-2 p-1.5 rounded-lg bg-[rgba(12,12,20,0.9)] border border-[rgba(255,255,255,0.08)] opacity-0 group-hover:opacity-100 transition-all duration-200 hover:border-[rgba(0,212,255,0.3)]",
                   message.role === "user" && "hidden"
                 )}
               >
                 {copiedId === message.id ? (
-                  <Check className="h-3 w-3 text-emerald-400" />
+                  <Check className="h-3 w-3 text-[#34d399]" />
                 ) : (
                   <Copy className="h-3 w-3 text-muted-foreground" />
                 )}
@@ -173,8 +173,8 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
             </div>
 
             {message.role === "user" && (
-              <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center shrink-0 mt-1">
-                <User className="h-4 w-4 text-secondary-foreground" />
+              <div className="h-8 w-8 rounded-xl bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.08)] flex items-center justify-center shrink-0 mt-1">
+                <User className="h-4 w-4 text-muted-foreground" />
               </div>
             )}
           </div>
@@ -182,10 +182,10 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
 
         {loading && (
           <div className="flex gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Bot className="h-4 w-4 text-primary" />
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center shrink-0">
+              <Bot className="h-4 w-4 text-[#00d4ff]" />
             </div>
-            <div className="bg-card border border-border rounded-xl px-4 py-3">
+            <div className="bg-[rgba(12,12,20,0.7)] border border-[rgba(255,255,255,0.06)] rounded-2xl px-4 py-3">
               <div className="flex items-center gap-2">
                 <Spinner size="sm" />
                 <span className="text-sm text-muted-foreground">Thinking...</span>
@@ -198,8 +198,8 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
       </div>
 
       {/* Input */}
-      <div className="border-t border-border pt-4">
-        <div className="flex items-end gap-2">
+      <div className="border-t border-[rgba(255,255,255,0.06)] pt-4">
+        <div className="flex items-end gap-3">
           <div className="flex-1 relative">
             <textarea
               ref={textareaRef}
@@ -207,7 +207,7 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Describe your business idea or ask a question..."
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[48px] max-h-[200px]"
+              className="w-full rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,212,255,0.4)] focus-visible:ring-offset-0 focus-visible:border-[rgba(0,212,255,0.3)] placeholder:text-[#4a4f5e] min-h-[48px] max-h-[200px] transition-all duration-200"
               rows={1}
               disabled={loading}
             />
@@ -216,7 +216,7 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
             onClick={handleSend}
             disabled={loading || !input.trim()}
             size="icon"
-            className="h-12 w-12 rounded-xl shrink-0"
+            className="h-12 w-12 rounded-2xl shrink-0"
           >
             {loading ? (
               <Spinner size="sm" />

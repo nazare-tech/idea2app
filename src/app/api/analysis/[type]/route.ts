@@ -68,7 +68,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     // Try N8N webhook first, then fallback to OpenRouter
-    let result: { content: string; source: string }
+    let result: { content: string; source: string; model: string }
 
     try {
       result = await callN8NWebhook(type, {
@@ -81,7 +81,13 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       result = await callOpenRouterFallback(type, idea, name)
     }
 
-    // Store the result based on type
+    const metadata = {
+      source: result.source,
+      model: result.model,
+      generated_at: new Date().toISOString(),
+    }
+
+    // Store the result based on type — always include source/model metadata
     if (type === "prd") {
       await supabase.from("prds").insert({
         project_id: projectId,
@@ -97,7 +103,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
         project_id: projectId,
         type,
         content: result.content,
-        metadata: { source: result.source },
+        metadata,
       })
     }
 
@@ -107,9 +113,12 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       .update({ status: "active", updated_at: new Date().toISOString() })
       .eq("id", projectId)
 
+    console.log(`[Analysis] type=${type} project=${projectId} source=${result.source} model=${result.model}`)
+
     return NextResponse.json({
       content: result.content,
       source: result.source,
+      model: result.model,
       type,
     })
   } catch (error) {

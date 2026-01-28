@@ -50,7 +50,7 @@ const analysisTypes = [
     description: "Analyze competitors, market positioning, and industry landscape",
     icon: BarChart3,
     credits: CREDIT_COSTS["competitive-analysis"],
-    color: "blue",
+    gradient: "from-[#00d4ff] to-[#0ea5e9]",
   },
   {
     id: "gap-analysis",
@@ -58,7 +58,7 @@ const analysisTypes = [
     description: "Identify market gaps, opportunities, and potential challenges",
     icon: Search,
     credits: CREDIT_COSTS["gap-analysis"],
-    color: "emerald",
+    gradient: "from-[#34d399] to-[#00d4ff]",
   },
 ]
 
@@ -69,6 +69,7 @@ const appTypes = [
     description: "HTML/CSS/JS - Simple and fast hosting",
     icon: Globe,
     credits: CREDIT_COSTS["app-static"],
+    gradient: "from-[#00d4ff] to-[#0ea5e9]",
   },
   {
     id: "dynamic",
@@ -76,6 +77,7 @@ const appTypes = [
     description: "Next.js with API routes and database",
     icon: Monitor,
     credits: CREDIT_COSTS["app-dynamic"],
+    gradient: "from-[#7c3aed] to-[#a855f7]",
   },
   {
     id: "spa",
@@ -83,6 +85,7 @@ const appTypes = [
     description: "React SPA with state management",
     icon: Smartphone,
     credits: CREDIT_COSTS["app-spa"],
+    gradient: "from-[#f472b6] to-[#fb923c]",
   },
   {
     id: "pwa",
@@ -90,6 +93,7 @@ const appTypes = [
     description: "PWA with offline support and service workers",
     icon: Zap,
     credits: CREDIT_COSTS["app-pwa"],
+    gradient: "from-[#34d399] to-[#00d4ff]",
   },
 ]
 
@@ -160,18 +164,20 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
     }
   }
 
+  const proseClasses = "prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-[#00d4ff] [&_code]:text-[#00d4ff] [&_code]:bg-[rgba(0,212,255,0.08)]"
+
   if (type === "analysis") {
     return (
       <div className="space-y-6">
         {/* Action Cards */}
         <div className="grid gap-4 md:grid-cols-2">
           {analysisTypes.map((analysis) => (
-            <Card key={analysis.id} className="hover:border-primary/50 transition-colors">
+            <Card key={analysis.id} className="group hover:border-[rgba(0,212,255,0.2)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(0,212,255,0.06)]">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-lg bg-${analysis.color}-500/10 flex items-center justify-center`}>
-                      <analysis.icon className={`h-5 w-5 text-${analysis.color}-500`} />
+                    <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${analysis.gradient} flex items-center justify-center shadow-lg`}>
+                      <analysis.icon className="h-5 w-5 text-white" />
                     </div>
                     <div>
                       <CardTitle className="text-lg">{analysis.name}</CardTitle>
@@ -207,7 +213,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
         </div>
 
         {error && (
-          <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
             {error}
           </div>
         )}
@@ -215,7 +221,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
         {/* Previous Results */}
         {analyses.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Previous Results</h3>
+            <h3 className="text-lg font-bold tracking-tight">Previous Results</h3>
             {analyses.map((analysis) => (
               <Card key={analysis.id}>
                 <CardHeader>
@@ -239,7 +245,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose prose-invert prose-sm max-w-none max-h-[400px] overflow-y-auto [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground">
+                  <div className={`${proseClasses} max-h-[400px] overflow-y-auto`}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {analysis.content || ""}
                     </ReactMarkdown>
@@ -260,8 +266,8 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-amber-500" />
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#fb923c] to-[#f472b6] flex items-center justify-center shadow-lg">
+                  <FileText className="h-5 w-5 text-white" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">Product Requirements Document</CardTitle>
@@ -292,7 +298,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
         </Card>
 
         {error && (
-          <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
             {error}
           </div>
         )}
@@ -317,7 +323,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground">
+                  <div className={proseClasses}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {prd.content || ""}
                     </ReactMarkdown>
@@ -338,8 +344,8 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  <Code className="h-5 w-5 text-purple-500" />
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#a855f7] flex items-center justify-center shadow-lg">
+                  <Code className="h-5 w-5 text-white" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">Technical Specification</CardTitle>
@@ -370,7 +376,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
         </Card>
 
         {error && (
-          <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
             {error}
           </div>
         )}
@@ -395,7 +401,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground">
+                  <div className={proseClasses}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {spec.content || ""}
                     </ReactMarkdown>
@@ -415,8 +421,8 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-              <Rocket className="h-5 w-5 text-emerald-500" />
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#34d399] to-[#00d4ff] flex items-center justify-center shadow-lg">
+              <Rocket className="h-5 w-5 text-white" />
             </div>
             <div>
               <CardTitle className="text-lg">Generate & Deploy Application</CardTitle>
@@ -431,14 +437,14 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
             {appTypes.map((app) => (
               <div
                 key={app.id}
-                className="p-4 rounded-lg border border-border hover:border-primary/50 transition-colors"
+                className="group p-4 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] hover:border-[rgba(0,212,255,0.2)] hover:bg-[rgba(0,212,255,0.03)] transition-all duration-300"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                    <app.icon className="h-5 w-5" />
+                  <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${app.gradient} flex items-center justify-center shadow-lg group-hover:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-shadow duration-300`}>
+                    <app.icon className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-medium">{app.name}</h4>
+                    <h4 className="font-semibold tracking-tight">{app.name}</h4>
                     <p className="text-sm text-muted-foreground">{app.description}</p>
                   </div>
                 </div>
@@ -467,7 +473,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
       </Card>
 
       {error && (
-        <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
           {error}
         </div>
       )}
@@ -475,7 +481,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
       {/* Previous Deployments */}
       {analyses.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Deployments</h3>
+          <h3 className="text-lg font-bold tracking-tight">Deployments</h3>
           {analyses.map((deployment) => (
             <Card key={deployment.id}>
               <CardHeader>

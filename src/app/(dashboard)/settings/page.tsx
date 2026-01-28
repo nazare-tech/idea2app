@@ -94,22 +94,26 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-3xl font-black tracking-tight">Settings</h1>
         <p className="text-muted-foreground mt-1">
           Manage your account settings and preferences
         </p>
       </div>
 
       {isDev && (
-        <Card className="border-amber-500/50 bg-amber-500/5">
+        <Card className="border-[rgba(251,191,36,0.3)] bg-[rgba(251,191,36,0.05)] shadow-[0_0_20px_rgba(251,191,36,0.08)]">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-amber-500" />
-              <CardTitle className="text-amber-500">Developer Account</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/20 flex items-center justify-center">
+                <Shield className="h-5 w-5 text-amber-400" />
+              </div>
+              <div>
+                <CardTitle className="text-amber-400">Developer Account</CardTitle>
+                <CardDescription>
+                  Unlimited credits enabled for testing and development.
+                </CardDescription>
+              </div>
             </div>
-            <CardDescription>
-              This is a developer account with unlimited credits for testing.
-            </CardDescription>
           </CardHeader>
         </Card>
       )}
@@ -117,7 +121,9 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <User className="h-5 w-5 text-muted-foreground" />
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center">
+              <User className="h-5 w-5 text-[#00d4ff]" />
+            </div>
             <div>
               <CardTitle>Profile</CardTitle>
               <CardDescription>Update your personal information</CardDescription>
@@ -127,10 +133,10 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           {message && (
             <div
-              className={`p-3 rounded-lg text-sm ${
+              className={`p-3 rounded-xl text-sm border ${
                 message.type === "success"
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : "bg-destructive/10 text-destructive"
+                  ? "bg-[rgba(52,211,153,0.08)] border-[rgba(52,211,153,0.2)] text-emerald-400"
+                  : "bg-[rgba(255,59,92,0.08)] border-[rgba(255,59,92,0.2)] text-[#ff6b8a]"
               }`}
             >
               {message.text}

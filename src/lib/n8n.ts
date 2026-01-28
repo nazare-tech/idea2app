@@ -15,7 +15,7 @@ const WEBHOOK_MAP: Record<string, string | undefined> = {
 export async function callN8NWebhook(
   type: string,
   payload: N8NPayload
-): Promise<{ content: string; source: "n8n" | "fallback" }> {
+): Promise<{ content: string; source: "n8n"; model: string }> {
   const baseUrl = process.env.N8N_WEBHOOK_BASE_URL
   const webhookPath = WEBHOOK_MAP[type]
 
@@ -51,8 +51,10 @@ export async function callN8NWebhook(
 
     // N8N can return content in different formats
     const content = data.content || data.output || data.result || JSON.stringify(data)
+    // N8N workflows can optionally return which model they used
+    const model = data.model || "n8n-workflow"
 
-    return { content, source: "n8n" }
+    return { content, source: "n8n", model }
   } catch (error) {
     console.error(`N8N webhook failed for ${type}:`, error)
     throw error

@@ -93,8 +93,8 @@ export default function NewProjectPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Lightbulb className="h-5 w-5 text-primary" />
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#00d4ff] to-[#7c3aed] flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.3)]">
+              <Lightbulb className="h-5 w-5 text-white" />
             </div>
             <div>
               <CardTitle>Create New Project</CardTitle>
@@ -107,7 +107,7 @@ export default function NewProjectPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
             {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+              <div className="p-3 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
                 {error}
               </div>
             )}
@@ -143,7 +143,7 @@ export default function NewProjectPage() {
                 id="category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-11 w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-2.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,212,255,0.4)] focus-visible:ring-offset-0 focus-visible:border-[rgba(0,212,255,0.3)] disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-200"
                 disabled={loading}
               >
                 {categories.map((cat) => (

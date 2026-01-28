@@ -78,14 +78,19 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <CardTitle className="text-2xl">{project.name}</CardTitle>
-                <Badge variant={project.status === "active" ? "success" : "secondary"}>
-                  {project.status || "draft"}
-                </Badge>
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.1)]">
+                <Code className="h-6 w-6 text-[#00d4ff]" />
               </div>
-              <CardDescription className="mt-2">{project.description}</CardDescription>
+              <div>
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-2xl font-black tracking-tight">{project.name}</CardTitle>
+                  <Badge variant={project.status === "active" ? "success" : "secondary"}>
+                    {project.status || "draft"}
+                  </Badge>
+                </div>
+                <CardDescription className="mt-1">{project.description}</CardDescription>
+              </div>
             </div>
           </div>
         </CardHeader>

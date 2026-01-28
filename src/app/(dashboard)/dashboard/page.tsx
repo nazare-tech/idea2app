@@ -39,9 +39,9 @@ export default async function DashboardPage() {
     .eq("status", "deployed")
 
   const stats = [
-    { name: "Total Projects", value: totalProjects || 0, icon: FolderKanban },
-    { name: "Analyses Generated", value: totalAnalyses || 0, icon: FileText },
-    { name: "Apps Deployed", value: totalDeployments || 0, icon: Rocket },
+    { name: "Total Projects", value: totalProjects || 0, icon: FolderKanban, gradient: "from-[#00d4ff] to-[#0ea5e9]" },
+    { name: "Analyses Generated", value: totalAnalyses || 0, icon: FileText, gradient: "from-[#7c3aed] to-[#a855f7]" },
+    { name: "Apps Deployed", value: totalDeployments || 0, icon: Rocket, gradient: "from-[#34d399] to-[#00d4ff]" },
   ]
 
   const getStatusColor = (status: string) => {
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
       {/* Welcome Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Welcome back!</h1>
+          <h1 className="text-3xl font-black tracking-tight">Welcome back!</h1>
           <p className="text-muted-foreground mt-1">
             Here&apos;s an overview of your business ideas and projects.
           </p>
@@ -76,17 +76,19 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-3">
         {stats.map((stat) => (
-          <Card key={stat.name}>
+          <Card key={stat.name} className="group hover:border-[rgba(0,212,255,0.15)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,212,255,0.06)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 {stat.name}
               </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
+              <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}>
+                <stat.icon className="h-4 w-4 text-white" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-3xl font-black tracking-tight">{stat.value}</div>
             </CardContent>
           </Card>
         ))}
@@ -108,19 +110,19 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           {projects && projects.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {projects.map((project) => (
                 <Link
                   key={project.id}
                   href={`/projects/${project.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(0,212,255,0.04)] hover:border-[rgba(0,212,255,0.15)] transition-all duration-200"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Code className="h-5 w-5 text-primary" />
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center">
+                      <Code className="h-5 w-5 text-[#00d4ff]" />
                     </div>
                     <div>
-                      <h3 className="font-medium">{project.name}</h3>
+                      <h3 className="font-semibold tracking-tight">{project.name}</h3>
                       <p className="text-sm text-muted-foreground line-clamp-1">
                         {project.description}
                       </p>
@@ -138,10 +140,12 @@ export default async function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <FolderKanban className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No projects yet</h3>
-              <p className="text-muted-foreground mb-4">
+            <div className="text-center py-16">
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-[rgba(0,212,255,0.1)] to-[rgba(124,58,237,0.1)] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mx-auto mb-5">
+                <FolderKanban className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-bold mb-2">No projects yet</h3>
+              <p className="text-muted-foreground mb-6">
                 Start by creating your first business idea project
               </p>
               <Link href="/projects/new">
@@ -157,53 +161,24 @@ export default async function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-          <Link href="/projects/new">
-            <CardHeader>
-              <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center mb-2">
-                <Plus className="h-5 w-5 text-blue-500" />
-              </div>
-              <CardTitle className="text-base">New Project</CardTitle>
-              <CardDescription>Start a new business idea</CardDescription>
-            </CardHeader>
-          </Link>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-          <Link href="/projects">
-            <CardHeader>
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-2">
-                <FolderKanban className="h-5 w-5 text-emerald-500" />
-              </div>
-              <CardTitle className="text-base">View Projects</CardTitle>
-              <CardDescription>Browse all your projects</CardDescription>
-            </CardHeader>
-          </Link>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-          <Link href="/billing">
-            <CardHeader>
-              <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-2">
-                <FileText className="h-5 w-5 text-amber-500" />
-              </div>
-              <CardTitle className="text-base">Manage Billing</CardTitle>
-              <CardDescription>View plans and credits</CardDescription>
-            </CardHeader>
-          </Link>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-          <Link href="/settings">
-            <CardHeader>
-              <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center mb-2">
-                <Rocket className="h-5 w-5 text-purple-500" />
-              </div>
-              <CardTitle className="text-base">Settings</CardTitle>
-              <CardDescription>Configure your account</CardDescription>
-            </CardHeader>
-          </Link>
-        </Card>
+        {[
+          { href: "/projects/new", icon: Plus, title: "New Project", desc: "Start a new business idea", gradient: "from-[#00d4ff] to-[#0ea5e9]" },
+          { href: "/projects", icon: FolderKanban, title: "View Projects", desc: "Browse all your projects", gradient: "from-[#34d399] to-[#00d4ff]" },
+          { href: "/billing", icon: FileText, title: "Manage Billing", desc: "View plans and credits", gradient: "from-[#fb923c] to-[#f472b6]" },
+          { href: "/settings", icon: Rocket, title: "Settings", desc: "Configure your account", gradient: "from-[#7c3aed] to-[#a855f7]" },
+        ].map((action) => (
+          <Card key={action.href} className="group cursor-pointer hover:border-[rgba(0,212,255,0.15)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(0,212,255,0.06)] hover:-translate-y-0.5">
+            <Link href={action.href}>
+              <CardHeader>
+                <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center mb-3 shadow-lg group-hover:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-shadow duration-300`}>
+                  <action.icon className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle className="text-base font-bold tracking-tight">{action.title}</CardTitle>
+                <CardDescription>{action.desc}</CardDescription>
+              </CardHeader>
+            </Link>
+          </Card>
+        ))}
       </div>
     </div>
   )
