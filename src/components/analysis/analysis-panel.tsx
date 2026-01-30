@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
 
 interface AnalysisPanelProps {
   projectId: string
@@ -101,6 +102,7 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
   const [loading, setLoading] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null)
 
   const runAnalysis = async (analysisType: string) => {
     setLoading(analysisType)
@@ -164,7 +166,44 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
     }
   }
 
-  const proseClasses = "prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-[#00d4ff] [&_code]:text-[#00d4ff] [&_code]:bg-[rgba(0,212,255,0.08)]"
+  const handleDownloadPDF = async (
+    analysisId: string,
+    content: string,
+    analysisType: string
+  ) => {
+    setDownloadingPdf(analysisId)
+    try {
+      const filename = `${project.name}-${analysisType}-${new Date().toISOString().split("T")[0]}.pdf`
+      await downloadMarkdownAsPDF(content, filename, project.name, analysisType)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to download PDF")
+    } finally {
+      setDownloadingPdf(null)
+    }
+  }
+
+  const proseClasses = `
+    prose prose-invert prose-sm max-w-none
+    [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-6 [&_h1]:text-foreground [&_h1]:border-b [&_h1]:border-[rgba(0,212,255,0.2)] [&_h1]:pb-2
+    [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-foreground
+    [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-foreground
+    [&_h4]:text-base [&_h4]:font-semibold [&_h4]:mb-2 [&_h4]:mt-3 [&_h4]:text-foreground
+    [&_p]:text-foreground [&_p]:mb-3 [&_p]:leading-relaxed
+    [&_ul]:my-3 [&_ul]:space-y-1 [&_ul]:pl-6
+    [&_ol]:my-3 [&_ol]:space-y-1 [&_ol]:pl-6
+    [&_li]:text-foreground [&_li]:leading-relaxed
+    [&_strong]:text-foreground [&_strong]:font-semibold
+    [&_em]:text-foreground [&_em]:italic
+    [&_a]:text-[#00d4ff] [&_a]:underline [&_a]:hover:text-[#00b8e6] [&_a]:transition-colors
+    [&_code]:text-[#00d4ff] [&_code]:bg-[rgba(0,212,255,0.08)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono
+    [&_pre]:bg-[rgba(255,255,255,0.05)] [&_pre]:border [&_pre]:border-[rgba(255,255,255,0.1)] [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto
+    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-foreground
+    [&_blockquote]:border-l-4 [&_blockquote]:border-[#00d4ff] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-3
+    [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse
+    [&_th]:border [&_th]:border-[rgba(255,255,255,0.1)] [&_th]:bg-[rgba(0,212,255,0.1)] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold
+    [&_td]:border [&_td]:border-[rgba(255,255,255,0.1)] [&_td]:px-4 [&_td]:py-2
+    [&_hr]:border-[rgba(255,255,255,0.1)] [&_hr]:my-4
+  `.trim()
 
   if (type === "analysis") {
     return (
@@ -232,16 +271,42 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
                         {new Date(analysis.created_at!).toLocaleDateString()}
                       </span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(analysis.content || "")
-                      }}
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      Copy
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(analysis.content || "")
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          handleDownloadPDF(
+                            analysis.id,
+                            analysis.content || "",
+                            analysis.type || "analysis"
+                          )
+                        }
+                        disabled={downloadingPdf === analysis.id}
+                      >
+                        {downloadingPdf === analysis.id ? (
+                          <>
+                            <Spinner size="sm" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-1" />
+                            Download PDF
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -312,14 +377,36 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
                     <span className="text-sm text-muted-foreground">
                       Version {String((prd as Record<string, unknown>).version || 1)} | {new Date(prd.created_at!).toLocaleDateString()}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigator.clipboard.writeText(prd.content || "")}
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      Copy
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(prd.content || "")}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          handleDownloadPDF(prd.id, prd.content || "", "prd")
+                        }
+                        disabled={downloadingPdf === prd.id}
+                      >
+                        {downloadingPdf === prd.id ? (
+                          <>
+                            <Spinner size="sm" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-1" />
+                            Download PDF
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -390,14 +477,36 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
                     <span className="text-sm text-muted-foreground">
                       Version {String((spec as Record<string, unknown>).version || 1)} | {new Date(spec.created_at!).toLocaleDateString()}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigator.clipboard.writeText(spec.content || "")}
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      Copy
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(spec.content || "")}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          handleDownloadPDF(spec.id, spec.content || "", "tech-spec")
+                        }
+                        disabled={downloadingPdf === spec.id}
+                      >
+                        {downloadingPdf === spec.id ? (
+                          <>
+                            <Spinner size="sm" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-1" />
+                            Download PDF
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
