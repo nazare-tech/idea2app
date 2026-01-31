@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/layout/header"
+import { ProjectSidebar } from "@/components/layout/project-sidebar"
 
 export default async function DashboardLayout({
   children,
@@ -25,28 +24,29 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single()
 
-  // Get user credits
-  const { data: credits } = await supabase
-    .from("credits")
-    .select("balance")
+  // Get all projects for the sidebar
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("id, name, status")
     .eq("user_id", user.id)
-    .single()
+    .order("created_at", { ascending: false })
 
   const userInfo = {
     email: user.email,
     full_name: profile?.full_name || user.user_metadata?.full_name,
-    avatar_url: profile?.avatar_url ?? undefined,
   }
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar credits={credits?.balance || 0} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header user={userInfo} />
-        <main className="flex-1 overflow-auto p-6">
-          {children}
-        </main>
-      </div>
+      <ProjectSidebar
+        projects={projects || []}
+        user={userInfo}
+      />
+      {/* Vertical Divider */}
+      <div className="w-px bg-border" />
+      <main className="flex-1 overflow-hidden">
+        {children}
+      </main>
     </div>
   )
 }
