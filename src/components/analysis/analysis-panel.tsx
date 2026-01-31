@@ -40,6 +40,13 @@ interface AnalysisPanelProps {
     created_at: string | null
     [key: string]: unknown
   }>
+  competitiveAnalyses?: Array<{
+    id: string
+    content?: string
+    type?: string
+    created_at: string | null
+    [key: string]: unknown
+  }>
   credits: number
   type: "analysis" | "prd" | "techspec" | "deploy"
 }
@@ -98,11 +105,17 @@ const appTypes = [
   },
 ]
 
-export function AnalysisPanel({ projectId, project, analyses, credits, type }: AnalysisPanelProps) {
+export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyses, credits, type }: AnalysisPanelProps) {
   const [loading, setLoading] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null)
+  const [showCompetitiveAnalysisBanner, setShowCompetitiveAnalysisBanner] = useState(false)
+
+  // Get the latest competitive analysis
+  const latestCompetitiveAnalysis = competitiveAnalyses?.find(
+    (analysis) => analysis.type === "competitive-analysis"
+  )
 
   const runAnalysis = async (analysisType: string) => {
     setLoading(analysisType)
@@ -110,14 +123,26 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
     setResult(null)
 
     try {
+      const payload: {
+        projectId: string
+        idea: string
+        name: string
+        competitiveAnalysis?: string
+      } = {
+        projectId,
+        idea: project.description,
+        name: project.name,
+      }
+
+      // Include competitive analysis for PRD generation
+      if (analysisType === "prd" && latestCompetitiveAnalysis?.content) {
+        payload.competitiveAnalysis = latestCompetitiveAnalysis.content
+      }
+
       const response = await fetch(`/api/analysis/${analysisType}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId,
-          idea: project.description,
-          name: project.name,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()
@@ -325,6 +350,9 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
   }
 
   if (type === "prd") {
+    const hasCompetitiveAnalysis = !!latestCompetitiveAnalysis
+    const isPrdButtonDisabled = loading !== null || credits < CREDIT_COSTS.prd || !hasCompetitiveAnalysis
+
     return (
       <div className="space-y-6">
         <Card>
@@ -344,9 +372,16 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{CREDIT_COSTS.prd} credits</Badge>
                 <Button
-                  onClick={() => runAnalysis("prd")}
-                  disabled={loading !== null || credits < CREDIT_COSTS.prd}
+                  onClick={() => {
+                    if (!hasCompetitiveAnalysis) {
+                      setShowCompetitiveAnalysisBanner(true)
+                      return
+                    }
+                    runAnalysis("prd")
+                  }}
+                  disabled={isPrdButtonDisabled}
                   size="sm"
+                  className={!hasCompetitiveAnalysis ? "opacity-50 cursor-not-allowed" : ""}
                 >
                   {loading === "prd" ? (
                     <>
@@ -361,6 +396,20 @@ export function AnalysisPanel({ projectId, project, analyses, credits, type }: A
             </div>
           </CardHeader>
         </Card>
+
+        {showCompetitiveAnalysisBanner && !hasCompetitiveAnalysis && (
+          <div className="p-4 rounded-xl bg-[rgba(255,165,0,0.1)] border border-[rgba(255,165,0,0.2)] text-[#ffa500] text-sm flex items-center justify-between">
+            <span>You need to generate a Competitive Analysis first before creating a PRD.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCompetitiveAnalysisBanner(false)}
+              className="text-[#ffa500] hover:text-[#ff8c00]"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
 
         {error && (
           <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">

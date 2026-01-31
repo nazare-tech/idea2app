@@ -144,6 +144,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             projectId={id}
             project={project}
             analyses={prds || []}
+            competitiveAnalyses={analyses || []}
             credits={credits?.balance || 0}
             type="prd"
           />
