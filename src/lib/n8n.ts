@@ -51,7 +51,7 @@ export async function callN8NWebhook(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(webhookBody),
-      signal: AbortSignal.timeout(30000), // 30s — n8n cloud sync webhooks won't respond beyond this
+      signal: AbortSignal.timeout(250000), // 250s — N8N workflows with LLM calls can take several minutes; stay within the 300s route maxDuration
     })
 
     if (!response.ok) {
