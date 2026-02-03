@@ -4,14 +4,13 @@ import { cn } from "@/lib/utils"
 import {
   PenLine,
   Search,
-  GitCompare,
   FileText,
   Code,
   Boxes,
   Rocket,
 } from "lucide-react"
 
-export type DocumentType = "prompt" | "competitive" | "gap" | "prd" | "techspec" | "architecture" | "deploy"
+export type DocumentType = "prompt" | "competitive" | "prd" | "techspec" | "architecture" | "deploy"
 
 interface DocumentStatus {
   type: DocumentType
@@ -33,7 +32,6 @@ const documents: {
 }[] = [
   { type: "prompt", label: "Prompt", description: "Your input", icon: PenLine },
   { type: "competitive", label: "Competitive Research", description: "", icon: Search },
-  { type: "gap", label: "Gap Analysis", description: "", icon: GitCompare },
   { type: "prd", label: "PRD", description: "", icon: FileText },
   { type: "techspec", label: "Tech Spec", description: "", icon: Code },
   { type: "architecture", label: "Architecture", description: "", icon: Boxes },

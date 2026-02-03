@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import React, { useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import mermaid from "mermaid"
@@ -14,7 +14,7 @@ interface MarkdownRendererProps {
 
 // Initialize mermaid
 mermaid.initialize({
-  startOnLoad: true,
+  startOnLoad: false,
   theme: "dark",
   themeVariables: {
     primaryColor: "#00d4ff",
@@ -36,9 +36,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
 
   useEffect(() => {
     // Render mermaid diagrams after component mounts
-    mermaid.run({
-      querySelector: ".mermaid",
-    })
+    mermaid.run({ querySelector: ".mermaid" }).catch(() => {})
   }, [content])
 
   const proseClasses = `
@@ -69,12 +67,12 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          code({ node, inline, className, children, ...props }) {
+          code({ className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || "")
             const language = match ? match[1] : ""
 
-            // Check if this is a mermaid diagram
-            if (language === "mermaid" && !inline) {
+            // Mermaid diagram block
+            if (language === "mermaid") {
               const code = String(children).replace(/\n$/, "")
               const id = `mermaid-${mermaidRef.current++}`
 
@@ -87,19 +85,18 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
               )
             }
 
-            // Code block with syntax highlighting
-            if (!inline && language) {
+            // Fenced code block with syntax highlighting
+            if (language) {
               return (
                 <SyntaxHighlighter
-                  style={vscDarkPlus}
+                  style={vscDarkPlus as Record<string, React.CSSProperties>}
                   language={language}
                   PreTag="div"
                   customStyle={{
                     margin: 0,
                     borderRadius: "0.5rem",
                     background: "rgba(255,255,255,0.05)",
-                  }}
-                  {...props}
+                  } as React.CSSProperties}
                 >
                   {String(children).replace(/\n$/, "")}
                 </SyntaxHighlighter>

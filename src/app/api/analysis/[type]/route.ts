@@ -4,6 +4,8 @@ import { callN8NWebhook } from "@/lib/n8n"
 import { callOpenRouterFallback } from "@/lib/openrouter"
 import { CREDIT_COSTS, type AnalysisType } from "@/lib/utils"
 
+export const maxDuration = 300 // 5 min — N8N webhook can be slow; OpenRouter fallback adds another 60-90s
+
 interface AnalysisParams {
   params: Promise<{ type: string }>
 }
@@ -31,7 +33,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     // Validate analysis type
-    const validTypes = ["competitive-analysis", "gap-analysis", "prd", "tech-spec"]
+    const validTypes = ["competitive-analysis", "prd", "tech-spec"]
     if (!validTypes.includes(type)) {
       return NextResponse.json(
         { error: `Invalid analysis type: ${type}` },

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
@@ -61,6 +61,14 @@ export function ProjectWorkspace({
   const router = useRouter()
   const [activeDocument, setActiveDocument] = useState<DocumentType>("prompt")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState<Record<DocumentType, number>>({
+    prompt: 0,
+    competitive: 0,
+    prd: 0,
+    techspec: 0,
+    architecture: 0,
+    deploy: 0,
+  })
 
   const getDocumentStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
     switch (type) {
@@ -68,8 +76,6 @@ export function ProjectWorkspace({
         return project.description ? "done" : "pending"
       case "competitive":
         return analyses.some(a => a.type === "competitive-analysis") ? "done" : "pending"
-      case "gap":
-        return analyses.some(a => a.type === "gap-analysis") ? "done" : "pending"
       case "prd":
         return prds.length > 0 ? "done" : "pending"
       case "techspec":
@@ -83,23 +89,38 @@ export function ProjectWorkspace({
     }
   }
 
+  const getVersionsForDocument = (type: DocumentType) => {
+    switch (type) {
+      case "competitive":
+        return analyses.filter(a => a.type === "competitive-analysis")
+      case "prd":
+        return prds
+      case "techspec":
+      case "architecture":
+        return techSpecs
+      case "deploy":
+        return deployments
+      default:
+        return []
+    }
+  }
+
   const getDocumentContent = (type: DocumentType): string | null => {
+    const versionIndex = selectedVersionIndex[type] || 0
+
     switch (type) {
       case "prompt":
         return project.description
       case "competitive":
-        const compAnalysis = analyses.find(a => a.type === "competitive-analysis")
-        return compAnalysis?.content || null
-      case "gap":
-        const gapAnalysis = analyses.find(a => a.type === "gap-analysis")
-        return gapAnalysis?.content || null
+        const compAnalyses = analyses.filter(a => a.type === "competitive-analysis")
+        return compAnalyses[versionIndex]?.content || null
       case "prd":
-        return prds[0]?.content || null
+        return prds[versionIndex]?.content || null
       case "techspec":
       case "architecture":
-        return techSpecs[0]?.content || null
+        return techSpecs[versionIndex]?.content || null
       case "deploy":
-        const deployment = deployments[0]
+        const deployment = deployments[versionIndex]
         if (!deployment) return null
         return deployment.deployment_url
           ? `**Deployment URL:** ${deployment.deployment_url}\n\n**Status:** ${deployment.status || "Unknown"}`
@@ -109,7 +130,26 @@ export function ProjectWorkspace({
     }
   }
 
-  const documentStatuses = (["prompt", "competitive", "gap", "prd", "techspec", "architecture", "deploy"] as DocumentType[]).map(
+  const getTotalVersions = (type: DocumentType): number => {
+    return getVersionsForDocument(type).length
+  }
+
+  const handleVersionChange = (type: DocumentType, index: number) => {
+    setSelectedVersionIndex(prev => ({
+      ...prev,
+      [type]: index,
+    }))
+  }
+
+  // Reset to latest version (index 0) when switching documents
+  useEffect(() => {
+    setSelectedVersionIndex(prev => ({
+      ...prev,
+      [activeDocument]: 0,
+    }))
+  }, [activeDocument])
+
+  const documentStatuses = (["prompt", "competitive", "prd", "techspec", "architecture", "deploy"] as DocumentType[]).map(
     type => ({ type, status: getDocumentStatus(type) })
   )
 
@@ -121,9 +161,6 @@ export function ProjectWorkspace({
       switch (activeDocument) {
         case "competitive":
           endpoint = "/api/analysis/competitive-analysis"
-          break
-        case "gap":
-          endpoint = "/api/analysis/gap-analysis"
           break
         case "prd":
           endpoint = "/api/analysis/prd"
@@ -145,32 +182,53 @@ export function ProjectWorkspace({
       // Get latest PRD for tech spec generation
       const latestPrd = prds[0]
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: project.id,
-          idea: project.description,
-          name: project.name,
-          ...(activeDocument === "deploy" && { appType: "dynamic" }),
-          // Pass competitive analysis for PRD generation
-          ...(activeDocument === "prd" && competitiveAnalysis?.content && {
-            competitiveAnalysis: competitiveAnalysis.content
-          }),
-          // Pass PRD for tech spec generation
-          ...((activeDocument === "techspec" || activeDocument === "architecture") && latestPrd?.content && {
-            prd: latestPrd.content
-          }),
-        }),
-      })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 min client-side limit
 
-      if (!response.ok) {
-        throw new Error("Failed to generate content")
+      let response: Response
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            projectId: project.id,
+            idea: project.description,
+            name: project.name,
+            ...(activeDocument === "deploy" && { appType: "dynamic" }),
+            ...(activeDocument === "prd" && competitiveAnalysis?.content && {
+              competitiveAnalysis: competitiveAnalysis.content
+            }),
+            ...((activeDocument === "techspec" || activeDocument === "architecture") && latestPrd?.content && {
+              prd: latestPrd.content
+            }),
+          }),
+        })
+      } finally {
+        clearTimeout(timeoutId)
       }
 
-      router.refresh()
+      if (!response.ok) {
+        let errorMsg = "Failed to generate content"
+        try {
+          const errorData = await response.json()
+          if (errorData?.error) errorMsg = errorData.error
+        } catch { /* ignore parse errors */ }
+        throw new Error(errorMsg)
+      }
+
+      // Wait a moment for database transaction to complete
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Force a hard refresh to ensure latest data is loaded
+      window.location.reload()
     } catch (error) {
       console.error("Error generating content:", error)
+      if (error instanceof Error && error.name === "AbortError") {
+        alert("Generation timed out after 5 minutes. Please try again.")
+      } else if (error instanceof Error) {
+        alert(error.message)
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -217,6 +275,9 @@ export function ProjectWorkspace({
           onUpdateDescription={handleUpdateDescription}
           isGenerating={isGenerating}
           credits={credits}
+          currentVersion={selectedVersionIndex[activeDocument] || 0}
+          totalVersions={getTotalVersions(activeDocument)}
+          onVersionChange={(index) => handleVersionChange(activeDocument, index)}
         />
       </div>
     </div>
