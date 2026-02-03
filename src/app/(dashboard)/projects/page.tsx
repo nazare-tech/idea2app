@@ -1,16 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { redirect } from "next/navigation"
 import Link from "next/link"
-import { Plus, FolderKanban, Code, MoreVertical } from "lucide-react"
-import { formatRelativeTime } from "@/lib/utils"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Plus, FolderOpen, Lightbulb } from "lucide-react"
 
 export default async function ProjectsPage() {
   const supabase = await createClient()
@@ -25,106 +16,47 @@ export default async function ProjectsPage() {
     .eq("user_id", user!.id)
     .order("updated_at", { ascending: false })
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "success"
-      case "draft":
-        return "secondary"
-      case "completed":
-        return "default"
-      default:
-        return "outline"
-    }
+  // If there are projects, redirect to the first one
+  if (projects && projects.length > 0) {
+    redirect(`/projects/${projects[0].id}`)
   }
 
+  // Show empty state for new users
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight">Projects</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your business ideas and analyses
-          </p>
+    <div className="flex h-full items-center justify-center bg-background">
+      <div className="text-center max-w-md px-6">
+        <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+          <FolderOpen className="h-10 w-10 text-primary" />
         </div>
-        <Link href="/projects/new">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Project
-          </Button>
+        <h1 className="text-2xl font-semibold text-foreground mb-3">
+          Welcome to Projects
+        </h1>
+        <p className="text-muted-foreground mb-8 leading-relaxed">
+          Start by creating your first project. Describe your business idea and let AI help you build it into reality.
+        </p>
+        <Link
+          href="/projects/new"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold text-sm hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Create Your First Project
         </Link>
-      </div>
-
-      {projects && projects.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
-            <Card key={project.id} className="group hover:border-[rgba(0,212,255,0.2)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(0,212,255,0.06)] hover:-translate-y-0.5">
-              <CardHeader className="flex flex-row items-start justify-between">
-                <Link href={`/projects/${project.id}`} className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center">
-                      <Code className="h-5 w-5 text-[#00d4ff]" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg group-hover:text-[#00d4ff] transition-colors">
-                        {project.name}
-                      </CardTitle>
-                      <Badge variant={getStatusColor(project.status || "draft")} className="mt-1">
-                        {project.status || "draft"}
-                      </Badge>
-                    </div>
-                  </div>
-                </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-[#0c0c14] border-[rgba(255,255,255,0.08)]">
-                    <DropdownMenuItem asChild>
-                      <Link href={`/projects/${project.id}`}>Open Project</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/projects/${project.id}/settings`}>Settings</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-[#ff3b5c] focus:text-[#ff3b5c]">
-                      Delete Project
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardHeader>
-              <CardContent>
-                <Link href={`/projects/${project.id}`}>
-                  <CardDescription className="line-clamp-2 min-h-[40px]">
-                    {project.description}
-                  </CardDescription>
-                  <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
-                    <span>{project.category || "General"}</span>
-                    <span>{formatRelativeTime(project.updated_at || project.created_at!)}</span>
-                  </div>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="mt-10 pt-8 border-t border-border">
+          <div className="flex items-start gap-4 text-left">
+            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <Lightbulb className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="font-medium text-foreground text-sm mb-1">
+                How it works
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Describe your idea, and we&apos;ll generate competitive research, gap analysis, PRD, tech specs, and even deployable code.
+              </p>
+            </div>
+          </div>
         </div>
-      ) : (
-        <Card>
-          <CardContent className="text-center py-12">
-            <FolderKanban className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No projects yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Start by creating your first business idea project
-            </p>
-            <Link href="/projects/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Create Your First Project
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      )}
+      </div>
     </div>
   )
 }
