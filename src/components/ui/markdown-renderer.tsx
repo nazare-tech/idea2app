@@ -31,13 +31,35 @@ mermaid.initialize({
   },
 })
 
-export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
-  const mermaidRef = useRef<number>(0)
+function MermaidDiagram({ code }: { code: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const idRef = useRef(`mermaid-${Date.now()}-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
-    // Render mermaid diagrams after component mounts
-    mermaid.run({ querySelector: ".mermaid" }).catch(() => {})
-  }, [content])
+    if (!containerRef.current) return
+
+    mermaid
+      .render(idRef.current, code)
+      .then(({ svg }) => {
+        if (containerRef.current) {
+          containerRef.current.innerHTML = svg
+        }
+      })
+      .catch(() => {
+        if (containerRef.current) {
+          containerRef.current.textContent = code
+        }
+      })
+  }, [code])
+
+  return (
+    <div className="mermaid-wrapper my-4 p-4 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(0,212,255,0.2)] overflow-x-auto">
+      <div ref={containerRef} />
+    </div>
+  )
+}
+
+export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
 
   const proseClasses = `
     prose prose-invert prose-sm max-w-none
@@ -73,16 +95,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
 
             // Mermaid diagram block
             if (language === "mermaid") {
-              const code = String(children).replace(/\n$/, "")
-              const id = `mermaid-${mermaidRef.current++}`
-
-              return (
-                <div className="mermaid-wrapper my-4 p-4 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(0,212,255,0.2)] overflow-x-auto">
-                  <div className="mermaid" id={id}>
-                    {code}
-                  </div>
-                </div>
-              )
+              return <MermaidDiagram code={String(children).replace(/\n$/, "")} />
             }
 
             // Fenced code block with syntax highlighting
