@@ -2,7 +2,8 @@ export interface N8NPayload {
   idea: string
   name: string
   projectId: string
-  context?: string
+  prd?: string
+  competitiveAnalysis?: string
 }
 
 const WEBHOOK_MAP: Record<string, string | undefined> = {
@@ -27,19 +28,29 @@ export async function callN8NWebhook(
   const webhookUrl = `${baseUrl}${webhookPath}`
 
   try {
+    // Build webhook body with optional fields
+    const webhookBody: Record<string, unknown> = {
+      type,
+      idea: payload.idea,
+      name: payload.name,
+      projectId: payload.projectId,
+      timestamp: new Date().toISOString(),
+    }
+
+    // Add optional fields only if they have values
+    if (payload.prd) {
+      webhookBody.prd = payload.prd
+    }
+    if (payload.competitiveAnalysis) {
+      webhookBody.competitiveAnalysis = payload.competitiveAnalysis
+    }
+
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        type,
-        idea: payload.idea,
-        name: payload.name,
-        projectId: payload.projectId,
-        context: payload.context,
-        timestamp: new Date().toISOString(),
-      }),
+      body: JSON.stringify(webhookBody),
       signal: AbortSignal.timeout(120000), // 2 minute timeout
     })
 

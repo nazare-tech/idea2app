@@ -139,12 +139,28 @@ export function ProjectWorkspace({
           return
       }
 
+      // Get competitive analysis for PRD generation
+      const competitiveAnalysis = analyses.find(a => a.type === "competitive-analysis")
+
+      // Get latest PRD for tech spec generation
+      const latestPrd = prds[0]
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId: project.id,
+          idea: project.description,
+          name: project.name,
           ...(activeDocument === "deploy" && { appType: "dynamic" }),
+          // Pass competitive analysis for PRD generation
+          ...(activeDocument === "prd" && competitiveAnalysis?.content && {
+            competitiveAnalysis: competitiveAnalysis.content
+          }),
+          // Pass PRD for tech spec generation
+          ...((activeDocument === "techspec" || activeDocument === "architecture") && latestPrd?.content && {
+            prd: latestPrd.content
+          }),
         }),
       })
 

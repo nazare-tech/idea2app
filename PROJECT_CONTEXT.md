@@ -49,6 +49,8 @@
 | **class-variance-authority** | 0.7.1 | Type-safe component variants |
 | **react-markdown** | 10.1.0 | Markdown rendering |
 | **remark-gfm** | 4.0.1 | GitHub Flavored Markdown support |
+| **mermaid** | latest | Diagram and flowchart rendering |
+| **react-syntax-highlighter** | latest | Code syntax highlighting |
 
 ### Backend & Services
 
@@ -194,6 +196,7 @@ src/
 │   │   ├── input.tsx, textarea.tsx, label.tsx
 │   │   ├── badge.tsx, avatar.tsx, spinner.tsx
 │   │   ├── dropdown-menu.tsx, tabs.tsx  # Radix UI
+│   │   ├── markdown-renderer.tsx # Markdown with Mermaid support
 │   │   └── ...
 │   ├── layout/                   # Layout components
 │   │   ├── sidebar.tsx           # Dashboard sidebar

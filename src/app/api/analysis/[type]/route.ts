@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { projectId, idea, name } = await request.json()
+    const { projectId, idea, name, competitiveAnalysis, prd } = await request.json()
 
     if (!projectId || !idea || !name) {
       return NextResponse.json(
@@ -75,6 +75,10 @@ export async function POST(request: Request, { params }: AnalysisParams) {
         idea,
         name,
         projectId,
+        // Pass PRD for tech-spec generation
+        prd: type === "tech-spec" ? prd : undefined,
+        // Pass competitive analysis for PRD generation
+        competitiveAnalysis: type === "prd" ? competitiveAnalysis : undefined,
       })
     } catch {
       console.log(`N8N webhook failed for ${type}, using OpenRouter fallback`)
