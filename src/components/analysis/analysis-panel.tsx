@@ -20,9 +20,8 @@ import {
   RefreshCw,
   ExternalLink,
 } from "lucide-react"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 
 interface AnalysisPanelProps {
   projectId: string
@@ -44,6 +43,12 @@ interface AnalysisPanelProps {
     id: string
     content?: string
     type?: string
+    created_at: string | null
+    [key: string]: unknown
+  }>
+  prds?: Array<{
+    id: string
+    content?: string
     created_at: string | null
     [key: string]: unknown
   }>
@@ -105,22 +110,24 @@ const appTypes = [
   },
 ]
 
-export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyses, credits, type }: AnalysisPanelProps) {
+export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyses, prds, credits, type }: AnalysisPanelProps) {
   const [loading, setLoading] = useState<string | null>(null)
-  const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null)
   const [showCompetitiveAnalysisBanner, setShowCompetitiveAnalysisBanner] = useState(false)
+  const [showPrdBanner, setShowPrdBanner] = useState(false)
 
   // Get the latest competitive analysis
   const latestCompetitiveAnalysis = competitiveAnalyses?.find(
     (analysis) => analysis.type === "competitive-analysis"
   )
 
+  // Get the latest PRD
+  const latestPrd = prds?.[0]
+
   const runAnalysis = async (analysisType: string) => {
     setLoading(analysisType)
     setError(null)
-    setResult(null)
 
     try {
       const payload: {
@@ -128,6 +135,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         idea: string
         name: string
         competitiveAnalysis?: string
+        prd?: string
       } = {
         projectId,
         idea: project.description,
@@ -137,6 +145,11 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
       // Include competitive analysis for PRD generation
       if (analysisType === "prd" && latestCompetitiveAnalysis?.content) {
         payload.competitiveAnalysis = latestCompetitiveAnalysis.content
+      }
+
+      // Include PRD for tech spec generation
+      if (analysisType === "tech-spec" && latestPrd?.content) {
+        payload.prd = latestPrd.content
       }
 
       const response = await fetch(`/api/analysis/${analysisType}`, {
@@ -151,7 +164,6 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         throw new Error(data.error || "Analysis failed")
       }
 
-      setResult(data.content)
       // Refresh to show updated analyses list
       window.location.reload()
     } catch (err) {
@@ -206,29 +218,6 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
       setDownloadingPdf(null)
     }
   }
-
-  const proseClasses = `
-    prose prose-invert prose-sm max-w-none
-    [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-6 [&_h1]:text-foreground [&_h1]:border-b [&_h1]:border-[rgba(0,212,255,0.2)] [&_h1]:pb-2
-    [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-foreground
-    [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-foreground
-    [&_h4]:text-base [&_h4]:font-semibold [&_h4]:mb-2 [&_h4]:mt-3 [&_h4]:text-foreground
-    [&_p]:text-foreground [&_p]:mb-3 [&_p]:leading-relaxed
-    [&_ul]:my-3 [&_ul]:space-y-1 [&_ul]:pl-6
-    [&_ol]:my-3 [&_ol]:space-y-1 [&_ol]:pl-6
-    [&_li]:text-foreground [&_li]:leading-relaxed
-    [&_strong]:text-foreground [&_strong]:font-semibold
-    [&_em]:text-foreground [&_em]:italic
-    [&_a]:text-[#00d4ff] [&_a]:underline [&_a]:hover:text-[#00b8e6] [&_a]:transition-colors
-    [&_code]:text-[#00d4ff] [&_code]:bg-[rgba(0,212,255,0.08)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono
-    [&_pre]:bg-[rgba(255,255,255,0.05)] [&_pre]:border [&_pre]:border-[rgba(255,255,255,0.1)] [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto
-    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-foreground
-    [&_blockquote]:border-l-4 [&_blockquote]:border-[#00d4ff] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-3
-    [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse
-    [&_th]:border [&_th]:border-[rgba(255,255,255,0.1)] [&_th]:bg-[rgba(0,212,255,0.1)] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold
-    [&_td]:border [&_td]:border-[rgba(255,255,255,0.1)] [&_td]:px-4 [&_td]:py-2
-    [&_hr]:border-[rgba(255,255,255,0.1)] [&_hr]:my-4
-  `.trim()
 
   if (type === "analysis") {
     return (
@@ -335,10 +324,8 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={`${proseClasses} max-h-[400px] overflow-y-auto`}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {analysis.content || ""}
-                    </ReactMarkdown>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    <MarkdownRenderer content={analysis.content || ""} />
                   </div>
                 </CardContent>
               </Card>
@@ -459,11 +446,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={proseClasses}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {prd.content || ""}
-                    </ReactMarkdown>
-                  </div>
+                  <MarkdownRenderer content={prd.content || ""} />
                 </CardContent>
               </Card>
             ))}
@@ -474,6 +457,9 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
   }
 
   if (type === "techspec") {
+    const hasPrd = !!latestPrd
+    const isTechSpecButtonDisabled = loading !== null || credits < CREDIT_COSTS["tech-spec"] || !hasPrd
+
     return (
       <div className="space-y-6">
         <Card>
@@ -493,9 +479,16 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{CREDIT_COSTS["tech-spec"]} credits</Badge>
                 <Button
-                  onClick={() => runAnalysis("tech-spec")}
-                  disabled={loading !== null || credits < CREDIT_COSTS["tech-spec"]}
+                  onClick={() => {
+                    if (!hasPrd) {
+                      setShowPrdBanner(true)
+                      return
+                    }
+                    runAnalysis("tech-spec")
+                  }}
+                  disabled={isTechSpecButtonDisabled}
                   size="sm"
+                  className={!hasPrd ? "opacity-50 cursor-not-allowed" : ""}
                 >
                   {loading === "tech-spec" ? (
                     <>
@@ -510,6 +503,20 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
             </div>
           </CardHeader>
         </Card>
+
+        {showPrdBanner && !hasPrd && (
+          <div className="p-4 rounded-xl bg-[rgba(255,165,0,0.1)] border border-[rgba(255,165,0,0.2)] text-[#ffa500] text-sm flex items-center justify-between">
+            <span>You need to generate a PRD first before creating a Technical Specification.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPrdBanner(false)}
+              className="text-[#ffa500] hover:text-[#ff8c00]"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
 
         {error && (
           <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
@@ -559,11 +566,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={proseClasses}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {spec.content || ""}
-                    </ReactMarkdown>
-                  </div>
+                  <MarkdownRenderer content={spec.content || ""} />
                 </CardContent>
               </Card>
             ))}

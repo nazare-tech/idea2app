@@ -155,6 +155,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             projectId={id}
             project={project}
             analyses={techSpecs || []}
+            prds={prds || []}
             credits={credits?.balance || 0}
             type="techspec"
           />
