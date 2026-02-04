@@ -9,6 +9,7 @@ import {
   Search,
   Settings,
   LogOut,
+  CreditCard,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useState } from "react"
@@ -148,6 +149,12 @@ export function ProjectSidebar({ projects, currentProjectId, user }: ProjectSide
         <span className="text-xs font-medium text-sidebar-muted flex-1 truncate">
           {user.full_name || user.email?.split("@")[0] || "User"}
         </span>
+        <button
+          onClick={() => router.push("/billing")}
+          className="p-1 text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+        >
+          <CreditCard className="h-4 w-4" />
+        </button>
         <button
           onClick={() => router.push("/settings")}
           className="p-1 text-sidebar-muted hover:text-sidebar-foreground transition-colors"

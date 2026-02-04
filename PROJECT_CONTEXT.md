@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-01-27
+**Last Updated**: 2026-02-02
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -47,10 +47,16 @@
 | **Radix UI** | Various | Unstyled, accessible component primitives |
 | **lucide-react** | 0.563.0 | Icon library |
 | **class-variance-authority** | 0.7.1 | Type-safe component variants |
+| **tailwind-merge** | 3.4.0 | Tailwind class merging utility |
 | **react-markdown** | 10.1.0 | Markdown rendering |
 | **remark-gfm** | 4.0.1 | GitHub Flavored Markdown support |
-| **mermaid** | latest | Diagram and flowchart rendering |
-| **react-syntax-highlighter** | latest | Code syntax highlighting |
+| **mermaid** | 11.12.2 | Diagram and flowchart rendering |
+| **react-syntax-highlighter** | 16.1.0 | Code syntax highlighting |
+| **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
+| **jspdf** | 4.0.0 | Client-side PDF generation |
+| **html2canvas** | 1.4.1 | HTML-to-canvas rendering (used for PDF) |
+| **Sora** | (Google Font) | Primary sans-serif typeface |
+| **IBM Plex Mono** | (Google Font) | Monospace typeface for labels/code |
 
 ### Backend & Services
 
@@ -131,11 +137,14 @@
    - Response streamed back to client
 
 3. **Analysis Flow**:
-   - Client requests analysis (competitive, gap, PRD, tech spec)
+   - Client requests analysis (competitive, PRD, or tech spec) from the workspace `ContentEditor`
    - Server checks credits, deducts if available
-   - Server tries N8N webhook first (if configured)
-   - Falls back to OpenRouter if N8N fails
-   - Result saved to database and returned
+   - Server calls N8N webhook first, forwarding contextual data:
+     - PRD generation receives the latest `competitiveAnalysis` content
+     - Tech spec generation receives the latest `prd` content
+   - Falls back to OpenRouter if N8N is unconfigured or fails
+   - Result saved to the appropriate table (`analyses`, `prds`, or `tech_specs`)
+   - Page reloads to surface the new version
 
 4. **App Generation Flow**:
    - Client requests app generation
@@ -145,17 +154,43 @@
    - Server saves deployment record
    - Returns generated code to client
 
+### Workspace Layout (Three-Column)
+
+The project workspace (`/projects/[id]`) uses a three-column layout inspired by Pencil:
+
+```
+┌──────────────┬───────────────────┬──────────────────────────────┐
+│ ProjectSide- │  DocumentNav      │  ContentEditor               │
+│ bar          │  (pipeline steps) │  (active document view)      │
+│              │                   │                              │
+│ - Project    │  1. Prompt        │  - Header (title, actions)   │
+│   list       │  2. Competitive   │  - Version navigation        │
+│ - Search     │     Research      │  - Editable prompt / MD view │
+│ - New Proj   │  3. PRD           │  - Generate button           │
+│ - User info  │  4. Tech Spec     │  - Copy / PDF download       │
+│              │  5. Architecture  │                              │
+│   (dark bg)  │  6. Deploy        │   (light bg)                 │
+└──────────────┴───────────────────┴──────────────────────────────┘
+  260px fixed    280px fixed         flex-1 (remaining)
+```
+
+- **`ProjectSidebar`** — persistent app-level navigation; lists all user projects, search, sign-out. Dark background (`#000`), rendered server-side and passed to client.
+- **`DocumentNav`** — pipeline-step navigation within a single project. Shows status badges (Done / In Progress / Pending) for each document stage.
+- **`ContentEditor`** — renders the active document. Handles editing the prompt, triggering generation, displaying rendered Markdown, version switching, copy-to-clipboard, and PDF export.
+- **`ProjectWorkspace`** — orchestrator component that connects all three columns. Manages active document state, version selection, and dispatches API calls.
+
 ### Key Design Patterns
 
 1. **App Router with Route Groups**: Organized routes with shared layouts using `(group-name)` syntax
 2. **Server Components by Default**: Pages default to server components; interactive components explicitly marked `"use client"`
 3. **Middleware-based Auth**: Global authentication protection at the middleware level
 4. **Credit System with Database Functions**: PostgreSQL stored procedures for atomic credit operations
-5. **Multi-Source AI with Fallback**: Primary webhook (N8N), fallback to OpenRouter
+5. **Multi-Source AI with Fallback**: Primary webhook (N8N) with `prd` / `competitiveAnalysis` context forwarded; fallback to OpenRouter
 6. **TypeScript-First**: Strict typing throughout, auto-generated database types
 7. **Component Composition**: Radix UI primitives + CVA for variants
 8. **Optimistic UI Updates**: Immediate feedback with graceful error handling
 9. **Path Aliases**: Clean imports using `@/*` aliases
+10. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
 
 ---
 
@@ -169,7 +204,7 @@ src/
 │   │   ├── signup/page.tsx       # Signup page
 │   │   └── callback/route.ts     # OAuth callback handler
 │   ├── (dashboard)/              # Dashboard route group (shared layout)
-│   │   ├── layout.tsx            # Sidebar + header layout
+│   │   ├── layout.tsx            # ProjectSidebar + main content layout
 │   │   ├── dashboard/page.tsx    # Main dashboard
 │   │   ├── projects/
 │   │   │   ├── page.tsx          # Projects list
@@ -179,8 +214,9 @@ src/
 │   │   └── settings/page.tsx     # User settings
 │   ├── api/                      # API routes
 │   │   ├── chat/route.ts         # POST chat messages
-│   │   ├── analysis/[type]/route.ts   # POST run analysis
+│   │   ├── analysis/[type]/route.ts   # POST run analysis (N8N → OpenRouter fallback)
 │   │   ├── generate-app/route.ts      # POST generate app code
+│   │   ├── projects/[id]/route.ts     # PATCH/GET project details
 │   │   └── stripe/
 │   │       ├── checkout/route.ts      # Create checkout session
 │   │       ├── portal/route.ts        # Customer portal
@@ -196,11 +232,16 @@ src/
 │   │   ├── input.tsx, textarea.tsx, label.tsx
 │   │   ├── badge.tsx, avatar.tsx, spinner.tsx
 │   │   ├── dropdown-menu.tsx, tabs.tsx  # Radix UI
-│   │   ├── markdown-renderer.tsx # Markdown with Mermaid support
+│   │   ├── markdown-renderer.tsx # Markdown with Mermaid + syntax highlighting
 │   │   └── ...
 │   ├── layout/                   # Layout components
-│   │   ├── sidebar.tsx           # Dashboard sidebar
-│   │   └── header.tsx            # Dashboard header
+│   │   ├── sidebar.tsx           # Legacy dashboard sidebar (retained)
+│   │   ├── header.tsx            # Legacy dashboard header (retained)
+│   │   ├── project-sidebar.tsx   # App-level project list sidebar (dark theme)
+│   │   ├── document-nav.tsx      # Pipeline-step navigation within a project
+│   │   └── content-editor.tsx    # Active document view (edit/generate/export)
+│   ├── workspace/                # Workspace orchestration
+│   │   └── project-workspace.tsx # Three-column layout orchestrator
 │   ├── chat/                     # Chat feature
 │   │   └── chat-interface.tsx    # Main chat UI
 │   └── analysis/                 # Analysis feature
@@ -213,8 +254,9 @@ src/
 │   │   └── middleware.ts         # Auth middleware logic
 │   ├── stripe.ts                 # Stripe singleton
 │   ├── openrouter.ts             # OpenRouter AI API
-│   ├── n8n.ts                    # N8N webhook integration
-│   └── utils.ts                  # Utility functions
+│   ├── n8n.ts                    # N8N webhook integration (with prd/competitiveAnalysis context)
+│   ├── pdf-utils.ts              # PDF export: renders Markdown → HTML → canvas → jsPDF
+│   └── utils.ts                  # Utility functions & CREDIT_COSTS
 │
 ├── types/                        # TypeScript types
 │   └── database.ts               # Supabase DB types (auto-generated)
@@ -232,11 +274,13 @@ src/
 | `app/(dashboard)/` | Protected app pages | Adding new dashboard features |
 | `app/api/` | Backend API endpoints | Creating new API functionality |
 | `components/ui/` | Reusable UI components | Adding new UI primitives |
-| `components/layout/` | Layout components | Modifying dashboard structure |
+| `components/layout/` | Layout & navigation components | Modifying sidebar, document nav, or content editor |
+| `components/workspace/` | Workspace orchestration | Changing the project workspace flow or column layout |
 | `components/chat/` | Chat feature components | Enhancing chat functionality |
 | `components/analysis/` | Analysis feature components | Adding analysis features |
 | `lib/` | Business logic & external APIs | Integrating new services |
 | `lib/supabase/` | Database & auth logic | Database operations |
+| `lib/pdf-utils.ts` | PDF export logic | Changing PDF styling or export behaviour |
 | `types/` | TypeScript definitions | Adding new type definitions |
 
 ---
@@ -273,7 +317,8 @@ interface ChatInterfaceProps { ... }
 interface AnalysisPanelProps { ... }
 
 // Type aliases: PascalCase or lowercase
-type AnalysisType = 'competitive-analysis' | 'gap-analysis' | 'prd' | 'tech-spec'
+type AnalysisType = 'competitive-analysis' | 'prd' | 'tech-spec'
+type DocumentType = 'prompt' | 'competitive' | 'prd' | 'techspec' | 'architecture' | 'deploy'
 ```
 
 ### Component Structure
@@ -394,20 +439,34 @@ import { cn } from "@/lib/utils"
 )} />
 ```
 
-#### Color Palette
+#### Color Palette (Pencil Design System)
+
+The app uses CSS custom properties (defined in `globals.css`) rather than hard-coded Tailwind colours. Use the semantic tokens below:
+
 ```typescript
-// Primary gradient (most common)
-"bg-gradient-to-r from-[#00d4ff] to-[#7c3aed]"  // Cyan to Purple
+// Primary action colour
+"bg-primary"                    // #DC2626 (red)
+"text-primary-foreground"       // #FFFFFF
 
-// Other gradients
-"from-[#7c3aed] to-[#a855f7]"  // Purple variants
-"from-[#34d399] to-[#00d4ff]"  // Green-Cyan
-"from-[#f472b6] to-[#fb923c]"  // Pink-Orange
+// Backgrounds & surfaces
+"bg-background"                 // #FAFAFA (main page)
+"bg-card"                       // #FFFFFF (content cards)
+"bg-secondary"                  // #F5F5F5 (inputs, sub-surfaces)
 
-// Background colors
-"bg-[#06060a]"           // Main background
-"bg-[#0c0c14]"           // Surface background
-"rgba(12, 12, 20, 0.5)"  // Semi-transparent
+// Sidebar (dark theme — always use sidebar-* tokens)
+"bg-sidebar-bg"                 // #000000
+"text-sidebar-foreground"       // #FAFAFA
+"text-sidebar-muted"            // #999999
+"border-sidebar-border"         // #222222
+
+// Status badges
+"text-success / bg-success-bg"  // Green (#22C55E / #ECFDF5) — Done
+"text-info / bg-info-bg"        // Blue  (#3B82F6 / #EFF6FF) — In Progress
+
+// Markdown renderer (dark-themed prose, used inside content cards)
+// Still uses hard-coded colours for code/Mermaid blocks:
+"#00d4ff"  // Cyan — code highlights, links, Mermaid primary
+"#7c3aed"  // Purple — Mermaid secondary
 ```
 
 ### Error Handling
@@ -456,7 +515,8 @@ interface ComponentProps {
 }
 
 // Type unions for specific values
-type AnalysisType = 'competitive-analysis' | 'gap-analysis' | 'prd' | 'tech-spec'
+type AnalysisType = 'competitive-analysis' | 'prd' | 'tech-spec'
+type DocumentType = 'prompt' | 'competitive' | 'prd' | 'techspec' | 'architecture' | 'deploy'
 
 // Const assertions for immutable objects
 const COSTS = {
@@ -687,12 +747,24 @@ docker run -p 3000:3000 idea2app
   - Returns: `{ id, content, role, created_at }`
   - Cost: 1 credit
 
+### Projects
+- **GET /api/projects/[id]**: Get project details
+  - Returns: project row (owner-scoped via RLS)
+
+- **PATCH /api/projects/[id]**: Update project fields
+  - Body: `{ description?, name?, status? }` (any subset)
+  - Returns: updated project row
+  - Used by the workspace prompt editor to persist description changes
+
 ### Analysis
 - **POST /api/analysis/[type]**: Generate analysis
-  - Types: `competitive-analysis`, `gap-analysis`, `prd`, `tech-spec`
-  - Body: `{ projectId }`
-  - Returns: `{ id, content, created_at }`
-  - Cost: 5 credits (10 for PRD/tech-spec)
+  - Types: `competitive-analysis`, `prd`, `tech-spec`
+  - Body: `{ projectId, idea, name, competitiveAnalysis?, prd? }`
+    - `competitiveAnalysis` forwarded to N8N when generating PRDs
+    - `prd` forwarded to N8N when generating tech specs
+  - Returns: `{ content, source, model, type }`
+  - Cost: 5 credits (`competitive-analysis`) / 10 credits (`prd`, `tech-spec`)
+  - Route `maxDuration`: 300s (N8N workflows can be slow)
 
 ### App Generation
 - **POST /api/generate-app**: Generate application code
@@ -722,10 +794,9 @@ docker run -p 3000:3000 idea2app
 |--------|------|
 | Chat message | 1 credit |
 | Competitive Analysis | 5 credits |
-| Gap Analysis | 5 credits |
 | PRD Generation | 10 credits |
 | Tech Spec Generation | 10 credits |
-| App Generation | 5 credits |
+| App Generation (Deploy) | 5 credits |
 
 ### Credit Management
 
@@ -752,7 +823,7 @@ docker run -p 3000:3000 idea2app
 src/app/(dashboard)/new-page/page.tsx
 
 # 2. Add to navigation (if needed)
-src/components/layout/sidebar.tsx
+src/components/layout/project-sidebar.tsx
 ```
 
 ### Adding a New API Endpoint
@@ -826,21 +897,40 @@ export const CREDIT_COSTS = {
 - Check credit balance in `profiles` table
 - Review `credits_history` for transaction log
 
+**N8N Timeout Issues**
+- The analysis route has `maxDuration = 300s`; the N8N client uses a 250s `AbortSignal.timeout`
+- If N8N consistently times out, check the N8N workflow for long-running LLM calls
+- The system will auto-fallback to OpenRouter if the N8N request fails
+
+**PDF Export Issues**
+- PDF export uses `html2canvas` which renders off-screen; ensure the page is not navigated away during generation
+- `marked` parses Markdown to HTML client-side; ensure the content is valid Markdown
+
 ---
 
 ## 12. Key Files Reference
 
 | File | Purpose |
 |------|---------|
-| [src/app/layout.tsx](src/app/layout.tsx) | Root layout, fonts, metadata |
-| [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout with sidebar |
-| [src/app/(dashboard)/projects/[id]/page.tsx](src/app/(dashboard)/projects/[id]/page.tsx) | Main project workspace |
+| [src/app/layout.tsx](src/app/layout.tsx) | Root layout — loads Sora + IBM Plex Mono fonts |
+| [src/app/globals.css](src/app/globals.css) | Pencil design tokens (CSS custom properties), status badge styles, scrollbar styles |
+| [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout — renders `ProjectSidebar` + children |
+| [src/app/(dashboard)/projects/[id]/page.tsx](src/app/(dashboard)/projects/[id]/page.tsx) | Project page — fetches data server-side, passes to `ProjectWorkspace` |
+| [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details |
+| [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation with N8N → OpenRouter fallback |
+| [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Three-column workspace orchestrator |
+| [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
+| [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
+| [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view (edit/generate/copy/PDF export) |
+| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with Mermaid diagrams + syntax highlighting |
 | [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | Chat UI component |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
+| [src/lib/n8n.ts](src/lib/n8n.ts) | N8N webhook client — forwards prd/competitiveAnalysis context |
+| [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export: Markdown → HTML → canvas → jsPDF |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
 | [src/lib/supabase/client.ts](src/lib/supabase/client.ts) | Browser Supabase client |
-| [src/lib/openrouter.ts](src/lib/openrouter.ts) | OpenRouter AI integration |
-| [src/lib/utils.ts](src/lib/utils.ts) | Utility functions & constants |
+| [src/lib/openrouter.ts](src/lib/openrouter.ts) | OpenRouter AI integration (fallback) |
+| [src/lib/utils.ts](src/lib/utils.ts) | Utility functions & CREDIT_COSTS |
 | [src/middleware.ts](src/middleware.ts) | Auth middleware |
 | [src/types/database.ts](src/types/database.ts) | Database type definitions |
 

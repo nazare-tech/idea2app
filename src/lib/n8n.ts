@@ -6,17 +6,18 @@ export interface N8NPayload {
   competitiveAnalysis?: string
 }
 
-const WEBHOOK_MAP: Record<string, string | undefined> = {
-  "competitive-analysis": process.env.N8N_COMPETITIVE_ANALYSIS_WEBHOOK,
-  "gap-analysis": process.env.N8N_GAP_ANALYSIS_WEBHOOK,
-  "prd": process.env.N8N_PRD_WEBHOOK,
-  "tech-spec": process.env.N8N_TECH_SPEC_WEBHOOK,
-}
-
 export async function callN8NWebhook(
   type: string,
   payload: N8NPayload
 ): Promise<{ content: string; source: "n8n"; model: string }> {
+  // Read env vars at call-time — module-scope reads are unreliable in serverless
+  const WEBHOOK_MAP: Record<string, string | undefined> = {
+    "competitive-analysis": process.env.N8N_COMPETITIVE_ANALYSIS_WEBHOOK,
+    "gap-analysis": process.env.N8N_GAP_ANALYSIS_WEBHOOK,
+    "prd": process.env.N8N_PRD_WEBHOOK,
+    "tech-spec": process.env.N8N_TECH_SPEC_WEBHOOK,
+  }
+
   const baseUrl = process.env.N8N_WEBHOOK_BASE_URL
   const webhookPath = WEBHOOK_MAP[type]
 
@@ -58,7 +59,10 @@ export async function callN8NWebhook(
       throw new Error(`N8N webhook returned ${response.status}`)
     }
 
-    const data = await response.json()
+    const raw = await response.json()
+
+    // N8N webhook responses are typically wrapped in an array; unwrap if needed
+    const data = Array.isArray(raw) ? raw[0] : raw
 
     // N8N can return content in different formats
     const content = data.content || data.output || data.result || JSON.stringify(data)

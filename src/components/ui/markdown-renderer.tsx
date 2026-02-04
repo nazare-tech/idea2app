@@ -12,21 +12,22 @@ interface MarkdownRendererProps {
   className?: string
 }
 
-// Initialize mermaid
+// Initialize mermaid with light-mode theme to match the white card backgrounds
 mermaid.initialize({
   startOnLoad: false,
-  theme: "dark",
+  theme: "default",
   themeVariables: {
-    primaryColor: "#00d4ff",
-    primaryTextColor: "#fff",
-    primaryBorderColor: "#00d4ff",
-    lineColor: "#00d4ff",
-    secondaryColor: "#7c3aed",
-    tertiaryColor: "#34d399",
-    background: "#0c0c14",
-    mainBkg: "#0c0c14",
-    secondBkg: "#06060a",
-    textColor: "#fff",
+    primaryColor: "#DC2626",
+    primaryTextColor: "#ffffff",
+    primaryBorderColor: "#DC2626",
+    lineColor: "#6B7280",
+    secondaryColor: "#EFF6FF",
+    tertiaryColor: "#F0FDF4",
+    background: "#FFFFFF",
+    mainBkg: "#F9FAFB",
+    secondBkg: "#EFF6FF",
+    textColor: "#111827",
+    edgeLabelBackground: "#FFFFFF",
     fontSize: "14px",
   },
 })
@@ -53,7 +54,7 @@ function MermaidDiagram({ code }: { code: string }) {
   }, [code])
 
   return (
-    <div className="mermaid-wrapper my-4 p-4 bg-[rgba(0,0,0,0.3)] rounded-lg border border-[rgba(0,212,255,0.2)] overflow-x-auto">
+    <div className="mermaid-wrapper my-4 p-4 bg-[#F9FAFB] rounded-lg border border-gray-200 overflow-x-auto">
       <div ref={containerRef} />
     </div>
   )
@@ -62,26 +63,26 @@ function MermaidDiagram({ code }: { code: string }) {
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
 
   const proseClasses = `
-    prose prose-invert prose-sm max-w-none
-    [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-6 [&_h1]:text-foreground [&_h1]:border-b [&_h1]:border-[rgba(0,212,255,0.2)] [&_h1]:pb-2
-    [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-foreground
-    [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-foreground
-    [&_h4]:text-base [&_h4]:font-semibold [&_h4]:mb-2 [&_h4]:mt-3 [&_h4]:text-foreground
-    [&_p]:text-foreground [&_p]:mb-3 [&_p]:leading-relaxed
+    prose prose-sm max-w-none
+    [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-6 [&_h1]:text-gray-900 [&_h1]:border-b [&_h1]:border-gray-200 [&_h1]:pb-2
+    [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-gray-900
+    [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-gray-900
+    [&_h4]:text-base [&_h4]:font-semibold [&_h4]:mb-2 [&_h4]:mt-3 [&_h4]:text-gray-900
+    [&_p]:text-gray-700 [&_p]:mb-3 [&_p]:leading-relaxed
     [&_ul]:my-3 [&_ul]:space-y-1 [&_ul]:pl-6
     [&_ol]:my-3 [&_ol]:space-y-1 [&_ol]:pl-6
-    [&_li]:text-foreground [&_li]:leading-relaxed
-    [&_strong]:text-foreground [&_strong]:font-semibold
-    [&_em]:text-foreground [&_em]:italic
-    [&_a]:text-[#00d4ff] [&_a]:underline [&_a]:hover:text-[#00b8e6] [&_a]:transition-colors
-    [&_code]:text-[#00d4ff] [&_code]:bg-[rgba(0,212,255,0.08)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono
-    [&_pre]:bg-[rgba(255,255,255,0.05)] [&_pre]:border [&_pre]:border-[rgba(255,255,255,0.1)] [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto
-    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-foreground
-    [&_blockquote]:border-l-4 [&_blockquote]:border-[#00d4ff] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-3
+    [&_li]:text-gray-700 [&_li]:leading-relaxed
+    [&_strong]:text-gray-900 [&_strong]:font-semibold
+    [&_em]:text-gray-700 [&_em]:italic
+    [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary/80 [&_a]:transition-colors
+    [&_code]:text-primary [&_code]:bg-[rgba(220,38,38,0.06)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono
+    [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto
+    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-gray-900
+    [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_blockquote]:my-3
     [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse
-    [&_th]:border [&_th]:border-[rgba(255,255,255,0.1)] [&_th]:bg-[rgba(0,212,255,0.1)] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold
-    [&_td]:border [&_td]:border-[rgba(255,255,255,0.1)] [&_td]:px-4 [&_td]:py-2
-    [&_hr]:border-[rgba(255,255,255,0.1)] [&_hr]:my-4
+    [&_th]:border [&_th]:border-gray-200 [&_th]:bg-[#EFF6FF] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-gray-800
+    [&_td]:border [&_td]:border-gray-200 [&_td]:px-4 [&_td]:py-2 [&_td]:text-gray-700
+    [&_hr]:border-gray-200 [&_hr]:my-4
   `.trim()
 
   return (

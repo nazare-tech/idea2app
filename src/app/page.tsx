@@ -216,8 +216,8 @@ export default function LandingPage() {
                 <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-5 shadow-lg group-hover:shadow-[0_0_20px_rgba(0,212,255,0.2)] transition-shadow duration-300`}>
                   <feature.icon className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-lg font-bold mb-2 tracking-tight">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                <h3 className="text-lg font-bold mb-2 tracking-tight text-white">{feature.title}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -274,8 +274,8 @@ export default function LandingPage() {
               >
                 <div className="text-5xl font-black gradient-text shrink-0 leading-none">{step.step}</div>
                 <div className="flex-1 pt-1">
-                  <h3 className="text-xl font-bold mb-2 tracking-tight">{step.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{step.description}</p>
+                  <h3 className="text-xl font-bold mb-2 tracking-tight text-white">{step.title}</h3>
+                  <p className="text-gray-400 leading-relaxed">{step.description}</p>
                 </div>
                 <div className={`hidden sm:flex h-12 w-12 rounded-xl bg-gradient-to-br ${step.gradient} items-center justify-center shrink-0 shadow-lg group-hover:shadow-[0_0_20px_rgba(0,212,255,0.2)] transition-shadow duration-300`}>
                   <step.icon className="h-6 w-6 text-white" />
@@ -318,18 +318,18 @@ export default function LandingPage() {
                     <Badge>Most Popular</Badge>
                   </div>
                 )}
-                <h3 className="text-xl font-bold tracking-tight">{plan.name}</h3>
-                <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+                <h3 className="text-xl font-bold tracking-tight text-white">{plan.name}</h3>
+                <p className="text-sm text-gray-400 mt-1">{plan.description}</p>
                 <div className="mt-5 mb-6">
-                  <span className="text-4xl font-black tracking-tight">{plan.price}</span>
-                  {plan.price !== "$0" && <span className="text-muted-foreground text-sm">/mo</span>}
+                  <span className="text-4xl font-black tracking-tight text-white">{plan.price}</span>
+                  {plan.price !== "$0" && <span className="text-gray-400 text-sm">/mo</span>}
                 </div>
-                <div className="text-xs uppercase tracking-widest text-muted-foreground mb-5 pb-5 border-b border-[rgba(255,255,255,0.06)]">
+                <div className="text-xs uppercase tracking-widest text-gray-400 mb-5 pb-5 border-b border-[rgba(255,255,255,0.06)]">
                   {plan.credits} credits/month
                 </div>
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2.5 text-sm">
+                    <li key={feature} className="flex items-center gap-2.5 text-sm text-gray-300">
                       <div className="h-4 w-4 rounded-full bg-[rgba(52,211,153,0.15)] flex items-center justify-center shrink-0">
                         <Check className="h-2.5 w-2.5 text-[#34d399]" />
                       </div>

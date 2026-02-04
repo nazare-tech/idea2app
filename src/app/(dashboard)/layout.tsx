@@ -44,7 +44,7 @@ export default async function DashboardLayout({
       />
       {/* Vertical Divider */}
       <div className="w-px bg-border" />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-y-auto p-8">
         {children}
       </main>
     </div>
