@@ -68,7 +68,15 @@ export function ProjectWorkspace({
 }: ProjectWorkspaceProps) {
   const router = useRouter()
   const [activeDocument, setActiveDocument] = useState<DocumentType>("prompt")
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatingDocuments, setGeneratingDocuments] = useState<Record<DocumentType, boolean>>({
+    prompt: false,
+    competitive: false,
+    prd: false,
+    mvp: false,
+    techspec: false,
+    architecture: false,
+    deploy: false,
+  })
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<Record<DocumentType, number>>({
     prompt: 0,
     competitive: 0,
@@ -79,7 +87,138 @@ export function ProjectWorkspace({
     deploy: 0,
   })
 
+  // Helper functions for localStorage persistence
+  const getStorageKey = (docType: DocumentType) => `generating_${project.id}_${docType}`
+
+  const getInitialCount = (docType: DocumentType): number => {
+    switch (docType) {
+      case "competitive":
+        return analyses.filter(a => a.type === "competitive-analysis").length
+      case "prd":
+        return prds.length
+      case "mvp":
+        return mvpPlans.length
+      case "techspec":
+      case "architecture":
+        return techSpecs.length
+      case "deploy":
+        return deployments.length
+      default:
+        return 0
+    }
+  }
+
+  const saveGeneratingState = (docType: DocumentType, isGenerating: boolean) => {
+    const key = getStorageKey(docType)
+    if (isGenerating) {
+      localStorage.setItem(key, JSON.stringify({
+        timestamp: Date.now(),
+        projectId: project.id,
+        initialCount: getInitialCount(docType)
+      }))
+    } else {
+      localStorage.removeItem(key)
+    }
+  }
+
+  const loadGeneratingState = (docType: DocumentType): boolean => {
+    const key = getStorageKey(docType)
+    const stored = localStorage.getItem(key)
+    if (!stored) return false
+
+    try {
+      const { timestamp } = JSON.parse(stored)
+      // Clear if older than 10 minutes (600000ms)
+      if (Date.now() - timestamp > 600000) {
+        localStorage.removeItem(key)
+        return false
+      }
+      return true
+    } catch {
+      localStorage.removeItem(key)
+      return false
+    }
+  }
+
+  const checkIfContentIncreased = (docType: DocumentType): boolean => {
+    const key = getStorageKey(docType)
+    const stored = localStorage.getItem(key)
+    if (!stored) return false
+
+    try {
+      const { initialCount } = JSON.parse(stored)
+      const currentCount = getInitialCount(docType)
+      return currentCount > initialCount
+    } catch {
+      return false
+    }
+  }
+
+  // Restore generating states from localStorage on mount
+  useEffect(() => {
+    const restored: Record<DocumentType, boolean> = {
+      prompt: false,
+      competitive: loadGeneratingState("competitive"),
+      prd: loadGeneratingState("prd"),
+      mvp: loadGeneratingState("mvp"),
+      techspec: loadGeneratingState("techspec"),
+      architecture: loadGeneratingState("architecture"),
+      deploy: loadGeneratingState("deploy"),
+    }
+    setGeneratingDocuments(restored)
+  }, [project.id])
+
+  // Poll for new content when documents are generating
+  useEffect(() => {
+    const isAnyDocGenerating = Object.values(generatingDocuments).some(Boolean)
+    if (!isAnyDocGenerating) return
+
+    const pollInterval = setInterval(() => {
+      router.refresh()
+    }, 5000) // Poll every 5 seconds
+
+    return () => clearInterval(pollInterval)
+  }, [generatingDocuments, router])
+
+  // Clear generating state when new content is detected
+  useEffect(() => {
+    const checkAndClearStates = () => {
+      if (generatingDocuments.competitive && checkIfContentIncreased("competitive")) {
+        setGeneratingDocuments(prev => ({ ...prev, competitive: false }))
+        saveGeneratingState("competitive", false)
+      }
+      if (generatingDocuments.prd && checkIfContentIncreased("prd")) {
+        setGeneratingDocuments(prev => ({ ...prev, prd: false }))
+        saveGeneratingState("prd", false)
+      }
+      if (generatingDocuments.mvp && checkIfContentIncreased("mvp")) {
+        setGeneratingDocuments(prev => ({ ...prev, mvp: false }))
+        saveGeneratingState("mvp", false)
+      }
+      if (generatingDocuments.techspec && checkIfContentIncreased("techspec")) {
+        setGeneratingDocuments(prev => ({ ...prev, techspec: false, architecture: false }))
+        saveGeneratingState("techspec", false)
+        saveGeneratingState("architecture", false)
+      }
+      if (generatingDocuments.architecture && checkIfContentIncreased("architecture")) {
+        setGeneratingDocuments(prev => ({ ...prev, techspec: false, architecture: false }))
+        saveGeneratingState("techspec", false)
+        saveGeneratingState("architecture", false)
+      }
+      if (generatingDocuments.deploy && checkIfContentIncreased("deploy")) {
+        setGeneratingDocuments(prev => ({ ...prev, deploy: false }))
+        saveGeneratingState("deploy", false)
+      }
+    }
+    checkAndClearStates()
+  }, [analyses, prds, mvpPlans, techSpecs, deployments, generatingDocuments])
+
   const getDocumentStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
+    // Check if document is currently generating
+    if (generatingDocuments[type]) {
+      return "in_progress"
+    }
+
     switch (type) {
       case "prompt":
         return project.description ? "done" : "pending"
@@ -164,12 +303,52 @@ export function ProjectWorkspace({
     }))
   }, [activeDocument])
 
+  // Check prerequisites for document generation
+  const checkPrerequisites = (type: DocumentType): { canGenerate: boolean; reason?: string } => {
+    switch (type) {
+      case "prompt":
+        return { canGenerate: true }
+      case "competitive":
+        if (!project.description) {
+          return { canGenerate: false, reason: "Please add a project description first" }
+        }
+        return { canGenerate: true }
+      case "prd":
+        const hasCompetitiveAnalysis = analyses.some(a => a.type === "competitive-analysis")
+        if (!hasCompetitiveAnalysis) {
+          return { canGenerate: false, reason: "Generate Competitive Research first" }
+        }
+        return { canGenerate: true }
+      case "mvp":
+        if (prds.length === 0) {
+          return { canGenerate: false, reason: "Generate PRD first" }
+        }
+        return { canGenerate: true }
+      case "techspec":
+      case "architecture":
+        if (prds.length === 0) {
+          return { canGenerate: false, reason: "Generate PRD first" }
+        }
+        return { canGenerate: true }
+      case "deploy":
+        if (techSpecs.length === 0) {
+          return { canGenerate: false, reason: "Generate Tech Spec first" }
+        }
+        return { canGenerate: true }
+      default:
+        return { canGenerate: true }
+    }
+  }
+
   const documentStatuses = (["prompt", "competitive", "prd", "mvp", "techspec", "architecture", "deploy"] as DocumentType[]).map(
     type => ({ type, status: getDocumentStatus(type) })
   )
 
   const handleGenerateContent = async () => {
-    setIsGenerating(true)
+    // Set generating state for the active document
+    setGeneratingDocuments(prev => ({ ...prev, [activeDocument]: true }))
+    saveGeneratingState(activeDocument, true)
+
     try {
       let endpoint = ""
 
@@ -245,14 +424,19 @@ export function ProjectWorkspace({
       window.location.reload()
     } catch (error) {
       console.error("Error generating content:", error)
+
+      // Clear generating state on error
+      setGeneratingDocuments(prev => ({ ...prev, [activeDocument]: false }))
+      saveGeneratingState(activeDocument, false)
+
       if (error instanceof Error && error.name === "AbortError") {
         alert("Generation timed out after 5 minutes. Please try again.")
       } else if (error instanceof Error) {
         alert(error.message)
       }
-    } finally {
-      setIsGenerating(false)
     }
+    // Note: We don't clear the generating state in finally because we want it to persist
+    // until the page reloads or new content is detected
   }
 
   const handleUpdateDescription = async (description: string) => {
@@ -294,8 +478,9 @@ export function ProjectWorkspace({
           content={getDocumentContent(activeDocument)}
           onGenerateContent={handleGenerateContent}
           onUpdateDescription={handleUpdateDescription}
-          isGenerating={isGenerating}
+          isGenerating={generatingDocuments[activeDocument]}
           credits={credits}
+          prerequisiteValidation={checkPrerequisites(activeDocument)}
           currentVersion={selectedVersionIndex[activeDocument] || 0}
           totalVersions={getTotalVersions(activeDocument)}
           onVersionChange={(index) => handleVersionChange(activeDocument, index)}

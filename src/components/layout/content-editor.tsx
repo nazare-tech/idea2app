@@ -28,6 +28,7 @@ interface ContentEditorProps {
   onUpdateDescription: (description: string) => Promise<void>
   isGenerating: boolean
   credits: number
+  prerequisiteValidation?: { canGenerate: boolean; reason?: string }
   currentVersion?: number
   totalVersions?: number
   onVersionChange?: (version: number) => void
@@ -89,6 +90,7 @@ export function ContentEditor({
   onUpdateDescription,
   isGenerating,
   credits,
+  prerequisiteValidation,
   currentVersion = 0,
   totalVersions = 0,
   onVersionChange,
@@ -125,7 +127,12 @@ export function ContentEditor({
     }
   }
 
-  const canGenerate = credits >= config.creditCost
+  const canGenerate = credits >= config.creditCost && (prerequisiteValidation?.canGenerate ?? true)
+  const disabledReason = !prerequisiteValidation?.canGenerate
+    ? prerequisiteValidation?.reason
+    : credits < config.creditCost
+      ? `Insufficient credits (need ${config.creditCost})`
+      : undefined
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -200,25 +207,35 @@ export function ContentEditor({
             </>
           )}
           {documentType !== "prompt" && (
-            <button
-              onClick={onGenerateContent}
-              disabled={isGenerating || !canGenerate}
-              className={cn(
-                "flex items-center gap-2 px-5 py-2 rounded-md transition-colors",
-                canGenerate
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
+            <div className="relative group">
+              <button
+                onClick={onGenerateContent}
+                disabled={isGenerating || !canGenerate}
+                className={cn(
+                  "flex items-center gap-2 px-5 py-2 rounded-md transition-colors",
+                  canGenerate
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
+                )}
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                <span className="text-xs font-semibold">
+                  {isGenerating ? "Generating..." : `Generate (${config.creditCost} credits)`}
+                </span>
+              </button>
+              {!canGenerate && disabledReason && !isGenerating && (
+                <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
+                  <div className="bg-popover text-popover-foreground px-3 py-2 rounded-md text-xs shadow-lg border border-border whitespace-nowrap">
+                    {disabledReason}
+                    <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-popover"></div>
+                  </div>
+                </div>
               )}
-            >
-              {isGenerating ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="h-3.5 w-3.5" />
-              )}
-              <span className="text-xs font-semibold">
-                {isGenerating ? "Generating..." : `Generate (${config.creditCost} credits)`}
-              </span>
-            </button>
+            </div>
           )}
         </div>
       </div>
