@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import mermaid from "mermaid"
+import { renderMermaid } from "beautiful-mermaid"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
 
@@ -12,50 +12,68 @@ interface MarkdownRendererProps {
   className?: string
 }
 
-// Initialize mermaid with light-mode theme to match the white card backgrounds
-mermaid.initialize({
-  startOnLoad: false,
-  theme: "default",
-  themeVariables: {
-    primaryColor: "#DC2626",
-    primaryTextColor: "#ffffff",
-    primaryBorderColor: "#DC2626",
-    lineColor: "#6B7280",
-    secondaryColor: "#EFF6FF",
-    tertiaryColor: "#F0FDF4",
-    background: "#FFFFFF",
-    mainBkg: "#F9FAFB",
-    secondBkg: "#EFF6FF",
-    textColor: "#111827",
-    edgeLabelBackground: "#FFFFFF",
-    fontSize: "14px",
-  },
-})
-
 function MermaidDiagram({ code }: { code: string }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const idRef = useRef(`mermaid-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+  const [svg, setSvg] = useState<string>("")
+  const [error, setError] = useState<boolean>(false)
+  const [isDark, setIsDark] = useState<boolean>(false)
 
+  // Detect system theme preference
   useEffect(() => {
-    if (!containerRef.current) return
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setIsDark(mediaQuery.matches)
 
-    mermaid
-      .render(idRef.current, code)
-      .then(({ svg }) => {
-        if (containerRef.current) {
-          containerRef.current.innerHTML = svg
-        }
+    const handleChange = (e: MediaQueryListEvent) => setIsDark(e.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  // Render diagram with theme-appropriate colors
+  useEffect(() => {
+    const theme = isDark ? {
+      bg: "#1a1a1a",
+      fg: "#e5e5e5",
+      line: "#6B7280",
+      accent: "#EF4444",
+      muted: "#2a2a2a",
+      font: "ui-monospace, 'IBM Plex Mono', monospace",
+    } : {
+      bg: "#FFFFFF",
+      fg: "#111827",
+      line: "#6B7280",
+      accent: "#DC2626",
+      muted: "#F5F5F5",
+      font: "ui-monospace, 'IBM Plex Mono', monospace",
+    }
+
+    renderMermaid(code, theme)
+      .then((renderedSvg) => {
+        setSvg(renderedSvg)
+        setError(false)
       })
-      .catch(() => {
-        if (containerRef.current) {
-          containerRef.current.textContent = code
-        }
+      .catch((err) => {
+        console.error("Mermaid rendering error:", err)
+        setError(true)
       })
-  }, [code])
+  }, [code, isDark])
+
+  if (error) {
+    return (
+      <div className="mermaid-wrapper my-4 p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+        <pre className="text-sm text-gray-700 dark:text-gray-300 font-mono whitespace-pre-wrap">{code}</pre>
+      </div>
+    )
+  }
 
   return (
-    <div className="mermaid-wrapper my-4 p-4 bg-[#F9FAFB] rounded-lg border border-gray-200 overflow-x-auto">
-      <div ref={containerRef} />
+    <div className="mermaid-wrapper my-4 p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+      <div
+        className="mermaid-diagram min-w-max"
+        dangerouslySetInnerHTML={{ __html: svg }}
+        style={{
+          fontSize: '14px',
+          fontFamily: 'ui-monospace, "IBM Plex Mono", monospace'
+        }}
+      />
     </div>
   )
 }

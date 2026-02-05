@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-02-02
+**Last Updated**: 2026-02-05
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -51,7 +51,7 @@
 | **tailwind-merge** | 3.4.0 | Tailwind class merging utility |
 | **react-markdown** | 10.1.0 | Markdown rendering |
 | **remark-gfm** | 4.0.1 | GitHub Flavored Markdown support |
-| **mermaid** | 11.12.2 | Diagram and flowchart rendering |
+| **beautiful-mermaid** | Latest | Beautiful, themeable Mermaid diagram rendering |
 | **react-syntax-highlighter** | 16.1.0 | Code syntax highlighting |
 | **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
 | **jspdf** | 4.0.0 | Client-side PDF generation |
@@ -932,7 +932,7 @@ export const CREDIT_COSTS = {
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
 | [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view (edit/generate/copy/PDF export) |
-| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with Mermaid diagrams + syntax highlighting |
+| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with beautiful-mermaid diagrams (auto light/dark theme) + syntax highlighting |
 | [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | Chat UI component |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
 | [src/lib/n8n.ts](src/lib/n8n.ts) | N8N webhook client — forwards prd/competitiveAnalysis context |

@@ -208,3 +208,108 @@ body {
   color: var(--muted-foreground);
   border: 1px solid var(--border);
 }
+
+/* Mermaid diagram styles */
+.mermaid-wrapper {
+  /* Ensure proper container sizing */
+  min-height: 200px;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ERD-specific styling improvements - Light Mode */
+.mermaid-diagram .er {
+  font-family: ui-monospace, 'IBM Plex Mono', monospace !important;
+}
+
+.mermaid-diagram .er .entityBox {
+  fill: #FFFFFF !important;
+  stroke: #6B7280 !important;
+  stroke-width: 1.5px !important;
+}
+
+.mermaid-diagram .er .entityLabel {
+  fill: #111827 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+.mermaid-diagram .er .attributeBoxEven,
+.mermaid-diagram .er .attributeBoxOdd {
+  fill: #F9FAFB !important;
+  stroke: #E5E5E5 !important;
+}
+
+.mermaid-diagram .er .relationshipLabel {
+  fill: #DC2626 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.mermaid-diagram .er .relationshipLabelBox {
+  fill: #FFFFFF !important;
+  opacity: 0.9 !important;
+}
+
+.mermaid-diagram text {
+  font-family: ui-monospace, 'IBM Plex Mono', monospace !important;
+  fill: #111827 !important;
+}
+
+.mermaid-diagram .er .attributeText {
+  fill: #374151 !important;
+  font-size: 12px !important;
+}
+
+/* Ensure all text elements are visible */
+.mermaid-diagram tspan {
+  fill: #111827 !important;
+}
+
+/* ERD-specific styling improvements - Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .mermaid-wrapper {
+    background: #1a1a1a !important;
+    border-color: #333333 !important;
+  }
+
+  .mermaid-diagram .er .entityBox {
+    fill: #2a2a2a !important;
+    stroke: #6B7280 !important;
+  }
+
+  .mermaid-diagram .er .entityLabel {
+    fill: #e5e5e5 !important;
+  }
+
+  .mermaid-diagram .er .attributeBoxEven,
+  .mermaid-diagram .er .attributeBoxOdd {
+    fill: #1f1f1f !important;
+    stroke: #404040 !important;
+  }
+
+  .mermaid-diagram .er .relationshipLabel {
+    fill: #EF4444 !important;
+  }
+
+  .mermaid-diagram .er .relationshipLabelBox {
+    fill: #2a2a2a !important;
+  }
+
+  .mermaid-diagram text {
+    fill: #e5e5e5 !important;
+  }
+
+  .mermaid-diagram .er .attributeText {
+    fill: #d1d5db !important;
+  }
+
+  /* Ensure all text elements are visible in dark mode */
+  .mermaid-diagram tspan {
+    fill: #e5e5e5 !important;
+  }
+}
