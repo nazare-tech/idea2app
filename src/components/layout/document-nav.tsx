@@ -5,12 +5,13 @@ import {
   PenLine,
   Search,
   FileText,
+  Target,
   Code,
   Boxes,
   Rocket,
 } from "lucide-react"
 
-export type DocumentType = "prompt" | "competitive" | "prd" | "techspec" | "architecture" | "deploy"
+export type DocumentType = "prompt" | "competitive" | "prd" | "mvp" | "techspec" | "architecture" | "deploy"
 
 interface DocumentStatus {
   type: DocumentType
@@ -33,6 +34,7 @@ const documents: {
   { type: "prompt", label: "Prompt", description: "Your input", icon: PenLine },
   { type: "competitive", label: "Competitive Research", description: "", icon: Search },
   { type: "prd", label: "PRD", description: "", icon: FileText },
+  { type: "mvp", label: "MVP Plan", description: "", icon: Target },
   { type: "techspec", label: "Tech Spec", description: "", icon: Code },
   { type: "architecture", label: "Architecture", description: "", icon: Boxes },
   { type: "deploy", label: "Deploy", description: "", icon: Rocket },

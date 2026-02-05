@@ -15,6 +15,7 @@
 - **Competitive Analysis**: AI-generated competitive landscape analysis, market positioning, and SWOT analysis
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans
+- **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **App Generation**: Automated code generation for multiple app types:
   - Static websites (HTML/CSS/JS)
@@ -137,13 +138,14 @@
    - Response streamed back to client
 
 3. **Analysis Flow**:
-   - Client requests analysis (competitive, PRD, or tech spec) from the workspace `ContentEditor`
+   - Client requests analysis (competitive, PRD, MVP plan, or tech spec) from the workspace `ContentEditor`
    - Server checks credits, deducts if available
    - Server calls N8N webhook first, forwarding contextual data:
      - PRD generation receives the latest `competitiveAnalysis` content
+     - MVP plan generation receives the latest `prd` content
      - Tech spec generation receives the latest `prd` content
    - Falls back to OpenRouter if N8N is unconfigured or fails
-   - Result saved to the appropriate table (`analyses`, `prds`, or `tech_specs`)
+   - Result saved to the appropriate table (`analyses`, `prds`, `mvp_plans`, or `tech_specs`)
    - Page reloads to surface the new version
 
 4. **App Generation Flow**:
@@ -167,9 +169,10 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 │   list       │  2. Competitive   │  - Version navigation        │
 │ - Search     │     Research      │  - Editable prompt / MD view │
 │ - New Proj   │  3. PRD           │  - Generate button           │
-│ - User info  │  4. Tech Spec     │  - Copy / PDF download       │
-│              │  5. Architecture  │                              │
-│   (dark bg)  │  6. Deploy        │   (light bg)                 │
+│ - User info  │  4. MVP Plan      │  - Copy / PDF download       │
+│              │  5. Tech Spec     │                              │
+│   (dark bg)  │  6. Architecture  │                              │
+│              │  7. Deploy        │   (light bg)                 │
 └──────────────┴───────────────────┴──────────────────────────────┘
   260px fixed    280px fixed         flex-1 (remaining)
 ```
@@ -317,8 +320,8 @@ interface ChatInterfaceProps { ... }
 interface AnalysisPanelProps { ... }
 
 // Type aliases: PascalCase or lowercase
-type AnalysisType = 'competitive-analysis' | 'prd' | 'tech-spec'
-type DocumentType = 'prompt' | 'competitive' | 'prd' | 'techspec' | 'architecture' | 'deploy'
+type AnalysisType = 'competitive-analysis' | 'prd' | 'mvp-plan' | 'tech-spec'
+type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'techspec' | 'architecture' | 'deploy'
 ```
 
 ### Component Structure
@@ -515,8 +518,8 @@ interface ComponentProps {
 }
 
 // Type unions for specific values
-type AnalysisType = 'competitive-analysis' | 'prd' | 'tech-spec'
-type DocumentType = 'prompt' | 'competitive' | 'prd' | 'techspec' | 'architecture' | 'deploy'
+type AnalysisType = 'competitive-analysis' | 'prd' | 'mvp-plan' | 'tech-spec'
+type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'techspec' | 'architecture' | 'deploy'
 
 // Const assertions for immutable objects
 const COSTS = {
@@ -577,6 +580,7 @@ N8N_WEBHOOK_BASE_URL=https://n8n.example.com
 N8N_COMPETITIVE_ANALYSIS_WEBHOOK=/webhook/competitive
 N8N_GAP_ANALYSIS_WEBHOOK=/webhook/gap
 N8N_PRD_WEBHOOK=/webhook/prd
+N8N_MVP_WEBHOOK=/webhook/mvp
 N8N_TECH_SPEC_WEBHOOK=/webhook/techspec
 
 # App
@@ -604,6 +608,7 @@ npm install
    - `messages` - Chat message history
    - `analyses` - Competitive and gap analyses
    - `prds` - Product requirement documents
+   - `mvp_plans` - MVP development plans
    - `tech_specs` - Technical specifications
    - `deployments` - Generated app deployments
    - `credits` - Credit balance tracking
@@ -717,6 +722,10 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `project_id`, `content`, `created_at`
   - RLS: Users can only access PRDs from their projects
 
+- **mvp_plans**: MVP (Minimum Viable Product) development plans
+  - Fields: `id`, `project_id`, `content`, `version`, `created_at`, `updated_at`
+  - RLS: Users can only access MVP plans from their projects
+
 - **tech_specs**: Technical specifications
   - Fields: `id`, `project_id`, `content`, `created_at`
   - RLS: Users can only access tech specs from their projects
@@ -758,12 +767,12 @@ docker run -p 3000:3000 idea2app
 
 ### Analysis
 - **POST /api/analysis/[type]**: Generate analysis
-  - Types: `competitive-analysis`, `prd`, `tech-spec`
+  - Types: `competitive-analysis`, `prd`, `mvp-plan`, `tech-spec`
   - Body: `{ projectId, idea, name, competitiveAnalysis?, prd? }`
     - `competitiveAnalysis` forwarded to N8N when generating PRDs
-    - `prd` forwarded to N8N when generating tech specs
+    - `prd` forwarded to N8N when generating MVP plans and tech specs
   - Returns: `{ content, source, model, type }`
-  - Cost: 5 credits (`competitive-analysis`) / 10 credits (`prd`, `tech-spec`)
+  - Cost: 5 credits (`competitive-analysis`) / 10 credits (`prd`, `mvp-plan`, `tech-spec`)
   - Route `maxDuration`: 300s (N8N workflows can be slow)
 
 ### App Generation
@@ -795,6 +804,7 @@ docker run -p 3000:3000 idea2app
 | Chat message | 1 credit |
 | Competitive Analysis | 5 credits |
 | PRD Generation | 10 credits |
+| MVP Plan Generation | 10 credits |
 | Tech Spec Generation | 10 credits |
 | App Generation (Deploy) | 5 credits |
 

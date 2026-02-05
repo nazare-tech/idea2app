@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     // Validate analysis type
-    const validTypes = ["competitive-analysis", "prd", "tech-spec"]
+    const validTypes = ["competitive-analysis", "prd", "mvp-plan", "tech-spec"]
     if (!validTypes.includes(type)) {
       return NextResponse.json(
         { error: `Invalid analysis type: ${type}` },
@@ -77,8 +77,8 @@ export async function POST(request: Request, { params }: AnalysisParams) {
         idea,
         name,
         projectId,
-        // Pass PRD for tech-spec generation
-        prd: type === "tech-spec" ? prd : undefined,
+        // Pass PRD for MVP plan and tech-spec generation
+        prd: (type === "mvp-plan" || type === "tech-spec") ? prd : undefined,
         // Pass competitive analysis for PRD generation
         competitiveAnalysis: type === "prd" ? competitiveAnalysis : undefined,
       })
@@ -96,6 +96,11 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     // Store the result based on type — always include source/model metadata
     if (type === "prd") {
       await supabase.from("prds").insert({
+        project_id: projectId,
+        content: result.content,
+      })
+    } else if (type === "mvp-plan") {
+      await supabase.from("mvp_plans").insert({
         project_id: projectId,
         content: result.content,
       })

@@ -10,11 +10,13 @@
  *   - competitive-analysis
  *   - gap-analysis
  *   - prd
+ *   - mvp-plan
  *   - tech-spec
  *
  * Examples:
  *   node test-n8n-webhook.js competitive-analysis
  *   node test-n8n-webhook.js prd
+ *   node test-n8n-webhook.js mvp-plan
  *   node test-n8n-webhook.js tech-spec
  */
 
@@ -42,6 +44,12 @@ const AVAILABLE_WEBHOOKS = {
     description: 'PRD Generation Webhook',
     needsCompetitiveAnalysis: true,
     needsPrd: false,
+  },
+  'mvp-plan': {
+    envVar: 'N8N_MVP_WEBHOOK',
+    description: 'MVP Plan Generation Webhook',
+    needsCompetitiveAnalysis: false,
+    needsPrd: true,
   },
   'tech-spec': {
     envVar: 'N8N_TECH_SPEC_WEBHOOK',
@@ -504,6 +512,13 @@ fetch(webhookUrl, {
       console.log('\n💡 PRD Webhook Tip:')
       console.log('   Remember that PRD generation requires a competitive analysis to exist first.')
       console.log('   The competitiveAnalysis field in the payload simulates this requirement.')
+    }
+
+    if (webhookType === 'mvp-plan') {
+      console.log('\n💡 MVP Plan Webhook Tip:')
+      console.log('   MVP plan generation requires a PRD to exist first.')
+      console.log('   The prd field in the payload contains a complete sample PRD.')
+      console.log('   In production, this PRD content comes from your database.')
     }
 
     if (webhookType === 'tech-spec') {

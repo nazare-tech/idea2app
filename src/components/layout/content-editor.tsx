@@ -6,6 +6,7 @@ import {
   PenLine,
   Search,
   FileText,
+  Target,
   Code,
   Boxes,
   Rocket,
@@ -52,6 +53,12 @@ const documentConfig: Record<
     title: "PRD",
     subtitle: "Product requirements document",
     icon: FileText,
+    creditCost: 10,
+  },
+  mvp: {
+    title: "MVP Plan",
+    subtitle: "Minimum viable product development plan",
+    icon: Target,
     creditCost: 10,
   },
   techspec: {

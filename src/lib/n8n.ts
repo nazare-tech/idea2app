@@ -15,6 +15,7 @@ export async function callN8NWebhook(
     "competitive-analysis": process.env.N8N_COMPETITIVE_ANALYSIS_WEBHOOK,
     "gap-analysis": process.env.N8N_GAP_ANALYSIS_WEBHOOK,
     "prd": process.env.N8N_PRD_WEBHOOK,
+    "mvp-plan": process.env.N8N_MVP_WEBHOOK,
     "tech-spec": process.env.N8N_TECH_SPEC_WEBHOOK,
   }
 

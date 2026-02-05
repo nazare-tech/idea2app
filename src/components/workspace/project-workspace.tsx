@@ -31,6 +31,12 @@ interface TechSpec {
   created_at: string | null
 }
 
+interface MvpPlan {
+  id: string
+  content: string
+  created_at: string | null
+}
+
 interface Deployment {
   id: string
   deployment_url: string | null
@@ -45,6 +51,7 @@ interface ProjectWorkspaceProps {
   project: Project
   analyses: Analysis[]
   prds: PRD[]
+  mvpPlans: MvpPlan[]
   techSpecs: TechSpec[]
   deployments: Deployment[]
   credits: number
@@ -54,6 +61,7 @@ export function ProjectWorkspace({
   project,
   analyses,
   prds,
+  mvpPlans,
   techSpecs,
   deployments,
   credits,
@@ -65,6 +73,7 @@ export function ProjectWorkspace({
     prompt: 0,
     competitive: 0,
     prd: 0,
+    mvp: 0,
     techspec: 0,
     architecture: 0,
     deploy: 0,
@@ -78,6 +87,8 @@ export function ProjectWorkspace({
         return analyses.some(a => a.type === "competitive-analysis") ? "done" : "pending"
       case "prd":
         return prds.length > 0 ? "done" : "pending"
+      case "mvp":
+        return mvpPlans.length > 0 ? "done" : "pending"
       case "techspec":
         return techSpecs.length > 0 ? "done" : "pending"
       case "architecture":
@@ -95,6 +106,8 @@ export function ProjectWorkspace({
         return analyses.filter(a => a.type === "competitive-analysis")
       case "prd":
         return prds
+      case "mvp":
+        return mvpPlans
       case "techspec":
       case "architecture":
         return techSpecs
@@ -116,6 +129,8 @@ export function ProjectWorkspace({
         return compAnalyses[versionIndex]?.content || null
       case "prd":
         return prds[versionIndex]?.content || null
+      case "mvp":
+        return mvpPlans[versionIndex]?.content || null
       case "techspec":
       case "architecture":
         return techSpecs[versionIndex]?.content || null
@@ -149,7 +164,7 @@ export function ProjectWorkspace({
     }))
   }, [activeDocument])
 
-  const documentStatuses = (["prompt", "competitive", "prd", "techspec", "architecture", "deploy"] as DocumentType[]).map(
+  const documentStatuses = (["prompt", "competitive", "prd", "mvp", "techspec", "architecture", "deploy"] as DocumentType[]).map(
     type => ({ type, status: getDocumentStatus(type) })
   )
 
@@ -165,6 +180,9 @@ export function ProjectWorkspace({
         case "prd":
           endpoint = "/api/analysis/prd"
           break
+        case "mvp":
+          endpoint = "/api/analysis/mvp-plan"
+          break
         case "techspec":
         case "architecture":
           endpoint = "/api/analysis/tech-spec"
@@ -179,7 +197,7 @@ export function ProjectWorkspace({
       // Get competitive analysis for PRD generation
       const competitiveAnalysis = analyses.find(a => a.type === "competitive-analysis")
 
-      // Get latest PRD for tech spec generation
+      // Get latest PRD for MVP plan and tech spec generation
       const latestPrd = prds[0]
 
       const controller = new AbortController()
@@ -198,6 +216,9 @@ export function ProjectWorkspace({
             ...(activeDocument === "deploy" && { appType: "dynamic" }),
             ...(activeDocument === "prd" && competitiveAnalysis?.content && {
               competitiveAnalysis: competitiveAnalysis.content
+            }),
+            ...(activeDocument === "mvp" && latestPrd?.content && {
+              prd: latestPrd.content
             }),
             ...((activeDocument === "techspec" || activeDocument === "architecture") && latestPrd?.content && {
               prd: latestPrd.content

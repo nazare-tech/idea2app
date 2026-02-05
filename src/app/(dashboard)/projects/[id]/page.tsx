@@ -39,6 +39,13 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     .eq("project_id", id)
     .order("created_at", { ascending: false })
 
+  // Get MVP plans
+  const { data: mvpPlans } = await supabase
+    .from("mvp_plans")
+    .select("*")
+    .eq("project_id", id)
+    .order("created_at", { ascending: false })
+
   // Get tech specs
   const { data: techSpecs } = await supabase
     .from("tech_specs")
@@ -65,6 +72,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       project={project}
       analyses={analyses || []}
       prds={prds || []}
+      mvpPlans={mvpPlans || []}
       techSpecs={techSpecs || []}
       deployments={deployments || []}
       credits={credits?.balance || 0}

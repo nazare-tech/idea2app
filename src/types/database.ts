@@ -196,6 +196,41 @@ export type Database = {
           },
         ]
       }
+      mvp_plans: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          project_id: string
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          project_id: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvp_plans_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           created_at: string | null
