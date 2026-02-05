@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-02-05
+**Last Updated**: 2026-02-05 (Added Prompt Tab AI Chat Feature)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -11,7 +11,13 @@
 
 ### Core Functionality
 
-- **AI-Powered Chat**: Interactive conversation interface to refine business ideas
+- **Prompt Tab AI Chat**: Interactive AI conversation in the Prompt tab that asks tailored follow-up questions to refine business ideas. Features:
+  - Model selection (Claude, GPT-4, Gemini, Llama, etc.)
+  - Context-aware question generation based on idea type (tool, marketplace, service, etc.)
+  - Automatic idea summarization after sufficient context gathering
+  - Configurable system prompts for customization
+  - Persistent conversation history
+- **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
 - **Competitive Analysis**: AI-generated competitive landscape analysis, market positioning, and SWOT analysis
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans
@@ -27,11 +33,14 @@
 
 ### User Workflow
 
-1. User creates a project and describes their business idea
-2. User chats with AI to refine and develop the concept
-3. User generates various analyses (competitive, gap, PRD, tech specs)
-4. User generates a working prototype/application
-5. User deploys the generated application
+1. User creates a project and submits an initial business idea
+2. **[NEW]** User is directed to the Prompt tab where AI asks 4-5 tailored follow-up questions
+3. User answers questions to clarify missing context (target audience, features, business model, etc.)
+4. AI synthesizes responses and generates a comprehensive idea summary
+5. User validates/refines the summary through continued conversation
+6. User generates various analyses (competitive, PRD, MVP plan, tech specs)
+7. User generates a working prototype/application
+8. User deploys the generated application
 
 ---
 
@@ -216,7 +225,8 @@ src/
 │   │   ├── billing/page.tsx      # Billing & subscription plans
 │   │   └── settings/page.tsx     # User settings
 │   ├── api/                      # API routes
-│   │   ├── chat/route.ts         # POST chat messages
+│   │   ├── chat/route.ts         # POST chat messages (general chat)
+│   │   ├── prompt-chat/route.ts  # GET/POST Prompt tab AI chat with follow-up questions
 │   │   ├── analysis/[type]/route.ts   # POST run analysis (N8N → OpenRouter fallback)
 │   │   ├── generate-app/route.ts      # POST generate app code
 │   │   ├── projects/[id]/route.ts     # PATCH/GET project details
@@ -246,7 +256,8 @@ src/
 │   ├── workspace/                # Workspace orchestration
 │   │   └── project-workspace.tsx # Three-column layout orchestrator
 │   ├── chat/                     # Chat feature
-│   │   └── chat-interface.tsx    # Main chat UI
+│   │   ├── chat-interface.tsx    # General chat UI
+│   │   └── prompt-chat-interface.tsx  # Prompt tab AI chat with model selection
 │   └── analysis/                 # Analysis feature
 │       └── analysis-panel.tsx    # Analysis/PRD/TechSpec UI
 │
@@ -259,6 +270,7 @@ src/
 │   ├── openrouter.ts             # OpenRouter AI API
 │   ├── n8n.ts                    # N8N webhook integration (with prd/competitiveAnalysis context)
 │   ├── pdf-utils.ts              # PDF export: renders Markdown → HTML → canvas → jsPDF
+│   ├── prompt-chat-config.ts     # System prompts and AI models for Prompt chat
 │   └── utils.ts                  # Utility functions & CREDIT_COSTS
 │
 ├── types/                        # TypeScript types
@@ -710,9 +722,14 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `user_id`, `name`, `description`, `status`, `created_at`
   - RLS: Users can only access their own projects
 
-- **messages**: Chat message history
+- **messages**: Chat message history (general chat)
   - Fields: `id`, `project_id`, `role` (user/assistant), `content`, `created_at`
   - RLS: Users can only access messages from their projects
+
+- **prompt_chat_messages**: Prompt tab AI chat messages (NEW)
+  - Fields: `id`, `project_id`, `role` (user/assistant/system), `content`, `metadata` (model, stage), `created_at`, `updated_at`
+  - RLS: Users can only access messages from their projects
+  - Purpose: Stores conversation for idea refinement with follow-up questions
 
 - **analyses**: Competitive and gap analyses
   - Fields: `id`, `project_id`, `type`, `content`, `created_at`
@@ -751,10 +768,21 @@ docker run -p 3000:3000 idea2app
 - **Callback**: `GET /callback` - OAuth callback handler
 
 ### Chat
-- **POST /api/chat**: Send chat message, get AI response
+- **POST /api/chat**: Send chat message, get AI response (general chat)
   - Body: `{ projectId, message }`
   - Returns: `{ id, content, role, created_at }`
   - Cost: 1 credit
+
+- **GET /api/prompt-chat**: Get Prompt tab chat history (NEW)
+  - Query: `?projectId=xxx`
+  - Returns: `{ messages, stage }`
+  - Used to load conversation history
+
+- **POST /api/prompt-chat**: Send Prompt chat message with AI refinement (NEW)
+  - Body: `{ projectId, message, model, isInitial }`
+  - Returns: `{ messages, stage, summary? }`
+  - Features: Model selection, follow-up questions, auto-summarization
+  - Cost: 1 credit per message
 
 ### Projects
 - **GET /api/projects/[id]**: Get project details
@@ -801,7 +829,8 @@ docker run -p 3000:3000 idea2app
 
 | Action | Cost |
 |--------|------|
-| Chat message | 1 credit |
+| Chat message (general) | 1 credit |
+| Prompt chat message (idea refinement) | 1 credit |
 | Competitive Analysis | 5 credits |
 | PRD Generation | 10 credits |
 | MVP Plan Generation | 10 credits |
@@ -927,22 +956,27 @@ export const CREDIT_COSTS = {
 | [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout — renders `ProjectSidebar` + children |
 | [src/app/(dashboard)/projects/[id]/page.tsx](src/app/(dashboard)/projects/[id]/page.tsx) | Project page — fetches data server-side, passes to `ProjectWorkspace` |
 | [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details |
+| [src/app/api/prompt-chat/route.ts](src/app/api/prompt-chat/route.ts) | **NEW** — GET/POST Prompt tab AI chat with follow-up questions |
 | [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation with N8N → OpenRouter fallback |
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Three-column workspace orchestrator |
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
-| [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view (edit/generate/copy/PDF export) |
+| [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view — now uses PromptChatInterface for Prompt tab |
 | [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with beautiful-mermaid diagrams (auto light/dark theme) + syntax highlighting |
-| [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | Chat UI component |
+| [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | General chat UI component |
+| [src/components/chat/prompt-chat-interface.tsx](src/components/chat/prompt-chat-interface.tsx) | **NEW** — Prompt tab chat with model selection and follow-up questions |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
 | [src/lib/n8n.ts](src/lib/n8n.ts) | N8N webhook client — forwards prd/competitiveAnalysis context |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export: Markdown → HTML → canvas → jsPDF |
+| [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | **NEW** — System prompts, question strategies, and AI models for Prompt chat |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
 | [src/lib/supabase/client.ts](src/lib/supabase/client.ts) | Browser Supabase client |
 | [src/lib/openrouter.ts](src/lib/openrouter.ts) | OpenRouter AI integration (fallback) |
 | [src/lib/utils.ts](src/lib/utils.ts) | Utility functions & CREDIT_COSTS |
 | [src/middleware.ts](src/middleware.ts) | Auth middleware |
 | [src/types/database.ts](src/types/database.ts) | Database type definitions |
+| [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | **NEW** — Database migration for prompt_chat_messages table |
+| [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | **NEW** — Setup guide for Prompt tab AI chat feature |
 
 ---
 

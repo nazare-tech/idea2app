@@ -458,6 +458,8 @@ export function ProjectWorkspace({
       <div className="flex-1">
         <ContentEditor
           documentType={activeDocument}
+          projectId={project.id}
+          projectName={project.name}
           projectDescription={project.description || ""}
           content={getDocumentContent(activeDocument)}
           onGenerateContent={handleGenerateContent}

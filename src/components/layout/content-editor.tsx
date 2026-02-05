@@ -9,7 +9,6 @@ import {
   Target,
   Code,
   Rocket,
-  Pencil,
   Sparkles,
   Loader2,
   Download,
@@ -18,9 +17,12 @@ import {
 import { DocumentType } from "./document-nav"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
+import { PromptChatInterface } from "@/components/chat/prompt-chat-interface"
 
 interface ContentEditorProps {
   documentType: DocumentType
+  projectId: string
+  projectName: string
   projectDescription: string
   content: string | null
   onGenerateContent: () => Promise<void>
@@ -77,6 +79,8 @@ const documentConfig: Record<
 
 export function ContentEditor({
   documentType,
+  projectId,
+  projectName,
   projectDescription,
   content,
   onGenerateContent,
@@ -88,16 +92,14 @@ export function ContentEditor({
   totalVersions = 0,
   onVersionChange,
 }: ContentEditorProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedDescription, setEditedDescription] = useState(projectDescription)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const config = documentConfig[documentType]
 
-  const handleSaveDescription = async () => {
-    await onUpdateDescription(editedDescription)
-    setIsEditing(false)
+  const handleIdeaSummary = async (summary: string) => {
+    // Update the project description with the summary
+    await onUpdateDescription(summary)
   }
 
   const handleCopyContent = async () => {
@@ -165,15 +167,6 @@ export function ContentEditor({
         </div>
 
         <div className="flex items-center gap-3">
-          {documentType === "prompt" && (
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              <span className="text-xs font-medium">Edit</span>
-            </button>
-          )}
           {documentType !== "prompt" && content && (
             <>
               <button
@@ -234,86 +227,57 @@ export function ContentEditor({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-10">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {documentType === "prompt" ? (
-            <div className="bg-card border border-border rounded-lg p-8">
-              <p className="text-[10px] font-medium tracking-[1px] font-mono text-muted-foreground mb-5">
-                WRITE YOUR IDEA
-              </p>
-              {isEditing ? (
-                <div className="space-y-4">
-                  <textarea
-                    value={editedDescription}
-                    onChange={(e) => setEditedDescription(e.target.value)}
-                    className="w-full h-48 p-4 bg-secondary border border-border rounded-md text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="Describe your project idea..."
-                  />
-                  <div className="flex gap-3">
-                    <button
-                      onClick={handleSaveDescription}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-xs font-semibold hover:bg-primary/90"
-                    >
-                      Save Changes
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditedDescription(projectDescription)
-                        setIsEditing(false)
-                      }}
-                      className="px-4 py-2 border border-border rounded-md text-xs font-medium hover:bg-muted/50"
-                    >
-                      Cancel
-                    </button>
+      <div className="flex-1 overflow-hidden">
+        {documentType === "prompt" ? (
+          <PromptChatInterface
+            projectId={projectId}
+            projectName={projectName}
+            initialIdea={projectDescription}
+            onIdeaSummary={handleIdeaSummary}
+            credits={credits}
+          />
+        ) : (
+          <div className="h-full overflow-y-auto p-10">
+            <div className="max-w-4xl mx-auto space-y-8">
+              <div className="bg-card border border-border rounded-lg p-8">
+                {isGenerating ? (
+                  <div className="flex flex-col items-center justify-center py-24">
+                    <div className="relative">
+                      <div className="h-16 w-16 rounded-full border-4 border-primary/20"></div>
+                      <div className="absolute top-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-primary"></div>
+                    </div>
+                    <div className="mt-6 text-center">
+                      <p className="text-sm font-medium text-foreground mb-2">
+                        Generating {config.title}...
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        This may take a moment
+                      </p>
+                    </div>
+                    {/* Animated dots */}
+                    <div className="mt-4 flex gap-2">
+                      <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="bg-secondary border border-border rounded-md p-4">
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                    {projectDescription || "No description provided. Click Edit to add your project idea."}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-card border border-border rounded-lg p-8">
-              {isGenerating ? (
-                <div className="flex flex-col items-center justify-center py-24">
-                  <div className="relative">
-                    <div className="h-16 w-16 rounded-full border-4 border-primary/20"></div>
-                    <div className="absolute top-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-primary"></div>
-                  </div>
-                  <div className="mt-6 text-center">
-                    <p className="text-sm font-medium text-foreground mb-2">
-                      Generating {config.title}...
+                ) : content ? (
+                  <MarkdownRenderer content={content} />
+                ) : (
+                  <div className="text-center py-16">
+                    <config.icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                    <p className="text-sm text-muted-foreground mb-2">
+                      No {config.title.toLowerCase()} generated yet
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      This may take a moment
+                      Click &quot;Generate&quot; to create your {config.title.toLowerCase()}
                     </p>
                   </div>
-                  {/* Animated dots */}
-                  <div className="mt-4 flex gap-2">
-                    <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
-              ) : content ? (
-                <MarkdownRenderer content={content} />
-              ) : (
-                <div className="text-center py-16">
-                  <config.icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    No {config.title.toLowerCase()} generated yet
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Click &quot;Generate&quot; to create your {config.title.toLowerCase()}
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
