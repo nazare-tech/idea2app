@@ -74,7 +74,6 @@ export function ProjectWorkspace({
     prd: false,
     mvp: false,
     techspec: false,
-    architecture: false,
     deploy: false,
   })
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<Record<DocumentType, number>>({
@@ -83,7 +82,6 @@ export function ProjectWorkspace({
     prd: 0,
     mvp: 0,
     techspec: 0,
-    architecture: 0,
     deploy: 0,
   })
 
@@ -99,7 +97,6 @@ export function ProjectWorkspace({
       case "mvp":
         return mvpPlans.length
       case "techspec":
-      case "architecture":
         return techSpecs.length
       case "deploy":
         return deployments.length
@@ -162,7 +159,6 @@ export function ProjectWorkspace({
       prd: loadGeneratingState("prd"),
       mvp: loadGeneratingState("mvp"),
       techspec: loadGeneratingState("techspec"),
-      architecture: loadGeneratingState("architecture"),
       deploy: loadGeneratingState("deploy"),
     }
     setGeneratingDocuments(restored)
@@ -196,14 +192,8 @@ export function ProjectWorkspace({
         saveGeneratingState("mvp", false)
       }
       if (generatingDocuments.techspec && checkIfContentIncreased("techspec")) {
-        setGeneratingDocuments(prev => ({ ...prev, techspec: false, architecture: false }))
+        setGeneratingDocuments(prev => ({ ...prev, techspec: false }))
         saveGeneratingState("techspec", false)
-        saveGeneratingState("architecture", false)
-      }
-      if (generatingDocuments.architecture && checkIfContentIncreased("architecture")) {
-        setGeneratingDocuments(prev => ({ ...prev, techspec: false, architecture: false }))
-        saveGeneratingState("techspec", false)
-        saveGeneratingState("architecture", false)
       }
       if (generatingDocuments.deploy && checkIfContentIncreased("deploy")) {
         setGeneratingDocuments(prev => ({ ...prev, deploy: false }))
@@ -230,8 +220,6 @@ export function ProjectWorkspace({
         return mvpPlans.length > 0 ? "done" : "pending"
       case "techspec":
         return techSpecs.length > 0 ? "done" : "pending"
-      case "architecture":
-        return techSpecs.length > 0 ? "done" : "pending"
       case "deploy":
         return deployments.length > 0 ? "done" : "pending"
       default:
@@ -248,7 +236,6 @@ export function ProjectWorkspace({
       case "mvp":
         return mvpPlans
       case "techspec":
-      case "architecture":
         return techSpecs
       case "deploy":
         return deployments
@@ -271,7 +258,6 @@ export function ProjectWorkspace({
       case "mvp":
         return mvpPlans[versionIndex]?.content || null
       case "techspec":
-      case "architecture":
         return techSpecs[versionIndex]?.content || null
       case "deploy":
         const deployment = deployments[versionIndex]
@@ -325,7 +311,6 @@ export function ProjectWorkspace({
         }
         return { canGenerate: true }
       case "techspec":
-      case "architecture":
         if (prds.length === 0) {
           return { canGenerate: false, reason: "Generate PRD first" }
         }
@@ -340,7 +325,7 @@ export function ProjectWorkspace({
     }
   }
 
-  const documentStatuses = (["prompt", "competitive", "prd", "mvp", "techspec", "architecture", "deploy"] as DocumentType[]).map(
+  const documentStatuses = (["prompt", "competitive", "prd", "mvp", "techspec", "deploy"] as DocumentType[]).map(
     type => ({ type, status: getDocumentStatus(type) })
   )
 
@@ -363,7 +348,6 @@ export function ProjectWorkspace({
           endpoint = "/api/analysis/mvp-plan"
           break
         case "techspec":
-        case "architecture":
           endpoint = "/api/analysis/tech-spec"
           break
         case "deploy":
@@ -399,7 +383,7 @@ export function ProjectWorkspace({
             ...(activeDocument === "mvp" && latestPrd?.content && {
               prd: latestPrd.content
             }),
-            ...((activeDocument === "techspec" || activeDocument === "architecture") && latestPrd?.content && {
+            ...(activeDocument === "techspec" && latestPrd?.content && {
               prd: latestPrd.content
             }),
           }),

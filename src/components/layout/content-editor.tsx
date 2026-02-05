@@ -8,7 +8,6 @@ import {
   FileText,
   Target,
   Code,
-  Boxes,
   Rocket,
   Pencil,
   Sparkles,
@@ -66,12 +65,6 @@ const documentConfig: Record<
     title: "Tech Spec",
     subtitle: "Technical specifications and architecture",
     icon: Code,
-    creditCost: 10,
-  },
-  architecture: {
-    title: "Architecture",
-    subtitle: "System design and infrastructure",
-    icon: Boxes,
     creditCost: 10,
   },
   deploy: {
