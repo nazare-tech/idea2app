@@ -52,7 +52,8 @@ export async function GET(request: Request) {
     let stage = "initial"
     if (messages && messages.length > 0) {
       const lastAssistantMsg = messages.filter(m => m.role === "assistant").pop()
-      if (lastAssistantMsg?.metadata?.stage === "summary") {
+      const metadata = lastAssistantMsg?.metadata as { stage?: string } | null
+      if (metadata?.stage === "summary") {
         stage = "summarized"
       } else if (messages.length > 0) {
         stage = "refining"
@@ -135,7 +136,10 @@ export async function POST(request: Request) {
       .order("created_at", { ascending: true })
 
     // Check if we already have a summary
-    const hasSummary = history?.some(m => m.role === "assistant" && m.metadata?.stage === "summary")
+    const hasSummary = history?.some(m => {
+      const metadata = m.metadata as { stage?: string } | null
+      return m.role === "assistant" && metadata?.stage === "summary"
+    })
     const messageCount = history?.length || 0
 
     // Determine conversation stage and system prompt
@@ -164,7 +168,7 @@ export async function POST(request: Request) {
       ]
       const messageWords = message.toLowerCase().split(/\s+/)
       const hasIdeaKeywords = ideaRelatedKeywords.some(keyword =>
-        messageWords.some(word => word.includes(keyword))
+        messageWords.some((word: string) => word.includes(keyword))
       )
 
       if (hasIdeaKeywords || message.length > 50) {

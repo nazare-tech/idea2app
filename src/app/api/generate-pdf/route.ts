@@ -50,8 +50,8 @@ export async function POST(request: Request) {
 
     await browser.close()
 
-    // Return PDF as downloadable file
-    return new NextResponse(pdfBuffer, {
+    // Return PDF as downloadable file (convert Uint8Array to Buffer)
+    return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,
