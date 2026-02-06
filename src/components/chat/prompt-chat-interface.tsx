@@ -47,8 +47,14 @@ export function PromptChatInterface({
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL)
   const [conversationStage, setConversationStage] = useState<"initial" | "refining" | "summarized">("initial")
   const [isFirstLoad, setIsFirstLoad] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Prevent hydration mismatch with Radix UI dropdowns
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -204,31 +210,38 @@ export function PromptChatInterface({
           </div>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-border rounded-lg hover:bg-accent/50 transition-colors">
-              <span className="max-w-[120px] truncate">{currentModelName}</span>
-              <ChevronDown className="h-3 w-3 opacity-50" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            {AVAILABLE_MODELS.map((model) => (
-              <DropdownMenuItem
-                key={model.id}
-                onClick={() => setSelectedModel(model.id)}
-                className="flex flex-col items-start gap-0.5 cursor-pointer"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-sm font-medium">{model.name}</span>
-                  {selectedModel === model.id && (
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground">{model.description}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {mounted ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-border rounded-lg hover:bg-accent/50 transition-colors">
+                <span className="max-w-[120px] truncate">{currentModelName}</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {AVAILABLE_MODELS.map((model) => (
+                <DropdownMenuItem
+                  key={model.id}
+                  onClick={() => setSelectedModel(model.id)}
+                  className="flex flex-col items-start gap-0.5 cursor-pointer"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-sm font-medium">{model.name}</span>
+                    {selectedModel === model.id && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">{model.description}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg">
+            <span className="max-w-[120px] truncate">{currentModelName}</span>
+            <ChevronDown className="h-3 w-3 opacity-50" />
+          </div>
+        )}
       </div>
 
       {/* Messages Area */}

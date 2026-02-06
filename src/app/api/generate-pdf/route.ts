@@ -429,10 +429,10 @@ function generateHTMLTemplate(
     <h1>${projectName}</h1>
     <p class="analysis-type">${analysisType.replace(/-/g, ' ')}</p>
     <p class="date">${new Date().toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })}</p>
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })}</p>
   </div>
 
   <div class="content">
