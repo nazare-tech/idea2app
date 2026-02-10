@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { Send, Bot, User, Copy, Check, ChevronDown, Sparkles } from "lucide-react"
+import { Send, Bot, User, Copy, Check, ChevronDown, Sparkles, Zap, ArrowUp } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/lib/prompt-chat-config"
@@ -48,8 +48,10 @@ export function PromptChatInterface({
   const [conversationStage, setConversationStage] = useState<"initial" | "refining" | "summarized">("initial")
   const [isFirstLoad, setIsFirstLoad] = useState(true)
   const [mounted, setMounted] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const composerRef = useRef<HTMLDivElement>(null)
 
   // Prevent hydration mismatch with Radix UI dropdowns
   useEffect(() => {
@@ -68,7 +70,7 @@ export function PromptChatInterface({
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto"
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`
     }
   }, [input])
 
@@ -195,53 +197,40 @@ export function PromptChatInterface({
     }
   }
 
-  const currentModelName = AVAILABLE_MODELS.find((m) => m.id === selectedModel)?.name || selectedModel
+  const currentModel = AVAILABLE_MODELS.find((m) => m.id === selectedModel)
+  const currentModelName = currentModel?.name || selectedModel
+
+  // Get short model name for the pill
+  const getShortModelName = (name: string) => {
+    if (name.includes("Claude")) return name.replace("Claude ", "")
+    if (name.includes("GPT-4")) return name.replace("GPT-", "")
+    if (name.includes("Gemini")) return name.split(" ")[1] || name
+    if (name.includes("Llama")) return "Llama 3.3"
+    if (name.includes("DeepSeek")) return "DeepSeek"
+    return name
+  }
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Compact Header with Model Selector */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 backdrop-blur-sm bg-background/95 sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-            <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
+      {/* Minimal Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm shadow-primary/20">
+            <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-foreground leading-none">Idea Refinement</h2>
+            <h2 className="text-base font-semibold text-foreground tracking-tight">Idea Refinement</h2>
+            <p className="text-xs text-muted-foreground/70">Powered by AI</p>
           </div>
         </div>
 
-        {mounted ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                <span className="max-w-[120px] truncate">{currentModelName}</span>
-                <ChevronDown className="h-3 w-3 opacity-50" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {AVAILABLE_MODELS.map((model) => (
-                <DropdownMenuItem
-                  key={model.id}
-                  onClick={() => setSelectedModel(model.id)}
-                  className="flex flex-col items-start gap-0.5 cursor-pointer"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-sm font-medium">{model.name}</span>
-                    {selectedModel === model.id && (
-                      <Check className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground">{model.description}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg">
-            <span className="max-w-[120px] truncate">{currentModelName}</span>
-            <ChevronDown className="h-3 w-3 opacity-50" />
-          </div>
-        )}
+        {/* Credits Badge */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/80 border border-border/50">
+          <Zap className="h-3 w-3 text-primary" />
+          <span className="text-xs font-medium text-foreground/80">
+            {credits >= 999999 ? "∞" : credits.toLocaleString()}
+          </span>
+        </div>
       </div>
 
       {/* Messages Area */}
@@ -249,27 +238,27 @@ export function PromptChatInterface({
         <div className="max-w-3xl mx-auto px-4 py-6">
           {messages.length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center text-center py-16 px-4">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 border border-primary/20">
-                <Bot className="h-8 w-8 text-primary/60" />
+              <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-6 border border-primary/10 shadow-lg shadow-primary/5">
+                <Bot className="h-10 w-10 text-primary/50" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+              <h3 className="text-xl font-semibold text-foreground mb-2 tracking-tight">
                 Welcome to {projectName}
               </h3>
-              <p className="text-sm text-muted-foreground max-w-md mb-6">
+              <p className="text-sm text-muted-foreground max-w-md mb-8 leading-relaxed">
                 Let's refine your idea with a few targeted questions to build a comprehensive understanding.
               </p>
               {initialIdea && (
-                <div className="w-full max-w-xl bg-card border border-border rounded-xl p-4 mb-6 shadow-sm">
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">Your Initial Idea</p>
+                <div className="w-full max-w-xl bg-card border border-border/50 rounded-2xl p-5 mb-8 shadow-sm">
+                  <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-widest">Your Initial Idea</p>
                   <p className="text-sm text-foreground leading-relaxed">{initialIdea}</p>
                 </div>
               )}
               <button
                 onClick={startConversation}
                 disabled={loading || !initialIdea}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                className="group inline-flex items-center gap-2.5 px-6 py-3 bg-primary text-primary-foreground text-sm font-semibold rounded-2xl hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98]"
               >
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
                 Start Refining
               </button>
             </div>
@@ -279,13 +268,13 @@ export function PromptChatInterface({
             <div
               key={message.id}
               className={cn(
-                "flex gap-3 mb-6 group",
+                "flex gap-3 mb-6 group animate-fade-up",
                 message.role === "user" ? "justify-end" : "justify-start"
               )}
             >
               {message.role === "assistant" && (
-                <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-1 border border-primary/20">
-                  <Bot className="h-3.5 w-3.5 text-primary" />
+                <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 mt-0.5 border border-primary/10 shadow-sm">
+                  <Bot className="h-4 w-4 text-primary/70" />
                 </div>
               )}
 
@@ -293,8 +282,8 @@ export function PromptChatInterface({
                 className={cn(
                   "rounded-2xl px-4 py-3 max-w-[85%] relative",
                   message.role === "user"
-                    ? "bg-card border-2 border-primary text-foreground shadow-sm"
-                    : "bg-card border border-border backdrop-blur-sm"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    : "bg-card border border-border/50 shadow-sm"
                 )}
               >
                 {message.role === "user" ? (
@@ -311,7 +300,7 @@ export function PromptChatInterface({
                 {message.role === "assistant" && (
                   <button
                     onClick={() => handleCopy(message.content, message.id)}
-                    className="absolute -bottom-2 right-2 p-1.5 rounded-lg bg-card border border-border opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-muted/50"
+                    className="absolute -bottom-2 right-2 p-1.5 rounded-lg bg-card border border-border/50 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-secondary hover:scale-105 shadow-sm"
                   >
                     {copiedId === message.id ? (
                       <Check className="h-3 w-3 text-success" />
@@ -323,21 +312,25 @@ export function PromptChatInterface({
               </div>
 
               {message.role === "user" && (
-                <div className="h-7 w-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-1">
-                  <User className="h-3.5 w-3.5 text-primary" />
+                <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                  <User className="h-4 w-4 text-primary/70" />
                 </div>
               )}
             </div>
           ))}
 
           {loading && (
-            <div className="flex gap-3 mb-6">
-              <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-                <Bot className="h-3.5 w-3.5 text-primary" />
+            <div className="flex gap-3 mb-6 animate-fade-up">
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 border border-primary/10 shadow-sm">
+                <Bot className="h-4 w-4 text-primary/70" />
               </div>
-              <div className="bg-card border border-border rounded-2xl px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Spinner size="sm" />
+              <div className="bg-card border border-border/50 rounded-2xl px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
                   <span className="text-sm text-muted-foreground">Thinking...</span>
                 </div>
               </div>
@@ -348,42 +341,123 @@ export function PromptChatInterface({
         </div>
       </div>
 
-      {/* Modern Input Area */}
+      {/* Modern Composer Bar */}
       {messages.length > 0 && (
-        <div className="border-t border-border/50 backdrop-blur-sm bg-background/95">
-          <div className="max-w-3xl mx-auto px-4 py-4">
-            <div className="flex items-end gap-2">
-              <div className="flex-1 relative">
+        <div className="px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
+          <div className="max-w-3xl mx-auto">
+            <div
+              ref={composerRef}
+              className={cn(
+                "relative rounded-2xl border bg-card shadow-lg transition-all duration-300",
+                isFocused
+                  ? "border-primary/40 shadow-xl shadow-primary/5 ring-4 ring-primary/5"
+                  : "border-border/50 shadow-md hover:shadow-lg hover:border-border"
+              )}
+            >
+              {/* Top Row: Model Selector */}
+              <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                {mounted ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/80 hover:bg-secondary border border-border/50 hover:border-border transition-all duration-200 hover:shadow-sm">
+                        <div className="h-4 w-4 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                          <Sparkles className="h-2 w-2 text-primary-foreground" />
+                        </div>
+                        <span className="text-xs font-medium text-foreground/80 group-hover:text-foreground">
+                          {getShortModelName(currentModelName)}
+                        </span>
+                        <ChevronDown className="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-64 p-2 rounded-xl border-border/50 shadow-xl">
+                      <div className="px-2 py-1.5 mb-1">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Select Model</p>
+                      </div>
+                      {AVAILABLE_MODELS.map((model) => (
+                        <DropdownMenuItem
+                          key={model.id}
+                          onClick={() => setSelectedModel(model.id)}
+                          className={cn(
+                            "flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors",
+                            selectedModel === model.id ? "bg-primary/5" : ""
+                          )}
+                        >
+                          <div className={cn(
+                            "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
+                            selectedModel === model.id
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary text-foreground/60"
+                          )}>
+                            <Sparkles className="h-3.5 w-3.5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-foreground">{model.name}</span>
+                              {selectedModel === model.id && (
+                                <Check className="h-4 w-4 text-primary shrink-0" />
+                              )}
+                            </div>
+                            <span className="text-xs text-muted-foreground line-clamp-1">{model.description}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/80 border border-border/50">
+                    <div className="h-4 w-4 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                      <Sparkles className="h-2 w-2 text-primary-foreground" />
+                    </div>
+                    <span className="text-xs font-medium text-foreground/80">{getShortModelName(currentModelName)}</span>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground/60" />
+                  </div>
+                )}
+
+                {/* Keyboard hint - subtle */}
+                <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
+                  <kbd className="px-1.5 py-0.5 rounded bg-secondary/80 font-mono">↵</kbd>
+                  <span>to send</span>
+                </div>
+              </div>
+
+              {/* Textarea */}
+              <div className="relative px-4 pb-3">
                 <textarea
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Refine your idea..."
-                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary placeholder:text-muted-foreground/60 min-h-[52px] max-h-[200px] transition-all duration-200"
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  placeholder="Describe your idea or answer the questions..."
+                  className="w-full bg-transparent text-sm resize-none focus-visible:outline-none placeholder:text-muted-foreground/40 min-h-[48px] max-h-[160px] py-2 pr-14"
                   rows={1}
                   disabled={loading}
                 />
+
+                {/* Send Button - positioned inside */}
+                <button
+                  onClick={handleSend}
+                  disabled={loading || !input.trim()}
+                  className={cn(
+                    "absolute right-4 bottom-3 h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-300",
+                    input.trim() && !loading
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:scale-105 active:scale-95"
+                      : "bg-secondary text-muted-foreground/40 cursor-not-allowed"
+                  )}
+                >
+                  {loading ? (
+                    <Spinner size="sm" />
+                  ) : (
+                    <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
+                  )}
+                </button>
               </div>
-              <button
-                onClick={handleSend}
-                disabled={loading || !input.trim()}
-                className={cn(
-                  "h-[52px] w-[52px] rounded-xl shrink-0 flex items-center justify-center transition-all duration-200",
-                  input.trim() && !loading
-                    ? "bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
-                    : "bg-muted text-muted-foreground/50 cursor-not-allowed"
-                )}
-              >
-                {loading ? (
-                  <Spinner size="sm" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </button>
             </div>
-            <p className="text-xs text-muted-foreground/70 mt-2 text-center">
-              {credits >= 999999 ? "∞" : credits} credits · Press <kbd className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono">Enter</kbd> to send
+
+            {/* Bottom hint */}
+            <p className="text-[11px] text-muted-foreground/40 mt-2.5 text-center">
+              Shift + Enter for new line
             </p>
           </div>
         </div>
