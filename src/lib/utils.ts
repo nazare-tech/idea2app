@@ -44,6 +44,7 @@ export const CREDIT_COSTS = {
   'app-spa': 150,
   'app-pwa': 200,
   'chat': 1,
+  'document-edit': 1,
 } as const
 
 export type AnalysisType = 'competitive-analysis' | 'gap-analysis' | 'prd' | 'mvp-plan' | 'tech-spec'

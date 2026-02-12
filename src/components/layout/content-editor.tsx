@@ -27,6 +27,7 @@ interface ContentEditorProps {
   content: string | null
   onGenerateContent: () => Promise<void>
   onUpdateDescription: (description: string) => Promise<void>
+  onUpdateContent?: (newContent: string) => Promise<void>
   isGenerating: boolean
   credits: number
   prerequisiteValidation?: { canGenerate: boolean; reason?: string }
@@ -85,6 +86,7 @@ export function ContentEditor({
   content,
   onGenerateContent,
   onUpdateDescription,
+  onUpdateContent,
   isGenerating,
   credits,
   prerequisiteValidation,
@@ -262,7 +264,12 @@ export function ContentEditor({
                     </div>
                   </div>
                 ) : content ? (
-                  <MarkdownRenderer content={content} />
+                  <MarkdownRenderer
+                    content={content}
+                    projectId={projectId}
+                    enableInlineEditing={true}
+                    onContentUpdate={onUpdateContent}
+                  />
                 ) : (
                   <div className="text-center py-16">
                     <config.icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />

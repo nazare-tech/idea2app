@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-02-05 (Added Prompt Tab AI Chat Feature)
+**Last Updated**: 2026-02-11 (Added Inline AI Document Editing Feature)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -17,6 +17,12 @@
   - Automatic idea summarization after sufficient context gathering
   - Configurable system prompts for customization
   - Persistent conversation history
+- **Inline AI Document Editing**: Select any text in generated documents and edit it with AI assistance. Features:
+  - Text selection toolbar that appears on highlight
+  - Inline editor with diff preview (shows before/after)
+  - Context-aware editing using full document as context
+  - 1 credit per edit
+  - Supports Competitive Research, PRD, MVP Plan, and Tech Spec documents
 - **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
 - **Competitive Analysis**: AI-generated competitive landscape analysis, market positioning, and SWOT analysis
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
@@ -227,7 +233,12 @@ src/
 │   ├── api/                      # API routes
 │   │   ├── chat/route.ts         # POST chat messages (general chat)
 │   │   ├── prompt-chat/route.ts  # GET/POST Prompt tab AI chat with follow-up questions
+│   │   ├── document-edit/route.ts     # POST inline AI document editing
 │   │   ├── analysis/[type]/route.ts   # POST run analysis (N8N → OpenRouter fallback)
+│   │   ├── analyses/[id]/route.ts     # PATCH update analysis content
+│   │   ├── prds/[id]/route.ts         # PATCH update PRD content
+│   │   ├── mvp-plans/[id]/route.ts    # PATCH update MVP plan content
+│   │   ├── tech-specs/[id]/route.ts   # PATCH update tech spec content
 │   │   ├── generate-app/route.ts      # POST generate app code
 │   │   ├── projects/[id]/route.ts     # PATCH/GET project details
 │   │   └── stripe/
@@ -245,7 +256,9 @@ src/
 │   │   ├── input.tsx, textarea.tsx, label.tsx
 │   │   ├── badge.tsx, avatar.tsx, spinner.tsx
 │   │   ├── dropdown-menu.tsx, tabs.tsx  # Radix UI
-│   │   ├── markdown-renderer.tsx # Markdown with Mermaid + syntax highlighting
+│   │   ├── markdown-renderer.tsx # Markdown with Mermaid + syntax highlighting + inline AI editing
+│   │   ├── inline-ai-editor.tsx  # Inline AI editing popup component
+│   │   ├── selection-toolbar.tsx # Text selection toolbar ("Edit with AI" button)
 │   │   └── ...
 │   ├── layout/                   # Layout components
 │   │   ├── sidebar.tsx           # Legacy dashboard sidebar (retained)
@@ -784,6 +797,12 @@ docker run -p 3000:3000 idea2app
   - Features: Model selection, follow-up questions, auto-summarization
   - Cost: 1 credit per message
 
+- **POST /api/document-edit**: Inline AI document editing (NEW)
+  - Body: `{ projectId, fullContent, selectedText, editPrompt }`
+  - Returns: `{ suggestedEdit, creditsUsed }`
+  - Uses OpenRouter API to generate context-aware edits
+  - Cost: 1 credit per edit
+
 ### Projects
 - **GET /api/projects/[id]**: Get project details
   - Returns: project row (owner-scoped via RLS)
@@ -802,6 +821,26 @@ docker run -p 3000:3000 idea2app
   - Returns: `{ content, source, model, type }`
   - Cost: 5 credits (`competitive-analysis`) / 10 credits (`prd`, `mvp-plan`, `tech-spec`)
   - Route `maxDuration`: 300s (N8N workflows can be slow)
+
+- **PATCH /api/analyses/[id]**: Update analysis content (NEW)
+  - Body: `{ content }`
+  - Returns: `{ data: updated_analysis }`
+  - Used by inline document editing
+
+- **PATCH /api/prds/[id]**: Update PRD content (NEW)
+  - Body: `{ content }`
+  - Returns: `{ data: updated_prd }`
+  - Used by inline document editing
+
+- **PATCH /api/mvp-plans/[id]**: Update MVP plan content (NEW)
+  - Body: `{ content }`
+  - Returns: `{ data: updated_mvp_plan }`
+  - Used by inline document editing
+
+- **PATCH /api/tech-specs/[id]**: Update tech spec content (NEW)
+  - Body: `{ content }`
+  - Returns: `{ data: updated_tech_spec }`
+  - Used by inline document editing
 
 ### App Generation
 - **POST /api/generate-app**: Generate application code
@@ -831,6 +870,7 @@ docker run -p 3000:3000 idea2app
 |--------|------|
 | Chat message (general) | 1 credit |
 | Prompt chat message (idea refinement) | 1 credit |
+| Inline document edit | 1 credit |
 | Competitive Analysis | 5 credits |
 | PRD Generation | 10 credits |
 | MVP Plan Generation | 10 credits |
@@ -962,9 +1002,16 @@ export const CREDIT_COSTS = {
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
 | [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view — now uses PromptChatInterface for Prompt tab |
-| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with beautiful-mermaid diagrams (auto light/dark theme) + syntax highlighting |
+| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | **UPDATED** — Markdown renderer with beautiful-mermaid diagrams, syntax highlighting, and inline AI editing support |
+| [src/components/ui/inline-ai-editor.tsx](src/components/ui/inline-ai-editor.tsx) | **NEW** — Inline AI editing popup with diff preview and apply/reject actions |
+| [src/components/ui/selection-toolbar.tsx](src/components/ui/selection-toolbar.tsx) | **NEW** — Text selection toolbar that shows "Edit with AI" button |
 | [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | General chat UI component |
 | [src/components/chat/prompt-chat-interface.tsx](src/components/chat/prompt-chat-interface.tsx) | **NEW** — Prompt tab chat with model selection and follow-up questions |
+| [src/app/api/document-edit/route.ts](src/app/api/document-edit/route.ts) | **NEW** — API endpoint for inline AI document editing |
+| [src/app/api/analyses/[id]/route.ts](src/app/api/analyses/[id]/route.ts) | **NEW** — PATCH endpoint to update analysis content |
+| [src/app/api/prds/[id]/route.ts](src/app/api/prds/[id]/route.ts) | **NEW** — PATCH endpoint to update PRD content |
+| [src/app/api/mvp-plans/[id]/route.ts](src/app/api/mvp-plans/[id]/route.ts) | **NEW** — PATCH endpoint to update MVP plan content |
+| [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | **NEW** — PATCH endpoint to update tech spec content |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
 | [src/lib/n8n.ts](src/lib/n8n.ts) | N8N webhook client — forwards prd/competitiveAnalysis context |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export: Markdown → HTML → canvas → jsPDF |
