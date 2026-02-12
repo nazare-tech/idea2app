@@ -145,27 +145,6 @@ export function ContentEditor({
               {config.subtitle}
             </p>
           </div>
-          {totalVersions > 1 && documentType !== "prompt" && (
-            <div className="flex items-center gap-2 ml-4 px-3 py-1.5 bg-secondary border border-border rounded-md">
-              <button
-                onClick={() => onVersionChange?.(Math.min(currentVersion + 1, totalVersions - 1))}
-                disabled={currentVersion >= totalVersions - 1}
-                className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                ←
-              </button>
-              <span className="text-xs font-mono text-muted-foreground">
-                {currentVersion + 1} / {totalVersions}
-              </span>
-              <button
-                onClick={() => onVersionChange?.(Math.max(currentVersion - 1, 0))}
-                disabled={currentVersion <= 0}
-                className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                →
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-3">

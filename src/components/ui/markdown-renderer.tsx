@@ -10,8 +10,8 @@ import { Check, X } from "lucide-react"
 import { SelectionToolbar } from "./selection-toolbar"
 import { InlineAiEditor } from "./inline-ai-editor"
 
-// Unique marker for inline diff
-const DIFF_MARKER = "___INLINE_DIFF_MARKER___"
+// Unique marker for inline diff - use something very unlikely to appear in content
+const DIFF_MARKER = "\u200B___INLINE_DIFF_MARKER___\u200B"
 
 interface MarkdownRendererProps {
   content: string
@@ -110,65 +110,79 @@ export function MarkdownRenderer({
     suggestedText: string
   } | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  // Use a single ref to track if any editing UI is active
-  const isEditingRef = useRef(false)
+  // Track if editing just completed (to prevent immediate re-selection)
+  const editingJustCompletedRef = useRef(false)
+  // Cooldown timer ref
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Keep ref in sync with editing states
-  useEffect(() => {
-    isEditingRef.current = showEditor || pendingEdit !== null
-  }, [showEditor, pendingEdit])
-
+  // Only check selection on mouseup - no interference during selection
   useEffect(() => {
     if (!enableInlineEditing) return
 
-    const handleSelectionChange = () => {
-      // Don't update selection while any editing UI is active
-      if (isEditingRef.current) return
-
-      const sel = window.getSelection()
-      if (!sel || sel.isCollapsed) {
-        setSelection(null)
+    const handleMouseUp = () => {
+      // Don't check if editing UI is active
+      if (editingJustCompletedRef.current) {
         return
       }
 
-      // Get the raw selected text (preserve whitespace for accurate matching)
-      const rawSelectedText = sel.toString()
-      if (!rawSelectedText.trim()) {
-        setSelection(null)
-        return
-      }
+      // Use requestAnimationFrame to ensure browser has finalized selection
+      requestAnimationFrame(() => {
+        const sel = window.getSelection()
 
-      // Check if selection is within our content
-      const range = sel.getRangeAt(0)
-      if (!contentRef.current?.contains(range.commonAncestorContainer)) {
-        setSelection(null)
-        return
-      }
+        // No selection or collapsed selection
+        if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+          setSelection(null)
+          return
+        }
 
-      // Use the raw text but trim only leading/trailing whitespace for storage
-      // This preserves internal whitespace/newlines for accurate content matching
-      const selectedText = rawSelectedText.trim()
-      const rect = range.getBoundingClientRect()
+        const selectedText = sel.toString().trim()
+        if (!selectedText) {
+          setSelection(null)
+          return
+        }
 
-      // Verify this text exists in the content (for better UX)
-      if (!content.includes(selectedText)) {
-        // Selection might span across markdown formatting - still allow but warn
-        console.debug("Selected text may include formatting that won't match source")
-      }
+        // Check if selection is within our content
+        const range = sel.getRangeAt(0)
+        const contentEl = contentRef.current
+        if (!contentEl) {
+          setSelection(null)
+          return
+        }
 
-      setSelection({
-        text: selectedText,
-        position: {
-          top: rect.top + window.scrollY,
-          left: rect.left + window.scrollX,
-          width: rect.width,
-        },
+        // Verify selection is in our content area
+        if (!contentEl.contains(range.startContainer) && !contentEl.contains(range.endContainer)) {
+          setSelection(null)
+          return
+        }
+
+        const rect = range.getBoundingClientRect()
+
+        setSelection({
+          text: selectedText,
+          position: {
+            top: rect.top + window.scrollY,
+            left: rect.left + window.scrollX,
+            width: rect.width,
+          },
+        })
       })
     }
 
-    document.addEventListener("selectionchange", handleSelectionChange)
-    return () => document.removeEventListener("selectionchange", handleSelectionChange)
-  }, [enableInlineEditing, content])
+    document.addEventListener("mouseup", handleMouseUp)
+
+    return () => {
+      document.removeEventListener("mouseup", handleMouseUp)
+    }
+  }, [enableInlineEditing])
+
+  // Cleanup cooldown timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) {
+        clearTimeout(cooldownTimerRef.current)
+      }
+    }
+  }, [])
 
   const handleEditClick = useCallback(() => {
     if (!selection) return
@@ -181,7 +195,8 @@ export function MarkdownRenderer({
       },
     })
     setShowEditor(true)
-    isEditingRef.current = true
+    // Clear the selection state to hide the toolbar
+    setSelection(null)
   }, [selection])
 
   // Called when AI generates a suggestion - show diff inline
@@ -208,6 +223,31 @@ export function MarkdownRenderer({
     window.getSelection()?.removeAllRanges()
   }, [editorData, content])
 
+  // Helper to clear all editing state with cooldown
+  const clearEditingState = useCallback(() => {
+    // Set cooldown flag to prevent immediate re-selection
+    editingJustCompletedRef.current = true
+
+    // Clear browser selection
+    window.getSelection()?.removeAllRanges()
+
+    // Clear all state
+    setSelection(null)
+    setEditorData(null)
+    setPendingEdit(null)
+    setShowEditor(false)
+
+    // Clear any existing cooldown timer
+    if (cooldownTimerRef.current) {
+      clearTimeout(cooldownTimerRef.current)
+    }
+
+    // Remove cooldown after a short delay
+    cooldownTimerRef.current = setTimeout(() => {
+      editingJustCompletedRef.current = false
+    }, 150)
+  }, [])
+
   // Accept the inline diff
   const handleAcceptEdit = useCallback(() => {
     if (!pendingEdit || !onContentUpdate) return
@@ -215,28 +255,17 @@ export function MarkdownRenderer({
     // Replace the original text with the suggested text
     const updatedContent = content.replace(pendingEdit.originalText, pendingEdit.suggestedText)
 
-    // Clear all editing state FIRST before triggering content update
-    isEditingRef.current = false
-    window.getSelection()?.removeAllRanges()
-    setSelection(null)
-    setEditorData(null)
-    setPendingEdit(null)
-    setShowEditor(false)
+    // Clear all editing state with cooldown
+    clearEditingState()
 
     // Then trigger the content update
     onContentUpdate(updatedContent)
-  }, [pendingEdit, content, onContentUpdate])
+  }, [pendingEdit, content, onContentUpdate, clearEditingState])
 
   // Reject the inline diff
   const handleRejectEdit = useCallback(() => {
-    // Clear all editing state
-    isEditingRef.current = false
-    window.getSelection()?.removeAllRanges()
-    setSelection(null)
-    setEditorData(null)
-    setPendingEdit(null)
-    setShowEditor(false)
-  }, [])
+    clearEditingState()
+  }, [clearEditingState])
 
   // Handler for direct apply from popup (when user clicks Apply in popup)
   const handleApplyEdit = useCallback((newText: string) => {
@@ -319,26 +348,15 @@ export function MarkdownRenderer({
       }
     }
 
-    // Clear all editing state
-    isEditingRef.current = false
-    window.getSelection()?.removeAllRanges()
-    setSelection(null)
-    setEditorData(null)
-    setShowEditor(false)
-    setPendingEdit(null)
+    // Clear all editing state with cooldown
+    clearEditingState()
 
     onContentUpdate(updatedContent)
-  }, [editorData, content, onContentUpdate])
+  }, [editorData, content, onContentUpdate, clearEditingState])
 
   const handleCancelEdit = useCallback(() => {
-    // Clear all editing state
-    isEditingRef.current = false
-    window.getSelection()?.removeAllRanges()
-    setSelection(null)
-    setEditorData(null)
-    setPendingEdit(null)
-    setShowEditor(false)
-  }, [])
+    clearEditingState()
+  }, [clearEditingState])
 
   // Create content with inline diff marker when there's a pending edit
   const displayContent = useMemo(() => {
@@ -371,7 +389,7 @@ export function MarkdownRenderer({
   `.trim()
 
   // Custom renderer for text nodes to handle diff markers
-  const renderTextWithDiff = (text: string) => {
+  const renderTextWithDiff = useCallback((text: string) => {
     if (!pendingEdit || !text.includes(DIFF_MARKER)) {
       return text
     }
@@ -420,7 +438,7 @@ export function MarkdownRenderer({
         {parts[1]}
       </>
     )
-  }
+  }, [pendingEdit, handleAcceptEdit, handleRejectEdit])
 
   // Keyboard shortcuts for accepting/rejecting inline diff
   useEffect(() => {
@@ -455,112 +473,124 @@ export function MarkdownRenderer({
     return () => clearTimeout(timer)
   }, [pendingEdit])
 
+  // Base code component for syntax highlighting
+  const codeComponent = useCallback(({ className, children, ...props }: { className?: string; children?: React.ReactNode }) => {
+    const match = /language-(\w+)/.exec(className || "")
+    const language = match ? match[1] : ""
+
+    if (language === "mermaid") {
+      return <MermaidDiagram code={String(children).replace(/\n$/, "")} />
+    }
+
+    if (language) {
+      return (
+        <SyntaxHighlighter
+          style={vscDarkPlus as Record<string, React.CSSProperties>}
+          language={language}
+          PreTag="div"
+          customStyle={{
+            margin: 0,
+            borderRadius: "0.5rem",
+            background: "rgba(255,255,255,0.05)",
+          } as React.CSSProperties}
+        >
+          {String(children).replace(/\n$/, "")}
+        </SyntaxHighlighter>
+      )
+    }
+
+    return <code className={className} {...props}>{children}</code>
+  }, [])
+
+  // Only create diff-handling components when there's a pending edit
+  // Otherwise use minimal components to allow normal text selection (like PromptChatInterface)
+  const markdownComponents = useMemo(() => {
+    // When no pending edit, only use code component for syntax highlighting
+    // This matches how PromptChatInterface works and allows proper text selection
+    if (!pendingEdit) {
+      return { code: codeComponent }
+    }
+
+    // When there's a pending edit, add diff marker processing
+    const processChildren = (children: React.ReactNode): React.ReactNode => {
+      return React.Children.map(children, (child) => {
+        if (typeof child === "string") {
+          if (child.includes(DIFF_MARKER)) {
+            return renderTextWithDiff(child)
+          }
+          return child
+        }
+
+        if (React.isValidElement(child)) {
+          const childElement = child as React.ReactElement<{ children?: React.ReactNode }>
+          if (childElement.props && childElement.props.children) {
+            const childrenStr = React.Children.toArray(childElement.props.children)
+              .filter((c): c is string => typeof c === "string")
+              .join("")
+
+            if (childrenStr.includes(DIFF_MARKER)) {
+              return React.cloneElement(childElement, {}, processChildren(childElement.props.children))
+            }
+          }
+        }
+
+        return child
+      })
+    }
+
+    return {
+      code: ({ className, children, ...props }: { className?: string; children?: React.ReactNode }) => {
+        const match = /language-(\w+)/.exec(className || "")
+        const language = match ? match[1] : ""
+
+        if (language === "mermaid") {
+          return <MermaidDiagram code={String(children).replace(/\n$/, "")} />
+        }
+
+        if (language) {
+          return (
+            <SyntaxHighlighter
+              style={vscDarkPlus as Record<string, React.CSSProperties>}
+              language={language}
+              PreTag="div"
+              customStyle={{ margin: 0, borderRadius: "0.5rem", background: "rgba(255,255,255,0.05)" } as React.CSSProperties}
+            >
+              {String(children).replace(/\n$/, "")}
+            </SyntaxHighlighter>
+          )
+        }
+
+        const codeContent = String(children)
+        if (codeContent.includes(DIFF_MARKER)) {
+          return <code className={className} {...props}>{renderTextWithDiff(codeContent)}</code>
+        }
+
+        return <code className={className} {...props}>{children}</code>
+      },
+      p: ({ children, ...props }: { children?: React.ReactNode }) => <p {...props}>{processChildren(children)}</p>,
+      li: ({ children, ...props }: { children?: React.ReactNode }) => <li {...props}>{processChildren(children)}</li>,
+      h1: ({ children, ...props }: { children?: React.ReactNode }) => <h1 {...props}>{processChildren(children)}</h1>,
+      h2: ({ children, ...props }: { children?: React.ReactNode }) => <h2 {...props}>{processChildren(children)}</h2>,
+      h3: ({ children, ...props }: { children?: React.ReactNode }) => <h3 {...props}>{processChildren(children)}</h3>,
+      h4: ({ children, ...props }: { children?: React.ReactNode }) => <h4 {...props}>{processChildren(children)}</h4>,
+      blockquote: ({ children, ...props }: { children?: React.ReactNode }) => <blockquote {...props}>{processChildren(children)}</blockquote>,
+      strong: ({ children, ...props }: { children?: React.ReactNode }) => <strong {...props}>{processChildren(children)}</strong>,
+      em: ({ children, ...props }: { children?: React.ReactNode }) => <em {...props}>{processChildren(children)}</em>,
+      td: ({ children, ...props }: { children?: React.ReactNode }) => <td {...props}>{processChildren(children)}</td>,
+      th: ({ children, ...props }: { children?: React.ReactNode }) => <th {...props}>{processChildren(children)}</th>,
+    }
+  }, [pendingEdit, codeComponent, renderTextWithDiff])
+
   return (
     <>
       <div ref={contentRef} className={`${proseClasses} ${className}`}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
-          components={{
-          // Helper to process children for diff markers
-          // This handles both direct string children and nested children
-          ...(() => {
-            const processChildren = (children: React.ReactNode): React.ReactNode => {
-              return React.Children.map(children, (child) => {
-                if (typeof child === "string" && child.includes(DIFF_MARKER)) {
-                  return renderTextWithDiff(child)
-                }
-                return child
-              })
-            }
-
-            return {
-              // Handle text nodes to render inline diffs in paragraphs
-              p({ children, ...props }: { children?: React.ReactNode }) {
-                return <p {...props}>{processChildren(children)}</p>
-              },
-              // List items
-              li({ children, ...props }: { children?: React.ReactNode }) {
-                return <li {...props}>{processChildren(children)}</li>
-              },
-              // Headings
-              h1({ children, ...props }: { children?: React.ReactNode }) {
-                return <h1 {...props}>{processChildren(children)}</h1>
-              },
-              h2({ children, ...props }: { children?: React.ReactNode }) {
-                return <h2 {...props}>{processChildren(children)}</h2>
-              },
-              h3({ children, ...props }: { children?: React.ReactNode }) {
-                return <h3 {...props}>{processChildren(children)}</h3>
-              },
-              h4({ children, ...props }: { children?: React.ReactNode }) {
-                return <h4 {...props}>{processChildren(children)}</h4>
-              },
-              // Blockquotes
-              blockquote({ children, ...props }: { children?: React.ReactNode }) {
-                return <blockquote {...props}>{processChildren(children)}</blockquote>
-              },
-              // Strong/Bold
-              strong({ children, ...props }: { children?: React.ReactNode }) {
-                return <strong {...props}>{processChildren(children)}</strong>
-              },
-              // Emphasis/Italic
-              em({ children, ...props }: { children?: React.ReactNode }) {
-                return <em {...props}>{processChildren(children)}</em>
-              },
-              // Table cells
-              td({ children, ...props }: { children?: React.ReactNode }) {
-                return <td {...props}>{processChildren(children)}</td>
-              },
-              th({ children, ...props }: { children?: React.ReactNode }) {
-                return <th {...props}>{processChildren(children)}</th>
-              },
-              // Code blocks
-              code({ className, children, ...props }: { className?: string; children?: React.ReactNode }) {
-                const match = /language-(\w+)/.exec(className || "")
-                const language = match ? match[1] : ""
-
-                // Mermaid diagram block
-                if (language === "mermaid") {
-                  return <MermaidDiagram code={String(children).replace(/\n$/, "")} />
-                }
-
-                // Fenced code block with syntax highlighting
-                if (language) {
-                  return (
-                    <SyntaxHighlighter
-                      style={vscDarkPlus as Record<string, React.CSSProperties>}
-                      language={language}
-                      PreTag="div"
-                      customStyle={{
-                        margin: 0,
-                        borderRadius: "0.5rem",
-                        background: "rgba(255,255,255,0.05)",
-                      } as React.CSSProperties}
-                    >
-                      {String(children).replace(/\n$/, "")}
-                    </SyntaxHighlighter>
-                  )
-                }
-
-                // Inline code - check for diff marker
-                const codeContent = String(children)
-                if (codeContent.includes(DIFF_MARKER)) {
-                  return <code className={className} {...props}>{renderTextWithDiff(codeContent)}</code>
-                }
-
-                return (
-                  <code className={className} {...props}>
-                    {children}
-                  </code>
-                )
-              },
-            }
-          })(),
-        }}
-      >
-        {displayContent}
-      </ReactMarkdown>
-    </div>
+          components={markdownComponents}
+        >
+          {displayContent}
+        </ReactMarkdown>
+      </div>
 
       {/* Show selection toolbar when text is selected */}
       {enableInlineEditing && selection && !showEditor && !pendingEdit && (

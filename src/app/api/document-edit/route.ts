@@ -66,16 +66,16 @@ IMPORTANT INSTRUCTIONS:
 2. You will receive the SELECTED TEXT that needs editing
 3. You will receive the USER'S EDIT REQUEST
 4. You must return ONLY the edited version of the selected text
-5. Do NOT return the full document
-6. Do NOT add explanations or markdown
-7. Maintain the original formatting style (if it has markdown, keep markdown; if plain text, keep plain text)
-8. Only change what was requested in the edit prompt
+5. Do NOT return the full document - only the edited portion
+6. Do NOT add explanations, preambles, or commentary before/after the edit
+7. PRESERVE MARKDOWN FORMATTING: If the selected text contains markdown (headers, bold, italic, lists, links, code blocks), keep the same markdown syntax in your edit. The document is markdown-formatted.
+8. Only change what was requested in the edit prompt - preserve all other formatting
 
-Your response should contain ONLY the replacement text for the selected portion.`,
+Your response should contain ONLY the replacement text for the selected portion, maintaining any markdown formatting that was present.`,
             },
             {
               role: "user",
-              content: `FULL DOCUMENT (for context):
+              content: `FULL DOCUMENT (for context - this is a markdown document):
 ---
 ${fullContent}
 ---
@@ -88,7 +88,7 @@ ${selectedText}
 EDIT REQUEST:
 ${editPrompt}
 
-Please provide ONLY the edited version of the selected text, nothing else.`,
+Please provide ONLY the edited version of the selected text. Preserve any markdown formatting (bold, italic, headers, lists, etc.) that was in the original selection.`,
             },
           ],
           temperature: 0.3,
