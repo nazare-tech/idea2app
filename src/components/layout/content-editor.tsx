@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import {
   PenLine,
@@ -13,6 +13,7 @@ import {
   Loader2,
   Download,
   Copy,
+  GripVertical,
 } from "lucide-react"
 import { DocumentType } from "./document-nav"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
@@ -78,6 +79,11 @@ const documentConfig: Record<
   },
 }
 
+// Width constraints for document resizing
+const MIN_DOCUMENT_WIDTH = 640 // Minimum width for readability (tablet size)
+const MAX_DOCUMENT_WIDTH = 1400 // Maximum width for optimal reading experience
+const DEFAULT_DOCUMENT_WIDTH = 896 // Default max-w-4xl in pixels
+
 export function ContentEditor({
   documentType,
   projectId,
@@ -96,8 +102,63 @@ export function ContentEditor({
 }: ContentEditorProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [documentWidth, setDocumentWidth] = useState(DEFAULT_DOCUMENT_WIDTH)
+  const [isResizing, setIsResizing] = useState(false)
+  const [resizeEdge, setResizeEdge] = useState<'left' | 'right' | null>(null)
+
+  const resizeStartX = useRef(0)
+  const resizeStartWidth = useRef(0)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const config = documentConfig[documentType]
+
+  // Handle mouse move during resize
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing || !resizeEdge) return
+
+      const delta = resizeEdge === 'right'
+        ? e.clientX - resizeStartX.current
+        : resizeStartX.current - e.clientX
+
+      // Calculate maximum width based on available container space
+      const containerWidth = containerRef.current?.clientWidth || window.innerWidth
+      const maxWidth = Math.min(MAX_DOCUMENT_WIDTH, containerWidth - 200) // Leave 100px padding on each side
+
+      const newWidth = Math.max(
+        MIN_DOCUMENT_WIDTH,
+        Math.min(resizeStartWidth.current + delta, maxWidth)
+      )
+      setDocumentWidth(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+      setResizeEdge(null)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isResizing, resizeEdge])
+
+  const handleResizeStart = (edge: 'left' | 'right', e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+    setResizeEdge(edge)
+    resizeStartX.current = e.clientX
+    resizeStartWidth.current = documentWidth
+  }
 
   const handleIdeaSummary = async (summary: string) => {
     // Update the project description with the summary
@@ -218,48 +279,74 @@ export function ContentEditor({
             credits={credits}
           />
         ) : (
-          <div className="h-full overflow-y-auto p-10">
-            <div className="max-w-4xl mx-auto space-y-8">
-              <div className="bg-card border border-border rounded-lg p-8">
-                {isGenerating ? (
-                  <div className="flex flex-col items-center justify-center py-24">
-                    <div className="relative">
-                      <div className="h-16 w-16 rounded-full border-4 border-primary/20"></div>
-                      <div className="absolute top-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-primary"></div>
+          <div className="h-full overflow-y-auto p-10 relative">
+            <div className="flex justify-center items-start relative" ref={containerRef}>
+              {/* Left Resize Handle */}
+              <div
+                className="group absolute left-0 top-0 bottom-0 w-3 cursor-col-resize z-10 flex items-center justify-center hover:bg-primary/10 transition-colors"
+                onMouseDown={(e) => handleResizeStart('left', e)}
+                style={{ left: `calc(50% - ${documentWidth / 2}px)` }}
+              >
+                <div className="h-16 w-1 bg-border group-hover:bg-primary transition-colors rounded-full" />
+                <GripVertical className="absolute h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
+              </div>
+
+              {/* Document Container */}
+              <div
+                className="space-y-8 transition-all"
+                style={{ width: `${documentWidth}px` }}
+              >
+                <div className="bg-card border border-border rounded-lg p-8">
+                  {isGenerating ? (
+                    <div className="flex flex-col items-center justify-center py-24">
+                      <div className="relative">
+                        <div className="h-16 w-16 rounded-full border-4 border-primary/20"></div>
+                        <div className="absolute top-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-primary"></div>
+                      </div>
+                      <div className="mt-6 text-center">
+                        <p className="text-sm font-medium text-foreground mb-2">
+                          Generating {config.title}...
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          This may take a moment
+                        </p>
+                      </div>
+                      {/* Animated dots */}
+                      <div className="mt-4 flex gap-2">
+                        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
                     </div>
-                    <div className="mt-6 text-center">
-                      <p className="text-sm font-medium text-foreground mb-2">
-                        Generating {config.title}...
+                  ) : content ? (
+                    <MarkdownRenderer
+                      content={content}
+                      projectId={projectId}
+                      enableInlineEditing={true}
+                      onContentUpdate={onUpdateContent}
+                    />
+                  ) : (
+                    <div className="text-center py-16">
+                      <config.icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                      <p className="text-sm text-muted-foreground mb-2">
+                        No {config.title.toLowerCase()} generated yet
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        This may take a moment
+                        Click &quot;Generate&quot; to create your {config.title.toLowerCase()}
                       </p>
                     </div>
-                    {/* Animated dots */}
-                    <div className="mt-4 flex gap-2">
-                      <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                  </div>
-                ) : content ? (
-                  <MarkdownRenderer
-                    content={content}
-                    projectId={projectId}
-                    enableInlineEditing={true}
-                    onContentUpdate={onUpdateContent}
-                  />
-                ) : (
-                  <div className="text-center py-16">
-                    <config.icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-                    <p className="text-sm text-muted-foreground mb-2">
-                      No {config.title.toLowerCase()} generated yet
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Click &quot;Generate&quot; to create your {config.title.toLowerCase()}
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
+              </div>
+
+              {/* Right Resize Handle */}
+              <div
+                className="group absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-10 flex items-center justify-center hover:bg-primary/10 transition-colors"
+                onMouseDown={(e) => handleResizeStart('right', e)}
+                style={{ right: `calc(50% - ${documentWidth / 2}px)` }}
+              >
+                <div className="h-16 w-1 bg-border group-hover:bg-primary transition-colors rounded-full" />
+                <GripVertical className="absolute h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
               </div>
             </div>
           </div>
