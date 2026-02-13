@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-02-11 (Added Inline AI Document Editing Feature)
+**Last Updated**: 2026-02-12 (Fixed Text Selection Issues in Inline Editing)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -19,6 +19,8 @@
   - Persistent conversation history
 - **Inline AI Document Editing**: Select any text in generated documents and edit it with AI assistance. Features:
   - Text selection toolbar that appears on highlight
+  - Non-intrusive selection capture (only on mouseup, no interference during drag)
+  - Conditional component rendering for optimal performance
   - Inline editor with diff preview (shows before/after)
   - Context-aware editing using full document as context
   - 1 credit per edit
@@ -209,6 +211,24 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 8. **Optimistic UI Updates**: Immediate feedback with graceful error handling
 9. **Path Aliases**: Clean imports using `@/*` aliases
 10. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
+11. **Non-Intrusive Selection Handling**: Text selection captured only on `mouseup` with `requestAnimationFrame` to ensure browser finalizes selection first, preventing interference during drag operations
+
+### Inline Editing Technical Implementation
+
+The inline AI editing feature in `MarkdownRenderer` uses a sophisticated approach to avoid interfering with native browser text selection:
+
+**Selection Capture Strategy**:
+- Uses `mouseup` event listener instead of continuous `selectionchange` tracking
+- Wraps selection capture in `requestAnimationFrame` to ensure browser has finalized the selection
+- No state updates during the drag operation, preventing React re-renders that could interrupt selection
+
+**Conditional Component Rendering**:
+- When there's **no pending edit** (normal viewing), ReactMarkdown uses minimal custom components (only `code` for syntax highlighting)
+- This matches how PromptChatInterface renders and allows normal browser text selection
+- When there **is a pending edit** (showing diff), all custom component renderers (p, li, h1, h2, etc.) are added to process the diff marker
+- Components are memoized with `useMemo` to prevent unnecessary re-renders
+
+**Result**: Users can select text across multiple elements (like list items) without any JavaScript interference, exactly like selecting text in the Prompt editor tab.
 
 ---
 
@@ -1002,7 +1022,7 @@ export const CREDIT_COSTS = {
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
 | [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view — now uses PromptChatInterface for Prompt tab |
-| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | **UPDATED** — Markdown renderer with beautiful-mermaid diagrams, syntax highlighting, and inline AI editing support |
+| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | **UPDATED** — Markdown renderer with beautiful-mermaid diagrams, syntax highlighting, and inline AI editing. Uses conditional component rendering (minimal components when no pending edit) and mouseup-based selection capture to prevent interference during text selection. |
 | [src/components/ui/inline-ai-editor.tsx](src/components/ui/inline-ai-editor.tsx) | **NEW** — Inline AI editing popup with diff preview and apply/reject actions |
 | [src/components/ui/selection-toolbar.tsx](src/components/ui/selection-toolbar.tsx) | **NEW** — Text selection toolbar that shows "Edit with AI" button |
 | [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | General chat UI component |

@@ -191,7 +191,7 @@ export function ContentEditor({
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
                 <span className="text-xs font-semibold">
-                  {isGenerating ? "Generating..." : `Generate (${config.creditCost} credits)`}
+                  {isGenerating ? "Generating..." : content ? `Regenerate (${config.creditCost} credits)` : `Generate (${config.creditCost} credits)`}
                 </span>
               </button>
               {!canGenerate && disabledReason && !isGenerating && (
