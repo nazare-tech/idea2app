@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-02-12 (Fixed Text Selection Issues in Inline Editing)
+**Last Updated**: 2026-02-12 (Added Mermaid Diagram Expansion Feature)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -68,7 +68,7 @@
 | **tailwind-merge** | 3.4.0 | Tailwind class merging utility |
 | **react-markdown** | 10.1.0 | Markdown rendering |
 | **remark-gfm** | 4.0.1 | GitHub Flavored Markdown support |
-| **beautiful-mermaid** | Latest | Beautiful, themeable Mermaid diagram rendering |
+| **beautiful-mermaid** | Latest | Beautiful, themeable Mermaid diagram rendering with expansion |
 | **react-syntax-highlighter** | 16.1.0 | Code syntax highlighting |
 | **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
 | **jspdf** | 4.0.0 | Client-side PDF generation |
@@ -229,6 +229,38 @@ The inline AI editing feature in `MarkdownRenderer` uses a sophisticated approac
 - Components are memoized with `useMemo` to prevent unnecessary re-renders
 
 **Result**: Users can select text across multiple elements (like list items) without any JavaScript interference, exactly like selecting text in the Prompt editor tab.
+
+### Mermaid Diagram Expansion Feature
+
+The `MarkdownRenderer` component includes an interactive Mermaid diagram viewer with expansion capabilities:
+
+**Compact View**:
+- Diagrams fit within the document width using `w-full overflow-hidden` (no horizontal scrolling)
+- Expand button appears in the bottom-right corner on hover (`opacity-0 group-hover:opacity-100`)
+- Uses lucide-react `Maximize2` icon
+
+**Expanded Modal View**:
+- Triggered by clicking the expand button
+- Full-screen modal with `calc(100vw-4rem)` × `calc(100vh-4rem)` sizing (2rem margins on all sides)
+- Dark backdrop with blur (`bg-black/50 backdrop-blur-sm`)
+- Close button (top-right) with `Minimize2` icon
+- Click outside or press `Escape` to close
+- Body scroll prevention when modal is open
+- Larger font size (20px vs 14px) for better readability
+
+**Styling Implementation**:
+- Both compact and expanded views use the same `mermaid-diagram` CSS class
+- Theme-appropriate colors defined in `globals.css` (lines 248-351)
+- Light mode: dark text (`#111827`), white entity boxes
+- Dark mode: light text (`#e5e5e5`), dark entity boxes
+- Uses `@media (prefers-color-scheme: dark)` for automatic theme detection
+- Important: CSS rules target `.mermaid-diagram` class specifically, so both views must use this class name
+
+**Technical Details**:
+- SVG rendered once by `beautiful-mermaid` and reused for both views
+- Theme detection uses `window.matchMedia('(prefers-color-scheme: dark)')`
+- React state (`isExpanded`) controls modal visibility
+- Event listeners for keyboard (`Escape`) and click-outside handled with proper cleanup
 
 ---
 
@@ -1012,7 +1044,7 @@ export const CREDIT_COSTS = {
 | File | Purpose |
 |------|---------|
 | [src/app/layout.tsx](src/app/layout.tsx) | Root layout — loads Sora + IBM Plex Mono fonts |
-| [src/app/globals.css](src/app/globals.css) | Pencil design tokens (CSS custom properties), status badge styles, scrollbar styles |
+| [src/app/globals.css](src/app/globals.css) | Pencil design tokens (CSS custom properties), status badge styles, scrollbar styles, Mermaid diagram styles (light/dark mode with media query) |
 | [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout — renders `ProjectSidebar` + children |
 | [src/app/(dashboard)/projects/[id]/page.tsx](src/app/(dashboard)/projects/[id]/page.tsx) | Project page — fetches data server-side, passes to `ProjectWorkspace` |
 | [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details |
@@ -1022,7 +1054,7 @@ export const CREDIT_COSTS = {
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
 | [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view — now uses PromptChatInterface for Prompt tab |
-| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | **UPDATED** — Markdown renderer with beautiful-mermaid diagrams, syntax highlighting, and inline AI editing. Uses conditional component rendering (minimal components when no pending edit) and mouseup-based selection capture to prevent interference during text selection. |
+| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | **UPDATED** — Markdown renderer with beautiful-mermaid diagrams, syntax highlighting, and inline AI editing. Features: (1) Mermaid diagram expansion - diagrams fit within document width with an expand button (bottom-right, visible on hover) that opens a full-screen modal with margins; (2) Conditional component rendering (minimal components when no pending edit); (3) Mouseup-based selection capture to prevent interference during text selection. Mermaid diagrams are styled via globals.css with theme-appropriate colors for both light and dark modes. |
 | [src/components/ui/inline-ai-editor.tsx](src/components/ui/inline-ai-editor.tsx) | **NEW** — Inline AI editing popup with diff preview and apply/reject actions |
 | [src/components/ui/selection-toolbar.tsx](src/components/ui/selection-toolbar.tsx) | **NEW** — Text selection toolbar that shows "Edit with AI" button |
 | [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | General chat UI component |

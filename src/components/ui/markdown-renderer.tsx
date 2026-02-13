@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm"
 import { renderMermaid } from "beautiful-mermaid"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
-import { Check, X } from "lucide-react"
+import { Check, X, Maximize2, Minimize2 } from "lucide-react"
 import { SelectionToolbar } from "./selection-toolbar"
 import { InlineAiEditor } from "./inline-ai-editor"
 
@@ -25,6 +25,7 @@ function MermaidDiagram({ code }: { code: string }) {
   const [svg, setSvg] = useState<string>("")
   const [error, setError] = useState<boolean>(false)
   const [isDark, setIsDark] = useState<boolean>(false)
+  const [isExpanded, setIsExpanded] = useState<boolean>(false)
 
   // Detect system theme preference
   useEffect(() => {
@@ -65,6 +66,33 @@ function MermaidDiagram({ code }: { code: string }) {
       })
   }, [code, isDark])
 
+  // Close modal on Escape key
+  useEffect(() => {
+    if (!isExpanded) return
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsExpanded(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isExpanded])
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isExpanded) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isExpanded])
+
   if (error) {
     return (
       <div className="mermaid-wrapper my-4 p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
@@ -74,16 +102,64 @@ function MermaidDiagram({ code }: { code: string }) {
   }
 
   return (
-    <div className="mermaid-wrapper my-4 p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
-      <div
-        className="mermaid-diagram min-w-max"
-        dangerouslySetInnerHTML={{ __html: svg }}
-        style={{
-          fontSize: '14px',
-          fontFamily: 'ui-monospace, "IBM Plex Mono", monospace'
-        }}
-      />
-    </div>
+    <>
+      {/* Compact view - fits within document width */}
+      <div className="mermaid-wrapper my-4 p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 relative group">
+        <div
+          className="mermaid-diagram w-full overflow-hidden"
+          dangerouslySetInnerHTML={{ __html: svg }}
+          style={{
+            fontSize: '14px',
+            fontFamily: 'ui-monospace, "IBM Plex Mono", monospace',
+          }}
+        />
+
+        {/* Expand button - bottom right */}
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="absolute bottom-2 right-2 p-2 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transition-all opacity-0 group-hover:opacity-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+          title="Expand diagram"
+          aria-label="Expand diagram"
+        >
+          <Maximize2 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+        </button>
+      </div>
+
+      {/* Expanded modal view */}
+      {isExpanded && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsExpanded(false)}
+        >
+          <div
+            className="relative w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] bg-white dark:bg-[#1a1a1a] rounded-lg shadow-2xl overflow-auto p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="absolute top-4 right-4 p-2 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors z-10"
+              title="Close (Esc)"
+              aria-label="Close expanded view"
+            >
+              <Minimize2 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            </button>
+
+            {/* Expanded diagram */}
+            <div className="flex items-center justify-center w-full h-full">
+              <div
+                className="mermaid-diagram max-w-full max-h-full"
+                dangerouslySetInnerHTML={{ __html: svg }}
+                style={{
+                  fontSize: '20px',
+                  fontFamily: 'ui-monospace, "IBM Plex Mono", monospace',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
