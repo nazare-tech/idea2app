@@ -193,9 +193,73 @@ export function ContentEditor({
       : undefined
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between px-10 py-5 border-b border-border">
+    <>
+      <style jsx>{`
+        .loader {
+          animation: rotate 1s infinite;
+          height: 50px;
+          width: 50px;
+        }
+
+        .loader:before,
+        .loader:after {
+          border-radius: 50%;
+          content: "";
+          display: block;
+          height: 20px;
+          width: 20px;
+        }
+        .loader:before {
+          animation: ball1 1s infinite;
+          background-color: #ca3a31;
+          box-shadow: 30px 0 0 #d3d3d3;
+          margin-bottom: 10px;
+        }
+        .loader:after {
+          animation: ball2 1s infinite;
+          background-color: #d3d3d3;
+          box-shadow: 30px 0 0 #ca3a31;
+        }
+
+        @keyframes rotate {
+          0% { transform: rotate(0deg) scale(0.8) }
+          50% { transform: rotate(360deg) scale(1.2) }
+          100% { transform: rotate(720deg) scale(0.8) }
+        }
+
+        @keyframes ball1 {
+          0% {
+            box-shadow: 30px 0 0 #d3d3d3;
+          }
+          50% {
+            box-shadow: 0 0 0 #d3d3d3;
+            margin-bottom: 0;
+            transform: translate(15px, 15px);
+          }
+          100% {
+            box-shadow: 30px 0 0 #d3d3d3;
+            margin-bottom: 10px;
+          }
+        }
+
+        @keyframes ball2 {
+          0% {
+            box-shadow: 30px 0 0 #ca3a31;
+          }
+          50% {
+            box-shadow: 0 0 0 #ca3a31;
+            margin-top: -20px;
+            transform: translate(15px, 15px);
+          }
+          100% {
+            box-shadow: 30px 0 0 #ca3a31;
+            margin-top: 0;
+          }
+        }
+      `}</style>
+      <div className="flex h-full flex-col bg-background">
+        {/* Header */}
+        <div className="flex items-center justify-between px-10 py-5 border-b border-border">
         <div className="flex items-center gap-4">
           <config.icon className="h-[18px] w-[18px] text-primary" />
           <div>
@@ -299,10 +363,7 @@ export function ContentEditor({
                 <div className="bg-card border border-border rounded-lg p-8">
                   {isGenerating ? (
                     <div className="flex flex-col items-center justify-center py-24">
-                      <div className="relative">
-                        <div className="h-16 w-16 rounded-full border-4 border-primary/20"></div>
-                        <div className="absolute top-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-primary"></div>
-                      </div>
+                      <span className="loader"></span>
                       <div className="mt-6 text-center">
                         <p className="text-sm font-medium text-foreground mb-2">
                           Generating {config.title}...
@@ -310,12 +371,6 @@ export function ContentEditor({
                         <p className="text-xs text-muted-foreground">
                           This may take a moment
                         </p>
-                      </div>
-                      {/* Animated dots */}
-                      <div className="mt-4 flex gap-2">
-                        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }}></div>
                       </div>
                     </div>
                   ) : content ? (
@@ -352,6 +407,7 @@ export function ContentEditor({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
