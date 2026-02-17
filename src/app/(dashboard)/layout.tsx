@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { ProjectSidebar } from "@/components/layout/project-sidebar"
+import { DashboardShell } from "@/components/layout/dashboard-shell"
 
 export default async function DashboardLayout({
   children,
@@ -37,16 +37,8 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <ProjectSidebar
-        projects={projects || []}
-        user={userInfo}
-      />
-      {/* Vertical Divider */}
-      <div className="w-px bg-border" />
-      <main className="flex-1 overflow-y-auto p-8">
-        {children}
-      </main>
-    </div>
+    <DashboardShell projects={projects || []} user={userInfo}>
+      {children}
+    </DashboardShell>
   )
 }

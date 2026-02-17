@@ -1,3 +1,6 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +17,8 @@ import {
   Globe,
   Check,
   Sparkles,
+  Menu,
+  X,
 } from "lucide-react"
 
 const features = [
@@ -91,12 +96,14 @@ const plans = [
 ]
 
 export default function LandingPage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden flex flex-col">
       {/* Background effects */}
-      <div className="fixed inset-0 pointer-events-none">
+      <div className="fixed inset-0 pointer-events-none z-0">
         {/* Hero gradient orb */}
-        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full bg-[radial-gradient(ellipse,rgba(0,212,255,0.08)_0%,rgba(124,58,237,0.05)_40%,transparent_70%)]" />
+        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] max-w-full h-[600px] rounded-full bg-[radial-gradient(ellipse,rgba(0,212,255,0.08)_0%,rgba(124,58,237,0.05)_40%,transparent_70%)]" />
         {/* Secondary orb */}
         <div className="absolute top-[40%] right-[-10%] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.06)_0%,transparent_70%)]" />
         {/* Grid pattern */}
@@ -113,6 +120,8 @@ export default function LandingPage() {
               </div>
               <span className="text-lg font-bold tracking-tight">Idea2App</span>
             </div>
+
+            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Features
@@ -124,7 +133,7 @@ export default function LandingPage() {
                 How It Works
               </a>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-3">
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="text-muted-foreground">
                   Sign In
@@ -137,44 +146,102 @@ export default function LandingPage() {
                 </Button>
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden absolute top-16 left-0 w-full bg-background border-b border-border p-4 shadow-lg animate-fade-in z-40">
+            <div className="flex flex-col space-y-4">
+              <a
+                href="#features"
+                className="text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Features
+              </a>
+              <a
+                href="#pricing"
+                className="text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Pricing
+              </a>
+              <a
+                href="#how-it-works"
+                className="text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                How It Works
+              </a>
+              <div className="h-px bg-border w-full my-2" />
+              <div className="flex flex-col gap-2">
+                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full justify-center">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="w-full justify-center">
+                    Get Started
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-36 pb-24 px-4">
-        <div className="max-w-5xl mx-auto text-center">
+      <section className="relative pt-36 pb-24 px-4 overflow-hidden">
+        <div className="max-w-5xl mx-auto text-center relative z-10">
           <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
             <Badge className="mb-8" variant="secondary">
               <Sparkles className="h-3 w-3 mr-1.5 text-[#00d4ff]" />
               AI-Powered Business Idea Platform
             </Badge>
           </div>
-          <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter mb-8 animate-fade-up leading-[0.9]" style={{ animationDelay: "100ms" }}>
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tighter mb-8 animate-fade-up leading-[0.9]" style={{ animationDelay: "100ms" }}>
             Transform Your{" "}
             <span className="gradient-text">Ideas</span>
             <br />
             Into Reality
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-up leading-relaxed px-4" style={{ animationDelay: "200ms" }}>
             From business idea to working application. Get competitive analysis, gap analysis, PRD documents, technical specs, and a deployed prototype &mdash; all powered by AI.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up" style={{ animationDelay: "300ms" }}>
-            <Link href="/signup">
-              <Button size="lg" className="gap-2 text-base px-10 h-14">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up px-4" style={{ animationDelay: "300ms" }}>
+            <Link href="/signup" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto gap-2 text-base px-10 h-14">
                 Start Building
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
-            <a href="#features">
-              <Button size="lg" variant="outline" className="text-base px-10 h-14">
+            <a href="#features" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-10 h-14">
                 Learn More
               </Button>
             </a>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 mt-20 max-w-xl mx-auto animate-fade-up" style={{ animationDelay: "400ms" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-20 max-w-xl mx-auto animate-fade-up px-4" style={{ animationDelay: "400ms" }}>
             {[
               { value: "5+", label: "Analysis Types" },
               { value: "AI", label: "Powered" },
@@ -192,8 +259,8 @@ export default function LandingPage() {
       {/* Features */}
       <section id="features" className="relative py-24 px-4">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(0,212,255,0.02)] to-transparent pointer-events-none" />
-        <div className="max-w-6xl mx-auto relative">
-          <div className="text-center mb-16">
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-16 px-4">
             <Badge className="mb-5" variant="secondary">
               <Zap className="h-3 w-3 mr-1.5 text-[#7c3aed]" />
               Features
@@ -206,7 +273,7 @@ export default function LandingPage() {
               Comprehensive tools to analyze, plan, and build your business idea from concept to deployment.
             </p>
           </div>
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 px-4">
             {features.map((feature, i) => (
               <div
                 key={feature.title}
@@ -226,8 +293,8 @@ export default function LandingPage() {
 
       {/* How It Works */}
       <section id="how-it-works" className="relative py-24 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="text-center mb-16 px-4">
             <Badge className="mb-5" variant="secondary">
               <Rocket className="h-3 w-3 mr-1.5 text-[#f472b6]" />
               How It Works
@@ -237,7 +304,7 @@ export default function LandingPage() {
               <span className="gradient-text">Minutes</span>
             </h2>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 px-4">
             {[
               {
                 step: "01",
@@ -270,9 +337,9 @@ export default function LandingPage() {
             ].map((step) => (
               <div
                 key={step.step}
-                className="group flex items-start gap-6 p-6 rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(12,12,20,0.4)] backdrop-blur-sm hover:border-[rgba(0,212,255,0.2)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,212,255,0.06)]"
+                className="group flex flex-col sm:flex-row items-start gap-6 p-6 rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(12,12,20,0.4)] backdrop-blur-sm hover:border-[rgba(0,212,255,0.2)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,212,255,0.06)]"
               >
-                <div className="text-5xl font-black gradient-text shrink-0 leading-none">{step.step}</div>
+                <div className="text-5xl font-black gradient-text shrink-0 leading-none mb-2 sm:mb-0">{step.step}</div>
                 <div className="flex-1 pt-1">
                   <h3 className="text-xl font-bold mb-2 tracking-tight text-white">{step.title}</h3>
                   <p className="text-gray-400 leading-relaxed">{step.description}</p>
@@ -289,8 +356,8 @@ export default function LandingPage() {
       {/* Pricing */}
       <section id="pricing" className="relative py-24 px-4">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(124,58,237,0.02)] to-transparent pointer-events-none" />
-        <div className="max-w-6xl mx-auto relative">
-          <div className="text-center mb-16">
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-16 px-4">
             <Badge className="mb-5" variant="secondary">
               <Shield className="h-3 w-3 mr-1.5 text-[#34d399]" />
               Pricing
@@ -303,15 +370,14 @@ export default function LandingPage() {
               Start for free, upgrade as you grow.
             </p>
           </div>
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 px-4">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative p-6 rounded-2xl transition-all duration-300 ${
-                  plan.highlighted
-                    ? "bg-[rgba(12,12,20,0.7)] border border-[rgba(0,212,255,0.3)] shadow-[0_0_40px_rgba(0,212,255,0.1)] scale-[1.02]"
-                    : "bg-[rgba(12,12,20,0.4)] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.1)]"
-                }`}
+                className={`relative p-6 rounded-2xl transition-all duration-300 ${plan.highlighted
+                  ? "bg-[rgba(12,12,20,0.7)] border border-[rgba(0,212,255,0.3)] shadow-[0_0_40px_rgba(0,212,255,0.1)] scale-[1.02]"
+                  : "bg-[rgba(12,12,20,0.4)] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.1)]"
+                  }`}
               >
                 {plan.highlighted && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -352,10 +418,10 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="relative py-24 px-4">
-        <div className="max-w-3xl mx-auto text-center relative">
+      <section className="relative py-24 px-4 overflow-hidden">
+        <div className="max-w-3xl mx-auto text-center relative z-10">
           {/* Glow behind CTA */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-[radial-gradient(ellipse,rgba(0,212,255,0.08)_0%,rgba(124,58,237,0.05)_40%,transparent_70%)] pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-[radial-gradient(ellipse,rgba(0,212,255,0.08)_0%,rgba(124,58,237,0.05)_40%,transparent_70%)] pointer-events-none max-w-full" />
           <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-5 relative">
             Ready to Build Your{" "}
             <span className="gradient-text">Next Big Thing?</span>
@@ -375,7 +441,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-[rgba(255,255,255,0.04)] py-12 px-4">
+      <footer className="relative border-t border-[rgba(255,255,255,0.04)] py-12 px-4 mt-auto">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
@@ -384,7 +450,7 @@ export default function LandingPage() {
               </div>
               <span className="text-lg font-bold tracking-tight">Idea2App</span>
             </div>
-            <div className="flex items-center gap-8 text-sm text-muted-foreground">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 text-sm text-muted-foreground">
               <a href="#features" className="hover:text-primary transition-colors">Features</a>
               <a href="#pricing" className="hover:text-primary transition-colors">Pricing</a>
               <a href="#how-it-works" className="hover:text-primary transition-colors">How It Works</a>
@@ -400,3 +466,4 @@ export default function LandingPage() {
     </div>
   )
 }
+
