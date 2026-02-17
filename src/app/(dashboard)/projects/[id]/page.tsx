@@ -76,6 +76,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       techSpecs={techSpecs || []}
       deployments={deployments || []}
       credits={credits?.balance || 0}
+      user={user}
     />
   )
 }

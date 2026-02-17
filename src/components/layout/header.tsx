@@ -21,9 +21,10 @@ interface HeaderProps {
     full_name?: string
     avatar_url?: string
   }
+  children?: React.ReactNode
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, children }: HeaderProps) {
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -42,7 +43,7 @@ export function Header({ user }: HeaderProps) {
   return (
     <header className="h-16 border-b border-[rgba(255,255,255,0.04)] bg-[rgba(8,8,14,0.6)] backdrop-blur-xl px-6 flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>
+        {children || <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>}
       </div>
 
       <div className="flex items-center gap-4">

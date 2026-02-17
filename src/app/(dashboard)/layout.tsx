@@ -24,20 +24,13 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single()
 
-  // Get all projects for the sidebar
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id, name, status")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-
   const userInfo = {
     email: user.email,
     full_name: profile?.full_name || user.user_metadata?.full_name,
   }
 
   return (
-    <DashboardShell projects={projects || []} user={userInfo}>
+    <DashboardShell>
       {children}
     </DashboardShell>
   )

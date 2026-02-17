@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
+import { Header } from "@/components/layout/header"
+
 
 interface Project {
   id: string
@@ -55,6 +58,7 @@ interface ProjectWorkspaceProps {
   techSpecs: TechSpec[]
   deployments: Deployment[]
   credits: number
+  user: any
 }
 
 export function ProjectWorkspace({
@@ -65,6 +69,7 @@ export function ProjectWorkspace({
   techSpecs,
   deployments,
   credits,
+  user,
 }: ProjectWorkspaceProps) {
   const router = useRouter()
   const [activeDocument, setActiveDocument] = useState<DocumentType>("prompt")
@@ -547,36 +552,51 @@ export function ProjectWorkspace({
   }
 
   return (
-    <div className="flex h-full">
-      {/* Document Navigation */}
-      <DocumentNav
-        projectName={project.name}
-        activeDocument={activeDocument}
-        onDocumentSelect={setActiveDocument}
-        documentStatuses={documentStatuses}
-      />
+    <div className="flex flex-col h-screen">
+      <Header user={user}>
+        <div className="flex items-center gap-2 text-sm">
+          <Link
+            href="/projects"
+            className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            <span className="opacity-50">←</span> Projects
+          </Link>
+          <span className="text-muted-foreground/40 mx-1">/</span>
+          <span className="font-semibold tracking-tight">{project.name}</span>
+        </div>
+      </Header>
 
-      {/* Vertical Divider */}
-      <div className="w-px bg-border" />
-
-      {/* Content Editor */}
-      <div className="flex-1">
-        <ContentEditor
-          documentType={activeDocument}
-          projectId={project.id}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Document Navigation */}
+        <DocumentNav
           projectName={project.name}
-          projectDescription={project.description || ""}
-          content={getDocumentContent(activeDocument)}
-          onGenerateContent={handleGenerateContent}
-          onUpdateDescription={handleUpdateDescription}
-          onUpdateContent={handleUpdateContent}
-          isGenerating={generatingDocuments[activeDocument]}
-          credits={credits}
-          prerequisiteValidation={checkPrerequisites(activeDocument)}
-          currentVersion={selectedVersionIndex[activeDocument] || 0}
-          totalVersions={getTotalVersions(activeDocument)}
-          onVersionChange={(index) => handleVersionChange(activeDocument, index)}
+          activeDocument={activeDocument}
+          onDocumentSelect={setActiveDocument}
+          documentStatuses={documentStatuses}
         />
+
+        {/* Vertical Divider */}
+        <div className="w-px bg-border" />
+
+        {/* Content Editor */}
+        <div className="flex-1 overflow-hidden">
+          <ContentEditor
+            documentType={activeDocument}
+            projectId={project.id}
+            projectName={project.name}
+            projectDescription={project.description || ""}
+            content={getDocumentContent(activeDocument)}
+            onGenerateContent={handleGenerateContent}
+            onUpdateDescription={handleUpdateDescription}
+            onUpdateContent={handleUpdateContent}
+            isGenerating={generatingDocuments[activeDocument]}
+            credits={credits}
+            prerequisiteValidation={checkPrerequisites(activeDocument)}
+            currentVersion={selectedVersionIndex[activeDocument] || 0}
+            totalVersions={getTotalVersions(activeDocument)}
+            onVersionChange={(index) => handleVersionChange(activeDocument, index)}
+          />
+        </div>
       </div>
     </div>
   )

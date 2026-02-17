@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Plus, FolderOpen, Lightbulb } from "lucide-react"
+import { ProjectCard } from "@/components/projects/project-card"
+import { Button } from "@/components/ui/button"
 
 export default async function ProjectsPage() {
   const supabase = await createClient()
@@ -16,47 +18,74 @@ export default async function ProjectsPage() {
     .eq("user_id", user!.id)
     .order("updated_at", { ascending: false })
 
-  // If there are projects, redirect to the first one
-  if (projects && projects.length > 0) {
-    redirect(`/projects/${projects[0].id}`)
-  }
-
-  // Show empty state for new users
   return (
-    <div className="flex h-full items-center justify-center bg-background">
-      <div className="text-center max-w-md px-6">
-        <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-          <FolderOpen className="h-10 w-10 text-primary" />
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center justify-between px-8 py-6 border-b border-border/40">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+            Projects
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage and organize your AI-powered applications.
+          </p>
         </div>
-        <h1 className="text-2xl font-semibold text-foreground mb-3">
-          Welcome to Projects
-        </h1>
-        <p className="text-muted-foreground mb-8 leading-relaxed">
-          Start by creating your first project. Describe your business idea and let AI help you build it into reality.
-        </p>
-        <Link
-          href="/projects/new"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold text-sm hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Create Your First Project
+        <Link href="/projects/new">
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            New Project
+          </Button>
         </Link>
-        <div className="mt-10 pt-8 border-t border-border">
-          <div className="flex items-start gap-4 text-left">
-            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-              <Lightbulb className="h-5 w-5 text-muted-foreground" />
+      </div>
+
+      {!projects || projects.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="text-center max-w-md">
+            <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <FolderOpen className="h-10 w-10 text-primary" />
             </div>
-            <div>
-              <h3 className="font-medium text-foreground text-sm mb-1">
-                How it works
-              </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Describe your idea, and we&apos;ll generate competitive research, gap analysis, PRD, tech specs, and even deployable code.
-              </p>
-            </div>
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              No projects yet
+            </h2>
+            <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
+              Start by creating your first project. Describe your business idea and
+              let AI help you build it into reality.
+            </p>
+            <Link href="/projects/new">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Project
+              </Button>
+            </Link>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={{
+                  ...project,
+                  updated_at: project.updated_at || project.created_at || new Date().toISOString()
+                }}
+              />
+            ))}
+
+            {/* New Project Card */}
+            <Link
+              href="/projects/new"
+              className="group flex flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/5 p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-200 min-h-[200px]"
+            >
+              <div className="h-12 w-12 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
+                <Plus className="h-6 w-6 text-muted-foreground group-hover:text-foreground" />
+              </div>
+              <span className="font-medium text-muted-foreground group-hover:text-foreground">
+                Create new project
+              </span>
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
