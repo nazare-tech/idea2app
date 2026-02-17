@@ -1,10 +1,5 @@
 "use client"
 
-import { useState } from "react"
-import { Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ProjectSidebar } from "@/components/layout/project-sidebar"
-
 interface DashboardShellProps {
     children: React.ReactNode
 }
