@@ -211,14 +211,50 @@ export function MarkdownRenderer({
           return
         }
 
-        const selectedText = sel.toString().trim()
+        let range = sel.getRangeAt(0)
+
+        // Snap to word boundaries for cleaner editing
+        if (range.startContainer.nodeType === Node.TEXT_NODE && range.endContainer.nodeType === Node.TEXT_NODE) {
+          try {
+            const newRange = range.cloneRange()
+
+            // Expand start
+            while (newRange.startOffset > 0) {
+              const charBefore = newRange.startContainer.textContent?.charAt(newRange.startOffset - 1)
+              if (charBefore && /[\w]/.test(charBefore)) {
+                newRange.setStart(newRange.startContainer, newRange.startOffset - 1)
+              } else {
+                break
+              }
+            }
+
+            // Expand end
+            while (newRange.endOffset < (newRange.endContainer.textContent?.length || 0)) {
+              const charAfter = newRange.endContainer.textContent?.charAt(newRange.endOffset)
+              if (charAfter && /[\w]/.test(charAfter)) {
+                newRange.setEnd(newRange.endContainer, newRange.endOffset + 1)
+              } else {
+                break
+              }
+            }
+
+            // Update selection to show the snapped range
+            sel.removeAllRanges()
+            sel.addRange(newRange)
+            range = newRange
+          } catch (e) {
+            console.warn("Failed to snap selection to word", e)
+          }
+        }
+
+        const selectedText = range.toString().trim()
         if (!selectedText) {
           setSelection(null)
           return
         }
 
         // Check if selection is within our content
-        const range = sel.getRangeAt(0)
+        // range is already updated or original
         const contentEl = contentRef.current
         if (!contentEl) {
           setSelection(null)
