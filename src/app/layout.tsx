@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Sora, IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
+import { AgentationWrapper } from "@/components/AgentationWrapper"
 
 const sora = Sora({
   variable: "--font-sora",
@@ -31,6 +32,7 @@ export default function RootLayout({
         className={`${sora.variable} ${ibmPlexMono.variable} antialiased min-h-screen bg-background`}
       >
         {children}
+        <AgentationWrapper />
       </body>
     </html>
   )
