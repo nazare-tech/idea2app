@@ -25,47 +25,22 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     notFound()
   }
 
-  // Get analyses
-  const { data: analyses } = await supabase
-    .from("analyses")
-    .select("*")
-    .eq("project_id", id)
-    .order("created_at", { ascending: false })
-
-  // Get PRDs
-  const { data: prds } = await supabase
-    .from("prds")
-    .select("*")
-    .eq("project_id", id)
-    .order("created_at", { ascending: false })
-
-  // Get MVP plans
-  const { data: mvpPlans } = await supabase
-    .from("mvp_plans")
-    .select("*")
-    .eq("project_id", id)
-    .order("created_at", { ascending: false })
-
-  // Get tech specs
-  const { data: techSpecs } = await supabase
-    .from("tech_specs")
-    .select("*")
-    .eq("project_id", id)
-    .order("created_at", { ascending: false })
-
-  // Get deployments
-  const { data: deployments } = await supabase
-    .from("deployments")
-    .select("*")
-    .eq("project_id", id)
-    .order("created_at", { ascending: false })
-
-  // Get user credits
-  const { data: credits } = await supabase
-    .from("credits")
-    .select("balance")
-    .eq("user_id", user!.id)
-    .single()
+  // Fetch all project data in parallel
+  const [
+    { data: analyses },
+    { data: prds },
+    { data: mvpPlans },
+    { data: techSpecs },
+    { data: deployments },
+    { data: credits },
+  ] = await Promise.all([
+    supabase.from("analyses").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+    supabase.from("prds").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+    supabase.from("mvp_plans").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+    supabase.from("tech_specs").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+    supabase.from("deployments").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+    supabase.from("credits").select("balance").eq("user_id", user!.id).single(),
+  ])
 
   return (
     <ProjectWorkspace
