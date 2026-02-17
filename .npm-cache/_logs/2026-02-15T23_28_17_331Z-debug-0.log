@@ -1,0 +1,65 @@
+0 verbose cli /opt/homebrew/Cellar/node/23.6.1/bin/node /opt/homebrew/bin/npm
+1 info using npm@11.4.2
+2 info using node@v23.6.1
+3 silly config load:file:/opt/homebrew/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/.npmrc
+5 silly config load:file:/Users/Mukul/.npmrc
+6 silly config load:file:/opt/homebrew/etc/npmrc
+7 verbose title npm install
+8 verbose argv "install"
+9 verbose logfile logs-max:10 dir:/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/.npm-cache/_logs/2026-02-15T23_28_17_331Z-
+10 verbose logfile /Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/.npm-cache/_logs/2026-02-15T23_28_17_331Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 silly logfile done cleaning log files
+14 silly idealTree buildDeps
+15 silly reify moves {}
+16 verbose reify failed optional dependency /Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/node_modules/@tailwindcss/oxide-wasm32-wasi
+17 silly reify mark deleted [
+17 silly reify   '/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/node_modules/@tailwindcss/oxide-wasm32-wasi'
+17 silly reify ]
+18 verbose stack Error: EPERM: operation not permitted, lstat '/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/node_modules'
+18 verbose stack     at async lstat (node:internal/fs/promises:1028:18)
+18 verbose stack     at async #loadActual (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/load-actual.js:129:15)
+18 verbose stack     at async /opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:996:11
+18 verbose stack     at async Promise.allSettled (index 0)
+18 verbose stack     at async [reifyPackages] (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:337:11)
+18 verbose stack     at async Arborist.reify (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:142:5)
+18 verbose stack     at async Install.exec (/opt/homebrew/lib/node_modules/npm/lib/commands/install.js:149:5)
+18 verbose stack     at async Npm.exec (/opt/homebrew/lib/node_modules/npm/lib/npm.js:208:9)
+18 verbose stack     at async module.exports (/opt/homebrew/lib/node_modules/npm/lib/cli/entry.js:67:5)
+19 error code EPERM
+20 error syscall lstat
+21 error path /Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/node_modules
+22 error errno -1
+23 error Error: EPERM: operation not permitted, lstat '/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/node_modules'
+23 error     at async lstat (node:internal/fs/promises:1028:18)
+23 error     at async #loadActual (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/load-actual.js:129:15)
+23 error     at async /opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:996:11
+23 error     at async Promise.allSettled (index 0)
+23 error     at async [reifyPackages] (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:337:11)
+23 error     at async Arborist.reify (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:142:5)
+23 error     at async Install.exec (/opt/homebrew/lib/node_modules/npm/lib/commands/install.js:149:5)
+23 error     at async Npm.exec (/opt/homebrew/lib/node_modules/npm/lib/npm.js:208:9)
+23 error     at async module.exports (/opt/homebrew/lib/node_modules/npm/lib/cli/entry.js:67:5) {
+23 error   errno: -1,
+23 error   code: 'EPERM',
+23 error   syscall: 'lstat',
+23 error   path: '/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/node_modules'
+23 error }
+24 error
+24 error The operation was rejected by your operating system.
+24 error It is likely you do not have the permissions to access this file as the current user
+24 error
+24 error If you believe this might be a permissions issue, please double-check the
+24 error permissions of the file and its containing directories, or try running
+24 error the command again as root/Administrator.
+25 silly unfinished npm timer reify 1771198097568
+26 silly unfinished npm timer reify:loadBundles 1771198097787
+27 verbose cwd /Users/Mukul/Documents/GitHub/2026 projects/5_idea2app
+28 verbose os Darwin 25.2.0
+29 verbose node v23.6.1
+30 verbose npm  v11.4.2
+31 verbose exit -1
+32 verbose code -1
+33 error A complete log of this run can be found in: /Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/.npm-cache/_logs/2026-02-15T23_28_17_331Z-debug-0.log

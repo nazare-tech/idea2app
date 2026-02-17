@@ -87,6 +87,7 @@ function LoginForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
+                  autoFocus
                 />
               </div>
               <div className="space-y-2">

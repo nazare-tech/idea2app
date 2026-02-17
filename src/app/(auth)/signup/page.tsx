@@ -123,6 +123,7 @@ export default function SignupPage() {
                   onChange={(e) => setFullName(e.target.value)}
                   required
                   disabled={loading}
+                  autoFocus
                 />
               </div>
               <div className="space-y-2">
