@@ -344,7 +344,7 @@ export function PromptChatInterface({
       {/* Modern Composer Bar */}
       {messages.length > 0 && (
         <div className="px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto px-4">
             <div
               ref={composerRef}
               className={cn(

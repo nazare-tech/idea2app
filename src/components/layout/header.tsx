@@ -41,7 +41,7 @@ export function Header({ user, children }: HeaderProps) {
     .toUpperCase() || user?.email?.[0].toUpperCase() || "U"
 
   return (
-    <header className="h-16 border-b border-[rgba(255,255,255,0.04)] bg-[rgba(8,8,14,0.6)] backdrop-blur-xl px-6 flex items-center justify-between">
+    <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-xl px-6 flex items-center justify-between">
       <div className="flex items-center gap-4">
         {children || <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>}
       </div>
