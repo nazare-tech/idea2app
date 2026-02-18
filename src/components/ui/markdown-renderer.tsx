@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useRef, useMemo, useCallback } from "react"
+import React, { useEffect, useState, useRef, useMemo, useCallback, useSyncExternalStore } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { renderMermaid } from "beautiful-mermaid"
@@ -24,18 +24,17 @@ interface MarkdownRendererProps {
 function MermaidDiagram({ code }: { code: string }) {
   const [svg, setSvg] = useState<string>("")
   const [error, setError] = useState<boolean>(false)
-  const [isDark, setIsDark] = useState<boolean>(false)
+  // Detect system theme preference using useSyncExternalStore to avoid effect synchronization issues
+  const isDark = useSyncExternalStore(
+    useCallback((callback) => {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      mediaQuery.addEventListener('change', callback)
+      return () => mediaQuery.removeEventListener('change', callback)
+    }, []),
+    () => window.matchMedia('(prefers-color-scheme: dark)').matches,
+    () => false // Server snapshot
+  )
   const [isExpanded, setIsExpanded] = useState<boolean>(false)
-
-  // Detect system theme preference
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    setIsDark(mediaQuery.matches)
-
-    const handleChange = (e: MediaQueryListEvent) => setIsDark(e.matches)
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [])
 
   // Render diagram with theme-appropriate colors
   useEffect(() => {

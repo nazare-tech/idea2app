@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import Link from "next/link"
-import { Plus, FolderOpen, Lightbulb } from "lucide-react"
+import { Plus, FolderOpen } from "lucide-react"
 import { ProjectCard } from "@/components/projects/project-card"
 import { Button } from "@/components/ui/button"
 

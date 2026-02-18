@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Send, Bot, User, Copy, Check, ChevronDown, Sparkles, Zap, ArrowUp } from "lucide-react"
+import { Bot, User, Copy, Check, ChevronDown, Sparkles, Zap, ArrowUp } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/lib/prompt-chat-config"
@@ -54,9 +54,44 @@ export function PromptChatInterface({
   const composerRef = useRef<HTMLDivElement>(null)
 
   // Prevent hydration mismatch with Radix UI dropdowns
+  // Prevent hydration mismatch with Radix UI dropdowns
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const startConversation = useCallback(async (overrideIdea?: string) => {
+    const ideaToUse = overrideIdea || initialIdea
+    if (!ideaToUse.trim()) return
+
+    setLoading(true)
+    try {
+      const response = await fetch("/api/prompt-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId,
+          message: ideaToUse,
+          model: selectedModel,
+          isInitial: true,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to start conversation")
+      }
+
+      setMessages(data.messages || [])
+      setConversationStage("refining")
+    } catch (error) {
+      console.error("Chat error:", error)
+      alert(error instanceof Error ? error.message : "An error occurred")
+    } finally {
+      setLoading(false)
+    }
+  }, [initialIdea, projectId, selectedModel])
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -98,39 +133,8 @@ export function PromptChatInterface({
     if (projectId) {
       loadMessages()
     }
-  }, [projectId])
+  }, [projectId, initialIdea, isFirstLoad, startConversation])
 
-  const startConversation = async () => {
-    if (!initialIdea.trim()) return
-
-    setLoading(true)
-    try {
-      const response = await fetch("/api/prompt-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId,
-          message: initialIdea,
-          model: selectedModel,
-          isInitial: true,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to start conversation")
-      }
-
-      setMessages(data.messages || [])
-      setConversationStage("refining")
-    } catch (error) {
-      console.error("Chat error:", error)
-      alert(error instanceof Error ? error.message : "An error occurred")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleCopy = async (content: string, id: string) => {
     await navigator.clipboard.writeText(content)
@@ -245,7 +249,7 @@ export function PromptChatInterface({
                 Welcome to {projectName}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mb-8 leading-relaxed">
-                Let's refine your idea with a few targeted questions to build a comprehensive understanding.
+                Let&apos;s refine your idea with a few targeted questions to build a comprehensive understanding.
               </p>
               {initialIdea && (
                 <div className="w-full max-w-xl bg-card border border-border/50 rounded-2xl p-5 mb-8 shadow-sm">
@@ -254,7 +258,7 @@ export function PromptChatInterface({
                 </div>
               )}
               <button
-                onClick={startConversation}
+                onClick={() => startConversation()}
                 disabled={loading || !initialIdea}
                 className="group inline-flex items-center gap-2.5 px-6 py-3 bg-primary text-primary-foreground text-sm font-semibold rounded-2xl hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98]"
               >

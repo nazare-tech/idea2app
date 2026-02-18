@@ -18,16 +18,9 @@ export default async function DashboardLayout({
   }
 
   // Get user profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single()
 
-  const userInfo = {
-    email: user.email,
-    full_name: profile?.full_name || user.user_metadata?.full_name,
-  }
+
+
 
   return (
     <DashboardShell>

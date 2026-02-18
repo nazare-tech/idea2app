@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     }
 
     // Save user message
-    const { data: userMessage, error: userMsgError } = await supabase
+    const { error: userMsgError } = await supabase
       .from("prompt_chat_messages")
       .insert({
         project_id: projectId,
@@ -214,7 +214,7 @@ export async function POST(request: Request) {
     assistantContent = response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response. Please try again."
 
     // Save assistant message
-    const { data: assistantMessage, error: assistantMsgError } = await supabase
+    const { error: assistantMsgError } = await supabase
       .from("prompt_chat_messages")
       .insert({
         project_id: projectId,
