@@ -59,8 +59,7 @@ function MermaidDiagram({ code }: { code: string }) {
         setSvg(renderedSvg)
         setError(false)
       })
-      .catch((err) => {
-        console.error("Mermaid rendering error:", err)
+      .catch(() => {
         setError(true)
       })
   }, [code, isDark])
