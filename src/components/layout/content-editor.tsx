@@ -14,11 +14,19 @@ import {
   Download,
   Copy,
   GripVertical,
+  ChevronDown,
+  FileDown,
 } from "lucide-react"
 import { DocumentType } from "./document-nav"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
 import { PromptChatInterface } from "@/components/chat/prompt-chat-interface"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface ContentEditorProps {
   documentType: DocumentType
@@ -185,6 +193,20 @@ export function ContentEditor({
     }
   }
 
+  const handleDownloadMarkdown = () => {
+    if (!content) return
+    const filename = `${config.title.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.md`
+    const blob = new Blob([content], { type: "text/markdown" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   const canGenerate = credits >= config.creditCost && (prerequisiteValidation?.canGenerate ?? true)
   const disabledReason = !prerequisiteValidation?.canGenerate
     ? prerequisiteValidation?.reason
@@ -260,153 +282,166 @@ export function ContentEditor({
       <div className="flex h-full flex-col bg-background">
         {/* Header */}
         <div className="flex items-center justify-between px-10 py-5 border-b border-border">
-        <div className="flex items-center gap-4">
-          <config.icon className="h-[18px] w-[18px] text-primary" />
-          <div>
-            <h1 className="text-xl font-semibold text-foreground tracking-tight">
-              {config.title}
-            </h1>
-            <p className="text-[11px] text-muted-foreground font-mono">
-              {config.subtitle}
-            </p>
+          <div className="flex items-center gap-4">
+            <config.icon className="h-[18px] w-[18px] text-primary" />
+            <div>
+              <h1 className="text-xl font-semibold text-foreground tracking-tight">
+                {config.title}
+              </h1>
+              <p className="text-[11px] text-muted-foreground font-mono">
+                {config.subtitle}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {documentType !== "prompt" && content && (
+              <>
+                <button
+                  onClick={handleCopyContent}
+                  className="flex items-center gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium">{copied ? "Copied!" : "Copy"}</span>
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      disabled={downloadingPdf}
+                      className="flex items-center gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {downloadingPdf ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5" />
+                      )}
+                      <span className="text-xs font-medium">
+                        {downloadingPdf ? "Generating..." : "Download"}
+                      </span>
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleDownloadPDF}>
+                      <FileDown className="h-3.5 w-3.5 mr-2" />
+                      <span className="text-xs font-medium">PDF</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDownloadMarkdown}>
+                      <FileDown className="h-3.5 w-3.5 mr-2" />
+                      <span className="text-xs font-medium">Markdown</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+            {documentType !== "prompt" && (
+              <div className="relative group">
+                <button
+                  onClick={onGenerateContent}
+                  disabled={isGenerating || !canGenerate}
+                  className={cn(
+                    "flex items-center gap-2 px-5 py-2 rounded-md transition-colors",
+                    canGenerate
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                  )}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  <span className="text-xs font-semibold">
+                    {isGenerating ? "Generating..." : content ? `Regenerate (${config.creditCost} credits)` : `Generate (${config.creditCost} credits)`}
+                  </span>
+                </button>
+                {!canGenerate && disabledReason && !isGenerating && (
+                  <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
+                    <div className="bg-popover text-popover-foreground px-3 py-2 rounded-md text-xs shadow-lg border border-border whitespace-nowrap">
+                      {disabledReason}
+                      <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-popover"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {documentType !== "prompt" && content && (
-            <>
-              <button
-                onClick={handleCopyContent}
-                className="flex items-center gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors"
-              >
-                <Copy className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">{copied ? "Copied!" : "Copy"}</span>
-              </button>
-              <button
-                onClick={handleDownloadPDF}
-                disabled={downloadingPdf}
-                className="flex items-center gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {downloadingPdf ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Download className="h-3.5 w-3.5" />
-                )}
-                <span className="text-xs font-medium">
-                  {downloadingPdf ? "Generating..." : "Download PDF"}
-                </span>
-              </button>
-            </>
-          )}
-          {documentType !== "prompt" && (
-            <div className="relative group">
-              <button
-                onClick={onGenerateContent}
-                disabled={isGenerating || !canGenerate}
-                className={cn(
-                  "flex items-center gap-2 px-5 py-2 rounded-md transition-colors",
-                  canGenerate
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-muted text-muted-foreground cursor-not-allowed"
-                )}
-              >
-                {isGenerating ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
-                )}
-                <span className="text-xs font-semibold">
-                  {isGenerating ? "Generating..." : content ? `Regenerate (${config.creditCost} credits)` : `Generate (${config.creditCost} credits)`}
-                </span>
-              </button>
-              {!canGenerate && disabledReason && !isGenerating && (
-                <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
-                  <div className="bg-popover text-popover-foreground px-3 py-2 rounded-md text-xs shadow-lg border border-border whitespace-nowrap">
-                    {disabledReason}
-                    <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-popover"></div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Content Area */}
-      <div className="flex-1 overflow-hidden">
-        {documentType === "prompt" ? (
-          <PromptChatInterface
-            projectId={projectId}
-            projectName={projectName}
-            initialIdea={projectDescription}
-            onIdeaSummary={handleIdeaSummary}
-            credits={credits}
-          />
-        ) : (
-          <div className="h-full overflow-y-auto p-10 relative">
-            <div className="flex justify-center items-start relative" ref={containerRef}>
-              {/* Left Resize Handle */}
-              <div
-                className="group absolute left-0 top-0 bottom-0 w-3 cursor-col-resize z-10 flex items-center justify-center hover:bg-primary/10 transition-colors"
-                onMouseDown={(e) => handleResizeStart('left', e)}
-                style={{ left: `calc(50% - ${documentWidth / 2}px)` }}
-              >
-                <div className="h-16 w-1 bg-border group-hover:bg-primary transition-colors rounded-full" />
-                <GripVertical className="absolute h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
-              </div>
-
-              {/* Document Container */}
-              <div
-                className="space-y-8 transition-all"
-                style={{ width: `${documentWidth}px` }}
-              >
-                <div className="bg-card border border-border rounded-lg p-8">
-                  {isGenerating ? (
-                    <div className="flex flex-col items-center justify-center py-24">
-                      <span className="loader"></span>
-                      <div className="mt-6 text-center">
-                        <p className="text-sm font-medium text-foreground mb-2">
-                          Generating {config.title}...
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          This may take a moment
-                        </p>
+        {/* Content Area */}
+        <div className="flex-1 overflow-hidden">
+          {documentType === "prompt" ? (
+            <PromptChatInterface
+              projectId={projectId}
+              projectName={projectName}
+              initialIdea={projectDescription}
+              onIdeaSummary={handleIdeaSummary}
+              credits={credits}
+            />
+          ) : (
+            <div className="h-full overflow-y-auto p-10 relative">
+              <div className="flex justify-center items-start relative" ref={containerRef}>
+                {/* Document Container with Resize Handles */}
+                <div
+                  className="transition-all relative"
+                  style={{ width: `${documentWidth}px` }}
+                >
+                  <div className="bg-card border border-border rounded-lg p-8 relative">
+                    {/* Left Resize Handle */}
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
+                      onMouseDown={(e) => handleResizeStart('left', e)}
+                    >
+                      <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
+                        <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
                       </div>
                     </div>
-                  ) : content ? (
-                    <MarkdownRenderer
-                      content={content}
-                      projectId={projectId}
-                      enableInlineEditing={true}
-                      onContentUpdate={onUpdateContent}
-                    />
-                  ) : (
-                    <div className="text-center py-16">
-                      <config.icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-                      <p className="text-sm text-muted-foreground mb-2">
-                        No {config.title.toLowerCase()} generated yet
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Click &quot;Generate&quot; to create your {config.title.toLowerCase()}
-                      </p>
+
+                    {/* Right Resize Handle */}
+                    <div
+                      className="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
+                      onMouseDown={(e) => handleResizeStart('right', e)}
+                    >
+                      <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
+                        <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
+                      </div>
                     </div>
-                  )}
+                    {isGenerating ? (
+                      <div className="flex flex-col items-center justify-center py-24">
+                        <span className="loader"></span>
+                        <div className="mt-6 text-center">
+                          <p className="text-sm font-medium text-foreground mb-2">
+                            Generating {config.title}...
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            This may take a moment
+                          </p>
+                        </div>
+                      </div>
+                    ) : content ? (
+                      <MarkdownRenderer
+                        content={content}
+                        projectId={projectId}
+                        enableInlineEditing={true}
+                        onContentUpdate={onUpdateContent}
+                      />
+                    ) : (
+                      <div className="text-center py-16">
+                        <config.icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                        <p className="text-sm text-muted-foreground mb-2">
+                          No {config.title.toLowerCase()} generated yet
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Click &quot;Generate&quot; to create your {config.title.toLowerCase()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Right Resize Handle */}
-              <div
-                className="group absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-10 flex items-center justify-center hover:bg-primary/10 transition-colors"
-                onMouseDown={(e) => handleResizeStart('right', e)}
-                style={{ right: `calc(50% - ${documentWidth / 2}px)` }}
-              >
-                <div className="h-16 w-1 bg-border group-hover:bg-primary transition-colors rounded-full" />
-                <GripVertical className="absolute h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
-              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       </div>
     </>
   )
