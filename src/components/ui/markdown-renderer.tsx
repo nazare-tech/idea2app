@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm"
 import { renderMermaid } from "beautiful-mermaid"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
-import { Check, X, Maximize2, Minimize2 } from "lucide-react"
+import { Check, X, Maximize2, Minimize2, RotateCcw } from "lucide-react"
 import { SelectionToolbar } from "./selection-toolbar"
 import { InlineAiEditor } from "./inline-ai-editor"
 
@@ -35,6 +35,13 @@ function MermaidDiagram({ code }: { code: string }) {
     () => false // Server snapshot
   )
   const [isExpanded, setIsExpanded] = useState<boolean>(false)
+
+  // Zoom and pan state for expanded view
+  const [zoom, setZoom] = useState<number>(100)
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const [isPanning, setIsPanning] = useState<boolean>(false)
+  const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const diagramContainerRef = useRef<HTMLDivElement>(null)
 
   // Render diagram with theme-appropriate colors
   useEffect(() => {
@@ -78,10 +85,13 @@ function MermaidDiagram({ code }: { code: string }) {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isExpanded])
 
-  // Prevent body scroll when modal is open
+  // Prevent body scroll when modal is open and reset zoom/pan
   useEffect(() => {
     if (isExpanded) {
       document.body.style.overflow = 'hidden'
+      // Reset zoom and pan when opening
+      setZoom(100)
+      setPan({ x: 0, y: 0 })
     } else {
       document.body.style.overflow = ''
     }
@@ -90,6 +100,56 @@ function MermaidDiagram({ code }: { code: string }) {
       document.body.style.overflow = ''
     }
   }, [isExpanded])
+
+  // Zoom handlers
+  const handleZoomIn = useCallback(() => {
+    setZoom((prev) => Math.min(prev + 10, 200))
+  }, [])
+
+  const handleZoomOut = useCallback(() => {
+    setZoom((prev) => Math.max(prev - 10, 50))
+  }, [])
+
+  // Pan handlers for middle mouse button
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button === 1) { // Middle mouse button
+      e.preventDefault()
+      setIsPanning(true)
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+    }
+  }, [pan])
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      setPan({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y,
+      })
+    }
+  }, [isPanning, panStart])
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false)
+  }, [])
+
+  // Pan handlers for trackpad - free 2D panning without modifiers
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    // Check if this is a horizontal scroll (deltaX) or vertical scroll (deltaY)
+    // Allow both to enable free 2D panning
+    if (Math.abs(e.deltaX) > 0 || Math.abs(e.deltaY) > 0) {
+      e.preventDefault()
+      setPan((prev) => ({
+        x: prev.x - e.deltaX,
+        y: prev.y - e.deltaY,
+      }))
+    }
+  }, [])
+
+  // Reset zoom and pan to defaults
+  const handleReset = useCallback(() => {
+    setZoom(100)
+    setPan({ x: 0, y: 0 })
+  }, [])
 
   if (error) {
     return (
@@ -130,7 +190,7 @@ function MermaidDiagram({ code }: { code: string }) {
           onClick={() => setIsExpanded(false)}
         >
           <div
-            className="relative w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] bg-white dark:bg-[#1a1a1a] rounded-lg shadow-2xl overflow-auto p-8"
+            className="relative w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] bg-white dark:bg-[#1a1a1a] rounded-lg shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
@@ -143,16 +203,73 @@ function MermaidDiagram({ code }: { code: string }) {
               <Minimize2 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
 
-            {/* Expanded diagram */}
-            <div className="flex items-center justify-center w-full h-full">
+            {/* Expanded diagram with pan and zoom */}
+            <div
+              ref={diagramContainerRef}
+              className="flex items-center justify-center w-full h-full overflow-hidden"
+              style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onWheel={handleWheel}
+            >
               <div
-                className="mermaid-diagram max-w-full max-h-full"
+                className="mermaid-diagram"
                 dangerouslySetInnerHTML={{ __html: svg }}
                 style={{
                   fontSize: '20px',
                   fontFamily: 'ui-monospace, "IBM Plex Mono", monospace',
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
+                  transformOrigin: 'center center',
+                  transition: isPanning ? 'none' : 'transform 0.1s ease-out',
                 }}
               />
+            </div>
+
+            {/* Zoom controls - bottom center */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg px-3 py-2 z-10">
+              <button
+                onClick={handleZoomOut}
+                disabled={zoom <= 50}
+                className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Zoom out"
+                aria-label="Zoom out"
+              >
+                <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">−</span>
+              </button>
+
+              <span className="min-w-[3.5rem] text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                {zoom}%
+              </span>
+
+              <button
+                onClick={handleZoomIn}
+                disabled={zoom >= 200}
+                className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Zoom in"
+                aria-label="Zoom in"
+              >
+                <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">+</span>
+              </button>
+
+              {/* Divider */}
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+              {/* Reset button */}
+              <button
+                onClick={handleReset}
+                className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Reset view"
+                aria-label="Reset zoom and pan"
+              >
+                <RotateCcw className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+              </button>
+            </div>
+
+            {/* Pan instruction hint */}
+            <div className="absolute top-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/90 dark:bg-gray-800/90 px-2 py-1 rounded">
+              Middle-click or trackpad scroll to pan • Reset button to center
             </div>
           </div>
         </div>
