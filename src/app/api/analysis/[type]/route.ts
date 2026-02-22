@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { callN8NWebhook } from "@/lib/n8n"
 import { callOpenRouterFallback } from "@/lib/openrouter"
 import { CREDIT_COSTS, type AnalysisType } from "@/lib/utils"
+import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 
 export const maxDuration = 300 // 5 min — N8N webhook can be slow; OpenRouter fallback adds another 60-90s
 
@@ -11,8 +12,20 @@ interface AnalysisParams {
 }
 
 export async function POST(request: Request, { params }: AnalysisParams) {
+  const timer = new MetricsTimer()
+  let statusCode = 200
+  let errorType: string | undefined
+  let errorMessage: string | undefined
+  let creditsConsumed = 0
+  let modelUsed: string | undefined
+  let aiSource: "openrouter" | "anthropic" | "n8n" | undefined
+  let userId: string | undefined
+  let projectId: string | undefined
+  let analysisType: string | undefined
+
   try {
     const { type } = await params
+    analysisType = type
     const supabase = await createClient()
 
     const {
@@ -20,12 +33,21 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      statusCode = 401
+      errorType = "unauthorized"
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { projectId, idea, name, competitiveAnalysis, prd } = await request.json()
+    userId = user.id
+
+    const body = await request.json()
+    projectId = body.projectId
+    const { idea, name, competitiveAnalysis, prd } = body
 
     if (!projectId || !idea || !name) {
+      statusCode = 400
+      errorType = "validation_error"
+      errorMessage = "projectId, idea, and name are required"
       return NextResponse.json(
         { error: "projectId, idea, and name are required" },
         { status: 400 }
@@ -35,6 +57,9 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     // Validate analysis type
     const validTypes = ["competitive-analysis", "prd", "mvp-plan", "tech-spec"]
     if (!validTypes.includes(type)) {
+      statusCode = 400
+      errorType = "validation_error"
+      errorMessage = `Invalid analysis type: ${type}`
       return NextResponse.json(
         { error: `Invalid analysis type: ${type}` },
         { status: 400 }
@@ -50,6 +75,9 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       .single()
 
     if (!project) {
+      statusCode = 404
+      errorType = "not_found"
+      errorMessage = "Project not found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
@@ -63,11 +91,16 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     })
 
     if (!consumed) {
+      statusCode = 402
+      errorType = "insufficient_credits"
+      errorMessage = "Insufficient credits"
       return NextResponse.json(
         { error: "Insufficient credits. Please upgrade your plan." },
         { status: 402 }
       )
     }
+
+    creditsConsumed = creditCost
 
     // Try N8N webhook first, then fallback to OpenRouter
     let result: { content: string; source: string; model: string }
@@ -86,6 +119,10 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       console.log(`N8N webhook failed for ${type}, using OpenRouter fallback`)
       result = await callOpenRouterFallback(type, idea, name)
     }
+
+    // Track AI model and source
+    modelUsed = result.model
+    aiSource = result.source as "openrouter" | "n8n"
 
     const metadata = {
       source: result.source,
@@ -134,9 +171,30 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     })
   } catch (error) {
     console.error("Analysis error:", error)
+    statusCode = 500
+    errorType = getErrorType(500, error)
+    errorMessage = getErrorMessage(error)
     return NextResponse.json(
       { error: "Failed to generate analysis. Please try again." },
       { status: 500 }
     )
+  } finally {
+    // Track metrics (fire and forget - won't block response)
+    if (userId && analysisType) {
+      trackAPIMetrics({
+        endpoint: `/api/analysis/${analysisType}`,
+        method: "POST",
+        featureType: "analysis",
+        userId,
+        projectId: projectId || null,
+        statusCode,
+        responseTimeMs: timer.getElapsedMs(),
+        creditsConsumed,
+        modelUsed,
+        aiSource,
+        errorType,
+        errorMessage,
+      })
+    }
   }
 }
