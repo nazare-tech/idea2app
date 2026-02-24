@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   PenLine,
@@ -22,6 +23,9 @@ interface DocumentNavProps {
   activeDocument: DocumentType
   onDocumentSelect: (type: DocumentType) => void
   documentStatuses: DocumentStatus[]
+  isNewProject?: boolean
+  shouldFocusName?: boolean
+  onProjectNameUpdate?: (name: string) => Promise<void> | void
 }
 
 const documents: {
@@ -30,7 +34,7 @@ const documents: {
   description: string
   icon: React.ElementType
 }[] = [
-  { type: "prompt", label: "Prompt", description: "Your input", icon: PenLine },
+  { type: "prompt", label: "Prompt", description: "", icon: PenLine },
   { type: "competitive", label: "Competitive Research", description: "", icon: Search },
   { type: "prd", label: "PRD", description: "", icon: FileText },
   { type: "mvp", label: "MVP Plan", description: "", icon: Target },
@@ -59,19 +63,94 @@ export function DocumentNav({
   activeDocument,
   onDocumentSelect,
   documentStatuses,
+  isNewProject = false,
+  shouldFocusName = false,
+  onProjectNameUpdate,
 }: DocumentNavProps) {
+  const [isEditingProjectName, setIsEditingProjectName] = useState(shouldFocusName)
+  const [projectNameDraft, setProjectNameDraft] = useState(projectName)
+  const projectNameInputRef = useRef<HTMLInputElement>(null)
+
   const getStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
     const docStatus = documentStatuses.find(d => d.type === type)
     return docStatus?.status || "pending"
+  }
+
+  const canSelectDocument = (type: DocumentType) => {
+    return !(isNewProject && type !== "prompt")
+  }
+
+  useEffect(() => {
+    setProjectNameDraft(projectName)
+  }, [projectName])
+
+  useEffect(() => {
+    if (shouldFocusName) {
+      setIsEditingProjectName(true)
+    }
+  }, [shouldFocusName])
+
+  useEffect(() => {
+    if (isEditingProjectName) {
+      projectNameInputRef.current?.focus()
+      projectNameInputRef.current?.setSelectionRange(projectNameDraft.length, projectNameDraft.length)
+    }
+  }, [isEditingProjectName, projectNameDraft.length])
+
+  const saveProjectName = async () => {
+    const trimmedName = projectNameDraft.trim() || "Untitled"
+    setProjectNameDraft(trimmedName)
+    setIsEditingProjectName(false)
+
+    try {
+      if (onProjectNameUpdate) {
+        await onProjectNameUpdate(trimmedName)
+      }
+    } catch (error) {
+      console.error("Failed to update project name:", error)
+      setProjectNameDraft(projectName)
+      setIsEditingProjectName(true)
+    }
+  }
+
+  const cancelProjectNameEdit = () => {
+    setProjectNameDraft(projectName)
+    setIsEditingProjectName(false)
   }
 
   return (
     <div className="flex h-full w-[280px] flex-col bg-card border-r border-border">
       {/* Project label */}
       <div className="px-6 pt-6 pb-3">
-        <p className="text-sm font-semibold text-foreground leading-tight truncate">
-          {projectName}
-        </p>
+        {isEditingProjectName ? (
+          <input
+            ref={projectNameInputRef}
+            value={projectNameDraft}
+            onChange={(e) => setProjectNameDraft(e.target.value)}
+            onBlur={saveProjectName}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault()
+                saveProjectName()
+              }
+
+              if (event.key === "Escape") {
+                event.preventDefault()
+                cancelProjectNameEdit()
+              }
+            }}
+            className="w-full rounded-md border border-border bg-transparent px-2 py-1.5 text-sm font-semibold leading-tight text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsEditingProjectName(true)}
+            className="text-sm font-semibold text-foreground leading-tight truncate text-left hover:text-primary transition-colors"
+            aria-label="Rename project"
+          >
+            {projectName}
+          </button>
+        )}
       </div>
 
       {/* Section Label */}
@@ -92,8 +171,12 @@ export function DocumentNav({
             <button
               key={doc.type}
               onClick={() => onDocumentSelect(doc.type)}
+              disabled={!canSelectDocument(doc.type)}
               className={cn(
                 "w-full flex items-center gap-3 px-6 py-3.5 text-left transition-colors",
+                !canSelectDocument(doc.type)
+                  ? "cursor-not-allowed opacity-50"
+                  : "",
                 isActive
                   ? "bg-background border-l-[3px] border-l-primary"
                   : "border-b border-border hover:bg-muted/50",

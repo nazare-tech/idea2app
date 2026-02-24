@@ -49,7 +49,7 @@ export function Header({ user, children, rightContent }: HeaderProps) {
 
       <div className="flex items-center gap-4">
         {rightContent}
-        <Link href="/projects/new">
+        <Link href="/projects/new" prefetch={false}>
           <Button size="sm" className="gap-2">
             <Plus className="h-4 w-4" />
             New Project

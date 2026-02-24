@@ -19,7 +19,9 @@ export function DashboardShell({
   credits = 0,
 }: DashboardShellProps) {
   const pathname = usePathname()
-  const shouldShowHeader = pathname ? !pathname.startsWith("/projects/") : true
+  const shouldShowHeader = pathname
+    ? pathname === "/projects/new" || !pathname.startsWith("/projects/")
+    : true
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

@@ -50,6 +50,33 @@ export function PromptChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const composerRef = useRef<HTMLDivElement>(null)
+  const requestInFlight = useRef(false)
+
+  const dedupeMessages = useCallback((messageList: Message[]) => {
+    if (!messageList.length) return []
+
+    const deduped: Message[] = []
+    const lastSeen = new Map<string, number>()
+
+    for (const message of messageList) {
+      const key = `${message.role}:${message.content.trim()}`
+      const currentTime = message.created_at
+        ? new Date(message.created_at).getTime()
+        : Date.now()
+      const lastTime = lastSeen.get(key)
+      const isDuplicate = typeof lastTime === "number" && Math.abs(currentTime - lastTime) <= 5000
+
+      if (!isDuplicate) {
+        deduped.push(message)
+      }
+
+      if (Number.isFinite(currentTime)) {
+        lastSeen.set(key, currentTime)
+      }
+    }
+
+    return deduped
+  }, [])
 
   // Prevent hydration mismatch with Radix UI dropdowns
   // Prevent hydration mismatch with Radix UI dropdowns
@@ -58,9 +85,12 @@ export function PromptChatInterface({
   }, [])
 
   const startConversation = useCallback(async (overrideIdea?: string) => {
+    if (requestInFlight.current) return
+
     const ideaToUse = overrideIdea || initialIdea
     if (!ideaToUse.trim()) return
 
+    requestInFlight.current = true
     setLoading(true)
     try {
       const response = await fetch("/api/prompt-chat", {
@@ -80,15 +110,16 @@ export function PromptChatInterface({
         throw new Error(data.error || "Failed to start conversation")
       }
 
-      setMessages(data.messages || [])
+      setMessages(dedupeMessages(data.messages || []))
       setConversationStage("refining")
     } catch (error) {
       console.error("Chat error:", error)
       alert(error instanceof Error ? error.message : "An error occurred")
     } finally {
+      requestInFlight.current = false
       setLoading(false)
     }
-  }, [initialIdea, projectId, selectedModel])
+  }, [initialIdea, projectId, selectedModel, dedupeMessages])
 
 
   const scrollToBottom = () => {
@@ -114,7 +145,7 @@ export function PromptChatInterface({
         const response = await fetch(`/api/prompt-chat?projectId=${projectId}`)
         if (response.ok) {
           const data = await response.json()
-          setMessages(data.messages || [])
+          setMessages(dedupeMessages(data.messages || []))
           setConversationStage(data.stage || "initial")
 
           // If no messages and initial idea exists, start the conversation
@@ -141,7 +172,9 @@ export function PromptChatInterface({
   }
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return
+    if (!input.trim() || loading || requestInFlight.current) return
+
+    requestInFlight.current = true
 
     const userMessage = input.trim()
     setInput("")
@@ -154,7 +187,7 @@ export function PromptChatInterface({
       content: userMessage,
       created_at: new Date().toISOString(),
     }
-    setMessages((prev) => [...prev, tempUserMsg])
+    setMessages((prev) => dedupeMessages([...prev, tempUserMsg]))
 
     try {
       const response = await fetch("/api/prompt-chat", {
@@ -175,7 +208,7 @@ export function PromptChatInterface({
       }
 
       // Replace temp message with real messages
-      setMessages(data.messages || [])
+      setMessages(dedupeMessages(data.messages || []))
       setConversationStage(data.stage || conversationStage)
 
       // If we got a summary, notify parent
@@ -188,6 +221,7 @@ export function PromptChatInterface({
       setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id))
       alert(error instanceof Error ? error.message : "An error occurred")
     } finally {
+      requestInFlight.current = false
       setLoading(false)
     }
   }
@@ -323,18 +357,17 @@ export function PromptChatInterface({
       </div>
 
       {/* Modern Composer Bar */}
-      {messages.length > 0 && (
-        <div className="px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
-          <div className="max-w-3xl mx-auto px-4">
-            <div
-              ref={composerRef}
-              className={cn(
-                "relative rounded-2xl border bg-card shadow-lg transition-all duration-300",
-                isFocused
-                  ? "border-primary/40 shadow-xl shadow-primary/5 ring-4 ring-primary/5"
-                  : "border-border/50 shadow-md hover:shadow-lg hover:border-border"
-              )}
-            >
+      <div className="px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
+        <div className="max-w-3xl mx-auto px-4">
+          <div
+            ref={composerRef}
+            className={cn(
+              "relative rounded-2xl border bg-card shadow-lg transition-all duration-300",
+              isFocused
+                ? "border-primary/40 shadow-xl shadow-primary/5 ring-4 ring-primary/5"
+                : "border-border/50 shadow-md hover:shadow-lg hover:border-border"
+            )}
+          >
               {/* Top Row: Model Selector */}
               <div className="flex items-center justify-between px-4 pt-3 pb-1">
                 {mounted ? (
@@ -442,7 +475,6 @@ export function PromptChatInterface({
             </p>
           </div>
         </div>
-      )}
-    </div>
+      </div>
   )
 }

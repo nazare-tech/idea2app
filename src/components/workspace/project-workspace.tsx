@@ -58,6 +58,7 @@ interface ProjectWorkspaceProps {
   deployments: Deployment[]
   credits: number
   user: unknown
+  isNewProject?: boolean
 }
 
 export function ProjectWorkspace({
@@ -69,8 +70,26 @@ export function ProjectWorkspace({
   deployments,
   credits,
   user,
+  isNewProject = false,
 }: ProjectWorkspaceProps) {
   const router = useRouter()
+  const [projectName, setProjectName] = useState(project.name)
+  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
+  
+  useEffect(() => {
+    setProjectName(project.name)
+  }, [project.name])
+
+  useEffect(() => {
+    setIsPromptOnlyMode(isNewProject)
+  }, [isNewProject])
+
+  useEffect(() => {
+    if (project.description) {
+      setIsPromptOnlyMode(false)
+    }
+  }, [project.description])
+
   const [activeDocument, setActiveDocument] = useState<DocumentType>("prompt")
   const [generatingDocuments, setGeneratingDocuments] = useState<Record<DocumentType, boolean>>({
     prompt: false,
@@ -315,6 +334,40 @@ export function ProjectWorkspace({
     }))
   }
 
+  const handleProjectNameUpdate = async (nextName: string) => {
+    const trimmedName = nextName.trim() || "Untitled"
+
+    if (trimmedName === projectName) {
+      setProjectName(trimmedName)
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmedName }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update project name")
+      }
+
+      setProjectName(trimmedName)
+    } catch (error) {
+      console.error("Error updating project name:", error)
+      throw error
+    }
+  }
+
+  const handleDocumentSelect = (type: DocumentType) => {
+    if (isPromptOnlyMode && type !== "prompt") {
+      return
+    }
+
+    setActiveDocument(type)
+  }
+
   // Reset to latest version (index 0) when switching documents
   useEffect(() => {
     setSelectedVersionIndex(prev => ({
@@ -406,10 +459,10 @@ export function ProjectWorkspace({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
-          body: JSON.stringify({
+      body: JSON.stringify({
             projectId: project.id,
             idea: project.description,
-            name: project.name,
+            name: projectName,
             ...(activeDocument === "deploy" && { appType: "dynamic" }),
             ...(activeDocument === "prd" && competitiveAnalysis?.content && {
               competitiveAnalysis: competitiveAnalysis.content
@@ -571,11 +624,14 @@ export function ProjectWorkspace({
 
       <div className="flex flex-1 overflow-hidden">
         {/* Document Navigation */}
-        <DocumentNav
-          projectName={project.name}
+      <DocumentNav
+          projectName={projectName}
           activeDocument={activeDocument}
-          onDocumentSelect={setActiveDocument}
+          onDocumentSelect={handleDocumentSelect}
           documentStatuses={documentStatuses}
+          isNewProject={isPromptOnlyMode}
+          shouldFocusName={isNewProject}
+          onProjectNameUpdate={handleProjectNameUpdate}
         />
 
         {/* Vertical Divider */}
@@ -586,7 +642,7 @@ export function ProjectWorkspace({
           <ContentEditor
             documentType={activeDocument}
             projectId={project.id}
-            projectName={project.name}
+            projectName={projectName}
             projectDescription={project.description || ""}
             content={getDocumentContent(activeDocument)}
             onGenerateContent={handleGenerateContent}

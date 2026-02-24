@@ -42,7 +42,7 @@ export default async function ProjectsPage() {
                 Start by creating your first project. Describe your business idea and
                 let AI help you build it into reality.
               </p>
-              <Link href="/projects/new">
+              <Link href="/projects/new" prefetch={false}>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Project
