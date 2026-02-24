@@ -22,9 +22,10 @@ interface HeaderProps {
     avatar_url?: string
   }
   children?: React.ReactNode
+  rightContent?: React.ReactNode
 }
 
-export function Header({ user, children }: HeaderProps) {
+export function Header({ user, children, rightContent }: HeaderProps) {
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -47,6 +48,7 @@ export function Header({ user, children }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
+        {rightContent}
         <Link href="/projects/new">
           <Button size="sm" className="gap-2">
             <Plus className="h-4 w-4" />
@@ -65,7 +67,11 @@ export function Header({ user, children }: HeaderProps) {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56 bg-[#0c0c14] border-[rgba(255,255,255,0.08)]" align="end" forceMount>
+          <DropdownMenuContent
+            className="w-56 bg-[#0c0c14] border-[rgba(255,255,255,0.08)] text-white"
+            align="end"
+            forceMount
+          >
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-semibold leading-none">{user?.full_name || "User"}</p>

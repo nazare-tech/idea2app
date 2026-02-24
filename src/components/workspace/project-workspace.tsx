@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
@@ -555,16 +554,18 @@ export function ProjectWorkspace({
 
   return (
     <div className="flex flex-col h-screen">
-      <Header user={user as any}> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
+      <Header
+        user={user as any}
+        rightContent={
+          activeDocument === "prompt" ? (
+            <span className="hidden md:inline-flex items-center gap-2 text-sm">
+              Credits: {credits >= 999999 ? "∞" : credits.toLocaleString()}
+            </span>
+          ) : undefined
+        }
+      >
         <div className="flex items-center gap-2 text-sm">
-          <Link
-            href="/projects"
-            className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-          >
-            <span className="opacity-50">←</span> Projects
-          </Link>
-          <span className="text-muted-foreground/40 mx-1">/</span>
-          <span className="font-semibold tracking-tight">{project.name}</span>
+          <span className="font-semibold tracking-tight">Idea2App</span>
         </div>
       </Header>
 

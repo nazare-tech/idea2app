@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Bot, User, Copy, Check, ChevronDown, Sparkles, Zap, ArrowUp } from "lucide-react"
+import { Bot, User, Copy, Check, ChevronDown, Sparkles, ArrowUp } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/lib/prompt-chat-config"
@@ -30,7 +30,6 @@ interface PromptChatInterfaceProps {
   projectName: string
   initialIdea: string
   onIdeaSummary?: (summary: string) => void
-  credits: number
 }
 
 export function PromptChatInterface({
@@ -38,7 +37,6 @@ export function PromptChatInterface({
   projectName,
   initialIdea,
   onIdeaSummary,
-  credits,
 }: PromptChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
@@ -216,27 +214,6 @@ export function PromptChatInterface({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Minimal Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm shadow-primary/20">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-foreground tracking-tight">Idea Refinement</h2>
-            <p className="text-xs text-muted-foreground/70">Powered by AI</p>
-          </div>
-        </div>
-
-        {/* Credits Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/80 border border-border/50">
-          <Zap className="h-3 w-3 text-primary" />
-          <span className="text-xs font-medium text-foreground/80">
-            {credits >= 999999 ? "∞" : credits.toLocaleString()}
-          </span>
-        </div>
-      </div>
-
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-4 py-6">

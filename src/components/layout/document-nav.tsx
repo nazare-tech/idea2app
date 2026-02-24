@@ -67,6 +67,13 @@ export function DocumentNav({
 
   return (
     <div className="flex h-full w-[280px] flex-col bg-card border-r border-border">
+      {/* Project label */}
+      <div className="px-6 pt-6 pb-3">
+        <p className="text-sm font-semibold text-foreground leading-tight truncate">
+          {projectName}
+        </p>
+      </div>
+
       {/* Section Label */}
       <div className="px-6 pt-6 pb-3">
         <p className="text-[10px] font-medium tracking-[1px] font-mono text-muted-foreground">

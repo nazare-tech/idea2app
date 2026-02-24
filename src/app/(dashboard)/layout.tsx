@@ -17,13 +17,27 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  // Get user profile
+  const { data: creditsData } = await supabase
+    .from("credits")
+    .select("balance")
+    .eq("user_id", user.id)
+    .single()
 
-
-
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("full_name, avatar_url")
+    .eq("id", user.id)
+    .single()
 
   return (
-    <DashboardShell>
+    <DashboardShell
+      user={{
+        email: user.email,
+        full_name: profileData?.full_name,
+        avatar_url: profileData?.avatar_url,
+      }}
+      credits={creditsData?.balance || 0}
+    >
       {children}
     </DashboardShell>
   )
