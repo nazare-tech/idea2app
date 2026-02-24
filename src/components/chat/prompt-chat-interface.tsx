@@ -260,7 +260,7 @@ export function PromptChatInterface({
                 Welcome to {projectName}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mb-8 leading-relaxed">
-                Let&apos;s refine your idea with a few targeted questions to build a comprehensive understanding.
+                Start by sharing your idea. I&apos;ll ask focused questions to refine it, then help you move from concept to research and PRD-ready planning.
               </p>
               {initialIdea && (
                 <div className="w-full max-w-xl bg-card border border-border/50 rounded-2xl p-5 mb-8 shadow-sm">
@@ -268,14 +268,6 @@ export function PromptChatInterface({
                   <p className="text-sm text-foreground leading-relaxed">{initialIdea}</p>
                 </div>
               )}
-              <button
-                onClick={() => startConversation()}
-                disabled={loading || !initialIdea}
-                className="group inline-flex items-center gap-2.5 px-6 py-3 bg-primary text-primary-foreground text-sm font-semibold rounded-2xl hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Sparkles className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
-                Start Refining
-              </button>
             </div>
           )}
 
@@ -443,7 +435,7 @@ export function PromptChatInterface({
                   onKeyDown={handleKeyDown}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  placeholder="Describe your idea or answer the questions..."
+                  placeholder="Start with your idea (problem, target user, or rough concept). I&apos;ll ask questions to refine it and guide you toward research + PRD."
                   className="w-full bg-transparent text-sm resize-none focus-visible:outline-none placeholder:text-muted-foreground/40 min-h-[48px] max-h-[160px] py-2 pr-14"
                   rows={1}
                   disabled={loading}
@@ -471,7 +463,7 @@ export function PromptChatInterface({
 
             {/* Bottom hint */}
             <p className="text-[11px] text-muted-foreground/40 mt-2.5 text-center">
-              Shift + Enter for new line
+              Shift + Enter for new line. Answer follow-up questions to unlock better research and PRD output.
             </p>
           </div>
         </div>

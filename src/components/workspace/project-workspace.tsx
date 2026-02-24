@@ -76,6 +76,7 @@ export function ProjectWorkspace({
   const router = useRouter()
   const [projectName, setProjectName] = useState(project.name)
   const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
+  const activeDocumentStorageKey = `project_${project.id}_active_tab`
   
   useEffect(() => {
     setProjectName(project.name)
@@ -91,7 +92,38 @@ export function ProjectWorkspace({
     }
   }, [project.description])
 
-  const [activeDocument, setActiveDocument] = useState<DocumentType>("prompt")
+  const getPersistedActiveDocument = useCallback((): DocumentType | null => {
+    if (typeof window === "undefined") return null
+
+    try {
+      const stored = localStorage.getItem(activeDocumentStorageKey)
+      if (
+        stored === "prompt" ||
+        stored === "competitive" ||
+        stored === "prd" ||
+        stored === "mvp" ||
+        stored === "techspec" ||
+        stored === "deploy"
+      ) {
+        return stored
+      }
+    } catch {
+      return null
+    }
+
+    return null
+  }, [activeDocumentStorageKey])
+
+  const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
+    if (isNewProject || isPromptOnlyMode) return "prompt"
+
+    const persistedDocument = getPersistedActiveDocument()
+    if (persistedDocument && !(isPromptOnlyMode && persistedDocument !== "prompt")) {
+      return persistedDocument
+    }
+
+    return "prompt"
+  })
   const [generatingDocuments, setGeneratingDocuments] = useState<Record<DocumentType, boolean>>({
     prompt: false,
     competitive: false,
@@ -163,6 +195,37 @@ export function ProjectWorkspace({
       return false
     }
   }, [project.id, getStorageKey])
+
+  const canSelectDocument = useCallback((documentType: DocumentType) => {
+    return !(isPromptOnlyMode && documentType !== "prompt")
+  }, [isPromptOnlyMode])
+
+  useEffect(() => {
+    if (isNewProject) {
+      setActiveDocument("prompt")
+      return
+    }
+
+    const persistedDocument = getPersistedActiveDocument()
+
+    if (!persistedDocument || !canSelectDocument(persistedDocument)) {
+      setActiveDocument("prompt")
+      return
+    }
+
+    setActiveDocument(persistedDocument)
+  }, [isNewProject, getPersistedActiveDocument, canSelectDocument])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (isPromptOnlyMode) return
+
+    try {
+      localStorage.setItem(activeDocumentStorageKey, activeDocument)
+    } catch {
+      // Ignore localStorage write errors
+    }
+  }, [activeDocument, activeDocumentStorageKey, isPromptOnlyMode])
 
   const checkIfContentIncreased = useCallback((docType: DocumentType): boolean => {
     const key = getStorageKey(docType)
@@ -337,11 +400,13 @@ export function ProjectWorkspace({
 
   const handleProjectNameUpdate = async (nextName: string) => {
     const trimmedName = nextName.trim() || "Untitled"
+    const previousProjectName = projectName
 
     if (trimmedName === projectName) {
-      setProjectName(trimmedName)
       return
     }
+
+    setProjectName(trimmedName)
 
     try {
       const response = await fetch(`/api/projects/${project.id}`, {
@@ -353,9 +418,8 @@ export function ProjectWorkspace({
       if (!response.ok) {
         throw new Error("Failed to update project name")
       }
-
-      setProjectName(trimmedName)
     } catch (error) {
+      setProjectName(previousProjectName)
       console.error("Error updating project name:", error)
       throw error
     }

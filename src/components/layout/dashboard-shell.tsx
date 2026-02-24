@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import Link from "next/link"
 import { Header } from "@/components/layout/header"
 
 interface DashboardShellProps {
@@ -35,7 +36,9 @@ export function DashboardShell({
               </span>
             }
           >
-            <span className="text-lg font-bold tracking-tight">Idea2App</span>
+            <Link href="/projects" className="inline-flex items-center gap-2">
+              <span className="text-lg font-bold tracking-tight">Idea2App</span>
+            </Link>
           </Header>
         )}
         <main className="flex-1 overflow-y-auto">
