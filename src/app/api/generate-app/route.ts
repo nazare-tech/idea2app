@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { CREDIT_COSTS } from "@/lib/utils"
 import Anthropic from "@anthropic-ai/sdk"
+import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 
 const APP_TYPE_CREDITS: Record<string, number> = {
   static: CREDIT_COSTS["app-static"],
@@ -18,6 +19,16 @@ const APP_TYPE_PROMPTS: Record<string, string> = {
 }
 
 export async function POST(request: Request) {
+  const timer = new MetricsTimer()
+  let statusCode = 200
+  let errorType: string | undefined
+  let errorMessage: string | undefined
+  let creditsConsumed = 0
+  let modelUsed: string | undefined
+  let aiSource: "openrouter" | "anthropic" | "n8n" | undefined
+  let userId: string | undefined
+  let projectId: string | undefined
+
   try {
     const supabase = await createClient()
 
@@ -26,12 +37,21 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      statusCode = 401
+      errorType = "unauthorized"
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { projectId, appType, idea, name } = await request.json()
+    userId = user.id
+
+    const body = await request.json()
+    projectId = body.projectId
+    const { appType, idea, name } = body
 
     if (!projectId || !appType || !idea || !name) {
+      statusCode = 400
+      errorType = "validation_error"
+      errorMessage = "projectId, appType, idea, and name are required"
       return NextResponse.json(
         { error: "projectId, appType, idea, and name are required" },
         { status: 400 }
@@ -40,6 +60,9 @@ export async function POST(request: Request) {
 
     // Validate app type
     if (!APP_TYPE_CREDITS[appType]) {
+      statusCode = 400
+      errorType = "validation_error"
+      errorMessage = `Invalid app type: ${appType}`
       return NextResponse.json(
         { error: `Invalid app type: ${appType}` },
         { status: 400 }
@@ -55,6 +78,9 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      statusCode = 404
+      errorType = "not_found"
+      errorMessage = "Project not found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
@@ -68,11 +94,16 @@ export async function POST(request: Request) {
     })
 
     if (!consumed) {
+      statusCode = 402
+      errorType = "insufficient_credits"
+      errorMessage = "Insufficient credits"
       return NextResponse.json(
         { error: "Insufficient credits. Please upgrade your plan." },
         { status: 402 }
       )
     }
+
+    creditsConsumed = creditCost
 
     // Get context from previous analyses
     const { data: analyses } = await supabase
@@ -119,10 +150,17 @@ export async function POST(request: Request) {
       .single()
 
     if (deployError) {
+      statusCode = 500
+      errorType = "server_error"
+      errorMessage = deployError.message
       return NextResponse.json({ error: deployError.message }, { status: 500 })
     }
 
     // Generate code using Anthropic Claude API
+    // Track model and source
+    modelUsed = "claude-sonnet-4-20250514"
+    aiSource = "anthropic"
+
     try {
       if (!process.env.ANTHROPIC_API_KEY) {
         throw new Error("Anthropic API key not configured")
@@ -189,6 +227,9 @@ Include all necessary files (package.json, configuration files, components, page
         })
         .eq("id", deployment.id)
 
+      statusCode = 500
+      errorType = "ai_model_error"
+      errorMessage = genError instanceof Error ? genError.message : "Generation failed"
       return NextResponse.json(
         { error: "Failed to generate app. Credits have been deducted." },
         { status: 500 }
@@ -196,9 +237,30 @@ Include all necessary files (package.json, configuration files, components, page
     }
   } catch (error) {
     console.error("App generation error:", error)
+    statusCode = 500
+    errorType = getErrorType(500, error)
+    errorMessage = getErrorMessage(error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
+  } finally {
+    // Track metrics (fire and forget - won't block response)
+    if (userId) {
+      trackAPIMetrics({
+        endpoint: "/api/generate-app",
+        method: "POST",
+        featureType: "app-generation",
+        userId,
+        projectId: projectId || null,
+        statusCode,
+        responseTimeMs: timer.getElapsedMs(),
+        creditsConsumed,
+        modelUsed,
+        aiSource,
+        errorType,
+        errorMessage,
+      })
+    }
   }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
@@ -58,7 +58,7 @@ interface ProjectWorkspaceProps {
   techSpecs: TechSpec[]
   deployments: Deployment[]
   credits: number
-  user: any
+  user: unknown
 }
 
 export function ProjectWorkspace({
@@ -94,9 +94,9 @@ export function ProjectWorkspace({
   const [localContentOverrides, setLocalContentOverrides] = useState<Record<string, string>>({})
 
   // Helper functions for localStorage persistence
-  const getStorageKey = (docType: DocumentType) => `generating_${project.id}_${docType}`
+  const getStorageKey = useCallback((docType: DocumentType) => `generating_${project.id}_${docType}`, [project.id])
 
-  const getInitialCount = (docType: DocumentType): number => {
+  const getInitialCount = useCallback((docType: DocumentType): number => {
     switch (docType) {
       case "competitive":
         return analyses.filter(a => a.type === "competitive-analysis").length
@@ -111,9 +111,9 @@ export function ProjectWorkspace({
       default:
         return 0
     }
-  }
+  }, [analyses, prds, mvpPlans, techSpecs, deployments])
 
-  const saveGeneratingState = (docType: DocumentType, isGenerating: boolean) => {
+  const saveGeneratingState = useCallback((docType: DocumentType, isGenerating: boolean) => {
     const key = getStorageKey(docType)
     if (isGenerating) {
       localStorage.setItem(key, JSON.stringify({
@@ -124,9 +124,9 @@ export function ProjectWorkspace({
     } else {
       localStorage.removeItem(key)
     }
-  }
+  }, [project.id, analyses, prds, mvpPlans, techSpecs, deployments])
 
-  const loadGeneratingState = (docType: DocumentType): boolean => {
+  const loadGeneratingState = useCallback((docType: DocumentType): boolean => {
     const key = getStorageKey(docType)
     const stored = localStorage.getItem(key)
     if (!stored) return false
@@ -143,9 +143,9 @@ export function ProjectWorkspace({
       localStorage.removeItem(key)
       return false
     }
-  }
+  }, [project.id, getStorageKey])
 
-  const checkIfContentIncreased = (docType: DocumentType): boolean => {
+  const checkIfContentIncreased = useCallback((docType: DocumentType): boolean => {
     const key = getStorageKey(docType)
     const stored = localStorage.getItem(key)
     if (!stored) return false
@@ -157,7 +157,7 @@ export function ProjectWorkspace({
     } catch {
       return false
     }
-  }
+  }, [project.id, analyses, prds, mvpPlans, techSpecs, deployments])
 
   // Restore generating states from localStorage on mount
   useEffect(() => {
@@ -170,7 +170,8 @@ export function ProjectWorkspace({
       deploy: loadGeneratingState("deploy"),
     }
     setGeneratingDocuments(restored)
-  }, [project.id])
+    setGeneratingDocuments(restored)
+  }, [project.id, loadGeneratingState])
 
   // Poll for new content when documents are generating
   useEffect(() => {
@@ -209,7 +210,8 @@ export function ProjectWorkspace({
       }
     }
     checkAndClearStates()
-  }, [analyses, prds, mvpPlans, techSpecs, deployments, generatingDocuments])
+    checkAndClearStates()
+  }, [analyses, prds, mvpPlans, techSpecs, deployments, generatingDocuments, checkIfContentIncreased, saveGeneratingState])
 
   const getDocumentStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
     // Check if document is currently generating
@@ -553,7 +555,7 @@ export function ProjectWorkspace({
 
   return (
     <div className="flex flex-col h-screen">
-      <Header user={user}>
+      <Header user={user as any}> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
         <div className="flex items-center gap-2 text-sm">
           <Link
             href="/projects"

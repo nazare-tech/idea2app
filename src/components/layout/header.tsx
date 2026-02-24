@@ -56,7 +56,7 @@ export function Header({ user, children }: HeaderProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" suppressHydrationWarning>
               <Avatar className="border-2 border-[rgba(0,212,255,0.2)]">
                 <AvatarImage src={user?.avatar_url} alt={user?.full_name || "User"} />
                 <AvatarFallback className="bg-gradient-to-br from-[#00d4ff] to-[#7c3aed] text-white text-xs font-bold">

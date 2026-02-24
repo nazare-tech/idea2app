@@ -1,0 +1,67 @@
+
+> idea2app-root-v2@0.1.0 lint
+> eslint
+
+
+D:\Github\idea2app-root-v2\src\app\(dashboard)\layout.tsx
+  27:9  warning  'userInfo' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Github\idea2app-root-v2\src\app\(dashboard)\projects\page.tsx
+  2:10  warning  'redirect' is defined but never used   @typescript-eslint/no-unused-vars
+  4:28  warning  'Lightbulb' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Github\idea2app-root-v2\src\app\api\prompt-chat\route.ts
+  116:19  warning  'userMessage' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  217:19  warning  'assistantMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Github\idea2app-root-v2\src\components\chat\chat-interface.tsx
+  4:10  warning  'createClient' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Github\idea2app-root-v2\src\components\chat\prompt-chat-interface.tsx
+    5:10  warning  'Send' is defined but never used                                                                                                                          @typescript-eslint/no-unused-vars
+  101:6   warning  React Hook useEffect has missing dependencies: 'initialIdea', 'isFirstLoad', and 'startConversation'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  248:20  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                           react/no-unescaped-entities
+
+D:\Github\idea2app-root-v2\src\components\layout\content-editor.tsx
+   99:3  warning  'currentVersion' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  100:3  warning  'totalVersions' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  101:3  warning  'onVersionChange' is defined but never used          @typescript-eslint/no-unused-vars
+
+D:\Github\idea2app-root-v2\src\components\layout\document-nav.tsx
+  58:3  warning  'projectName' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Github\idea2app-root-v2\src\components\ui\input.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+D:\Github\idea2app-root-v2\src\components\ui\markdown-renderer.tsx
+  33:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\Github\idea2app-root-v2\src\components\ui\markdown-renderer.tsx:33:5
+  31 |   useEffect(() => {
+  32 |     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+> 33 |     setIsDark(mediaQuery.matches)
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  34 |
+  35 |     const handleChange = (e: MediaQueryListEvent) => setIsDark(e.matches)
+  36 |     mediaQuery.addEventListener('change', handleChange)  react-hooks/set-state-in-effect
+
+D:\Github\idea2app-root-v2\src\components\ui\textarea.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+D:\Github\idea2app-root-v2\src\components\workspace\project-workspace.tsx
+   61:9  error    Unexpected any. Specify a different type                                                                                                                @typescript-eslint/no-explicit-any
+  173:6  warning  React Hook useEffect has a missing dependency: 'loadGeneratingState'. Either include it or remove the dependency array                                  react-hooks/exhaustive-deps
+  212:6  warning  React Hook useEffect has missing dependencies: 'checkIfContentIncreased' and 'saveGeneratingState'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Github\idea2app-root-v2\test-n8n-webhook.js
+  23:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  24:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+✖ 21 problems (7 errors, 14 warnings)
+
