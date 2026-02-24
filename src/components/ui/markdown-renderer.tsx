@@ -19,6 +19,8 @@ interface MarkdownRendererProps {
   projectId?: string
   enableInlineEditing?: boolean
   onContentUpdate?: (newContent: string) => void
+  /** Disable remarkGfm (tables, etc.) — useful for ASCII art content where │ gets misinterpreted as table syntax */
+  disableGfm?: boolean
 }
 
 function MermaidDiagram({ code }: { code: string }) {
@@ -284,6 +286,7 @@ export function MarkdownRenderer({
   projectId,
   enableInlineEditing = false,
   onContentUpdate,
+  disableGfm = false,
 }: MarkdownRendererProps) {
   const [selection, setSelection] = useState<{
     text: string
@@ -606,8 +609,8 @@ export function MarkdownRenderer({
     [&_em]:text-gray-700 [&_em]:italic
     [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary/80 [&_a]:transition-colors
     [&_code]:text-primary [&_code]:bg-[rgba(220,38,38,0.06)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono
-    [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto
-    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-gray-900
+    [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:font-mono
+    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-gray-900 [&_pre_code]:font-mono [&_pre_code]:whitespace-pre [&_pre_code]:text-sm [&_pre_code]:leading-relaxed
     [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_blockquote]:my-3
     [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse
     [&_th]:border [&_th]:border-gray-200 [&_th]:bg-[#EFF6FF] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-gray-800
@@ -812,7 +815,7 @@ export function MarkdownRenderer({
     <>
       <div ref={contentRef} className={`${proseClasses} ${className}`}>
         <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
+          remarkPlugins={disableGfm ? [] : [remarkGfm]}
           components={markdownComponents}
         >
           {displayContent}

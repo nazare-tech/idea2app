@@ -30,6 +30,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     { data: analyses },
     { data: prds },
     { data: mvpPlans },
+    { data: mockups },
     { data: techSpecs },
     { data: deployments },
     { data: credits },
@@ -37,6 +38,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     supabase.from("analyses").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     supabase.from("prds").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     supabase.from("mvp_plans").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+    supabase.from("mockups").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     supabase.from("tech_specs").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     supabase.from("deployments").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     supabase.from("credits").select("balance").eq("user_id", user!.id).single(),
@@ -48,6 +50,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       analyses={analyses || []}
       prds={prds || []}
       mvpPlans={mvpPlans || []}
+      mockups={mockups || []}
       techSpecs={techSpecs || []}
       deployments={deployments || []}
       credits={credits?.balance || 0}

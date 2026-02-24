@@ -39,6 +39,7 @@ export const CREDIT_COSTS = {
   'prd': 10,
   'mvp-plan': 10,
   'tech-spec': 10,
+  'mockup': 15,
   'app-static': 50,
   'app-dynamic': 100,
   'app-spa': 150,
@@ -47,5 +48,5 @@ export const CREDIT_COSTS = {
   'document-edit': 1,
 } as const
 
-export type AnalysisType = 'competitive-analysis' | 'gap-analysis' | 'prd' | 'mvp-plan' | 'tech-spec'
+export type AnalysisType = 'competitive-analysis' | 'gap-analysis' | 'prd' | 'mvp-plan' | 'tech-spec' | 'mockup'
 export type AppType = 'static' | 'dynamic' | 'spa' | 'pwa'

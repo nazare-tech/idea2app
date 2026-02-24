@@ -30,6 +30,7 @@
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans
 - **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD
+- **Mockup Generation**: ASCII art mockups showing information architecture based on MVP plans (with AI model selection)
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **App Generation**: Automated code generation for multiple app types:
   - Static websites (HTML/CSS/JS)
@@ -46,7 +47,7 @@
 3. User answers questions to clarify missing context (target audience, features, business model, etc.)
 4. AI synthesizes responses and generates a comprehensive idea summary
 5. User validates/refines the summary through continued conversation
-6. User generates various analyses (competitive, PRD, MVP plan, tech specs)
+6. User generates various analyses (competitive, PRD, MVP plan, mockups, tech specs)
 7. User generates a working prototype/application
 8. User deploys the generated application
 
@@ -187,8 +188,8 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 │ - Search     │     Research      │  - Editable prompt / MD view │
 │ - New Proj   │  3. PRD           │  - Generate button           │
 │ - User info  │  4. MVP Plan      │  - Copy / PDF download       │
-│              │  5. Tech Spec     │                              │
-│   (dark bg)  │  6. Architecture  │                              │
+│              │  5. Mockups       │                              │
+│   (dark bg)  │  6. Tech Spec     │                              │
 │              │  7. Deploy        │   (light bg)                 │
 └──────────────┴───────────────────┴──────────────────────────────┘
   260px fixed    280px fixed         flex-1 (remaining)
@@ -398,7 +399,7 @@ interface AnalysisPanelProps { ... }
 
 // Type aliases: PascalCase or lowercase
 type AnalysisType = 'competitive-analysis' | 'prd' | 'mvp-plan' | 'tech-spec'
-type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'techspec' | 'architecture' | 'deploy'
+type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'mockups' | 'techspec' | 'deploy'
 ```
 
 ### Component Structure
@@ -596,7 +597,7 @@ interface ComponentProps {
 
 // Type unions for specific values
 type AnalysisType = 'competitive-analysis' | 'prd' | 'mvp-plan' | 'tech-spec'
-type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'techspec' | 'architecture' | 'deploy'
+type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'mockups' | 'techspec' | 'deploy'
 
 // Const assertions for immutable objects
 const COSTS = {
@@ -874,22 +875,36 @@ docker run -p 3000:3000 idea2app
   - Cost: 5 credits (`competitive-analysis`) / 10 credits (`prd`, `mvp-plan`, `tech-spec`)
   - Route `maxDuration`: 300s (N8N workflows can be slow)
 
-- **PATCH /api/analyses/[id]**: Update analysis content (NEW)
+- **POST /api/mockups/generate**: Generate ASCII art mockups (NEW)
+  - Body: `{ projectId, mvpPlan, projectName, model? }`
+    - `model` is optional; defaults to `OPENROUTER_ANALYSIS_MODEL` if not provided
+  - Returns: `{ content, model, source }`
+  - Cost: 15 credits
+  - Uses OpenRouter directly (not N8N)
+  - Route `maxDuration`: 300s (AI generation can be slow)
+  - Generates ASCII art diagrams showing site map, page layouts, and user flows
+
+- **PATCH /api/analyses/[id]**: Update analysis content
   - Body: `{ content }`
   - Returns: `{ data: updated_analysis }`
   - Used by inline document editing
 
-- **PATCH /api/prds/[id]**: Update PRD content (NEW)
+- **PATCH /api/prds/[id]**: Update PRD content
   - Body: `{ content }`
   - Returns: `{ data: updated_prd }`
   - Used by inline document editing
 
-- **PATCH /api/mvp-plans/[id]**: Update MVP plan content (NEW)
+- **PATCH /api/mvp-plans/[id]**: Update MVP plan content
   - Body: `{ content }`
   - Returns: `{ data: updated_mvp_plan }`
   - Used by inline document editing
 
-- **PATCH /api/tech-specs/[id]**: Update tech spec content (NEW)
+- **PATCH /api/mockups/[id]**: Update mockup content (NEW)
+  - Body: `{ content }`
+  - Returns: `{ data: updated_mockup }`
+  - Used by inline document editing
+
+- **PATCH /api/tech-specs/[id]**: Update tech spec content
   - Body: `{ content }`
   - Returns: `{ data: updated_tech_spec }`
   - Used by inline document editing
@@ -926,6 +941,7 @@ docker run -p 3000:3000 idea2app
 | Competitive Analysis | 5 credits |
 | PRD Generation | 10 credits |
 | MVP Plan Generation | 10 credits |
+| Mockup Generation | 15 credits |
 | Tech Spec Generation | 10 credits |
 | App Generation (Deploy) | 5 credits |
 
@@ -1062,8 +1078,10 @@ export const CREDIT_COSTS = {
 | [src/app/api/document-edit/route.ts](src/app/api/document-edit/route.ts) | **NEW** — API endpoint for inline AI document editing |
 | [src/app/api/analyses/[id]/route.ts](src/app/api/analyses/[id]/route.ts) | **NEW** — PATCH endpoint to update analysis content |
 | [src/app/api/prds/[id]/route.ts](src/app/api/prds/[id]/route.ts) | **NEW** — PATCH endpoint to update PRD content |
-| [src/app/api/mvp-plans/[id]/route.ts](src/app/api/mvp-plans/[id]/route.ts) | **NEW** — PATCH endpoint to update MVP plan content |
-| [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | **NEW** — PATCH endpoint to update tech spec content |
+| [src/app/api/mvp-plans/[id]/route.ts](src/app/api/mvp-plans/[id]/route.ts) | PATCH endpoint to update MVP plan content |
+| [src/app/api/mockups/generate/route.ts](src/app/api/mockups/generate/route.ts) | **NEW** — POST endpoint to generate ASCII art mockups using OpenRouter with optional model selection |
+| [src/app/api/mockups/[id]/route.ts](src/app/api/mockups/[id]/route.ts) | **NEW** — PATCH endpoint to update mockup content |
+| [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | PATCH endpoint to update tech spec content |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
 | [src/lib/n8n.ts](src/lib/n8n.ts) | N8N webhook client — forwards prd/competitiveAnalysis context |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export: Markdown → HTML → canvas → jsPDF |
@@ -1074,8 +1092,9 @@ export const CREDIT_COSTS = {
 | [src/lib/utils.ts](src/lib/utils.ts) | Utility functions & CREDIT_COSTS |
 | [src/middleware.ts](src/middleware.ts) | Auth middleware |
 | [src/types/database.ts](src/types/database.ts) | Database type definitions |
-| [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | **NEW** — Database migration for prompt_chat_messages table |
-| [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | **NEW** — Setup guide for Prompt tab AI chat feature |
+| [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
+| [migrations/create_mockups_table.sql](migrations/create_mockups_table.sql) | **NEW** — Database migration for mockups table |
+| [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Setup guide for Prompt tab AI chat feature |
 
 ---
 

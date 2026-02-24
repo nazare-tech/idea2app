@@ -40,6 +40,13 @@ interface MvpPlan {
   created_at: string | null
 }
 
+interface Mockup {
+  id: string
+  content: string
+  model_used: string | null
+  created_at: string | null
+}
+
 interface Deployment {
   id: string
   deployment_url: string | null
@@ -55,6 +62,7 @@ interface ProjectWorkspaceProps {
   analyses: Analysis[]
   prds: PRD[]
   mvpPlans: MvpPlan[]
+  mockups: Mockup[]
   techSpecs: TechSpec[]
   deployments: Deployment[]
   credits: number
@@ -66,6 +74,7 @@ export function ProjectWorkspace({
   analyses,
   prds,
   mvpPlans,
+  mockups,
   techSpecs,
   deployments,
   credits,
@@ -78,6 +87,7 @@ export function ProjectWorkspace({
     competitive: false,
     prd: false,
     mvp: false,
+    mockups: false,
     techspec: false,
     deploy: false,
   })
@@ -86,6 +96,7 @@ export function ProjectWorkspace({
     competitive: 0,
     prd: 0,
     mvp: 0,
+    mockups: 0,
     techspec: 0,
     deploy: 0,
   })
@@ -104,6 +115,8 @@ export function ProjectWorkspace({
         return prds.length
       case "mvp":
         return mvpPlans.length
+      case "mockups":
+        return mockups.length
       case "techspec":
         return techSpecs.length
       case "deploy":
@@ -111,7 +124,7 @@ export function ProjectWorkspace({
       default:
         return 0
     }
-  }, [analyses, prds, mvpPlans, techSpecs, deployments])
+  }, [analyses, prds, mvpPlans, mockups, techSpecs, deployments])
 
   const saveGeneratingState = useCallback((docType: DocumentType, isGenerating: boolean) => {
     const key = getStorageKey(docType)
@@ -124,7 +137,7 @@ export function ProjectWorkspace({
     } else {
       localStorage.removeItem(key)
     }
-  }, [project.id, analyses, prds, mvpPlans, techSpecs, deployments])
+  }, [project.id, getInitialCount, getStorageKey])
 
   const loadGeneratingState = useCallback((docType: DocumentType): boolean => {
     const key = getStorageKey(docType)
@@ -200,6 +213,10 @@ export function ProjectWorkspace({
         setGeneratingDocuments(prev => ({ ...prev, mvp: false }))
         saveGeneratingState("mvp", false)
       }
+      if (generatingDocuments.mockups && checkIfContentIncreased("mockups")) {
+        setGeneratingDocuments(prev => ({ ...prev, mockups: false }))
+        saveGeneratingState("mockups", false)
+      }
       if (generatingDocuments.techspec && checkIfContentIncreased("techspec")) {
         setGeneratingDocuments(prev => ({ ...prev, techspec: false }))
         saveGeneratingState("techspec", false)
@@ -211,7 +228,7 @@ export function ProjectWorkspace({
     }
     checkAndClearStates()
     checkAndClearStates()
-  }, [analyses, prds, mvpPlans, techSpecs, deployments, generatingDocuments, checkIfContentIncreased, saveGeneratingState])
+  }, [analyses, prds, mvpPlans, mockups, techSpecs, deployments, generatingDocuments, checkIfContentIncreased, saveGeneratingState])
 
   const getDocumentStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
     // Check if document is currently generating
@@ -228,6 +245,8 @@ export function ProjectWorkspace({
         return prds.length > 0 ? "done" : "pending"
       case "mvp":
         return mvpPlans.length > 0 ? "done" : "pending"
+      case "mockups":
+        return mockups.length > 0 ? "done" : "pending"
       case "techspec":
         return techSpecs.length > 0 ? "done" : "pending"
       case "deploy":
@@ -245,6 +264,8 @@ export function ProjectWorkspace({
         return prds
       case "mvp":
         return mvpPlans
+      case "mockups":
+        return mockups
       case "techspec":
         return techSpecs
       case "deploy":
@@ -266,6 +287,8 @@ export function ProjectWorkspace({
           return prds[versionIndex]?.id || null
         case "mvp":
           return mvpPlans[versionIndex]?.id || null
+        case "mockups":
+          return mockups[versionIndex]?.id || null
         case "techspec":
           return techSpecs[versionIndex]?.id || null
         default:
@@ -292,6 +315,8 @@ export function ProjectWorkspace({
         return prds[versionIndex]?.content || null
       case "mvp":
         return mvpPlans[versionIndex]?.content || null
+      case "mockups":
+        return mockups[versionIndex]?.content || null
       case "techspec":
         return techSpecs[versionIndex]?.content || null
       case "deploy":
@@ -345,6 +370,11 @@ export function ProjectWorkspace({
           return { canGenerate: false, reason: "Generate PRD first" }
         }
         return { canGenerate: true }
+      case "mockups":
+        if (mvpPlans.length === 0) {
+          return { canGenerate: false, reason: "Generate MVP Plan first" }
+        }
+        return { canGenerate: true }
       case "techspec":
         if (prds.length === 0) {
           return { canGenerate: false, reason: "Generate PRD first" }
@@ -360,7 +390,7 @@ export function ProjectWorkspace({
     }
   }
 
-  const documentStatuses = (["prompt", "competitive", "prd", "mvp", "techspec", "deploy"] as DocumentType[]).map(
+  const documentStatuses = (["prompt", "competitive", "prd", "mvp", "mockups", "techspec", "deploy"] as DocumentType[]).map(
     type => ({ type, status: getDocumentStatus(type) })
   )
 
@@ -382,6 +412,9 @@ export function ProjectWorkspace({
         case "mvp":
           endpoint = "/api/analysis/mvp-plan"
           break
+        case "mockups":
+          endpoint = "/api/mockups/generate"
+          break
         case "techspec":
           endpoint = "/api/analysis/tech-spec"
           break
@@ -397,6 +430,9 @@ export function ProjectWorkspace({
 
       // Get latest PRD for MVP plan and tech spec generation
       const latestPrd = prds[0]
+
+      // Get latest MVP plan for mockup generation
+      const latestMvp = mvpPlans[0]
 
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 min client-side limit
@@ -417,6 +453,10 @@ export function ProjectWorkspace({
             }),
             ...(activeDocument === "mvp" && latestPrd?.content && {
               prd: latestPrd.content
+            }),
+            ...(activeDocument === "mockups" && latestMvp?.content && {
+              mvpPlan: latestMvp.content,
+              projectName: project.name
             }),
             ...(activeDocument === "techspec" && latestPrd?.content && {
               prd: latestPrd.content
@@ -504,6 +544,13 @@ export function ProjectWorkspace({
           if (mvp) {
             endpoint = `/api/mvp-plans/${mvp.id}`
             recordId = mvp.id
+          }
+          break
+        case "mockups":
+          const mockup = mockups[versionIndex]
+          if (mockup) {
+            endpoint = `/api/mockups/${mockup.id}`
+            recordId = mockup.id
           }
           break
         case "techspec":

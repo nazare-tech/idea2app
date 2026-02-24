@@ -7,6 +7,7 @@ import {
   Search,
   FileText,
   Target,
+  LayoutGrid,
   Code,
   Rocket,
   Sparkles,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react"
 import { DocumentType } from "./document-nav"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
+import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
 import { PromptChatInterface } from "@/components/chat/prompt-chat-interface"
 import {
@@ -72,6 +74,12 @@ const documentConfig: Record<
     subtitle: "Minimum viable product development plan",
     icon: Target,
     creditCost: 10,
+  },
+  mockups: {
+    title: "Mockups",
+    subtitle: "ASCII art mockups showing information architecture",
+    icon: LayoutGrid,
+    creditCost: 15,
   },
   techspec: {
     title: "Tech Spec",
@@ -419,12 +427,16 @@ export function ContentEditor({
                         </div>
                       </div>
                     ) : content ? (
-                      <MarkdownRenderer
-                        content={content}
-                        projectId={projectId}
-                        enableInlineEditing={true}
-                        onContentUpdate={onUpdateContent}
-                      />
+                      documentType === "mockups" ? (
+                        <MockupRenderer content={content} />
+                      ) : (
+                        <MarkdownRenderer
+                          content={content}
+                          projectId={projectId}
+                          enableInlineEditing={true}
+                          onContentUpdate={onUpdateContent}
+                        />
+                      )
                     ) : (
                       <div className="text-center py-16">
                         <config.icon className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />

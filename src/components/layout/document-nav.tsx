@@ -6,11 +6,12 @@ import {
   Search,
   FileText,
   Target,
+  LayoutGrid,
   Code,
   Rocket,
 } from "lucide-react"
 
-export type DocumentType = "prompt" | "competitive" | "prd" | "mvp" | "techspec" | "deploy"
+export type DocumentType = "prompt" | "competitive" | "prd" | "mvp" | "mockups" | "techspec" | "deploy"
 
 interface DocumentStatus {
   type: DocumentType
@@ -34,6 +35,7 @@ const documents: {
   { type: "competitive", label: "Competitive Research", description: "", icon: Search },
   { type: "prd", label: "PRD", description: "", icon: FileText },
   { type: "mvp", label: "MVP Plan", description: "", icon: Target },
+  { type: "mockups", label: "Mockups", description: "", icon: LayoutGrid },
   { type: "techspec", label: "Tech Spec", description: "", icon: Code },
   { type: "deploy", label: "Deploy", description: "", icon: Rocket },
 ]
