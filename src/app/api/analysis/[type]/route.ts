@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { callN8NWebhook } from "@/lib/n8n"
 import { callOpenRouterFallback } from "@/lib/openrouter"
 import { CREDIT_COSTS, type AnalysisType } from "@/lib/utils"
+import { linkifyBareUrls } from "@/lib/markdown-links"
 
 export const maxDuration = 300 // 5 min — N8N webhook can be slow; OpenRouter fallback adds another 60-90s
 
@@ -87,6 +88,8 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       result = await callOpenRouterFallback(type, idea, name)
     }
 
+    const contentWithLinks = linkifyBareUrls(result.content)
+
     const metadata = {
       source: result.source,
       model: result.model,
@@ -97,23 +100,23 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     if (type === "prd") {
       await supabase.from("prds").insert({
         project_id: projectId,
-        content: result.content,
+        content: contentWithLinks,
       })
     } else if (type === "mvp-plan") {
       await supabase.from("mvp_plans").insert({
         project_id: projectId,
-        content: result.content,
+        content: contentWithLinks,
       })
     } else if (type === "tech-spec") {
       await supabase.from("tech_specs").insert({
         project_id: projectId,
-        content: result.content,
+        content: contentWithLinks,
       })
     } else {
       await supabase.from("analyses").insert({
         project_id: projectId,
         type,
-        content: result.content,
+        content: contentWithLinks,
         metadata,
       })
     }
@@ -127,7 +130,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     console.log(`[Analysis] type=${type} project=${projectId} source=${result.source} model=${result.model}`)
 
     return NextResponse.json({
-      content: result.content,
+      content: contentWithLinks,
       source: result.source,
       model: result.model,
       type,
