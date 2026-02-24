@@ -59,6 +59,7 @@ interface ProjectWorkspaceProps {
   deployments: Deployment[]
   credits: number
   user: unknown
+  isNewProject?: boolean
 }
 
 export function ProjectWorkspace({
@@ -70,9 +71,59 @@ export function ProjectWorkspace({
   deployments,
   credits,
   user,
+  isNewProject = false,
 }: ProjectWorkspaceProps) {
   const router = useRouter()
-  const [activeDocument, setActiveDocument] = useState<DocumentType>("prompt")
+  const [projectName, setProjectName] = useState(project.name)
+  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
+  const activeDocumentStorageKey = `project_${project.id}_active_tab`
+  
+  useEffect(() => {
+    setProjectName(project.name)
+  }, [project.name])
+
+  useEffect(() => {
+    setIsPromptOnlyMode(isNewProject)
+  }, [isNewProject])
+
+  useEffect(() => {
+    if (project.description) {
+      setIsPromptOnlyMode(false)
+    }
+  }, [project.description])
+
+  const getPersistedActiveDocument = useCallback((): DocumentType | null => {
+    if (typeof window === "undefined") return null
+
+    try {
+      const stored = localStorage.getItem(activeDocumentStorageKey)
+      if (
+        stored === "prompt" ||
+        stored === "competitive" ||
+        stored === "prd" ||
+        stored === "mvp" ||
+        stored === "techspec" ||
+        stored === "deploy"
+      ) {
+        return stored
+      }
+    } catch {
+      return null
+    }
+
+    return null
+  }, [activeDocumentStorageKey])
+
+  const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
+    if (isNewProject || isPromptOnlyMode) return "prompt"
+
+    const persistedDocument = getPersistedActiveDocument()
+    if (persistedDocument && !(isPromptOnlyMode && persistedDocument !== "prompt")) {
+      return persistedDocument
+    }
+
+    return "prompt"
+  })
   const [generatingDocuments, setGeneratingDocuments] = useState<Record<DocumentType, boolean>>({
     prompt: false,
     competitive: false,
@@ -144,6 +195,37 @@ export function ProjectWorkspace({
       return false
     }
   }, [project.id, getStorageKey])
+
+  const canSelectDocument = useCallback((documentType: DocumentType) => {
+    return !(isPromptOnlyMode && documentType !== "prompt")
+  }, [isPromptOnlyMode])
+
+  useEffect(() => {
+    if (isNewProject) {
+      setActiveDocument("prompt")
+      return
+    }
+
+    const persistedDocument = getPersistedActiveDocument()
+
+    if (!persistedDocument || !canSelectDocument(persistedDocument)) {
+      setActiveDocument("prompt")
+      return
+    }
+
+    setActiveDocument(persistedDocument)
+  }, [isNewProject, getPersistedActiveDocument, canSelectDocument])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (isPromptOnlyMode) return
+
+    try {
+      localStorage.setItem(activeDocumentStorageKey, activeDocument)
+    } catch {
+      // Ignore localStorage write errors
+    }
+  }, [activeDocument, activeDocumentStorageKey, isPromptOnlyMode])
 
   const checkIfContentIncreased = useCallback((docType: DocumentType): boolean => {
     const key = getStorageKey(docType)
@@ -316,6 +398,41 @@ export function ProjectWorkspace({
     }))
   }
 
+  const handleProjectNameUpdate = async (nextName: string) => {
+    const trimmedName = nextName.trim() || "Untitled"
+    const previousProjectName = projectName
+
+    if (trimmedName === projectName) {
+      return
+    }
+
+    setProjectName(trimmedName)
+
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmedName }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update project name")
+      }
+    } catch (error) {
+      setProjectName(previousProjectName)
+      console.error("Error updating project name:", error)
+      throw error
+    }
+  }
+
+  const handleDocumentSelect = (type: DocumentType) => {
+    if (isPromptOnlyMode && type !== "prompt") {
+      return
+    }
+
+    setActiveDocument(type)
+  }
+
   // Reset to latest version (index 0) when switching documents
   useEffect(() => {
     setSelectedVersionIndex(prev => ({
@@ -407,10 +524,10 @@ export function ProjectWorkspace({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
-          body: JSON.stringify({
+      body: JSON.stringify({
             projectId: project.id,
             idea: project.description,
-            name: project.name,
+            name: projectName,
             ...(activeDocument === "deploy" && { appType: "dynamic" }),
             ...(activeDocument === "prd" && competitiveAnalysis?.content && {
               competitiveAnalysis: competitiveAnalysis.content
@@ -439,8 +556,8 @@ export function ProjectWorkspace({
       // Wait a moment for database transaction to complete
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Force a hard refresh to ensure latest data is loaded
-      window.location.reload()
+      // Refresh data while keeping UI state (e.g., active tab) intact
+      router.refresh()
     } catch (error) {
       console.error("Error generating content:", error)
 
@@ -455,7 +572,7 @@ export function ProjectWorkspace({
       }
     }
     // Note: We don't clear the generating state in finally because we want it to persist
-    // until the page reloads or new content is detected
+    // until content refresh/detection completes.
   }
 
   const handleUpdateDescription = async (description: string) => {
@@ -555,26 +672,31 @@ export function ProjectWorkspace({
 
   return (
     <div className="flex flex-col h-screen">
-      <Header user={user as any}> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
-        <div className="flex items-center gap-2 text-sm">
-          <Link
-            href="/projects"
-            className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-          >
-            <span className="opacity-50">←</span> Projects
-          </Link>
-          <span className="text-muted-foreground/40 mx-1">/</span>
-          <span className="font-semibold tracking-tight">{project.name}</span>
-        </div>
+      <Header
+        user={user as any}
+        rightContent={
+          activeDocument === "prompt" ? (
+            <span className="hidden md:inline-flex items-center gap-2 text-sm">
+              Credits: {credits >= 999999 ? "∞" : credits.toLocaleString()}
+            </span>
+          ) : undefined
+        }
+      >
+        <Link href="/projects" className="inline-flex items-center gap-2">
+          <span className="font-semibold tracking-tight">Idea2App</span>
+        </Link>
       </Header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Document Navigation */}
-        <DocumentNav
-          projectName={project.name}
+      <DocumentNav
+          projectName={projectName}
           activeDocument={activeDocument}
-          onDocumentSelect={setActiveDocument}
+          onDocumentSelect={handleDocumentSelect}
           documentStatuses={documentStatuses}
+          isNewProject={isPromptOnlyMode}
+          shouldFocusName={isNewProject}
+          onProjectNameUpdate={handleProjectNameUpdate}
         />
 
         {/* Vertical Divider */}
@@ -585,7 +707,7 @@ export function ProjectWorkspace({
           <ContentEditor
             documentType={activeDocument}
             projectId={project.id}
-            projectName={project.name}
+            projectName={projectName}
             projectDescription={project.description || ""}
             content={getDocumentContent(activeDocument)}
             onGenerateContent={handleGenerateContent}

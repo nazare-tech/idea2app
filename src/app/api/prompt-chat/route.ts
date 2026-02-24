@@ -2,25 +2,72 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import OpenAI from "openai"
 import { PROMPT_CHAT_SYSTEM, IDEA_SUMMARY_PROMPT, POST_SUMMARY_SYSTEM } from "@/lib/prompt-chat-config"
+import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 
 const openrouter = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY || "",
 })
 
+type PromptChatMessage = {
+  id?: string
+  role?: string | null
+  content?: string | null
+  created_at?: string | null
+}
+
+function dedupePromptChatMessages(messages: PromptChatMessage[] = []) {
+  const deduped: PromptChatMessage[] = []
+  const lastSeen = new Map<string, number>()
+
+  for (const message of messages) {
+    const content = typeof message.content === "string" ? message.content.trim() : ""
+    const role = message.role || ""
+    const key = `${role}:${content}`
+    const currentTime = message.created_at ? new Date(message.created_at).getTime() : NaN
+    const lastTime = lastSeen.get(key)
+    const isDuplicate = Number.isFinite(lastTime) && Number.isFinite(currentTime)
+      ? Math.abs(currentTime - lastTime) <= 5000
+      : false
+
+    if (!isDuplicate) {
+      deduped.push(message)
+    }
+
+    if (Number.isFinite(currentTime)) {
+      lastSeen.set(key, currentTime)
+    }
+  }
+
+  return deduped
+}
+
 export async function GET(request: Request) {
+  const timer = new MetricsTimer()
+  let statusCode = 200
+  let errorType: string | undefined
+  let errorMessage: string | undefined
+  let userId: string | undefined
+  let projectId: string | null = null
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
+      statusCode = 401
+      errorType = "unauthorized"
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    userId = user.id
     const { searchParams } = new URL(request.url)
-    const projectId = searchParams.get("projectId")
+    projectId = searchParams.get("projectId")
 
     if (!projectId) {
+      statusCode = 400
+      errorType = "validation_error"
+      errorMessage = "projectId is required"
       return NextResponse.json({ error: "projectId is required" }, { status: 400 })
     }
 
@@ -33,6 +80,9 @@ export async function GET(request: Request) {
       .single()
 
     if (!project) {
+      statusCode = 404
+      errorType = "not_found"
+      errorMessage = "Project not found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
@@ -60,25 +110,65 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ messages: messages || [], stage })
+    return NextResponse.json({
+      messages: dedupePromptChatMessages(messages || []),
+      stage,
+    })
   } catch (error) {
     console.error("GET /api/prompt-chat error:", error)
+    statusCode = 500
+    errorType = getErrorType(500, error)
+    errorMessage = getErrorMessage(error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  } finally {
+    // Track metrics for GET endpoint
+    if (userId) {
+      trackAPIMetrics({
+        endpoint: "/api/prompt-chat",
+        method: "GET",
+        featureType: "prompt-chat",
+        userId,
+        projectId,
+        statusCode,
+        responseTimeMs: timer.getElapsedMs(),
+        errorType,
+        errorMessage,
+      })
+    }
   }
 }
 
 export async function POST(request: Request) {
+  const timer = new MetricsTimer()
+  let statusCode = 200
+  let errorType: string | undefined
+  let errorMessage: string | undefined
+  let creditsConsumed = 0
+  let modelUsed: string | undefined
+  let userId: string | undefined
+  let projectId: string | undefined
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
+      statusCode = 401
+      errorType = "unauthorized"
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { projectId, message, model, isInitial } = await request.json()
+    userId = user.id
+    const body = await request.json()
+    projectId = body.projectId
+    const message = body.message
+    const model = body.model
+    const isInitial = body.isInitial
 
     if (!projectId || !message) {
+      statusCode = 400
+      errorType = "validation_error"
+      errorMessage = "projectId and message are required"
       return NextResponse.json(
         { error: "projectId and message are required" },
         { status: 400 }
@@ -94,6 +184,9 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      statusCode = 404
+      errorType = "not_found"
+      errorMessage = "Project not found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
@@ -106,11 +199,16 @@ export async function POST(request: Request) {
     })
 
     if (!consumed) {
+      statusCode = 402
+      errorType = "insufficient_credits"
+      errorMessage = "Insufficient credits"
       return NextResponse.json(
         { error: "Insufficient credits. Please upgrade your plan." },
         { status: 402 }
       )
     }
+
+    creditsConsumed = 1
 
     // Save user message
     const { error: userMsgError } = await supabase
@@ -125,6 +223,9 @@ export async function POST(request: Request) {
 
     if (userMsgError) {
       console.error("Error saving user message:", userMsgError)
+      statusCode = 500
+      errorType = "server_error"
+      errorMessage = userMsgError.message
       return NextResponse.json({ error: userMsgError.message }, { status: 500 })
     }
 
@@ -213,6 +314,9 @@ export async function POST(request: Request) {
 
     assistantContent = response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response. Please try again."
 
+    // Track model used
+    modelUsed = model || "anthropic/claude-sonnet-4"
+
     // Save assistant message
     const { error: assistantMsgError } = await supabase
       .from("prompt_chat_messages")
@@ -231,6 +335,9 @@ export async function POST(request: Request) {
 
     if (assistantMsgError) {
       console.error("Error saving assistant message:", assistantMsgError)
+      statusCode = 500
+      errorType = "server_error"
+      errorMessage = assistantMsgError.message
       return NextResponse.json({ error: assistantMsgError.message }, { status: 500 })
     }
 
@@ -262,16 +369,39 @@ export async function POST(request: Request) {
 
     console.log(`[PromptChat] project=${projectId} model=${model || "default"} stage=${stage}`)
 
+    const dedupedMessages = dedupePromptChatMessages(allMessages || [])
+
     return NextResponse.json({
-      messages: allMessages,
+      messages: dedupedMessages,
       stage: conversationStage,
       summary: stage === "summary" ? assistantContent : null,
     })
   } catch (error) {
     console.error("POST /api/prompt-chat error:", error)
+    statusCode = 500
+    errorType = getErrorType(500, error)
+    errorMessage = getErrorMessage(error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
+  } finally {
+    // Track metrics for POST endpoint
+    if (userId) {
+      trackAPIMetrics({
+        endpoint: "/api/prompt-chat",
+        method: "POST",
+        featureType: "prompt-chat",
+        userId,
+        projectId: projectId || null,
+        statusCode,
+        responseTimeMs: timer.getElapsedMs(),
+        creditsConsumed,
+        modelUsed,
+        aiSource: "openrouter",
+        errorType,
+        errorMessage,
+      })
+    }
   }
 }

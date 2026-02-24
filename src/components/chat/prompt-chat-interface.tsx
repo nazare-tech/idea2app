@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Bot, User, Copy, Check, ChevronDown, Sparkles, Zap, ArrowUp } from "lucide-react"
+import { Bot, User, Copy, Check, ChevronDown, Sparkles, ArrowUp } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/lib/prompt-chat-config"
@@ -30,7 +30,6 @@ interface PromptChatInterfaceProps {
   projectName: string
   initialIdea: string
   onIdeaSummary?: (summary: string) => void
-  credits: number
 }
 
 export function PromptChatInterface({
@@ -38,7 +37,6 @@ export function PromptChatInterface({
   projectName,
   initialIdea,
   onIdeaSummary,
-  credits,
 }: PromptChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
@@ -52,6 +50,33 @@ export function PromptChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const composerRef = useRef<HTMLDivElement>(null)
+  const requestInFlight = useRef(false)
+
+  const dedupeMessages = useCallback((messageList: Message[]) => {
+    if (!messageList.length) return []
+
+    const deduped: Message[] = []
+    const lastSeen = new Map<string, number>()
+
+    for (const message of messageList) {
+      const key = `${message.role}:${message.content.trim()}`
+      const currentTime = message.created_at
+        ? new Date(message.created_at).getTime()
+        : Date.now()
+      const lastTime = lastSeen.get(key)
+      const isDuplicate = typeof lastTime === "number" && Math.abs(currentTime - lastTime) <= 5000
+
+      if (!isDuplicate) {
+        deduped.push(message)
+      }
+
+      if (Number.isFinite(currentTime)) {
+        lastSeen.set(key, currentTime)
+      }
+    }
+
+    return deduped
+  }, [])
 
   // Prevent hydration mismatch with Radix UI dropdowns
   // Prevent hydration mismatch with Radix UI dropdowns
@@ -60,9 +85,12 @@ export function PromptChatInterface({
   }, [])
 
   const startConversation = useCallback(async (overrideIdea?: string) => {
+    if (requestInFlight.current) return
+
     const ideaToUse = overrideIdea || initialIdea
     if (!ideaToUse.trim()) return
 
+    requestInFlight.current = true
     setLoading(true)
     try {
       const response = await fetch("/api/prompt-chat", {
@@ -82,15 +110,16 @@ export function PromptChatInterface({
         throw new Error(data.error || "Failed to start conversation")
       }
 
-      setMessages(data.messages || [])
+      setMessages(dedupeMessages(data.messages || []))
       setConversationStage("refining")
     } catch (error) {
       console.error("Chat error:", error)
       alert(error instanceof Error ? error.message : "An error occurred")
     } finally {
+      requestInFlight.current = false
       setLoading(false)
     }
-  }, [initialIdea, projectId, selectedModel])
+  }, [initialIdea, projectId, selectedModel, dedupeMessages])
 
 
   const scrollToBottom = () => {
@@ -116,7 +145,7 @@ export function PromptChatInterface({
         const response = await fetch(`/api/prompt-chat?projectId=${projectId}`)
         if (response.ok) {
           const data = await response.json()
-          setMessages(data.messages || [])
+          setMessages(dedupeMessages(data.messages || []))
           setConversationStage(data.stage || "initial")
 
           // If no messages and initial idea exists, start the conversation
@@ -143,7 +172,9 @@ export function PromptChatInterface({
   }
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return
+    if (!input.trim() || loading || requestInFlight.current) return
+
+    requestInFlight.current = true
 
     const userMessage = input.trim()
     setInput("")
@@ -156,7 +187,7 @@ export function PromptChatInterface({
       content: userMessage,
       created_at: new Date().toISOString(),
     }
-    setMessages((prev) => [...prev, tempUserMsg])
+    setMessages((prev) => dedupeMessages([...prev, tempUserMsg]))
 
     try {
       const response = await fetch("/api/prompt-chat", {
@@ -177,7 +208,7 @@ export function PromptChatInterface({
       }
 
       // Replace temp message with real messages
-      setMessages(data.messages || [])
+      setMessages(dedupeMessages(data.messages || []))
       setConversationStage(data.stage || conversationStage)
 
       // If we got a summary, notify parent
@@ -190,6 +221,7 @@ export function PromptChatInterface({
       setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id))
       alert(error instanceof Error ? error.message : "An error occurred")
     } finally {
+      requestInFlight.current = false
       setLoading(false)
     }
   }
@@ -216,27 +248,6 @@ export function PromptChatInterface({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Minimal Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm shadow-primary/20">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-foreground tracking-tight">Idea Refinement</h2>
-            <p className="text-xs text-muted-foreground/70">Powered by AI</p>
-          </div>
-        </div>
-
-        {/* Credits Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/80 border border-border/50">
-          <Zap className="h-3 w-3 text-primary" />
-          <span className="text-xs font-medium text-foreground/80">
-            {credits >= 999999 ? "∞" : credits.toLocaleString()}
-          </span>
-        </div>
-      </div>
-
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-4 py-6">
@@ -249,7 +260,7 @@ export function PromptChatInterface({
                 Welcome to {projectName}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mb-8 leading-relaxed">
-                Let&apos;s refine your idea with a few targeted questions to build a comprehensive understanding.
+                Start by sharing your idea. I&apos;ll ask focused questions to refine it, then help you move from concept to research and PRD-ready planning.
               </p>
               {initialIdea && (
                 <div className="w-full max-w-xl bg-card border border-border/50 rounded-2xl p-5 mb-8 shadow-sm">
@@ -257,14 +268,6 @@ export function PromptChatInterface({
                   <p className="text-sm text-foreground leading-relaxed">{initialIdea}</p>
                 </div>
               )}
-              <button
-                onClick={() => startConversation()}
-                disabled={loading || !initialIdea}
-                className="group inline-flex items-center gap-2.5 px-6 py-3 bg-primary text-primary-foreground text-sm font-semibold rounded-2xl hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Sparkles className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
-                Start Refining
-              </button>
             </div>
           )}
 
@@ -346,18 +349,17 @@ export function PromptChatInterface({
       </div>
 
       {/* Modern Composer Bar */}
-      {messages.length > 0 && (
-        <div className="px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
-          <div className="max-w-3xl mx-auto px-4">
-            <div
-              ref={composerRef}
-              className={cn(
-                "relative rounded-2xl border bg-card shadow-lg transition-all duration-300",
-                isFocused
-                  ? "border-primary/40 shadow-xl shadow-primary/5 ring-4 ring-primary/5"
-                  : "border-border/50 shadow-md hover:shadow-lg hover:border-border"
-              )}
-            >
+      <div className="px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
+        <div className="max-w-3xl mx-auto px-4">
+          <div
+            ref={composerRef}
+            className={cn(
+              "relative rounded-2xl border bg-card shadow-lg transition-all duration-300",
+              isFocused
+                ? "border-primary/40 shadow-xl shadow-primary/5 ring-4 ring-primary/5"
+                : "border-border/50 shadow-md hover:shadow-lg hover:border-border"
+            )}
+          >
               {/* Top Row: Model Selector */}
               <div className="flex items-center justify-between px-4 pt-3 pb-1">
                 {mounted ? (
@@ -433,7 +435,7 @@ export function PromptChatInterface({
                   onKeyDown={handleKeyDown}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  placeholder="Describe your idea or answer the questions..."
+                  placeholder="Start with your idea (problem, target user, or rough concept). I&apos;ll ask questions to refine it and guide you toward research + PRD."
                   className="w-full bg-transparent text-sm resize-none focus-visible:outline-none placeholder:text-muted-foreground/40 min-h-[48px] max-h-[160px] py-2 pr-14"
                   rows={1}
                   disabled={loading}
@@ -461,11 +463,10 @@ export function PromptChatInterface({
 
             {/* Bottom hint */}
             <p className="text-[11px] text-muted-foreground/40 mt-2.5 text-center">
-              Shift + Enter for new line
+              Shift + Enter for new line. Answer follow-up questions to unlock better research and PRD output.
             </p>
           </div>
         </div>
-      )}
-    </div>
+      </div>
   )
 }
