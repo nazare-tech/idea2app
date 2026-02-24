@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { User, Settings, LogOut, Plus } from "lucide-react"
+import { CreditCard, LogOut, Plus, Settings, User } from "lucide-react"
 import Link from "next/link"
 
 interface HeaderProps {
@@ -82,15 +82,21 @@ export function Header({ user, children, rightContent }: HeaderProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.06)]" />
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center">
+              <Link href="/settings?tab=profile" className="flex items-center">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center">
+              <Link href="/settings?tab=settings" className="flex items-center">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings?tab=subscriptions" className="flex items-center">
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Manage Subscriptions</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.06)]" />

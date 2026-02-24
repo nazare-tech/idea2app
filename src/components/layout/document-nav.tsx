@@ -34,7 +34,7 @@ const documents: {
   description: string
   icon: React.ElementType
 }[] = [
-  { type: "prompt", label: "Prompt", description: "", icon: PenLine },
+  { type: "prompt", label: "Explain the idea", description: "", icon: PenLine },
   { type: "competitive", label: "Competitive Research", description: "", icon: Search },
   { type: "prd", label: "PRD", description: "", icon: FileText },
   { type: "mvp", label: "MVP Plan", description: "", icon: Target },

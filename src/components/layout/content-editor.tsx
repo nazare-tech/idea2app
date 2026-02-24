@@ -50,7 +50,7 @@ const documentConfig: Record<
   { title: string; subtitle: string; icon: React.ElementType; creditCost: number }
 > = {
   prompt: {
-    title: "Prompt",
+    title: "Explain the idea",
     subtitle: "Define your project requirements and goals",
     icon: PenLine,
     creditCost: 0,
@@ -218,7 +218,7 @@ export function ContentEditor({
     <>
       <style jsx>{`
         .loader {
-          animation: rotate 1s infinite;
+          animation: rotate 2s infinite;
           height: 50px;
           width: 50px;
         }
@@ -232,13 +232,13 @@ export function ContentEditor({
           width: 20px;
         }
         .loader:before {
-          animation: ball1 1s infinite;
+          animation: ball1 2s infinite;
           background-color: #ca3a31;
           box-shadow: 30px 0 0 #d3d3d3;
           margin-bottom: 10px;
         }
         .loader:after {
-          animation: ball2 1s infinite;
+          animation: ball2 2s infinite;
           background-color: #d3d3d3;
           box-shadow: 30px 0 0 #ca3a31;
         }

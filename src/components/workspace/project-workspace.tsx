@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
@@ -491,8 +492,8 @@ export function ProjectWorkspace({
       // Wait a moment for database transaction to complete
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Force a hard refresh to ensure latest data is loaded
-      window.location.reload()
+      // Refresh data while keeping UI state (e.g., active tab) intact
+      router.refresh()
     } catch (error) {
       console.error("Error generating content:", error)
 
@@ -507,7 +508,7 @@ export function ProjectWorkspace({
       }
     }
     // Note: We don't clear the generating state in finally because we want it to persist
-    // until the page reloads or new content is detected
+    // until content refresh/detection completes.
   }
 
   const handleUpdateDescription = async (description: string) => {
@@ -617,9 +618,9 @@ export function ProjectWorkspace({
           ) : undefined
         }
       >
-        <div className="flex items-center gap-2 text-sm">
+        <Link href="/projects" className="inline-flex items-center gap-2">
           <span className="font-semibold tracking-tight">Idea2App</span>
-        </div>
+        </Link>
       </Header>
 
       <div className="flex flex-1 overflow-hidden">
