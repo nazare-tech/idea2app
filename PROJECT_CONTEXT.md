@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-02-12 (Added Mermaid Diagram Expansion Feature)
+**Last Updated**: 2026-02-23 (Added Stripe Payment Integration Details)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -918,14 +918,24 @@ docker run -p 3000:3000 idea2app
 
 ### Stripe
 - **POST /api/stripe/checkout**: Create checkout session
-  - Body: `{ planId }`
-  - Returns: `{ url }`
+  - Body: `{ priceId, planId }`
+  - Returns: `{ url }` (Stripe-hosted checkout page URL)
+  - Creates or reuses Stripe customer (linked via `profiles.stripe_customer_id`)
+  - Sets `mode: "subscription"` for recurring billing
+  - Passes `supabase_user_id` and `plan_id` in session metadata
 
-- **GET /api/stripe/portal**: Access customer portal
-  - Returns: `{ url }`
+- **POST /api/stripe/portal**: Access customer portal
+  - Returns: `{ url }` (Stripe billing portal URL)
+  - Requires existing `stripe_customer_id` on the user's profile
 
 - **POST /api/stripe/webhook**: Handle Stripe events
-  - Handles: `checkout.session.completed`, `customer.subscription.updated`, etc.
+  - Verifies webhook signature using `STRIPE_WEBHOOK_SECRET`
+  - Uses Supabase service role client (no user context) for database operations
+  - Handled events:
+    - `checkout.session.completed` — creates subscription record, adds credits via `add_credits()` RPC
+    - `customer.subscription.updated` — syncs status, cancel_at_period_end, period_end
+    - `customer.subscription.deleted` — marks subscription as canceled
+    - `invoice.paid` (billing_reason = `subscription_cycle`) — monthly credit renewal via `add_credits()` RPC
 
 ---
 
@@ -954,10 +964,22 @@ docker run -p 3000:3000 idea2app
 
 ### Subscription Plans
 
-- **Free**: 10 credits/month
-- **Starter**: 100 credits/month
-- **Pro**: 500 credits/month
-- **Enterprise**: Unlimited credits
+| Plan | Credits/Month | Price | Stripe Product ID | Stripe Price ID |
+|------|--------------|-------|-------------------|-----------------|
+| **Free** | 10 | $0 | — | — |
+| **Starter** | 100 | $19/mo | `prod_U2GDQiAqtdQzYd` | `price_1T4BgvHkipUdBg5jpUOWPEnt` |
+| **Pro** | 500 | $49/mo | `prod_U2GDpeJ8JHRfOo` | `price_1T4BhIHkipUdBg5jzuXgvaVt` |
+| **Enterprise** | 2,500 | $199/mo | `prod_U2GElh8VRq2AGg` | `price_1T4BhZHkipUdBg5jumSZzNmy` |
+
+### Stripe Integration Details
+
+- **Account**: Nazare Sandbox (`acct_1SqyskHkipUdBg5j`) — Test Mode
+- **API Version**: `2026-01-28.clover`
+- **Singleton Client**: `src/lib/stripe.ts` — lazy-initialized Stripe instance via `getStripeClient()` with a `Proxy` export for ergonomic access
+- **Customer Linking**: Stripe customer ID stored in `profiles.stripe_customer_id`; created on first checkout and reused thereafter
+- **Checkout Flow**: Server-side redirect to Stripe-hosted checkout (no Stripe.js Elements needed)
+- **Webhook Processing**: Uses `SUPABASE_SERVICE_ROLE_KEY` (service role) to bypass RLS for subscription and credit updates
+- **Billing UI**: `src/app/(dashboard)/billing/page.tsx` — displays plan cards, current subscription, credit balance, and credit cost reference
 
 ---
 
@@ -1088,6 +1110,11 @@ export const CREDIT_COSTS = {
 | [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | **NEW** — System prompts, question strategies, and AI models for Prompt chat |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
 | [src/lib/supabase/client.ts](src/lib/supabase/client.ts) | Browser Supabase client |
+| [src/lib/stripe.ts](src/lib/stripe.ts) | Stripe singleton client — lazy-initialized with Proxy export |
+| [src/app/api/stripe/checkout/route.ts](src/app/api/stripe/checkout/route.ts) | POST — creates Stripe checkout session for subscription upgrade |
+| [src/app/api/stripe/portal/route.ts](src/app/api/stripe/portal/route.ts) | POST — creates Stripe billing portal session for subscription management |
+| [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) | POST — handles Stripe webhook events (checkout, subscription updates, invoice payments) |
+| [src/app/(dashboard)/billing/page.tsx](src/app/(dashboard)/billing/page.tsx) | Billing page — plan cards, subscription status, credit balance, upgrade flow |
 | [src/lib/openrouter.ts](src/lib/openrouter.ts) | OpenRouter AI integration (fallback) |
 | [src/lib/utils.ts](src/lib/utils.ts) | Utility functions & CREDIT_COSTS |
 | [src/middleware.ts](src/middleware.ts) | Auth middleware |
