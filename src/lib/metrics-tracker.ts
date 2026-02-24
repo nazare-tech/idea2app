@@ -39,7 +39,7 @@
  * ```
  */
 
-import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 
 /**
  * Feature types for categorizing API endpoints
@@ -128,7 +128,7 @@ export async function trackAPIMetrics(data: MetricsData): Promise<void> {
   Promise.resolve()
     .then(async () => {
       try {
-        const supabase = await createClient()
+        const supabase = createServiceClient()
 
         // Insert metrics record
         const { error } = await supabase.from("api_request_metrics").insert({
