@@ -29,6 +29,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { DocumentModelSelector } from "@/components/ui/document-model-selector"
+import { DEFAULT_DOCUMENT_MODEL } from "@/lib/prompt-chat-config"
 
 interface ContentEditorProps {
   documentType: DocumentType
@@ -36,7 +38,7 @@ interface ContentEditorProps {
   projectName: string
   projectDescription: string
   content: string | null
-  onGenerateContent: () => Promise<void>
+  onGenerateContent: (model?: string) => Promise<void>
   onUpdateDescription: (description: string) => Promise<void>
   onUpdateContent?: (newContent: string) => Promise<void>
   isGenerating: boolean
@@ -121,6 +123,7 @@ export function ContentEditor({
   const [documentWidth, setDocumentWidth] = useState(DEFAULT_DOCUMENT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)
   const [resizeEdge, setResizeEdge] = useState<'left' | 'right' | null>(null)
+  const [selectedDocModel, setSelectedDocModel] = useState(DEFAULT_DOCUMENT_MODEL)
 
   const resizeStartX = useRef(0)
   const resizeStartWidth = useRef(0)
@@ -301,6 +304,11 @@ export function ContentEditor({
                   {config.subtitle}
                 </p>
               </div>
+              <div className="h-6 w-px bg-border/60 mx-1" />
+              <DocumentModelSelector
+                selectedModel={selectedDocModel}
+                onModelChange={setSelectedDocModel}
+              />
             </div>
 
             <div className="flex items-center gap-3">
@@ -345,7 +353,7 @@ export function ContentEditor({
               )}
               <div className="relative group">
                 <button
-                  onClick={onGenerateContent}
+                  onClick={() => onGenerateContent(selectedDocModel)}
                   disabled={isGenerating || !canGenerate}
                   className={cn(
                     "flex items-center gap-2 px-5 py-2 rounded-md transition-colors",

@@ -511,7 +511,7 @@ export function ProjectWorkspace({
     type => ({ type, status: getDocumentStatus(type) })
   )
 
-  const handleGenerateContent = async () => {
+  const handleGenerateContent = async (model?: string) => {
     // Set generating state for the active document
     setGeneratingDocuments(prev => ({ ...prev, [activeDocument]: true }))
     saveGeneratingState(activeDocument, true)
@@ -564,6 +564,7 @@ export function ProjectWorkspace({
             projectId: project.id,
             idea: project.description,
             name: projectName,
+            ...(model && { model }),
             ...(activeDocument === "deploy" && { appType: "dynamic" }),
             ...(activeDocument === "prd" && competitiveAnalysis?.content && {
               competitiveAnalysis: competitiveAnalysis.content

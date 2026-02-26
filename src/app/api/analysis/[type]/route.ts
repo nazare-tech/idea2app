@@ -42,7 +42,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
     const body = await request.json()
     projectId = body.projectId
-    const { idea, name, competitiveAnalysis, prd } = body
+    const { idea, name, competitiveAnalysis, prd, model } = body
 
     if (!projectId || !idea || !name) {
       statusCode = 400
@@ -117,7 +117,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       })
     } catch {
       console.log(`N8N webhook failed for ${type}, using OpenRouter fallback`)
-      result = await callOpenRouterFallback(type, idea, name)
+      result = await callOpenRouterFallback(type, idea, name, model)
     }
 
     // Track AI model and source

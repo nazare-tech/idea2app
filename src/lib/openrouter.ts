@@ -225,7 +225,8 @@ Use markdown formatting with code snippets where helpful.`,
 export async function callOpenRouterFallback(
   type: string,
   idea: string,
-  name: string
+  name: string,
+  userSelectedModel?: string
 ): Promise<{ content: string; source: "openrouter"; model: string }> {
   const promptFn = ANALYSIS_PROMPTS[type]
 
@@ -237,8 +238,10 @@ export async function callOpenRouterFallback(
     throw new Error("OpenRouter API key not configured")
   }
 
+  const modelToUse = userSelectedModel || ANALYSIS_MODEL
+
   const response = await openrouter.chat.completions.create({
-    model: ANALYSIS_MODEL,
+    model: modelToUse,
     messages: [
       {
         role: "user",
@@ -254,7 +257,7 @@ export async function callOpenRouterFallback(
     throw new Error("No content returned from OpenRouter")
   }
 
-  return { content, source: "openrouter", model: ANALYSIS_MODEL }
+  return { content, source: "openrouter", model: modelToUse }
 }
 
 // Chat completion for the chat interface
