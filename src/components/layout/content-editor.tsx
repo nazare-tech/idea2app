@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { DocumentType } from "./document-nav"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
-import { MockupRenderer } from "@/components/ui/mockup-renderer"
+import { MockupScreenViewer } from "@/components/ui/mockup-screen-viewer"
 import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
 import { PromptChatInterface } from "@/components/chat/prompt-chat-interface"
 import {
@@ -47,6 +47,7 @@ interface ContentEditorProps {
   currentVersion?: number
   totalVersions?: number
   onVersionChange?: (version: number) => void
+  mockupScreens?: { screen_name: string; ascii_art: string | null; wiretext_url: string | null }[]
 }
 
 const documentConfig: Record<
@@ -117,6 +118,7 @@ export function ContentEditor({
   currentVersion = 0,
   totalVersions = 0,
   onVersionChange,
+  mockupScreens,
 }: ContentEditorProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -435,7 +437,15 @@ export function ContentEditor({
                       </div>
                     ) : content ? (
                       documentType === "mockups" ? (
-                        <MockupRenderer content={content} />
+                        mockupScreens && mockupScreens.length > 0 ? (
+                          <MockupScreenViewer screens={mockupScreens} />
+                        ) : (
+                          <pre className="bg-zinc-950 border border-zinc-800 rounded-lg p-5 overflow-x-auto">
+                            <code className="font-mono text-[13px] leading-[1.6] text-emerald-400 whitespace-pre block">
+                              {content}
+                            </code>
+                          </pre>
+                        )
                       ) : (
                         <MarkdownRenderer
                           content={content}
