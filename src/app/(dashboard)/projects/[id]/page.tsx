@@ -50,6 +50,18 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     supabase.from("credits").select("balance").eq("user_id", user!.id).single(),
   ])
 
+  // Fetch mockup screens for all mockup versions
+  const mockupIds = (mockups || []).map((m: { id: string }) => m.id)
+  let mockupScreens: any[] = []
+  if (mockupIds.length > 0) {
+    const { data: screens } = await supabase
+      .from("mockup_screens")
+      .select("*")
+      .in("mockup_id", mockupIds)
+      .order("screen_order", { ascending: true })
+    mockupScreens = screens || []
+  }
+
   return (
     <ProjectWorkspace
       project={project}
@@ -57,6 +69,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       prds={prds || []}
       mvpPlans={mvpPlans || []}
       mockups={mockups || []}
+      mockupScreens={mockupScreens}
       techSpecs={techSpecs || []}
       deployments={deployments || []}
       credits={credits?.balance || 0}
