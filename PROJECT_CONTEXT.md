@@ -30,7 +30,12 @@
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans
 - **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD
-- **Mockup Generation**: ASCII art mockups showing information architecture based on MVP plans (with AI model selection)
+- **Mockup Generation**: Structured wireframe mockups for core product screens using Wiretext MCP integration (with AI model selection)
+  - AI identifies 3-5 core screens from the MVP plan (skips login, settings, generic pages)
+  - Wiretext MCP (`@wiretext/mcp`) renders structured component objects as Unicode wireframes
+  - Per-screen tabbed display with horizontal screen selector
+  - "Edit in Wiretext" external link for visual editing on wiretext.app
+  - Per-screen data stored in `mockup_screens` table (wire_objects, ascii_art, wiretext_url)
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **App Generation**: Automated code generation for multiple app types:
   - Static websites (HTML/CSS/JS)
@@ -88,6 +93,7 @@
 | **OpenRouter** | 6.16.0 | API wrapper for AI analysis |
 | **Stripe** | 20.2.0 | Payment processing and subscriptions |
 | **n8n** | - | Workflow automation (webhook integration) |
+| **@modelcontextprotocol/sdk** | ^1.27.1 | MCP client for wiretext wireframe rendering |
 
 ### Development Tools
 
