@@ -47,6 +47,17 @@ interface Mockup {
   created_at: string | null
 }
 
+interface MockupScreen {
+  id: string
+  mockup_id: string
+  screen_name: string
+  screen_order: number
+  wire_objects: Record<string, unknown>[]
+  ascii_art: string | null
+  wiretext_url: string | null
+  created_at: string | null
+}
+
 interface Deployment {
   id: string
   deployment_url: string | null
@@ -63,6 +74,7 @@ interface ProjectWorkspaceProps {
   prds: PRD[]
   mvpPlans: MvpPlan[]
   mockups: Mockup[]
+  mockupScreens: MockupScreen[]
   techSpecs: TechSpec[]
   deployments: Deployment[]
   credits: number
@@ -76,6 +88,7 @@ export function ProjectWorkspace({
   prds,
   mvpPlans,
   mockups,
+  mockupScreens,
   techSpecs,
   deployments,
   credits,
@@ -507,6 +520,15 @@ export function ProjectWorkspace({
     }
   }
 
+  const getScreensForCurrentMockup = (): MockupScreen[] => {
+    const versionIndex = selectedVersionIndex["mockups"] || 0
+    const currentMockup = mockups[versionIndex]
+    if (!currentMockup) return []
+    return mockupScreens
+      .filter((s) => s.mockup_id === currentMockup.id)
+      .sort((a, b) => a.screen_order - b.screen_order)
+  }
+
   const documentStatuses = (["prompt", "competitive", "prd", "mvp", "mockups", "techspec", "deploy"] as DocumentType[]).map(
     type => ({ type, status: getDocumentStatus(type) })
   )
@@ -767,6 +789,7 @@ export function ProjectWorkspace({
             currentVersion={selectedVersionIndex[activeDocument] || 0}
             totalVersions={getTotalVersions(activeDocument)}
             onVersionChange={(index) => handleVersionChange(activeDocument, index)}
+            mockupScreens={activeDocument === "mockups" ? getScreensForCurrentMockup() : undefined}
           />
         </div>
       </div>
