@@ -9,6 +9,39 @@ const openrouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY || "",
 })
 
+type PromptChatMessage = {
+  id?: string
+  role?: string | null
+  content?: string | null
+  created_at?: string | null
+}
+
+function dedupePromptChatMessages(messages: PromptChatMessage[] = []) {
+  const deduped: PromptChatMessage[] = []
+  const lastSeen = new Map<string, number>()
+
+  for (const message of messages) {
+    const content = typeof message.content === "string" ? message.content.trim() : ""
+    const role = message.role || ""
+    const key = `${role}:${content}`
+    const currentTime = message.created_at ? new Date(message.created_at).getTime() : NaN
+    const lastTime = lastSeen.get(key)
+    const isDuplicate = Number.isFinite(lastTime) && Number.isFinite(currentTime)
+      ? Math.abs(currentTime - lastTime) <= 5000
+      : false
+
+    if (!isDuplicate) {
+      deduped.push(message)
+    }
+
+    if (Number.isFinite(currentTime)) {
+      lastSeen.set(key, currentTime)
+    }
+  }
+
+  return deduped
+}
+
 export async function GET(request: Request) {
   const timer = new MetricsTimer()
   let statusCode = 200
@@ -77,7 +110,10 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ messages: messages || [], stage })
+    return NextResponse.json({
+      messages: dedupePromptChatMessages(messages || []),
+      stage,
+    })
   } catch (error) {
     console.error("GET /api/prompt-chat error:", error)
     statusCode = 500
@@ -333,8 +369,10 @@ export async function POST(request: Request) {
 
     console.log(`[PromptChat] project=${projectId} model=${model || "default"} stage=${stage}`)
 
+    const dedupedMessages = dedupePromptChatMessages(allMessages || [])
+
     return NextResponse.json({
-      messages: allMessages,
+      messages: dedupedMessages,
       stage: conversationStage,
       summary: stage === "summary" ? assistantContent : null,
     })

@@ -4,11 +4,17 @@ import { ProjectWorkspace } from "@/components/workspace/project-workspace"
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export default async function ProjectPage({ params }: ProjectPageProps) {
+export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
   const { id } = await params
+  const resolvedSearchParams = await searchParams
   const supabase = await createClient()
+
+  const newProjectFlag = resolvedSearchParams.new
+  const isNewProject =
+    newProjectFlag === "1" || newProjectFlag === "true"
 
   const {
     data: { user },
@@ -55,6 +61,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       deployments={deployments || []}
       credits={credits?.balance || 0}
       user={user}
+      isNewProject={isNewProject}
     />
   )
 }

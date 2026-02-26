@@ -88,6 +88,82 @@ export async function PATCH(
   }
 }
 
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const timer = new MetricsTimer()
+  let statusCode = 200
+  let errorType: string | undefined
+  let errorMessage: string | undefined
+  let userId: string | undefined
+  let projectId: string | undefined
+
+  try {
+    const { id } = await params
+    projectId = id
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      statusCode = 401
+      errorType = "unauthorized"
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    userId = user.id
+
+    const { data: deletedProject, error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .select("id")
+      .single()
+
+    if (error) {
+      console.error("Error deleting project:", error)
+      statusCode = 500
+      errorType = "server_error"
+      errorMessage = error.message
+      return NextResponse.json({ error: "Failed to delete project" }, { status: 500 })
+    }
+
+    if (!deletedProject) {
+      statusCode = 404
+      errorType = "not_found"
+      errorMessage = "Project not found"
+      return NextResponse.json({ error: "Project not found" }, { status: 404 })
+    }
+
+    return NextResponse.json({ data: deletedProject })
+  } catch (error) {
+    console.error("Error:", error)
+    statusCode = 500
+    errorType = getErrorType(500, error)
+    errorMessage = getErrorMessage(error)
+    return NextResponse.json({ error: "Internal error" }, { status: 500 })
+  } finally {
+    if (userId) {
+      trackAPIMetrics({
+        endpoint: "/api/projects/[id]",
+        method: "DELETE",
+        featureType: "project-management",
+        userId,
+        projectId: projectId || null,
+        statusCode,
+        responseTimeMs: timer.getElapsedMs(),
+        creditsConsumed: 0,
+        errorType,
+        errorMessage,
+      })
+    }
+  }
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

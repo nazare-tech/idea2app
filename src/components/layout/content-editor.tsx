@@ -52,7 +52,7 @@ const documentConfig: Record<
   { title: string; subtitle: string; icon: React.ElementType; creditCost: number }
 > = {
   prompt: {
-    title: "Prompt",
+    title: "Explain the idea",
     subtitle: "Define your project requirements and goals",
     icon: PenLine,
     creditCost: 0,
@@ -226,7 +226,7 @@ export function ContentEditor({
     <>
       <style jsx>{`
         .loader {
-          animation: rotate 1s infinite;
+          animation: rotate 2s infinite;
           height: 50px;
           width: 50px;
         }
@@ -240,13 +240,13 @@ export function ContentEditor({
           width: 20px;
         }
         .loader:before {
-          animation: ball1 1s infinite;
+          animation: ball1 2s infinite;
           background-color: #ca3a31;
           box-shadow: 30px 0 0 #d3d3d3;
           margin-bottom: 10px;
         }
         .loader:after {
-          animation: ball2 1s infinite;
+          animation: ball2 2s infinite;
           background-color: #d3d3d3;
           box-shadow: 30px 0 0 #ca3a31;
         }
@@ -289,60 +289,60 @@ export function ContentEditor({
       `}</style>
       <div className="flex h-full flex-col bg-background">
         {/* Header */}
-        <div className="flex items-center justify-between px-10 py-5 border-b border-border">
-          <div className="flex items-center gap-4">
-            <config.icon className="h-[18px] w-[18px] text-primary" />
-            <div>
-              <h1 className="text-xl font-semibold text-foreground tracking-tight">
-                {config.title}
-              </h1>
-              <p className="text-[11px] text-muted-foreground font-mono">
-                {config.subtitle}
-              </p>
+        {documentType !== "prompt" && (
+          <div className="flex items-center justify-between px-10 py-5 border-b border-border">
+            <div className="flex items-center gap-4">
+              <config.icon className="h-[18px] w-[18px] text-primary" />
+              <div>
+                <h1 className="text-xl font-semibold text-foreground tracking-tight">
+                  {config.title}
+                </h1>
+                <p className="text-[11px] text-muted-foreground font-mono">
+                  {config.subtitle}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            {documentType !== "prompt" && content && (
-              <>
-                <button
-                  onClick={handleCopyContent}
-                  className="flex items-center gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  <span className="text-xs font-medium">{copied ? "Copied!" : "Copy"}</span>
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      disabled={downloadingPdf}
-                      className="flex items-center gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {downloadingPdf ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Download className="h-3.5 w-3.5" />
-                      )}
-                      <span className="text-xs font-medium">
-                        {downloadingPdf ? "Generating..." : "Download"}
-                      </span>
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleDownloadPDF}>
-                      <FileDown className="h-3.5 w-3.5 mr-2" />
-                      <span className="text-xs font-medium">PDF</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDownloadMarkdown}>
-                      <FileDown className="h-3.5 w-3.5 mr-2" />
-                      <span className="text-xs font-medium">Markdown</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
-            {documentType !== "prompt" && (
+            <div className="flex items-center gap-3">
+              {content && (
+                <>
+                  <button
+                    onClick={handleCopyContent}
+                    className="flex items-center gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    <span className="text-xs font-medium">{copied ? "Copied!" : "Copy"}</span>
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        disabled={downloadingPdf}
+                        className="flex items-center gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {downloadingPdf ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        <span className="text-xs font-medium">
+                          {downloadingPdf ? "Generating..." : "Download"}
+                        </span>
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleDownloadPDF}>
+                        <FileDown className="h-3.5 w-3.5 mr-2" />
+                        <span className="text-xs font-medium">PDF</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleDownloadMarkdown}>
+                        <FileDown className="h-3.5 w-3.5 mr-2" />
+                        <span className="text-xs font-medium">Markdown</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
               <div className="relative group">
                 <button
                   onClick={onGenerateContent}
@@ -372,9 +372,9 @@ export function ContentEditor({
                   </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
@@ -384,7 +384,6 @@ export function ContentEditor({
               projectName={projectName}
               initialIdea={projectDescription}
               onIdeaSummary={handleIdeaSummary}
-              credits={credits}
             />
           ) : (
             <div className="h-full overflow-y-auto p-10 relative">

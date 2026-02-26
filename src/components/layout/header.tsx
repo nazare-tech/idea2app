@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { User, Settings, LogOut, Plus } from "lucide-react"
+import { CreditCard, LogOut, Plus, Settings, User } from "lucide-react"
 import Link from "next/link"
 
 interface HeaderProps {
@@ -22,9 +22,10 @@ interface HeaderProps {
     avatar_url?: string
   }
   children?: React.ReactNode
+  rightContent?: React.ReactNode
 }
 
-export function Header({ user, children }: HeaderProps) {
+export function Header({ user, children, rightContent }: HeaderProps) {
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -47,7 +48,8 @@ export function Header({ user, children }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <Link href="/projects/new">
+        {rightContent}
+        <Link href="/projects/new" prefetch={false}>
           <Button size="sm" className="gap-2">
             <Plus className="h-4 w-4" />
             New Project
@@ -65,7 +67,11 @@ export function Header({ user, children }: HeaderProps) {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56 bg-[#0c0c14] border-[rgba(255,255,255,0.08)]" align="end" forceMount>
+          <DropdownMenuContent
+            className="w-56 bg-[#0c0c14] border-[rgba(255,255,255,0.08)] text-white"
+            align="end"
+            forceMount
+          >
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-semibold leading-none">{user?.full_name || "User"}</p>
@@ -76,15 +82,21 @@ export function Header({ user, children }: HeaderProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.06)]" />
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center">
+              <Link href="/settings?tab=profile" className="flex items-center">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center">
+              <Link href="/settings?tab=settings" className="flex items-center">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings?tab=subscriptions" className="flex items-center">
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Manage Subscriptions</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.06)]" />
