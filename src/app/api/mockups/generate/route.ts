@@ -284,6 +284,7 @@ export async function POST(request: Request) {
 
     if (screensError) {
       console.error("[Mockup] Failed to insert screens:", screensError)
+      throw new Error(`Failed to insert mockup screens: ${screensError.message}`)
     }
 
     // Update project status

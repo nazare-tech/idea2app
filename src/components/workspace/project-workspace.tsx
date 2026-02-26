@@ -274,10 +274,10 @@ export function ProjectWorkspace({
       competitive: loadGeneratingState("competitive"),
       prd: loadGeneratingState("prd"),
       mvp: loadGeneratingState("mvp"),
+      mockups: loadGeneratingState("mockups"),
       techspec: loadGeneratingState("techspec"),
       deploy: loadGeneratingState("deploy"),
     }
-    setGeneratingDocuments(restored)
     setGeneratingDocuments(restored)
   }, [project.id, loadGeneratingState])
 
