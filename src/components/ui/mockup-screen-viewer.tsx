@@ -52,7 +52,15 @@ export function MockupScreenViewer({ screens, className = "" }: MockupScreenView
       {/* ASCII art display */}
       {activeScreen?.ascii_art ? (
         <pre className="bg-zinc-950 border border-zinc-800 rounded-lg p-5 overflow-x-auto">
-          <code className="font-mono text-[13px] leading-[1.6] text-emerald-400 whitespace-pre block">
+          <code
+            className="text-[13px] text-emerald-400 whitespace-pre block"
+            style={{
+              fontFamily: "'Courier New', Courier, 'Lucida Console', monospace",
+              lineHeight: 1.4,
+              fontVariantLigatures: "none",
+              tabSize: 4,
+            }}
+          >
             {activeScreen.ascii_art}
           </code>
         </pre>

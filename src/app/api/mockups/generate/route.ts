@@ -63,28 +63,52 @@ Stepper:   { "type": "component", "componentType": "stepper", "position": { "col
 Rating:    { "type": "component", "componentType": "rating", "position": { "col": 0, "row": 0 }, "value": 3, "maxValue": 5 }
 Skeleton:  { "type": "component", "componentType": "skeleton", "position": { "col": 0, "row": 0 }, "width": 40, "height": 3 }
 
-## Layout Rules
-- Grid is character-based. 1 cell = 1 char wide, 1 char tall.
-- Typical screen fits within 80 cols x 40 rows.
-- Bordered components (button, input, card, browser, table, tabs, progress, icon, image, alert, avatar) have height >= 3.
-- Borderless components (checkbox, radio, toggle, divider, breadcrumb, list, stepper, rating, skeleton) can be height 1.
-- To nest children inside containers: child.col >= parent.col + 2, child.row >= parent.row + 2.
-- Use zIndex for layering: low values for containers, high for content on top.
+## Layout Rules — FOLLOW STRICTLY
 
-## Example
+The grid is character-based: 1 cell = 1 char wide, 1 char tall.
+
+**Browser container is the outermost wrapper:**
+- ALWAYS start with a browser at col:0, row:0, width:80.
+- The browser height should be tall enough to fit ALL content inside (calculate based on your content).
+
+**All children MUST fit inside the browser's inner area:**
+- Usable columns: 1 to 78 (inclusive). So child.col >= 1 AND child.col + child.width <= 79.
+- Usable rows: start at row 2 (below browser chrome).
+- NEVER place a child at col:0 or let col + width exceed 79. This causes overlap with the browser border.
+
+**No overlapping:**
+- Elements stacked vertically must NOT share rows. Leave at least 1 row gap.
+- Elements side by side: ensure left.col + left.width + 1 <= right.col.
+- Plan your layout TOP-TO-BOTTOM: navbar (row 2), then title (row 5), then content sections below, each spaced apart.
+
+**Sizing rules:**
+- Width must fit the label. Buttons: width >= label.length + 4. Selects: width >= label.length + 5. Inputs: width >= label.length + 6.
+- Bordered components (button, input, card, browser, table, tabs, progress, icon, image, alert, avatar): height >= 3.
+- Borderless components (checkbox, radio, toggle, divider, breadcrumb, list, stepper, rating, skeleton): height can be 1.
+- Use zIndex: 0 for the browser, 1 for everything inside.
+
+**Keep it simple:**
+- Use 8-12 objects per screen maximum. Fewer objects = cleaner wireframe.
+- Prefer cards, text, tables, and buttons. Avoid deeply nested layouts.
+- Arrows and connectors REQUIRE "endPosition": { "col": NUMBER, "row": NUMBER }.
+
+## Example — Study this layout carefully
 
 {
   "name": "Dashboard",
   "objects": [
-    { "type": "component", "componentType": "browser", "position": { "col": 0, "row": 0 }, "width": 80, "height": 35, "label": "https://app.example.com/dashboard", "zIndex": 0 },
-    { "type": "component", "componentType": "navbar", "position": { "col": 1, "row": 2 }, "width": 78, "navItems": ["Dashboard", "Projects", "Analytics", "Team"], "zIndex": 1 },
-    { "type": "text", "position": { "col": 2, "row": 5 }, "content": "Welcome back, User", "zIndex": 1 },
-    { "type": "component", "componentType": "card", "position": { "col": 2, "row": 7 }, "width": 24, "height": 8, "label": "Active Projects", "body": "12", "zIndex": 1 },
-    { "type": "component", "componentType": "card", "position": { "col": 28, "row": 7 }, "width": 24, "height": 8, "label": "Tasks Due", "body": "5", "zIndex": 1 },
-    { "type": "component", "componentType": "card", "position": { "col": 54, "row": 7 }, "width": 24, "height": 8, "label": "Team Members", "body": "8", "zIndex": 1 },
-    { "type": "component", "componentType": "table", "position": { "col": 2, "row": 17 }, "width": 76, "height": 12, "columns": ["Project", "Status", "Due Date", "Owner"], "rows": 5, "zIndex": 1 }
+    { "type": "component", "componentType": "browser", "position": { "col": 0, "row": 0 }, "width": 80, "height": 40, "label": "https://app.example.com/dashboard", "zIndex": 0 },
+    { "type": "component", "componentType": "navbar", "position": { "col": 1, "row": 2 }, "width": 78, "navItems": ["Dashboard", "Projects", "Analytics"], "zIndex": 1 },
+    { "type": "text", "position": { "col": 3, "row": 5 }, "content": "Welcome back, User", "zIndex": 1 },
+    { "type": "component", "componentType": "card", "position": { "col": 3, "row": 7 }, "width": 24, "height": 7, "label": "Active Projects", "body": "12", "zIndex": 1 },
+    { "type": "component", "componentType": "card", "position": { "col": 29, "row": 7 }, "width": 24, "height": 7, "label": "Tasks Due", "body": "5", "zIndex": 1 },
+    { "type": "component", "componentType": "card", "position": { "col": 55, "row": 7 }, "width": 23, "height": 7, "label": "Team Members", "body": "8", "zIndex": 1 },
+    { "type": "component", "componentType": "table", "position": { "col": 3, "row": 16 }, "width": 75, "height": 12, "columns": ["Project", "Status", "Due Date"], "rows": 4, "zIndex": 1 },
+    { "type": "component", "componentType": "button", "position": { "col": 3, "row": 30 }, "label": "New Project", "width": 17, "zIndex": 1 }
   ]
 }
+
+Notice: all children have col >= 1 and col + width <= 79. Rows are spaced apart. No overlapping.
 
 ## Output Format
 
@@ -242,10 +266,18 @@ export async function POST(request: Request) {
       wiretext_url: string | null
     }[] = []
 
+    const mcpErrors: string[] = []
     try {
       for (let i = 0; i < screens.length; i++) {
         const screen = screens[i]
+        console.log(`[Mockup] Rendering screen ${i}: "${screen.name}" with ${screen.objects.length} objects`)
         const result = await mcp.renderScreen(screen.objects as any)
+        if (result.render_error) {
+          mcpErrors.push(`Screen "${screen.name}" render: ${result.render_error}`)
+        }
+        if (result.create_error) {
+          mcpErrors.push(`Screen "${screen.name}" create: ${result.create_error}`)
+        }
         renderedScreens.push({
           name: screen.name,
           order: i,
@@ -256,6 +288,10 @@ export async function POST(request: Request) {
       }
     } finally {
       await mcp.close()
+    }
+
+    if (mcpErrors.length > 0) {
+      console.error("[Mockup] MCP errors:", mcpErrors)
     }
 
     // Store in database
@@ -316,6 +352,7 @@ export async function POST(request: Request) {
       screens: renderedScreens,
       model: selectedModel,
       source: "openrouter+wiretext",
+      ...(mcpErrors.length > 0 && { mcpErrors }),
     })
   } catch (error) {
     console.error("Mockup generation error:", error)
