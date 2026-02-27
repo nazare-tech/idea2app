@@ -72,7 +72,7 @@ export function MockupScreenViewer({ screens, className = "" }: MockupScreenView
         </div>
       )}
 
-      {/* Edit in Wiretext link */}
+      {/* View in Wiretext link */}
       {activeScreen?.wiretext_url && (
         <div className="flex justify-end">
           <a
@@ -81,7 +81,7 @@ export function MockupScreenViewer({ screens, className = "" }: MockupScreenView
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
-            Edit in Wiretext
+            View in Wiretext
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
