@@ -3,8 +3,8 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 interface WireObject {
   type: string
-  x: number
-  y: number
+  position?: { col: number; row: number }
+  componentType?: string
   width?: number
   height?: number
   label?: string
@@ -49,7 +49,12 @@ export class WiretextMCP {
         name: "render_wireframe",
         arguments: { objects: wireObjects },
       })
-      if (renderResult.content && Array.isArray(renderResult.content)) {
+      if (renderResult.isError) {
+        const errText = Array.isArray(renderResult.content)
+          ? renderResult.content.map((c: any) => c.text || "").join("")
+          : "Unknown MCP error"
+        console.error("[WiretextMCP] render_wireframe error:", errText)
+      } else if (renderResult.content && Array.isArray(renderResult.content)) {
         const textContent = renderResult.content.find(
           (c: { type: string }) => c.type === "text"
         )
@@ -66,7 +71,12 @@ export class WiretextMCP {
         name: "create_wireframe",
         arguments: { objects: wireObjects },
       })
-      if (createResult.content && Array.isArray(createResult.content)) {
+      if (createResult.isError) {
+        const errText = Array.isArray(createResult.content)
+          ? createResult.content.map((c: any) => c.text || "").join("")
+          : "Unknown MCP error"
+        console.error("[WiretextMCP] create_wireframe error:", errText)
+      } else if (createResult.content && Array.isArray(createResult.content)) {
         const textContent = createResult.content.find(
           (c: { type: string }) => c.type === "text"
         )

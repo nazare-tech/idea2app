@@ -19,54 +19,70 @@ ${mvpPlan}
 
 1. Identify the 3-5 most important screens that show the product's core value. Examples: Dashboard, Product Detail, Marketplace, Feed, Editor, etc.
 2. Do NOT include generic screens like Login, Sign Up, Settings, Profile, 404, or Landing Page.
-3. For each screen, output an array of wiretext component objects positioned on a grid.
+3. For each screen, output an array of wiretext objects using the EXACT schema below.
 
-## Available Wiretext Components
+## CRITICAL SCHEMA RULES
 
-Primitives: box, text, line, arrow, connector
-UI Components:
-- button: { type: "button", x, y, label, icon?, align? }
-- input: { type: "input", x, y, width?, label?, icon? }
-- select: { type: "select", x, y, width?, label? }
-- checkbox: { type: "checkbox", x, y, label, checked? }
-- radio: { type: "radio", x, y, label, checked? }
-- toggle: { type: "toggle", x, y, label, checked? }
-- table: { type: "table", x, y, width?, columns, rows?, filterable? }
-- modal: { type: "modal", x, y, width?, height?, label, body? }
-- browser: { type: "browser", x, y, width, height, label? }
-- card: { type: "card", x, y, width, height, label?, body? }
-- navbar: { type: "navbar", x, y, width?, navItems }
-- tabs: { type: "tabs", x, y, width?, tabs }
-- progress: { type: "progress", x, y, width?, progress? }
-- icon: { type: "icon", x, y, icon }
-- image: { type: "image", x, y, width?, height?, label?, icon? }
-- alert: { type: "alert", x, y, width?, label, alertType? }
-- avatar: { type: "avatar", x, y, label?, icon? }
-- divider: { type: "divider", x, y, width?, label? }
-- breadcrumb: { type: "breadcrumb", x, y, items, separator? }
-- list: { type: "list", x, y, items, listStyle? }
-- stepper: { type: "stepper", x, y, items, activeStep? }
-- rating: { type: "rating", x, y, value?, maxValue? }
-- skeleton: { type: "skeleton", x, y, width?, height? }
+There are exactly 5 primitive types and 1 component wrapper type:
+- Primitives: "box", "text", "line", "arrow", "connector"
+- All UI components (button, input, card, navbar, etc.) use type: "component" with a componentType field
 
-## Coordinate System
-- x, y are character positions (0-based). y=0 is top.
-- width, height are in characters. Typical screen fits within 80x40.
-- Place components logically: navbar at top (y=0), content below, buttons at appropriate positions.
+Position is ALWAYS an object: "position": { "col": NUMBER, "row": NUMBER }
+NEVER use "x" or "y" — always use "position" with "col" and "row".
+
+## Object Schemas
+
+### Primitives
+
+Box: { "type": "box", "position": { "col": 0, "row": 0 }, "width": 20, "height": 10, "label": "Title" }
+Text: { "type": "text", "position": { "col": 0, "row": 0 }, "content": "Hello World" }
+  - Text REQUIRES a "content" field (string). Do NOT use "text" or "label" for text objects.
+
+### UI Components (ALL use type: "component")
+
+Button:    { "type": "component", "componentType": "button", "position": { "col": 0, "row": 0 }, "label": "Click Me", "width": 14 }
+Input:     { "type": "component", "componentType": "input", "position": { "col": 0, "row": 0 }, "label": "Username", "width": 30 }
+Select:    { "type": "component", "componentType": "select", "position": { "col": 0, "row": 0 }, "label": "Choose...", "width": 20 }
+Checkbox:  { "type": "component", "componentType": "checkbox", "position": { "col": 0, "row": 0 }, "label": "Remember me", "checked": true }
+Radio:     { "type": "component", "componentType": "radio", "position": { "col": 0, "row": 0 }, "label": "Option A" }
+Toggle:    { "type": "component", "componentType": "toggle", "position": { "col": 0, "row": 0 }, "label": "Dark mode", "checked": false }
+Table:     { "type": "component", "componentType": "table", "position": { "col": 0, "row": 0 }, "width": 60, "height": 10, "columns": ["Name", "Status", "Date"], "rows": 5 }
+Card:      { "type": "component", "componentType": "card", "position": { "col": 0, "row": 0 }, "width": 30, "height": 10, "label": "Title", "body": "Content here" }
+Browser:   { "type": "component", "componentType": "browser", "position": { "col": 0, "row": 0 }, "width": 80, "height": 35, "label": "https://example.com" }
+Navbar:    { "type": "component", "componentType": "navbar", "position": { "col": 0, "row": 0 }, "width": 78, "navItems": ["Home", "Dashboard", "Settings"] }
+Tabs:      { "type": "component", "componentType": "tabs", "position": { "col": 0, "row": 0 }, "width": 60, "height": 20, "tabs": ["Tab 1", "Tab 2", "Tab 3"] }
+Progress:  { "type": "component", "componentType": "progress", "position": { "col": 0, "row": 0 }, "width": 30, "progress": 75 }
+Icon:      { "type": "component", "componentType": "icon", "position": { "col": 0, "row": 0 }, "icon": "★" }
+Image:     { "type": "component", "componentType": "image", "position": { "col": 0, "row": 0 }, "width": 20, "height": 10, "label": "Photo" }
+Divider:   { "type": "component", "componentType": "divider", "position": { "col": 0, "row": 0 }, "width": 60 }
+Alert:     { "type": "component", "componentType": "alert", "position": { "col": 0, "row": 0 }, "width": 40, "label": "Warning message", "alertType": "warning" }
+Avatar:    { "type": "component", "componentType": "avatar", "position": { "col": 0, "row": 0 }, "label": "JD" }
+Breadcrumb:{ "type": "component", "componentType": "breadcrumb", "position": { "col": 0, "row": 0 }, "items": ["Home", "Products", "Detail"] }
+List:      { "type": "component", "componentType": "list", "position": { "col": 0, "row": 0 }, "items": ["Item 1", "Item 2", "Item 3"] }
+Stepper:   { "type": "component", "componentType": "stepper", "position": { "col": 0, "row": 0 }, "items": ["Step 1", "Step 2", "Step 3"], "activeStep": 1 }
+Rating:    { "type": "component", "componentType": "rating", "position": { "col": 0, "row": 0 }, "value": 3, "maxValue": 5 }
+Skeleton:  { "type": "component", "componentType": "skeleton", "position": { "col": 0, "row": 0 }, "width": 40, "height": 3 }
+
+## Layout Rules
+- Grid is character-based. 1 cell = 1 char wide, 1 char tall.
+- Typical screen fits within 80 cols x 40 rows.
+- Bordered components (button, input, card, browser, table, tabs, progress, icon, image, alert, avatar) have height >= 3.
+- Borderless components (checkbox, radio, toggle, divider, breadcrumb, list, stepper, rating, skeleton) can be height 1.
+- To nest children inside containers: child.col >= parent.col + 2, child.row >= parent.row + 2.
+- Use zIndex for layering: low values for containers, high for content on top.
 
 ## Example
 
-A dashboard screen might look like:
 {
   "name": "Dashboard",
   "objects": [
-    { "type": "browser", "x": 0, "y": 0, "width": 80, "height": 35, "label": "https://app.example.com/dashboard" },
-    { "type": "navbar", "x": 1, "y": 2, "width": 78, "navItems": ["Dashboard", "Projects", "Analytics", "Team"] },
-    { "type": "text", "x": 2, "y": 5, "text": "Welcome back, User" },
-    { "type": "card", "x": 2, "y": 7, "width": 24, "height": 8, "label": "Active Projects", "body": "12" },
-    { "type": "card", "x": 28, "y": 7, "width": 24, "height": 8, "label": "Tasks Due", "body": "5" },
-    { "type": "card", "x": 54, "y": 7, "width": 24, "height": 8, "label": "Team Members", "body": "8" },
-    { "type": "table", "x": 2, "y": 17, "width": 76, "columns": ["Project", "Status", "Due Date", "Owner"], "rows": 5 }
+    { "type": "component", "componentType": "browser", "position": { "col": 0, "row": 0 }, "width": 80, "height": 35, "label": "https://app.example.com/dashboard", "zIndex": 0 },
+    { "type": "component", "componentType": "navbar", "position": { "col": 1, "row": 2 }, "width": 78, "navItems": ["Dashboard", "Projects", "Analytics", "Team"], "zIndex": 1 },
+    { "type": "text", "position": { "col": 2, "row": 5 }, "content": "Welcome back, User", "zIndex": 1 },
+    { "type": "component", "componentType": "card", "position": { "col": 2, "row": 7 }, "width": 24, "height": 8, "label": "Active Projects", "body": "12", "zIndex": 1 },
+    { "type": "component", "componentType": "card", "position": { "col": 28, "row": 7 }, "width": 24, "height": 8, "label": "Tasks Due", "body": "5", "zIndex": 1 },
+    { "type": "component", "componentType": "card", "position": { "col": 54, "row": 7 }, "width": 24, "height": 8, "label": "Team Members", "body": "8", "zIndex": 1 },
+    { "type": "component", "componentType": "table", "position": { "col": 2, "row": 17 }, "width": 76, "height": 12, "columns": ["Project", "Status", "Due Date", "Owner"], "rows": 5, "zIndex": 1 }
   ]
 }
 
