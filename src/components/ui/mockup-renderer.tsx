@@ -357,18 +357,221 @@ const viewportConfig: Record<Viewport, { width: string; icon: typeof Monitor; la
   mobile: { width: "375px", icon: Smartphone, label: "Mobile" },
 }
 
+// ---- Wireframe CSS layer ----
+
+/**
+ * Wraps json-render output with CSS overrides that give it a wireframe aesthetic:
+ * - Muted grayscale palette
+ * - Dashed borders on cards
+ * - Reduced font sizes
+ * - Skeleton placeholders rendered as crosshatched blocks
+ */
+const wireframeStyles = `
+  .wireframe-layer {
+    --card: 0 0% 97%;
+    --card-foreground: 0 0% 25%;
+    --primary: 0 0% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 92%;
+    --secondary-foreground: 0 0% 25%;
+    --border: 0 0% 82%;
+    --muted: 0 0% 93%;
+    --muted-foreground: 0 0% 50%;
+    --accent: 0 0% 93%;
+    --accent-foreground: 0 0% 25%;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    overflow: hidden;
+    word-break: break-word;
+  }
+
+  /* ---- Overflow containment ---- */
+
+  /* Cards: dashed wireframe look + overflow protection */
+  .wireframe-layer [data-slot="card"] {
+    border-style: dashed !important;
+    border-color: hsl(0 0% 78%) !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    min-width: 0 !important;
+  }
+
+  .wireframe-layer [data-slot="card-header"],
+  .wireframe-layer [data-slot="card-content"] {
+    overflow: hidden !important;
+    min-width: 0 !important;
+  }
+
+  /* All flex/grid children must shrink and not overflow */
+  .wireframe-layer div {
+    min-width: 0;
+  }
+
+  /* Text elements must wrap and not overflow */
+  .wireframe-layer p,
+  .wireframe-layer h1,
+  .wireframe-layer h2,
+  .wireframe-layer h3,
+  .wireframe-layer h4,
+  .wireframe-layer span {
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    min-width: 0 !important;
+  }
+
+  /* ---- Buttons: visible wireframe style for ALL variants ---- */
+
+  /* Default/primary buttons: solid gray background */
+  .wireframe-layer [data-slot="button"] {
+    box-shadow: none !important;
+    border-radius: 4px !important;
+    border: 1px solid hsl(0 0% 70%) !important;
+    min-height: 32px !important;
+    padding: 6px 14px !important;
+    font-size: 13px !important;
+    cursor: default !important;
+  }
+
+  /* Primary variant: filled gray */
+  .wireframe-layer [data-slot="button"][data-variant="default"],
+  .wireframe-layer [data-slot="button"]:not([data-variant]) {
+    background: hsl(0 0% 40%) !important;
+    color: white !important;
+    border-color: hsl(0 0% 35%) !important;
+  }
+
+  /* Secondary, outline, ghost variants: outlined gray */
+  .wireframe-layer [data-slot="button"][data-variant="secondary"],
+  .wireframe-layer [data-slot="button"][data-variant="outline"],
+  .wireframe-layer [data-slot="button"][data-variant="ghost"] {
+    background: hsl(0 0% 96%) !important;
+    color: hsl(0 0% 30%) !important;
+    border: 1px dashed hsl(0 0% 72%) !important;
+  }
+
+  /* Link variant: underlined text */
+  .wireframe-layer [data-slot="button"][data-variant="link"] {
+    background: transparent !important;
+    border: none !important;
+    text-decoration: underline !important;
+    color: hsl(0 0% 40%) !important;
+    padding: 0 !important;
+  }
+
+  /* Destructive variant: darker outline */
+  .wireframe-layer [data-slot="button"][data-variant="destructive"] {
+    background: hsl(0 0% 90%) !important;
+    color: hsl(0 0% 25%) !important;
+    border: 1px solid hsl(0 0% 60%) !important;
+  }
+
+  /* ---- Grid: ensure children fill available space ---- */
+
+  .wireframe-layer .grid {
+    width: 100% !important;
+  }
+
+  .wireframe-layer .grid > * {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* ---- Inputs: simple bordered fields ---- */
+
+  .wireframe-layer input,
+  .wireframe-layer textarea,
+  .wireframe-layer select {
+    border: 1px dashed hsl(0 0% 72%) !important;
+    background: hsl(0 0% 98%) !important;
+    border-radius: 4px !important;
+    min-height: 32px !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ---- Skeleton: crosshatch pattern ---- */
+
+  .wireframe-layer [data-slot="skeleton"] {
+    background: repeating-linear-gradient(
+      -45deg,
+      hsl(0 0% 90%),
+      hsl(0 0% 90%) 2px,
+      hsl(0 0% 95%) 2px,
+      hsl(0 0% 95%) 8px
+    ) !important;
+    border: 1px dashed hsl(0 0% 80%) !important;
+    border-radius: 4px !important;
+    min-height: 60px;
+    animation: none !important;
+  }
+
+  /* ---- Separator: dashed line ---- */
+
+  .wireframe-layer [data-slot="separator"] {
+    border-style: dashed !important;
+  }
+
+  /* ---- Badge: outlined pill ---- */
+
+  .wireframe-layer [data-slot="badge"] {
+    border: 1px dashed hsl(0 0% 72%) !important;
+    background: hsl(0 0% 96%) !important;
+    color: hsl(0 0% 35%) !important;
+    font-weight: 400 !important;
+    font-size: 11px !important;
+  }
+
+  /* ---- Table: clean wireframe borders ---- */
+
+  .wireframe-layer table {
+    border: 1px dashed hsl(0 0% 80%) !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+  .wireframe-layer th,
+  .wireframe-layer td {
+    border: 1px dashed hsl(0 0% 85%) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* ---- Tabs: simple underline style ---- */
+
+  .wireframe-layer [role="tablist"] {
+    border-bottom: 1px dashed hsl(0 0% 80%) !important;
+  }
+
+  .wireframe-layer [role="tab"] {
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    font-size: 13px !important;
+    padding: 6px 12px !important;
+    color: hsl(0 0% 50%) !important;
+  }
+
+  .wireframe-layer [role="tab"][data-state="active"] {
+    border-bottom-color: hsl(0 0% 35%) !important;
+    color: hsl(0 0% 20%) !important;
+  }
+`
+
 // ---- JSON-render page renderer (single page) ----
 
 function JsonRenderPage({ page }: { page: MockupPage }) {
   return (
-    <div className="bg-white rounded-lg min-h-[400px]">
+    <div className="wireframe-layer bg-white rounded-lg min-h-[400px] overflow-hidden w-full max-w-full">
+      <style dangerouslySetInnerHTML={{ __html: wireframeStyles }} />
       <JSONUIProvider registry={mockupRegistry}>
         <Renderer
           spec={page.spec}
           registry={mockupRegistry}
           fallback={() => (
-            <div className="p-3 border border-dashed border-gray-300 rounded-md text-xs text-gray-400">
-              Unknown component
+            <div className="p-3 border border-dashed border-gray-300 rounded-md text-xs text-gray-400 bg-gray-50">
+              [Component placeholder]
             </div>
           )}
         />
@@ -489,8 +692,8 @@ function MockupViewer({ pages }: { pages: MockupPage[] }) {
           >
             {/* Page description */}
             {activePage.description && (
-              <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
-                <p className="text-xs text-blue-600">{activePage.description}</p>
+              <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                <p className="text-xs text-gray-500">{activePage.description}</p>
               </div>
             )}
 
@@ -658,8 +861,8 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
       <div className={className}>
         <SinglePageViewer
           page={{
-            title: "App Mockup",
-            description: "Interactive UI mockup generated from the MVP plan",
+            title: "Wireframe",
+            description: "Layout wireframe generated from the MVP plan",
             spec: patchSpec,
           }}
         />

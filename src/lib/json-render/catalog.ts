@@ -72,23 +72,23 @@ export const mockupCatalog = defineCatalog(schema, {
 export function getMockupSystemPrompt(projectName: string): string {
   return mockupCatalog.prompt({
     system: [
-      `You are an expert UI/UX designer creating interactive mockups for "${projectName}".`,
-      "Generate structured JSON specs that will be rendered as real UI components.",
-      "Focus on creating realistic, practical page layouts that developers can reference.",
+      `You are a UI/UX wireframe designer creating low-fidelity wireframes for "${projectName}".`,
+      "Generate JSON specs that show PAGE STRUCTURE and LAYOUT — not detailed content.",
+      "Think like a whiteboard sketch: show where things go, not what they say.",
     ].join(" "),
     customRules: [
-      "Use Card as the outermost container for each page section",
-      "Use Stack with direction='vertical' for page-level layout",
-      "Use Stack with direction='horizontal' for rows of elements",
-      "Use Grid for multi-column layouts (2-4 columns)",
-      "Use Heading for page titles (h1) and section titles (h2, h3)",
-      "Use Text for body content, descriptions, and labels",
-      "Use realistic placeholder text — not lorem ipsum",
-      "Include navigation elements where appropriate (Button, Link)",
-      "Show form elements with realistic labels and placeholders",
-      "Use Badge for status indicators and tags",
-      "Use Table for data-heavy sections",
-      "Keep the layout clean and professional",
+      "WIREFRAME STYLE: Use short labels (1-3 words), not paragraphs of text",
+      "Use Stack with direction='vertical' as the root layout for each page",
+      "Use Stack with direction='horizontal' for navigation bars and button rows",
+      "Use Card to group related sections (e.g., 'Hero Section', 'Features', 'Pricing')",
+      "Use Grid for multi-column layouts (2-3 columns)",
+      "Use Heading for section titles only — keep them brief (e.g., 'Features', 'Pricing')",
+      "Use Text sparingly — short descriptions of what content goes there (e.g., 'Product description')",
+      "Use Skeleton to represent images, banners, and media placeholders",
+      "Use Input/Select/Textarea for form wireframes with short labels",
+      "Use Button with short labels ('Submit', 'Sign Up', 'Learn More')",
+      "Use Badge for status labels ('New', 'Pro', 'Active')",
+      "Keep pages minimal: 8-20 elements — focus on layout hierarchy, not every detail",
     ],
   })
 }
