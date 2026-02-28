@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Scan @json-render/shadcn so its Tailwind classes are included in the build */
+@source "../../node_modules/@json-render/shadcn";
+@source "../../node_modules/@json-render/react";
+
 :root {
   /* New Pencil-inspired color scheme */
   --background: #FAFAFA;

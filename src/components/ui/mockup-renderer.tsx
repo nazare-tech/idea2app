@@ -1,11 +1,219 @@
 "use client"
 
 import React from "react"
+import { Renderer, JSONUIProvider } from "@json-render/react"
+import { mockupRegistry } from "@/lib/json-render/registry"
+import type { Spec } from "@json-render/core"
+import { Monitor, Smartphone, Tablet, ChevronLeft, ChevronRight, Layers } from "lucide-react"
 
 interface MockupRendererProps {
   content: string
   className?: string
 }
+
+// ---- JSON-render mockup types and parsing ----
+
+interface MockupPage {
+  title: string
+  description: string
+  spec: Spec
+}
+
+/**
+ * Detect whether content is in the new json-render format.
+ * JSON-render content contains "root" and "elements" keys within JSON blocks.
+ */
+function isJsonRenderContent(content: string): boolean {
+  return content.includes('"root"') && content.includes('"elements"')
+}
+
+/**
+ * Parse markdown content containing json-render specs.
+ * Expected format: markdown headers (## or ###) followed by ```json blocks.
+ */
+function parseJsonRenderPages(raw: string): MockupPage[] {
+  const pages: MockupPage[] = []
+  const lines = raw.split("\n")
+  let currentTitle = ""
+  let currentDescription: string[] = []
+  let inCodeFence = false
+  let codeBlock: string[] = []
+
+  const flushPage = () => {
+    if (codeBlock.length === 0) return
+    const jsonStr = codeBlock.join("\n").trim()
+    try {
+      const spec = JSON.parse(jsonStr) as Spec
+      if (spec.root && spec.elements) {
+        pages.push({
+          title: currentTitle || `Page ${pages.length + 1}`,
+          description: currentDescription.join("\n").trim(),
+          spec,
+        })
+      }
+    } catch {
+      // Invalid JSON — skip this block
+      console.warn(`[MockupRenderer] Failed to parse json-render spec for "${currentTitle}"`)
+    }
+    codeBlock = []
+    currentDescription = []
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+
+    // Handle code fences
+    if (trimmed.startsWith("```")) {
+      if (inCodeFence) {
+        flushPage()
+        inCodeFence = false
+      } else {
+        inCodeFence = true
+      }
+      continue
+    }
+
+    if (inCodeFence) {
+      codeBlock.push(line)
+      continue
+    }
+
+    // Detect markdown headers
+    const headerMatch = trimmed.match(/^(#{1,6})\s+(.+)$/)
+    if (headerMatch) {
+      currentTitle = headerMatch[2]
+      currentDescription = []
+      continue
+    }
+
+    // Collect description text between header and code block
+    if (trimmed) {
+      currentDescription.push(trimmed)
+    }
+  }
+
+  // Flush any remaining content
+  flushPage()
+
+  return pages
+}
+
+// ---- JSON Patch format detection and parsing ----
+
+/**
+ * Detect whether content is in JSON Patch format (streaming patches).
+ * Some models output json-render specs as a series of {"op":"add",...} operations.
+ */
+function isJsonPatchContent(content: string): boolean {
+  return content.trimStart().startsWith('{"op":')
+}
+
+/**
+ * Split a string containing multiple concatenated JSON objects into individual strings.
+ * Handles nested objects and quoted strings with escaped characters correctly.
+ */
+function splitJsonObjects(content: string): string[] {
+  const objects: string[] = []
+  let depth = 0
+  let start = -1
+  let inString = false
+  let escaped = false
+
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i]
+
+    if (escaped) {
+      escaped = false
+      continue
+    }
+
+    if (char === "\\" && inString) {
+      escaped = true
+      continue
+    }
+
+    if (char === '"') {
+      inString = !inString
+      continue
+    }
+
+    if (inString) continue
+
+    if (char === "{") {
+      if (depth === 0) start = i
+      depth++
+    } else if (char === "}") {
+      depth--
+      if (depth === 0 && start !== -1) {
+        objects.push(content.slice(start, i + 1))
+        start = -1
+      }
+    }
+  }
+
+  return objects
+}
+
+/**
+ * Set a nested value in an object using a JSON Pointer path (e.g. "/elements/app").
+ */
+function setNestedValue(
+  obj: Record<string, unknown>,
+  path: string,
+  value: unknown
+) {
+  const parts = path.split("/").filter(Boolean)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let current: any = obj
+
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i]
+    if (
+      !(part in current) ||
+      typeof current[part] !== "object" ||
+      current[part] === null
+    ) {
+      current[part] = {}
+    }
+    current = current[part]
+  }
+
+  current[parts[parts.length - 1]] = value
+}
+
+/**
+ * Apply JSON Patch "add" operations to reconstruct a complete json-render spec.
+ * Returns null if the result doesn't contain the required root + elements.
+ */
+function applyJsonPatches(content: string): Spec | null {
+  const jsonStrings = splitJsonObjects(content)
+  if (jsonStrings.length === 0) return null
+
+  const result: Record<string, unknown> = {}
+
+  for (const jsonStr of jsonStrings) {
+    try {
+      const patch = JSON.parse(jsonStr) as {
+        op: string
+        path: string
+        value: unknown
+      }
+      if (patch.op === "add" && patch.path && patch.value !== undefined) {
+        setNestedValue(result, patch.path, patch.value)
+      }
+    } catch {
+      // Skip malformed JSON patches — the content may be truncated
+    }
+  }
+
+  if (result.root && result.elements) {
+    return result as unknown as Spec
+  }
+
+  return null
+}
+
+// ---- Legacy ASCII art types and parsing ----
 
 interface Section {
   type: "header" | "code" | "text"
@@ -14,7 +222,7 @@ interface Section {
 }
 
 /**
- * Parses mockup markdown content into structured sections.
+ * Parses legacy mockup markdown content into structured sections.
  * Handles code fences, headers, and auto-detects unfenced ASCII art.
  */
 function parseMockupContent(raw: string): Section[] {
@@ -48,7 +256,6 @@ function parseMockupContent(raw: string): Section[] {
 
   const flushCode = () => {
     if (codeBlock.length === 0) return
-    // Trim trailing empty lines
     while (codeBlock.length > 0 && !codeBlock[codeBlock.length - 1].trim()) {
       codeBlock.pop()
     }
@@ -62,7 +269,6 @@ function parseMockupContent(raw: string): Section[] {
     const line = lines[i]
     const trimmed = line.trim()
 
-    // Handle code fences
     if (trimmed.startsWith("```")) {
       if (inCodeFence) {
         flushCode()
@@ -79,7 +285,6 @@ function parseMockupContent(raw: string): Section[] {
       continue
     }
 
-    // Detect markdown headers
     const headerMatch = trimmed.match(/^(#{1,6})\s+(.+)$/)
     if (headerMatch) {
       flushText()
@@ -92,17 +297,14 @@ function parseMockupContent(raw: string): Section[] {
       continue
     }
 
-    // Detect ASCII art lines (not inside code fences)
     if (isAsciiArtLine(line)) {
       flushText()
       codeBlock.push(line)
       continue
     }
 
-    // If we're accumulating ASCII art (unfenced), handle continuation
     if (codeBlock.length > 0) {
       if (!trimmed) {
-        // Blank line: check if more art follows within next few lines
         let moreArt = false
         for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
           if (isAsciiArtLine(lines[j])) {
@@ -118,7 +320,6 @@ function parseMockupContent(raw: string): Section[] {
           textBlock.push(line)
         }
       } else {
-        // Non-empty, non-art line while in art block — check if it's a label within art
         let moreArt = false
         for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
           if (isAsciiArtLine(lines[j])) {
@@ -128,7 +329,7 @@ function parseMockupContent(raw: string): Section[] {
           if (lines[j].trim().match(/^#{1,6}\s/)) break
         }
         if (moreArt) {
-          codeBlock.push(line) // label within ASCII art
+          codeBlock.push(line)
         } else {
           flushCode()
           textBlock.push(line)
@@ -137,27 +338,254 @@ function parseMockupContent(raw: string): Section[] {
       continue
     }
 
-    // Regular text line
     textBlock.push(line)
   }
 
-  // Flush remaining content
   flushText()
   flushCode()
 
   return sections
 }
 
-/**
- * Renders mockup content (ASCII art wireframes) without ReactMarkdown.
- * Completely bypasses markdown parsing to prevent box-drawing characters
- * from being misinterpreted as table syntax.
- */
-export function MockupRenderer({ content, className = "" }: MockupRendererProps) {
-  const sections = React.useMemo(() => parseMockupContent(content), [content])
+// ---- Viewport presets ----
+
+type Viewport = "desktop" | "tablet" | "mobile"
+
+const viewportConfig: Record<Viewport, { width: string; icon: typeof Monitor; label: string }> = {
+  desktop: { width: "100%", icon: Monitor, label: "Desktop" },
+  tablet: { width: "768px", icon: Tablet, label: "Tablet" },
+  mobile: { width: "375px", icon: Smartphone, label: "Mobile" },
+}
+
+// ---- JSON-render page renderer (single page) ----
+
+function JsonRenderPage({ page }: { page: MockupPage }) {
+  return (
+    <div className="bg-white rounded-lg min-h-[400px]">
+      <JSONUIProvider registry={mockupRegistry}>
+        <Renderer
+          spec={page.spec}
+          registry={mockupRegistry}
+          fallback={() => (
+            <div className="p-3 border border-dashed border-gray-300 rounded-md text-xs text-gray-400">
+              Unknown component
+            </div>
+          )}
+        />
+      </JSONUIProvider>
+    </div>
+  )
+}
+
+// ---- Multi-page interactive mockup viewer ----
+
+function MockupViewer({ pages }: { pages: MockupPage[] }) {
+  const [activeIndex, setActiveIndex] = React.useState(0)
+  const [viewport, setViewport] = React.useState<Viewport>("desktop")
+
+  const activePage = pages[activeIndex]
+  const vp = viewportConfig[viewport]
 
   return (
-    <div className={`space-y-5 ${className}`}>
+    <div className="space-y-0">
+      {/* Toolbar: page tabs + viewport switcher */}
+      <div className="flex items-center justify-between border border-border rounded-t-xl bg-muted/30 px-1">
+        {/* Page tabs (scrollable if many) */}
+        <div className="flex items-center gap-0.5 overflow-x-auto py-1 flex-1 min-w-0">
+          {pages.map((page, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveIndex(i)}
+              className={`
+                flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg
+                transition-all duration-150 whitespace-nowrap shrink-0
+                ${i === activeIndex
+                  ? "bg-background text-foreground shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                }
+              `}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                i === activeIndex ? "bg-primary" : "bg-muted-foreground/30"
+              }`} />
+              {page.title}
+            </button>
+          ))}
+        </div>
+
+        {/* Page counter + viewport switcher */}
+        <div className="flex items-center gap-2 pl-3 border-l border-border ml-2 shrink-0">
+          {/* Page navigation arrows */}
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
+              disabled={activeIndex === 0}
+              className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-[10px] text-muted-foreground font-mono tabular-nums px-0.5">
+              {activeIndex + 1}/{pages.length}
+            </span>
+            <button
+              onClick={() => setActiveIndex(Math.min(pages.length - 1, activeIndex + 1))}
+              disabled={activeIndex === pages.length - 1}
+              className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Viewport toggles */}
+          <div className="flex items-center bg-background rounded-md border border-border p-0.5">
+            {(Object.entries(viewportConfig) as [Viewport, typeof vp][]).map(([key, config]) => {
+              const Icon = config.icon
+              return (
+                <button
+                  key={key}
+                  onClick={() => setViewport(key)}
+                  title={config.label}
+                  className={`
+                    p-1 rounded transition-colors
+                    ${key === viewport
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                    }
+                  `}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Browser chrome frame */}
+      <div className="border-x border-border bg-muted/20">
+        {/* URL bar */}
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
+          <div className="flex gap-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/60" />
+            <span className="w-2.5 h-2.5 rounded-full bg-green-400/60" />
+          </div>
+          <div className="flex-1 flex items-center gap-1.5 bg-background rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground font-mono">
+            <span className="text-green-600">●</span>
+            <span>app.example.com/{activePage.title.toLowerCase().replace(/\s+/g, "-")}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Viewport container */}
+      <div className="border-x border-b border-border rounded-b-xl bg-muted/10 overflow-hidden">
+        <div className="flex justify-center py-0 bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
+          <div
+            className="w-full transition-all duration-300 ease-out bg-white"
+            style={{
+              maxWidth: vp.width,
+              minHeight: "500px",
+            }}
+          >
+            {/* Page description */}
+            {activePage.description && (
+              <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+                <p className="text-xs text-blue-600">{activePage.description}</p>
+              </div>
+            )}
+
+            {/* Rendered mockup */}
+            <div className="p-4">
+              <JsonRenderPage page={activePage} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---- Single-page viewer (for JSON Patch results) ----
+
+function SinglePageViewer({ page }: { page: MockupPage }) {
+  const [viewport, setViewport] = React.useState<Viewport>("desktop")
+  const vp = viewportConfig[viewport]
+
+  return (
+    <div className="space-y-0">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between border border-border rounded-t-xl bg-muted/30 px-3 py-1.5">
+        <div className="flex items-center gap-2">
+          <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-foreground">{page.title}</span>
+          {page.description && (
+            <span className="text-[10px] text-muted-foreground hidden sm:inline">
+              — {page.description}
+            </span>
+          )}
+        </div>
+
+        {/* Viewport toggles */}
+        <div className="flex items-center bg-background rounded-md border border-border p-0.5">
+          {(Object.entries(viewportConfig) as [Viewport, typeof vp][]).map(([key, config]) => {
+            const Icon = config.icon
+            return (
+              <button
+                key={key}
+                onClick={() => setViewport(key)}
+                title={config.label}
+                className={`
+                  p-1 rounded transition-colors
+                  ${key === viewport
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                  }
+                `}
+              >
+                <Icon className="w-3.5 h-3.5" />
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Browser chrome */}
+      <div className="border-x border-border bg-muted/20">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
+          <div className="flex gap-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/60" />
+            <span className="w-2.5 h-2.5 rounded-full bg-green-400/60" />
+          </div>
+          <div className="flex-1 flex items-center gap-1.5 bg-background rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground font-mono">
+            <span className="text-green-600">●</span>
+            <span>app.example.com</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Viewport */}
+      <div className="border-x border-b border-border rounded-b-xl bg-muted/10 overflow-hidden">
+        <div className="flex justify-center bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
+          <div
+            className="w-full transition-all duration-300 ease-out bg-white"
+            style={{ maxWidth: vp.width, minHeight: "500px" }}
+          >
+            <div className="p-4">
+              <JsonRenderPage page={page} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---- Legacy ASCII renderer ----
+
+function AsciiMockupContent({ sections }: { sections: Section[] }) {
+  return (
+    <>
       {sections.map((section, i) => {
         switch (section.type) {
           case "header": {
@@ -200,6 +628,81 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
             return null
         }
       })}
+    </>
+  )
+}
+
+// ---- Main component ----
+
+/**
+ * Renders mockup content — either as interactive json-render components (new)
+ * or as ASCII art wireframes (legacy). Auto-detects the format.
+ */
+export function MockupRenderer({ content, className = "" }: MockupRendererProps) {
+  // Memoize format detection and parsing to avoid re-parsing on every render
+  const patchSpec = React.useMemo(() => {
+    if (isJsonPatchContent(content)) {
+      return applyJsonPatches(content)
+    }
+    return null
+  }, [content])
+
+  const isJsonRender = React.useMemo(
+    () => !patchSpec && isJsonRenderContent(content),
+    [content, patchSpec]
+  )
+
+  // JSON Patch format — reconstruct spec from streaming patches
+  if (patchSpec) {
+    return (
+      <div className={className}>
+        <SinglePageViewer
+          page={{
+            title: "App Mockup",
+            description: "Interactive UI mockup generated from the MVP plan",
+            spec: patchSpec,
+          }}
+        />
+      </div>
+    )
+  }
+
+  // Standard json-render format — markdown headers + JSON code blocks
+  if (isJsonRender) {
+    const pages = parseJsonRenderPages(content)
+
+    if (pages.length === 0) {
+      // Fallback: couldn't parse any valid specs — render as ASCII
+      const sections = parseMockupContent(content)
+      return (
+        <div className={`space-y-5 ${className}`}>
+          <AsciiMockupContent sections={sections} />
+        </div>
+      )
+    }
+
+    // Multi-page: tabbed viewer
+    if (pages.length > 1) {
+      return (
+        <div className={className}>
+          <MockupViewer pages={pages} />
+        </div>
+      )
+    }
+
+    // Single page
+    return (
+      <div className={className}>
+        <SinglePageViewer page={pages[0]} />
+      </div>
+    )
+  }
+
+  // Legacy ASCII art rendering
+  const sections = parseMockupContent(content)
+  return (
+    <div className={`space-y-5 ${className}`}>
+      <AsciiMockupContent sections={sections} />
     </div>
   )
 }

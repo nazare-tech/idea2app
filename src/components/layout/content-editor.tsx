@@ -79,7 +79,7 @@ const documentConfig: Record<
   },
   mockups: {
     title: "Mockups",
-    subtitle: "ASCII art mockups showing information architecture",
+    subtitle: "Interactive UI mockups showing information architecture",
     icon: LayoutGrid,
     creditCost: 15,
   },
