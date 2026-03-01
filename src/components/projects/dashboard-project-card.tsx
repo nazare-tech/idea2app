@@ -93,27 +93,31 @@ export function DashboardProjectCard({
       )}
 
       {showDeleteConfirmation && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setShowDeleteConfirmation(false)}
-        >
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                onClick={() => setShowDeleteConfirmation(false)}
+            >
           <div
-            className="w-full max-w-sm rounded-xl border border-[#2A2A2A] bg-[#1A1A1A] p-5 shadow-2xl"
+            className="w-full max-w-[560px] rounded-xl border border-[#E5E5E5] bg-white p-6"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="text-sm font-semibold text-white mb-2">
-              Delete project
+            <h3 className="text-[28px] leading-[1.1] font-[700] tracking-[-1px] text-[#0A0A0A]">
+              Delete project?
             </h3>
-            <p className="text-sm text-[#B0B0B0]">
-              Are you sure you want to delete{" "}
-              <span className="font-medium text-white">{name}</span>? This action cannot be undone.
+            <p className="mt-4 text-[14px] leading-[1.5] text-[#666666]">
+              You are about to permanently delete "{name}". This action removes all
+              environments, deployment history, and collaborator access. This cannot be
+              undone.
             </p>
-            <div className="mt-4 flex justify-end gap-2">
+            <p className="mt-4 text-[12px] leading-[1.5] font-[600] text-[#FF3B30]">
+              Warning: deleting this project is permanent.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirmation(false)}
                 disabled={isDeleting}
-                className="h-8 rounded-md border border-[#4A4A4A] px-3 text-xs font-semibold text-[#C9C9C9] disabled:opacity-40"
+                className="h-11 rounded-md border border-[#E5E5E5] bg-white px-5 text-[13px] font-semibold text-[#0A0A0A] disabled:opacity-40"
               >
                 Cancel
               </button>
@@ -124,7 +128,7 @@ export function DashboardProjectCard({
                   handleDelete()
                 }}
                 disabled={isDeleting}
-                className="h-8 rounded-md bg-[#FF3B30] px-3 text-xs font-semibold text-white disabled:opacity-40"
+                className="h-11 rounded-md bg-[#FF3B30] px-5 text-[13px] font-semibold text-white disabled:opacity-40"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </button>
