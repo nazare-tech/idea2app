@@ -1,24 +1,30 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { Lightbulb, ArrowLeft, Check } from "lucide-react"
+import { Lightbulb, ArrowRight, Check } from "lucide-react"
 
-export default function SignupPage() {
+function SignupScreen() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [fullName, setFullName] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const message = searchParams.get("message")
+  const socialText = "Continue with Google"
+
+  const isSocialError = message === "social_callback_error"
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,6 +33,11 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.")
+        return
+      }
+
       const supabase = createClient()
 
       const { error } = await supabase.auth.signUp({
@@ -36,7 +47,7 @@ export default function SignupPage() {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${window.location.origin}/callback`,
+          emailRedirectTo: `${window.location.origin}/callback?next=/dashboard`,
         },
       })
 
@@ -53,131 +64,249 @@ export default function SignupPage() {
     }
   }
 
+  const handleGoogleSignup = async () => {
+    if (loading) return
+    setError(null)
+    setLoading(true)
+
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/callback?next=/dashboard`,
+        },
+      })
+
+      if (error) {
+        setError(error.message)
+      }
+    } catch {
+      setError("An unexpected error occurred.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <Card>
-            <CardHeader className="text-center">
-              <div className="mx-auto h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
-                <Check className="h-6 w-6 text-emerald-500" />
-              </div>
-              <CardTitle className="text-2xl">Check your email</CardTitle>
-              <CardDescription>
-                We&apos;ve sent you a confirmation link to <strong>{email}</strong>.
-                Click the link to verify your account.
-              </CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => router.push("/login")}
-              >
-                Back to login
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
+      <div className="min-h-screen bg-background text-foreground">
+        <section className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pb-6 md:px-8 lg:px-12 xl:px-16">
+          <AuthHeader />
+          <main className="flex min-h-0 flex-1 items-center justify-center">
+            <Card className="w-full max-w-[480px] border-[#E0E0E0] bg-card p-8 text-center">
+              <CardHeader>
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-bg">
+                  <Check className="h-6 w-6 text-success" />
+                </div>
+                <CardTitle className="text-2xl">Check your email</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  We&apos;ve sent a confirmation link to <strong>{email}</strong>.
+                  Open it to verify your account.
+                </p>
+              </CardHeader>
+            </Card>
+          </main>
+        </section>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to home
-        </Link>
-
-        <Card>
-          <CardHeader className="space-y-1">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Lightbulb className="h-5 w-5 text-primary" />
+    <div className="min-h-screen bg-background text-foreground">
+      <section className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pb-6 md:px-8 lg:px-12 xl:px-16">
+        <AuthHeader />
+        <main className="flex min-h-0 flex-1 flex-col-reverse gap-8 overflow-hidden rounded-xl border border-border bg-white lg:flex-row lg:justify-center lg:rounded-none lg:border-0 lg:bg-transparent">
+          <aside className="hidden min-h-[620px] w-full max-w-[560px] bg-foreground px-12 py-14 text-background lg:block">
+            <div className="flex h-full flex-col justify-between">
+              <div>
+                <p className="text-sm font-semibold tracking-[0.16em] text-gray-400">
+                  CREATIVE WORKFLOW
+                </p>
+                <h1 className="mt-6 max-w-sm text-5xl font-semibold leading-tight tracking-[-0.06em]">
+                  Ship products with confidence.
+                </h1>
               </div>
-              <span className="text-xl font-bold">Idea2App</span>
-            </div>
-            <CardTitle className="text-2xl">Create an account</CardTitle>
-            <CardDescription>
-              Start transforming your business ideas into reality
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSignup}>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                  {error}
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  disabled={loading}
-                  autoFocus
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Create a password (min 6 characters)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  disabled={loading}
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Spinner size="sm" />
-                    Creating account...
-                  </>
-                ) : (
-                  "Create account"
-                )}
-              </Button>
-              <p className="text-sm text-muted-foreground text-center">
-                Already have an account?{" "}
-                <Link href="/login" className="text-primary hover:underline">
-                  Sign in
-                </Link>
+              <p className="text-sm leading-relaxed text-gray-400">
+                Create your Idea2App account to manage prompts, builds, and launches
+                from one workspace.
               </p>
-            </CardFooter>
-          </form>
-        </Card>
+            </div>
+          </aside>
 
-        <p className="text-xs text-muted-foreground text-center">
-          By creating an account, you agree to our Terms of Service and Privacy Policy.
-        </p>
-      </div>
+          <div className="flex w-full justify-center overflow-y-auto px-0 py-8 md:px-4 lg:px-12">
+            <Card className="w-full max-w-[520px] border-[#E0E0E0] bg-card">
+              <CardHeader className="space-y-2 px-8 pt-8">
+                <div className="mb-2 flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <Lightbulb className="h-4 w-4" />
+                  </div>
+                  <span className="text-lg font-semibold tracking-[0.05em]">Idea2App</span>
+                </div>
+                <CardTitle className="text-3xl tracking-[-0.02em]">Create account</CardTitle>
+                <p className="text-sm text-muted-foreground">Join Idea2App and start building.</p>
+              </CardHeader>
+
+              <CardContent className="space-y-5 px-8 pt-3">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignup}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-white text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={loading}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  {loading ? "Connecting..." : socialText}
+                </button>
+
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-[#E0E0E0]" />
+                  <span>OR</span>
+                  <span className="h-px flex-1 bg-[#E0E0E0]" />
+                </div>
+
+                <form onSubmit={handleSignup} className="space-y-4">
+                  {isSocialError && (
+                    <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-[#B42318]">
+                      Could not complete Google sign in. Please try again.
+                    </p>
+                  )}
+
+                  {error && (
+                    <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-destructive">
+                      {error}
+                    </p>
+                  )}
+
+                  <FormField
+                    id="fullName"
+                    label="Full name"
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChange={(value) => setFullName(value)}
+                    disabled={loading}
+                  />
+                  <FormField
+                    id="email"
+                    type="email"
+                    label="Email address"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(value) => setEmail(value)}
+                    disabled={loading}
+                  />
+                  <FormField
+                    id="password"
+                    type="password"
+                    label="Password"
+                    placeholder="Create a password"
+                    value={password}
+                    onChange={(value) => setPassword(value)}
+                    minLength={6}
+                    disabled={loading}
+                  />
+                  <FormField
+                    id="confirmPassword"
+                    type="password"
+                    label="Confirm password"
+                    placeholder="Re-enter your password"
+                    value={confirmPassword}
+                    onChange={(value) => setConfirmPassword(value)}
+                    minLength={6}
+                    disabled={loading}
+                  />
+
+                  <Button type="submit" className="h-12 w-full bg-primary text-primary-foreground" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Spinner size="sm" />
+                        Creating account...
+                      </>
+                    ) : (
+                      "Create account"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+              <CardFooter className="px-8 pb-8 pt-2">
+                <p className="w-full text-center text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link href="/login" className="font-semibold text-primary hover:underline">
+                    Log in
+                  </Link>
+                </p>
+              </CardFooter>
+            </Card>
+          </div>
+        </main>
+      </section>
     </div>
+  )
+}
+
+function AuthHeader() {
+  return (
+    <header className="border-b border-border bg-card">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 md:px-8 lg:px-12 xl:px-16">
+        <Link href="/" className="inline-flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Lightbulb className="h-4 w-4" />
+          </div>
+          <span className="text-base font-semibold tracking-[0.05em]">Idea2App</span>
+        </Link>
+      </div>
+    </header>
+  )
+}
+
+function FormField({
+  id,
+  type = "text",
+  label,
+  placeholder,
+  value,
+  onChange,
+  disabled,
+  minLength,
+}: {
+  id: string
+  type?: string
+  label: string
+  placeholder: string
+  value: string
+  onChange: (value: string) => void
+  disabled: boolean
+  minLength?: number
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-[13px] text-muted-foreground">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+        disabled={disabled}
+        minLength={minLength}
+        className="h-12 bg-[#FFFFFF] border-[#E0E0E0] text-[#0A0A0A] placeholder:text-[#999999] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
+      />
+    </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      <SignupScreen />
+    </Suspense>
   )
 }
