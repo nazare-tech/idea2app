@@ -86,7 +86,7 @@ export function ProjectWorkspace({
   const [projectName, setProjectName] = useState(project.name)
   const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
-  
+
   useEffect(() => {
     setProjectName(project.name)
   }, [project.name])
@@ -261,6 +261,7 @@ export function ProjectWorkspace({
       competitive: loadGeneratingState("competitive"),
       prd: loadGeneratingState("prd"),
       mvp: loadGeneratingState("mvp"),
+      mockups: loadGeneratingState("mockups"),
       techspec: loadGeneratingState("techspec"),
       deploy: loadGeneratingState("deploy"),
     }
@@ -560,7 +561,7 @@ export function ProjectWorkspace({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
-      body: JSON.stringify({
+          body: JSON.stringify({
             projectId: project.id,
             idea: project.description,
             name: projectName,
@@ -737,7 +738,7 @@ export function ProjectWorkspace({
 
       <div className="flex flex-1 overflow-hidden">
         {/* Document Navigation */}
-      <DocumentNav
+        <DocumentNav
           projectName={projectName}
           activeDocument={activeDocument}
           onDocumentSelect={handleDocumentSelect}

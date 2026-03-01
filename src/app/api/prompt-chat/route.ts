@@ -27,7 +27,7 @@ function dedupePromptChatMessages(messages: PromptChatMessage[] = []) {
     const currentTime = message.created_at ? new Date(message.created_at).getTime() : NaN
     const lastTime = lastSeen.get(key)
     const isDuplicate = Number.isFinite(lastTime) && Number.isFinite(currentTime)
-      ? Math.abs(currentTime - lastTime) <= 5000
+      ? Math.abs(currentTime - (lastTime as number)) <= 5000
       : false
 
     if (!isDuplicate) {
