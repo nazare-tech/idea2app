@@ -353,3 +353,221 @@ body {
     fill: #e5e5e5 !important;
   }
 }
+
+/* ============================================================
+   Wireframe Layer — grayscale wireframe aesthetic for mockups
+   ============================================================ */
+
+.wireframe-layer {
+  /* Base CSS variables (hex) for Tailwind v4 compatibility */
+  --card: #f7f7f7;
+  --card-foreground: #404040;
+  --primary: #595959;
+  --primary-foreground: #ffffff;
+  --secondary: #ebebeb;
+  --secondary-foreground: #404040;
+  --border: #d1d1d1;
+  --muted: #ededed;
+  --muted-foreground: #808080;
+  --accent: #ededed;
+  --accent-foreground: #404040;
+  --background: #ffffff;
+  --foreground: #404040;
+  --popover: #ffffff;
+  --popover-foreground: #404040;
+  --input: #d1d1d1;
+  --ring: #595959;
+  --destructive: #808080;
+  --destructive-foreground: #ffffff;
+
+  /* Tailwind v4 --color-* overrides (utility classes like text-foreground reference these) */
+  --color-card: #f7f7f7;
+  --color-card-foreground: #404040;
+  --color-primary: #595959;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #ebebeb;
+  --color-secondary-foreground: #404040;
+  --color-border: #d1d1d1;
+  --color-muted: #ededed;
+  --color-muted-foreground: #808080;
+  --color-accent: #ededed;
+  --color-accent-foreground: #404040;
+  --color-background: #ffffff;
+  --color-foreground: #404040;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #404040;
+  --color-input: #d1d1d1;
+  --color-ring: #595959;
+  --color-destructive: #808080;
+  --color-destructive-foreground: #ffffff;
+
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: #404040;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* Cards: dashed wireframe look + overflow protection */
+.wireframe-layer [data-slot="card"] {
+  border-style: dashed !important;
+  border-color: #c7c7c7 !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  min-width: 0 !important;
+}
+
+.wireframe-layer [data-slot="card-header"],
+.wireframe-layer [data-slot="card-content"] {
+  overflow: hidden !important;
+  min-width: 0 !important;
+}
+
+/* All flex/grid children must shrink and not overflow */
+.wireframe-layer div {
+  min-width: 0;
+}
+
+/* Text elements must wrap and not overflow */
+.wireframe-layer p,
+.wireframe-layer h1,
+.wireframe-layer h2,
+.wireframe-layer h3,
+.wireframe-layer h4,
+.wireframe-layer span {
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  min-width: 0 !important;
+}
+
+/* Buttons: wireframe style for ALL variants */
+.wireframe-layer [data-slot="button"] {
+  box-shadow: none !important;
+  border-radius: 4px !important;
+  border: 1px solid #b3b3b3 !important;
+  min-height: 32px !important;
+  padding: 6px 14px !important;
+  font-size: 13px !important;
+  cursor: default !important;
+}
+
+/* Primary variant: filled gray */
+.wireframe-layer [data-slot="button"][data-variant="default"],
+.wireframe-layer [data-slot="button"]:not([data-variant]) {
+  background: #666666 !important;
+  color: white !important;
+  border-color: #595959 !important;
+}
+
+/* Secondary, outline, ghost variants: outlined gray */
+.wireframe-layer [data-slot="button"][data-variant="secondary"],
+.wireframe-layer [data-slot="button"][data-variant="outline"],
+.wireframe-layer [data-slot="button"][data-variant="ghost"] {
+  background: #f5f5f5 !important;
+  color: #4d4d4d !important;
+  border: 1px dashed #b8b8b8 !important;
+}
+
+/* Link variant: underlined text */
+.wireframe-layer [data-slot="button"][data-variant="link"] {
+  background: transparent !important;
+  border: none !important;
+  text-decoration: underline !important;
+  color: #666666 !important;
+  padding: 0 !important;
+}
+
+/* Destructive variant: darker outline */
+.wireframe-layer [data-slot="button"][data-variant="destructive"] {
+  background: #e6e6e6 !important;
+  color: #404040 !important;
+  border: 1px solid #999999 !important;
+}
+
+/* Grid: ensure children fill available space */
+.wireframe-layer .grid {
+  width: 100% !important;
+}
+
+.wireframe-layer .grid > * {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Inputs: simple bordered fields */
+.wireframe-layer input,
+.wireframe-layer textarea,
+.wireframe-layer select {
+  border: 1px dashed #b8b8b8 !important;
+  background: #fafafa !important;
+  border-radius: 4px !important;
+  min-height: 32px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  color: #666666 !important;
+}
+
+/* Skeleton: crosshatch pattern */
+.wireframe-layer [data-slot="skeleton"] {
+  background: repeating-linear-gradient(
+    -45deg,
+    #e6e6e6,
+    #e6e6e6 2px,
+    #f2f2f2 2px,
+    #f2f2f2 8px
+  ) !important;
+  border: 1px dashed #cccccc !important;
+  border-radius: 4px !important;
+  min-height: 60px;
+  animation: none !important;
+}
+
+/* Separator: dashed line */
+.wireframe-layer [data-slot="separator"] {
+  border-style: dashed !important;
+}
+
+/* Badge: outlined pill */
+.wireframe-layer [data-slot="badge"] {
+  border: 1px dashed #b8b8b8 !important;
+  background: #f5f5f5 !important;
+  color: #595959 !important;
+  font-weight: 400 !important;
+  font-size: 11px !important;
+}
+
+/* Table: clean wireframe borders */
+.wireframe-layer table {
+  border: 1px dashed #cccccc !important;
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+.wireframe-layer th,
+.wireframe-layer td {
+  border: 1px dashed #d9d9d9 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  color: #404040 !important;
+}
+
+/* Tabs: simple underline style */
+.wireframe-layer [role="tablist"] {
+  border-bottom: 1px dashed #cccccc !important;
+}
+
+.wireframe-layer [role="tab"] {
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  padding: 6px 12px !important;
+  color: #808080 !important;
+}
+
+.wireframe-layer [role="tab"][data-state="active"] {
+  border-bottom-color: #595959 !important;
+  color: #333333 !important;
+}
