@@ -106,8 +106,8 @@ export default function SettingsPage() {
       <div
         className={`p-3 rounded-xl text-sm border ${
           message.type === "success"
-            ? "bg-[rgba(52,211,153,0.08)] border-[rgba(52,211,153,0.2)] text-emerald-400"
-            : "bg-[rgba(255,59,92,0.08)] border-[rgba(255,59,92,0.2)] text-[#ff6b8a]"
+            ? "bg-[rgba(34,197,94,0.08)] border-[rgba(34,197,94,0.25)] text-[#15803d]"
+            : "bg-[rgba(255,59,48,0.08)] border-[rgba(255,59,48,0.25)] text-[#b91c1c]"
         }`}
       >
         {message.text}
@@ -263,6 +263,9 @@ export default function SettingsPage() {
     return new Date(value).toLocaleDateString()
   }
 
+  const activeTabConfig = settingsTabs.find((tab) => tab.value === activeTab) ?? settingsTabs[0]
+  const badgeText = (fullName || username || email || "A").slice(0, 2).toUpperCase()
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -272,50 +275,74 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-black tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage your account settings and preferences</p>
-      </div>
-
-      <div className="grid gap-5 lg:grid-cols-[240px_1fr]">
-        <div className="space-y-2">
-          {settingsTabs.map((tab) => {
-            const Icon = tab.icon
-            const isActive = activeTab === tab.value
-
-            return (
-              <Link
-                key={tab.value}
-                href={getTabHref(tab.value)}
-                className={`group flex flex-col gap-0.5 rounded-xl border px-3 py-3 transition ${
-                  isActive
-                    ? "border-[rgba(0,212,255,0.35)] bg-[rgba(0,212,255,0.08)] text-[#00d4ff]"
-                    : "border-transparent text-muted-foreground hover:border-[rgba(255,255,255,0.08)] hover:text-foreground"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
-                  <span className="font-medium">{tab.label}</span>
-                </div>
-                <span className="text-xs text-muted-foreground group-hover:text-foreground">{tab.description}</span>
-              </Link>
-            )
-          })}
+    <div className="min-h-screen bg-white text-[#0A0A0A]">
+      <header className="sticky top-0 z-10 h-auto min-h-16 border-b border-[#E0E0E0] bg-white px-4 sm:px-8 lg:px-14 py-3 flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3.5">
+          <span className="text-[20px] sm:text-[22px] font-black tracking-[0.05em] truncate">Idea2App</span>
+          <span className="text-sm text-[#777777]">Account / Profile Settings</span>
         </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            className="h-10 w-10 flex items-center justify-center rounded border border-[#E0E0E0] bg-white text-[#666666]"
+            aria-label="Notifications"
+          >
+            <Bell className="h-4 w-4" />
+          </button>
+          <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center text-sm font-bold">
+            {badgeText}
+          </div>
+        </div>
+      </header>
 
-        <div className="space-y-6">
-          {activeTab === "profile" && (
-            <>
-              {isDev && (
-                <Card className="border-[rgba(251,191,36,0.3)] bg-[rgba(251,191,36,0.05)] shadow-[0_0_20px_rgba(251,191,36,0.08)]">
+      <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-8 lg:px-[56px] lg:py-8">
+        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+          <aside className="rounded border border-[#E0E0E0] bg-[#F8F8F8] p-4 lg:p-6 h-fit">
+            <h2 className="text-[18px] font-semibold mb-2 hidden lg:block">Account</h2>
+            <div className="grid grid-cols-3 gap-2 lg:block lg:space-y-2">
+              {settingsTabs.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.value
+
+                return (
+                  <Link
+                    key={tab.value}
+                    href={getTabHref(tab.value)}
+                    className={`group inline-flex lg:flex items-center justify-center lg:justify-start gap-2 rounded-md border px-3 py-3 transition ${
+                      isActive
+                        ? "border-[#0A0A0A] bg-[#0A0A0A] text-white"
+                        : "border-[#E0E0E0] bg-white text-[#0A0A0A] hover:border-[#B5B5B5]"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <div className="leading-tight">
+                      <span className="font-medium">{tab.label}</span>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </aside>
+
+          <section className="space-y-5">
+            <div>
+              <h1 className="text-[30px] sm:text-[36px] font-bold tracking-[-0.03em] leading-tight">
+                {activeTabConfig.label}
+              </h1>
+              <p className="text-[#666666] mt-1">{activeTabConfig.description}</p>
+            </div>
+
+            {activeTab === "profile" && (
+              <>
+                {isDev && (
+                <Card className="border-[#E0E0E0] bg-[#FFF9E7]">
                   <CardHeader>
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/20 flex items-center justify-center">
-                        <Shield className="h-5 w-5 text-amber-400" />
+                      <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                        <Shield className="h-5 w-5" />
                       </div>
                       <div>
-                        <CardTitle className="text-amber-400">Developer Account</CardTitle>
+                        <CardTitle>Developer Account</CardTitle>
                         <CardDescription>Unlimited credits enabled for testing and development.</CardDescription>
                       </div>
                     </div>
@@ -323,11 +350,11 @@ export default function SettingsPage() {
                 </Card>
               )}
 
-              <Card>
+              <Card className="border-[#E0E0E0] bg-[#FAFAFA]">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center">
-                      <User className="h-5 w-5 text-[#00d4ff]" />
+                    <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                      <User className="h-5 w-5" />
                     </div>
                     <div>
                       <CardTitle>Profile</CardTitle>
@@ -390,11 +417,11 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-[#E0E0E0] bg-[#FAFAFA]">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#7c3aed]/20 to-[#00d4ff]/20 border border-[rgba(124,58,237,0.15)] flex items-center justify-center">
-                      <Lock className="h-5 w-5 text-[#7c3aed]" />
+                    <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                      <Lock className="h-5 w-5" />
                     </div>
                     <div>
                       <CardTitle>Change Password</CardTitle>
@@ -427,7 +454,7 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <div className="flex justify-end">
+                      <div className="flex justify-end">
                     <Button onClick={handlePasswordChange} disabled={passwordSaving}>
                       {passwordSaving ? (
                         <>
@@ -448,11 +475,11 @@ export default function SettingsPage() {
           )}
 
           {activeTab === "settings" && (
-            <Card>
+            <Card className="border-[#E0E0E0] bg-[#FAFAFA]">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center">
-                    <Settings className="h-5 w-5 text-[#00d4ff]" />
+                  <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                    <Settings className="h-5 w-5" />
                   </div>
                   <div>
                     <CardTitle>Settings</CardTitle>
@@ -461,15 +488,15 @@ export default function SettingsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-xl border border-dashed border-[rgba(255,255,255,0.15)] p-4 text-sm text-muted-foreground">
+                <div className="rounded-xl border border-[#E0E0E0] bg-white p-4 text-sm text-[#666666]">
                   Additional account-level settings and preferences can be added here.
                 </div>
-                <div className="rounded-xl border border-dashed border-[rgba(0,212,255,0.2)] p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-foreground">
+                <div className="rounded-xl border border-[#E0E0E0] bg-white p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-[#0A0A0A]">
                     <Bell className="h-4 w-4" />
                     <span>Notifications</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#666666]">
                     Notification preferences are not yet configurable in this build.
                   </p>
                 </div>
@@ -478,11 +505,11 @@ export default function SettingsPage() {
           )}
 
           {activeTab === "subscriptions" && (
-            <Card>
+            <Card className="border-[#E0E0E0] bg-[#FAFAFA]">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#7c3aed]/20 to-[#00d4ff]/20 border border-[rgba(124,58,237,0.15)] flex items-center justify-center">
-                    <CreditCard className="h-5 w-5 text-[#a78bfa]" />
+                  <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                    <CreditCard className="h-5 w-5" />
                   </div>
                   <div>
                     <CardTitle>Manage Subscriptions</CardTitle>
@@ -494,22 +521,22 @@ export default function SettingsPage() {
                 {renderMessage(subscriptionMessage)}
 
                 {subscription ? (
-                  <div className="space-y-4 rounded-xl border border-[rgba(255,255,255,0.08)] p-4">
+                  <div className="space-y-4 rounded-xl border border-[#E0E0E0] bg-white p-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Current plan</p>
+                      <p className="text-sm text-[#666666]">Current plan</p>
                       <p className="text-lg font-bold">
                         {subscriptionPlanName || subscription.plan_id || "Active subscription"}
                       </p>
                     </div>
                     <div className="space-y-2 text-sm">
                       <p>
-                        <span className="text-muted-foreground">Status:</span> {subscription.status || "active"}
+                        <span className="text-[#666666]">Status:</span> {subscription.status || "active"}
                       </p>
                       {subscription.cancel_at_period_end && (
-                        <p className="text-[#ffb020]">Cancels at period end</p>
+                        <p className="text-[#ff3b30]">Cancels at period end</p>
                       )}
                       <p>
-                        <span className="text-muted-foreground">Next renewal:</span> {" "}
+                        <span className="text-[#666666]">Next renewal:</span> {" "}
                         {formatRenewalDate(subscription.current_period_end)}
                       </p>
                     </div>
@@ -525,13 +552,15 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4 rounded-xl border border-[rgba(255,255,255,0.08)] p-4">
-                    <p className="text-sm text-muted-foreground">
+                  <div className="space-y-4 rounded-xl border border-[#E0E0E0] bg-white p-4">
+                    <p className="text-sm text-[#666666]">
                       No active subscription found. You currently appear to be on the free tier.
                     </p>
                     <div className="flex flex-wrap gap-3">
                       <Link href="/billing" className="inline-flex">
-                        <Button variant="outline">View Plans</Button>
+                        <Button variant="outline" className="border-[#E0E0E0] text-[#0A0A0A]">
+                          View Plans
+                        </Button>
                       </Link>
                       <Button
                         onClick={handleManageSubscription}
@@ -553,8 +582,9 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           )}
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

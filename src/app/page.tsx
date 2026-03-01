@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
 import { ArrowRight, CloudUpload, GitBranch, ListChecks, Rocket, ScanSearch, FileText } from "lucide-react"
 
 const navLinks = [
@@ -262,6 +263,10 @@ export default function LandingPage() {
             })}
           </div>
         </section>
+      </SectionCard>
+
+      <SectionCard>
+        <InspirationProjectsSection />
       </SectionCard>
 
       <section className="border-t border-[#E0E0E0] py-16 md:py-20">
