@@ -275,26 +275,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A]">
-      <header className="sticky top-0 z-10 h-auto min-h-16 border-b border-[#E0E0E0] bg-white px-4 sm:px-8 lg:px-14 py-3 flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3.5">
-          <span className="text-[20px] sm:text-[22px] font-black tracking-[0.05em] truncate">Idea2App</span>
-          <span className="text-sm text-[#777777]">Account / Profile Settings</span>
-        </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <button
-            type="button"
-            className="h-10 w-10 flex items-center justify-center rounded border border-[#E0E0E0] bg-white text-[#666666]"
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
-          <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center text-sm font-bold">
-            {badgeText}
-          </div>
-        </div>
-      </header>
-
+    <div className="bg-white text-[#0A0A0A]">
       <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-8 lg:px-[56px] lg:py-8">
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="rounded border border-[#E0E0E0] bg-[#F8F8F8] p-4 lg:p-6 h-fit">
