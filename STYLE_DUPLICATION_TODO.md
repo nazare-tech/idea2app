@@ -69,18 +69,18 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - [ ] `src/components/ui/markdown-renderer.tsx`
 
 ## 4) Extract repeated class bundles into reusable components
-- [ ] Replace repeated exact bundles:
-  - [ ] `h-4 w-4` (icon sizing)
-  - [ ] `text-sm text-muted-foreground`
-  - [ ] `flex items-center gap-3`
-  - [ ] `flex items-center justify-between`
-  - [ ] `flex items-center gap-2`
-  - [ ] `space-y-2` / `space-y-6`
-- [ ] Candidate extraction targets:
-  - [ ] `src/components/analysis/analysis-panel.tsx` (highest cluster density)
-  - [ ] `src/app/(dashboard)/settings/page.tsx`
-  - [ ] `src/app/page.tsx`
-  - [ ] `src/components/layout/sidebar.tsx`
+- [x] Replace repeated exact bundles:
+  - [x] `h-4 w-4` (icon sizing)
+  - [x] `text-sm text-muted-foreground`
+  - [x] `flex items-center gap-3`
+  - [x] `flex items-center justify-between`
+  - [x] `flex items-center gap-2`
+  - [x] `space-y-2` / `space-y-6`
+- [x] Candidate extraction targets:
+  - [x] `src/components/analysis/analysis-panel.tsx` (highest cluster density)
+  - [x] `src/app/(dashboard)/settings/page.tsx`
+  - [x] `src/app/page.tsx`
+  - [x] `src/components/layout/sidebar.tsx`
 
 ## 5) Add migration safety checklist
 - [ ] Replace class strings using token variables in each touched file.

@@ -290,7 +290,7 @@ export default function SettingsPage() {
                   <Link
                     key={tab.value}
                     href={getTabHref(tab.value)}
-                    className={`group inline-flex lg:flex items-center justify-center lg:justify-start gap-2 rounded-md border px-3 py-3 transition ${
+                    className={`group inline-flex lg:flex ui-row-gap-2 justify-center lg:justify-start rounded-md border px-3 py-3 transition ${
                       isActive
                         ? "border-text-primary bg-text-primary text-white"
                         : "border-border-subtle bg-white text-text-primary hover:border-[#B5B5B5]"
