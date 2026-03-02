@@ -6,4 +6,4 @@
 - [ ] High: Remove `window.location.reload()` usage in `src/components/analysis/analysis-panel.tsx`; use targeted state/cache updates after async completion.
 - [x] High: Lazy-load heavy markdown/code highlighting path in `src/components/ui/markdown-renderer.tsx` (defer `react-syntax-highlighter`, split heavy parsing/rendered sections).
 - [x] High: Throttle/RAF resize drag updates in `src/components/ui/content-editor.tsx` so `documentWidth` is not updated on every `mousemove`.
-- [ ] High: Optimize chat rendering in `src/components/chat/chat-interface.tsx`, `src/components/chat/prompt-chat-interface.tsx`, and chat API routes by virtualizing/paginating long message lists and streaming incremental updates.
+- [x] High: Optimize chat rendering in `src/components/chat/chat-interface.tsx`, `src/components/chat/prompt-chat-interface.tsx`, and chat API routes by virtualizing/paginating long message lists and streaming incremental updates.
