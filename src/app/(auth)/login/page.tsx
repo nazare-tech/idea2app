@@ -81,7 +81,7 @@ function LoginForm() {
           <aside className="hidden h-screen w-full max-w-[560px] bg-sidebar-bg px-14 py-14 text-sidebar-foreground lg:flex">
             <div className="flex h-full flex-col justify-between">
               <div>
-                <h1 className="text-5xl font-semibold leading-tight tracking-[-0.06em]">
+                <h1 className="text-5xl ui-font-semibold leading-tight tracking-[-0.06em]">
                   Ship your next product faster.
                 </h1>
                 <p className="mt-6 max-w-sm text-sm leading-relaxed text-gray-400">
@@ -99,16 +99,16 @@ function LoginForm() {
               <header className="h-[104px] px-6 py-5">
                 <Link href="/" className="inline-flex h-full items-center gap-3">
                   <div className={uiStylePresets.authIconCircle}>
-                    <Lightbulb className="h-4 w-4" />
+                    <Lightbulb className="ui-icon-16" />
                   </div>
-                  <span className="text-lg font-semibold tracking-[0.05em]">Idea2App</span>
+                  <span className="text-lg ui-font-semibold tracking-[0.05em]">Idea2App</span>
                 </Link>
               </header>
               <div className="flex-1 flex items-center">
                 <Card className={uiStylePresets.authCardContainer}>
-                  <CardHeader className="space-y-2 px-8 pt-8">
+                  <CardHeader className="ui-stack-2 px-8 pt-8">
                     <CardTitle className="text-3xl tracking-[-0.02em]">Welcome back</CardTitle>
-                    <p className="text-sm text-muted-foreground">Sign in to continue to Idea2App.</p>
+                    <p className="ui-text-sm-muted">Sign in to continue to Idea2App.</p>
                   </CardHeader>
                   <form onSubmit={handleLogin}>
                     <CardContent className="space-y-5 px-8 pt-3">
@@ -118,7 +118,7 @@ function LoginForm() {
                         disabled={loading}
                         className={uiStylePresets.authSocialButton}
                       >
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="ui-icon-16" />
                         Continue with Google
                       </button>
 
@@ -134,7 +134,7 @@ function LoginForm() {
                         </p>
                       )}
 
-                      <div className="space-y-2">
+                      <div className="ui-stack-2">
                         <Label htmlFor="email" className={uiStylePresets.authFieldLabel}>
                           Email
                         </Label>
@@ -150,7 +150,7 @@ function LoginForm() {
                         />
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="ui-stack-2">
                         <Label htmlFor="password" className={uiStylePresets.authFieldLabel}>
                           Password
                         </Label>
@@ -184,7 +184,7 @@ function LoginForm() {
                   </form>
 
                   <CardFooter className="px-8 pb-8 pt-2">
-                    <p className="w-full text-center text-sm text-muted-foreground">
+                    <p className="w-full text-center ui-text-sm-muted">
                       Don&apos;t have an account?{" "}
                       <Link href="/signup" className={uiStylePresets.authLinkUnderline}>
                         Create account

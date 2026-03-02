@@ -70,7 +70,7 @@ const plans = [
     points: ["2 projects", "Basic analysis", "Community support"],
     tone: "light",
     cta: "Choose Free",
-    ctaClasses: "h-11 border border-[#0A0A0A] bg-white text-[#0A0A0A] hover:bg-[#fafafa]",
+    ctaClasses: "h-11 border border-text-primary bg-white text-text-primary hover:bg-muted",
   },
   {
     name: "Starter",
@@ -78,7 +78,7 @@ const plans = [
     points: ["10 projects", "All analyses", "PRD export"],
     tone: "light",
     cta: "Start Starter",
-    ctaClasses: "h-11 border border-[#0A0A0A] bg-white text-[#0A0A0A] hover:bg-[#fafafa]",
+    ctaClasses: "h-11 border border-text-primary bg-white text-text-primary hover:bg-muted",
   },
   {
     name: "Pro",
@@ -94,7 +94,7 @@ const plans = [
     points: ["Dedicated VPC", "SSO + RBAC", "Custom integrations"],
     tone: "light",
     cta: "Talk to Sales",
-    ctaClasses: "h-11 border border-[#0A0A0A] bg-white text-[#0A0A0A] hover:bg-[#fafafa]",
+    ctaClasses: "h-11 border border-text-primary bg-white text-text-primary hover:bg-muted",
   },
 ]
 
@@ -106,8 +106,8 @@ function SectionCard({ children }: { children: ReactNode }) {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A]">
-      <header className="sticky top-0 z-50 border-b border-[#E0E0E0] bg-white/95 backdrop-blur-sm">
+    <div className="min-h-screen bg-white text-text-primary">
+      <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
         <div className={`${container} flex h-16 items-center justify-between`}>
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-sm bg-primary text-white flex items-center justify-center font-bold">I</div>
@@ -116,7 +116,7 @@ export default function LandingPage() {
 
           <div className="hidden items-center gap-8 md:flex">
             {navLinks.map((item) => (
-              <a key={item.label} href={item.href} className="text-sm font-medium text-[#0A0A0A] hover:text-[#666666]">
+              <a key={item.label} href={item.href} className="text-sm font-medium text-text-primary hover:text-text-secondary">
                 {item.label}
               </a>
             ))}
@@ -124,7 +124,7 @@ export default function LandingPage() {
 
           <div className="hidden items-center gap-3 md:flex">
             <Link href="/login">
-              <Button variant="outline" className="h-10 border-[#0A0A0A] px-6 text-sm font-semibold">
+              <Button variant="outline" className="h-10 border-text-primary px-6 text-sm font-semibold">
                 Sign In
               </Button>
             </Link>
@@ -137,7 +137,7 @@ export default function LandingPage() {
 
       <SectionCard>
         <div className="flex items-center justify-center pt-10 pb-8 md:pt-14">
-          <div className="inline-flex items-center rounded-full border border-[#E0E0E0] px-4 py-2 text-xs font-medium tracking-[0.16em] text-[#777777]">
+          <div className="inline-flex items-center rounded-full border border-border-subtle px-4 py-2 text-xs font-medium tracking-[0.16em] text-text-secondary">
             AI-Powered Business Idea Platform
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function LandingPage() {
           Transform Your Ideas Into Reality
         </h1>
 
-        <p className="mx-auto mt-6 max-w-[780px] text-center text-[20px] leading-relaxed text-[#666666]">
+        <p className="mx-auto mt-6 max-w-[780px] text-center text-[20px] leading-relaxed text-text-secondary">
           Go from rough concept to validated plan, generated PRD, and deploy-ready app in one AI-assisted workflow.
         </p>
 
@@ -155,14 +155,14 @@ export default function LandingPage() {
             <Button className="h-14 px-7 bg-primary text-base font-semibold text-white">Get Started Free</Button>
           </Link>
           <Link href="#features">
-            <Button variant="outline" className="h-14 px-7 border-[#E0E0E0] text-base font-semibold bg-white text-[#0A0A0A]">
+            <Button variant="outline" className="h-14 px-7 border-border-subtle text-base font-semibold bg-white text-text-primary">
               Learn More
             </Button>
           </Link>
         </div>
 
         <div className="mx-auto mt-12 grid w-full max-w-[780px] gap-4 sm:grid-cols-3">
-          <div className="flex h-[112px] flex-col items-center justify-center border border-[#0A0A0A] bg-[#0A0A0A] text-white p-4">
+          <div className="flex h-[112px] flex-col items-center justify-center border border-text-primary bg-text-primary text-white p-4">
             <p className="text-[36px] font-semibold leading-none tracking-[-0.06em]">5+</p>
             <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[#F0F0F0]">Analysis Types</p>
           </div>
@@ -179,19 +179,19 @@ export default function LandingPage() {
 
       <SectionCard>
         <section id="features" className="py-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">Features</p>
+          <p className="ui-kicker-label">Features</p>
           <h2 className="mt-4 text-[clamp(2rem,4vw,3.35rem)] leading-[0.98] tracking-[-0.06em] font-semibold">
             Everything You Need To Build Smarter
           </h2>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {featureCards.map((item) => (
-              <article key={item.title} className="border border-[#E0E0E0] bg-white p-6 md:p-7">
-                <div className="flex h-10 w-10 items-center justify-center bg-[#0A0A0A] text-white">
+              <article key={item.title} className="border border-border-subtle bg-white p-6 md:p-7">
+                <div className="flex h-10 w-10 items-center justify-center bg-text-primary text-white">
                   <item.icon className="h-[18px] w-[18px]" />
                 </div>
                 <h3 className="mt-5 text-2xl font-semibold tracking-[-0.03em]">{item.title}</h3>
-                <p className="mt-4 text-[14px] leading-relaxed text-[#666666]">{item.description}</p>
+                <p className="mt-4 text-[14px] leading-relaxed text-text-secondary">{item.description}</p>
               </article>
             ))}
           </div>
@@ -200,16 +200,16 @@ export default function LandingPage() {
 
       <SectionCard>
         <section id="how-it-works" className="py-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">How It Works</p>
+          <p className="ui-kicker-label">How It Works</p>
           <h2 className="mt-4 max-w-[760px] text-[clamp(2rem,4vw,3.35rem)] leading-[0.98] tracking-[-0.06em] font-semibold">
             From Idea To Deployed Product
           </h2>
 
           <div className="mt-8 space-y-4">
             {steps.map((step) => (
-              <div key={step.number} className="grid grid-cols-[auto,1fr] gap-5 border border-[#E0E0E0] p-5 md:p-6">
+              <div key={step.number} className="grid grid-cols-[auto,1fr] gap-5 border border-border-subtle p-5 md:p-6">
                 <p className="text-[36px] leading-none font-semibold tracking-[-0.06em] text-primary">{step.number}</p>
-                <p className="whitespace-pre-line text-[16px] leading-7 text-[#0A0A0A]">{step.body}</p>
+                <p className="whitespace-pre-line text-[16px] leading-7 text-text-primary">{step.body}</p>
               </div>
             ))}
           </div>
@@ -218,7 +218,7 @@ export default function LandingPage() {
 
       <SectionCard>
         <section id="pricing" className="py-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">Pricing</p>
+          <p className="ui-kicker-label">Pricing</p>
           <h2 className="mt-4 max-w-[840px] text-[clamp(2rem,4vw,3.35rem)] leading-[0.98] tracking-[-0.06em] font-semibold">
             Plans For Builders At Every Stage
           </h2>
@@ -231,8 +231,8 @@ export default function LandingPage() {
                   key={plan.name}
                   className={`flex min-h-full flex-col border p-7 ${
                     isDark
-                      ? "border-[#0A0A0A] bg-[#0A0A0A] text-white"
-                      : "border-[#E0E0E0] bg-white text-[#0A0A0A]"
+                      ? "border-text-primary bg-text-primary text-white"
+                      : "border-border-subtle bg-white text-text-primary"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -244,13 +244,13 @@ export default function LandingPage() {
                     )}
                   </div>
 
-                  <p className={`mt-2 text-4xl font-semibold tracking-[-0.05em] ${isDark ? "text-primary" : "text-[#0A0A0A]"}`}>
+                  <p className={`mt-2 text-4xl font-semibold tracking-[-0.05em] ${isDark ? "text-primary" : "text-text-primary"}`}>
                     {plan.price}
                   </p>
 
                   <div className="mt-8 mb-6 space-y-3 border-b border-[rgba(0,0,0,0.08)] pb-6 dark:border-white/20">
                     {plan.points.map((point) => (
-                      <p key={point} className={`text-sm ${isDark ? "text-[#D5D5D5]" : "text-[#777777]"}`}>
+                      <p key={point} className={`text-sm ${isDark ? "text-text-muted" : "text-text-secondary"}`}>
                         {point}
                       </p>
                     ))}
@@ -270,12 +270,12 @@ export default function LandingPage() {
         <InspirationProjectsSection />
       </SectionCard>
 
-      <section className="border-t border-[#E0E0E0] py-16 md:py-20">
+      <section className="border-t border-border-subtle py-16 md:py-20">
         <div className={`${container} text-center`}>
           <h2 className="mx-auto max-w-[860px] text-[clamp(2rem,4.6vw,4rem)] leading-[0.96] tracking-[-0.06em] font-semibold">
             Ready To Turn Your Next Idea Into A Real Product?
           </h2>
-          <p className="mx-auto mt-6 max-w-[760px] text-xl text-[#666666]">
+          <p className="mx-auto mt-6 max-w-[760px] text-xl text-text-secondary">
             Join founders and product teams using IDEA2 to research, plan, generate, and launch faster.
           </p>
           <Link href="/signup" className="inline-block mt-8">
@@ -289,8 +289,8 @@ export default function LandingPage() {
 
       <footer className="border-t border-[#E2E8F0] bg-white">
         <div className={`${container} flex h-[88px] flex-wrap items-center justify-between gap-5 text-sm`}>
-          <span className="font-mono text-[11px] tracking-[0.05em] text-[#64748B]">(c) 2026 Idea2App. All rights reserved.</span>
-          <div className="flex items-center gap-5 font-mono text-[11px] tracking-[0.05em] text-[#334155]">
+          <span className="font-mono text-[11px] tracking-[0.05em] text-text-muted">(c) 2026 Idea2App. All rights reserved.</span>
+          <div className="flex items-center gap-5 font-mono text-[11px] tracking-[0.05em] text-text-muted">
             <a href="#" className={uiStylePresets.subtleLinkHover}>Terms</a>
             <a href="#" className={uiStylePresets.subtleLinkHover}>Privacy</a>
             <a href="#" className={uiStylePresets.subtleLinkHover}>Contact</a>

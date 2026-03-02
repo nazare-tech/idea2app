@@ -100,7 +100,7 @@ function SignupScreen() {
                   <Check className="h-6 w-6 text-success" />
                 </div>
                 <CardTitle className="text-2xl">Check your email</CardTitle>
-                <p className="text-sm text-muted-foreground">
+                <p className="ui-text-sm-muted">
                   We&apos;ve sent a confirmation link to <strong>{email}</strong>.
                   Open it to verify your account.
                 </p>
@@ -119,7 +119,7 @@ function SignupScreen() {
           <aside className="hidden h-screen w-full max-w-[560px] bg-sidebar-bg px-14 py-14 text-sidebar-foreground lg:flex">
             <div className="flex h-full flex-col justify-between">
               <div>
-                <h1 className="text-5xl font-semibold leading-tight tracking-[-0.06em]">
+                <h1 className="text-5xl ui-font-semibold leading-tight tracking-[-0.06em]">
                   Ship your next product faster.
                 </h1>
                 <p className="mt-6 max-w-sm text-sm leading-relaxed text-gray-400">
@@ -137,16 +137,16 @@ function SignupScreen() {
               <header className="h-[104px] px-6 py-5">
                 <Link href="/" className="inline-flex h-full items-center gap-3">
                   <div className={uiStylePresets.authIconCircle}>
-                    <Lightbulb className="h-4 w-4" />
+                    <Lightbulb className="ui-icon-16" />
                   </div>
-                  <span className="text-lg font-semibold tracking-[0.05em]">Idea2App</span>
+                  <span className="text-lg ui-font-semibold tracking-[0.05em]">Idea2App</span>
                 </Link>
               </header>
               <div className="flex-1 flex items-center">
                 <Card className={uiStylePresets.authCardContainer}>
-                <CardHeader className="space-y-2 px-8 pt-8">
+                <CardHeader className="ui-stack-2 px-8 pt-8">
                   <CardTitle className="text-3xl tracking-[-0.02em]">Create account</CardTitle>
-                  <p className="text-sm text-muted-foreground">Join Idea2App and start building.</p>
+                  <p className="ui-text-sm-muted">Join Idea2App and start building.</p>
                 </CardHeader>
 
                 <CardContent className="space-y-5 px-8 pt-3">
@@ -156,7 +156,7 @@ function SignupScreen() {
                     className={uiStylePresets.authSocialButton}
                     disabled={loading}
                   >
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="ui-icon-16" />
                     {loading ? "Connecting..." : socialText}
                   </button>
 
@@ -230,7 +230,7 @@ function SignupScreen() {
                   </form>
                 </CardContent>
                 <CardFooter className="px-8 pb-8 pt-2">
-                  <p className="w-full text-center text-sm text-muted-foreground">
+                  <p className="w-full text-center ui-text-sm-muted">
                     Already have an account?{" "}
                     <Link href="/login" className={uiStylePresets.authLinkUnderline}>
                       Log in
@@ -251,11 +251,11 @@ function AuthHeader() {
   return (
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 md:px-8 lg:px-12 xl:px-16">
-        <Link href="/" className="inline-flex items-center gap-2">
+        <Link href="/" className="inline-ui-row-gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Lightbulb className="h-4 w-4" />
+            <Lightbulb className="ui-icon-16" />
           </div>
-          <span className="text-base font-semibold tracking-[0.05em]">Idea2App</span>
+          <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
         </Link>
       </div>
     </header>
@@ -282,7 +282,7 @@ function FormField({
   minLength?: number
 }) {
   return (
-    <div className="space-y-2">
+    <div className="ui-stack-2">
       <Label htmlFor={id} className={uiStylePresets.authFieldLabel}>
         {label}
       </Label>

@@ -1,6 +1,6 @@
 export const uiStylePresets = {
   authFieldInput:
-    "h-12 bg-[#FFFFFF] border-[#E0E0E0] text-[#0A0A0A] placeholder:text-[#999999] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0",
+    "h-12 bg-white border-border-subtle text-text-primary placeholder:text-text-muted focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0",
   authErrorPill:
     "rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-[#B42318]",
   authSocialButton:
@@ -12,53 +12,53 @@ export const uiStylePresets = {
   authFieldLabel:
     "text-[13px] text-muted-foreground",
   authCardCompact:
-    "w-full max-w-[480px] border-[#E0E0E0] bg-card",
+    "w-full max-w-[480px] border-border-subtle bg-card",
   authTopIconBadge:
     "flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground",
   settingsIconBadge:
-    "h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center",
+    "h-10 w-10 rounded bg-text-primary text-white flex items-center justify-center",
   settingsInfoCard:
-    "space-y-4 rounded-xl border border-[#E0E0E0] bg-white p-4",
+    "space-y-4 rounded-xl border border-border-subtle bg-white p-4",
   analysisErrorBanner:
     "p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm",
   analysisDependencyBanner:
     "p-4 rounded-xl bg-[rgba(255,165,0,0.1)] border border-[rgba(255,165,0,0.2)] text-[#ffa500] text-sm flex items-center justify-between",
   tagPill:
-    "inline-flex h-7 items-center rounded-full border border-[#E0E0E0] bg-white px-3 text-xs font-medium text-[#0A0A0A]",
+    "inline-flex h-7 items-center rounded-full border border-border-subtle bg-white px-3 text-xs ui-font-medium text-text-primary",
   chatBrandIcon:
-    "h-4 w-4 text-[#00d4ff]",
+    "ui-icon-16 text-text-accent",
   authDividerLine:
-    "h-px flex-1 bg-[#E0E0E0]",
+    "h-px flex-1 bg-border-subtle",
   settingsSurface:
-    "border-[#E0E0E0] bg-[#FAFAFA]",
+    "border-border-subtle bg-background",
   mutedTextSm:
-    "text-sm text-[#666666]",
+    "text-sm text-text-secondary",
   analysisDismissAction:
     "text-[#ffa500] hover:text-[#ff8c00]",
   authIconCircle:
     "flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF3B30] text-white",
   authProfileAvatarFallback:
-    "bg-[#0A0A0A] text-white text-[12px] font-bold",
+    "bg-text-primary text-white text-[12px] font-bold",
   subtleLinkHover:
-    "hover:text-[#0A0A0A]",
+    "hover:text-text-primary",
   authFormMeta:
-    "text-xs uppercase tracking-[0.12em] text-[#999999]",
+    "text-xs uppercase tracking-[0.12em] text-text-muted",
   authCardContainer:
-    "mx-auto w-full max-w-[520px] border-[#E0E0E0] bg-card",
+    "mx-auto w-full max-w-[520px] border-border-subtle bg-card",
   authLinkUnderline:
     "font-semibold text-[#FF3B30] hover:underline",
   headerOutlineTab:
-    "h-11 w-full rounded-md px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5]",
+    "h-11 w-full rounded-md px-4 ui-text-sm-muted ui-font-medium hover:bg-[#F5F5F5]",
   headerProfileTrigger:
-    "relative h-10 inline-flex items-center gap-2.5 rounded-md border border-[#E0E0E0] bg-white px-3.5 py-0 text-[#0A0A0A]",
+    "relative h-10 inline-flex items-center gap-2.5 rounded-md border border-border-subtle bg-white px-3.5 py-0 text-text-primary",
   headerProfileLabel:
-    "text-[13px] font-medium leading-none tracking-tight text-[#0A0A0A]",
+    "text-[13px] ui-font-medium leading-none tracking-tight text-text-primary",
   headerLogoutItem:
-    "h-11 w-full rounded-md px-4 text-sm font-medium text-[#FF3B30] hover:bg-[#F5F5F5]",
+    "h-11 w-full rounded-md px-4 text-sm ui-font-medium text-[#FF3B30] hover:bg-[#F5F5F5]",
   landingFeaturePill:
-    "mt-1 text-xs uppercase tracking-[0.2em] text-[#777777]",
+    "mt-1 text-xs uppercase tracking-[0.2em] text-text-secondary",
   landingStatCard:
-    "flex h-[112px] flex-col items-center justify-center border border-[#E0E0E0] bg-white p-4",
+    "flex h-[112px] flex-col items-center justify-center border border-border-subtle bg-white p-4",
   mutedTextSimple:
-    "text-[#666666]",
+    "text-text-secondary",
 } as const

@@ -82,11 +82,11 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <section className="mx-auto flex min-h-screen max-w-[460px] flex-col justify-center px-4">
-          <Card className="border-[#E0E0E0]">
+          <Card className="border-border-subtle">
             <CardHeader className="space-y-3">
-              <p className="text-sm text-muted-foreground">Password reset</p>
+              <p className="ui-text-sm-muted">Password reset</p>
               <CardTitle className="text-2xl">Session expired</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="ui-text-sm-muted">
                 The reset link is invalid or has expired. Go back and request a new reset link.
               </p>
             </CardHeader>
@@ -107,16 +107,16 @@ export default function ResetPasswordPage() {
         <AuthHeader />
         <div className="mt-12">
           <Card className={uiStylePresets.authCardCompact}>
-            <CardHeader className="space-y-2">
+            <CardHeader className="ui-stack-2">
               <CardTitle className="text-3xl tracking-[-0.02em]">Set new password</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="ui-text-sm-muted">
                 Create a new password and confirm it to continue.
               </p>
             </CardHeader>
 
             <form onSubmit={handleReset}>
               <CardContent className="space-y-5">
-                <div className="space-y-2">
+                <div className="ui-stack-2">
                   <Label htmlFor="password" className={uiStylePresets.authFieldLabel}>
                     New password
                   </Label>
@@ -132,7 +132,7 @@ export default function ResetPasswordPage() {
                     className={uiStylePresets.authFieldInput}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="ui-stack-2">
                   <Label htmlFor="confirmPassword" className={uiStylePresets.authFieldLabel}>
                     Confirm new password
                   </Label>
@@ -179,11 +179,11 @@ export default function ResetPasswordPage() {
 function AuthHeader() {
   return (
     <header className="mt-10">
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-6 ui-row-gap-3">
         <div className={uiStylePresets.authTopIconBadge}>
           <Lightbulb className="h-5 w-5" />
         </div>
-        <span className="text-base font-semibold tracking-[0.05em]">Idea2App</span>
+        <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
       </div>
     </header>
   )

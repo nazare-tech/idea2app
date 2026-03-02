@@ -49,16 +49,16 @@ export function Header({ user, children, rightContent }: HeaderProps) {
     : user?.email?.split("@")[0] || "User"
 
   return (
-    <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-xl px-6 flex items-center justify-between">
+    <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-xl px-6 ui-row-between">
       <div className="flex items-center gap-4">
-        {children || <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>}
+        {children || <h1 className="text-lg font-bold ui-tracking-tight">Dashboard</h1>}
       </div>
 
         <div className="flex items-center gap-4">
           {rightContent}
           <Link href="/projects/new" prefetch={false}>
             <Button size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
+              <Plus className="ui-icon-16" />
             New Project
           </Button>
         </Link>
@@ -78,11 +78,11 @@ export function Header({ user, children, rightContent }: HeaderProps) {
               <span className={uiStylePresets.headerProfileLabel}>
                 {profileLabel}
               </span>
-              <ChevronDown className="h-4 w-4 text-[#777777]" />
+              <ChevronDown className="ui-icon-16 text-text-secondary" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-[260px] border border-[#E0E0E0] bg-white p-2 text-[#0A0A0A]"
+            className="w-[260px] border border-border-subtle bg-white p-2 text-text-primary"
             align="end"
             forceMount
           >

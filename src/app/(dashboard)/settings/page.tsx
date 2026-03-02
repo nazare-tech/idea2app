@@ -276,12 +276,12 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="bg-white text-[#0A0A0A]">
+    <div className="bg-white text-text-primary">
       <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-8 lg:px-[56px] lg:py-8">
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-          <aside className="rounded border border-[#E0E0E0] bg-[#F8F8F8] p-4 lg:p-6 h-fit">
-            <h2 className="text-[18px] font-semibold mb-2 hidden lg:block">Account</h2>
-            <div className="grid grid-cols-3 gap-2 lg:block lg:space-y-2">
+          <aside className="rounded border border-border-subtle bg-[#F8F8F8] p-4 lg:p-6 h-fit">
+            <h2 className="text-[18px] ui-font-semibold mb-2 hidden lg:block">Account</h2>
+            <div className="grid grid-cols-3 gap-2 lg:block lg:ui-stack-2">
               {settingsTabs.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.value
@@ -292,13 +292,13 @@ export default function SettingsPage() {
                     href={getTabHref(tab.value)}
                     className={`group inline-flex lg:flex items-center justify-center lg:justify-start gap-2 rounded-md border px-3 py-3 transition ${
                       isActive
-                        ? "border-[#0A0A0A] bg-[#0A0A0A] text-white"
-                        : "border-[#E0E0E0] bg-white text-[#0A0A0A] hover:border-[#B5B5B5]"
+                        ? "border-text-primary bg-text-primary text-white"
+                        : "border-border-subtle bg-white text-text-primary hover:border-[#B5B5B5]"
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="ui-icon-16" />
                     <div className="leading-tight">
-                      <span className="font-medium">{tab.label}</span>
+                      <span className="ui-font-medium">{tab.label}</span>
                     </div>
                   </Link>
                 )
@@ -311,15 +311,15 @@ export default function SettingsPage() {
               <h1 className="text-[30px] sm:text-[36px] font-bold tracking-[-0.03em] leading-tight">
                 {activeTabConfig.label}
               </h1>
-              <p className="text-[#666666] mt-1">{activeTabConfig.description}</p>
+              <p className="text-text-secondary mt-1">{activeTabConfig.description}</p>
             </div>
 
             {activeTab === "profile" && (
               <>
                 {isDev && (
-                <Card className="border-[#E0E0E0] bg-[#FFF9E7]">
+                <Card className="border-border-subtle bg-[#FFF9E7]">
                   <CardHeader>
-                    <div className="flex items-center gap-3">
+                    <div className="ui-row-gap-3">
                       <div className={uiStylePresets.settingsIconBadge}>
                         <Shield className="h-5 w-5" />
                       </div>
@@ -334,7 +334,7 @@ export default function SettingsPage() {
 
               <Card className={uiStylePresets.settingsSurface}>
                 <CardHeader>
-                  <div className="flex items-center gap-3">
+                  <div className="ui-row-gap-3">
                     <div className={uiStylePresets.settingsIconBadge}>
                       <User className="h-5 w-5" />
                     </div>
@@ -347,9 +347,9 @@ export default function SettingsPage() {
                 <CardContent className="space-y-4">
                   {renderMessage(profileMessage)}
 
-                  <div className="space-y-2">
+                  <div className="ui-stack-2">
                     <Label htmlFor="email">Email</Label>
-                    <div className="flex items-center gap-2">
+                    <div className="ui-row-gap-2">
                       <Input
                         id="email"
                         type="email"
@@ -364,7 +364,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="ui-stack-2">
                     <Label htmlFor="fullName">Full Name</Label>
                     <Input
                       id="fullName"
@@ -374,7 +374,7 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="ui-stack-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
                       id="username"
@@ -401,7 +401,7 @@ export default function SettingsPage() {
 
               <Card className={uiStylePresets.settingsSurface}>
                 <CardHeader>
-                  <div className="flex items-center gap-3">
+                  <div className="ui-row-gap-3">
                     <div className={uiStylePresets.settingsIconBadge}>
                       <Lock className="h-5 w-5" />
                     </div>
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                 <CardContent className="space-y-4">
                   {renderMessage(passwordMessage)}
 
-                  <div className="space-y-2">
+                  <div className="ui-stack-2">
                     <Label htmlFor="new-password">New Password</Label>
                     <Input
                       id="new-password"
@@ -425,7 +425,7 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="ui-stack-2">
                     <Label htmlFor="confirm-password">Confirm New Password</Label>
                     <Input
                       id="confirm-password"
@@ -445,7 +445,7 @@ export default function SettingsPage() {
                         </>
                       ) : (
                         <>
-                          <KeyRound className="h-4 w-4" />
+                          <KeyRound className="ui-icon-16" />
                           Change Password
                         </>
                       )}
@@ -459,7 +459,7 @@ export default function SettingsPage() {
           {activeTab === "settings" && (
             <Card className={uiStylePresets.settingsSurface}>
               <CardHeader>
-                <div className="flex items-center gap-3">
+                <div className="ui-row-gap-3">
                   <div className={uiStylePresets.settingsIconBadge}>
                     <Settings className="h-5 w-5" />
                   </div>
@@ -470,12 +470,12 @@ export default function SettingsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-xl border border-[#E0E0E0] bg-white p-4 text-sm text-[#666666]">
+                <div className="rounded-xl border border-border-subtle bg-white p-4 text-sm text-text-secondary">
                   Additional account-level settings and preferences can be added here.
                 </div>
-                <div className="rounded-xl border border-[#E0E0E0] bg-white p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-[#0A0A0A]">
-                    <Bell className="h-4 w-4" />
+                <div className="rounded-xl border border-border-subtle bg-white p-4 space-y-3">
+                  <div className="ui-row-gap-2 text-text-primary">
+                    <Bell className="ui-icon-16" />
                     <span>Notifications</span>
                   </div>
                   <p className={uiStylePresets.mutedTextSm}>
@@ -489,7 +489,7 @@ export default function SettingsPage() {
           {activeTab === "subscriptions" && (
             <Card className={uiStylePresets.settingsSurface}>
               <CardHeader>
-                <div className="flex items-center gap-3">
+                <div className="ui-row-gap-3">
                   <div className={uiStylePresets.settingsIconBadge}>
                     <CreditCard className="h-5 w-5" />
                   </div>
@@ -510,7 +510,7 @@ export default function SettingsPage() {
                         {subscriptionPlanName || subscription.plan_id || "Active subscription"}
                       </p>
                     </div>
-                    <div className="space-y-2 text-sm">
+                    <div className="ui-stack-2 text-sm">
                       <p>
                         <span className={uiStylePresets.mutedTextSimple}>Status:</span> {subscription.status || "active"}
                       </p>
@@ -540,7 +540,7 @@ export default function SettingsPage() {
                     </p>
                     <div className="flex flex-wrap gap-3">
                       <Link href="/billing" className="inline-flex">
-                        <Button variant="outline" className="border-[#E0E0E0] text-[#0A0A0A]">
+                        <Button variant="outline" className="border-border-subtle text-text-primary">
                           View Plans
                         </Button>
                       </Link>

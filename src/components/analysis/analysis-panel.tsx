@@ -64,7 +64,7 @@ const analysisTypes = [
     description: "Analyze competitors, market positioning, and industry landscape",
     icon: BarChart3,
     credits: CREDIT_COSTS["competitive-analysis"],
-    gradient: "from-[#00d4ff] to-[#0ea5e9]",
+    gradient: "from-text-accent to-[#0ea5e9]",
   },
   {
     id: "gap-analysis",
@@ -72,7 +72,7 @@ const analysisTypes = [
     description: "Identify market gaps, opportunities, and potential challenges",
     icon: Search,
     credits: CREDIT_COSTS["gap-analysis"],
-    gradient: "from-[#34d399] to-[#00d4ff]",
+    gradient: "from-[#34d399] to-text-accent",
   },
 ]
 
@@ -83,7 +83,7 @@ const appTypes = [
     description: "HTML/CSS/JS - Simple and fast hosting",
     icon: Globe,
     credits: CREDIT_COSTS["app-static"],
-    gradient: "from-[#00d4ff] to-[#0ea5e9]",
+    gradient: "from-text-accent to-[#0ea5e9]",
   },
   {
     id: "dynamic",
@@ -107,7 +107,7 @@ const appTypes = [
     description: "PWA with offline support and service workers",
     icon: Zap,
     credits: CREDIT_COSTS["app-pwa"],
-    gradient: "from-[#34d399] to-[#00d4ff]",
+    gradient: "from-[#34d399] to-text-accent",
   },
 ]
 
@@ -222,14 +222,14 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
 
   if (type === "analysis") {
     return (
-      <div className="space-y-6">
+      <div className="ui-stack-6">
         {/* Action Cards */}
         <div className="grid gap-4 md:grid-cols-2">
           {analysisTypes.map((analysis) => (
-            <Card key={analysis.id} className="group hover:border-[rgba(0,212,255,0.2)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(0,212,255,0.06)]">
+            <Card key={analysis.id} className="group hover:border-text-accent/20 transition-all duration-300 hover:shadow-[0_0_25px_rgba(0,212,255,0.06)]">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="ui-row-between">
+                  <div className="ui-row-gap-3">
                     <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${analysis.gradient} flex items-center justify-center shadow-lg`}>
                       <analysis.icon className="h-5 w-5 text-white" />
                     </div>
@@ -241,7 +241,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
+                <div className="ui-row-between">
                   <Badge variant="outline">{analysis.credits} credits</Badge>
                   <Button
                     onClick={() => runAnalysis(analysis.id)}
@@ -255,7 +255,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                       </>
                     ) : (
                       <>
-                        <RefreshCw className="h-4 w-4 mr-1" />
+                        <RefreshCw className="ui-icon-16 mr-1" />
                         Generate
                       </>
                     )}
@@ -275,18 +275,18 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         {/* Previous Results */}
         {analyses.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-bold tracking-tight">Previous Results</h3>
+            <h3 className="ui-section-title">Previous Results</h3>
             {analyses.map((analysis) => (
               <Card key={analysis.id}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="ui-row-between">
+                    <div className="ui-row-gap-2">
                       <Badge>{analysis.type}</Badge>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="ui-text-sm-muted">
                         {new Date(analysis.created_at!).toLocaleDateString()}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="ui-row-gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -294,7 +294,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                           navigator.clipboard.writeText(analysis.content || "")
                         }}
                       >
-                        <Download className="h-4 w-4 mr-1" />
+                        <Download className="ui-icon-16 mr-1" />
                         Copy
                       </Button>
                       <Button
@@ -316,7 +316,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                           </>
                         ) : (
                           <>
-                            <Download className="h-4 w-4 mr-1" />
+                            <Download className="ui-icon-16 mr-1" />
                             Download PDF
                           </>
                         )}
@@ -342,11 +342,11 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
     const isPrdButtonDisabled = loading !== null || credits < CREDIT_COSTS.prd || !hasCompetitiveAnalysis
 
     return (
-      <div className="space-y-6">
+      <div className="ui-stack-6">
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="ui-row-between">
+              <div className="ui-row-gap-3">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#fb923c] to-[#f472b6] flex items-center justify-center shadow-lg">
                   <FileText className="h-5 w-5 text-white" />
                 </div>
@@ -357,7 +357,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                   </CardDescription>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="ui-row-gap-2">
                 <Badge variant="outline">{CREDIT_COSTS.prd} credits</Badge>
                 <Button
                   onClick={() => {
@@ -410,17 +410,17 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
             {analyses.map((prd) => (
               <Card key={prd.id}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
+                  <div className="ui-row-between">
+                    <span className="ui-text-sm-muted">
                       Version {String((prd as Record<string, unknown>).version || 1)} | {new Date(prd.created_at!).toLocaleDateString()}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="ui-row-gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => navigator.clipboard.writeText(prd.content || "")}
                       >
-                        <Download className="h-4 w-4 mr-1" />
+                        <Download className="ui-icon-16 mr-1" />
                         Copy
                       </Button>
                       <Button
@@ -438,7 +438,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                           </>
                         ) : (
                           <>
-                            <Download className="h-4 w-4 mr-1" />
+                            <Download className="ui-icon-16 mr-1" />
                             Download PDF
                           </>
                         )}
@@ -462,11 +462,11 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
     const isTechSpecButtonDisabled = loading !== null || credits < CREDIT_COSTS["tech-spec"] || !hasPrd
 
     return (
-      <div className="space-y-6">
+      <div className="ui-stack-6">
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="ui-row-between">
+              <div className="ui-row-gap-3">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#a855f7] flex items-center justify-center shadow-lg">
                   <Code className="h-5 w-5 text-white" />
                 </div>
@@ -477,7 +477,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                   </CardDescription>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="ui-row-gap-2">
                 <Badge variant="outline">{CREDIT_COSTS["tech-spec"]} credits</Badge>
                 <Button
                   onClick={() => {
@@ -530,17 +530,17 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
             {analyses.map((spec) => (
               <Card key={spec.id}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
+                  <div className="ui-row-between">
+                    <span className="ui-text-sm-muted">
                       Version {String((spec as Record<string, unknown>).version || 1)} | {new Date(spec.created_at!).toLocaleDateString()}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="ui-row-gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => navigator.clipboard.writeText(spec.content || "")}
                       >
-                        <Download className="h-4 w-4 mr-1" />
+                        <Download className="ui-icon-16 mr-1" />
                         Copy
                       </Button>
                       <Button
@@ -558,7 +558,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                           </>
                         ) : (
                           <>
-                            <Download className="h-4 w-4 mr-1" />
+                            <Download className="ui-icon-16 mr-1" />
                             Download PDF
                           </>
                         )}
@@ -579,11 +579,11 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
 
   // Deploy tab
   return (
-    <div className="space-y-6">
+    <div className="ui-stack-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#34d399] to-[#00d4ff] flex items-center justify-center shadow-lg">
+          <div className="ui-row-gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#34d399] to-text-accent flex items-center justify-center shadow-lg">
               <Rocket className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -599,18 +599,18 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
             {appTypes.map((app) => (
               <div
                 key={app.id}
-                className="group p-4 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] hover:border-[rgba(0,212,255,0.2)] hover:bg-[rgba(0,212,255,0.03)] transition-all duration-300"
+                className="group p-4 rounded-xl border border-surface-mid bg-[rgba(255,255,255,0.02)] hover:border-text-accent/20 hover:bg-text-accent/3 transition-all duration-300"
               >
-                <div className="flex items-center gap-3 mb-3">
+                <div className="ui-row-gap-3 mb-3">
                   <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${app.gradient} flex items-center justify-center shadow-lg group-hover:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-shadow duration-300`}>
                     <app.icon className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-semibold tracking-tight">{app.name}</h4>
-                    <p className="text-sm text-muted-foreground">{app.description}</p>
+                    <h4 className="ui-font-semibold ui-tracking-tight">{app.name}</h4>
+                    <p className="ui-text-sm-muted">{app.description}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="ui-row-between">
                   <Badge variant="outline">{app.credits} credits</Badge>
                   <Button
                     onClick={() => generateApp(app.id)}
@@ -643,18 +643,18 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
       {/* Previous Deployments */}
       {analyses.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-bold tracking-tight">Deployments</h3>
+          <h3 className="ui-section-title">Deployments</h3>
           {analyses.map((deployment) => (
             <Card key={deployment.id}>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="ui-row-between">
+                  <div className="ui-row-gap-2">
                     <Badge
                       variant={deployment.status === "deployed" ? "success" : deployment.status === "failed" ? "destructive" : "secondary"}
                     >
                       {deployment.status || "pending"}
                     </Badge>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="ui-text-sm-muted">
                       {new Date(deployment.created_at!).toLocaleDateString()}
                     </span>
                   </div>
@@ -665,7 +665,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                       rel="noopener noreferrer"
                     >
                       <Button size="sm" variant="outline" className="gap-2">
-                        <ExternalLink className="h-4 w-4" />
+                        <ExternalLink className="ui-icon-16" />
                         View App
                       </Button>
                     </a>

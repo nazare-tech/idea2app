@@ -51,15 +51,15 @@ export default function ForgotPasswordPage() {
         <AuthHeader />
         <main className="flex flex-1 items-center justify-center px-4 py-12">
           <Card className={uiStylePresets.authCardCompact}>
-            <CardHeader className="space-y-2 px-8 pt-8">
-              <div className="flex items-center gap-3">
+            <CardHeader className="ui-stack-2 px-8 pt-8">
+              <div className="ui-row-gap-3">
                 <div className={uiStylePresets.authTopIconBadge}>
                   <Lightbulb className="h-5 w-5" />
                 </div>
-                <span className="text-base font-semibold tracking-[0.05em]">Idea2App</span>
+                <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
               </div>
               <CardTitle className="text-4xl tracking-[-0.02em]">Forgot your password?</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="ui-text-sm-muted">
                 Enter the email for your account and we&apos;ll send you a reset link.
               </p>
             </CardHeader>
@@ -67,12 +67,12 @@ export default function ForgotPasswordPage() {
             {sent ? (
               <CardContent className="space-y-4 px-8 pb-8 pt-4">
                 <div className="rounded-lg border border-success-bg bg-success-bg p-4 text-sm text-success">
-                  <p className="flex items-center gap-2">
-                    <Check className="h-4 w-4" />
-                    Reset link sent to <span className="font-semibold">{email}</span>.
+                  <p className="ui-row-gap-2">
+                    <Check className="ui-icon-16" />
+                    Reset link sent to <span className="ui-font-semibold">{email}</span>.
                   </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="ui-text-sm-muted">
                   If you do not receive it within a few minutes, check spam and request again.
                 </p>
                 <Button
@@ -92,7 +92,7 @@ export default function ForgotPasswordPage() {
                     </p>
                   )}
 
-                  <div className="space-y-2">
+                  <div className="ui-stack-2">
                     <Label htmlFor="email" className={uiStylePresets.authFieldLabel}>
                       Email address
                     </Label>
@@ -123,9 +123,9 @@ export default function ForgotPasswordPage() {
             )}
 
             <CardFooter className="px-8 pb-8 pt-0">
-              <p className="w-full text-center text-sm text-muted-foreground">
+              <p className="w-full text-center ui-text-sm-muted">
                 Remembered your password?{" "}
-                <Link href="/login" className="font-semibold text-foreground hover:text-primary underline decoration-dotted underline-offset-2">
+                <Link href="/login" className="ui-font-semibold text-foreground hover:text-primary underline decoration-dotted underline-offset-2">
                   Back to Sign in
                 </Link>
               </p>
@@ -141,11 +141,11 @@ function AuthHeader() {
   return (
         <header className="border-b border-border bg-card">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 md:px-8 lg:px-12 xl:px-16">
-        <Link href="/" className="inline-flex items-center gap-2">
+        <Link href="/" className="inline-ui-row-gap-2">
           <div className={uiStylePresets.authTopIconBadge}>
             <Lightbulb className="h-5 w-5" />
           </div>
-          <span className="text-base font-semibold tracking-[0.05em]">Idea2App</span>
+          <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
         </Link>
       </div>
     </header>

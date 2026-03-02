@@ -65,12 +65,12 @@ export default async function ProjectsPage() {
 
   return (
     <div className="flex flex-col h-full bg-background px-6 py-6 md:px-12 md:py-6 lg:px-[56px] lg:py-6">
-      <section className="rounded-2xl border border-[#E0E0E0] bg-[#0A0A0A] p-8 text-white">
+      <section className="rounded-2xl border border-border-subtle bg-text-primary p-8 text-white">
         <header className="mb-7">
           <h1 className="font-[700] text-[24px] leading-tight tracking-[-0.5px] text-[#FFFFFF]">
             Projects
           </h1>
-          <p className="mt-2 text-sm text-[#999999]">
+          <p className="mt-2 text-sm text-text-muted">
             Manage and organize your AI-powered applications.
           </p>
         </header>
@@ -88,7 +88,7 @@ export default async function ProjectsPage() {
         </div>
       </section>
 
-      <div className="h-[1px] bg-[#E0E0E0] my-6" />
+      <div className="h-[1px] bg-border-subtle my-6" />
 
       <InspirationProjectsSection />
     </div>
