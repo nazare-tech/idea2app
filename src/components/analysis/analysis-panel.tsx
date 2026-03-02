@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -117,6 +118,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null)
   const [showCompetitiveAnalysisBanner, setShowCompetitiveAnalysisBanner] = useState(false)
   const [showPrdBanner, setShowPrdBanner] = useState(false)
+  const router = useRouter()
 
   // Get the latest competitive analysis
   const latestCompetitiveAnalysis = competitiveAnalyses?.find(
@@ -165,8 +167,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         throw new Error(data.error || "Analysis failed")
       }
 
-      // Refresh to show updated analyses list
-      window.location.reload()
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -196,7 +197,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         throw new Error(data.error || "App generation failed")
       }
 
-      window.location.reload()
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {

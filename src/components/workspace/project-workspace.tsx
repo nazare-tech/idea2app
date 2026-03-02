@@ -230,6 +230,30 @@ export function ProjectWorkspace({
     return !(isPromptOnlyMode && documentType !== "prompt")
   }, [isPromptOnlyMode])
 
+  const hydrateGeneratingStateFromStorage = useCallback((): Record<DocumentType, boolean> => {
+    if (typeof window === "undefined") {
+      return {
+        prompt: false,
+        competitive: false,
+        prd: false,
+        mvp: false,
+        mockups: false,
+        techspec: false,
+        deploy: false,
+      }
+    }
+
+    return {
+      prompt: false,
+      competitive: loadGeneratingState("competitive"),
+      prd: loadGeneratingState("prd"),
+      mvp: loadGeneratingState("mvp"),
+      mockups: loadGeneratingState("mockups"),
+      techspec: loadGeneratingState("techspec"),
+      deploy: loadGeneratingState("deploy"),
+    }
+  }, [loadGeneratingState])
+
   useEffect(() => {
     if (isNewProject) {
       setActiveDocument("prompt")
@@ -271,22 +295,17 @@ export function ProjectWorkspace({
     }
   }, [getStorageKey, getInitialCount])
 
-  // Restore generating states from localStorage on mount
+  // Restore and sync generation flags from localStorage
   useEffect(() => {
-    const restored: Record<DocumentType, boolean> = {
-      prompt: false,
-      competitive: loadGeneratingState("competitive"),
-      prd: loadGeneratingState("prd"),
-      mvp: loadGeneratingState("mvp"),
-      mockups: loadGeneratingState("mockups"),
-      techspec: loadGeneratingState("techspec"),
-      deploy: loadGeneratingState("deploy"),
-    }
-    setGeneratingDocuments(restored)
-  }, [project.id, loadGeneratingState])
+    if (isPromptOnlyMode) return
+
+    setGeneratingDocuments(hydrateGeneratingStateFromStorage())
+  }, [project.id, isPromptOnlyMode, hydrateGeneratingStateFromStorage])
 
   // Poll for new content when documents are generating, and refresh only when versions arrive.
   useEffect(() => {
+    if (isPromptOnlyMode) return
+
     const activeDocumentTypes = (Object.entries(generatingDocuments) as [DocumentType, boolean][])
       .filter(([, isGenerating]) => isGenerating)
       .map(([type]) => type)
@@ -313,32 +332,27 @@ export function ProjectWorkspace({
       const completedDocs: DocumentType[] = []
       const activeDocs: DocumentType[] = []
 
-      if (!snapshot) {
-        activeDocumentTypes.forEach(type => {
-          if (loadGeneratingState(type)) {
-            activeDocs.push(type)
-            return
-          }
+      for (const type of activeDocumentTypes) {
+        if (!loadGeneratingState(type)) {
           completedDocs.push(type)
-        })
-      } else {
-        for (const type of activeDocumentTypes) {
-          if (!loadGeneratingState(type)) {
-            completedDocs.push(type)
-            continue
-          }
+          continue
+        }
 
-          const remoteCount = snapshot[type]
-          if (remoteCount === undefined) {
-            activeDocs.push(type)
-            continue
-          }
+        if (!snapshot) {
+          activeDocs.push(type)
+          continue
+        }
 
-          if (checkIfContentIncreased(type, remoteCount)) {
-            completedDocs.push(type)
-          } else {
-            activeDocs.push(type)
-          }
+        const remoteCount = snapshot[type]
+        if (remoteCount === undefined) {
+          activeDocs.push(type)
+          continue
+        }
+
+        if (checkIfContentIncreased(type, remoteCount)) {
+          completedDocs.push(type)
+        } else {
+          activeDocs.push(type)
         }
       }
 
@@ -347,6 +361,7 @@ export function ProjectWorkspace({
           saveGeneratingState(type, false)
         })
 
+        let didChange = false
         setGeneratingDocuments(prev => {
           const next = { ...prev }
           let changed = false
@@ -355,13 +370,16 @@ export function ProjectWorkspace({
             if (next[type]) {
               next[type] = false
               changed = true
+              didChange = true
             }
           }
 
           return changed ? next : prev
         })
 
-        router.refresh()
+        if (didChange) {
+          router.refresh()
+        }
       }
 
       if (activeDocs.length > 0 && !isCanceled) {
@@ -380,39 +398,8 @@ export function ProjectWorkspace({
       isCanceled = true
       clearPoll()
     }
-  }, [generatingDocuments, getGenerationSnapshot, checkIfContentIncreased, loadGeneratingState, saveGeneratingState, router])
+  }, [\n    generatingDocuments,\n    getGenerationSnapshot,\n    checkIfContentIncreased,\n    loadGeneratingState,\n    saveGeneratingState,\n    router,\n    isPromptOnlyMode,\n  ])
 
-  // Clear generating state when new content is detected
-  useEffect(() => {
-    const checkAndClearStates = () => {
-      if (generatingDocuments.competitive && checkIfContentIncreased("competitive")) {
-        setGeneratingDocuments(prev => ({ ...prev, competitive: false }))
-        saveGeneratingState("competitive", false)
-      }
-      if (generatingDocuments.prd && checkIfContentIncreased("prd")) {
-        setGeneratingDocuments(prev => ({ ...prev, prd: false }))
-        saveGeneratingState("prd", false)
-      }
-      if (generatingDocuments.mvp && checkIfContentIncreased("mvp")) {
-        setGeneratingDocuments(prev => ({ ...prev, mvp: false }))
-        saveGeneratingState("mvp", false)
-      }
-      if (generatingDocuments.mockups && checkIfContentIncreased("mockups")) {
-        setGeneratingDocuments(prev => ({ ...prev, mockups: false }))
-        saveGeneratingState("mockups", false)
-      }
-      if (generatingDocuments.techspec && checkIfContentIncreased("techspec")) {
-        setGeneratingDocuments(prev => ({ ...prev, techspec: false }))
-        saveGeneratingState("techspec", false)
-      }
-      if (generatingDocuments.deploy && checkIfContentIncreased("deploy")) {
-        setGeneratingDocuments(prev => ({ ...prev, deploy: false }))
-        saveGeneratingState("deploy", false)
-      }
-    }
-    checkAndClearStates()
-    checkAndClearStates()
-  }, [analyses, prds, mvpPlans, mockups, techSpecs, deployments, generatingDocuments, checkIfContentIncreased, saveGeneratingState])
 
   const getDocumentStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
     // Check if document is currently generating
