@@ -316,7 +316,7 @@ export function ContentEditor({
                 <>
                   <button
                     onClick={handleCopyContent}
-                    className="ui-row-gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors"
+                    className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors"
                   >
                     <Copy className="h-3.5 w-3.5" />
                     <span className="text-xs ui-font-medium">{copied ? "Copied!" : "Copy"}</span>
@@ -325,7 +325,7 @@ export function ContentEditor({
                     <DropdownMenuTrigger asChild>
                       <button
                         disabled={downloadingPdf}
-                        className="ui-row-gap-2 px-4 py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {downloadingPdf ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -356,7 +356,7 @@ export function ContentEditor({
                   onClick={() => onGenerateContent(selectedDocModel)}
                   disabled={isGenerating || !canGenerate}
                   className={cn(
-                    "ui-row-gap-2 px-5 py-2 rounded-md transition-colors",
+                    "ui-row-gap-2 px-5 ui-py-2 rounded-md transition-colors",
                     canGenerate
                       ? "bg-primary text-primary-foreground hover:bg-primary/90"
                       : "bg-muted text-muted-foreground cursor-not-allowed"
@@ -373,7 +373,7 @@ export function ContentEditor({
                 </button>
                 {!canGenerate && disabledReason && !isGenerating && (
                   <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
-                    <div className="bg-popover text-popover-foreground px-3 py-2 rounded-md text-xs shadow-lg border border-border whitespace-nowrap">
+                    <div className="bg-popover text-popover-foreground ui-px-3 ui-py-2 rounded-md text-xs shadow-lg border border-border whitespace-nowrap">
                       {disabledReason}
                       <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-popover"></div>
                     </div>

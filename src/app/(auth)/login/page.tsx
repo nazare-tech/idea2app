@@ -96,7 +96,7 @@ function LoginForm() {
           </aside>
           <div className="flex w-full flex-1">
             <div className="w-full max-w-[880px] lg:h-full lg:flex lg:flex-col">
-              <header className="h-[104px] px-6 py-5">
+              <header className="h-[104px] ui-px-6 py-5">
                 <Link href="/" className="inline-flex h-full items-center gap-3">
                   <div className={uiStylePresets.authIconCircle}>
                     <Lightbulb className="ui-icon-16" />
@@ -106,12 +106,12 @@ function LoginForm() {
               </header>
               <div className="flex-1 flex items-center">
                 <Card className={uiStylePresets.authCardContainer}>
-                  <CardHeader className="ui-stack-2 px-8 pt-8">
+                  <CardHeader className="ui-stack-2 ui-px-8 pt-8">
                     <CardTitle className="text-3xl tracking-[-0.02em]">Welcome back</CardTitle>
                     <p className="ui-text-sm-muted">Sign in to continue to Idea2App.</p>
                   </CardHeader>
                   <form onSubmit={handleLogin}>
-                    <CardContent className="space-y-5 px-8 pt-3">
+                    <CardContent className="space-y-5 ui-px-8 pt-3">
                       <button
                         type="button"
                         onClick={handleGoogleLogin}
@@ -183,7 +183,7 @@ function LoginForm() {
                     </CardContent>
                   </form>
 
-                  <CardFooter className="px-8 pb-8 pt-2">
+                  <CardFooter className="ui-px-8 pb-8 pt-2">
                     <p className="w-full text-center ui-text-sm-muted">
                       Don&apos;t have an account?{" "}
                       <Link href="/signup" className={uiStylePresets.authLinkUnderline}>

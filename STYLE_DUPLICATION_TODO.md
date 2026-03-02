@@ -48,7 +48,7 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - [ ] `text-sm font-semibold uppercase tracking-[0.14em] text-primary` (used on multiple marketing section labels)
 
 ## 3) Spacing/padding pattern consolidation
-- [x] Create reusable spacing variants for the most repeated utility groupings.
+- [x] Create reusable spacing variants for the most repeated utility groupings. (Implemented in this branch; main had this item open)
   - [x] `px-4`
   - [x] `p-4`
   - [x] `px-3`
@@ -58,29 +58,29 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - [x] `py-1.5`
   - [x] `px-6`
 - [ ] Replace recurring full class bundles with semantic primitives/components in:
-  - [ ] `src/app/(auth)/forgot-password/page.tsx`
-  - [ ] `src/app/(auth)/login/page.tsx`
-  - [ ] `src/app/(auth)/reset-password/page.tsx`
-  - [ ] `src/app/(auth)/signup/page.tsx`
-  - [ ] `src/components/layout/content-editor.tsx`
-  - [ ] `src/components/ui/input.tsx`
-  - [ ] `src/components/ui/textarea.tsx`
-  - [ ] `src/components/ui/inline-ai-editor.tsx`
-  - [ ] `src/components/ui/markdown-renderer.tsx`
+  - [x] `src/app/(auth)/forgot-password/page.tsx`
+  - [x] `src/app/(auth)/login/page.tsx`
+  - [x] `src/app/(auth)/reset-password/page.tsx`
+  - [x] `src/app/(auth)/signup/page.tsx`
+  - [x] `src/components/layout/content-editor.tsx`
+  - [x] `src/components/ui/input.tsx`
+  - [x] `src/components/ui/textarea.tsx`
+  - [x] `src/components/ui/inline-ai-editor.tsx`
+  - [x] `src/components/ui/markdown-renderer.tsx`
 
 ## 4) Extract repeated class bundles into reusable components
-- [ ] Replace repeated exact bundles:
-  - [ ] `h-4 w-4` (icon sizing)
-  - [ ] `text-sm text-muted-foreground`
-  - [ ] `flex items-center gap-3`
-  - [ ] `flex items-center justify-between`
-  - [ ] `flex items-center gap-2`
-  - [ ] `space-y-2` / `space-y-6`
-- [ ] Candidate extraction targets:
-  - [ ] `src/components/analysis/analysis-panel.tsx` (highest cluster density)
-  - [ ] `src/app/(dashboard)/settings/page.tsx`
-  - [ ] `src/app/page.tsx`
-  - [ ] `src/components/layout/sidebar.tsx`
+- [x] Replace repeated exact bundles:
+  - [x] `h-4 w-4` (icon sizing)
+  - [x] `text-sm text-muted-foreground`
+  - [x] `flex items-center gap-3`
+  - [x] `flex items-center justify-between`
+  - [x] `flex items-center gap-2`
+  - [x] `space-y-2` / `space-y-6`
+- [x] Candidate extraction targets:
+  - [x] `src/components/analysis/analysis-panel.tsx` (highest cluster density)
+  - [x] `src/app/(dashboard)/settings/page.tsx`
+  - [x] `src/app/page.tsx`
+  - [x] `src/components/layout/sidebar.tsx`
 
 ## 5) Add migration safety checklist
 - [ ] Replace class strings using token variables in each touched file.

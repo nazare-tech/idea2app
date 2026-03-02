@@ -108,8 +108,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-text-primary">
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
-        <div className={`${container} flex h-16 items-center justify-between`}>
-          <div className="flex items-center gap-3">
+        <div className={`${container} ui-row-between h-16`}>
+          <div className="ui-row-gap-3">
             <div className="h-9 w-9 rounded-sm bg-primary text-white flex items-center justify-center font-bold">I</div>
             <span className="text-lg font-semibold tracking-[0.01em]">Idea2App</span>
           </div>
@@ -122,7 +122,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden ui-row-gap-3 md:flex">
             <Link href="/login">
               <Button variant="outline" className="h-10 border-text-primary px-6 text-sm font-semibold">
                 Sign In
@@ -281,14 +281,14 @@ export default function LandingPage() {
           <Link href="/signup" className="inline-block mt-8">
             <Button className="h-14 px-8 text-base font-semibold bg-primary text-white">
               Get Started Free
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="ml-2 ui-icon-16" />
             </Button>
           </Link>
         </div>
       </section>
 
       <footer className="border-t border-[#E2E8F0] bg-white">
-        <div className={`${container} flex h-[88px] flex-wrap items-center justify-between gap-5 text-sm`}>
+        <div className={`${container} ui-row-between h-[88px] flex-wrap gap-5 text-sm`}>
           <span className="font-mono text-[11px] tracking-[0.05em] text-text-muted">(c) 2026 Idea2App. All rights reserved.</span>
           <div className="flex items-center gap-5 font-mono text-[11px] tracking-[0.05em] text-text-muted">
             <a href="#" className={uiStylePresets.subtleLinkHover}>Terms</a>

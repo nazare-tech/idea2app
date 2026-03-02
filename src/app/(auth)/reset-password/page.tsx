@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
   if (!ready) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <section className="mx-auto flex min-h-screen max-w-[460px] flex-col justify-center px-4">
+        <section className="mx-auto flex min-h-screen max-w-[460px] flex-col justify-center ui-px-4">
           <Card className="border-border-subtle">
             <CardHeader className="space-y-3">
               <p className="ui-text-sm-muted">Password reset</p>
@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <section className="mx-auto flex min-h-screen max-w-[480px] flex-col px-4 pb-6 md:px-8">
+      <section className="mx-auto flex min-h-screen max-w-[480px] flex-col ui-px-4 pb-6 md:px-8">
         <AuthHeader />
         <div className="mt-12">
           <Card className={uiStylePresets.authCardCompact}>

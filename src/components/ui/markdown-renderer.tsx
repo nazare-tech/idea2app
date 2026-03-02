@@ -155,7 +155,7 @@ function MermaidDiagram({ code }: { code: string }) {
 
   if (error) {
     return (
-      <div className="mermaid-wrapper my-4 p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+      <div className="mermaid-wrapper my-4 ui-p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
         <pre className="text-sm text-gray-700 dark:text-gray-300 ui-font-mono whitespace-pre-wrap">{code}</pre>
       </div>
     )
@@ -164,7 +164,7 @@ function MermaidDiagram({ code }: { code: string }) {
   return (
     <>
       {/* Compact view - fits within document width */}
-      <div className="mermaid-wrapper my-4 p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 relative group">
+      <div className="mermaid-wrapper my-4 ui-p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 relative group">
         <div
           className="mermaid-diagram w-full overflow-hidden"
           dangerouslySetInnerHTML={{ __html: svg }}
@@ -230,7 +230,7 @@ function MermaidDiagram({ code }: { code: string }) {
             </div>
 
             {/* Zoom controls - bottom center */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 ui-row-gap-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg px-3 py-2 z-10">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 ui-row-gap-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg ui-px-3 ui-py-2 z-10">
               <button
                 onClick={handleZoomOut}
                 disabled={zoom <= 50}
@@ -609,12 +609,12 @@ export function MarkdownRenderer({
     [&_em]:text-gray-700 [&_em]:italic
     [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary/80 [&_a]:transition-colors
     [&_code]:text-primary [&_code]:bg-[rgba(220,38,38,0.06)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:ui-font-mono
-    [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:ui-font-mono
+    [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded-lg [&_pre]:ui-p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:ui-font-mono
     [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-gray-900 [&_pre_code]:ui-font-mono [&_pre_code]:whitespace-pre [&_pre_code]:text-sm [&_pre_code]:leading-relaxed
     [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_blockquote]:my-3
     [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse
-    [&_th]:border [&_th]:border-gray-200 [&_th]:bg-[#EFF6FF] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:ui-font-semibold [&_th]:text-gray-800
-    [&_td]:border [&_td]:border-gray-200 [&_td]:px-4 [&_td]:py-2 [&_td]:text-gray-700
+    [&_th]:border [&_th]:border-gray-200 [&_th]:bg-[#EFF6FF] [&_th]:ui-px-4 [&_th]:ui-py-2 [&_th]:text-left [&_th]:ui-font-semibold [&_th]:text-gray-800
+    [&_td]:border [&_td]:border-gray-200 [&_td]:ui-px-4 [&_td]:ui-py-2 [&_td]:text-gray-700
     [&_hr]:border-gray-200 [&_hr]:my-4
   `.trim()
 
