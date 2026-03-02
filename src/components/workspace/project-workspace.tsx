@@ -86,22 +86,8 @@ export function ProjectWorkspace({
 }: ProjectWorkspaceProps) {
   const router = useRouter()
   const [projectName, setProjectName] = useState(project.name)
-  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
+  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject || !project.description)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
-
-  useEffect(() => {
-    setProjectName(project.name)
-  }, [project.name])
-
-  useEffect(() => {
-    setIsPromptOnlyMode(isNewProject)
-  }, [isNewProject])
-
-  useEffect(() => {
-    if (project.description) {
-      setIsPromptOnlyMode(false)
-    }
-  }, [project.description])
 
   const getPersistedActiveDocument = useCallback((): DocumentType | null => {
     if (typeof window === "undefined") return null
@@ -207,6 +193,16 @@ export function ProjectWorkspace({
     }
   }, [project.id, getInitialCount, getStorageKey])
 
+  const getBaseGeneratingState = useCallback((): Record<DocumentType, boolean> => ({
+    prompt: false,
+    competitive: false,
+    prd: false,
+    mvp: false,
+    mockups: false,
+    techspec: false,
+    deploy: false,
+  }), [])
+
   const loadGeneratingState = useCallback((docType: DocumentType): boolean => {
     const key = getStorageKey(docType)
     const stored = localStorage.getItem(key)
@@ -232,15 +228,7 @@ export function ProjectWorkspace({
 
   const hydrateGeneratingStateFromStorage = useCallback((): Record<DocumentType, boolean> => {
     if (typeof window === "undefined") {
-      return {
-        prompt: false,
-        competitive: false,
-        prd: false,
-        mvp: false,
-        mockups: false,
-        techspec: false,
-        deploy: false,
-      }
+      return getBaseGeneratingState()
     }
 
     return {
@@ -252,23 +240,37 @@ export function ProjectWorkspace({
       techspec: loadGeneratingState("techspec"),
       deploy: loadGeneratingState("deploy"),
     }
-  }, [loadGeneratingState])
+  }, [getBaseGeneratingState, loadGeneratingState])
+
+  const getWorkspaceSyncState = useCallback(() => {
+    const nextIsPromptOnlyMode = isNewProject || !project.description
+    const persistedDocument = nextIsPromptOnlyMode ? null : getPersistedActiveDocument()
+
+    return {
+      isPromptOnlyMode: nextIsPromptOnlyMode,
+      activeDocument: !nextIsPromptOnlyMode && persistedDocument && canSelectDocument(persistedDocument)
+        ? persistedDocument
+        : "prompt" as DocumentType,
+      generatingDocuments: nextIsPromptOnlyMode
+        ? getBaseGeneratingState()
+        : hydrateGeneratingStateFromStorage(),
+    }
+  }, [canSelectDocument, getBaseGeneratingState, getPersistedActiveDocument, hydrateGeneratingStateFromStorage, isNewProject, project.description])
 
   useEffect(() => {
-    if (isNewProject) {
-      setActiveDocument("prompt")
-      return
-    }
+    const nextSyncState = getWorkspaceSyncState()
 
-    const persistedDocument = getPersistedActiveDocument()
+    setProjectName(project.name)
+    setIsPromptOnlyMode(nextSyncState.isPromptOnlyMode)
+    setActiveDocument(nextSyncState.activeDocument)
 
-    if (!persistedDocument || !canSelectDocument(persistedDocument)) {
-      setActiveDocument("prompt")
-      return
-    }
+    setGeneratingDocuments(prev => {
+      const changedKeys = (Object.keys(nextSyncState.generatingDocuments) as Array<keyof typeof nextSyncState.generatingDocuments>)
+        .some((key) => prev[key] !== nextSyncState.generatingDocuments[key])
 
-    setActiveDocument(persistedDocument)
-  }, [isNewProject, getPersistedActiveDocument, canSelectDocument])
+      return changedKeys ? nextSyncState.generatingDocuments : prev
+    })
+  }, [getWorkspaceSyncState, project.name])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -294,13 +296,6 @@ export function ProjectWorkspace({
       return false
     }
   }, [getStorageKey, getInitialCount])
-
-  // Restore and sync generation flags from localStorage
-  useEffect(() => {
-    if (isPromptOnlyMode) return
-
-    setGeneratingDocuments(hydrateGeneratingStateFromStorage())
-  }, [project.id, isPromptOnlyMode, hydrateGeneratingStateFromStorage])
 
   // Poll for new content when documents are generating, and refresh only when versions arrive.
   useEffect(() => {

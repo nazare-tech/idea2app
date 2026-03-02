@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -56,6 +55,18 @@ interface AnalysisPanelProps {
   }>
   credits: number
   type: "analysis" | "prd" | "techspec" | "deploy"
+}
+
+type AnalysisResult = {
+  id: string
+  content?: string
+  type?: string
+  status?: string | null
+  deployment_url?: string | null
+  error_message?: string | null
+  build_logs?: string | null
+  created_at: string | null
+  [key: string]: unknown
 }
 
 const analysisTypes = [
@@ -118,15 +129,21 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null)
   const [showCompetitiveAnalysisBanner, setShowCompetitiveAnalysisBanner] = useState(false)
   const [showPrdBanner, setShowPrdBanner] = useState(false)
-  const router = useRouter()
+  const [localAnalyses, setLocalAnalyses] = useState<AnalysisResult[]>(analyses)
+  const [localCompetitiveAnalyses, setLocalCompetitiveAnalyses] = useState<AnalysisResult[]>(competitiveAnalyses ?? [])
+  const [localPrds, setLocalPrds] = useState<AnalysisResult[]>(prds ?? [])
+
+  useEffect(() => setLocalAnalyses(analyses), [analyses])
+  useEffect(() => setLocalCompetitiveAnalyses(competitiveAnalyses ?? []), [competitiveAnalyses])
+  useEffect(() => setLocalPrds(prds ?? []), [prds])
 
   // Get the latest competitive analysis
-  const latestCompetitiveAnalysis = competitiveAnalyses?.find(
+  const latestCompetitiveAnalysis = localCompetitiveAnalyses?.find(
     (analysis) => analysis.type === "competitive-analysis"
   )
 
   // Get the latest PRD
-  const latestPrd = prds?.[0]
+  const latestPrd = localPrds?.[0]
 
   const runAnalysis = async (analysisType: string) => {
     setLoading(analysisType)
@@ -167,7 +184,32 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         throw new Error(data.error || "Analysis failed")
       }
 
-      router.refresh()
+      const now = new Date().toISOString()
+      const newRecord: AnalysisResult = {
+        id: data.id || `${analysisType}-${Date.now()}`,
+        content: data.content,
+        type: data.type || analysisType,
+        created_at: now,
+      }
+
+      if (analysisType === "competitive-analysis") {
+        setLocalCompetitiveAnalyses(prev => [
+          { ...newRecord },
+          ...prev,
+        ])
+      }
+
+      if (analysisType === "prd") {
+        setLocalPrds(prev => [
+          { ...newRecord },
+          ...prev,
+        ])
+      }
+
+      setLocalAnalyses(prev => [
+        { ...newRecord },
+        ...prev,
+      ])
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -197,7 +239,17 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         throw new Error(data.error || "App generation failed")
       }
 
-      router.refresh()
+      const now = new Date().toISOString()
+      setLocalAnalyses(prev => [
+        {
+          id: data.deploymentId || `deployment-${Date.now()}`,
+          type: "deployment",
+          status: data.status || "generated",
+          content: data.message || "",
+          created_at: now,
+        },
+        ...prev,
+      ])
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -274,10 +326,10 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         )}
 
         {/* Previous Results */}
-        {analyses.length > 0 && (
+        {localAnalyses.length > 0 && (
           <div className="space-y-4">
             <h3 className="ui-section-title">Previous Results</h3>
-            {analyses.map((analysis) => (
+            {localAnalyses.map((analysis) => (
               <Card key={analysis.id}>
                 <CardHeader>
                   <div className="ui-row-between">
@@ -406,9 +458,9 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
           </div>
         )}
 
-        {analyses.length > 0 && (
+        {localAnalyses.length > 0 && (
           <div className="space-y-4">
-            {analyses.map((prd) => (
+            {localAnalyses.map((prd) => (
               <Card key={prd.id}>
                 <CardHeader>
                   <div className="ui-row-between">
@@ -526,9 +578,9 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
           </div>
         )}
 
-        {analyses.length > 0 && (
+        {localAnalyses.length > 0 && (
           <div className="space-y-4">
-            {analyses.map((spec) => (
+            {localAnalyses.map((spec) => (
               <Card key={spec.id}>
                 <CardHeader>
                   <div className="ui-row-between">
@@ -642,10 +694,10 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
       )}
 
       {/* Previous Deployments */}
-      {analyses.length > 0 && (
+      {localAnalyses.length > 0 && (
         <div className="space-y-4">
           <h3 className="ui-section-title">Deployments</h3>
-          {analyses.map((deployment) => (
+          {localAnalyses.map((deployment) => (
             <Card key={deployment.id}>
               <CardHeader>
                 <div className="ui-row-between">
