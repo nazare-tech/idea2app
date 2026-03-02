@@ -70,6 +70,8 @@ interface ProjectWorkspaceProps {
   isNewProject?: boolean
 }
 
+type WorkspaceGenerationCounts = Partial<Record<DocumentType, number>>
+
 export function ProjectWorkspace({
   project,
   analyses,
@@ -154,6 +156,21 @@ export function ProjectWorkspace({
   // Local content overrides for immediate UI updates after inline edits
   // Key format: `${documentType}-${recordId}` -> updated content
   const [localContentOverrides, setLocalContentOverrides] = useState<Record<string, string>>({})
+
+  const getGenerationSnapshot = useCallback(async (): Promise<WorkspaceGenerationCounts | null> => {
+    try {
+      const response = await fetch(`/api/projects/${project.id}/status`, {
+        cache: "no-store",
+      })
+
+      if (!response.ok) return null
+
+      const payload = await response.json()
+      return (payload?.data?.counts as WorkspaceGenerationCounts | undefined) ?? null
+    } catch {
+      return null
+    }
+  }, [project.id])
 
   // Helper functions for localStorage persistence
   const getStorageKey = useCallback((docType: DocumentType) => `generating_${project.id}_${docType}`, [project.id])
@@ -240,19 +257,19 @@ export function ProjectWorkspace({
     }
   }, [activeDocument, activeDocumentStorageKey, isPromptOnlyMode])
 
-  const checkIfContentIncreased = useCallback((docType: DocumentType): boolean => {
+  const checkIfContentIncreased = useCallback((docType: DocumentType, remoteCount?: number): boolean => {
     const key = getStorageKey(docType)
     const stored = localStorage.getItem(key)
     if (!stored) return false
 
     try {
       const { initialCount } = JSON.parse(stored)
-      const currentCount = getInitialCount(docType)
+      const currentCount = remoteCount ?? getInitialCount(docType)
       return currentCount > initialCount
     } catch {
       return false
     }
-  }, [project.id, analyses, prds, mvpPlans, techSpecs, deployments])
+  }, [getStorageKey, getInitialCount])
 
   // Restore generating states from localStorage on mount
   useEffect(() => {
@@ -266,20 +283,104 @@ export function ProjectWorkspace({
       deploy: loadGeneratingState("deploy"),
     }
     setGeneratingDocuments(restored)
-    setGeneratingDocuments(restored)
   }, [project.id, loadGeneratingState])
 
-  // Poll for new content when documents are generating
+  // Poll for new content when documents are generating, and refresh only when versions arrive.
   useEffect(() => {
-    const isAnyDocGenerating = Object.values(generatingDocuments).some(Boolean)
-    if (!isAnyDocGenerating) return
+    const activeDocumentTypes = (Object.entries(generatingDocuments) as [DocumentType, boolean][])
+      .filter(([, isGenerating]) => isGenerating)
+      .map(([type]) => type)
 
-    const pollInterval = setInterval(() => {
-      router.refresh()
-    }, 5000) // Poll every 5 seconds
+    if (activeDocumentTypes.length === 0) return
 
-    return () => clearInterval(pollInterval)
-  }, [generatingDocuments, router])
+    let isCanceled = false
+    let pollDelayMs = 1000
+    let pollTimeout: ReturnType<typeof setTimeout> | null = null
+
+    const clearPoll = () => {
+      if (pollTimeout) {
+        clearTimeout(pollTimeout)
+        pollTimeout = null
+      }
+    }
+
+    const pollGenerationCompletion = async () => {
+      if (isCanceled) return
+
+      const snapshot = await getGenerationSnapshot()
+      if (isCanceled) return
+
+      const completedDocs: DocumentType[] = []
+      const activeDocs: DocumentType[] = []
+
+      if (!snapshot) {
+        activeDocumentTypes.forEach(type => {
+          if (loadGeneratingState(type)) {
+            activeDocs.push(type)
+            return
+          }
+          completedDocs.push(type)
+        })
+      } else {
+        for (const type of activeDocumentTypes) {
+          if (!loadGeneratingState(type)) {
+            completedDocs.push(type)
+            continue
+          }
+
+          const remoteCount = snapshot[type]
+          if (remoteCount === undefined) {
+            activeDocs.push(type)
+            continue
+          }
+
+          if (checkIfContentIncreased(type, remoteCount)) {
+            completedDocs.push(type)
+          } else {
+            activeDocs.push(type)
+          }
+        }
+      }
+
+      if (completedDocs.length > 0) {
+        completedDocs.forEach((type) => {
+          saveGeneratingState(type, false)
+        })
+
+        setGeneratingDocuments(prev => {
+          const next = { ...prev }
+          let changed = false
+
+          for (const type of completedDocs) {
+            if (next[type]) {
+              next[type] = false
+              changed = true
+            }
+          }
+
+          return changed ? next : prev
+        })
+
+        router.refresh()
+      }
+
+      if (activeDocs.length > 0 && !isCanceled) {
+        pollDelayMs = Math.min(6000, Math.round(pollDelayMs * 1.35))
+        pollTimeout = setTimeout(() => {
+          void pollGenerationCompletion()
+        }, pollDelayMs)
+      } else {
+        clearPoll()
+      }
+    }
+
+    pollGenerationCompletion()
+
+    return () => {
+      isCanceled = true
+      clearPoll()
+    }
+  }, [generatingDocuments, getGenerationSnapshot, checkIfContentIncreased, loadGeneratingState, saveGeneratingState, router])
 
   // Clear generating state when new content is detected
   useEffect(() => {
@@ -513,14 +614,19 @@ export function ProjectWorkspace({
   )
 
   const handleGenerateContent = async (model?: string) => {
+    const generatingType = activeDocument
+    let didGenerate = false
+
     // Set generating state for the active document
-    setGeneratingDocuments(prev => ({ ...prev, [activeDocument]: true }))
-    saveGeneratingState(activeDocument, true)
+    setGeneratingDocuments(prev => ({ ...prev, [generatingType]: true }))
+    saveGeneratingState(generatingType, true)
 
     try {
       let endpoint = ""
 
-      switch (activeDocument) {
+      switch (generatingType) {
+        case "prompt":
+          throw new Error("Prompt generation is not supported")
         case "competitive":
           endpoint = "/api/analysis/competitive-analysis"
           break
@@ -540,7 +646,7 @@ export function ProjectWorkspace({
           endpoint = "/api/generate-app"
           break
         default:
-          return
+          throw new Error("Unsupported document type")
       }
 
       // Get competitive analysis for PRD generation
@@ -566,18 +672,18 @@ export function ProjectWorkspace({
             idea: project.description,
             name: projectName,
             ...(model && { model }),
-            ...(activeDocument === "deploy" && { appType: "dynamic" }),
-            ...(activeDocument === "prd" && competitiveAnalysis?.content && {
+            ...(generatingType === "deploy" && { appType: "dynamic" }),
+            ...(generatingType === "prd" && competitiveAnalysis?.content && {
               competitiveAnalysis: competitiveAnalysis.content
             }),
-            ...(activeDocument === "mvp" && latestPrd?.content && {
+            ...(generatingType === "mvp" && latestPrd?.content && {
               prd: latestPrd.content
             }),
-            ...(activeDocument === "mockups" && latestMvp?.content && {
+            ...(generatingType === "mockups" && latestMvp?.content && {
               mvpPlan: latestMvp.content,
               projectName: project.name
             }),
-            ...(activeDocument === "techspec" && latestPrd?.content && {
+            ...(generatingType === "techspec" && latestPrd?.content && {
               prd: latestPrd.content
             }),
           }),
@@ -591,30 +697,33 @@ export function ProjectWorkspace({
         try {
           const errorData = await response.json()
           if (errorData?.error) errorMsg = errorData.error
-        } catch { /* ignore parse errors */ }
+        } catch {
+          // ignore parse errors
+        }
         throw new Error(errorMsg)
       }
 
-      // Wait a moment for database transaction to complete
-      await new Promise(resolve => setTimeout(resolve, 500))
-
-      // Refresh data while keeping UI state (e.g., active tab) intact
-      router.refresh()
+      didGenerate = true
     } catch (error) {
       console.error("Error generating content:", error)
-
-      // Clear generating state on error
-      setGeneratingDocuments(prev => ({ ...prev, [activeDocument]: false }))
-      saveGeneratingState(activeDocument, false)
-
       if (error instanceof Error && error.name === "AbortError") {
         alert("Generation timed out after 5 minutes. Please try again.")
       } else if (error instanceof Error) {
         alert(error.message)
       }
+    } finally {
+      // Clear generation state once request finishes
+      setGeneratingDocuments(prev => ({ ...prev, [generatingType]: false }))
+      saveGeneratingState(generatingType, false)
     }
-    // Note: We don't clear the generating state in finally because we want it to persist
-    // until content refresh/detection completes.
+
+    if (!didGenerate) return
+
+    // Wait a moment for database transaction to complete
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Refresh data while keeping UI state (e.g., active tab) intact
+    router.refresh()
   }
 
   const handleUpdateDescription = async (description: string) => {
