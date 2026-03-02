@@ -86,7 +86,9 @@ export function ProjectWorkspace({
 }: ProjectWorkspaceProps) {
   const router = useRouter()
   const [projectName, setProjectName] = useState(project.name)
-  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject || !project.description)
+  const [projectDescription, setProjectDescription] = useState(project.description || "")
+  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(!project.description)
+  const [hasCompletedPromptOnboarding, setHasCompletedPromptOnboarding] = useState(Boolean(project.description))
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
 
   const getPersistedActiveDocument = useCallback((): DocumentType | null => {
@@ -112,7 +114,7 @@ export function ProjectWorkspace({
   }, [activeDocumentStorageKey])
 
   const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
-    if (isNewProject || isPromptOnlyMode) return "prompt"
+    if (isPromptOnlyMode) return "prompt"
 
     const persistedDocument = getPersistedActiveDocument()
     if (persistedDocument && !(isPromptOnlyMode && persistedDocument !== "prompt")) {
@@ -243,7 +245,7 @@ export function ProjectWorkspace({
   }, [getBaseGeneratingState, loadGeneratingState])
 
   const getWorkspaceSyncState = useCallback(() => {
-    const nextIsPromptOnlyMode = isNewProject || !project.description
+    const nextIsPromptOnlyMode = !hasCompletedPromptOnboarding
     const persistedDocument = nextIsPromptOnlyMode ? null : getPersistedActiveDocument()
 
     return {
@@ -255,7 +257,7 @@ export function ProjectWorkspace({
         ? getBaseGeneratingState()
         : hydrateGeneratingStateFromStorage(),
     }
-  }, [canSelectDocument, getBaseGeneratingState, getPersistedActiveDocument, hydrateGeneratingStateFromStorage, isNewProject, project.description])
+  }, [canSelectDocument, getBaseGeneratingState, getPersistedActiveDocument, hasCompletedPromptOnboarding, hydrateGeneratingStateFromStorage])
 
   useEffect(() => {
     const nextSyncState = getWorkspaceSyncState()
@@ -271,6 +273,11 @@ export function ProjectWorkspace({
       return changedKeys ? nextSyncState.generatingDocuments : prev
     })
   }, [getWorkspaceSyncState, project.name])
+
+  useEffect(() => {
+    setProjectDescription(project.description || "")
+    setHasCompletedPromptOnboarding(Boolean(project.description))
+  }, [project.description])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -412,7 +419,7 @@ export function ProjectWorkspace({
 
     switch (type) {
       case "prompt":
-        return project.description ? "done" : "pending"
+        return projectDescription ? "done" : "pending"
       case "competitive":
         return analyses.some(a => a.type === "competitive-analysis") ? "done" : "pending"
       case "prd":
@@ -481,7 +488,7 @@ export function ProjectWorkspace({
 
     switch (type) {
       case "prompt":
-        return project.description
+        return projectDescription
       case "competitive":
         const compAnalyses = analyses.filter(a => a.type === "competitive-analysis")
         return compAnalyses[versionIndex]?.content || null
@@ -564,7 +571,7 @@ export function ProjectWorkspace({
       case "prompt":
         return { canGenerate: true }
       case "competitive":
-        if (!project.description) {
+        if (!projectDescription) {
           return { canGenerate: false, reason: "Please add a project description first" }
         }
         return { canGenerate: true }
@@ -659,7 +666,7 @@ export function ProjectWorkspace({
           signal: controller.signal,
           body: JSON.stringify({
             projectId: project.id,
-            idea: project.description,
+            idea: projectDescription,
             name: projectName,
             ...(model && { model }),
             ...(generatingType === "deploy" && { appType: "dynamic" }),
@@ -728,10 +735,19 @@ export function ProjectWorkspace({
         throw new Error("Failed to update description")
       }
 
+      setProjectDescription(description)
+      setHasCompletedPromptOnboarding(true)
+      setIsPromptOnlyMode(false)
       router.refresh()
     } catch (error) {
       console.error("Error updating description:", error)
     }
+  }
+
+  const handleIdeaSummary = (summary: string) => {
+    setProjectDescription(summary)
+    setHasCompletedPromptOnboarding(true)
+    setIsPromptOnlyMode(false)
   }
 
   const handleUpdateContent = async (newContent: string) => {
@@ -856,10 +872,11 @@ export function ProjectWorkspace({
             documentType={activeDocument}
             projectId={project.id}
             projectName={projectName}
-            projectDescription={project.description || ""}
+            projectDescription={projectDescription}
             content={getDocumentContent(activeDocument)}
             onGenerateContent={handleGenerateContent}
             onUpdateDescription={handleUpdateDescription}
+            onIdeaSummary={handleIdeaSummary}
             onUpdateContent={handleUpdateContent}
             isGenerating={generatingDocuments[activeDocument]}
             credits={credits}

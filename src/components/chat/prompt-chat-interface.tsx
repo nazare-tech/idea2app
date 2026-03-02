@@ -574,7 +574,7 @@ export function PromptChatInterface({
                 <div
                   key={message.id}
                   className={cn(
-                    "flex gap-3 mb-6 group animate-fade-up",
+                    "flex gap-3 mb-6 group animate-fade-up items-start",
                     message.role === "user" ? "justify-end" : "justify-start"
                   )}
                 >
@@ -586,20 +586,23 @@ export function PromptChatInterface({
 
                   <div
                     className={cn(
-                      "rounded-2xl px-4 py-3 max-w-[85%] relative",
+                      "rounded-2xl px-4 py-3 max-w-[75%] relative border shadow-sm transition-all duration-200",
                       message.role === "user"
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                        : "bg-card border border-border/50 shadow-sm"
+                        ? "bg-gradient-to-br from-primary/95 to-primary/85 text-primary-foreground border-primary/30 shadow-primary/25"
+                        : "bg-card/90 border-border/70 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.25)] backdrop-blur-sm"
                     )}
                   >
                     {message.role === "user" ? (
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap tracking-tight">{message.content}</p>
                     ) : (
-                      <div className="prose prose-sm max-w-none dark:prose-invert text-sm leading-relaxed [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2 [&_li]:my-1">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
+                      <>
+                        <span className="pointer-events-none absolute inset-y-0 left-0 w-1.5 bg-primary/15" />
+                        <div className="prose prose-sm max-w-none dark:prose-invert text-sm leading-relaxed [&_p]:text-foreground [&_p]:leading-relaxed [&_p]:my-1.5 [&_li]:text-foreground [&_li]:leading-relaxed [&_li]:my-1.5 [&_strong]:font-semibold [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/8 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2 [&_ol]:pl-5 [&_ul]:pl-5 [&_blockquote]:text-foreground/90 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/30 [&_blockquote]:pl-3 [&_blockquote]:italic">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                      </>
                     )}
 
                     {/* Copy button for assistant messages */}
@@ -607,7 +610,7 @@ export function PromptChatInterface({
                       <button
                         onClick={() => handleCopy(message.content, message.id)}
                         className={cn(
-                          "absolute -bottom-3 right-2 p-1.5 rounded-lg bg-background/90 border border-border/40 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:border-primary/50"
+                          "absolute bottom-2 right-2 p-1.5 rounded-lg bg-background/90 border border-border/40 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:border-primary/50"
                         )}
                       >
                         {copiedId === message.id ? (

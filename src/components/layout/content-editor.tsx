@@ -47,6 +47,7 @@ interface ContentEditorProps {
   currentVersion?: number
   totalVersions?: number
   onVersionChange?: (version: number) => void
+  onIdeaSummary?: (summary: string) => void | Promise<void>
 }
 
 const documentConfig: Record<
@@ -110,6 +111,7 @@ export function ContentEditor({
   content,
   onGenerateContent,
   onUpdateDescription,
+  onIdeaSummary,
   onUpdateContent,
   isGenerating,
   credits,
@@ -211,6 +213,9 @@ export function ContentEditor({
   const handleIdeaSummary = async (summary: string) => {
     // Update the project description with the summary
     await onUpdateDescription(summary)
+    if (onIdeaSummary) {
+      await onIdeaSummary(summary)
+    }
   }
 
   const handleCopyContent = async () => {
