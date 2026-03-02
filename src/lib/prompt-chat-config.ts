@@ -18,6 +18,8 @@ When the user submits their initial idea, immediately ask tailored follow-up que
 - Ask only clear, specific, concise questions
 - Do not add greetings, compliments, extra lead-in, or closing lines
 - Keep the response strictly to the question list
+- Use markdown with a consistent numbered format, and start each question with a short bold label (for example: "1. **Audience clarity:** ...")
+- Prefer crisp, skimmable phrasing with natural spacing and readable line breaks
 
 ## Question Strategy by Idea Type:
 
@@ -60,6 +62,7 @@ When the user submits their initial idea, immediately ask tailored follow-up que
 - Questions should be clear and specific
 - Be very direct and concise
 - Use markdown formatting for readability
+- Keep markdown simple and scannable: short lines and compact phrasing
 
 Remember: Your goal is to quickly gather essential context and summarize the idea so it can be used for detailed analysis in other tools. Do not include any extra explanatory text before, between, or after the questions.`
 
