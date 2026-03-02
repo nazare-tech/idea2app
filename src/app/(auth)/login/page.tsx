@@ -75,9 +75,9 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <section className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pb-6 md:px-8 lg:px-12 xl:px-16">
-        <main className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-white">
-          <aside className="hidden min-h-[620px] w-full max-w-[560px] bg-[#0A0A0A] px-14 py-14 text-background lg:flex">
+      <section className="flex min-h-screen w-full flex-col">
+        <main className="flex min-h-screen w-full overflow-hidden lg:flex-row-reverse">
+          <aside className="hidden h-screen w-full max-w-[560px] bg-sidebar-bg px-14 py-14 text-sidebar-foreground lg:flex">
             <div className="flex h-full flex-col justify-between">
               <div>
                 <h1 className="text-5xl font-semibold leading-tight tracking-[-0.06em]">
@@ -93,103 +93,105 @@ function LoginForm() {
               </p>
             </div>
           </aside>
-          <div className="flex w-full justify-center overflow-y-auto px-0 py-8 md:px-4 lg:px-12">
-            <div className="w-full max-w-[880px]">
-              <header className="h-[104px] px-[56px] py-5">
-                <div className="flex h-full items-center gap-3">
+          <div className="flex w-full flex-1">
+            <div className="w-full max-w-[880px] lg:h-full lg:flex lg:flex-col">
+              <header className="h-[104px] px-6 py-5">
+                <Link href="/" className="inline-flex h-full items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF3B30] text-white">
                     <Lightbulb className="h-4 w-4" />
                   </div>
                   <span className="text-lg font-semibold tracking-[0.05em]">Idea2App</span>
-                </div>
+                </Link>
               </header>
-              <Card className="mx-auto w-full max-w-[520px] border-[#E0E0E0] bg-card">
-                <CardHeader className="space-y-2 px-8 pt-8">
-                  <CardTitle className="text-3xl tracking-[-0.02em]">Welcome back</CardTitle>
-                  <p className="text-sm text-muted-foreground">Sign in to continue to Idea2App.</p>
-                </CardHeader>
-                <form onSubmit={handleLogin}>
-                  <CardContent className="space-y-5 px-8 pt-3">
-                    <button
-                      type="button"
-                      onClick={handleGoogleLogin}
-                      disabled={loading}
-                      className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-white text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <ArrowRight className="h-4 w-4" />
-                      Continue with Google
-                    </button>
-
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="h-px flex-1 bg-[#E0E0E0]" />
-                      <span>OR</span>
-                      <span className="h-px flex-1 bg-[#E0E0E0]" />
-                    </div>
-
-                    {error && (
-                      <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-[#B42318]">
-                        {error}
-                      </p>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-[13px] text-muted-foreground">
-                        Email
-                      </Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
+              <div className="flex-1 flex items-center">
+                <Card className="mx-auto w-full max-w-[520px] border-[#E0E0E0] bg-card">
+                  <CardHeader className="space-y-2 px-8 pt-8">
+                    <CardTitle className="text-3xl tracking-[-0.02em]">Welcome back</CardTitle>
+                    <p className="text-sm text-muted-foreground">Sign in to continue to Idea2App.</p>
+                  </CardHeader>
+                  <form onSubmit={handleLogin}>
+                    <CardContent className="space-y-5 px-8 pt-3">
+                      <button
+                        type="button"
+                        onClick={handleGoogleLogin}
                         disabled={loading}
-                        className="h-12 bg-[#FFFFFF] border-[#E0E0E0] text-[#0A0A0A] placeholder:text-[#999999] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
-                      />
-                    </div>
+                        className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-white text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                        Continue with Google
+                      </button>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-[13px] text-muted-foreground">
-                        Password
-                      </Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        disabled={loading}
-                        className="h-12 bg-[#FFFFFF] border-[#E0E0E0] text-[#0A0A0A] placeholder:text-[#999999] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
-                      />
-                    </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="h-px flex-1 bg-[#E0E0E0]" />
+                        <span>OR</span>
+                        <span className="h-px flex-1 bg-[#E0E0E0]" />
+                      </div>
 
-                    <Button
-                      type="submit"
-                      className="h-12 w-full bg-[#FF3B30] text-white"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <>
-                          <Spinner size="sm" />
-                          Signing in...
-                        </>
-                      ) : (
-                        "Log in"
+                      {error && (
+                        <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-[#B42318]">
+                          {error}
+                        </p>
                       )}
-                    </Button>
-                  </CardContent>
-                </form>
 
-                <CardFooter className="px-8 pb-8 pt-2">
-                  <p className="w-full text-center text-sm text-muted-foreground">
-                    Don&apos;t have an account?{" "}
-                    <Link href="/signup" className="font-semibold text-[#FF3B30] hover:underline">
-                      Create account
-                    </Link>
-                  </p>
-                </CardFooter>
-              </Card>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-[13px] text-muted-foreground">
+                          Email
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          disabled={loading}
+                          className="h-12 bg-[#FFFFFF] border-[#E0E0E0] text-[#0A0A0A] placeholder:text-[#999999] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="text-[13px] text-muted-foreground">
+                          Password
+                        </Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          placeholder="Enter your password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          disabled={loading}
+                          className="h-12 bg-[#FFFFFF] border-[#E0E0E0] text-[#0A0A0A] placeholder:text-[#999999] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="h-12 w-full bg-[#FF3B30] text-white"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <Spinner size="sm" />
+                            Signing in...
+                          </>
+                        ) : (
+                          "Log in"
+                        )}
+                      </Button>
+                    </CardContent>
+                  </form>
+
+                  <CardFooter className="px-8 pb-8 pt-2">
+                    <p className="w-full text-center text-sm text-muted-foreground">
+                      Don&apos;t have an account?{" "}
+                      <Link href="/signup" className="font-semibold text-[#FF3B30] hover:underline">
+                        Create account
+                      </Link>
+                    </p>
+                  </CardFooter>
+                </Card>
+              </div>
             </div>
           </div>
         </main>

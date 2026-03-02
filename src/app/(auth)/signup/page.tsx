@@ -90,9 +90,9 @@ function SignupScreen() {
   if (success) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <section className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pb-6 md:px-8 lg:px-12 xl:px-16">
+        <section className="flex min-h-screen w-full flex-col">
           <AuthHeader />
-          <main className="flex min-h-0 flex-1 items-center justify-center">
+          <main className="flex min-h-screen w-full items-center justify-center">
             <Card className="w-full max-w-[480px] border-[#E0E0E0] bg-card p-8 text-center">
               <CardHeader>
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-bg">
@@ -113,9 +113,9 @@ function SignupScreen() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <section className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pb-6 md:px-8 lg:px-12 xl:px-16">
-        <main className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-white">
-          <aside className="hidden min-h-[620px] w-full max-w-[560px] bg-[#0A0A0A] px-14 py-14 text-background lg:flex">
+      <section className="flex min-h-screen w-full flex-col">
+        <main className="flex min-h-screen w-full overflow-hidden lg:flex-row-reverse">
+          <aside className="hidden h-screen w-full max-w-[560px] bg-sidebar-bg px-14 py-14 text-sidebar-foreground lg:flex">
             <div className="flex h-full flex-col justify-between">
               <div>
                 <h1 className="text-5xl font-semibold leading-tight tracking-[-0.06em]">
@@ -131,17 +131,18 @@ function SignupScreen() {
               </p>
             </div>
           </aside>
-          <div className="flex w-full justify-center overflow-y-auto px-0 py-8 md:px-4 lg:px-12">
-            <div className="w-full max-w-[880px]">
-              <header className="h-[104px] px-[56px] py-5">
-                <div className="flex h-full items-center gap-3">
+          <div className="flex w-full flex-1">
+            <div className="w-full max-w-[880px] lg:h-full lg:flex lg:flex-col">
+              <header className="h-[104px] px-6 py-5">
+                <Link href="/" className="inline-flex h-full items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF3B30] text-white">
                     <Lightbulb className="h-4 w-4" />
                   </div>
                   <span className="text-lg font-semibold tracking-[0.05em]">Idea2App</span>
-                </div>
+                </Link>
               </header>
-              <Card className="mx-auto w-full max-w-[520px] border-[#E0E0E0] bg-card">
+              <div className="flex-1 flex items-center">
+                <Card className="mx-auto w-full max-w-[520px] border-[#E0E0E0] bg-card">
                 <CardHeader className="space-y-2 px-8 pt-8">
                   <CardTitle className="text-3xl tracking-[-0.02em]">Create account</CardTitle>
                   <p className="text-sm text-muted-foreground">Join Idea2App and start building.</p>
@@ -236,6 +237,7 @@ function SignupScreen() {
                   </p>
                 </CardFooter>
               </Card>
+              </div>
             </div>
           </div>
         </main>
