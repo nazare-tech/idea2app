@@ -62,12 +62,13 @@ export function DashboardProjectCard({
 
   return (
     <div className="group relative">
+      {/* TODO: keep #FF3B30 local as the destructive action color for delete confirmation actions. */}
       <Link
         href={href}
         className="block rounded-2xl border border-border-subtle bg-[#1A1A1A] p-5 transition hover:bg-[#1f1f1f] min-h-[176px] max-h-[176px]"
       >
         <div className="space-y-4">
-          <h2 className="text-[18px] leading-tight font-[700] tracking-[-0.4px] text-white line-clamp-1">
+          <h2 className="text-[18px] leading-tight font-bold tracking-[-0.4px] text-white line-clamp-1">
             {name}
           </h2>
           <p className="ui-font-mono text-[12px] leading-[1.5] text-text-muted line-clamp-2 overflow-hidden min-h-[36px]">
@@ -101,7 +102,7 @@ export function DashboardProjectCard({
             className="w-full max-w-[560px] rounded-xl border border-border-strong bg-white p-6"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="text-[28px] leading-[1.1] font-[700] tracking-[-1px] text-text-primary">
+            <h3 className="text-[28px] leading-[1.1] font-bold tracking-[-1px] text-text-primary">
               Delete project?
             </h3>
             <p className="mt-4 text-[14px] leading-[1.5] text-text-secondary">
@@ -109,7 +110,7 @@ export function DashboardProjectCard({
               environments, deployment history, and collaborator access. This cannot be
               undone.
             </p>
-            <p className="mt-4 text-[12px] leading-[1.5] font-[600] text-[#FF3B30]">
+            <p className="mt-4 text-[12px] leading-[1.5] ui-font-semibold text-[#FF3B30]">
               Warning: deleting this project is permanent.
             </p>
             <div className="mt-6 flex justify-end gap-3">

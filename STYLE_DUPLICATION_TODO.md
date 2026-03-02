@@ -4,19 +4,19 @@
 Reduce repeated inline style patterns (colors, spacing, typography, and class bundles) found across the codebase into shared tokens, variants, and reusable primitives.
 
 ## 1) Palette / color token consolidation
-- [ ] Add canonical color tokens in `src/app/globals.css` (or existing design token layer).
-  - [ ] `--color-text-primary: #0a0a0a`
-  - [ ] `--color-text-secondary: #666666`
-  - [ ] `--color-text-muted: #999999`
-  - [ ] `--color-text-accent: #00d4ff`
-  - [ ] `--color-border-subtle: #e0e0e0`
-  - [ ] `--color-border-strong: #e5e5e5`
-  - [ ] `--color-accent-primary: rgba(0,212,255,0.15)`
-  - [ ] `--color-accent-primary-light: rgba(0,212,255,0.4)`
-  - [ ] `--color-surface-soft: rgba(255,255,255,0.03)`
-  - [ ] `--color-surface-mid: rgba(255,255,255,0.06)`
-  - [ ] `--color-surface-strong: rgba(255,255,255,0.08)`
-- [ ] Migrate repeated hex/rgba usages in these files to tokens:
+- [x] Add canonical color tokens in `src/app/globals.css` (or existing design token layer).
+  - [x] `--color-text-primary: #0a0a0a`
+  - [x] `--color-text-secondary: #666666`
+  - [x] `--color-text-muted: #999999`
+  - [x] `--color-text-accent: #00d4ff`
+  - [x] `--color-border-subtle: #e0e0e0`
+  - [x] `--color-border-strong: #e5e5e5`
+  - [x] `--color-accent-primary: rgba(0,212,255,0.15)`
+  - [x] `--color-accent-primary-light: rgba(0,212,255,0.4)`
+  - [x] `--color-surface-soft: rgba(255,255,255,0.03)`
+  - [x] `--color-surface-mid: rgba(255,255,255,0.06)`
+  - [x] `--color-surface-strong: rgba(255,255,255,0.08)`
+- [x] Migrate repeated hex/rgba usages in these files to tokens:
   - `src/app/page.tsx`
   - `src/app/(dashboard)/settings/page.tsx`
   - `src/app/(dashboard)/projects/page.tsx`
@@ -30,25 +30,25 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - `src/components/ui/input.tsx`
   - `src/components/ui/textarea.tsx`
   - `src/components/ui/tabs.tsx`
-- [ ] Keep rare error/success accent colors local unless reused elsewhere (`ff3b30`, `f472b6`, `ff6b8a`, etc. are currently lower-duplication).
+- [x] Keep rare error/success accent colors local unless reused elsewhere (`ff3b30`, `f472b6`, `ff6b8a`, etc. are currently lower-duplication).
 
 ## 2) Typography token cleanup
-- [ ] Centralize repeated text utility tokens through global classes or shared component props:
-  - [ ] `text-sm` + `text-muted-foreground`
-  - [ ] `font-semibold`
-  - [ ] `font-medium`
-  - [ ] `text-xs`
-  - [ ] `tracking-tight`
-  - [ ] `font-mono`
-- [ ] Replace hard-coded font declarations in generated code paths:
-  - [ ] `font-weight: 600` in `src/app/api/generate-pdf/route.ts` and `src/app/globals.css`
-  - [ ] `line-height`, `font-weight: 700`, and related one-off declarations where semantically similar.
-- [ ] Audit repeated class combinations and move into shared helpers/components:
-  - [ ] `text-lg font-bold tracking-tight` (currently reused in app header/sidebar and analysis headings)
-  - [ ] `text-sm font-semibold uppercase tracking-[0.14em] text-primary` (used on multiple marketing section labels)
+- [x] Centralize repeated text utility tokens through global classes or shared component props:
+  - [x] `text-sm` + `text-muted-foreground`
+  - [x] `font-semibold`
+  - [x] `font-medium`
+  - [x] `text-xs`
+  - [x] `tracking-tight`
+  - [x] `font-mono`
+- [x] Replace hard-coded font declarations in generated code paths:
+  - [x] `font-weight: 600` in `src/app/api/generate-pdf/route.ts` and `src/app/globals.css`
+  - [x] `line-height`, `font-weight: 700`, and related one-off declarations where semantically similar.
+- [x] Audit repeated class combinations and move into shared helpers/components:
+  - [x] `text-lg font-bold tracking-tight` (currently reused in app header/sidebar and analysis headings)
+  - [x] `text-sm font-semibold uppercase tracking-[0.14em] text-primary` (used on multiple marketing section labels)
 
 ## 3) Spacing/padding pattern consolidation
-- [ ] Create reusable spacing variants for the most repeated utility groupings.
+- [x] Create reusable spacing variants for the most repeated utility groupings.
   - [x] `px-4`
   - [x] `p-4`
   - [x] `px-3`
@@ -57,7 +57,7 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - [x] `py-3`
   - [x] `py-1.5`
   - [x] `px-6`
-- [ ] Replace recurring full class bundles with semantic primitives/components in:
+- [x] Replace recurring full class bundles with semantic primitives/components in:
   - [x] `src/app/(auth)/forgot-password/page.tsx`
   - [x] `src/app/(auth)/login/page.tsx`
   - [x] `src/app/(auth)/reset-password/page.tsx`
@@ -83,7 +83,7 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - [x] `src/components/layout/sidebar.tsx`
 
 ## 5) Add migration safety checklist
-- [ ] Replace class strings using token variables in each touched file.
-- [ ] Keep behavior identical (visual diffs should be only noise-level)
-- [ ] Add TODO markers for any style that must remain intentionally unique.
-- [ ] Run a final scan for duplicated patterns not covered above.
+- [x] Replace class strings using token variables in each touched file.
+- [x] Keep behavior identical (visual diffs should be only noise-level)
+- [x] Add TODO markers for any style that must remain intentionally unique.
+- [x] Run a final scan for duplicated patterns not covered above.

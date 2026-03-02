@@ -134,7 +134,7 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
             )}
           >
             {message.role !== "user" && (
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#00D4FF]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center shrink-0 mt-1">
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[var(--color-accent-primary-soft)] to-[#7c3aed]/20 border border-[var(--color-accent-primary)] flex items-center justify-center shrink-0 mt-1">
                 <Bot className={uiStylePresets.chatBrandIcon} />
               </div>
             )}
@@ -143,14 +143,14 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
               className={cn(
                 "rounded-2xl px-4 py-3 max-w-[80%] relative",
                 message.role === "user"
-                  ? "bg-gradient-to-r from-[#00D4FF] to-[#7c3aed] text-white shadow-[0_0_15px_rgba(0,212,255,0.15)]"
-                  : "bg-[rgba(12,12,20,0.7)] backdrop-blur-sm border border-surface-mid"
+                  ? "bg-gradient-to-r from-[var(--color-text-accent)] to-[#7c3aed] text-white shadow-[0_0_15px_var(--color-accent-primary)]"
+                  : "bg-[var(--color-surface-ink-soft)] backdrop-blur-sm border border-surface-mid"
               )}
             >
               {message.role === "user" ? (
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               ) : (
-                <div className="prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-[#00D4FF] [&_code]:text-[#00D4FF] [&_code]:bg-[rgba(0,212,255,0.08)]">
+                <div className="prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-[var(--color-text-accent)] [&_code]:text-[var(--color-text-accent)] [&_code]:bg-[var(--color-accent-primary-whisper)]">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {message.content}
                   </ReactMarkdown>
@@ -160,8 +160,8 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
               {/* Copy button */}
               <button
                 onClick={() => handleCopy(message.content, message.id)}
-                className={cn(
-                  "absolute -bottom-3 right-2 p-1.5 rounded-lg bg-[rgba(12,12,20,0.9)] border border-surface-strong opacity-0 group-hover:opacity-100 transition-all duration-200 hover:border-[rgba(0,212,255,0.3)]",
+                  className={cn(
+                  "absolute -bottom-3 right-2 p-1.5 rounded-lg bg-[var(--color-surface-ink-strong)] border border-surface-strong opacity-0 group-hover:opacity-100 transition-all duration-200 hover:border-[var(--color-accent-primary-mid)]",
                   message.role === "user" && "hidden"
                 )}
               >
@@ -183,10 +183,10 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
 
         {loading && (
           <div className="flex gap-3">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#00D4FF]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[var(--color-accent-primary-soft)] to-[#7c3aed]/20 border border-[var(--color-accent-primary)] flex items-center justify-center shrink-0">
                 <Bot className={uiStylePresets.chatBrandIcon} />
             </div>
-            <div className="bg-[rgba(12,12,20,0.7)] border border-surface-mid rounded-2xl px-4 py-3">
+            <div className="bg-[var(--color-surface-ink-soft)] border border-surface-mid rounded-2xl px-4 py-3">
               <div className="ui-row-gap-2">
                 <Spinner size="sm" />
                 <span className="ui-text-sm-muted">Thinking...</span>
@@ -208,7 +208,7 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Describe your business idea or ask a question..."
-              className="w-full rounded-2xl border border-surface-strong bg-surface-soft px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,212,255,0.4)] focus-visible:ring-offset-0 focus-visible:border-[rgba(0,212,255,0.3)] placeholder:text-text-secondary min-h-[48px] max-h-[200px] transition-all duration-200"
+              className="w-full rounded-2xl border border-surface-strong bg-surface-soft px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[48px] max-h-[200px] transition-all duration-200"
               rows={1}
               disabled={loading}
             />
