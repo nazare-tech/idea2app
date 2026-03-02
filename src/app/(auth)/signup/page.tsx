@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,7 +19,6 @@ function SignupScreen() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const router = useRouter()
   const searchParams = useSearchParams()
   const message = searchParams.get("message")
   const socialText = "Continue with Google"
@@ -115,127 +114,129 @@ function SignupScreen() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <section className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pb-6 md:px-8 lg:px-12 xl:px-16">
-        <AuthHeader />
-        <main className="flex min-h-0 flex-1 flex-col-reverse gap-8 overflow-hidden rounded-xl border border-border bg-white lg:flex-row lg:justify-center lg:rounded-none lg:border-0 lg:bg-transparent">
-          <aside className="hidden min-h-[620px] w-full max-w-[560px] bg-foreground px-12 py-14 text-background lg:block">
+        <main className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-white">
+          <aside className="hidden min-h-[620px] w-full max-w-[560px] bg-[#0A0A0A] px-14 py-14 text-background lg:flex">
             <div className="flex h-full flex-col justify-between">
               <div>
-                <p className="text-sm font-semibold tracking-[0.16em] text-gray-400">
-                  CREATIVE WORKFLOW
-                </p>
-                <h1 className="mt-6 max-w-sm text-5xl font-semibold leading-tight tracking-[-0.06em]">
-                  Ship products with confidence.
+                <h1 className="text-5xl font-semibold leading-tight tracking-[-0.06em]">
+                  Ship your next product faster.
                 </h1>
+                <p className="mt-6 max-w-sm text-sm leading-relaxed text-gray-400">
+                  Create your Idea2App account to manage prompts, builds, and releases from
+                  one workspace.
+                </p>
               </div>
-              <p className="text-sm leading-relaxed text-gray-400">
-                Create your Idea2App account to manage prompts, builds, and launches
-                from one workspace.
+              <p className="text-xs uppercase tracking-[0.12em] text-[#999999]">
+                Trusted by 3,000+ teams
               </p>
             </div>
           </aside>
-
           <div className="flex w-full justify-center overflow-y-auto px-0 py-8 md:px-4 lg:px-12">
-            <Card className="w-full max-w-[520px] border-[#E0E0E0] bg-card">
-              <CardHeader className="space-y-2 px-8 pt-8">
-                <div className="mb-2 flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="w-full max-w-[880px]">
+              <header className="h-[104px] px-[56px] py-5">
+                <div className="flex h-full items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF3B30] text-white">
                     <Lightbulb className="h-4 w-4" />
                   </div>
                   <span className="text-lg font-semibold tracking-[0.05em]">Idea2App</span>
                 </div>
-                <CardTitle className="text-3xl tracking-[-0.02em]">Create account</CardTitle>
-                <p className="text-sm text-muted-foreground">Join Idea2App and start building.</p>
-              </CardHeader>
+              </header>
+              <Card className="mx-auto w-full max-w-[520px] border-[#E0E0E0] bg-card">
+                <CardHeader className="space-y-2 px-8 pt-8">
+                  <CardTitle className="text-3xl tracking-[-0.02em]">Create account</CardTitle>
+                  <p className="text-sm text-muted-foreground">Join Idea2App and start building.</p>
+                </CardHeader>
 
-              <CardContent className="space-y-5 px-8 pt-3">
-                <button
-                  type="button"
-                  onClick={handleGoogleSignup}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-white text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={loading}
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  {loading ? "Connecting..." : socialText}
-                </button>
-
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="h-px flex-1 bg-[#E0E0E0]" />
-                  <span>OR</span>
-                  <span className="h-px flex-1 bg-[#E0E0E0]" />
-                </div>
-
-                <form onSubmit={handleSignup} className="space-y-4">
-                  {isSocialError && (
-                    <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-[#B42318]">
-                      Could not complete Google sign in. Please try again.
-                    </p>
-                  )}
-
-                  {error && (
-                    <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-destructive">
-                      {error}
-                    </p>
-                  )}
-
-                  <FormField
-                    id="fullName"
-                    label="Full name"
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(value) => setFullName(value)}
+                <CardContent className="space-y-5 px-8 pt-3">
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignup}
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-white text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={loading}
-                  />
-                  <FormField
-                    id="email"
-                    type="email"
-                    label="Email address"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(value) => setEmail(value)}
-                    disabled={loading}
-                  />
-                  <FormField
-                    id="password"
-                    type="password"
-                    label="Password"
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(value) => setPassword(value)}
-                    minLength={6}
-                    disabled={loading}
-                  />
-                  <FormField
-                    id="confirmPassword"
-                    type="password"
-                    label="Confirm password"
-                    placeholder="Re-enter your password"
-                    value={confirmPassword}
-                    onChange={(value) => setConfirmPassword(value)}
-                    minLength={6}
-                    disabled={loading}
-                  />
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    {loading ? "Connecting..." : socialText}
+                  </button>
 
-                  <Button type="submit" className="h-12 w-full bg-primary text-primary-foreground" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Spinner size="sm" />
-                        Creating account...
-                      </>
-                    ) : (
-                      "Create account"
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="h-px flex-1 bg-[#E0E0E0]" />
+                    <span>OR</span>
+                    <span className="h-px flex-1 bg-[#E0E0E0]" />
+                  </div>
+
+                  <form onSubmit={handleSignup} className="space-y-4">
+                    {isSocialError && (
+                      <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-[#B42318]">
+                        Could not complete Google sign in. Please try again.
+                      </p>
                     )}
-                  </Button>
-                </form>
-              </CardContent>
-              <CardFooter className="px-8 pb-8 pt-2">
-                <p className="w-full text-center text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <Link href="/login" className="font-semibold text-primary hover:underline">
-                    Log in
-                  </Link>
-                </p>
-              </CardFooter>
-            </Card>
+
+                    {error && (
+                      <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-destructive">
+                        {error}
+                      </p>
+                    )}
+
+                    <FormField
+                      id="fullName"
+                      label="Full name"
+                      placeholder="John Doe"
+                      value={fullName}
+                      onChange={(value) => setFullName(value)}
+                      disabled={loading}
+                    />
+                    <FormField
+                      id="email"
+                      type="email"
+                      label="Email address"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(value) => setEmail(value)}
+                      disabled={loading}
+                    />
+                    <FormField
+                      id="password"
+                      type="password"
+                      label="Password"
+                      placeholder="Create a password"
+                      value={password}
+                      onChange={(value) => setPassword(value)}
+                      minLength={6}
+                      disabled={loading}
+                    />
+                    <FormField
+                      id="confirmPassword"
+                      type="password"
+                      label="Confirm password"
+                      placeholder="Re-enter your password"
+                      value={confirmPassword}
+                      onChange={(value) => setConfirmPassword(value)}
+                      minLength={6}
+                      disabled={loading}
+                    />
+
+                    <Button type="submit" className="h-12 w-full bg-[#FF3B30] text-white" disabled={loading}>
+                      {loading ? (
+                        <>
+                          <Spinner size="sm" />
+                          Creating account...
+                        </>
+                      ) : (
+                        "Create account"
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+                <CardFooter className="px-8 pb-8 pt-2">
+                  <p className="w-full text-center text-sm text-muted-foreground">
+                    Already have an account?{" "}
+                    <Link href="/login" className="font-semibold text-[#FF3B30] hover:underline">
+                      Log in
+                    </Link>
+                  </p>
+                </CardFooter>
+              </Card>
+            </div>
           </div>
         </main>
       </section>
