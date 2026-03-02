@@ -130,7 +130,7 @@ export function PromptChatInterface({
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto"
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 360)}px`
     }
   }, [input])
 
@@ -444,12 +444,13 @@ export function PromptChatInterface({
     if (name.includes("DeepSeek")) return "DeepSeek"
     return name
   }
+  const showCenteredComposer = messages.length === 0 && !loading && !messagesLoading
 
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
-        <div className="max-w-3xl mx-auto px-4 py-6">
+        <div className={cn("max-w-3xl mx-auto px-4 py-6", showCenteredComposer && "h-full flex flex-col")}>
           <div className="mb-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm ui-font-semibold text-foreground/80 tracking-wide">
@@ -489,114 +490,149 @@ export function PromptChatInterface({
             </div>
           </div>
 
-          {messages.length === 0 && !loading && (
-            <div className="flex flex-col items-center justify-center text-center py-16 px-4">
-              <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-6 border border-primary/10 shadow-lg shadow-primary/5">
-                <Bot className="h-10 w-10 text-primary/50" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2 tracking-tight">
-                Welcome to {projectName}
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md mb-8 leading-relaxed">
-                Start by sharing your idea. I&apos;ll ask focused questions to refine it, then help you move from concept to research and PRD-ready planning.
-              </p>
-              {initialIdea && (
-                <div className="w-full max-w-xl bg-card border border-border/50 rounded-2xl p-5 mb-8 shadow-sm">
-                  <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-widest">Your Initial Idea</p>
-                  <p className="text-sm text-foreground leading-relaxed">{initialIdea}</p>
+          {showCenteredComposer ? (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="flex flex-col items-center justify-center text-center w-full">
+                <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-6 border border-primary/10 shadow-lg shadow-primary/5">
+                  <Bot className="h-10 w-10 text-primary/50" />
                 </div>
-              )}
-            </div>
-          )}
-
-          {hasMoreMessages && (
-            <div className="mb-4 flex justify-center">
-              <button
-                type="button"
-                onClick={loadOlderMessages}
-                disabled={isLoadingOlder}
-                className="rounded-lg border border-border/70 bg-card px-3 py-1.5 text-xs ui-font-medium text-foreground/80 hover:bg-muted/50 disabled:opacity-60"
-              >
-                {isLoadingOlder ? "Loading..." : "Load earlier messages"}
-              </button>
-            </div>
-          )}
-
-          {messagesLoading && messages.length === 0 && (
-            <div className="flex justify-center py-2">
-              <Spinner size="sm" />
-            </div>
-          )}
-
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex gap-3 mb-6 group animate-fade-up",
-                message.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
-              {message.role === "assistant" && (
-                <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 mt-0.5 border border-primary/10 shadow-sm">
-                  <Bot className="h-4 w-4 text-primary/70" />
-                </div>
-              )}
-
-              <div
-                className={cn(
-                  "rounded-2xl px-4 py-3 max-w-[85%] relative",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                    : "bg-card border border-border/50 shadow-sm"
-                )}
-              >
-                {message.role === "user" ? (
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                ) : (
-                  <div className="prose prose-sm max-w-none dark:prose-invert [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2 [&_li]:my-1">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {message.content}
-                    </ReactMarkdown>
+                <h3 className="text-xl font-semibold text-foreground mb-2 tracking-tight">
+                  Welcome to {projectName}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
+                  Start by sharing your idea. I&apos;ll ask focused questions to refine it, then help you move from concept to research and PRD-ready planning.
+                </p>
+                {initialIdea && (
+                  <div className="w-full max-w-xl bg-card border border-border/50 rounded-2xl p-5 mb-4 shadow-sm">
+                    <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-widest">Your Initial Idea</p>
+                    <p className="text-sm text-foreground leading-relaxed">{initialIdea}</p>
                   </div>
                 )}
-
-                {/* Copy button for assistant messages */}
-                {message.role === "assistant" && (
-                  <button
-                    onClick={() => handleCopy(message.content, message.id)}
-                    className={cn(
-                      "absolute -bottom-3 right-2 p-1.5 rounded-lg bg-background/90 border border-border/40 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:border-primary/50"
-                    )}
-                  >
-                    {copiedId === message.id ? (
-                      <Check className="h-3 w-3 text-[#34d399]" />
-                    ) : (
-                      <Copy className="h-3 w-3 text-muted-foreground" />
-                    )}
-                  </button>
-                )}
+                <div className="w-full max-w-3xl">
+                  <div className="flex flex-col gap-4" ref={composerRef}>
+                    <div className="flex-1 relative">
+                      <textarea
+                        ref={textareaRef}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                        placeholder="Type your business idea update or question..."
+                        className="w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[240px] max-h-[360px]"
+                        rows={5}
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleSend}
+                        disabled={loading || !input.trim() || requestInFlight.current}
+                        className={cn(
+                          "inline-flex h-12 shrink-0 items-center justify-center rounded-2xl bg-primary px-4 text-sm ui-font-medium text-primary-foreground transition-colors disabled:opacity-60 disabled:cursor-not-allowed",
+                          (loading || !input.trim() || requestInFlight.current) && "cursor-not-allowed opacity-60"
+                        )}
+                      >
+                        {loading ? <Spinner size="sm" /> : "Help me refine this idea"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              {message.role === "user" && (
-                <div className="h-8 w-8 rounded-xl bg-surface-mid border border-surface-strong flex items-center justify-center shrink-0 mt-1">
-                  <User className="h-4 w-4 text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              {hasMoreMessages && (
+                <div className="mb-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={loadOlderMessages}
+                    disabled={isLoadingOlder}
+                    className="rounded-lg border border-border/70 bg-card px-3 py-1.5 text-xs ui-font-medium text-foreground/80 hover:bg-muted/50 disabled:opacity-60"
+                  >
+                    {isLoadingOlder ? "Loading..." : "Load earlier messages"}
+                  </button>
                 </div>
               )}
-            </div>
-          ))}
 
-          {messagesLoading && messages.length > 0 && (
-            <div className="flex gap-3 justify-start mb-4">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mt-0.5">
-                <Bot className="h-4 w-4 text-primary/70" />
-              </div>
-              <div className="rounded-2xl px-4 py-3 border border-border/50 bg-card">
-                <div className="ui-row-gap-2">
+              {messagesLoading && messages.length === 0 && (
+                <div className="flex justify-center py-2">
                   <Spinner size="sm" />
-                  <span className="text-sm ui-text-muted">Thinking...</span>
                 </div>
-              </div>
-            </div>
+              )}
+
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={cn(
+                    "flex gap-3 mb-6 group animate-fade-up",
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  )}
+                >
+                  {message.role === "assistant" && (
+                    <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 mt-0.5 border border-primary/10 shadow-sm">
+                      <Bot className="h-4 w-4 text-primary/70" />
+                    </div>
+                  )}
+
+                  <div
+                    className={cn(
+                      "rounded-2xl px-4 py-3 max-w-[85%] relative",
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                        : "bg-card border border-border/50 shadow-sm"
+                    )}
+                  >
+                    {message.role === "user" ? (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                    ) : (
+                      <div className="prose prose-sm max-w-none dark:prose-invert [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2 [&_li]:my-1">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+
+                    {/* Copy button for assistant messages */}
+                    {message.role === "assistant" && (
+                      <button
+                        onClick={() => handleCopy(message.content, message.id)}
+                        className={cn(
+                          "absolute -bottom-3 right-2 p-1.5 rounded-lg bg-background/90 border border-border/40 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:border-primary/50"
+                        )}
+                      >
+                        {copiedId === message.id ? (
+                          <Check className="h-3 w-3 text-[#34d399]" />
+                        ) : (
+                          <Copy className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {message.role === "user" && (
+                    <div className="h-8 w-8 rounded-xl bg-surface-mid border border-surface-strong flex items-center justify-center shrink-0 mt-1">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {messagesLoading && messages.length > 0 && (
+                <div className="flex gap-3 justify-start mb-4">
+                  <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mt-0.5">
+                    <Bot className="h-4 w-4 text-primary/70" />
+                  </div>
+                  <div className="rounded-2xl px-4 py-3 border border-border/50 bg-card">
+                    <div className="ui-row-gap-2">
+                      <Spinner size="sm" />
+                      <span className="text-sm ui-text-muted">Thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <div ref={messagesEndRef} />
@@ -604,37 +640,39 @@ export function PromptChatInterface({
       </div>
 
       {/* Input */}
-      <div className="border-t border-border/70 p-4 bg-card/40">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-end gap-3" ref={composerRef}>
-            <div className="flex-1 relative">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                placeholder="Type your business idea update or question..."
-                className="w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[48px] max-h-[160px]"
-                rows={1}
-                disabled={loading}
-              />
+      {!showCenteredComposer && (
+        <div className="border-t border-border/70 p-4 bg-card/40">
+              <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-4" ref={composerRef}>
+              <div className="flex-1 relative">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  placeholder="Type your business idea update or question..."
+                  className="w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[240px] max-h-[360px]"
+                  rows={5}
+                  disabled={loading}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={loading || !input.trim() || requestInFlight.current}
+                className={cn(
+                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground transition-colors",
+                  (loading || !input.trim() || requestInFlight.current) && "opacity-60 cursor-not-allowed"
+                )}
+              >
+                {loading ? <Spinner size="sm" /> : <Sparkles className="h-4 w-4" />}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={loading || !input.trim() || requestInFlight.current}
-              className={cn(
-                "h-12 w-12 rounded-2xl shrink-0 ui-row-gap-2 bg-primary text-primary-foreground transition-colors",
-                (loading || !input.trim() || requestInFlight.current) && "opacity-60 cursor-not-allowed"
-              )}
-            >
-              {loading ? <Spinner size="sm" /> : <Sparkles className="h-4 w-4" />}
-            </button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
