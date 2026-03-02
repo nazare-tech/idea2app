@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
 const inspirationProjects = [
+  // TODO: keep #FF3B30 local as intentionally unique project emphasis color.
   {
     category: "FINTECH • CRM",
     title: "Apex Revenue OS",
@@ -42,7 +43,7 @@ export function InspirationProjectsSection() {
   return (
     <section className="rounded-2xl border border-border-subtle bg-white p-7">
       <div className="mb-4 flex flex-col gap-3">
-        <h2 className="text-[24px] leading-tight font-[700] tracking-[-0.5px] text-text-primary">
+        <h2 className="text-[24px] leading-tight font-bold tracking-[-0.5px] text-text-primary">
           Get inspired by pre-made projects
         </h2>
         <p className="text-sm leading-[1.5] text-text-secondary">
@@ -70,7 +71,7 @@ export function InspirationProjectsSection() {
           >
             <div className="ui-stack-2">
               <p className={`text-[12px] ui-font-medium ${project.categoryClass}`}>{project.category}</p>
-              <h3 className={`text-[24px] leading-tight font-[700] tracking-[-0.5px] ${project.titleClass}`}>
+              <h3 className={`text-[24px] leading-tight font-bold tracking-[-0.5px] ${project.titleClass}`}>
                 {project.title}
               </h3>
               <p className="text-sm text-text-muted dark:text-text-secondary">

@@ -104,6 +104,8 @@ export default function SettingsPage() {
     if (!message) return null
 
     return (
+      <>
+      {/* TODO: keep success/error color pairs intentionally local to the account settings domain. */}
       <div
         className={`p-3 rounded-xl text-sm border ${
           message.type === "success"
@@ -113,6 +115,7 @@ export default function SettingsPage() {
       >
         {message.text}
       </div>
+      </>
     )
   }
 

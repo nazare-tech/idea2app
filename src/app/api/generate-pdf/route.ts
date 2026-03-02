@@ -349,7 +349,7 @@ function generateHTMLTemplate(
 
     .content strong {
       color: #000;
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
     }
 
     .content code {
@@ -406,7 +406,7 @@ function generateHTMLTemplate(
 
     .content th {
       background: #f5f5f5;
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
     }
 
     .content a {

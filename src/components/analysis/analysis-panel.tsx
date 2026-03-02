@@ -226,7 +226,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         {/* Action Cards */}
         <div className="grid gap-4 md:grid-cols-2">
           {analysisTypes.map((analysis) => (
-            <Card key={analysis.id} className="group hover:border-text-accent/20 transition-all duration-300 hover:shadow-[0_0_25px_rgba(0,212,255,0.06)]">
+            <Card key={analysis.id} className="group hover:border-text-accent/20 transition-all duration-300 hover:shadow-[0_0_25px_var(--color-accent-primary-whisper)]">
               <CardHeader>
                 <div className="ui-row-between">
                   <div className="ui-row-gap-3">
@@ -234,7 +234,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                       <analysis.icon className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{analysis.name}</CardTitle>
+                      <CardTitle className="ui-section-title">{analysis.name}</CardTitle>
                       <CardDescription>{analysis.description}</CardDescription>
                     </div>
                   </div>
@@ -351,7 +351,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                   <FileText className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">Product Requirements Document</CardTitle>
+                  <CardTitle className="ui-section-title">Product Requirements Document</CardTitle>
                   <CardDescription>
                     Generate a comprehensive PRD for your business idea
                   </CardDescription>
@@ -471,7 +471,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                   <Code className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">Technical Specification</CardTitle>
+                  <CardTitle className="ui-section-title">Technical Specification</CardTitle>
                   <CardDescription>
                     Generate detailed technical specifications for your product
                   </CardDescription>
@@ -587,7 +587,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
               <Rocket className="h-5 w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-lg">Generate & Deploy Application</CardTitle>
+              <CardTitle className="ui-section-title">Generate & Deploy Application</CardTitle>
               <CardDescription>
                 Choose an app type to generate and deploy a working prototype
               </CardDescription>
@@ -599,10 +599,10 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
             {appTypes.map((app) => (
               <div
                 key={app.id}
-                className="group p-4 rounded-xl border border-surface-mid bg-[rgba(255,255,255,0.02)] hover:border-text-accent/20 hover:bg-text-accent/3 transition-all duration-300"
+                className="group p-4 rounded-xl border border-surface-mid bg-[var(--color-surface-whisper)] hover:border-text-accent/20 hover:bg-text-accent/3 transition-all duration-300"
               >
                 <div className="ui-row-gap-3 mb-3">
-                  <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${app.gradient} flex items-center justify-center shadow-lg group-hover:shadow-[0_0_15px_rgba(0,212,255,0.2)] transition-shadow duration-300`}>
+                  <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${app.gradient} flex items-center justify-center shadow-lg group-hover:shadow-[0_0_15px_var(--color-accent-primary-soft)] transition-shadow duration-300`}>
                     <app.icon className="h-5 w-5 text-white" />
                   </div>
                   <div>

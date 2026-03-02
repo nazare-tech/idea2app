@@ -52,9 +52,18 @@
   --color-border-strong: #E5E5E5;
   --color-accent-primary: rgba(0,212,255,0.15);
   --color-accent-primary-light: rgba(0,212,255,0.4);
+  --color-accent-primary-mid: rgba(0,212,255,0.3);
+  --color-accent-primary-soft: rgba(0,212,255,0.2);
+  --color-accent-primary-subtle: rgba(0,212,255,0.1);
+  --color-accent-primary-faint: rgba(0,212,255,0.02);
+  --color-accent-primary-whisper: rgba(0,212,255,0.06);
   --color-surface-soft: rgba(255,255,255,0.03);
   --color-surface-mid: rgba(255,255,255,0.06);
   --color-surface-strong: rgba(255,255,255,0.08);
+  --color-surface-whisper: rgba(255,255,255,0.02);
+  --color-surface-ghost: rgba(255,255,255,0.04);
+  --color-surface-ink-soft: rgba(12,12,20,0.7);
+  --color-surface-ink-strong: rgba(12,12,20,0.9);
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 }
@@ -96,6 +105,15 @@
   --color-border-strong: var(--color-border-strong);
   --color-accent-primary: var(--color-accent-primary);
   --color-accent-primary-light: var(--color-accent-primary-light);
+  --color-accent-primary-mid: var(--color-accent-primary-mid);
+  --color-accent-primary-soft: var(--color-accent-primary-soft);
+  --color-accent-primary-subtle: var(--color-accent-primary-subtle);
+  --color-accent-primary-faint: var(--color-accent-primary-faint);
+  --color-accent-primary-whisper: var(--color-accent-primary-whisper);
+  --color-surface-ghost: var(--color-surface-ghost);
+  --color-surface-ink-soft: var(--color-surface-ink-soft);
+  --color-surface-ink-strong: var(--color-surface-ink-strong);
+  --color-surface-whisper: var(--color-surface-whisper);
   --color-surface-soft: var(--color-surface-soft);
   --color-surface-mid: var(--color-surface-mid);
   --color-surface-strong: var(--color-surface-strong);
@@ -379,7 +397,7 @@ body {
 
 .mermaid-diagram .er .entityLabel {
   fill: #111827 !important;
-  font-weight: 600 !important;
+  font-weight: var(--font-weight-semibold) !important;
   font-size: 14px !important;
 }
 

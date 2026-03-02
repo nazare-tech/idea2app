@@ -67,7 +67,7 @@ export default async function ProjectsPage() {
     <div className="flex flex-col h-full bg-background px-6 py-6 md:px-12 md:py-6 lg:px-[56px] lg:py-6">
       <section className="rounded-2xl border border-border-subtle bg-text-primary p-8 text-white">
         <header className="mb-7">
-          <h1 className="font-[700] text-[24px] leading-tight tracking-[-0.5px] text-[#FFFFFF]">
+          <h1 className="font-bold text-[24px] leading-tight tracking-[-0.5px] text-white">
             Projects
           </h1>
           <p className="mt-2 text-sm text-text-muted">

@@ -50,8 +50,8 @@ export function Header({ user, children, rightContent }: HeaderProps) {
 
   return (
     <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-xl px-6 ui-row-between">
-      <div className="flex items-center gap-4">
-        {children || <h1 className="text-lg font-bold ui-tracking-tight">Dashboard</h1>}
+        <div className="flex items-center gap-4">
+        {children || <h1 className="ui-section-title">Dashboard</h1>}
       </div>
 
         <div className="flex items-center gap-4">
