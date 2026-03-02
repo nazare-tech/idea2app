@@ -49,24 +49,24 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
 
 ## 3) Spacing/padding pattern consolidation
 - [ ] Create reusable spacing variants for the most repeated utility groupings.
-  - [ ] `px-4`
-  - [ ] `p-4`
-  - [ ] `px-3`
-  - [ ] `px-8`
-  - [ ] `py-2`
-  - [ ] `py-3`
-  - [ ] `py-1.5`
-  - [ ] `px-6`
+  - [x] `px-4`
+  - [x] `p-4`
+  - [x] `px-3`
+  - [x] `px-8`
+  - [x] `py-2`
+  - [x] `py-3`
+  - [x] `py-1.5`
+  - [x] `px-6`
 - [ ] Replace recurring full class bundles with semantic primitives/components in:
-  - [ ] `src/app/(auth)/forgot-password/page.tsx`
-  - [ ] `src/app/(auth)/login/page.tsx`
-  - [ ] `src/app/(auth)/reset-password/page.tsx`
-  - [ ] `src/app/(auth)/signup/page.tsx`
-  - [ ] `src/components/layout/content-editor.tsx`
-  - [ ] `src/components/ui/input.tsx`
-  - [ ] `src/components/ui/textarea.tsx`
-  - [ ] `src/components/ui/inline-ai-editor.tsx`
-  - [ ] `src/components/ui/markdown-renderer.tsx`
+  - [x] `src/app/(auth)/forgot-password/page.tsx`
+  - [x] `src/app/(auth)/login/page.tsx`
+  - [x] `src/app/(auth)/reset-password/page.tsx`
+  - [x] `src/app/(auth)/signup/page.tsx`
+  - [x] `src/components/layout/content-editor.tsx`
+  - [x] `src/components/ui/input.tsx`
+  - [x] `src/components/ui/textarea.tsx`
+  - [x] `src/components/ui/inline-ai-editor.tsx`
+  - [x] `src/components/ui/markdown-renderer.tsx`
 
 ## 4) Extract repeated class bundles into reusable components
 - [x] Replace repeated exact bundles:

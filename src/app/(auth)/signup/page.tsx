@@ -134,7 +134,7 @@ function SignupScreen() {
           </aside>
           <div className="flex w-full flex-1">
             <div className="w-full max-w-[880px] lg:h-full lg:flex lg:flex-col">
-              <header className="h-[104px] px-6 py-5">
+              <header className="h-[104px] ui-px-6 py-5">
                 <Link href="/" className="inline-flex h-full items-center gap-3">
                   <div className={uiStylePresets.authIconCircle}>
                     <Lightbulb className="ui-icon-16" />
@@ -144,12 +144,12 @@ function SignupScreen() {
               </header>
               <div className="flex-1 flex items-center">
                 <Card className={uiStylePresets.authCardContainer}>
-                <CardHeader className="ui-stack-2 px-8 pt-8">
+                <CardHeader className="ui-stack-2 ui-px-8 pt-8">
                   <CardTitle className="text-3xl tracking-[-0.02em]">Create account</CardTitle>
                   <p className="ui-text-sm-muted">Join Idea2App and start building.</p>
                 </CardHeader>
 
-                <CardContent className="space-y-5 px-8 pt-3">
+                <CardContent className="space-y-5 ui-px-8 pt-3">
                   <button
                     type="button"
                     onClick={handleGoogleSignup}
@@ -229,7 +229,7 @@ function SignupScreen() {
                     </Button>
                   </form>
                 </CardContent>
-                <CardFooter className="px-8 pb-8 pt-2">
+                <CardFooter className="ui-px-8 pb-8 pt-2">
                   <p className="w-full text-center ui-text-sm-muted">
                     Already have an account?{" "}
                     <Link href="/login" className={uiStylePresets.authLinkUnderline}>
@@ -250,7 +250,7 @@ function SignupScreen() {
 function AuthHeader() {
   return (
     <header className="border-b border-border bg-card">
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 md:px-8 lg:px-12 xl:px-16">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between ui-px-4 md:px-8 lg:px-12 xl:px-16">
         <Link href="/" className="inline-ui-row-gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Lightbulb className="ui-icon-16" />

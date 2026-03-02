@@ -47,11 +47,11 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-        <section className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pb-6 md:px-8 lg:px-12 xl:px-16">
+        <section className="mx-auto flex min-h-screen max-w-[1440px] flex-col ui-px-4 pb-6 md:px-8 lg:px-12 xl:px-16">
         <AuthHeader />
-        <main className="flex flex-1 items-center justify-center px-4 py-12">
+        <main className="flex flex-1 items-center justify-center ui-px-4 py-12">
           <Card className={uiStylePresets.authCardCompact}>
-            <CardHeader className="ui-stack-2 px-8 pt-8">
+            <CardHeader className="ui-stack-2 ui-px-8 pt-8">
               <div className="ui-row-gap-3">
                 <div className={uiStylePresets.authTopIconBadge}>
                   <Lightbulb className="h-5 w-5" />
@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
             </CardHeader>
 
             {sent ? (
-              <CardContent className="space-y-4 px-8 pb-8 pt-4">
+                <CardContent className="space-y-4 ui-px-8 pb-8 pt-4">
                 <div className="rounded-lg border border-success-bg bg-success-bg p-4 text-sm text-success">
                   <p className="ui-row-gap-2">
                     <Check className="ui-icon-16" />
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
               </CardContent>
             ) : (
               <form onSubmit={handleReset}>
-                <CardContent className="space-y-5 px-8 pb-8 pt-3">
+                <CardContent className="space-y-5 ui-px-8 pb-8 pt-3">
                   {error && (
                     <p className={uiStylePresets.authErrorPill}>
                       {error}
@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
               </form>
             )}
 
-            <CardFooter className="px-8 pb-8 pt-0">
+            <CardFooter className="ui-px-8 pb-8 pt-0">
               <p className="w-full text-center ui-text-sm-muted">
                 Remembered your password?{" "}
                 <Link href="/login" className="ui-font-semibold text-foreground hover:text-primary underline decoration-dotted underline-offset-2">
@@ -140,7 +140,7 @@ export default function ForgotPasswordPage() {
 function AuthHeader() {
   return (
         <header className="border-b border-border bg-card">
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 md:px-8 lg:px-12 xl:px-16">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between ui-px-4 md:px-8 lg:px-12 xl:px-16">
         <Link href="/" className="inline-ui-row-gap-2">
           <div className={uiStylePresets.authTopIconBadge}>
             <Lightbulb className="h-5 w-5" />
