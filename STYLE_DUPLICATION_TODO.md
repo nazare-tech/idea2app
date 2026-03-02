@@ -13,9 +13,9 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - [x] `--color-border-strong: #e5e5e5`
   - [x] `--color-accent-primary: rgba(0,212,255,0.15)`
   - [x] `--color-accent-primary-light: rgba(0,212,255,0.4)`
-  - [x] `--color-surface-soft: rgba(255,255,255,0.03)`
-  - [x] `--color-surface-mid: rgba(255,255,255,0.06)`
-  - [x] `--color-surface-strong: rgba(255,255,255,0.08)`
+- [x] `--color-surface-soft: rgba(255,255,255,0.03)`
+- [x] `--color-surface-mid: rgba(255,255,255,0.06)`
+- [x] `--color-surface-strong: rgba(255,255,255,0.08)`
 - [x] Migrate repeated hex/rgba usages in these files to tokens:
   - `src/app/page.tsx`
   - `src/app/(dashboard)/settings/page.tsx`
@@ -37,9 +37,9 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - [x] `text-sm` + `text-muted-foreground`
   - [x] `font-semibold`
   - [x] `font-medium`
-  - [x] `text-xs`
-  - [x] `tracking-tight`
-  - [x] `font-mono`
+- [x] `text-xs`
+- [x] `tracking-tight`
+- [x] `font-mono`
 - [x] Replace hard-coded font declarations in generated code paths:
   - [x] `font-weight: 600` in `src/app/api/generate-pdf/route.ts` and `src/app/globals.css`
   - [x] `line-height`, `font-weight: 700`, and related one-off declarations where semantically similar.
@@ -48,7 +48,7 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - [x] `text-sm font-semibold uppercase tracking-[0.14em] text-primary` (used on multiple marketing section labels)
 
 ## 3) Spacing/padding pattern consolidation
-- [x] Create reusable spacing variants for the most repeated utility groupings.
+- [x] Create reusable spacing variants for the most repeated utility groupings. (Implemented in this branch; main had this item open)
   - [x] `px-4`
   - [x] `p-4`
   - [x] `px-3`
