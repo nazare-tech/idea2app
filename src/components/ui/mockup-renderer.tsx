@@ -28,6 +28,52 @@ function isJsonRenderContent(content: string): boolean {
 }
 
 /**
+ * Extract a human-readable page title from a json-render spec.
+ * Looks at the root element's title prop, its element ID, or the first Heading child.
+ */
+function extractPageTitle(spec: Spec, fallbackIndex: number): string {
+  const elements = spec.elements as Record<string, { type?: string; props?: Record<string, unknown>; children?: string[] }>
+  const rootId = spec.root as string
+  const rootEl = elements[rootId]
+
+  if (!rootEl) return `Page ${fallbackIndex}`
+
+  // 1. Check root element's title prop (e.g. Card with title)
+  const titleProp = rootEl.props?.title as string | undefined
+  if (titleProp) return titleProp
+
+  // 2. Look for a Heading in immediate children
+  for (const childId of rootEl.children || []) {
+    const child = elements[childId]
+    if (child?.type === "Heading" && child.props) {
+      const text = (child.props as Record<string, unknown>).text as string
+      if (text) return text
+    }
+  }
+
+  // 3. Look deeper — check grandchildren for a Heading (e.g. Stack > Card > Heading)
+  for (const childId of rootEl.children || []) {
+    const child = elements[childId]
+    for (const grandchildId of child?.children || []) {
+      const grandchild = elements[grandchildId]
+      if (grandchild?.type === "Heading" && grandchild.props) {
+        const text = (grandchild.props as Record<string, unknown>).text as string
+        if (text) return text
+      }
+    }
+  }
+
+  // 4. Try to derive from the root element ID (e.g. "dashboard-root" → "Dashboard")
+  if (rootId && rootId !== "root") {
+    return rootId
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, c => c.toUpperCase())
+  }
+
+  return `Page ${fallbackIndex}`
+}
+
+/**
  * Parse markdown content containing json-render specs.
  * Expected format: markdown headers (## or ###) followed by ```json blocks.
  */
@@ -45,8 +91,9 @@ function parseJsonRenderPages(raw: string): MockupPage[] {
     try {
       const spec = JSON.parse(jsonStr) as Spec
       if (spec.root && spec.elements) {
+        const title = currentTitle || extractPageTitle(spec, pages.length + 1)
         pages.push({
-          title: currentTitle || `Page ${pages.length + 1}`,
+          title,
           description: currentDescription.join("\n").trim(),
           spec,
         })
@@ -463,7 +510,7 @@ function JsonRenderPage({ page }: { page: MockupPage }) {
   }, [page.spec])
 
   return (
-    <div className="wireframe-layer rounded-lg min-h-[400px] overflow-hidden w-full max-w-full bg-white">
+    <div className="wireframe-layer rounded-lg min-h-[400px] overflow-hidden w-full max-w-full bg-white [&>div]:w-full [&>div>div]:w-full">
       <RendererErrorBoundary specJson={specJson}>
         <RendererWithFallback spec={page.spec} specJson={specJson} />
       </RendererErrorBoundary>
@@ -776,29 +823,13 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
       subElements[key] = elements[key]
     }
 
-    // Derive page title from the first Heading child or the element's props
-    let title = `Page ${pages.length + 1}`
-    const titleProp = el.props?.title as string | undefined
-    if (titleProp) {
-      title = titleProp
-    } else {
-      // Look for a Heading in immediate children
-      for (const childId of el.children || []) {
-        const child = elements[childId]
-        if (child?.type === "Heading" && child.props) {
-          const text = (child.props as Record<string, unknown>).text as string
-          if (text) {
-            title = text
-            break
-          }
-        }
-      }
-    }
+    const subSpec = { root: id, elements: subElements } as unknown as Spec
+    const title = extractPageTitle(subSpec, pages.length + 1)
 
     pages.push({
       title,
       description: "",
-      spec: { root: id, elements: subElements } as unknown as Spec,
+      spec: subSpec,
     })
   }
 

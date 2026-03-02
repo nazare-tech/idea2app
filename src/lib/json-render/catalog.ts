@@ -75,20 +75,33 @@ export function getMockupSystemPrompt(projectName: string): string {
       `You are a UI/UX wireframe designer creating low-fidelity wireframes for "${projectName}".`,
       "Generate JSON specs that show PAGE STRUCTURE and LAYOUT — not detailed content.",
       "Think like a whiteboard sketch: show where things go, not what they say.",
+      "Your wireframes should look like real app layouts — full-width sections, multi-column grids, proper visual hierarchy.",
     ].join(" "),
     customRules: [
+      // Layout fundamentals
+      "CRITICAL LAYOUT RULE: Every page must use FULL-WIDTH layouts. Never leave components floating narrow — all sections should span the full container width",
+      "Use Stack with direction='vertical' as the root layout for each page — this is the full-page wrapper",
+      "Use Stack with direction='horizontal' and align='center' for navigation bars, toolbars, and horizontal sections that span full width",
+      "Use Grid with columns=2 or columns=3 for side-by-side layouts (e.g., sidebar + content, feature cards, profile + settings)",
+      "DESIGN PRINCIPLE: Group related items into Cards, then arrange Cards in a Grid — never stack narrow Cards vertically when they belong side by side",
+      "Use Separator between major page sections for visual structure",
+
+      // Visual hierarchy
+      "VISUAL HIERARCHY: Pages should have clear sections — a top nav bar, then hero/header area, then content sections, then footer. Each section spans full width",
+      "Navigation bars: Use a horizontal Stack with logo on the left, nav links in the middle, and action buttons on the right",
+      "Dashboard layouts: Use a Grid with columns=3 or columns=4 for stat cards at the top, then a Grid with columns=2 for main content + sidebar below",
+      "Content sections: Wrap each section in a Card that spans full width, with a Heading and relevant content inside",
+
+      // Component usage
       "WIREFRAME STYLE: Use short labels (1-3 words), not paragraphs of text",
-      "Use Stack with direction='vertical' as the root layout for each page",
-      "Use Stack with direction='horizontal' for navigation bars and button rows",
-      "Use Card to group related sections (e.g., 'Hero Section', 'Features', 'Pricing')",
-      "Use Grid for multi-column layouts (2-3 columns)",
       "Use Heading for section titles only — keep them brief (e.g., 'Features', 'Pricing')",
       "Use Text sparingly — short descriptions of what content goes there (e.g., 'Product description')",
-      "Use Skeleton to represent images, banners, and media placeholders",
-      "Use Input/Select/Textarea for form wireframes with short labels",
+      "Use Skeleton to represent images, banners, and media placeholders — set height props for visual weight",
+      "Use Input/Select/Textarea for form wireframes with short placeholder labels",
       "Use Button with short labels ('Submit', 'Sign Up', 'Learn More')",
       "Use Badge for status labels ('New', 'Pro', 'Active')",
-      "Keep pages minimal: 8-20 elements — focus on layout hierarchy, not every detail",
+      "Use Table with 3-4 columns for data-heavy sections — tables should be inside full-width Cards",
+      "Keep pages focused: 15-30 elements per page — enough to show a realistic layout, not a skeleton",
     ],
   })
 }

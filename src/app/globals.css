@@ -484,7 +484,18 @@ body {
   border: 1px solid #999999 !important;
 }
 
-/* Grid: ensure children fill available space */
+/* Stack: ensure flex containers fill their parent width */
+.wireframe-layer > .flex,
+.wireframe-layer .flex.flex-col {
+  width: 100% !important;
+}
+
+/* Horizontal stacks should also fill width and distribute children properly */
+.wireframe-layer .flex.flex-row {
+  width: 100% !important;
+}
+
+/* Grid: ensure grid fills available space and children stretch */
 .wireframe-layer .grid {
   width: 100% !important;
 }
@@ -492,6 +503,18 @@ body {
 .wireframe-layer .grid > * {
   min-width: 0 !important;
   overflow: hidden !important;
+}
+
+/* Cards inside grids should fill their grid cell */
+.wireframe-layer .grid > [data-slot="card"] {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Cards as direct children of stacks should be full width */
+.wireframe-layer .flex.flex-col > [data-slot="card"] {
+  width: 100% !important;
+  max-width: none !important;
 }
 
 /* Inputs: simple bordered fields */
