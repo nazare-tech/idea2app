@@ -4,14 +4,106 @@ import React, { useEffect, useState, useRef, useMemo, useCallback, useSyncExtern
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { renderMermaid } from "beautiful-mermaid"
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
 import { Check, X, Maximize2, Minimize2, RotateCcw } from "lucide-react"
 import { SelectionToolbar } from "./selection-toolbar"
 import { InlineAiEditor } from "./inline-ai-editor"
 
 // Unique marker for inline diff - use something very unlikely to appear in content
 const DIFF_MARKER = "\u200B___INLINE_DIFF_MARKER___\u200B"
+
+interface LazySyntaxHighlighterModule {
+  Highlighter: React.ComponentType<{
+    language: string
+    style: Record<string, React.CSSProperties>
+    PreTag: string
+    customStyle: React.CSSProperties
+    children: React.ReactNode
+  }>
+  style: Record<string, React.CSSProperties>
+}
+
+let syntaxHighlighterLoadPromise: Promise<LazySyntaxHighlighterModule> | null = null
+
+function loadSyntaxHighlighterModule(): Promise<LazySyntaxHighlighterModule> {
+  if (!syntaxHighlighterLoadPromise) {
+    syntaxHighlighterLoadPromise = Promise.all([
+      import("react-syntax-highlighter"),
+      import("react-syntax-highlighter/dist/esm/styles/prism"),
+    ]).then(([highlighterModule, styleModule]) => ({
+      Highlighter: highlighterModule.Prism as React.ComponentType<{
+        language: string
+        style: Record<string, React.CSSProperties>
+        PreTag: string
+        customStyle: React.CSSProperties
+        children: React.ReactNode
+      }>,
+      style: styleModule.vscDarkPlus as Record<string, React.CSSProperties>,
+    }))
+  }
+
+  return syntaxHighlighterLoadPromise
+}
+
+function LazySyntaxHighlighter({
+  language,
+  code,
+}: {
+  language: string
+  code: string
+}) {
+  const [module, setModule] = useState<LazySyntaxHighlighterModule | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+    loadSyntaxHighlighterModule()
+      .then((loadedModule) => {
+        if (isMounted) {
+          setModule(loadedModule)
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setLoadFailed(true)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  if (loadFailed) {
+    return (
+      <pre className="ui-overflow-x-auto ui-p-4 ui-bg-[#0F172A] ui-rounded-lg">
+        <code>{code}</code>
+      </pre>
+    )
+  }
+
+  if (!module) {
+    return (
+      <pre className="ui-overflow-x-auto ui-p-4 ui-bg-[#0F172A] ui-rounded-lg">
+        <code>{code}</code>
+      </pre>
+    )
+  }
+
+  return (
+    <module.Highlighter
+      style={module.style}
+      language={language}
+      PreTag="div"
+      customStyle={{
+        margin: 0,
+        borderRadius: "0.5rem",
+        background: "rgba(255,255,255,0.05)",
+      } as React.CSSProperties}
+    >
+      {code}
+    </module.Highlighter>
+  )
+}
 
 interface MarkdownRendererProps {
   content: string
@@ -714,18 +806,10 @@ export function MarkdownRenderer({
 
     if (language) {
       return (
-        <SyntaxHighlighter
-          style={vscDarkPlus as Record<string, React.CSSProperties>}
+        <LazySyntaxHighlighter
           language={language}
-          PreTag="div"
-          customStyle={{
-            margin: 0,
-            borderRadius: "0.5rem",
-            background: "rgba(255,255,255,0.05)",
-          } as React.CSSProperties}
-        >
-          {String(children).replace(/\n$/, "")}
-        </SyntaxHighlighter>
+          code={String(children).replace(/\n$/, "")}
+        />
       )
     }
 
@@ -779,14 +863,10 @@ export function MarkdownRenderer({
 
         if (language) {
           return (
-            <SyntaxHighlighter
-              style={vscDarkPlus as Record<string, React.CSSProperties>}
+            <LazySyntaxHighlighter
               language={language}
-              PreTag="div"
-              customStyle={{ margin: 0, borderRadius: "0.5rem", background: "rgba(255,255,255,0.05)" } as React.CSSProperties}
-            >
-              {String(children).replace(/\n$/, "")}
-            </SyntaxHighlighter>
+              code={String(children).replace(/\n$/, "")}
+            />
           )
         }
 

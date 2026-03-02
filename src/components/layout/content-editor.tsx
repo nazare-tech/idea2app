@@ -127,6 +127,8 @@ export function ContentEditor({
 
   const resizeStartX = useRef(0)
   const resizeStartWidth = useRef(0)
+  const resizeRafRef = useRef<number | null>(null)
+  const pendingDocumentWidthRef = useRef<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const config = documentConfig[documentType]
@@ -148,10 +150,32 @@ export function ContentEditor({
         MIN_DOCUMENT_WIDTH,
         Math.min(resizeStartWidth.current + delta, maxWidth)
       )
-      setDocumentWidth(newWidth)
+
+      pendingDocumentWidthRef.current = newWidth
+
+      if (resizeRafRef.current === null) {
+        resizeRafRef.current = requestAnimationFrame(() => {
+          resizeRafRef.current = null
+
+          if (pendingDocumentWidthRef.current !== null) {
+            setDocumentWidth(pendingDocumentWidthRef.current)
+            pendingDocumentWidthRef.current = null
+          }
+        })
+      }
     }
 
     const handleMouseUp = () => {
+      if (resizeRafRef.current !== null) {
+        cancelAnimationFrame(resizeRafRef.current)
+        resizeRafRef.current = null
+      }
+
+      if (pendingDocumentWidthRef.current !== null) {
+        setDocumentWidth(pendingDocumentWidthRef.current)
+        pendingDocumentWidthRef.current = null
+      }
+
       setIsResizing(false)
       setResizeEdge(null)
       document.body.style.cursor = ''
@@ -167,6 +191,11 @@ export function ContentEditor({
       return () => {
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
+
+        if (resizeRafRef.current !== null) {
+          cancelAnimationFrame(resizeRafRef.current)
+          resizeRafRef.current = null
+        }
       }
     }
   }, [isResizing, resizeEdge])
