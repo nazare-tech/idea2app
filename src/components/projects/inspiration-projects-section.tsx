@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
+import { uiStylePresets } from "@/lib/ui-style-presets"
 
 const inspirationProjects = [
   {
@@ -52,10 +53,10 @@ export function InspirationProjectsSection() {
           <span className="inline-flex h-7 items-center rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-3 text-xs font-medium text-white">
             Case Studies
           </span>
-          <span className="inline-flex h-7 items-center rounded-full border border-[#E0E0E0] bg-white px-3 text-xs font-medium text-[#0A0A0A]">
+          <span className={uiStylePresets.tagPill}>
             Top Performers
           </span>
-          <span className="inline-flex h-7 items-center rounded-full border border-[#E0E0E0] bg-white px-3 text-xs font-medium text-[#0A0A0A]">
+          <span className={uiStylePresets.tagPill}>
             Recently Shipped
           </span>
         </div>

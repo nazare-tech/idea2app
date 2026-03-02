@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { uiStylePresets } from "@/lib/ui-style-presets"
 import { useRouter } from "next/navigation"
 import { ChevronDown, Plus } from "lucide-react"
 import Link from "next/link"
@@ -66,15 +67,15 @@ export function Header({ user, children, rightContent }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="relative h-10 inline-flex items-center gap-2.5 rounded-md border border-[#E0E0E0] bg-white px-3.5 py-0 text-[#0A0A0A]"
+              className={uiStylePresets.headerProfileTrigger}
             >
               <Avatar className="h-7 w-7 rounded-full">
                 <AvatarImage src={user?.avatar_url} alt={user?.full_name || "User"} />
-                <AvatarFallback className="bg-[#0A0A0A] text-white text-[12px] font-bold">
+                <AvatarFallback className={uiStylePresets.authProfileAvatarFallback}>
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-[13px] font-medium leading-none tracking-tight text-[#0A0A0A]">
+              <span className={uiStylePresets.headerProfileLabel}>
                 {profileLabel}
               </span>
               <ChevronDown className="h-4 w-4 text-[#777777]" />
@@ -88,7 +89,7 @@ export function Header({ user, children, rightContent }: HeaderProps) {
             <DropdownMenuItem asChild>
               <Link
                 href="/settings?tab=profile"
-                className="h-11 w-full rounded-md px-4 text-sm font-medium text-[#0A0A0A] data-[highlighted]:bg-[#F5F5F5] hover:bg-[#F5F5F5]"
+                className={uiStylePresets.headerOutlineTab}
               >
                 <span>Profile</span>
               </Link>
@@ -96,7 +97,7 @@ export function Header({ user, children, rightContent }: HeaderProps) {
             <DropdownMenuItem asChild>
               <Link
                 href="/settings?tab=settings"
-                className="h-11 w-full rounded-md px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5]"
+                className={uiStylePresets.headerOutlineTab}
               >
                 <span>Settings</span>
               </Link>
@@ -104,14 +105,14 @@ export function Header({ user, children, rightContent }: HeaderProps) {
             <DropdownMenuItem asChild>
               <Link
                 href="/settings?tab=subscriptions"
-                className="h-11 w-full rounded-md px-4 text-sm font-medium text-[#0A0A0A] hover:bg-[#F5F5F5]"
+                className={uiStylePresets.headerOutlineTab}
               >
                 <span>Subscriptions</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleSignOut}
-              className="h-11 w-full rounded-md px-4 text-sm font-medium text-[#FF3B30] hover:bg-[#F5F5F5]"
+              className={uiStylePresets.headerLogoutItem}
             >
               <span>Log out</span>
             </DropdownMenuItem>

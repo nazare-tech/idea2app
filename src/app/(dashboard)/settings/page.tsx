@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
+import { uiStylePresets } from "@/lib/ui-style-presets"
 import { Bell, CreditCard, KeyRound, Lock, Shield, Settings, User } from "lucide-react"
 
 type MessageState = { type: "success" | "error"; text: string }
@@ -319,7 +320,7 @@ export default function SettingsPage() {
                 <Card className="border-[#E0E0E0] bg-[#FFF9E7]">
                   <CardHeader>
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                      <div className={uiStylePresets.settingsIconBadge}>
                         <Shield className="h-5 w-5" />
                       </div>
                       <div>
@@ -331,10 +332,10 @@ export default function SettingsPage() {
                 </Card>
               )}
 
-              <Card className="border-[#E0E0E0] bg-[#FAFAFA]">
+              <Card className={uiStylePresets.settingsSurface}>
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                    <div className={uiStylePresets.settingsIconBadge}>
                       <User className="h-5 w-5" />
                     </div>
                     <div>
@@ -398,10 +399,10 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-[#E0E0E0] bg-[#FAFAFA]">
+              <Card className={uiStylePresets.settingsSurface}>
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                    <div className={uiStylePresets.settingsIconBadge}>
                       <Lock className="h-5 w-5" />
                     </div>
                     <div>
@@ -456,10 +457,10 @@ export default function SettingsPage() {
           )}
 
           {activeTab === "settings" && (
-            <Card className="border-[#E0E0E0] bg-[#FAFAFA]">
+            <Card className={uiStylePresets.settingsSurface}>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                  <div className={uiStylePresets.settingsIconBadge}>
                     <Settings className="h-5 w-5" />
                   </div>
                   <div>
@@ -477,7 +478,7 @@ export default function SettingsPage() {
                     <Bell className="h-4 w-4" />
                     <span>Notifications</span>
                   </div>
-                  <p className="text-sm text-[#666666]">
+                  <p className={uiStylePresets.mutedTextSm}>
                     Notification preferences are not yet configurable in this build.
                   </p>
                 </div>
@@ -486,10 +487,10 @@ export default function SettingsPage() {
           )}
 
           {activeTab === "subscriptions" && (
-            <Card className="border-[#E0E0E0] bg-[#FAFAFA]">
+            <Card className={uiStylePresets.settingsSurface}>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded bg-[#0A0A0A] text-white flex items-center justify-center">
+                  <div className={uiStylePresets.settingsIconBadge}>
                     <CreditCard className="h-5 w-5" />
                   </div>
                   <div>
@@ -502,22 +503,22 @@ export default function SettingsPage() {
                 {renderMessage(subscriptionMessage)}
 
                 {subscription ? (
-                  <div className="space-y-4 rounded-xl border border-[#E0E0E0] bg-white p-4">
+                  <div className={uiStylePresets.settingsInfoCard}>
                     <div>
-                      <p className="text-sm text-[#666666]">Current plan</p>
+                      <p className={uiStylePresets.mutedTextSm}>Current plan</p>
                       <p className="text-lg font-bold">
                         {subscriptionPlanName || subscription.plan_id || "Active subscription"}
                       </p>
                     </div>
                     <div className="space-y-2 text-sm">
                       <p>
-                        <span className="text-[#666666]">Status:</span> {subscription.status || "active"}
+                        <span className={uiStylePresets.mutedTextSimple}>Status:</span> {subscription.status || "active"}
                       </p>
                       {subscription.cancel_at_period_end && (
                         <p className="text-[#ff3b30]">Cancels at period end</p>
                       )}
                       <p>
-                        <span className="text-[#666666]">Next renewal:</span> {" "}
+                        <span className={uiStylePresets.mutedTextSimple}>Next renewal:</span> {" "}
                         {formatRenewalDate(subscription.current_period_end)}
                       </p>
                     </div>
@@ -533,8 +534,8 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4 rounded-xl border border-[#E0E0E0] bg-white p-4">
-                    <p className="text-sm text-[#666666]">
+                  <div className={uiStylePresets.settingsInfoCard}>
+                    <p className={uiStylePresets.mutedTextSm}>
                       No active subscription found. You currently appear to be on the free tier.
                     </p>
                     <div className="flex flex-wrap gap-3">

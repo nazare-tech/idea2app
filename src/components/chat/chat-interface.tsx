@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
+import { uiStylePresets } from "@/lib/ui-style-presets"
 import { Send, Bot, User, Copy, Check } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -134,7 +135,7 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
           >
             {message.role !== "user" && (
               <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center shrink-0 mt-1">
-                <Bot className="h-4 w-4 text-[#00d4ff]" />
+                <Bot className={uiStylePresets.chatBrandIcon} />
               </div>
             )}
 
@@ -183,7 +184,7 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
         {loading && (
           <div className="flex gap-3">
             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center shrink-0">
-              <Bot className="h-4 w-4 text-[#00d4ff]" />
+                <Bot className={uiStylePresets.chatBrandIcon} />
             </div>
             <div className="bg-[rgba(12,12,20,0.7)] border border-[rgba(255,255,255,0.06)] rounded-2xl px-4 py-3">
               <div className="flex items-center gap-2">

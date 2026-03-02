@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { ArrowRight, Lightbulb } from "lucide-react"
+import { uiStylePresets } from "@/lib/ui-style-presets"
 
 function LoginForm() {
   const [email, setEmail] = useState("")
@@ -88,7 +89,7 @@ function LoginForm() {
                   one workspace.
                 </p>
               </div>
-              <p className="text-xs uppercase tracking-[0.12em] text-[#999999]">
+              <p className={uiStylePresets.authFormMeta}>
                 Trusted by 3,000+ teams
               </p>
             </div>
@@ -97,14 +98,14 @@ function LoginForm() {
             <div className="w-full max-w-[880px] lg:h-full lg:flex lg:flex-col">
               <header className="h-[104px] px-6 py-5">
                 <Link href="/" className="inline-flex h-full items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF3B30] text-white">
+                  <div className={uiStylePresets.authIconCircle}>
                     <Lightbulb className="h-4 w-4" />
                   </div>
                   <span className="text-lg font-semibold tracking-[0.05em]">Idea2App</span>
                 </Link>
               </header>
               <div className="flex-1 flex items-center">
-                <Card className="mx-auto w-full max-w-[520px] border-[#E0E0E0] bg-card">
+                <Card className={uiStylePresets.authCardContainer}>
                   <CardHeader className="space-y-2 px-8 pt-8">
                     <CardTitle className="text-3xl tracking-[-0.02em]">Welcome back</CardTitle>
                     <p className="text-sm text-muted-foreground">Sign in to continue to Idea2App.</p>
@@ -115,26 +116,26 @@ function LoginForm() {
                         type="button"
                         onClick={handleGoogleLogin}
                         disabled={loading}
-                        className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-white text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60"
+                        className={uiStylePresets.authSocialButton}
                       >
                         <ArrowRight className="h-4 w-4" />
                         Continue with Google
                       </button>
 
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="h-px flex-1 bg-[#E0E0E0]" />
+                        <span className={uiStylePresets.authDividerLine} />
                         <span>OR</span>
-                        <span className="h-px flex-1 bg-[#E0E0E0]" />
+                        <span className={uiStylePresets.authDividerLine} />
                       </div>
 
                       {error && (
-                        <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-[#B42318]">
+                        <p className={uiStylePresets.authErrorPill}>
                           {error}
                         </p>
                       )}
 
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="text-[13px] text-muted-foreground">
+                        <Label htmlFor="email" className={uiStylePresets.authFieldLabel}>
                           Email
                         </Label>
                         <Input
@@ -145,12 +146,12 @@ function LoginForm() {
                           onChange={(e) => setEmail(e.target.value)}
                           required
                           disabled={loading}
-                          className="h-12 bg-[#FFFFFF] border-[#E0E0E0] text-[#0A0A0A] placeholder:text-[#999999] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
+                          className={uiStylePresets.authFieldInput}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="password" className="text-[13px] text-muted-foreground">
+                        <Label htmlFor="password" className={uiStylePresets.authFieldLabel}>
                           Password
                         </Label>
                         <Input
@@ -161,13 +162,13 @@ function LoginForm() {
                           onChange={(e) => setPassword(e.target.value)}
                           required
                           disabled={loading}
-                          className="h-12 bg-[#FFFFFF] border-[#E0E0E0] text-[#0A0A0A] placeholder:text-[#999999] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
+                          className={uiStylePresets.authFieldInput}
                         />
                       </div>
 
                       <Button
                         type="submit"
-                        className="h-12 w-full bg-[#FF3B30] text-white"
+                        className={uiStylePresets.authDestructiveButton}
                         disabled={loading}
                       >
                         {loading ? (
@@ -185,7 +186,7 @@ function LoginForm() {
                   <CardFooter className="px-8 pb-8 pt-2">
                     <p className="w-full text-center text-sm text-muted-foreground">
                       Don&apos;t have an account?{" "}
-                      <Link href="/signup" className="font-semibold text-[#FF3B30] hover:underline">
+                      <Link href="/signup" className={uiStylePresets.authLinkUnderline}>
                         Create account
                       </Link>
                     </p>

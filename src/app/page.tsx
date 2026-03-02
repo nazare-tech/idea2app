@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
+import { uiStylePresets } from "@/lib/ui-style-presets"
 import { ArrowRight, CloudUpload, GitBranch, ListChecks, Rocket, ScanSearch, FileText } from "lucide-react"
 
 const navLinks = [
@@ -151,7 +152,7 @@ export default function LandingPage() {
 
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
           <Link href="/signup">
-            <Button className="h-14 px-7 bg-primary text-base font-semibold text-white">Start Building Free</Button>
+            <Button className="h-14 px-7 bg-primary text-base font-semibold text-white">Get Started Free</Button>
           </Link>
           <Link href="#features">
             <Button variant="outline" className="h-14 px-7 border-[#E0E0E0] text-base font-semibold bg-white text-[#0A0A0A]">
@@ -165,13 +166,13 @@ export default function LandingPage() {
             <p className="text-[36px] font-semibold leading-none tracking-[-0.06em]">5+</p>
             <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[#F0F0F0]">Analysis Types</p>
           </div>
-          <div className="flex h-[112px] flex-col items-center justify-center border border-[#E0E0E0] bg-white p-4">
+          <div className={uiStylePresets.landingStatCard}>
             <p className="text-[36px] font-semibold leading-none tracking-[-0.06em]">AI</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[#777777]">Powered</p>
+            <p className={uiStylePresets.landingFeaturePill}>Powered</p>
           </div>
-          <div className="flex h-[112px] flex-col items-center justify-center border border-[#E0E0E0] bg-white p-4">
+          <div className={uiStylePresets.landingStatCard}>
             <p className="text-[36px] font-semibold leading-none tracking-[-0.06em]">1-Click</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[#777777]">Deploy</p>
+            <p className={uiStylePresets.landingFeaturePill}>Deploy</p>
           </div>
         </div>
       </SectionCard>
@@ -290,9 +291,9 @@ export default function LandingPage() {
         <div className={`${container} flex h-[88px] flex-wrap items-center justify-between gap-5 text-sm`}>
           <span className="font-mono text-[11px] tracking-[0.05em] text-[#64748B]">(c) 2026 Idea2App. All rights reserved.</span>
           <div className="flex items-center gap-5 font-mono text-[11px] tracking-[0.05em] text-[#334155]">
-            <a href="#" className="hover:text-[#0A0A0A]">Terms</a>
-            <a href="#" className="hover:text-[#0A0A0A]">Privacy</a>
-            <a href="#" className="hover:text-[#0A0A0A]">Contact</a>
+            <a href="#" className={uiStylePresets.subtleLinkHover}>Terms</a>
+            <a href="#" className={uiStylePresets.subtleLinkHover}>Privacy</a>
+            <a href="#" className={uiStylePresets.subtleLinkHover}>Contact</a>
           </div>
         </div>
       </footer>

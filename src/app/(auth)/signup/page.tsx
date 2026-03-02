@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { Lightbulb, ArrowRight, Check } from "lucide-react"
+import { uiStylePresets } from "@/lib/ui-style-presets"
 
 function SignupScreen() {
   const [email, setEmail] = useState("")
@@ -93,7 +94,7 @@ function SignupScreen() {
         <section className="flex min-h-screen w-full flex-col">
           <AuthHeader />
           <main className="flex min-h-screen w-full items-center justify-center">
-            <Card className="w-full max-w-[480px] border-[#E0E0E0] bg-card p-8 text-center">
+            <Card className={`${uiStylePresets.authCardCompact} p-8 text-center`}>
               <CardHeader>
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-bg">
                   <Check className="h-6 w-6 text-success" />
@@ -126,7 +127,7 @@ function SignupScreen() {
                   one workspace.
                 </p>
               </div>
-              <p className="text-xs uppercase tracking-[0.12em] text-[#999999]">
+              <p className={uiStylePresets.authFormMeta}>
                 Trusted by 3,000+ teams
               </p>
             </div>
@@ -135,14 +136,14 @@ function SignupScreen() {
             <div className="w-full max-w-[880px] lg:h-full lg:flex lg:flex-col">
               <header className="h-[104px] px-6 py-5">
                 <Link href="/" className="inline-flex h-full items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF3B30] text-white">
+                  <div className={uiStylePresets.authIconCircle}>
                     <Lightbulb className="h-4 w-4" />
                   </div>
                   <span className="text-lg font-semibold tracking-[0.05em]">Idea2App</span>
                 </Link>
               </header>
               <div className="flex-1 flex items-center">
-                <Card className="mx-auto w-full max-w-[520px] border-[#E0E0E0] bg-card">
+                <Card className={uiStylePresets.authCardContainer}>
                 <CardHeader className="space-y-2 px-8 pt-8">
                   <CardTitle className="text-3xl tracking-[-0.02em]">Create account</CardTitle>
                   <p className="text-sm text-muted-foreground">Join Idea2App and start building.</p>
@@ -152,7 +153,7 @@ function SignupScreen() {
                   <button
                     type="button"
                     onClick={handleGoogleSignup}
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-white text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-60"
+                    className={uiStylePresets.authSocialButton}
                     disabled={loading}
                   >
                     <ArrowRight className="h-4 w-4" />
@@ -160,20 +161,20 @@ function SignupScreen() {
                   </button>
 
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="h-px flex-1 bg-[#E0E0E0]" />
+                    <span className={uiStylePresets.authDividerLine} />
                     <span>OR</span>
-                    <span className="h-px flex-1 bg-[#E0E0E0]" />
+                    <span className={uiStylePresets.authDividerLine} />
                   </div>
 
                   <form onSubmit={handleSignup} className="space-y-4">
                     {isSocialError && (
-                      <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-[#B42318]">
+                      <p className={uiStylePresets.authErrorPill}>
                         Could not complete Google sign in. Please try again.
                       </p>
                     )}
 
                     {error && (
-                      <p className="rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-destructive">
+                      <p className={uiStylePresets.authErrorPill}>
                         {error}
                       </p>
                     )}
@@ -216,7 +217,7 @@ function SignupScreen() {
                       disabled={loading}
                     />
 
-                    <Button type="submit" className="h-12 w-full bg-[#FF3B30] text-white" disabled={loading}>
+                    <Button type="submit" className={uiStylePresets.authDestructiveButton} disabled={loading}>
                       {loading ? (
                         <>
                           <Spinner size="sm" />
@@ -231,7 +232,7 @@ function SignupScreen() {
                 <CardFooter className="px-8 pb-8 pt-2">
                   <p className="w-full text-center text-sm text-muted-foreground">
                     Already have an account?{" "}
-                    <Link href="/login" className="font-semibold text-[#FF3B30] hover:underline">
+                    <Link href="/login" className={uiStylePresets.authLinkUnderline}>
                       Log in
                     </Link>
                   </p>
@@ -282,7 +283,7 @@ function FormField({
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-[13px] text-muted-foreground">
+      <Label htmlFor={id} className={uiStylePresets.authFieldLabel}>
         {label}
       </Label>
       <Input
@@ -294,7 +295,7 @@ function FormField({
         required
         disabled={disabled}
         minLength={minLength}
-        className="h-12 bg-[#FFFFFF] border-[#E0E0E0] text-[#0A0A0A] placeholder:text-[#999999] focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
+        className={uiStylePresets.authFieldInput}
       />
     </div>
   )

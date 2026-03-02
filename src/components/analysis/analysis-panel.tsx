@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 import { CREDIT_COSTS } from "@/lib/utils"
+import { uiStylePresets } from "@/lib/ui-style-presets"
 import {
   BarChart3,
   Search,
@@ -266,7 +267,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         </div>
 
         {error && (
-          <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
+          <div className={uiStylePresets.analysisErrorBanner}>
             {error}
           </div>
         )}
@@ -385,13 +386,13 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         </Card>
 
         {showCompetitiveAnalysisBanner && !hasCompetitiveAnalysis && (
-          <div className="p-4 rounded-xl bg-[rgba(255,165,0,0.1)] border border-[rgba(255,165,0,0.2)] text-[#ffa500] text-sm flex items-center justify-between">
+          <div className={uiStylePresets.analysisDependencyBanner}>
             <span>You need to generate a Competitive Analysis first before creating a PRD.</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowCompetitiveAnalysisBanner(false)}
-              className="text-[#ffa500] hover:text-[#ff8c00]"
+              className={uiStylePresets.analysisDismissAction}
             >
               Dismiss
             </Button>
@@ -399,7 +400,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         )}
 
         {error && (
-          <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
+          <div className={uiStylePresets.analysisErrorBanner}>
             {error}
           </div>
         )}
@@ -505,13 +506,13 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         </Card>
 
         {showPrdBanner && !hasPrd && (
-          <div className="p-4 rounded-xl bg-[rgba(255,165,0,0.1)] border border-[rgba(255,165,0,0.2)] text-[#ffa500] text-sm flex items-center justify-between">
+          <div className={uiStylePresets.analysisDependencyBanner}>
             <span>You need to generate a PRD first before creating a Technical Specification.</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowPrdBanner(false)}
-              className="text-[#ffa500] hover:text-[#ff8c00]"
+              className={uiStylePresets.analysisDismissAction}
             >
               Dismiss
             </Button>
@@ -519,7 +520,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         )}
 
         {error && (
-          <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
+          <div className={uiStylePresets.analysisErrorBanner}>
             {error}
           </div>
         )}
@@ -634,7 +635,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
       </Card>
 
       {error && (
-        <div className="p-4 rounded-xl bg-[rgba(255,59,92,0.1)] border border-[rgba(255,59,92,0.2)] text-[#ff6b8a] text-sm">
+        <div className={uiStylePresets.analysisErrorBanner}>
           {error}
         </div>
       )}
