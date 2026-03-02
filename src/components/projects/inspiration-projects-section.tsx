@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
+import { uiStylePresets } from "@/lib/ui-style-presets"
 
 const inspirationProjects = [
   // TODO: keep #FF3B30 local as intentionally unique project emphasis color.
@@ -49,6 +50,17 @@ export function InspirationProjectsSection() {
           Browse successful apps already launched by other teams and use them as a starting point for your next build.
         </p>
 
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="inline-flex h-7 items-center rounded-full border border-text-primary bg-text-primary px-3 text-xs ui-font-medium text-white">
+            Case Studies
+          </span>
+          <span className={uiStylePresets.tagPill}>
+            Top Performers
+          </span>
+          <span className={uiStylePresets.tagPill}>
+            Recently Shipped
+          </span>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

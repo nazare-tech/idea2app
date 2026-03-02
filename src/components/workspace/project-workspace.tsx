@@ -86,10 +86,22 @@ export function ProjectWorkspace({
 }: ProjectWorkspaceProps) {
   const router = useRouter()
   const [projectName, setProjectName] = useState(project.name)
-  const [projectDescription, setProjectDescription] = useState(project.description || "")
-  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(!project.description)
-  const [hasCompletedPromptOnboarding, setHasCompletedPromptOnboarding] = useState(Boolean(project.description))
+  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
+
+  useEffect(() => {
+    setProjectName(project.name)
+  }, [project.name])
+
+  useEffect(() => {
+    setIsPromptOnlyMode(isNewProject)
+  }, [isNewProject])
+
+  useEffect(() => {
+    if (project.description) {
+      setIsPromptOnlyMode(false)
+    }
+  }, [project.description])
 
   const getPersistedActiveDocument = useCallback((): DocumentType | null => {
     if (typeof window === "undefined") return null
@@ -114,7 +126,7 @@ export function ProjectWorkspace({
   }, [activeDocumentStorageKey])
 
   const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
-    if (isPromptOnlyMode) return "prompt"
+    if (isNewProject || isPromptOnlyMode) return "prompt"
 
     const persistedDocument = getPersistedActiveDocument()
     if (persistedDocument && !(isPromptOnlyMode && persistedDocument !== "prompt")) {
@@ -195,16 +207,6 @@ export function ProjectWorkspace({
     }
   }, [project.id, getInitialCount, getStorageKey])
 
-  const getBaseGeneratingState = useCallback((): Record<DocumentType, boolean> => ({
-    prompt: false,
-    competitive: false,
-    prd: false,
-    mvp: false,
-    mockups: false,
-    techspec: false,
-    deploy: false,
-  }), [])
-
   const loadGeneratingState = useCallback((docType: DocumentType): boolean => {
     const key = getStorageKey(docType)
     const stored = localStorage.getItem(key)
@@ -230,7 +232,15 @@ export function ProjectWorkspace({
 
   const hydrateGeneratingStateFromStorage = useCallback((): Record<DocumentType, boolean> => {
     if (typeof window === "undefined") {
-      return getBaseGeneratingState()
+      return {
+        prompt: false,
+        competitive: false,
+        prd: false,
+        mvp: false,
+        mockups: false,
+        techspec: false,
+        deploy: false,
+      }
     }
 
     return {
@@ -242,42 +252,23 @@ export function ProjectWorkspace({
       techspec: loadGeneratingState("techspec"),
       deploy: loadGeneratingState("deploy"),
     }
-  }, [getBaseGeneratingState, loadGeneratingState])
+  }, [loadGeneratingState])
 
-  const getWorkspaceSyncState = useCallback(() => {
-    const nextIsPromptOnlyMode = !hasCompletedPromptOnboarding
-    const persistedDocument = nextIsPromptOnlyMode ? null : getPersistedActiveDocument()
-
-    return {
-      isPromptOnlyMode: nextIsPromptOnlyMode,
-      activeDocument: !nextIsPromptOnlyMode && persistedDocument && canSelectDocument(persistedDocument)
-        ? persistedDocument
-        : "prompt" as DocumentType,
-      generatingDocuments: nextIsPromptOnlyMode
-        ? getBaseGeneratingState()
-        : hydrateGeneratingStateFromStorage(),
+  useEffect(() => {
+    if (isNewProject) {
+      setActiveDocument("prompt")
+      return
     }
-  }, [canSelectDocument, getBaseGeneratingState, getPersistedActiveDocument, hasCompletedPromptOnboarding, hydrateGeneratingStateFromStorage])
 
-  useEffect(() => {
-    const nextSyncState = getWorkspaceSyncState()
+    const persistedDocument = getPersistedActiveDocument()
 
-    setProjectName(project.name)
-    setIsPromptOnlyMode(nextSyncState.isPromptOnlyMode)
-    setActiveDocument(nextSyncState.activeDocument)
+    if (!persistedDocument || !canSelectDocument(persistedDocument)) {
+      setActiveDocument("prompt")
+      return
+    }
 
-    setGeneratingDocuments(prev => {
-      const changedKeys = (Object.keys(nextSyncState.generatingDocuments) as Array<keyof typeof nextSyncState.generatingDocuments>)
-        .some((key) => prev[key] !== nextSyncState.generatingDocuments[key])
-
-      return changedKeys ? nextSyncState.generatingDocuments : prev
-    })
-  }, [getWorkspaceSyncState, project.name])
-
-  useEffect(() => {
-    setProjectDescription(project.description || "")
-    setHasCompletedPromptOnboarding(Boolean(project.description))
-  }, [project.description])
+    setActiveDocument(persistedDocument)
+  }, [isNewProject, getPersistedActiveDocument, canSelectDocument])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -303,6 +294,13 @@ export function ProjectWorkspace({
       return false
     }
   }, [getStorageKey, getInitialCount])
+
+  // Restore and sync generation flags from localStorage
+  useEffect(() => {
+    if (isPromptOnlyMode) return
+
+    setGeneratingDocuments(hydrateGeneratingStateFromStorage())
+  }, [project.id, isPromptOnlyMode, hydrateGeneratingStateFromStorage])
 
   // Poll for new content when documents are generating, and refresh only when versions arrive.
   useEffect(() => {
@@ -400,15 +398,7 @@ export function ProjectWorkspace({
       isCanceled = true
       clearPoll()
     }
-  }, [
-    generatingDocuments,
-    getGenerationSnapshot,
-    checkIfContentIncreased,
-    loadGeneratingState,
-    saveGeneratingState,
-    router,
-    isPromptOnlyMode,
-  ])
+  }, [\n    generatingDocuments,\n    getGenerationSnapshot,\n    checkIfContentIncreased,\n    loadGeneratingState,\n    saveGeneratingState,\n    router,\n    isPromptOnlyMode,\n  ])
 
 
   const getDocumentStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
@@ -419,7 +409,7 @@ export function ProjectWorkspace({
 
     switch (type) {
       case "prompt":
-        return projectDescription ? "done" : "pending"
+        return project.description ? "done" : "pending"
       case "competitive":
         return analyses.some(a => a.type === "competitive-analysis") ? "done" : "pending"
       case "prd":
@@ -488,7 +478,7 @@ export function ProjectWorkspace({
 
     switch (type) {
       case "prompt":
-        return projectDescription
+        return project.description
       case "competitive":
         const compAnalyses = analyses.filter(a => a.type === "competitive-analysis")
         return compAnalyses[versionIndex]?.content || null
@@ -571,7 +561,7 @@ export function ProjectWorkspace({
       case "prompt":
         return { canGenerate: true }
       case "competitive":
-        if (!projectDescription) {
+        if (!project.description) {
           return { canGenerate: false, reason: "Please add a project description first" }
         }
         return { canGenerate: true }
@@ -666,7 +656,7 @@ export function ProjectWorkspace({
           signal: controller.signal,
           body: JSON.stringify({
             projectId: project.id,
-            idea: projectDescription,
+            idea: project.description,
             name: projectName,
             ...(model && { model }),
             ...(generatingType === "deploy" && { appType: "dynamic" }),
@@ -735,19 +725,10 @@ export function ProjectWorkspace({
         throw new Error("Failed to update description")
       }
 
-      setProjectDescription(description)
-      setHasCompletedPromptOnboarding(true)
-      setIsPromptOnlyMode(false)
       router.refresh()
     } catch (error) {
       console.error("Error updating description:", error)
     }
-  }
-
-  const handleIdeaSummary = (summary: string) => {
-    setProjectDescription(summary)
-    setHasCompletedPromptOnboarding(true)
-    setIsPromptOnlyMode(false)
   }
 
   const handleUpdateContent = async (newContent: string) => {
@@ -872,11 +853,10 @@ export function ProjectWorkspace({
             documentType={activeDocument}
             projectId={project.id}
             projectName={projectName}
-            projectDescription={projectDescription}
+            projectDescription={project.description || ""}
             content={getDocumentContent(activeDocument)}
             onGenerateContent={handleGenerateContent}
             onUpdateDescription={handleUpdateDescription}
-            onIdeaSummary={handleIdeaSummary}
             onUpdateContent={handleUpdateContent}
             isGenerating={generatingDocuments[activeDocument]}
             credits={credits}
