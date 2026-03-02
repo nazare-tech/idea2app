@@ -64,6 +64,7 @@ export function PromptChatInterface({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const composerRef = useRef<HTMLDivElement>(null)
   const requestInFlight = useRef(false)
+  const showCenteredComposer = messages.length === 0 && !loading && !messagesLoading
 
   const dedupeMessages = useCallback((messageList: Message[]) => {
     if (!messageList.length) return []
@@ -129,10 +130,15 @@ export function PromptChatInterface({
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
+      if (!showCenteredComposer) {
+        textareaRef.current.style.height = ""
+        return
+      }
+
       textareaRef.current.style.height = "auto"
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 360)}px`
     }
-  }, [input])
+  }, [input, showCenteredComposer])
 
   // Load existing messages and start conversation if needed
   useEffect(() => {
@@ -444,7 +450,9 @@ export function PromptChatInterface({
     if (name.includes("DeepSeek")) return "DeepSeek"
     return name
   }
-  const showCenteredComposer = messages.length === 0 && !loading && !messagesLoading
+  const textareaClassName = showCenteredComposer
+    ? "w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[240px] max-h-[360px]"
+    : "w-full h-10 min-h-10 max-h-10 rounded-2xl border border-surface-strong bg-background px-4 py-2 pr-12 text-sm resize-none overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary"
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -510,20 +518,20 @@ export function PromptChatInterface({
                 )}
                 <div className="w-full max-w-3xl">
                   <div className="flex flex-col gap-4" ref={composerRef}>
-                    <div className="flex-1 relative">
-                      <textarea
-                        ref={textareaRef}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                <div className="flex-1 relative">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        onFocus={() => setIsFocused(true)}
-                        onBlur={() => setIsFocused(false)}
-                        placeholder="Type your business idea update or question..."
-                        className="w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[240px] max-h-[360px]"
-                        rows={5}
-                        disabled={loading}
-                      />
-                    </div>
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    placeholder="Type your business idea update or question..."
+                    className={textareaClassName}
+                    rows={showCenteredComposer ? 5 : 1}
+                    disabled={loading}
+                  />
+                </div>
                     <div className="flex justify-end">
                       <button
                         type="button"
@@ -587,7 +595,7 @@ export function PromptChatInterface({
                     {message.role === "user" ? (
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                     ) : (
-                      <div className="prose prose-sm max-w-none dark:prose-invert [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2 [&_li]:my-1">
+                      <div className="prose prose-sm max-w-none dark:prose-invert text-sm leading-relaxed [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2 [&_li]:my-1">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {message.content}
                         </ReactMarkdown>
@@ -645,19 +653,19 @@ export function PromptChatInterface({
               <div className="max-w-3xl mx-auto">
             <div className="flex items-center gap-4" ref={composerRef}>
               <div className="flex-1 relative">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  placeholder="Type your business idea update or question..."
-                  className="w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[240px] max-h-[360px]"
-                  rows={5}
-                  disabled={loading}
-                />
-              </div>
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    placeholder="Type your business idea update or question..."
+                    className={textareaClassName}
+                    rows={showCenteredComposer ? 5 : 1}
+                    disabled={loading}
+                  />
+                </div>
               <button
                 type="button"
                 onClick={handleSend}
