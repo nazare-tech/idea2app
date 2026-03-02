@@ -4,18 +4,18 @@
 Reduce repeated inline style patterns (colors, spacing, typography, and class bundles) found across the codebase into shared tokens, variants, and reusable primitives.
 
 ## 1) Palette / color token consolidation
-- [ ] Add canonical color tokens in `src/app/globals.css` (or existing design token layer).
-  - [ ] `--color-text-primary: #0a0a0a`
-  - [ ] `--color-text-secondary: #666666`
-  - [ ] `--color-text-muted: #999999`
-  - [ ] `--color-text-accent: #00d4ff`
-  - [ ] `--color-border-subtle: #e0e0e0`
-  - [ ] `--color-border-strong: #e5e5e5`
-  - [ ] `--color-accent-primary: rgba(0,212,255,0.15)`
-  - [ ] `--color-accent-primary-light: rgba(0,212,255,0.4)`
-  - [ ] `--color-surface-soft: rgba(255,255,255,0.03)`
-  - [ ] `--color-surface-mid: rgba(255,255,255,0.06)`
-  - [ ] `--color-surface-strong: rgba(255,255,255,0.08)`
+- [x] Add canonical color tokens in `src/app/globals.css` (or existing design token layer).
+  - [x] `--color-text-primary: #0a0a0a`
+  - [x] `--color-text-secondary: #666666`
+  - [x] `--color-text-muted: #999999`
+  - [x] `--color-text-accent: #00d4ff`
+  - [x] `--color-border-subtle: #e0e0e0`
+  - [x] `--color-border-strong: #e5e5e5`
+  - [x] `--color-accent-primary: rgba(0,212,255,0.15)`
+  - [x] `--color-accent-primary-light: rgba(0,212,255,0.4)`
+  - [x] `--color-surface-soft: rgba(255,255,255,0.03)`
+  - [x] `--color-surface-mid: rgba(255,255,255,0.06)`
+  - [x] `--color-surface-strong: rgba(255,255,255,0.08)`
 - [ ] Migrate repeated hex/rgba usages in these files to tokens:
   - `src/app/page.tsx`
   - `src/app/(dashboard)/settings/page.tsx`
@@ -33,13 +33,13 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
 - [ ] Keep rare error/success accent colors local unless reused elsewhere (`ff3b30`, `f472b6`, `ff6b8a`, etc. are currently lower-duplication).
 
 ## 2) Typography token cleanup
-- [ ] Centralize repeated text utility tokens through global classes or shared component props:
-  - [ ] `text-sm` + `text-muted-foreground`
-  - [ ] `font-semibold`
-  - [ ] `font-medium`
-  - [ ] `text-xs`
-  - [ ] `tracking-tight`
-  - [ ] `font-mono`
+- [x] Centralize repeated text utility tokens through global classes or shared component props:
+  - [x] `text-sm` + `text-muted-foreground`
+  - [x] `font-semibold`
+  - [x] `font-medium`
+  - [x] `text-xs`
+  - [x] `tracking-tight`
+  - [x] `font-mono`
 - [ ] Replace hard-coded font declarations in generated code paths:
   - [ ] `font-weight: 600` in `src/app/api/generate-pdf/route.ts` and `src/app/globals.css`
   - [ ] `line-height`, `font-weight: 700`, and related one-off declarations where semantically similar.
@@ -48,15 +48,15 @@ Reduce repeated inline style patterns (colors, spacing, typography, and class bu
   - [ ] `text-sm font-semibold uppercase tracking-[0.14em] text-primary` (used on multiple marketing section labels)
 
 ## 3) Spacing/padding pattern consolidation
-- [ ] Create reusable spacing variants for the most repeated utility groupings.
-  - [ ] `px-4`
-  - [ ] `p-4`
-  - [ ] `px-3`
-  - [ ] `px-8`
-  - [ ] `py-2`
-  - [ ] `py-3`
-  - [ ] `py-1.5`
-  - [ ] `px-6`
+- [x] Create reusable spacing variants for the most repeated utility groupings.
+  - [x] `px-4`
+  - [x] `p-4`
+  - [x] `px-3`
+  - [x] `px-8`
+  - [x] `py-2`
+  - [x] `py-3`
+  - [x] `py-1.5`
+  - [x] `px-6`
 - [ ] Replace recurring full class bundles with semantic primitives/components in:
   - [ ] `src/app/(auth)/forgot-password/page.tsx`
   - [ ] `src/app/(auth)/login/page.tsx`
