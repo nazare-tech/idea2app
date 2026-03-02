@@ -59,7 +59,7 @@ function MOCKUP_PROMPT(mvpPlan: string, projectName: string): string {
     "│                        HOMEPAGE                              │",
     "├─────────────────────────────────────────────────────────────┤",
     "│  ┌──────────────────────────────────────────────────────┐  │",
-    "│  │  Logo                    [Login] [Sign Up]            │  │",
+    "│  │  Logo                    [Sign in] [Sign up]            │  │",
     "│  └──────────────────────────────────────────────────────┘  │",
     "│                                                              │",
     "│  ┌──────────────────────────────────────────────────────┐  │",
@@ -193,7 +193,7 @@ export async function POST(request: Request) {
     }
 
     // Store the mockup in database
-    await supabase.from("mockups").insert({
+    await supabase.from("mockups" as any).insert({
       project_id: projectId,
       content,
       model_used: selectedModel,
