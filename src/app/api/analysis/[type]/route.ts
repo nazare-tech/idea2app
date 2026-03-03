@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { callN8NWebhook } from "@/lib/n8n"
+import { runCompetitiveAnalysis, runPRD, runMVPPlan, runTechSpec } from "@/lib/analysis-pipelines"
 import { callOpenRouterFallback } from "@/lib/openrouter"
 import { CREDIT_COSTS, type AnalysisType } from "@/lib/utils"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 
-export const maxDuration = 300 // 5 min — N8N webhook can be slow; OpenRouter fallback adds another 60-90s
+export const maxDuration = 300 // 5 min — competitive analysis pipeline (Perplexity + Tavily + synthesis) can take up to ~70s
 
 interface AnalysisParams {
   params: Promise<{ type: string }>
@@ -18,7 +18,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
   let errorMessage: string | undefined
   let creditsConsumed = 0
   let modelUsed: string | undefined
-  let aiSource: "openrouter" | "anthropic" | "n8n" | undefined
+  let aiSource: "openrouter" | "anthropic" | "n8n" | "inhouse" | undefined
   let userId: string | undefined
   let projectId: string | undefined
   let analysisType: string | undefined
@@ -102,27 +102,25 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
     creditsConsumed = creditCost
 
-    // Try N8N webhook first, then fallback to OpenRouter
+    // Route to the appropriate in-house pipeline
     let result: { content: string; source: string; model: string }
 
-    try {
-      result = await callN8NWebhook(type, {
-        idea,
-        name,
-        projectId,
-        // Pass PRD for MVP plan and tech-spec generation
-        prd: (type === "mvp-plan" || type === "tech-spec") ? prd : undefined,
-        // Pass competitive analysis for PRD generation
-        competitiveAnalysis: type === "prd" ? competitiveAnalysis : undefined,
-      })
-    } catch {
-      console.log(`N8N webhook failed for ${type}, using OpenRouter fallback`)
+    if (type === "competitive-analysis") {
+      result = await runCompetitiveAnalysis({ idea, name, model })
+    } else if (type === "prd") {
+      result = await runPRD({ idea, name, competitiveAnalysis, model })
+    } else if (type === "mvp-plan") {
+      result = await runMVPPlan({ idea, name, prd, model })
+    } else if (type === "tech-spec") {
+      result = await runTechSpec({ idea, name, prd, model })
+    } else {
+      // gap-analysis still uses OpenRouter fallback
       result = await callOpenRouterFallback(type, idea, name, model)
     }
 
     // Track AI model and source
     modelUsed = result.model
-    aiSource = result.source as "openrouter" | "n8n"
+    aiSource = result.source as "openrouter" | "inhouse"
 
     const metadata = {
       source: result.source,

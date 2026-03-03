@@ -87,7 +87,8 @@
 | **Anthropic Claude** | 0.71.2 | AI SDK for app generation |
 | **OpenRouter** | 6.16.0 | API wrapper for AI analysis |
 | **Stripe** | 20.2.0 | Payment processing and subscriptions |
-| **n8n** | - | Workflow automation (webhook integration) |
+| **Perplexity** | - | AI-powered competitor search (sonar-pro model, OpenAI-compatible API) |
+| **Tavily** | - | Web content extraction from competitor URLs |
 
 ### Development Tools
 
@@ -136,7 +137,8 @@
 │  - Anthropic Claude API             │
 │  - OpenRouter API                   │
 │  - Stripe API                       │
-│  - n8n Webhooks                     │
+│  - Perplexity API (competitor search)│
+│  - Tavily API (URL extraction)      │
 └─────────────────────────────────────┘
 ```
 
@@ -158,11 +160,11 @@
 3. **Analysis Flow**:
    - Client requests analysis (competitive, PRD, MVP plan, or tech spec) from the workspace `ContentEditor`
    - Server checks credits, deducts if available
-   - Server calls N8N webhook first, forwarding contextual data:
-     - PRD generation receives the latest `competitiveAnalysis` content
-     - MVP plan generation receives the latest `prd` content
-     - Tech spec generation receives the latest `prd` content
-   - Falls back to OpenRouter if N8N is unconfigured or fails
+   - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`):
+     - **Competitive Analysis**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail.
+     - **PRD**: OpenRouter LLM call with detailed system prompt, receives `competitiveAnalysis` as context
+     - **MVP Plan**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
+     - **Tech Spec**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
    - Result saved to the appropriate table (`analyses`, `prds`, `mvp_plans`, or `tech_specs`)
    - Page reloads to surface the new version
 
@@ -206,7 +208,7 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 2. **Server Components by Default**: Pages default to server components; interactive components explicitly marked `"use client"`
 3. **Middleware-based Auth**: Global authentication protection at the middleware level
 4. **Credit System with Database Functions**: PostgreSQL stored procedures for atomic credit operations
-5. **Multi-Source AI with Fallback**: Primary webhook (N8N) with `prd` / `competitiveAnalysis` context forwarded; fallback to OpenRouter
+5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter); PRD/MVP/Tech Spec use direct OpenRouter calls with detailed prompts
 6. **TypeScript-First**: Strict typing throughout, auto-generated database types
 7. **Component Composition**: Radix UI primitives + CVA for variants
 8. **Optimistic UI Updates**: Immediate feedback with graceful error handling
@@ -287,7 +289,7 @@ src/
 │   │   ├── chat/route.ts         # POST chat messages (general chat)
 │   │   ├── prompt-chat/route.ts  # GET/POST Prompt tab AI chat with follow-up questions
 │   │   ├── document-edit/route.ts     # POST inline AI document editing
-│   │   ├── analysis/[type]/route.ts   # POST run analysis (N8N → OpenRouter fallback)
+│   │   ├── analysis/[type]/route.ts   # POST run analysis (in-house pipelines)
 │   │   ├── analyses/[id]/route.ts     # PATCH update analysis content
 │   │   ├── prds/[id]/route.ts         # PATCH update PRD content
 │   │   ├── mvp-plans/[id]/route.ts    # PATCH update MVP plan content
@@ -333,8 +335,10 @@ src/
 │   │   ├── server.ts             # Server-side client
 │   │   └── middleware.ts         # Auth middleware logic
 │   ├── stripe.ts                 # Stripe singleton
-│   ├── openrouter.ts             # OpenRouter AI API
-│   ├── n8n.ts                    # N8N webhook integration (with prd/competitiveAnalysis context)
+│   ├── openrouter.ts             # OpenRouter AI API (chat, gap-analysis fallback)
+│   ├── analysis-pipelines.ts     # In-house analysis orchestration (competitive, PRD, MVP, tech spec)
+│   ├── perplexity.ts             # Perplexity API client (competitor search)
+│   ├── tavily.ts                 # Tavily API client (URL content extraction)
 │   ├── pdf-utils.ts              # PDF export: renders Markdown → HTML → canvas → jsPDF
 │   ├── prompt-chat-config.ts     # System prompts and AI models for Prompt chat
 │   └── utils.ts                  # Utility functions & CREDIT_COSTS
@@ -653,13 +657,11 @@ ANTHROPIC_API_KEY=sk-ant-xxx...
 STRIPE_SECRET_KEY=sk_secret_xxx...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxx...
 
-# N8N (optional - fallback enabled)
-N8N_WEBHOOK_BASE_URL=https://n8n.example.com
-N8N_COMPETITIVE_ANALYSIS_WEBHOOK=/webhook/competitive
-N8N_GAP_ANALYSIS_WEBHOOK=/webhook/gap
-N8N_PRD_WEBHOOK=/webhook/prd
-N8N_MVP_WEBHOOK=/webhook/mvp
-N8N_TECH_SPEC_WEBHOOK=/webhook/techspec
+# Perplexity (competitor research in competitive analysis)
+PERPLEXITY_API_KEY=pplx-xxx...
+
+# Tavily (URL content extraction in competitive analysis)
+TAVILY_API_KEY=tvly-xxx...
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -868,12 +870,15 @@ docker run -p 3000:3000 idea2app
 ### Analysis
 - **POST /api/analysis/[type]**: Generate analysis
   - Types: `competitive-analysis`, `prd`, `mvp-plan`, `tech-spec`
-  - Body: `{ projectId, idea, name, competitiveAnalysis?, prd? }`
-    - `competitiveAnalysis` forwarded to N8N when generating PRDs
-    - `prd` forwarded to N8N when generating MVP plans and tech specs
+  - Body: `{ projectId, idea, name, competitiveAnalysis?, prd?, model? }`
+    - `competitiveAnalysis` passed to PRD pipeline as context
+    - `prd` passed to MVP plan and tech spec pipelines as context
   - Returns: `{ content, source, model, type }`
   - Cost: 5 credits (`competitive-analysis`) / 10 credits (`prd`, `mvp-plan`, `tech-spec`)
-  - Route `maxDuration`: 300s (N8N workflows can be slow)
+  - Route `maxDuration`: 300s
+  - Uses in-house pipelines (`src/lib/analysis-pipelines.ts`):
+    - Competitive: Perplexity → Tavily → OpenRouter synthesis (graceful degradation)
+    - PRD/MVP/Tech Spec: Direct OpenRouter calls with detailed system prompts
 
 - **POST /api/mockups/generate**: Generate ASCII art mockups (NEW)
   - Body: `{ projectId, mvpPlan, projectName, model? }`
@@ -1066,10 +1071,10 @@ export const CREDIT_COSTS = {
 - Check credit balance in `profiles` table
 - Review `credits_history` for transaction log
 
-**N8N Timeout Issues**
-- The analysis route has `maxDuration = 300s`; the N8N client uses a 250s `AbortSignal.timeout`
-- If N8N consistently times out, check the N8N workflow for long-running LLM calls
-- The system will auto-fallback to OpenRouter if the N8N request fails
+**Analysis Pipeline Issues**
+- Competitive analysis uses a 3-step pipeline: if Perplexity or Tavily fail, the pipeline degrades gracefully (logs warnings, continues with available data)
+- Check server logs for `[CompetitiveAnalysis]` prefixed messages to trace pipeline step failures
+- Ensure `PERPLEXITY_API_KEY` and `TAVILY_API_KEY` are set in environment for full competitive analysis quality
 
 **PDF Export Issues**
 - PDF export uses `html2canvas` which renders off-screen; ensure the page is not navigated away during generation
@@ -1087,7 +1092,7 @@ export const CREDIT_COSTS = {
 | [src/app/(dashboard)/projects/[id]/page.tsx](src/app/(dashboard)/projects/[id]/page.tsx) | Project page — fetches data server-side, passes to `ProjectWorkspace` |
 | [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details |
 | [src/app/api/prompt-chat/route.ts](src/app/api/prompt-chat/route.ts) | **NEW** — GET/POST Prompt tab AI chat with follow-up questions |
-| [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation with N8N → OpenRouter fallback |
+| [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation using in-house pipelines |
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Three-column workspace orchestrator |
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
@@ -1105,7 +1110,9 @@ export const CREDIT_COSTS = {
 | [src/app/api/mockups/[id]/route.ts](src/app/api/mockups/[id]/route.ts) | **NEW** — PATCH endpoint to update mockup content |
 | [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | PATCH endpoint to update tech spec content |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
-| [src/lib/n8n.ts](src/lib/n8n.ts) | N8N webhook client — forwards prd/competitiveAnalysis context |
+| [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (competitive, PRD, MVP, tech spec) |
+| [src/lib/perplexity.ts](src/lib/perplexity.ts) | Perplexity API client for competitor search |
+| [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export: Markdown → HTML → canvas → jsPDF |
 | [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | **NEW** — System prompts, question strategies, and AI models for Prompt chat |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
