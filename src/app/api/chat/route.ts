@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     const { data: userMessage, error: userMsgError } = await supabase
       .from("messages")
       .insert({
-        project_id: projectId,
+        project_id: projectId!,
         role: "user",
         content: message,
       })
@@ -158,7 +158,7 @@ export async function POST(request: Request) {
             const { data: assistantMessage, error: assistantMsgError } = await supabase
               .from("messages")
               .insert({
-                project_id: projectId,
+                project_id: projectId!,
                 role: "assistant",
                 content: assistantContent,
                 metadata: {
@@ -223,7 +223,7 @@ export async function POST(request: Request) {
     const { data: assistantMessage, error: assistantMsgError } = await supabase
       .from("messages")
       .insert({
-        project_id: projectId,
+        project_id: projectId!,
         role: "assistant",
         content: aiResult.content,
         metadata: {
