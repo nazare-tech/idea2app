@@ -181,7 +181,7 @@ export async function POST(request: Request) {
               await supabase
                 .from("projects")
                 .update({ status: "active", updated_at: new Date().toISOString() })
-                .eq("id", projectId)
+                .eq("id", projectId!)
             }
 
             sendEvent({

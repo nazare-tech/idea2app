@@ -374,7 +374,7 @@ export async function POST(request: Request) {
             const { data: assistantMessage, error: assistantMsgError } = await supabase
               .from("prompt_chat_messages")
               .insert({
-                project_id: projectId,
+                project_id: projectId!,
                 role: "assistant",
                 content: assistantContent,
                 metadata: {
@@ -398,7 +398,7 @@ export async function POST(request: Request) {
                   description: assistantContent,
                   updated_at: new Date().toISOString(),
                 })
-                .eq("id", projectId)
+                .eq("id", projectId!)
             }
 
             modelUsed = selectedModel
