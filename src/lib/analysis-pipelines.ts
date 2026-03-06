@@ -52,6 +52,34 @@ export interface StreamCallbacks {
   onToken?: (content: string) => void
 }
 
+// ─── Streaming Helper ────────────────────────────────────────────────
+
+async function consumeStream(
+  streamOrResp: import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk> | import("openai/resources/chat/completions").ChatCompletion,
+  onToken?: (token: string) => void
+): Promise<string> {
+  if (onToken && Symbol.asyncIterator in streamOrResp) {
+    let content = ""
+    try {
+      for await (const chunk of streamOrResp as import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk>) {
+        const token = chunk.choices?.[0]?.delta?.content ?? ""
+        if (token) {
+          content += token
+          onToken(token)
+        }
+      }
+    } catch (err) {
+      throw new Error(
+        `Stream interrupted: ${err instanceof Error ? err.message : String(err)}`
+      )
+    }
+    return content
+  } else {
+    const resp = streamOrResp as import("openai/resources/chat/completions").ChatCompletion
+    return resp.choices[0]?.message?.content ?? ""
+  }
+}
+
 // ─── Competitive Analysis Pipeline ──────────────────────────────────
 
 export async function runCompetitiveAnalysis(
@@ -123,7 +151,7 @@ export async function runCompetitiveAnalysis(
   // Step 4: OpenRouter synthesis — produce the final report
   console.log("[CompetitiveAnalysis] Step 3: Synthesizing with OpenRouter")
 
-  const streamOrResp = await openrouter.chat.completions.create({
+  const completion = await openrouter.chat.completions.create({
     model,
     messages: [
       { role: "system", content: COMPETITIVE_ANALYSIS_SYSTEM_PROMPT },
@@ -141,20 +169,7 @@ export async function runCompetitiveAnalysis(
     stream: callbacks?.onToken ? true : false,
   })
 
-  let content: string
-  if (callbacks?.onToken && Symbol.asyncIterator in streamOrResp) {
-    content = ""
-    for await (const chunk of streamOrResp as AsyncIterable<import("openai/resources/chat/completions").ChatCompletionChunk>) {
-      const token = chunk.choices?.[0]?.delta?.content ?? ""
-      if (token) {
-        content += token
-        callbacks.onToken(token)
-      }
-    }
-  } else {
-    const resp = streamOrResp as import("openai/resources/chat/completions").ChatCompletion
-    content = resp.choices[0]?.message?.content ?? ""
-  }
+  const content = await consumeStream(completion, callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter synthesis")
   callbacks?.onStage?.("Finalizing analysis...", 4, 4)
@@ -166,14 +181,13 @@ export async function runCompetitiveAnalysis(
 
 export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
-  callbacks?.onStage?.("Analyzing your idea...", 1, 3)
 
   const competitiveContext = input.competitiveAnalysis
     ? `\n\nCompetitive and Gap analysis: ${input.competitiveAnalysis}`
     : ""
 
-  callbacks?.onStage?.("Writing product requirements...", 2, 3)
-  const streamOrResp = await openrouter.chat.completions.create({
+  callbacks?.onStage?.("Writing product requirements...", 1, 2)
+  const completion = await openrouter.chat.completions.create({
     model,
     messages: [
       { role: "system", content: PRD_SYSTEM_PROMPT },
@@ -187,20 +201,10 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
     stream: callbacks?.onToken ? true : false,
   })
 
-  let content: string
-  if (callbacks?.onToken && Symbol.asyncIterator in streamOrResp) {
-    content = ""
-    for await (const chunk of streamOrResp as AsyncIterable<import("openai/resources/chat/completions").ChatCompletionChunk>) {
-      const token = chunk.choices?.[0]?.delta?.content ?? ""
-      if (token) { content += token; callbacks.onToken(token) }
-    }
-  } else {
-    const resp = streamOrResp as import("openai/resources/chat/completions").ChatCompletion
-    content = resp.choices[0]?.message?.content ?? ""
-  }
+  const content = await consumeStream(completion, callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for PRD")
-  callbacks?.onStage?.("Finalizing PRD...", 3, 3)
+  callbacks?.onStage?.("Finalizing PRD...", 2, 2)
 
   return { content, source: "inhouse", model }
 }
@@ -212,12 +216,11 @@ export async function runMVPPlan(
   callbacks?: StreamCallbacks
 ): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
-  callbacks?.onStage?.("Reviewing PRD requirements...", 1, 3)
 
   const prdContext = input.prd ? `\nPRD: ${input.prd}` : ""
 
-  callbacks?.onStage?.("Writing MVP roadmap...", 2, 3)
-  const streamOrResp = await openrouter.chat.completions.create({
+  callbacks?.onStage?.("Writing MVP roadmap...", 1, 2)
+  const completion = await openrouter.chat.completions.create({
     model,
     messages: [
       { role: "system", content: MVP_PLAN_SYSTEM_PROMPT },
@@ -228,20 +231,10 @@ export async function runMVPPlan(
     stream: callbacks?.onToken ? true : false,
   })
 
-  let content: string
-  if (callbacks?.onToken && Symbol.asyncIterator in streamOrResp) {
-    content = ""
-    for await (const chunk of streamOrResp as AsyncIterable<import("openai/resources/chat/completions").ChatCompletionChunk>) {
-      const token = chunk.choices?.[0]?.delta?.content ?? ""
-      if (token) { content += token; callbacks.onToken(token) }
-    }
-  } else {
-    const resp = streamOrResp as import("openai/resources/chat/completions").ChatCompletion
-    content = resp.choices[0]?.message?.content ?? ""
-  }
+  const content = await consumeStream(completion, callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for MVP Plan")
-  callbacks?.onStage?.("Finalizing MVP plan...", 3, 3)
+  callbacks?.onStage?.("Finalizing MVP plan...", 2, 2)
 
   return { content, source: "inhouse", model }
 }
@@ -253,10 +246,9 @@ export async function runTechSpec(
   callbacks?: StreamCallbacks
 ): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
-  callbacks?.onStage?.("Reviewing product requirements...", 1, 3)
 
-  callbacks?.onStage?.("Writing technical specifications...", 2, 3)
-  const streamOrResp = await openrouter.chat.completions.create({
+  callbacks?.onStage?.("Writing technical specifications...", 1, 2)
+  const completion = await openrouter.chat.completions.create({
     model,
     messages: [
       { role: "system", content: TECH_SPEC_SYSTEM_PROMPT },
@@ -267,20 +259,10 @@ export async function runTechSpec(
     stream: callbacks?.onToken ? true : false,
   })
 
-  let content: string
-  if (callbacks?.onToken && Symbol.asyncIterator in streamOrResp) {
-    content = ""
-    for await (const chunk of streamOrResp as AsyncIterable<import("openai/resources/chat/completions").ChatCompletionChunk>) {
-      const token = chunk.choices?.[0]?.delta?.content ?? ""
-      if (token) { content += token; callbacks.onToken(token) }
-    }
-  } else {
-    const resp = streamOrResp as import("openai/resources/chat/completions").ChatCompletion
-    content = resp.choices[0]?.message?.content ?? ""
-  }
+  const content = await consumeStream(completion, callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for Tech Spec")
-  callbacks?.onStage?.("Finalizing tech spec...", 3, 3)
+  callbacks?.onStage?.("Finalizing tech spec...", 2, 2)
 
   return { content, source: "inhouse", model }
 }
@@ -314,4 +296,3 @@ Why they compete: ${comp.whyCompetes}${urlContent}`
     })
     .join("\n\n---\n\n")
 }
-
