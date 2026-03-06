@@ -30,6 +30,8 @@ export async function POST(request: Request, { params }: AnalysisParams) {
   let projectId: string | undefined
   let analysisType: string | undefined
 
+  let isStreaming = false
+
   try {
     const { type } = await params
     analysisType = type
@@ -111,6 +113,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
     // ─── Streaming path ────────────────────────────────────────────────
     if (streamRequested === true) {
+      isStreaming = true
       const readableStream = new ReadableStream({
         async start(controller) {
           const send = createStreamSender(controller)
@@ -160,12 +163,42 @@ export async function POST(request: Request, { params }: AnalysisParams) {
             modelUsed = streamResult.model
             aiSource = streamResult.source as "openrouter" | "inhouse"
             send({ type: "done", model: streamResult.model })
+            // Track metrics for successful streaming request
+            trackAPIMetrics({
+              endpoint: `/api/analysis/${type}`,
+              method: "POST",
+              featureType: "analysis",
+              userId: userId!,
+              projectId: projectId ?? null,
+              statusCode: 200,
+              responseTimeMs: timer.getElapsedMs(),
+              creditsConsumed,
+              modelUsed: streamResult.model,
+              aiSource: streamResult.source as "openrouter" | "inhouse",
+              errorType: undefined,
+              errorMessage: undefined,
+            })
           } catch (err) {
             const msg = err instanceof Error ? err.message : "Generation failed"
             send({ type: "error", message: msg })
             errorType = "generation_error"
             errorMessage = msg
             statusCode = 500
+            // Track metrics for failed streaming request
+            trackAPIMetrics({
+              endpoint: `/api/analysis/${type}`,
+              method: "POST",
+              featureType: "analysis",
+              userId: userId!,
+              projectId: projectId ?? null,
+              statusCode: 500,
+              responseTimeMs: timer.getElapsedMs(),
+              creditsConsumed,
+              modelUsed: undefined,
+              aiSource: undefined,
+              errorType: "generation_error",
+              errorMessage: msg,
+            })
           } finally {
             controller.close()
           }
@@ -254,7 +287,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     )
   } finally {
     // Track metrics (fire and forget - won't block response)
-    if (userId && analysisType) {
+    if (!isStreaming && userId && analysisType) {
       trackAPIMetrics({
         endpoint: `/api/analysis/${analysisType}`,
         method: "POST",
