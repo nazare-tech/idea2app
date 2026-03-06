@@ -102,14 +102,16 @@ export async function POST(request: Request) {
           const send = createStreamSender(controller)
 
           try {
-            send({ type: "stage", message: "Analyzing MVP plan...", step: 1, totalSteps: 3 })
-
             const openrouterClient = new OpenAI({
               baseURL: "https://openrouter.ai/api/v1",
               apiKey: process.env.OPENROUTER_API_KEY || "",
             })
 
-            send({ type: "stage", message: "Generating UI mockups...", step: 2, totalSteps: 3 })
+            if (!process.env.OPENROUTER_API_KEY) {
+              throw new Error("OpenRouter API key not configured")
+            }
+
+            send({ type: "stage", message: "Generating UI mockups...", step: 1, totalSteps: 2 })
 
             const streamResp = await openrouterClient.chat.completions.create({
               model: selectedModel,
@@ -129,7 +131,7 @@ export async function POST(request: Request) {
 
             if (!generatedContent) throw new Error("No content returned from OpenRouter")
 
-            send({ type: "stage", message: "Saving mockups...", step: 3, totalSteps: 3 })
+            send({ type: "stage", message: "Saving mockups...", step: 2, totalSteps: 2 })
             modelUsed = selectedModel
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
