@@ -55,13 +55,13 @@ export interface StreamCallbacks {
 // ─── Streaming Helper ────────────────────────────────────────────────
 
 async function consumeStream(
-  streamOrResp: import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk> | import("openai/resources/chat/completions").ChatCompletion,
+  apiResponse: import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk> | import("openai/resources/chat/completions").ChatCompletion,
   onToken?: (token: string) => void
 ): Promise<string> {
-  if (onToken && Symbol.asyncIterator in streamOrResp) {
+  if (onToken && Symbol.asyncIterator in apiResponse) {
     let content = ""
     try {
-      for await (const chunk of streamOrResp as import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk>) {
+      for await (const chunk of apiResponse as import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk>) {
         const token = chunk.choices?.[0]?.delta?.content ?? ""
         if (token) {
           content += token
@@ -75,7 +75,7 @@ async function consumeStream(
     }
     return content
   } else {
-    const resp = streamOrResp as import("openai/resources/chat/completions").ChatCompletion
+    const resp = apiResponse as import("openai/resources/chat/completions").ChatCompletion
     return resp.choices[0]?.message?.content ?? ""
   }
 }
