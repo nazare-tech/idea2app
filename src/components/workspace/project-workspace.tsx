@@ -6,6 +6,8 @@ import Link from "next/link"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
+import { parseDocumentStream } from "@/lib/parse-document-stream"
+import type { StreamStage } from "@/lib/parse-document-stream"
 
 
 interface Project {
@@ -156,6 +158,17 @@ export function ProjectWorkspace({
   // Local content overrides for immediate UI updates after inline edits
   // Key format: `${documentType}-${recordId}` -> updated content
   const [localContentOverrides, setLocalContentOverrides] = useState<Record<string, string>>({})
+
+  // Streaming state for live NDJSON document generation
+  const [streamStages, setStreamStages] = useState<StreamStage[]>([])
+  const [streamCurrentStep, setStreamCurrentStep] = useState(0)
+  const [streamContent, setStreamContent] = useState("")
+
+  const clearStreamState = useCallback(() => {
+    setStreamStages([])
+    setStreamCurrentStep(0)
+    setStreamContent("")
+  }, [])
 
   const getGenerationSnapshot = useCallback(async (): Promise<WorkspaceGenerationCounts | null> => {
     try {
@@ -667,6 +680,7 @@ export function ProjectWorkspace({
             idea: project.description,
             name: projectName,
             ...(model && { model }),
+            ...(generatingType !== "deploy" && { stream: true }),
             ...(generatingType === "deploy" && { appType: "dynamic" }),
             ...(generatingType === "prd" && competitiveAnalysis?.content && {
               competitiveAnalysis: competitiveAnalysis.content
@@ -698,7 +712,33 @@ export function ProjectWorkspace({
         throw new Error(errorMsg)
       }
 
-      didGenerate = true
+      const contentType = response.headers.get("Content-Type") ?? ""
+      if (contentType.includes("application/x-ndjson")) {
+        // Streaming path: process NDJSON events live
+        await parseDocumentStream(response, {
+          onStage: (stage) => {
+            setStreamStages(prev => {
+              const existingIdx = prev.findIndex(s => s.step === stage.step)
+              if (existingIdx >= 0) {
+                const next = [...prev]
+                next[existingIdx] = stage
+                return next
+              }
+              return [...prev, stage]
+            })
+            setStreamCurrentStep(stage.step)
+          },
+          onToken: (content) => setStreamContent(prev => prev + content),
+          onDone: () => { didGenerate = true },
+          onError: (message) => {
+            console.error("[Stream] Document generation error:", message)
+            alert(message)
+          },
+        })
+      } else {
+        // Non-streaming JSON path (deploy or fallback)
+        didGenerate = true
+      }
     } catch (error) {
       console.error("Error generating content:", error)
       if (error instanceof Error && error.name === "AbortError") {
@@ -710,6 +750,7 @@ export function ProjectWorkspace({
       // Clear generation state once request finishes
       setGeneratingDocuments(prev => ({ ...prev, [generatingType]: false }))
       saveGeneratingState(generatingType, false)
+      clearStreamState()
     }
 
     if (!didGenerate) return
@@ -867,6 +908,9 @@ export function ProjectWorkspace({
             onUpdateDescription={handleUpdateDescription}
             onUpdateContent={handleUpdateContent}
             isGenerating={generatingDocuments[activeDocument]}
+            streamStages={streamStages}
+            streamCurrentStep={streamCurrentStep}
+            streamContent={streamContent}
             credits={credits}
             prerequisiteValidation={checkPrerequisites(activeDocument)}
             currentVersion={selectedVersionIndex[activeDocument] || 0}
