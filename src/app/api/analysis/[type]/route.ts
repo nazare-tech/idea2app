@@ -4,6 +4,7 @@ import { runCompetitiveAnalysis, runPRD, runMVPPlan, runTechSpec } from "@/lib/a
 import { callOpenRouterFallback } from "@/lib/openrouter"
 import { CREDIT_COSTS, type AnalysisType } from "@/lib/utils"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
+import { linkifyBareUrls } from "@/lib/markdown-links"
 
 export const maxDuration = 300 // 5 min — competitive analysis pipeline (Perplexity + Tavily + synthesis) can take up to ~70s
 
@@ -122,6 +123,8 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     modelUsed = result.model
     aiSource = result.source as "openrouter" | "inhouse"
 
+    const contentWithLinks = linkifyBareUrls(result.content)
+
     const metadata = {
       source: result.source,
       model: result.model,
@@ -132,23 +135,23 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     if (type === "prd") {
       await supabase.from("prds").insert({
         project_id: projectId,
-        content: result.content,
+        content: contentWithLinks,
       })
     } else if (type === "mvp-plan") {
       await supabase.from("mvp_plans").insert({
         project_id: projectId,
-        content: result.content,
+        content: contentWithLinks,
       })
     } else if (type === "tech-spec") {
       await supabase.from("tech_specs").insert({
         project_id: projectId,
-        content: result.content,
+        content: contentWithLinks,
       })
     } else {
       await supabase.from("analyses").insert({
         project_id: projectId,
         type,
-        content: result.content,
+        content: contentWithLinks,
         metadata,
       })
     }
@@ -162,7 +165,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     console.log(`[Analysis] type=${type} project=${projectId} source=${result.source} model=${result.model}`)
 
     return NextResponse.json({
-      content: result.content,
+      content: contentWithLinks,
       source: result.source,
       model: result.model,
       type,
