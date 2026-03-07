@@ -873,6 +873,7 @@ export function ProjectWorkspace({
   return (
     <div className="flex flex-col h-screen">
       <Header
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         user={user as any}
         rightContent={
           activeDocument === "prompt" ? (

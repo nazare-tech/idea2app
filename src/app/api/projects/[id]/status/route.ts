@@ -74,8 +74,9 @@ export async function GET(
         .from("mvp_plans")
         .select("id", { count: "exact", head: true })
         .eq("project_id", id),
-      supabase
-        .from("mockups" as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("mockups")
         .select("id", { count: "exact", head: true })
         .eq("project_id", id),
       supabase

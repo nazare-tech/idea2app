@@ -26,8 +26,9 @@ export async function PATCH(request: Request, { params }: MockupParams) {
     }
 
     // Verify ownership and update
-    const { data: mockup, error } = await supabase
-      .from("mockups" as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: mockup, error } = await (supabase as any)
+      .from("mockups")
       .update({
         content,
         updated_at: new Date().toISOString(),
@@ -52,9 +53,10 @@ export async function PATCH(request: Request, { params }: MockupParams) {
 }
 
 // Helper function to verify project ownership
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getUserProjectId(supabase: any, userId: string, mockupId: string): Promise<string | null> {
   const { data: mockup } = await supabase
-    .from("mockups" as any)
+    .from("mockups")
     .select("project_id")
     .eq("id", mockupId)
     .single()
