@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { Lightbulb, Check } from "lucide-react"
+import { Lightbulb, Check, Eye, EyeOff } from "lucide-react"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
 function SignupScreen() {
@@ -281,22 +281,38 @@ function FormField({
   disabled: boolean
   minLength?: number
 }) {
+  const [showPassword, setShowPassword] = useState(false)
+  const isPassword = type === "password"
+
   return (
     <div className="ui-stack-2">
       <Label htmlFor={id} className={uiStylePresets.authFieldLabel}>
         {label}
       </Label>
-      <Input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required
-        disabled={disabled}
-        minLength={minLength}
-        className={uiStylePresets.authFieldInput}
-      />
+      <div className={isPassword ? "relative" : undefined}>
+        <Input
+          id={id}
+          type={isPassword ? (showPassword ? "text" : "password") : type}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required
+          disabled={disabled}
+          minLength={minLength}
+          className={uiStylePresets.authFieldInput}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
