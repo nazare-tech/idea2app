@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { ArrowRight, Lightbulb } from "lucide-react"
+import { Lightbulb } from "lucide-react"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
 function LoginForm() {
@@ -118,7 +118,7 @@ function LoginForm() {
                         disabled={loading}
                         className={uiStylePresets.authSocialButton}
                       >
-                        <ArrowRight className="ui-icon-16" />
+                        <img src="/google-logo.svg" alt="Google" className="h-4 w-4" />
                         Continue with Google
                       </button>
 
