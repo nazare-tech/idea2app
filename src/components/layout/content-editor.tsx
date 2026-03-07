@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DocumentModelSelector } from "@/components/ui/document-model-selector"
 import { DEFAULT_DOCUMENT_MODEL } from "@/lib/prompt-chat-config"
+import { GenerationStreamPanel } from "@/components/workspace/generation-stream-panel"
+import type { StreamStage } from "@/lib/parse-document-stream"
 
 interface ContentEditorProps {
   documentType: DocumentType
@@ -42,6 +44,9 @@ interface ContentEditorProps {
   onUpdateDescription: (description: string) => Promise<void>
   onUpdateContent?: (newContent: string) => Promise<void>
   isGenerating: boolean
+  streamStages?: StreamStage[]
+  streamCurrentStep?: number
+  streamContent?: string
   credits: number
   prerequisiteValidation?: { canGenerate: boolean; reason?: string }
   currentVersion?: number
@@ -117,6 +122,9 @@ export function ContentEditor({
   currentVersion = 0,
   totalVersions = 0,
   onVersionChange,
+  streamStages,
+  streamCurrentStep,
+  streamContent,
 }: ContentEditorProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -450,18 +458,30 @@ export function ContentEditor({
                         <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
                       </div>
                     </div>
+                    {/* isGenerating is the sole render gate — streamStages is intentionally
+                        ignored when isGenerating is false, preventing stale stage UI */}
                     {isGenerating ? (
-                      <div className="flex flex-col items-center justify-center py-24">
-                        <span className="loader"></span>
-                        <div className="mt-6 text-center">
-                          <p className="text-sm ui-font-medium text-foreground mb-2">
-                            Generating {config.title}...
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            This may take a moment
-                          </p>
+                      streamStages && streamStages.length > 0 ? (
+                        <GenerationStreamPanel
+                          documentTitle={config.title}
+                          stages={streamStages}
+                          currentStep={streamCurrentStep ?? 0}
+                          streamContent={streamContent ?? ""}
+                          projectId={projectId}
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-24">
+                          <span className="loader"></span>
+                          <div className="mt-6 text-center">
+                            <p className="text-sm ui-font-medium text-foreground mb-2">
+                              Generating {config.title}...
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              This may take a moment
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      )
                     ) : content ? (
                       documentType === "mockups" ? (
                         <MockupRenderer content={content} />

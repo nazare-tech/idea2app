@@ -44,6 +44,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     supabase.from("analyses").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     supabase.from("prds").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     supabase.from("mvp_plans").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     supabase.from("mockups" as any).select("*").eq("project_id", id).order("created_at", { ascending: false }),
     supabase.from("tech_specs").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     supabase.from("deployments").select("*").eq("project_id", id).order("created_at", { ascending: false }),
@@ -56,6 +57,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       analyses={analyses || []}
       prds={prds || []}
       mvpPlans={mvpPlans || []}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockups={(mockups as any) || []}
       techSpecs={techSpecs || []}
       deployments={deployments || []}

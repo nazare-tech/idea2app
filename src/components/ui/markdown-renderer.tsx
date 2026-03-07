@@ -183,9 +183,11 @@ function MermaidDiagram({ code }: { code: string }) {
   useEffect(() => {
     if (isExpanded) {
       document.body.style.overflow = 'hidden'
-      // Reset zoom and pan when opening
+      // Reset zoom and pan when opening (intentional state reset on modal open)
+      /* eslint-disable react-hooks/set-state-in-effect */
       setZoom(100)
       setPan({ x: 0, y: 0 })
+      /* eslint-enable react-hooks/set-state-in-effect */
     } else {
       document.body.style.overflow = ''
     }

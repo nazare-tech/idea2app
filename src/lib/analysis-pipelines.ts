@@ -47,12 +47,47 @@ export interface TechSpecInput {
   model?: string
 }
 
+export interface StreamCallbacks {
+  onStage?: (message: string, step: number, totalSteps: number) => void
+  onToken?: (content: string) => void
+}
+
+// ─── Streaming Helper ────────────────────────────────────────────────
+
+async function consumeStream(
+  apiResponse: import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk> | import("openai/resources/chat/completions").ChatCompletion,
+  onToken?: (token: string) => void
+): Promise<string> {
+  if (onToken && Symbol.asyncIterator in apiResponse) {
+    let content = ""
+    try {
+      for await (const chunk of apiResponse as import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk>) {
+        const token = chunk.choices?.[0]?.delta?.content ?? ""
+        if (token) {
+          content += token
+          onToken(token)
+        }
+      }
+    } catch (err) {
+      throw new Error(
+        `Stream interrupted: ${err instanceof Error ? err.message : String(err)}`
+      )
+    }
+    return content
+  } else {
+    const resp = apiResponse as import("openai/resources/chat/completions").ChatCompletion
+    return resp.choices[0]?.message?.content ?? ""
+  }
+}
+
 // ─── Competitive Analysis Pipeline ──────────────────────────────────
 
 export async function runCompetitiveAnalysis(
-  input: CompetitiveAnalysisInput
+  input: CompetitiveAnalysisInput,
+  callbacks?: StreamCallbacks
 ): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
+  callbacks?.onStage?.("Identifying top competitors...", 1, 4)
 
   let perplexityData: {
     competitors: Array<{
@@ -85,6 +120,7 @@ export async function runCompetitiveAnalysis(
       err
     )
   }
+  callbacks?.onStage?.("Extracting competitor details...", 2, 4)
 
   // Step 2: Tavily — extract factual info from competitor URLs
   if (perplexityData.competitors.length > 0) {
@@ -104,6 +140,7 @@ export async function runCompetitiveAnalysis(
       )
     }
   }
+  callbacks?.onStage?.("Writing competitive analysis...", 3, 4)
 
   // Step 3: Build context from gathered data
   const competitorContext = buildCompetitorContext(
@@ -114,7 +151,7 @@ export async function runCompetitiveAnalysis(
   // Step 4: OpenRouter synthesis — produce the final report
   console.log("[CompetitiveAnalysis] Step 3: Synthesizing with OpenRouter")
 
-  const response = await openrouter.chat.completions.create({
+  const completion = await openrouter.chat.completions.create({
     model,
     messages: [
       { role: "system", content: COMPETITIVE_ANALYSIS_SYSTEM_PROMPT },
@@ -129,24 +166,28 @@ export async function runCompetitiveAnalysis(
     ],
     max_tokens: 8192,
     temperature: 0.3,
+    stream: callbacks?.onToken ? true : false,
   })
 
-  const content = response.choices[0]?.message?.content
+  const content = await consumeStream(completion, callbacks?.onToken)
+
   if (!content) throw new Error("No content returned from OpenRouter synthesis")
+  callbacks?.onStage?.("Finalizing analysis...", 4, 4)
 
   return { content, source: "inhouse", model }
 }
 
 // ─── PRD Pipeline ────────────────────────────────────────────────────
 
-export async function runPRD(input: PRDInput): Promise<AnalysisResult> {
+export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
 
   const competitiveContext = input.competitiveAnalysis
     ? `\n\nCompetitive and Gap analysis: ${input.competitiveAnalysis}`
     : ""
 
-  const response = await openrouter.chat.completions.create({
+  callbacks?.onStage?.("Writing product requirements...", 1, 2)
+  const completion = await openrouter.chat.completions.create({
     model,
     messages: [
       { role: "system", content: PRD_SYSTEM_PROMPT },
@@ -157,10 +198,13 @@ export async function runPRD(input: PRDInput): Promise<AnalysisResult> {
     ],
     max_tokens: 8192,
     temperature: 0.3,
+    stream: callbacks?.onToken ? true : false,
   })
 
-  const content = response.choices[0]?.message?.content
+  const content = await consumeStream(completion, callbacks?.onToken)
+
   if (!content) throw new Error("No content returned from OpenRouter for PRD")
+  callbacks?.onStage?.("Finalizing PRD...", 2, 2)
 
   return { content, source: "inhouse", model }
 }
@@ -168,28 +212,29 @@ export async function runPRD(input: PRDInput): Promise<AnalysisResult> {
 // ─── MVP Plan Pipeline ───────────────────────────────────────────────
 
 export async function runMVPPlan(
-  input: MVPPlanInput
+  input: MVPPlanInput,
+  callbacks?: StreamCallbacks
 ): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
 
   const prdContext = input.prd ? `\nPRD: ${input.prd}` : ""
 
-  const response = await openrouter.chat.completions.create({
+  callbacks?.onStage?.("Writing MVP roadmap...", 1, 2)
+  const completion = await openrouter.chat.completions.create({
     model,
     messages: [
       { role: "system", content: MVP_PLAN_SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: buildMVPPlanUserPrompt(input.idea, input.name, prdContext),
-      },
+      { role: "user", content: buildMVPPlanUserPrompt(input.idea, input.name, prdContext) },
     ],
     max_tokens: 8192,
     temperature: 0.3,
+    stream: callbacks?.onToken ? true : false,
   })
 
-  const content = response.choices[0]?.message?.content
-  if (!content)
-    throw new Error("No content returned from OpenRouter for MVP Plan")
+  const content = await consumeStream(completion, callbacks?.onToken)
+
+  if (!content) throw new Error("No content returned from OpenRouter for MVP Plan")
+  callbacks?.onStage?.("Finalizing MVP plan...", 2, 2)
 
   return { content, source: "inhouse", model }
 }
@@ -197,26 +242,27 @@ export async function runMVPPlan(
 // ─── Tech Spec Pipeline ─────────────────────────────────────────────
 
 export async function runTechSpec(
-  input: TechSpecInput
+  input: TechSpecInput,
+  callbacks?: StreamCallbacks
 ): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
 
-  const response = await openrouter.chat.completions.create({
+  callbacks?.onStage?.("Writing technical specifications...", 1, 2)
+  const completion = await openrouter.chat.completions.create({
     model,
     messages: [
       { role: "system", content: TECH_SPEC_SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: buildTechSpecUserPrompt(input.idea, input.name, input.prd),
-      },
+      { role: "user", content: buildTechSpecUserPrompt(input.idea, input.name, input.prd) },
     ],
     max_tokens: 8192,
     temperature: 0.3,
+    stream: callbacks?.onToken ? true : false,
   })
 
-  const content = response.choices[0]?.message?.content
-  if (!content)
-    throw new Error("No content returned from OpenRouter for Tech Spec")
+  const content = await consumeStream(completion, callbacks?.onToken)
+
+  if (!content) throw new Error("No content returned from OpenRouter for Tech Spec")
+  callbacks?.onStage?.("Finalizing tech spec...", 2, 2)
 
   return { content, source: "inhouse", model }
 }
@@ -250,4 +296,3 @@ Why they compete: ${comp.whyCompetes}${urlContent}`
     })
     .join("\n\n---\n\n")
 }
-

@@ -106,7 +106,7 @@ export function DashboardProjectCard({
               Delete project?
             </h3>
             <p className="mt-4 text-[14px] leading-[1.5] text-text-secondary">
-              You are about to permanently delete "{name}". This action removes all
+              You are about to permanently delete &quot;{name}&quot;. This action removes all
               environments, deployment history, and collaborator access. This cannot be
               undone.
             </p>

@@ -6,6 +6,7 @@ import Link from "next/link"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
+import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stream"
 
 
 interface Project {
@@ -156,6 +157,17 @@ export function ProjectWorkspace({
   // Local content overrides for immediate UI updates after inline edits
   // Key format: `${documentType}-${recordId}` -> updated content
   const [localContentOverrides, setLocalContentOverrides] = useState<Record<string, string>>({})
+
+  // Streaming state for live NDJSON document generation
+  const [streamStages, setStreamStages] = useState<StreamStage[]>([])
+  const [streamCurrentStep, setStreamCurrentStep] = useState(0)
+  const [streamContent, setStreamContent] = useState("")
+
+  const clearStreamState = useCallback(() => {
+    setStreamStages([])
+    setStreamCurrentStep(0)
+    setStreamContent("")
+  }, [])
 
   const getGenerationSnapshot = useCallback(async (): Promise<WorkspaceGenerationCounts | null> => {
     try {
@@ -611,6 +623,7 @@ export function ProjectWorkspace({
   const handleGenerateContent = async (model?: string) => {
     const generatingType = activeDocument
     let didGenerate = false
+    let wasStreaming = false
 
     // Set generating state for the active document
     setGeneratingDocuments(prev => ({ ...prev, [generatingType]: true }))
@@ -667,6 +680,7 @@ export function ProjectWorkspace({
             idea: project.description,
             name: projectName,
             ...(model && { model }),
+            ...(generatingType !== "deploy" && { stream: true }),
             ...(generatingType === "deploy" && { appType: "dynamic" }),
             ...(generatingType === "prd" && competitiveAnalysis?.content && {
               competitiveAnalysis: competitiveAnalysis.content
@@ -698,7 +712,35 @@ export function ProjectWorkspace({
         throw new Error(errorMsg)
       }
 
-      didGenerate = true
+      const contentType = response.headers.get("Content-Type") ?? ""
+      if (contentType.includes("application/x-ndjson")) {
+        // Streaming path: process NDJSON events live
+        wasStreaming = true
+        let streamError: string | undefined
+        await parseDocumentStream(response, {
+          onStage: (stage) => {
+            setStreamStages(prev => {
+              const existingIdx = prev.findIndex(s => s.step === stage.step)
+              if (existingIdx >= 0) {
+                const next = [...prev]
+                next[existingIdx] = stage
+                return next
+              }
+              return [...prev, stage]
+            })
+            setStreamCurrentStep(stage.step)
+          },
+          onToken: (content) => setStreamContent(prev => prev + content),
+          onDone: (_model) => { didGenerate = true },
+          onError: (message) => {
+            streamError = message
+          },
+        })
+        if (streamError) throw new Error(streamError)
+      } else {
+        // Non-streaming JSON path (deploy or fallback)
+        didGenerate = true
+      }
     } catch (error) {
       console.error("Error generating content:", error)
       if (error instanceof Error && error.name === "AbortError") {
@@ -710,15 +752,20 @@ export function ProjectWorkspace({
       // Clear generation state once request finishes
       setGeneratingDocuments(prev => ({ ...prev, [generatingType]: false }))
       saveGeneratingState(generatingType, false)
+      // clearStreamState() is called after router.refresh() in the success path below
     }
 
     if (!didGenerate) return
 
-    // Wait a moment for database transaction to complete
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // Refresh data while keeping UI state (e.g., active tab) intact
-    router.refresh()
+    if (wasStreaming) {
+      // DB save already committed before server sent 'done'; no delay needed
+      router.refresh()
+      clearStreamState()
+    } else {
+      // Wait a moment for database transaction to complete
+      await new Promise(resolve => setTimeout(resolve, 500))
+      router.refresh()
+    }
   }
 
   const handleUpdateDescription = async (description: string) => {
@@ -826,6 +873,7 @@ export function ProjectWorkspace({
   return (
     <div className="flex flex-col h-screen">
       <Header
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         user={user as any}
         rightContent={
           activeDocument === "prompt" ? (
@@ -867,6 +915,9 @@ export function ProjectWorkspace({
             onUpdateDescription={handleUpdateDescription}
             onUpdateContent={handleUpdateContent}
             isGenerating={generatingDocuments[activeDocument]}
+            streamStages={streamStages}
+            streamCurrentStep={streamCurrentStep}
+            streamContent={streamContent}
             credits={credits}
             prerequisiteValidation={checkPrerequisites(activeDocument)}
             currentVersion={selectedVersionIndex[activeDocument] || 0}

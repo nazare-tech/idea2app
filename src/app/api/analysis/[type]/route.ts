@@ -7,6 +7,13 @@ import { getTokenCost } from "@/lib/token-economics"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { linkifyBareUrls } from "@/lib/markdown-links"
 
+const encoder = new TextEncoder()
+
+function createStreamSender(controller: ReadableStreamDefaultController) {
+  return (event: object) =>
+    controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"))
+}
+
 export const maxDuration = 300 // 5 min — competitive analysis pipeline (Perplexity + Tavily + synthesis) can take up to ~70s
 
 interface AnalysisParams {
@@ -24,6 +31,8 @@ export async function POST(request: Request, { params }: AnalysisParams) {
   let userId: string | undefined
   let projectId: string | undefined
   let analysisType: string | undefined
+
+  let isStreaming = false
 
   try {
     const { type } = await params
@@ -44,7 +53,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
     const body = await request.json()
     projectId = body.projectId
-    const { idea, name, competitiveAnalysis, prd, model } = body
+    const { idea, name, competitiveAnalysis, prd, model, stream: streamRequested } = body
 
     if (!projectId || !idea || !name) {
       statusCode = 400
@@ -103,6 +112,106 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     creditsConsumed = creditCost
+
+    // ─── Streaming path ────────────────────────────────────────────────
+    if (streamRequested === true) {
+      isStreaming = true
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          const send = createStreamSender(controller)
+
+          try {
+            const callbacks: import("@/lib/analysis-pipelines").StreamCallbacks = {
+              onStage: (message, step, totalSteps) =>
+                send({ type: "stage", message, step, totalSteps }),
+              onToken: (content) => send({ type: "token", content }),
+            }
+
+            let streamResult: { content: string; source: string; model: string }
+
+            if (type === "competitive-analysis") {
+              streamResult = await runCompetitiveAnalysis({ idea, name, model }, callbacks)
+            } else if (type === "prd") {
+              streamResult = await runPRD({ idea, name, competitiveAnalysis, model }, callbacks)
+            } else if (type === "mvp-plan") {
+              streamResult = await runMVPPlan({ idea, name, prd, model }, callbacks)
+            } else if (type === "tech-spec") {
+              streamResult = await runTechSpec({ idea, name, prd, model }, callbacks)
+            } else {
+              streamResult = await callOpenRouterFallback(type, idea, name, model)
+            }
+
+            // Save to DB — same as non-streaming path
+            const metadata = {
+              source: streamResult.source,
+              model: streamResult.model,
+              generated_at: new Date().toISOString(),
+            }
+            if (type === "prd") {
+              await supabase.from("prds").insert({ project_id: projectId!, content: streamResult.content })
+            } else if (type === "mvp-plan") {
+              await supabase.from("mvp_plans").insert({ project_id: projectId!, content: streamResult.content })
+            } else if (type === "tech-spec") {
+              await supabase.from("tech_specs").insert({ project_id: projectId!, content: streamResult.content })
+            } else {
+              await supabase.from("analyses").insert({ project_id: projectId!, type, content: streamResult.content, metadata })
+            }
+
+            await supabase
+              .from("projects")
+              .update({ status: "active", updated_at: new Date().toISOString() })
+              .eq("id", projectId!)
+
+            modelUsed = streamResult.model
+            aiSource = streamResult.source as "openrouter" | "inhouse"
+            send({ type: "done", model: streamResult.model })
+            // Track metrics for successful streaming request
+            trackAPIMetrics({
+              endpoint: `/api/analysis/${type}`,
+              method: "POST",
+              featureType: "analysis",
+              userId: userId!,
+              projectId: projectId ?? null,
+              statusCode: 200,
+              responseTimeMs: timer.getElapsedMs(),
+              creditsConsumed,
+              modelUsed: streamResult.model,
+              aiSource: streamResult.source as "openrouter" | "inhouse",
+              errorType: undefined,
+              errorMessage: undefined,
+            })
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : "Generation failed"
+            send({ type: "error", message: msg })
+            errorType = "generation_error"
+            errorMessage = msg
+            statusCode = 500
+            // Track metrics for failed streaming request
+            trackAPIMetrics({
+              endpoint: `/api/analysis/${type}`,
+              method: "POST",
+              featureType: "analysis",
+              userId: userId!,
+              projectId: projectId ?? null,
+              statusCode: 500,
+              responseTimeMs: timer.getElapsedMs(),
+              creditsConsumed,
+              modelUsed: undefined,
+              aiSource: undefined,
+              errorType: "generation_error",
+              errorMessage: msg,
+            })
+          } finally {
+            controller.close()
+          }
+        },
+      })
+
+      return new Response(readableStream, {
+        headers: { "Content-Type": "application/x-ndjson" },
+      })
+    }
+    // ─── End streaming path ─────────────────────────────────────────────
 
     // Route to the appropriate in-house pipeline
     let result: { content: string; source: string; model: string }
@@ -182,7 +291,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     )
   } finally {
     // Track metrics (fire and forget - won't block response)
-    if (userId && analysisType) {
+    if (!isStreaming && userId && analysisType) {
       trackAPIMetrics({
         endpoint: `/api/analysis/${analysisType}`,
         method: "POST",
