@@ -43,6 +43,16 @@ export async function GET(request: Request) {
         }
       }
 
+      // Safety net: ensure every user has a credits row.
+      // The DB trigger handles new users; this covers users who signed up
+      // before the trigger was installed.
+      if (user) {
+        await supabase.from("credits").upsert(
+          { user_id: user.id, balance: 20 },
+          { onConflict: "user_id", ignoreDuplicates: true }
+        )
+      }
+
       const forwardedHost = request.headers.get("x-forwarded-host")
       const isLocalEnv = process.env.NODE_ENV === "development"
 
