@@ -16,6 +16,8 @@ interface MockupRendererProps {
 interface MockupPage {
   title: string
   description: string
+  pros: string[]
+  cons: string[]
   spec: Spec
 }
 
@@ -77,6 +79,65 @@ function extractPageTitle(spec: Spec, fallbackIndex: number): string {
  * Parse markdown content containing json-render specs.
  * Expected format: markdown headers (## or ###) followed by ```json blocks.
  */
+
+
+/**
+ * Split optional markdown text into notes + pros/cons sections.
+ */
+function parseProsAndCons(raw: string): {
+  notes: string[]
+  pros: string[]
+  cons: string[]
+} {
+  const notes: string[] = []
+  const pros: string[] = []
+  const cons: string[] = []
+
+  const section = {
+    notes,
+    pros,
+    cons,
+  }
+
+  let current: "notes" | "pros" | "cons" = "notes"
+
+  const lines = raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+
+  for (const line of lines) {
+    const normalized = line.toLowerCase().replace(/^\*+|:+$/g, "").trim()
+
+    if (/^pros?$/.test(normalized)) {
+      current = "pros"
+      continue
+    }
+
+    if (/^cons?$/.test(normalized)) {
+      current = "cons"
+      continue
+    }
+
+    const bullet = line.replace(/^[-*•]\s*/, "").trim()
+    if (!bullet) continue
+
+    if (current === "pros") {
+      pros.push(bullet)
+      continue
+    }
+
+    if (current === "cons") {
+      cons.push(bullet)
+      continue
+    }
+
+    notes.push(bullet)
+  }
+
+  return section
+}
+
 function parseJsonRenderPages(raw: string): MockupPage[] {
   const pages: MockupPage[] = []
   const lines = raw.split("\n")
@@ -92,9 +153,12 @@ function parseJsonRenderPages(raw: string): MockupPage[] {
       const spec = JSON.parse(jsonStr) as Spec
       if (spec.root && spec.elements) {
         const title = currentTitle || extractPageTitle(spec, pages.length + 1)
+        const parsed = parseProsAndCons(currentDescription.join("\n"))
         pages.push({
           title,
-          description: currentDescription.join("\n").trim(),
+          description: parsed.notes.join("\n").trim(),
+          pros: parsed.pros,
+          cons: parsed.cons,
           spec,
         })
       }
@@ -548,11 +612,6 @@ function SinglePageViewer({ page }: { page: MockupPage }) {
         <div className="flex items-center gap-2">
           <Layers className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-xs font-medium text-foreground">{page.title}</span>
-          {page.description && (
-            <span className="text-[10px] text-muted-foreground hidden sm:inline">
-              — {page.description}
-            </span>
-          )}
         </div>
 
         {/* Viewport toggles */}
@@ -578,6 +637,41 @@ function SinglePageViewer({ page }: { page: MockupPage }) {
           })}
         </div>
       </div>
+
+        {/* Pros / Cons */}
+      {(page.description || page.pros.length > 0 || page.cons.length > 0) && (
+        <div className="border-x border-border bg-muted/15 px-3 py-2 text-xs">
+          {page.description && (
+            <p className="text-muted-foreground mb-2">{page.description}</p>
+          )}
+
+          {(page.pros.length > 0 || page.cons.length > 0) && (
+            <div className="grid gap-2 md:grid-cols-2">
+              {page.pros.length > 0 && (
+                <div className="rounded-md border border-green-200/50 bg-green-50/40 dark:bg-green-950/20 dark:border-green-900/50 p-2">
+                  <p className="font-medium text-green-700 dark:text-green-300 text-[11px] mb-1">Pros</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+                    {page.pros.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {page.cons.length > 0 && (
+                <div className="rounded-md border border-red-200/50 bg-red-50/40 dark:bg-red-950/20 dark:border-red-900/50 p-2">
+                  <p className="font-medium text-red-700 dark:text-red-300 text-[11px] mb-1">Cons</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+                    {page.cons.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Browser chrome */}
       <div className="border-x border-border bg-muted/20">
@@ -718,6 +812,8 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
     pages.push({
       title,
       description: "",
+      pros: [],
+      cons: [],
       spec: subSpec,
     })
   }
@@ -766,6 +862,8 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
           page={{
             title: "Wireframe",
             description: "Layout wireframe generated from the MVP plan",
+            pros: [],
+            cons: [],
             spec: patchSpec,
           }}
         />
