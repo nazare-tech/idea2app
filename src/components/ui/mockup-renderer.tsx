@@ -146,34 +146,31 @@ function parseProsAndCons(raw: string): {
   return section
 }
 
-function parseJsonRenderPages(raw: string): MockupPage[] {
-  const pages: MockupPage[] = []
+interface RawMockupSection {
+  title: string
+  description: string[]
+  json: string
+}
+
+function collectJsonSections(raw: string): RawMockupSection[] {
   const lines = raw.split("\n")
+  const sections: RawMockupSection[] = []
+
   let currentTitle = ""
   let currentDescription: string[] = []
   let inCodeFence = false
   let codeBlock: string[] = []
 
-  const flushPage = () => {
-    if (codeBlock.length === 0) return
-    const jsonStr = codeBlock.join("\n").trim()
-    try {
-      const spec = JSON.parse(jsonStr) as Spec
-      if (spec.root && spec.elements) {
-        const title = currentTitle || extractPageTitle(spec, pages.length + 1)
-        const parsed = parseProsAndCons(currentDescription.join("\n"))
-        pages.push({
-          title,
-          description: parsed.notes.join("\n").trim(),
-          pros: parsed.pros,
-          cons: parsed.cons,
-          spec,
-        })
-      }
-    } catch {
-      // Invalid JSON — skip this block
-      console.warn(`[MockupRenderer] Failed to parse json-render spec for "${currentTitle}"`)
-    }
+  const flushSection = () => {
+    const json = codeBlock.join("\n").trim()
+    if (!json) return
+
+    sections.push({
+      title: currentTitle,
+      description: currentDescription,
+      json,
+    })
+
     codeBlock = []
     currentDescription = []
   }
@@ -181,10 +178,9 @@ function parseJsonRenderPages(raw: string): MockupPage[] {
   for (const line of lines) {
     const trimmed = line.trim()
 
-    // Handle code fences
     if (trimmed.startsWith("```")) {
       if (inCodeFence) {
-        flushPage()
+        flushSection()
         inCodeFence = false
       } else {
         inCodeFence = true
@@ -197,25 +193,110 @@ function parseJsonRenderPages(raw: string): MockupPage[] {
       continue
     }
 
-    // Detect markdown headers
     const headerMatch = trimmed.match(/^(#{1,6})\s+(.+)$/)
     if (headerMatch) {
-      currentTitle = headerMatch[2]
+      if (inCodeFence && codeBlock.length > 0) {
+        flushSection()
+      }
+      currentTitle = headerMatch[2].trim()
       currentDescription = []
       continue
     }
 
-    // Collect description text between header and code block
     if (trimmed) {
       currentDescription.push(trimmed)
     }
   }
 
-  // Flush any remaining content
-  flushPage()
+  flushSection()
+
+  return sections.filter((section) => section.json)
+}
+
+function normalizeOptionTitle(rawTitle: string, index: number): string {
+  const optionMatch = rawTitle.match(/option\s*([A-C])/i)
+  if (optionMatch) {
+    const normalized = rawTitle.replace(/^\s*Option\s*[A-C]\s*-?\s*/i, "")
+    if (normalized) {
+      return `Option ${optionMatch[1].toUpperCase()} - ${normalized}`
+    }
+    return `Option ${optionMatch[1].toUpperCase()}`
+  }
+
+  if (rawTitle) {
+    return rawTitle
+  }
+
+  return `Option ${String.fromCharCode(65 + index)}`
+}
+
+function ensureProsAndCons(section: RawMockupSection, index: number) {
+  const parsed = parseProsAndCons(section.description.join("\n"))
+
+  const labels = ["A", "B", "C"]
+  const optionLabel = labels[index] || `${index + 1}`
+
+  return {
+    pros: parsed.pros.length
+      ? parsed.pros
+      : [
+          `Option ${optionLabel} keeps the generated layout concise.`,
+          `Option ${optionLabel} focuses on the same core user flow.`,
+        ],
+    cons: parsed.cons.length
+      ? parsed.cons
+      : [
+          "Review this variation against your implementation constraints.",
+          "Regenerate if you want stronger tradeoff-specific wording.",
+        ],
+    notes: parsed.notes,
+  }
+}
+
+function parseJsonRenderPages(raw: string): MockupPage[] {
+  const sections = collectJsonSections(raw)
+
+  if (sections.length === 0) {
+    return []
+  }
+
+  const hasOptionHeaders = sections.some((section) =>
+    OPTION_HEADER_RE.test(section.title || "")
+  )
+
+  const pages: MockupPage[] = []
+
+  sections.forEach((section, index) => {
+    if (index >= 3) return
+
+    try {
+      const spec = JSON.parse(section.json) as Spec
+      if (!spec.root || !spec.elements) return
+
+      const baseTitle = section.title ? section.title.trim() : ""
+      const title = hasOptionHeaders
+        ? normalizeOptionTitle(baseTitle, index)
+        : sections.length === 3
+          ? `Option ${String.fromCharCode(65 + index)} - ${baseTitle || "Screen"}`
+          : normalizeOptionTitle(baseTitle || `Option ${String.fromCharCode(65 + index)}`, index)
+
+      const parsed = ensureProsAndCons(section, index)
+
+      pages.push({
+        title,
+        description: parsed.notes.join("\n").trim(),
+        pros: parsed.pros,
+        cons: parsed.cons,
+        spec,
+      })
+    } catch {
+      console.warn(`[MockupRenderer] Failed to parse json-render spec for "${section.title}"`)
+    }
+  })
 
   return pages
 }
+
 
 // ---- JSON Patch format detection and parsing ----
 
@@ -792,7 +873,7 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
 
   // Extract each child as a separate page spec
   const pages: MockupPage[] = []
-  for (const { id, el } of childElements) {
+  for (const { id } of childElements) {
     // Collect all elements reachable from this child
     const reachable = new Set<string>()
     const queue = [id]
