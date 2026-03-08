@@ -107,7 +107,12 @@ function parseProsAndCons(raw: string): {
     .filter((line) => line.length > 0)
 
   for (const line of lines) {
-    const normalized = line.toLowerCase().replace(/^\*+|:+$/g, "").trim()
+    const normalized = line
+      .toLowerCase()
+      .replace(/[`*_]/g, "")
+      .replace(/^#+\s*/, "")
+      .replace(/:+$/, "")
+      .trim()
 
     if (/^pros?$/.test(normalized)) {
       current = "pros"
@@ -119,7 +124,10 @@ function parseProsAndCons(raw: string): {
       continue
     }
 
-    const bullet = line.replace(/^[-*•]\s*/, "").trim()
+    const bullet = line
+      .replace(/^\s*[-*•]\s*/, "")
+      .replace(/^\s*\d+\.\s*/, "")
+      .trim()
     if (!bullet) continue
 
     if (current === "pros") {

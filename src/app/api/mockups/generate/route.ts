@@ -7,6 +7,60 @@ import { buildMockupPrompt } from "@/lib/prompts"
 
 const encoder = new TextEncoder()
 
+const OPTION_HEADER_RE = /^#{1,6}\s*Option\s*[A-C]/im
+const JSON_BLOCK_RE = /```json[\s\S]*?```/gi
+
+function isValidMockupStructure(content: string): boolean {
+  const optionHeaders = content.match(OPTION_HEADER_RE) || []
+  const jsonBlocks = content.match(JSON_BLOCK_RE) || []
+  const pros = [...content.matchAll(/^\s*[#*_`\s]*pros\s*: ?\s*$/gim)]
+  const cons = [...content.matchAll(/^\s*[#*_`\s]*cons\s*: ?\s*$/gim)]
+
+  return optionHeaders.length >= 3 && jsonBlocks.length >= 3 && pros.length >= 3 && cons.length >= 3
+}
+
+async function enforceMockupFormat({
+  client,
+  content,
+  mvpPlan,
+  projectName,
+  model,
+}: {
+  client: OpenAI,
+  content: string,
+  mvpPlan: string,
+  projectName: string,
+  model: string,
+}): Promise<string> {
+  if (isValidMockupStructure(content)) {
+    return content
+  }
+
+  try {
+    const fallbackPrompt =
+      `You are a strict formatter. Convert the mockup result below into the required template exactly.\n` +
+      `Required: exactly 3 options labeled Option A/B/C.\n` +
+      `For each option include: heading, Pros section (2-4 bullets), Cons section (2-4 bullets), and ONE json-render code block.\n` +
+      `Preserve the JSON blocks whenever possible; only adjust surrounding prose as needed.\n\n` +
+      `Source output:\n\n${content}\n\n` +
+      `Project name: ${projectName}\n` +
+      `MVP context: ${mvpPlan}`
+
+    const rewriteResp = await client.chat.completions.create({
+      model,
+      messages: [{ role: "user", content: fallbackPrompt }],
+      max_tokens: 16384,
+    })
+
+    const rewritten = rewriteResp.choices?.[0]?.message?.content?.trim()
+    if (!rewritten) return content
+    return rewritten
+  } catch (error) {
+    console.warn("[Mockup] format enforcement failed, using original generated content", error)
+    return content
+  }
+}
+
 function createStreamSender(controller: ReadableStreamDefaultController) {
   return (event: object) =>
     controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"))
@@ -131,13 +185,21 @@ export async function POST(request: Request) {
 
             if (!generatedContent) throw new Error("No content returned from OpenRouter")
 
+            const normalizedContent = await enforceMockupFormat({
+              client: openrouterClient,
+              content: generatedContent,
+              mvpPlan,
+              projectName,
+              model: selectedModel,
+            })
+
             send({ type: "stage", message: "Saving mockups...", step: 2, totalSteps: 2 })
             modelUsed = selectedModel
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (supabase as any).from("mockups").insert({
               project_id: projectId!,
-              content: generatedContent,
+              content: normalizedContent,
               model_used: selectedModel,
               metadata: { source: "openrouter", model: selectedModel, generated_at: new Date().toISOString() },
             })
@@ -219,11 +281,19 @@ export async function POST(request: Request) {
       max_tokens: 16384, // Large limit for multiple JSON spec pages
     })
 
-    const content = response.choices[0]?.message?.content
+    const rawContent = response.choices[0]?.message?.content
 
-    if (!content) {
+    if (!rawContent) {
       throw new Error("No content returned from OpenRouter")
     }
+
+    const content = await enforceMockupFormat({
+      client: openrouter,
+      content: rawContent,
+      mvpPlan,
+      projectName,
+      model: selectedModel,
+    })
 
     modelUsed = selectedModel
 
