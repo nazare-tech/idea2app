@@ -9,6 +9,12 @@ const encoder = new TextEncoder()
 
 const OPTION_HEADER_RE = /^#{1,6}\s*Option\s*[A-C]/im
 const JSON_BLOCK_RE = /```json[\s\S]*?```/gi
+const OPTION_LABELS = ["A", "B", "C"]
+
+interface LegacyOptionChunk {
+  title: string
+  json: string
+}
 
 function isValidMockupStructure(content: string): boolean {
   const optionHeaders = content.match(OPTION_HEADER_RE) || []
@@ -17,6 +23,85 @@ function isValidMockupStructure(content: string): boolean {
   const cons = [...content.matchAll(/^\s*[#*_`\s]*cons\s*: ?\s*$/gim)]
 
   return optionHeaders.length >= 3 && jsonBlocks.length >= 3 && pros.length >= 3 && cons.length >= 3
+}
+
+function extractLegacyOptionChunks(content: string): LegacyOptionChunk[] {
+  const lines = content.split("\n")
+  const chunks: LegacyOptionChunk[] = []
+  let currentTitle = "Screen"
+
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i].trim()
+
+    const headingMatch = line.match(/^(#{1,6})\s*(.+)$/)
+    if (headingMatch) {
+      currentTitle = headingMatch[2]
+        .trim()
+        .replace(/^`+|`+$/g, "")
+        .replace(/:\s*$/, "")
+        .trim() || "Screen"
+      i += 1
+      continue
+    }
+
+    if (/^```json\s*$/i.test(line)) {
+      const startLine = i
+      i += 1
+
+      while (i < lines.length && !/^```\s*$/.test(lines[i].trim())) {
+        i += 1
+      }
+
+      if (i < lines.length) {
+        const block = lines.slice(startLine, i + 1).join("\n")
+        chunks.push({ title: currentTitle, json: block })
+      }
+      i += 1
+      continue
+    }
+
+    i += 1
+  }
+
+  return chunks
+}
+
+function buildLegacyTemplate(content: string): string | null {
+  const chunks = extractLegacyOptionChunks(content)
+
+  if (!chunks.length) return null
+
+  const sections = [...chunks]
+
+  while (sections.length < 3 && sections.length > 0) {
+    sections.push({
+      title: `Alternative ${sections.length + 1}`,
+      json: sections[sections.length - 1].json,
+    })
+  }
+
+  const selectedSections = sections.slice(0, 3)
+
+  const output: string[] = []
+
+  for (let i = 0; i < selectedSections.length; i += 1) {
+    const section = selectedSections[i]
+    const label = OPTION_LABELS[i] || `${i + 1}`
+    const title = section.title.trim() || `Option ${label}`
+
+    output.push(`### Option ${label} - ${title}`)
+    output.push("Pros:")
+    output.push("- Preserves the generated structure from the source output.")
+    output.push("- Keeps layout-focused JSON elements intact.")
+    output.push("Cons:")
+    output.push("- Tradeoffs were not explicitly provided in source output.")
+    output.push("- Consider regenerating to enrich comparison language.")
+    output.push(section.json)
+    output.push("")
+  }
+
+  return output.join("\n")
 }
 
 async function enforceMockupFormat({
@@ -36,29 +121,52 @@ async function enforceMockupFormat({
     return content
   }
 
-  try {
-    const fallbackPrompt =
-      `You are a strict formatter. Convert the mockup result below into the required template exactly.\n` +
-      `Required: exactly 3 options labeled Option A/B/C.\n` +
-      `For each option include: heading, Pros section (2-4 bullets), Cons section (2-4 bullets), and ONE json-render code block.\n` +
-      `Preserve the JSON blocks whenever possible; only adjust surrounding prose as needed.\n\n` +
-      `Source output:\n\n${content}\n\n` +
-      `Project name: ${projectName}\n` +
-      `MVP context: ${mvpPlan}`
+  const fallbackPrompt =
+    `You are a strict formatter. Convert the mockup result below into the required template exactly.
+` +
+    `Required: exactly 3 options labeled Option A/B/C.
+` +
+    `For each option include: heading, Pros section (2-4 bullets), Cons section (2-4 bullets), and ONE json-render code block.
+` +
+    `Preserve the JSON blocks whenever possible; only adjust surrounding prose as needed.
 
+` +
+    `Source output:
+
+${content}
+
+` +
+    `Project name: ${projectName}
+` +
+    `MVP context: ${mvpPlan}`
+
+  try {
     const rewriteResp = await client.chat.completions.create({
       model,
       messages: [{ role: "user", content: fallbackPrompt }],
-      max_tokens: 16384,
+      max_tokens: 20000,
     })
 
-    const rewritten = rewriteResp.choices?.[0]?.message?.content?.trim()
-    if (!rewritten) return content
-    return rewritten
+    const rewritten = rewriteResp.choices?.[0]?.message?.content?.trim() || ""
+    if (rewritten && isValidMockupStructure(rewritten)) {
+      return rewritten
+    }
+
+    if (rewritten) {
+      const legacy = buildLegacyTemplate(content)
+      if (legacy) return legacy
+    }
   } catch (error) {
-    console.warn("[Mockup] format enforcement failed, using original generated content", error)
-    return content
+    console.warn("[Mockup] format enforcement failed, using deterministic fallback", error)
   }
+
+  const legacy = buildLegacyTemplate(content)
+  if (legacy) {
+    return legacy
+  }
+
+  console.warn("[Mockup] format enforcement failed, using original generated content")
+  return content
 }
 
 function createStreamSender(controller: ReadableStreamDefaultController) {
