@@ -37,7 +37,6 @@ function extractLegacyOptionChunks(content: string): LegacyOptionChunk[] {
     const headingMatch = line.match(/^(#{1,6})\s*(.+)$/)
     if (headingMatch) {
       currentTitle = headingMatch[2]
-        .trim()
         .replace(/^`+|`+$/g, "")
         .replace(/:\s*$/, "")
         .trim() || "Screen"
@@ -68,6 +67,10 @@ function extractLegacyOptionChunks(content: string): LegacyOptionChunk[] {
 }
 
 function buildLegacyTemplate(content: string): string | null {
+  return normalizeLegacyOptionTemplate(content)
+}
+
+function normalizeLegacyOptionTemplate(content: string): string | null {
   const chunks = extractLegacyOptionChunks(content)
 
   if (!chunks.length) return null
@@ -88,8 +91,14 @@ function buildLegacyTemplate(content: string): string | null {
   for (let i = 0; i < selectedSections.length; i += 1) {
     const section = selectedSections[i]
     const label = OPTION_LABELS[i] || `${i + 1}`
-    const title = section.title.trim() || `Option ${label}`
+    const cleanedTitle = section.title
+      .replace(/^(\`|\`{3,})\s*|\s+\`?\`{3,}$/g, "")
+      .replace(/^\s*Option\s*[A-C]\s*-\s*Option\s*[A-C]\s*[-:]?\s*/i, "")
+      .replace(/^\s*Option\s*[A-C]\s*[-:]?/i, "")
+      .replace(/^\s*-\s*/, "")
+      .trim()
 
+    const title = cleanedTitle || `Option ${label}`
     output.push(`### Option ${label} - ${title}`)
     output.push("Pros:")
     output.push("- Preserves the generated structure from the source output.")
@@ -103,7 +112,6 @@ function buildLegacyTemplate(content: string): string | null {
 
   return output.join("\n")
 }
-
 async function enforceMockupFormat({
   client,
   content,
@@ -118,7 +126,14 @@ async function enforceMockupFormat({
   model: string,
 }): Promise<string> {
   if (isValidMockupStructure(content)) {
+    const canonicalContent = normalizeLegacyOptionTemplate(content)
+    if (canonicalContent) return canonicalContent
     return content
+  }
+
+  const preNormalized = normalizeLegacyOptionTemplate(content)
+  if (preNormalized) {
+    return preNormalized
   }
 
   const fallbackPrompt =
@@ -148,6 +163,11 @@ ${content}
     })
 
     const rewritten = rewriteResp.choices?.[0]?.message?.content?.trim() || ""
+    const normalizedRewrite = normalizeLegacyOptionTemplate(rewritten)
+    if (normalizedRewrite) {
+      return normalizedRewrite
+    }
+
     if (rewritten && isValidMockupStructure(rewritten)) {
       return rewritten
     }
@@ -168,6 +188,7 @@ ${content}
   console.warn("[Mockup] format enforcement failed, using original generated content")
   return content
 }
+
 
 function createStreamSender(controller: ReadableStreamDefaultController) {
   return (event: object) =>
