@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { DOCUMENT_EDIT_SYSTEM_PROMPT, buildDocumentEditUserPrompt } from "@/lib/prompts"
+import { calculateDocumentEditCredits } from "@/lib/utils"
 
 export const maxDuration = 60
 
@@ -47,18 +48,22 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check credits (soft check - log warning but allow for testing)
+    // Hard credit check — minimum cost for a document edit is 2 credits
     const { data: profile } = await supabase
       .from("profiles")
       .select("credits")
       .eq("id", user.id)
       .single()
 
-    // Type assertion needed as the credits column might not be in generated types yet
     const profileData = profile as { credits?: number } | null
-    const hasAppCredits = profileData && (profileData.credits ?? 0) >= 1
-    if (!hasAppCredits) {
-      console.warn(`User ${user.id} has insufficient app credits, but proceeding with OpenRouter`)
+    if (!profileData || (profileData.credits ?? 0) < 2) {
+      statusCode = 402
+      errorType = "insufficient_credits"
+      errorMessage = "Insufficient credits"
+      return NextResponse.json(
+        { error: "Insufficient credits. Please upgrade your plan." },
+        { status: 402 }
+      )
     }
 
     // Determine which model to use
@@ -120,22 +125,23 @@ export async function POST(request: Request) {
       )
     }
 
-    // Consume 1 credit only if user has app credits
+    // Deduct credits based on actual token usage (2–5 credits)
+    const totalTokens = (data.usage?.prompt_tokens ?? 0) + (data.usage?.completion_tokens ?? 0)
+    const creditsToDeduct = calculateDocumentEditCredits(totalTokens)
     let creditsUsed = 0
-    if (hasAppCredits) {
-      const { error: creditError } = await supabase.rpc("consume_credits", {
-        p_user_id: user.id,
-        p_amount: 1,
-        p_action: "document_edit",
-        p_description: `Inline AI edit for project ${projectId}`,
-      })
 
-      if (creditError) {
-        console.error("Error consuming credits:", creditError)
-      } else {
-        creditsUsed = 1
-        creditsConsumed = 1
-      }
+    const { error: creditError } = await supabase.rpc("consume_credits", {
+      p_user_id: user.id,
+      p_amount: creditsToDeduct,
+      p_action: "document_edit",
+      p_description: `Inline AI edit for project ${projectId} (${totalTokens} tokens)`,
+    })
+
+    if (creditError) {
+      console.error("Error consuming credits:", creditError)
+    } else {
+      creditsUsed = creditsToDeduct
+      creditsConsumed = creditsToDeduct
     }
 
     return NextResponse.json({

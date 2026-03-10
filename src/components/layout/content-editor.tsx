@@ -68,7 +68,7 @@ const documentConfig: Record<
     title: "Competitive Research",
     subtitle: "Market analysis and competitor insights",
     icon: Search,
-    creditCost: 5,
+    creditCost: 15,
   },
   prd: {
     title: "PRD",
@@ -80,19 +80,19 @@ const documentConfig: Record<
     title: "MVP Plan",
     subtitle: "Minimum viable product development plan",
     icon: Target,
-    creditCost: 10,
+    creditCost: 15,
   },
   mockups: {
     title: "Mockups",
     subtitle: "Interactive UI mockups showing information architecture",
     icon: LayoutGrid,
-    creditCost: 15,
+    creditCost: 30,
   },
   techspec: {
     title: "Tech Spec",
     subtitle: "Technical specifications and architecture",
     icon: Code,
-    creditCost: 10,
+    creditCost: 15,
   },
   deploy: {
     title: "Deploy",

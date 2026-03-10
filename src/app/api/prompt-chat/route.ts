@@ -4,6 +4,7 @@ import OpenAI from "openai"
 import { createClient } from "@/lib/supabase/server"
 import { PROMPT_CHAT_SYSTEM, IDEA_SUMMARY_PROMPT, POST_SUMMARY_SYSTEM } from "@/lib/prompt-chat-config"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
+import { calculatePromptChatCredits } from "@/lib/utils"
 
 const openrouter = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -230,10 +231,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
-    // Check credits (1 credit per message)
+    // Check credits (1–2 credits per message based on input length)
+    const creditAmount = calculatePromptChatCredits(message.length)
     const { data: consumed } = await supabase.rpc("consume_credits", {
       p_user_id: user.id,
-      p_amount: 1,
+      p_amount: creditAmount,
       p_action: "prompt_chat",
       p_description: "Prompt chat message",
     })
@@ -248,7 +250,7 @@ export async function POST(request: Request) {
       )
     }
 
-    creditsConsumed = 1
+    creditsConsumed = creditAmount
 
     // Save user message
     const { data: userMessage, error: userMsgError } = await supabase

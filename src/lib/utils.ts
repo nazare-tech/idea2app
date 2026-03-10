@@ -34,19 +34,32 @@ export function formatRelativeTime(date: string | Date): string {
 }
 
 export const CREDIT_COSTS = {
-  'competitive-analysis': 5,
+  'competitive-analysis': 15,
   'gap-analysis': 5,
   'prd': 10,
-  'mvp-plan': 10,
-  'tech-spec': 10,
-  'mockup': 15,
+  'mvp-plan': 15,
+  'tech-spec': 15,
+  'mockup': 30,
   'app-static': 50,
   'app-dynamic': 100,
   'app-spa': 150,
   'app-pwa': 200,
   'chat': 1,
-  'document-edit': 1,
+  'document-edit': 2, // minimum; actual cost is dynamic (2–5)
 } as const
+
+// 1–2 credits for Explain the Idea chat messages based on input length
+export function calculatePromptChatCredits(messageLength: number): number {
+  return messageLength >= 200 ? 2 : 1
+}
+
+// 2–5 credits for AI text edits based on total tokens used
+export function calculateDocumentEditCredits(totalTokens: number): number {
+  if (totalTokens < 1000) return 2
+  if (totalTokens < 2000) return 3
+  if (totalTokens < 4000) return 4
+  return 5
+}
 
 export type AnalysisType = 'competitive-analysis' | 'gap-analysis' | 'prd' | 'mvp-plan' | 'tech-spec' | 'mockup'
 export type AppType = 'static' | 'dynamic' | 'spa' | 'pwa'
