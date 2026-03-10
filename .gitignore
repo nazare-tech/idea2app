@@ -46,3 +46,6 @@ next-env.d.ts
 .npm-cache
 .playwright-mcp/
 .dmux/
+
+# local design exports
+/design/idea2App-design.json
