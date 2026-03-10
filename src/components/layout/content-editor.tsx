@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Code,
   Rocket,
+  Megaphone,
   Sparkles,
   Loader2,
   Download,
@@ -98,6 +99,12 @@ const documentConfig: Record<
     title: "Deploy",
     subtitle: "Generate and deploy your application",
     icon: Rocket,
+    creditCost: 5,
+  },
+  launch: {
+    title: "Launch",
+    subtitle: "Generate launch plan and distribution copy",
+    icon: Megaphone,
     creditCost: 5,
   },
 }

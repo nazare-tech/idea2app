@@ -10,9 +10,10 @@ import {
   LayoutGrid,
   Code,
   Rocket,
+  Megaphone,
 } from "lucide-react"
 
-export type DocumentType = "prompt" | "competitive" | "prd" | "mvp" | "mockups" | "techspec" | "deploy"
+export type DocumentType = "prompt" | "competitive" | "prd" | "mvp" | "mockups" | "techspec" | "deploy" | "launch"
 
 interface DocumentStatus {
   type: DocumentType
@@ -42,6 +43,7 @@ const documents: {
   { type: "mockups", label: "Mockups", description: "", icon: LayoutGrid },
   { type: "techspec", label: "Tech Spec", description: "", icon: Code },
   { type: "deploy", label: "Deploy", description: "", icon: Rocket },
+  { type: "launch", label: "Launch", description: "", icon: Megaphone },
 ]
 
 function StatusBadge({ status }: { status: "done" | "in_progress" | "pending" }) {
