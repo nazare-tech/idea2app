@@ -4,11 +4,10 @@ import { CREDIT_COSTS } from "@/lib/utils"
 import OpenAI from "openai"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { buildMockupPrompt } from "@/lib/prompts"
+import { hasThreeOptionProsConsContract } from "@/lib/mockup-format-contract"
 
 const encoder = new TextEncoder()
 
-const OPTION_HEADER_RE = /^#{1,6}\s*Option\s*[A-C]/im
-const JSON_BLOCK_RE = /```json[\s\S]*?```/gi
 const OPTION_LABELS = ["A", "B", "C"]
 
 interface LegacyOptionChunk {
@@ -17,12 +16,7 @@ interface LegacyOptionChunk {
 }
 
 function isValidMockupStructure(content: string): boolean {
-  const optionHeaders = content.match(OPTION_HEADER_RE) || []
-  const jsonBlocks = content.match(JSON_BLOCK_RE) || []
-  const pros = [...content.matchAll(/^\s*[#*_`\s]*pros\s*: ?\s*$/gim)]
-  const cons = [...content.matchAll(/^\s*[#*_`\s]*cons\s*: ?\s*$/gim)]
-
-  return optionHeaders.length >= 3 && jsonBlocks.length >= 3 && pros.length >= 3 && cons.length >= 3
+  return hasThreeOptionProsConsContract(content)
 }
 
 function extractLegacyOptionChunks(content: string): LegacyOptionChunk[] {

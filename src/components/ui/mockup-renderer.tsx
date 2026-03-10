@@ -5,6 +5,7 @@ import { Renderer, JSONUIProvider } from "@json-render/react"
 import { mockupRegistry } from "@/lib/json-render/registry"
 import type { Spec } from "@json-render/core"
 import { Monitor, Smartphone, Tablet, Layers } from "lucide-react"
+import { extractMockupOptions } from "@/lib/mockup-format-contract"
 
 interface MockupRendererProps {
   content: string
@@ -281,16 +282,38 @@ function isLikelyOptionRootContainer(id: string): boolean {
 }
 
 function parseJsonRenderPages(raw: string): MockupPage[] {
-  const sections = collectJsonSections(raw)
+  const options = extractMockupOptions(raw)
 
-  if (sections.length === 0) {
-    return []
+  // Prefer strict option contract parsing when available
+  if (options.length > 0) {
+    const pages: MockupPage[] = []
+
+    options.slice(0, 3).forEach((option, index) => {
+      try {
+        const json = option.json.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim()
+        const spec = JSON.parse(json) as Spec
+        if (!spec.root || !spec.elements) return
+
+        pages.push({
+          title: `Option ${option.label}${option.title ? ` - ${option.title}` : ""}`,
+          description: "",
+          pros: option.pros,
+          cons: option.cons,
+          spec,
+        })
+      } catch {
+        console.warn(`[MockupRenderer] Failed to parse json-render spec for option ${option.label}`)
+      }
+    })
+
+    if (pages.length > 0) return pages
   }
 
-  const hasOptionHeaders = sections.some((section) =>
-    OPTION_HEADER_RE.test(section.title || "")
-  )
+  // Backward-compatible parsing fallback
+  const sections = collectJsonSections(raw)
+  if (sections.length === 0) return []
 
+  const hasOptionHeaders = sections.some((section) => OPTION_HEADER_RE.test(section.title || ""))
   const pages: MockupPage[] = []
 
   sections.forEach((section, index) => {
