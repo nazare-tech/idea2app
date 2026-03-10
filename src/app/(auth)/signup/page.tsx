@@ -47,7 +47,7 @@ function SignupScreen() {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${window.location.origin}/callback?next=/dashboard`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/callback?next=/dashboard`,
         },
       })
 
@@ -71,10 +71,11 @@ function SignupScreen() {
 
     try {
       const supabase = createClient()
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/callback?next=/dashboard`,
+          redirectTo: `${baseUrl}/callback?next=/dashboard`,
         },
       })
 
