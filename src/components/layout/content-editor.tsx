@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Code,
   Rocket,
+  Megaphone,
   Sparkles,
   Loader2,
   Download,
@@ -34,13 +35,21 @@ import { DEFAULT_DOCUMENT_MODEL } from "@/lib/prompt-chat-config"
 import { GenerationStreamPanel } from "@/components/workspace/generation-stream-panel"
 import type { StreamStage } from "@/lib/parse-document-stream"
 
+interface MarketingBrief {
+  targetAudience: string
+  stage: string
+  budget: string
+  channels: string
+  launchWindow: string
+}
+
 interface ContentEditorProps {
   documentType: DocumentType
   projectId: string
   projectName: string
   projectDescription: string
   content: string | null
-  onGenerateContent: (model?: string) => Promise<void>
+  onGenerateContent: (model?: string, options?: { marketingBrief?: MarketingBrief }) => Promise<void>
   onUpdateDescription: (description: string) => Promise<void>
   onUpdateContent?: (newContent: string) => Promise<void>
   isGenerating: boolean
@@ -100,6 +109,12 @@ const documentConfig: Record<
     icon: Rocket,
     creditCost: 5,
   },
+  launch: {
+    title: "Marketing",
+    subtitle: "Generate launch plan and distribution copy",
+    icon: Megaphone,
+    creditCost: 5,
+  },
 }
 
 // Width constraints for document resizing
@@ -132,6 +147,13 @@ export function ContentEditor({
   const [isResizing, setIsResizing] = useState(false)
   const [resizeEdge, setResizeEdge] = useState<'left' | 'right' | null>(null)
   const [selectedDocModel, setSelectedDocModel] = useState(DEFAULT_DOCUMENT_MODEL)
+  const [marketingBrief, setMarketingBrief] = useState<MarketingBrief>({
+    targetAudience: "",
+    stage: "",
+    budget: "",
+    channels: "",
+    launchWindow: "",
+  })
 
   const resizeStartX = useRef(0)
   const resizeStartWidth = useRef(0)
@@ -216,6 +238,48 @@ export function ContentEditor({
     resizeStartWidth.current = documentWidth
   }
 
+  useEffect(() => {
+    if (typeof window === "undefined" || documentType !== "launch") return
+
+    const key = `project_${projectId}_marketing_brief`
+    const stored = localStorage.getItem(key)
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as MarketingBrief
+        setMarketingBrief({
+          targetAudience: parsed.targetAudience || "",
+          stage: parsed.stage || "",
+          budget: parsed.budget || "",
+          channels: parsed.channels || "",
+          launchWindow: parsed.launchWindow || "",
+        })
+        return
+      } catch {
+        // ignore invalid local data
+      }
+    }
+
+    // Autofill from existing project docs (best-effort)
+    const audienceMatch = projectDescription.match(/target audience[:\s]*([\s\S]*?)(?:\n##|\n\n##|$)/i)
+    const audience = audienceMatch?.[1]
+      ?.replace(/\n+/g, " ")
+      ?.replace(/\*\*/g, "")
+      ?.trim()
+
+    setMarketingBrief((prev) => ({
+      targetAudience: prev.targetAudience || audience || "",
+      stage: prev.stage || "MVP",
+      budget: prev.budget || "",
+      channels: prev.channels || "Product Hunt, X, Reddit, Email",
+      launchWindow: prev.launchWindow || "next 14 days",
+    }))
+  }, [documentType, projectId, projectDescription])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || documentType !== "launch") return
+    localStorage.setItem(`project_${projectId}_marketing_brief`, JSON.stringify(marketingBrief))
+  }, [documentType, projectId, marketingBrief])
+
   const handleIdeaSummary = async (summary: string) => {
     // Update the project description with the summary
     await onUpdateDescription(summary)
@@ -255,12 +319,15 @@ export function ContentEditor({
     URL.revokeObjectURL(url)
   }
 
-  const canGenerate = credits >= config.creditCost && (prerequisiteValidation?.canGenerate ?? true)
+  const isMarketingBriefComplete = documentType !== "launch" || Object.values(marketingBrief).every(v => v.trim().length > 0)
+  const canGenerate = credits >= config.creditCost && (prerequisiteValidation?.canGenerate ?? true) && isMarketingBriefComplete
   const disabledReason = !prerequisiteValidation?.canGenerate
     ? prerequisiteValidation?.reason
     : credits < config.creditCost
       ? `Insufficient credits (need ${config.creditCost})`
-      : undefined
+      : !isMarketingBriefComplete
+        ? "Complete all marketing brief fields first"
+        : undefined
 
   return (
     <>
@@ -390,7 +457,7 @@ export function ContentEditor({
               )}
               <div className="relative group">
                 <button
-                  onClick={() => onGenerateContent(selectedDocModel)}
+                  onClick={() => onGenerateContent(selectedDocModel, documentType === "launch" ? { marketingBrief } : undefined)}
                   disabled={isGenerating || !canGenerate}
                   className={cn(
                     "ui-row-gap-2 px-5 ui-py-2 rounded-md transition-colors",
@@ -432,6 +499,43 @@ export function ContentEditor({
             />
           ) : (
             <div className="h-full overflow-y-auto p-10 relative">
+              {documentType === "launch" && (
+                <div className="mx-auto mb-6 max-w-4xl rounded-lg border border-border bg-card p-4">
+                  <p className="mb-3 text-sm font-semibold">Marketing Brief (required)</p>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <input
+                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      placeholder="Target audience (e.g., PMs at SaaS startups)"
+                      value={marketingBrief.targetAudience}
+                      onChange={(e) => setMarketingBrief(prev => ({ ...prev, targetAudience: e.target.value }))}
+                    />
+                    <input
+                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      placeholder="Stage (idea / MVP / growth)"
+                      value={marketingBrief.stage}
+                      onChange={(e) => setMarketingBrief(prev => ({ ...prev, stage: e.target.value }))}
+                    />
+                    <input
+                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      placeholder="Budget (e.g., $500, $2k/mo)"
+                      value={marketingBrief.budget}
+                      onChange={(e) => setMarketingBrief(prev => ({ ...prev, budget: e.target.value }))}
+                    />
+                    <input
+                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      placeholder="Launch window (e.g., next 2 weeks)"
+                      value={marketingBrief.launchWindow}
+                      onChange={(e) => setMarketingBrief(prev => ({ ...prev, launchWindow: e.target.value }))}
+                    />
+                    <input
+                      className="rounded-md border border-border bg-background px-3 py-2 text-sm md:col-span-2"
+                      placeholder="Channels (comma-separated: PH, X, HN, Reddit, email...)"
+                      value={marketingBrief.channels}
+                      onChange={(e) => setMarketingBrief(prev => ({ ...prev, channels: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="flex justify-center items-start relative" ref={containerRef}>
                 {/* Document Container with Resize Handles */}
                 <div

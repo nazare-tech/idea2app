@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { BASE_ACTION_TOKENS } from '@/lib/token-economics'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -33,20 +34,7 @@ export function formatRelativeTime(date: string | Date): string {
   return formatDate(date)
 }
 
-export const CREDIT_COSTS = {
-  'competitive-analysis': 15,
-  'gap-analysis': 5,
-  'prd': 10,
-  'mvp-plan': 15,
-  'tech-spec': 15,
-  'mockup': 30,
-  'app-static': 50,
-  'app-dynamic': 100,
-  'app-spa': 150,
-  'app-pwa': 200,
-  'chat': 1,
-  'document-edit': 2, // minimum; actual cost is dynamic (2–5)
-} as const
+export const CREDIT_COSTS = BASE_ACTION_TOKENS
 
 // 1–2 credits for Explain the Idea chat messages based on input length
 export function calculatePromptChatCredits(messageLength: number): number {

@@ -4,8 +4,265 @@ import { CREDIT_COSTS } from "@/lib/utils"
 import OpenAI from "openai"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { buildMockupPrompt } from "@/lib/prompts"
+import { hasThreeOptionProsConsContract } from "@/lib/mockup-format-contract"
 
 const encoder = new TextEncoder()
+
+const OPTION_LABELS = ["A", "B", "C"]
+
+interface LegacyOptionChunk {
+  title: string
+  json: string
+}
+
+function isValidMockupStructure(content: string): boolean {
+  return hasThreeOptionProsConsContract(content)
+}
+
+function extractLegacyOptionChunks(content: string): LegacyOptionChunk[] {
+  const lines = content.split("\n")
+  const chunks: LegacyOptionChunk[] = []
+  let currentTitle = "Screen"
+
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i].trim()
+
+    const headingMatch = line.match(/^(#{1,6})\s*(.+)$/)
+    if (headingMatch) {
+      currentTitle = headingMatch[2]
+        .replace(/^`+|`+$/g, "")
+        .replace(/:\s*$/, "")
+        .trim() || "Screen"
+      i += 1
+      continue
+    }
+
+    if (/^```json\s*$/i.test(line)) {
+      const startLine = i
+      i += 1
+
+      while (i < lines.length && !/^```\s*$/.test(lines[i].trim())) {
+        i += 1
+      }
+
+      if (i < lines.length) {
+        const block = lines.slice(startLine, i + 1).join("\n")
+        chunks.push({ title: currentTitle, json: block })
+      }
+      i += 1
+      continue
+    }
+
+    i += 1
+  }
+
+  return chunks
+}
+
+function buildLegacyTemplate(content: string): string | null {
+  return normalizeLegacyOptionTemplate(content)
+}
+
+function cleanSectionTitle(rawTitle: string): string {
+  return rawTitle
+    .replace(/^(\`|\`{3,})\s*|\s+\`?\`{3,}$/g, "")
+    .replace(/^\s*Option\s*[A-C]\s*-\s*Option\s*[A-C]\s*[-:]?\s*/i, "")
+    .replace(/^\s*Option\s*[A-C]\s*[-:]?/i, "")
+    .replace(/^\s*-\s*/, "")
+    .trim()
+}
+
+function buildFallbackProsCons(title: string, json: string, optionLabel: string): { pros: string[]; cons: string[] } {
+  const normalizedTitle = (title || "").toLowerCase()
+  const normalizedJson = (json || "").toLowerCase()
+  const text = `${normalizedTitle} ${normalizedJson}`
+  const has = (pattern: RegExp) => pattern.test(text)
+
+  const pros: string[] = []
+  const cons: string[] = []
+
+  if (has(/wizard|step|\btab\b|\btabs?\b/)) {
+    pros.push(`${optionLabel}: Uses an explicit progression pattern to reduce cognitive load during setup.`)
+  }
+
+  if (has(/faq|question|table|faqs?|help/)) {
+    pros.push("Groups operational details into structured blocks, making information easy to scan and maintain.")
+  }
+
+  if (has(/nav|menu|sidebar|navigation/)) {
+    pros.push("Provides obvious wayfinding so users can jump between configuration, analytics, and content tasks quickly.")
+  }
+
+  if (has(/form|input|textbox|combobox|select/)) {
+    pros.push("Keeps agent setup and management operations directly editable in a single screen.")
+  }
+
+  if (has(/card|grid/)) {
+    pros.push("Uses modular cards/grids to keep functional areas visually separated and scannable.")
+  }
+
+  if (has(/button/) && has(/save|deploy|preview|play/)) {
+    pros.push("Places high-value actions near relevant content, making completion flow straightforward.")
+  }
+
+  if (pros.length < 2) {
+    pros.push(`${optionLabel}: Keeps layout hierarchy explicit for faster handoff to implementation.`)
+    pros.push("Reduces visual ambiguity with short labels and clearly grouped controls.")
+  }
+
+  if (has(/dashboard|chart|stat|analytics/)) {
+    cons.push("Adds data synchronization and freshness requirements that raise backend implementation complexity.")
+  }
+
+  if (has(/integration|api|webhook|voice|tts|booking/)) {
+    cons.push("Needs platform/API integration work, which increases testing surface and operational assumptions.")
+  }
+
+  if (has(/wizard|step|flow|onboard/)) {
+    cons.push("Requires explicit state and validation logic to avoid getting users stuck between flow stages.")
+  }
+
+  if (has(/faq|table|responsive|mobile/)) {
+    cons.push("Dense content-heavy sections need careful responsive tuning for mobile readability.")
+  }
+
+  if (cons.length < 2) {
+    cons.push("Multiple interactive regions demand stronger keyboard/focus treatment for accessibility.")
+    cons.push("Live business data should be validated before exposing advanced controls in production.")
+  }
+
+  return {
+    pros: pros.slice(0, 4),
+    cons: cons.slice(0, 4),
+  }
+}
+
+function normalizeLegacyOptionTemplate(content: string): string | null {
+  const chunks = extractLegacyOptionChunks(content)
+
+  if (!chunks.length) return null
+
+  const sections = [...chunks]
+
+  while (sections.length < 3 && sections.length > 0) {
+    sections.push({
+      title: `Alternative ${sections.length + 1}`,
+      json: sections[sections.length - 1].json,
+    })
+  }
+
+  const selectedSections = sections.slice(0, 3)
+
+  const output: string[] = []
+
+  for (let i = 0; i < selectedSections.length; i += 1) {
+    const section = selectedSections[i]
+    const label = OPTION_LABELS[i] || `${i + 1}`
+    const cleanedTitle = cleanSectionTitle(section.title)
+    const title = cleanedTitle || `Option ${label}`
+    const fallback = buildFallbackProsCons(title, section.json, `Option ${label}`)
+
+    output.push(`### Option ${label} - ${title}`)
+    output.push("Pros:")
+    fallback.pros.forEach((item) => {
+      output.push(`- ${item}`)
+    })
+    output.push("Cons:")
+    fallback.cons.forEach((item) => {
+      output.push(`- ${item}`)
+    })
+    output.push(section.json)
+    output.push("")
+  }
+
+  return output.join("\n")
+}
+
+function sanitizeMockupProsCons(content: string): string {
+  const chunks = extractLegacyOptionChunks(content)
+  if (chunks.length < 3) return content
+
+  const selected = chunks.slice(0, 3)
+  const lines: string[] = []
+
+  for (let i = 0; i < selected.length; i += 1) {
+    const section = selected[i]
+    const label = OPTION_LABELS[i] || `${i + 1}`
+    const title = cleanSectionTitle(section.title) || `Option ${label}`
+    const fallback = buildFallbackProsCons(title, section.json, `Option ${label}`)
+
+    lines.push(`### Option ${label} - ${title}`)
+    lines.push("Pros:")
+    fallback.pros.forEach((item) => lines.push(`- ${item}`))
+    lines.push("Cons:")
+    fallback.cons.forEach((item) => lines.push(`- ${item}`))
+    lines.push(section.json)
+    lines.push("")
+  }
+
+  return lines.join("\n")
+}
+
+async function enforceMockupFormat({
+  client,
+  content,
+  mvpPlan,
+  projectName,
+  model,
+}: {
+  client: OpenAI,
+  content: string,
+  mvpPlan: string,
+  projectName: string,
+  model: string,
+}): Promise<string> {
+  if (isValidMockupStructure(content)) {
+    return sanitizeMockupProsCons(content)
+  }
+
+  const fallbackPrompt =
+    `You are a strict formatter. Convert the mockup result below into the required template exactly.\n` +
+    `Required: exactly 3 options labeled Option A/B/C.\n` +
+    `For each option include: heading, Pros section (2-4 bullets), Cons section (2-4 bullets), and ONE json-render code block.\n` +
+    `Preserve the JSON blocks whenever possible; only adjust surrounding prose as needed.\n\n` +
+    `Source output:\n\n${content}\n\n` +
+    `Project name: ${projectName}\n` +
+    `MVP context: ${mvpPlan}`
+
+  try {
+    const rewriteResp = await client.chat.completions.create({
+      model,
+      messages: [{ role: "user", content: fallbackPrompt }],
+      max_tokens: 20000,
+    })
+
+    const rewritten = rewriteResp.choices?.[0]?.message?.content?.trim() || ""
+    if (rewritten && isValidMockupStructure(rewritten)) {
+      return sanitizeMockupProsCons(rewritten)
+    }
+
+    const normalizedRewrite = normalizeLegacyOptionTemplate(rewritten)
+    if (normalizedRewrite) {
+      return normalizedRewrite
+    }
+
+    const legacy = buildLegacyTemplate(content)
+    if (legacy) {
+      return legacy
+    }
+  } catch (error) {
+    console.warn("[Mockup] format enforcement failed, using deterministic fallback", error)
+  }
+
+  const legacy = buildLegacyTemplate(content)
+  if (legacy) {
+    return legacy
+  }
+
+  console.warn("[Mockup] format enforcement failed, using original generated content")
+  return content
+}
 
 function createStreamSender(controller: ReadableStreamDefaultController) {
   return (event: object) =>
@@ -131,13 +388,21 @@ export async function POST(request: Request) {
 
             if (!generatedContent) throw new Error("No content returned from OpenRouter")
 
+            const normalizedContent = await enforceMockupFormat({
+              client: openrouterClient,
+              content: generatedContent,
+              mvpPlan,
+              projectName,
+              model: selectedModel,
+            })
+
             send({ type: "stage", message: "Saving mockups...", step: 2, totalSteps: 2 })
             modelUsed = selectedModel
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (supabase as any).from("mockups").insert({
               project_id: projectId!,
-              content: generatedContent,
+              content: normalizedContent,
               model_used: selectedModel,
               metadata: { source: "openrouter", model: selectedModel, generated_at: new Date().toISOString() },
             })
@@ -219,11 +484,19 @@ export async function POST(request: Request) {
       max_tokens: 16384, // Large limit for multiple JSON spec pages
     })
 
-    const content = response.choices[0]?.message?.content
+    const rawContent = response.choices[0]?.message?.content
 
-    if (!content) {
+    if (!rawContent) {
       throw new Error("No content returned from OpenRouter")
     }
+
+    const content = await enforceMockupFormat({
+      client: openrouter,
+      content: rawContent,
+      mvpPlan,
+      projectName,
+      model: selectedModel,
+    })
 
     modelUsed = selectedModel
 

@@ -115,7 +115,8 @@ export function ProjectWorkspace({
         stored === "prd" ||
         stored === "mvp" ||
         stored === "techspec" ||
-        stored === "deploy"
+        stored === "deploy" ||
+        stored === "launch"
       ) {
         return stored
       }
@@ -144,6 +145,7 @@ export function ProjectWorkspace({
     mockups: false,
     techspec: false,
     deploy: false,
+    launch: false,
   })
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<Record<DocumentType, number>>({
     prompt: 0,
@@ -153,6 +155,7 @@ export function ProjectWorkspace({
     mockups: 0,
     techspec: 0,
     deploy: 0,
+    launch: 0,
   })
   // Local content overrides for immediate UI updates after inline edits
   // Key format: `${documentType}-${recordId}` -> updated content
@@ -201,6 +204,8 @@ export function ProjectWorkspace({
         return techSpecs.length
       case "deploy":
         return deployments.length
+      case "launch":
+        return analyses.filter(a => a.type === "launch-plan").length
       default:
         return 0
     }
@@ -252,6 +257,7 @@ export function ProjectWorkspace({
         mockups: false,
         techspec: false,
         deploy: false,
+        launch: false,
       }
     }
 
@@ -263,6 +269,7 @@ export function ProjectWorkspace({
       mockups: loadGeneratingState("mockups"),
       techspec: loadGeneratingState("techspec"),
       deploy: loadGeneratingState("deploy"),
+      launch: loadGeneratingState("launch"),
     }
   }, [loadGeneratingState])
 
@@ -442,6 +449,8 @@ export function ProjectWorkspace({
         return techSpecs.length > 0 ? "done" : "pending"
       case "deploy":
         return deployments.length > 0 ? "done" : "pending"
+      case "launch":
+        return analyses.some(a => a.type === "launch-plan") ? "done" : "pending"
       default:
         return "pending"
     }
@@ -461,6 +470,8 @@ export function ProjectWorkspace({
         return techSpecs
       case "deploy":
         return deployments
+      case "launch":
+        return analyses.filter(a => a.type === "launch-plan")
       default:
         return []
     }
@@ -482,6 +493,8 @@ export function ProjectWorkspace({
           return mockups[versionIndex]?.id || null
         case "techspec":
           return techSpecs[versionIndex]?.id || null
+        case "launch":
+          return analyses.filter(a => a.type === "launch-plan")[versionIndex]?.id || null
         default:
           return null
       }
@@ -516,6 +529,9 @@ export function ProjectWorkspace({
         return deployment.deployment_url
           ? `**Deployment URL:** ${deployment.deployment_url}\n\n**Status:** ${deployment.status || "Unknown"}`
           : deployment.error_message || deployment.build_logs || null
+      case "launch":
+        const launchPlans = analyses.filter(a => a.type === "launch-plan")
+        return launchPlans[versionIndex]?.content || null
       default:
         return null
     }
@@ -611,16 +627,32 @@ export function ProjectWorkspace({
           return { canGenerate: false, reason: "Generate Tech Spec first" }
         }
         return { canGenerate: true }
+      case "launch":
+        if (!project.description) {
+          return { canGenerate: false, reason: "Please add a project description first" }
+        }
+        return { canGenerate: true }
       default:
         return { canGenerate: true }
     }
   }
 
-  const documentStatuses = (["prompt", "competitive", "prd", "mvp", "mockups", "techspec", "deploy"] as DocumentType[]).map(
+  const documentStatuses = (["prompt", "competitive", "prd", "mvp", "mockups", "techspec", "deploy", "launch"] as DocumentType[]).map(
     type => ({ type, status: getDocumentStatus(type) })
   )
 
-  const handleGenerateContent = async (model?: string) => {
+  const handleGenerateContent = async (
+    model?: string,
+    options?: {
+      marketingBrief?: {
+        targetAudience: string
+        stage: string
+        budget: string
+        channels: string
+        launchWindow: string
+      }
+    }
+  ) => {
     const generatingType = activeDocument
     let didGenerate = false
     let wasStreaming = false
@@ -653,6 +685,9 @@ export function ProjectWorkspace({
         case "deploy":
           endpoint = "/api/generate-app"
           break
+        case "launch":
+          endpoint = "/api/launch/plan"
+          break
         default:
           throw new Error("Unsupported document type")
       }
@@ -680,7 +715,7 @@ export function ProjectWorkspace({
             idea: project.description,
             name: projectName,
             ...(model && { model }),
-            ...(generatingType !== "deploy" && { stream: true }),
+            ...(generatingType !== "deploy" && generatingType !== "launch" && { stream: true }),
             ...(generatingType === "deploy" && { appType: "dynamic" }),
             ...(generatingType === "prd" && competitiveAnalysis?.content && {
               competitiveAnalysis: competitiveAnalysis.content
@@ -694,6 +729,9 @@ export function ProjectWorkspace({
             }),
             ...(generatingType === "techspec" && latestPrd?.content && {
               prd: latestPrd.content
+            }),
+            ...(generatingType === "launch" && options?.marketingBrief && {
+              marketingBrief: options.marketingBrief,
             }),
           }),
         })
@@ -828,6 +866,13 @@ export function ProjectWorkspace({
           if (techSpec) {
             endpoint = `/api/tech-specs/${techSpec.id}`
             recordId = techSpec.id
+          }
+          break
+        case "launch":
+          const launchPlan = analyses.filter(a => a.type === "launch-plan")[versionIndex]
+          if (launchPlan) {
+            endpoint = `/api/analyses/${launchPlan.id}`
+            recordId = launchPlan.id
           }
           break
         default:

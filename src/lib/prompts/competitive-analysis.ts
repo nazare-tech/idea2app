@@ -26,6 +26,8 @@ After completing the competitive analysis and gap analysis:
 OUTPUT FORMAT (STRICT)
 Output Markdown only. Use the following structure:
 
+# Competitive Analysis: [Business Name]
+
 ## Executive Summary
 2-3 sentences on the competitive landscape
 
@@ -68,7 +70,14 @@ For each competitor (3-5):
 TONE
 - Professional, analytical, concise
 - No fluff, no generic claims
-- Every point backed by research data where available`
+- Every point backed by research data where available
+
+MARKDOWN QUALITY BAR
+- Maintain heading hierarchy: H1 for document title, H2 for sections, H3 for nested blocks
+- Keep bullets concise and parallel in style
+- Ensure tables are valid markdown tables with aligned columns
+- Format all external references as markdown links: [Label](https://example.com)
+- Do not leave raw bare URLs in the final output`
 
 const COMPETITIVE_ANALYSIS_USER_TEMPLATE = `Please analyze the competitive landscape for the following business:
 

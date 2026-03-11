@@ -9,6 +9,7 @@ interface DocumentCounts {
   mockups: number
   techspec: number
   deploy: number
+  launch: number
 }
 
 export async function GET(
@@ -60,6 +61,7 @@ export async function GET(
       mockupResult,
       techSpecResult,
       deploymentResult,
+      launchResult,
     ] = await Promise.all([
       supabase
         .from("analyses")
@@ -87,6 +89,11 @@ export async function GET(
         .from("deployments")
         .select("id", { count: "exact", head: true })
         .eq("project_id", id),
+      supabase
+        .from("analyses")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", id)
+        .eq("type", "launch-plan"),
     ])
 
     const counts: DocumentCounts = {
@@ -96,6 +103,7 @@ export async function GET(
       mockups: mockupResult.count || 0,
       techspec: techSpecResult.count || 0,
       deploy: deploymentResult.count || 0,
+      launch: launchResult.count || 0,
     }
 
     return NextResponse.json({

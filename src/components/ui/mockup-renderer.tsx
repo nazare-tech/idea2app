@@ -4,7 +4,8 @@ import React from "react"
 import { Renderer, JSONUIProvider } from "@json-render/react"
 import { mockupRegistry } from "@/lib/json-render/registry"
 import type { Spec } from "@json-render/core"
-import { Monitor, Smartphone, Tablet, ChevronLeft, ChevronRight, Layers } from "lucide-react"
+import { Monitor, Smartphone, Tablet, Layers } from "lucide-react"
+import { extractMockupOptions } from "@/lib/mockup-format-contract"
 
 interface MockupRendererProps {
   content: string
@@ -16,6 +17,8 @@ interface MockupRendererProps {
 interface MockupPage {
   title: string
   description: string
+  pros: string[]
+  cons: string[]
   spec: Spec
 }
 
@@ -26,6 +29,7 @@ interface MockupPage {
 function isJsonRenderContent(content: string): boolean {
   return content.includes('"root"') && content.includes('"elements"')
 }
+const OPTION_HEADER_RE = /^#{1,6}\s*Option\s*[A-C]/im
 
 /**
  * Extract a human-readable page title from a json-render spec.
@@ -77,31 +81,98 @@ function extractPageTitle(spec: Spec, fallbackIndex: number): string {
  * Parse markdown content containing json-render specs.
  * Expected format: markdown headers (## or ###) followed by ```json blocks.
  */
-function parseJsonRenderPages(raw: string): MockupPage[] {
-  const pages: MockupPage[] = []
+
+
+/**
+ * Split optional markdown text into notes + pros/cons sections.
+ */
+function parseProsAndCons(raw: string): {
+  notes: string[]
+  pros: string[]
+  cons: string[]
+} {
+  const notes: string[] = []
+  const pros: string[] = []
+  const cons: string[] = []
+
+  const section = {
+    notes,
+    pros,
+    cons,
+  }
+
+  let current: "notes" | "pros" | "cons" = "notes"
+
+  const lines = raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+
+  for (const line of lines) {
+    const normalized = line
+      .toLowerCase()
+      .replace(/[`*_]/g, "")
+      .replace(/^#+\s*/, "")
+      .replace(/:+$/, "")
+      .trim()
+
+    if (/^pros?$/.test(normalized)) {
+      current = "pros"
+      continue
+    }
+
+    if (/^cons?$/.test(normalized)) {
+      current = "cons"
+      continue
+    }
+
+    const bullet = line
+      .replace(/^\s*[-*•]\s*/, "")
+      .replace(/^\s*\d+\.\s*/, "")
+      .trim()
+    if (!bullet) continue
+
+    if (current === "pros") {
+      pros.push(bullet)
+      continue
+    }
+
+    if (current === "cons") {
+      cons.push(bullet)
+      continue
+    }
+
+    notes.push(bullet)
+  }
+
+  return section
+}
+
+interface RawMockupSection {
+  title: string
+  description: string[]
+  json: string
+}
+
+function collectJsonSections(raw: string): RawMockupSection[] {
   const lines = raw.split("\n")
+  const sections: RawMockupSection[] = []
+
   let currentTitle = ""
   let currentDescription: string[] = []
   let inCodeFence = false
   let codeBlock: string[] = []
 
-  const flushPage = () => {
-    if (codeBlock.length === 0) return
-    const jsonStr = codeBlock.join("\n").trim()
-    try {
-      const spec = JSON.parse(jsonStr) as Spec
-      if (spec.root && spec.elements) {
-        const title = currentTitle || extractPageTitle(spec, pages.length + 1)
-        pages.push({
-          title,
-          description: currentDescription.join("\n").trim(),
-          spec,
-        })
-      }
-    } catch {
-      // Invalid JSON — skip this block
-      console.warn(`[MockupRenderer] Failed to parse json-render spec for "${currentTitle}"`)
-    }
+  const flushSection = () => {
+    const json = codeBlock.join("\n").trim()
+    if (!json) return
+
+    sections.push({
+      title: currentTitle,
+      description: currentDescription,
+      json,
+    })
+
     codeBlock = []
     currentDescription = []
   }
@@ -109,10 +180,9 @@ function parseJsonRenderPages(raw: string): MockupPage[] {
   for (const line of lines) {
     const trimmed = line.trim()
 
-    // Handle code fences
     if (trimmed.startsWith("```")) {
       if (inCodeFence) {
-        flushPage()
+        flushSection()
         inCodeFence = false
       } else {
         inCodeFence = true
@@ -125,25 +195,158 @@ function parseJsonRenderPages(raw: string): MockupPage[] {
       continue
     }
 
-    // Detect markdown headers
     const headerMatch = trimmed.match(/^(#{1,6})\s+(.+)$/)
     if (headerMatch) {
-      currentTitle = headerMatch[2]
+      if (inCodeFence && codeBlock.length > 0) {
+        flushSection()
+      }
+      currentTitle = headerMatch[2].trim()
       currentDescription = []
       continue
     }
 
-    // Collect description text between header and code block
     if (trimmed) {
       currentDescription.push(trimmed)
     }
   }
 
-  // Flush any remaining content
-  flushPage()
+  flushSection()
+
+  return sections.filter((section) => section.json)
+}
+
+function normalizeOptionTitle(rawTitle: string, index: number): string {
+  const optionMatch = rawTitle.match(/option\s*([A-C])/i)
+  if (optionMatch) {
+    const normalized = rawTitle.replace(/^\s*Option\s*[A-C]\s*-?\s*/i, "")
+    if (normalized) {
+      return `Option ${optionMatch[1].toUpperCase()} - ${normalized}`
+    }
+    return `Option ${optionMatch[1].toUpperCase()}`
+  }
+
+  if (rawTitle) {
+    return rawTitle
+  }
+
+  return `Option ${String.fromCharCode(65 + index)}`
+}
+
+function ensureProsAndCons(section: RawMockupSection, index: number) {
+  const parsed = parseProsAndCons(section.description.join("\n"))
+
+  const labels = ["A", "B", "C"]
+  const optionLabel = labels[index] || `${index + 1}`
+
+  return {
+    pros: parsed.pros.length
+      ? parsed.pros
+      : [
+          `Option ${optionLabel} keeps the generated layout concise.`,
+          `Option ${optionLabel} focuses on the same core user flow.`,
+        ],
+    cons: parsed.cons.length
+      ? parsed.cons
+      : [
+          "Review this variation against your implementation constraints.",
+          "Regenerate if you want stronger tradeoff-specific wording.",
+        ],
+    notes: parsed.notes,
+  }
+}
+
+function addFallbackProsConsIfMissing(page: MockupPage, index: number): MockupPage {
+  const optionLabel = `Option ${String.fromCharCode(65 + index)}`
+
+  if (page.pros.length > 0 || page.cons.length > 0) {
+    return page
+  }
+
+  return {
+    ...page,
+    pros: [
+      `${optionLabel} keeps the core flow visually clear.`,
+      `${optionLabel} is built with wireframe-ready component structure.`,
+    ],
+    cons: [
+      "Tradeoff details were not provided in this generation format.",
+      "Regenerate with the standard option format for explicit pros/cons.",
+    ],
+  }
+}
+
+const OPTION_ROOT_ID_RE = /^(option|variation|candidate|layout|screen)/i
+
+function isLikelyOptionRootContainer(id: string): boolean {
+  return OPTION_ROOT_ID_RE.test(id)
+}
+
+function parseJsonRenderPages(raw: string): MockupPage[] {
+  const options = extractMockupOptions(raw)
+
+  // Prefer strict option contract parsing when available
+  if (options.length > 0) {
+    const pages: MockupPage[] = []
+
+    options.slice(0, 3).forEach((option, index) => {
+      try {
+        const json = option.json.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim()
+        const spec = JSON.parse(json) as Spec
+        if (!spec.root || !spec.elements) return
+
+        pages.push({
+          title: `Option ${option.label}${option.title ? ` - ${option.title}` : ""}`,
+          description: "",
+          pros: option.pros,
+          cons: option.cons,
+          spec,
+        })
+      } catch {
+        console.warn(`[MockupRenderer] Failed to parse json-render spec for option ${option.label}`)
+      }
+    })
+
+    if (pages.length > 0) return pages
+  }
+
+  // Backward-compatible parsing fallback
+  const sections = collectJsonSections(raw)
+  if (sections.length === 0) return []
+
+  const hasOptionHeaders = sections.some((section) => OPTION_HEADER_RE.test(section.title || ""))
+  const pages: MockupPage[] = []
+
+  sections.forEach((section, index) => {
+    if (index >= 3) return
+
+    try {
+      const spec = JSON.parse(section.json) as Spec
+      if (!spec.root || !spec.elements) return
+
+      const baseTitle = section.title ? section.title.trim() : ""
+      const title = hasOptionHeaders
+        ? normalizeOptionTitle(baseTitle, index)
+        : sections.length === 3
+          ? `Option ${String.fromCharCode(65 + index)} - ${baseTitle || "Screen"}`
+          : normalizeOptionTitle(baseTitle || `Option ${String.fromCharCode(65 + index)}`, index)
+
+      const parsed = ensureProsAndCons(section, index)
+
+      pages.push({
+        title,
+        description: parsed.notes.join("\n").trim(),
+        pros: parsed.pros,
+        cons: parsed.cons,
+        spec,
+      })
+    } catch {
+      console.warn(`[MockupRenderer] Failed to parse json-render spec for "${section.title}"`)
+    }
+  })
 
   return pages
 }
+
 
 // ---- JSON Patch format detection and parsing ----
 
@@ -521,127 +724,16 @@ function JsonRenderPage({ page }: { page: MockupPage }) {
 // ---- Multi-page interactive mockup viewer ----
 
 function MockupViewer({ pages }: { pages: MockupPage[] }) {
-  const [activeIndex, setActiveIndex] = React.useState(0)
-  const [viewport, setViewport] = React.useState<Viewport>("desktop")
-
-  const activePage = pages[activeIndex]
-  const vp = viewportConfig[viewport]
-
   return (
-    <div className="space-y-0">
-      {/* Toolbar: page tabs + viewport switcher */}
-      <div className="flex items-center justify-between border border-border rounded-t-xl bg-muted/30 px-1">
-        {/* Page tabs (scrollable if many) */}
-        <div className="flex items-center gap-0.5 overflow-x-auto py-1 flex-1 min-w-0">
-          {pages.map((page, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveIndex(i)}
-              className={`
-                flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg
-                transition-all duration-150 whitespace-nowrap shrink-0
-                ${i === activeIndex
-                  ? "bg-background text-foreground shadow-sm border border-border"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                }
-              `}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                i === activeIndex ? "bg-primary" : "bg-muted-foreground/30"
-              }`} />
-              {page.title}
-            </button>
-          ))}
+    <div className="space-y-6">
+      {pages.map((page, index) => (
+        <div key={`${page.title}-${index}`} className="space-y-2">
+          <div className="text-xs font-medium text-muted-foreground border-l-2 border-primary pl-2">
+            Option {index + 1}: {page.title}
+          </div>
+          <SinglePageViewer page={page} />
         </div>
-
-        {/* Page counter + viewport switcher */}
-        <div className="flex items-center gap-2 pl-3 border-l border-border ml-2 shrink-0">
-          {/* Page navigation arrows */}
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
-              disabled={activeIndex === 0}
-              className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-[10px] text-muted-foreground font-mono tabular-nums px-0.5">
-              {activeIndex + 1}/{pages.length}
-            </span>
-            <button
-              onClick={() => setActiveIndex(Math.min(pages.length - 1, activeIndex + 1))}
-              disabled={activeIndex === pages.length - 1}
-              className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Viewport toggles */}
-          <div className="flex items-center bg-background rounded-md border border-border p-0.5">
-            {(Object.entries(viewportConfig) as [Viewport, typeof vp][]).map(([key, config]) => {
-              const Icon = config.icon
-              return (
-                <button
-                  key={key}
-                  onClick={() => setViewport(key)}
-                  title={config.label}
-                  className={`
-                    p-1 rounded transition-colors
-                    ${key === viewport
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                    }
-                  `}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Browser chrome frame */}
-      <div className="border-x border-border bg-muted/20">
-        {/* URL bar */}
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
-          <div className="flex gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
-            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/60" />
-            <span className="w-2.5 h-2.5 rounded-full bg-green-400/60" />
-          </div>
-          <div className="flex-1 flex items-center gap-1.5 bg-background rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground font-mono">
-            <span className="text-green-600">●</span>
-            <span>app.example.com/{activePage.title.toLowerCase().replace(/\s+/g, "-")}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Viewport container */}
-      <div className="border-x border-b border-border rounded-b-xl bg-muted/10 overflow-hidden">
-        <div className="flex justify-center py-0 bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
-          <div
-            className="w-full transition-all duration-300 ease-out bg-white"
-            style={{
-              maxWidth: vp.width,
-              minHeight: "500px",
-            }}
-          >
-            {/* Page description */}
-            {activePage.description && (
-              <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                <p className="text-xs text-gray-500">{activePage.description}</p>
-              </div>
-            )}
-
-            {/* Rendered mockup */}
-            <div className="p-4">
-              <JsonRenderPage page={activePage} />
-            </div>
-          </div>
-        </div>
-      </div>
+      ))}
     </div>
   )
 }
@@ -659,11 +751,6 @@ function SinglePageViewer({ page }: { page: MockupPage }) {
         <div className="flex items-center gap-2">
           <Layers className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-xs font-medium text-foreground">{page.title}</span>
-          {page.description && (
-            <span className="text-[10px] text-muted-foreground hidden sm:inline">
-              — {page.description}
-            </span>
-          )}
         </div>
 
         {/* Viewport toggles */}
@@ -689,6 +776,41 @@ function SinglePageViewer({ page }: { page: MockupPage }) {
           })}
         </div>
       </div>
+
+        {/* Pros / Cons */}
+      {(page.description || page.pros.length > 0 || page.cons.length > 0) && (
+        <div className="border-x border-border bg-muted/15 px-3 py-2 text-xs">
+          {page.description && (
+            <p className="text-muted-foreground mb-2">{page.description}</p>
+          )}
+
+          {(page.pros.length > 0 || page.cons.length > 0) && (
+            <div className="grid gap-2 md:grid-cols-2">
+              {page.pros.length > 0 && (
+                <div className="rounded-md border border-green-200/50 bg-green-50/40 dark:bg-green-950/20 dark:border-green-900/50 p-2">
+                  <p className="font-medium text-green-700 dark:text-green-300 text-[11px] mb-1">Pros</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+                    {page.pros.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {page.cons.length > 0 && (
+                <div className="rounded-md border border-red-200/50 bg-red-50/40 dark:bg-red-950/20 dark:border-red-900/50 p-2">
+                  <p className="font-medium text-red-700 dark:text-red-300 text-[11px] mb-1">Cons</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+                    {page.cons.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Browser chrome */}
       <div className="border-x border-border bg-muted/20">
@@ -788,6 +910,14 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
     return [] // Not splittable
   }
 
+  // Safety check: only split when all children look like option-level containers.
+  const allChildrenAreLikelyOptions = rootEl.children.every((id) =>
+    isLikelyOptionRootContainer(id)
+  )
+  if (!allChildrenAreLikelyOptions) {
+    return []
+  }
+
   // Check if root's children look like individual pages
   // (each child is a Stack or Card with its own subtree)
   const childElements = rootEl.children
@@ -801,7 +931,7 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
 
   // Extract each child as a separate page spec
   const pages: MockupPage[] = []
-  for (const { id, el } of childElements) {
+  for (const { id } of childElements) {
     // Collect all elements reachable from this child
     const reachable = new Set<string>()
     const queue = [id]
@@ -829,13 +959,14 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
     pages.push({
       title,
       description: "",
+      pros: [],
+      cons: [],
       spec: subSpec,
     })
   }
 
   return pages
 }
-
 // ---- Main component ----
 
 /**
@@ -866,7 +997,7 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
     if (pages.length > 1) {
       return (
         <div className={className}>
-          <MockupViewer pages={pages} />
+          <MockupViewer pages={pages.map((page, index) => addFallbackProsConsIfMissing(page, index))} />
         </div>
       )
     }
@@ -874,11 +1005,16 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
     return (
       <div className={className}>
         <SinglePageViewer
-          page={{
-            title: "Wireframe",
-            description: "Layout wireframe generated from the MVP plan",
-            spec: patchSpec,
-          }}
+          page={addFallbackProsConsIfMissing(
+            {
+              title: "Wireframe",
+              description: "Layout wireframe generated from the MVP plan",
+              pros: [],
+              cons: [],
+              spec: patchSpec,
+            },
+            0
+          )}
         />
       </div>
     )
@@ -898,11 +1034,11 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
       )
     }
 
-    // Multi-page: tabbed viewer
+    // Multi-page: show all options in linear order
     if (pages.length > 1) {
       return (
         <div className={className}>
-          <MockupViewer pages={pages} />
+          <MockupViewer pages={pages.map((page, index) => addFallbackProsConsIfMissing(page, index))} />
         </div>
       )
     }
