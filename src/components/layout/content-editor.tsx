@@ -24,6 +24,7 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
 import { PromptChatInterface } from "@/components/chat/prompt-chat-interface"
+import type { GenerateAllProgress } from "@/components/chat/generate-all-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,6 +62,14 @@ interface ContentEditorProps {
   currentVersion?: number
   totalVersions?: number
   onVersionChange?: (version: number) => void
+  // Generate All props — threaded to PromptChatInterface
+  showGenerateAllDialog?: boolean
+  generateAllProgress?: GenerateAllProgress | null
+  generateAllCreditCost?: number
+  onGenerateAll?: () => void
+  onGenerateAllDismiss?: () => void
+  onNavigateToArtifact?: (type: DocumentType) => void
+  onGenerateAllRetry?: (type: DocumentType) => void
 }
 
 const documentConfig: Record<
@@ -140,6 +149,13 @@ export function ContentEditor({
   streamStages,
   streamCurrentStep,
   streamContent,
+  showGenerateAllDialog,
+  generateAllProgress,
+  generateAllCreditCost,
+  onGenerateAll,
+  onGenerateAllDismiss,
+  onNavigateToArtifact,
+  onGenerateAllRetry,
 }: ContentEditorProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -496,6 +512,14 @@ export function ContentEditor({
               projectName={projectName}
               initialIdea={projectDescription}
               onIdeaSummary={handleIdeaSummary}
+              credits={credits}
+              showGenerateAllDialog={showGenerateAllDialog}
+              generateAllProgress={generateAllProgress ?? null}
+              generateAllCreditCost={generateAllCreditCost}
+              onGenerateAll={onGenerateAll}
+              onGenerateAllDismiss={onGenerateAllDismiss}
+              onNavigateToArtifact={onNavigateToArtifact}
+              onGenerateAllRetry={onGenerateAllRetry}
             />
           ) : (
             <div className="h-full overflow-y-auto p-10 relative">

@@ -82,6 +82,22 @@ export function estimateFullReportTokens(modelId?: string) {
   return actions.reduce((sum, action) => sum + getTokenCost(action, modelId), 0)
 }
 
+// The 5 core artifacts generated in sequence by "Generate All"
+export const GENERATE_ALL_ARTIFACTS = [
+  "competitive-analysis",
+  "prd",
+  "mvp-plan",
+  "tech-spec",
+  "mockup",
+] as const satisfies readonly TokenBillableAction[]
+
+export function calculateGenerateAllCost(modelId?: string): number {
+  return GENERATE_ALL_ARTIFACTS.reduce(
+    (sum, action) => sum + getTokenCost(action, modelId),
+    0
+  )
+}
+
 export function tokensToUsdCents(tokens: number) {
   return Math.round(tokens * TOKEN_VALUE_CENTS)
 }

@@ -7,6 +7,8 @@ import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
 import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stream"
+import { calculateGenerateAllCost } from "@/lib/token-economics"
+import type { GenerateAllProgress } from "@/components/chat/generate-all-dialog"
 
 
 interface Project {
@@ -171,6 +173,24 @@ export function ProjectWorkspace({
     setStreamCurrentStep(0)
     setStreamContent("")
   }, [])
+
+  // Generate All state
+  const [generateAllProgress, setGenerateAllProgress] = useState<GenerateAllProgress | null>(null)
+  const [generateAllDismissed, setGenerateAllDismissed] = useState(false)
+
+  const GENERATE_ALL_MODEL = "google/gemini-3.1-pro-preview"
+
+  const hasAnyArtifact =
+    analyses.some(a => a.type === "competitive-analysis") ||
+    prds.length > 0 ||
+    mvpPlans.length > 0 ||
+    techSpecs.length > 0 ||
+    mockups.length > 0
+
+  const showGenerateAllDialog =
+    Boolean(project.description) && !hasAnyArtifact && !generateAllDismissed
+
+  const generateAllCreditCost = calculateGenerateAllCost(GENERATE_ALL_MODEL)
 
   const getGenerationSnapshot = useCallback(async (): Promise<WorkspaceGenerationCounts | null> => {
     try {
@@ -651,9 +671,10 @@ export function ProjectWorkspace({
         channels: string
         launchWindow: string
       }
-    }
+    },
+    documentTypeOverride?: DocumentType
   ) => {
-    const generatingType = activeDocument
+    const generatingType = documentTypeOverride ?? activeDocument
     let didGenerate = false
     let wasStreaming = false
 
@@ -803,6 +824,53 @@ export function ProjectWorkspace({
       // Wait a moment for database transaction to complete
       await new Promise(resolve => setTimeout(resolve, 500))
       router.refresh()
+    }
+  }
+
+  const GENERATE_ALL_SEQUENCE: Array<{ type: DocumentType; key: keyof GenerateAllProgress }> = [
+    { type: "competitive", key: "competitive" },
+    { type: "prd",         key: "prd" },
+    { type: "mvp",         key: "mvp" },
+    { type: "techspec",    key: "techspec" },
+    { type: "mockups",     key: "mockups" },
+  ]
+
+  const handleGenerateAll = async () => {
+    if (credits < generateAllCreditCost) {
+      alert(`Insufficient credits. Need ${generateAllCreditCost}, you have ${credits}.`)
+      return
+    }
+
+    setGenerateAllProgress({
+      competitive: "queued",
+      prd: "queued",
+      mvp: "queued",
+      techspec: "queued",
+      mockups: "queued",
+    })
+
+    for (const { type, key } of GENERATE_ALL_SEQUENCE) {
+      setGenerateAllProgress(prev => prev ? { ...prev, [key]: "generating" } : prev)
+      try {
+        await handleGenerateContent(GENERATE_ALL_MODEL, undefined, type)
+        setGenerateAllProgress(prev => prev ? { ...prev, [key]: "done" } : prev)
+      } catch {
+        setGenerateAllProgress(prev => prev ? { ...prev, [key]: "error" } : prev)
+        // Continue with remaining artifacts even on error
+      }
+    }
+  }
+
+  const handleGenerateAllRetry = async (type: DocumentType) => {
+    const key = GENERATE_ALL_SEQUENCE.find(s => s.type === type)?.key
+    if (!key || !generateAllProgress) return
+
+    setGenerateAllProgress(prev => prev ? { ...prev, [key]: "generating" } : prev)
+    try {
+      await handleGenerateContent(GENERATE_ALL_MODEL, undefined, type)
+      setGenerateAllProgress(prev => prev ? { ...prev, [key]: "done" } : prev)
+    } catch {
+      setGenerateAllProgress(prev => prev ? { ...prev, [key]: "error" } : prev)
     }
   }
 
@@ -968,6 +1036,13 @@ export function ProjectWorkspace({
             currentVersion={selectedVersionIndex[activeDocument] || 0}
             totalVersions={getTotalVersions(activeDocument)}
             onVersionChange={(index) => handleVersionChange(activeDocument, index)}
+            showGenerateAllDialog={showGenerateAllDialog}
+            generateAllProgress={generateAllProgress}
+            generateAllCreditCost={generateAllCreditCost}
+            onGenerateAll={handleGenerateAll}
+            onGenerateAllDismiss={() => setGenerateAllDismissed(true)}
+            onNavigateToArtifact={handleDocumentSelect}
+            onGenerateAllRetry={handleGenerateAllRetry}
           />
         </div>
       </div>

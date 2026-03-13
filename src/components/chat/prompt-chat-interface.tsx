@@ -13,6 +13,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Spinner } from "@/components/ui/spinner"
+import { GenerateAllDialog } from "@/components/chat/generate-all-dialog"
+import type { GenerateAllProgress } from "@/components/chat/generate-all-dialog"
+import type { DocumentType } from "@/components/layout/document-nav"
 
 interface Message {
   id: string
@@ -30,6 +33,14 @@ interface PromptChatInterfaceProps {
   projectName: string
   initialIdea: string
   onIdeaSummary?: (summary: string) => void
+  credits?: number
+  showGenerateAllDialog?: boolean
+  generateAllProgress?: GenerateAllProgress | null
+  generateAllCreditCost?: number
+  onGenerateAll?: () => void
+  onGenerateAllDismiss?: () => void
+  onNavigateToArtifact?: (type: DocumentType) => void
+  onGenerateAllRetry?: (type: DocumentType) => void
 }
 
 type StreamEvent =
@@ -45,6 +56,14 @@ export function PromptChatInterface({
   projectName,
   initialIdea,
   onIdeaSummary,
+  credits = 0,
+  showGenerateAllDialog = false,
+  generateAllProgress = null,
+  generateAllCreditCost = 0,
+  onGenerateAll,
+  onGenerateAllDismiss,
+  onNavigateToArtifact,
+  onGenerateAllRetry,
 }: PromptChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
@@ -601,6 +620,19 @@ export function PromptChatInterface({
 
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Generate All dialog — shown below messages when idea is summarized */}
+        {(showGenerateAllDialog || generateAllProgress !== null) && (
+          <GenerateAllDialog
+            creditCost={generateAllCreditCost}
+            credits={credits}
+            onAccept={onGenerateAll ?? (() => {})}
+            onDismiss={onGenerateAllDismiss ?? (() => {})}
+            progress={generateAllProgress}
+            onNavigate={onNavigateToArtifact}
+            onRetry={onGenerateAllRetry}
+          />
+        )}
       </div>
 
       {/* Input */}
