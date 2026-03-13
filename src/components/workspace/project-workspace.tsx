@@ -672,7 +672,17 @@ export function ProjectWorkspace({
         launchWindow: string
       }
     },
-    documentTypeOverride?: DocumentType
+    documentTypeOverride?: DocumentType,
+    hooks?: {
+      /** Override stale-closure prerequisite data (used by handleGenerateAll) */
+      contentOverrides?: {
+        competitiveAnalysis?: string | null
+        prd?: string | null
+        mvpPlan?: string | null
+      }
+      /** Called with the full generated text once streaming completes */
+      onGeneratedContent?: (content: string) => void
+    }
   ) => {
     const generatingType = documentTypeOverride ?? activeDocument
     let didGenerate = false
@@ -714,13 +724,22 @@ export function ProjectWorkspace({
       }
 
       // Get competitive analysis for PRD generation
-      const competitiveAnalysis = analyses.find(a => a.type === "competitive-analysis")
+      // Use content override if provided (avoids stale-closure issue in handleGenerateAll)
+      const competitiveAnalysis = hooks?.contentOverrides?.competitiveAnalysis !== undefined
+        ? (hooks.contentOverrides.competitiveAnalysis ? { content: hooks.contentOverrides.competitiveAnalysis } : undefined)
+        : analyses.find(a => a.type === "competitive-analysis")
 
       // Get latest PRD for MVP plan and tech spec generation
-      const latestPrd = prds[0]
+      const latestPrd = hooks?.contentOverrides?.prd !== undefined
+        ? (hooks.contentOverrides.prd ? { content: hooks.contentOverrides.prd } : undefined)
+        : prds[0]
 
       // Get latest MVP plan for mockup generation
-      const latestMvp = mvpPlans[0]
+      const latestMvp = hooks?.contentOverrides?.mvpPlan !== undefined
+        ? (hooks.contentOverrides.mvpPlan ? { content: hooks.contentOverrides.mvpPlan } : undefined)
+        : mvpPlans[0]
+
+      let localContent = ""
 
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 min client-side limit
@@ -789,8 +808,14 @@ export function ProjectWorkspace({
             })
             setStreamCurrentStep(stage.step)
           },
-          onToken: (content) => setStreamContent(prev => prev + content),
-          onDone: (_model) => { didGenerate = true },
+          onToken: (content) => {
+            localContent += content
+            setStreamContent(prev => prev + content)
+          },
+          onDone: (_model) => {
+            didGenerate = true
+            hooks?.onGeneratedContent?.(localContent)
+          },
           onError: (message) => {
             streamError = message
           },
@@ -849,10 +874,29 @@ export function ProjectWorkspace({
       mockups: "queued",
     })
 
+    // Accumulate prerequisite content as each artifact is generated, so
+    // subsequent steps aren't blocked by stale React state from the closure.
+    const ctx: {
+      competitiveAnalysis?: string
+      prd?: string
+      mvpPlan?: string
+    } = {}
+
     for (const { type, key } of GENERATE_ALL_SEQUENCE) {
       setGenerateAllProgress(prev => prev ? { ...prev, [key]: "generating" } : prev)
       try {
-        await handleGenerateContent(GENERATE_ALL_MODEL, undefined, type)
+        await handleGenerateContent(GENERATE_ALL_MODEL, undefined, type, {
+          contentOverrides: {
+            competitiveAnalysis: ctx.competitiveAnalysis ?? null,
+            prd: ctx.prd ?? null,
+            mvpPlan: ctx.mvpPlan ?? null,
+          },
+          onGeneratedContent: (content) => {
+            if (type === "competitive") ctx.competitiveAnalysis = content
+            else if (type === "prd") ctx.prd = content
+            else if (type === "mvp") ctx.mvpPlan = content
+          },
+        })
         setGenerateAllProgress(prev => prev ? { ...prev, [key]: "done" } : prev)
       } catch {
         setGenerateAllProgress(prev => prev ? { ...prev, [key]: "error" } : prev)
