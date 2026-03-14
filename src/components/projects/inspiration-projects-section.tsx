@@ -37,17 +37,7 @@ const inspirationProjects = [
     categoryClass: "text-[#FF3B30]",
     href: "/projects",
   },
-  {
-    category: "PRODUCT • SOCIAL",
-    title: "OffMenu X Inspiration",
-    description: "Real-world social-first product narrative and positioning ideas",
-    action: "Open Inspiration",
-    buttonClass: "bg-text-primary border-text-primary text-white",
-    cardClass: "bg-white text-text-primary",
-    titleClass: "text-text-primary",
-    categoryClass: "text-[#FF3B30]",
-    href: "https://x.com/WeAreOffMenu/status/2031750760522748113?s=20",
-  },
+
 ]
 
 export function InspirationProjectsSection() {
