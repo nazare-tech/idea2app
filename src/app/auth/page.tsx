@@ -59,7 +59,7 @@ function AuthScreen() {
     return rawMode === "signup" ? "signup" : "signin"
   }, [searchParams])
 
-  const [mode, setMode] = useState<AuthMode>(defaultMode)
+  const mode = defaultMode
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -71,13 +71,6 @@ function AuthScreen() {
   const [success, setSuccess] = useState(false)
 
   const copy = modeLabels[mode]
-
-  const setAuthMode = (nextMode: AuthMode) => {
-    if (mode === nextMode || loading) return
-    setMode(nextMode)
-    setError(null)
-    router.replace(`/auth?mode=${nextMode}`)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -225,27 +218,6 @@ function AuthScreen() {
                     <CardTitle className="text-3xl tracking-[-0.02em]">{copy.title}</CardTitle>
                     <p className="ui-text-sm-muted">{copy.subtitle}</p>
                   </CardHeader>
-
-                  <div className="mx-8 mb-4 grid grid-cols-2 gap-2 rounded-lg border border-border-subtle bg-[#F8F8F8] p-1">
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode("signin")}
-                      className={`${uiStylePresets.headerOutlineTab} ${
-                        mode === "signin" ? "bg-white text-foreground shadow-sm" : "text-text-secondary"
-                      }`}
-                    >
-                      Sign In
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode("signup")}
-                      className={`${uiStylePresets.headerOutlineTab} ${
-                        mode === "signup" ? "bg-white text-foreground shadow-sm" : "text-text-secondary"
-                      }`}
-                    >
-                      Sign Up
-                    </button>
-                  </div>
 
                   <div className="ui-px-8">
                     <button
