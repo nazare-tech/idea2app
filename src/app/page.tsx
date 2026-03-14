@@ -143,11 +143,6 @@ export default function LandingPage() {
 
           <div className="hidden ui-row-gap-3 md:flex">
             <Link href="/auth">
-              <Button variant="outline" className="h-10 border-text-primary px-6 text-sm font-semibold">
-                Get Started
-              </Button>
-            </Link>
-            <Link href="/auth">
               <Button className="h-10 px-6 bg-primary text-primary-foreground">Get Started</Button>
             </Link>
           </div>
