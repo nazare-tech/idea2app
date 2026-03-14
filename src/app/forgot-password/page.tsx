@@ -125,7 +125,7 @@ export default function ForgotPasswordPage() {
             <CardFooter className="ui-px-8 pb-8 pt-0">
               <p className="w-full text-center ui-text-sm-muted">
                 Remembered your password?{" "}
-                <Link href="/login" className="ui-font-semibold text-foreground hover:text-primary underline decoration-dotted underline-offset-2">
+                <Link href="/auth?mode=signin" className="ui-font-semibold text-foreground hover:text-primary underline decoration-dotted underline-offset-2">
                   Back to Sign in
                 </Link>
               </p>
