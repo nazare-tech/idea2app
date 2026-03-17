@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Trash2 } from "lucide-react"
+import { ArrowRight, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { MouseEvent } from "react"
 
@@ -79,7 +79,7 @@ export function DashboardProjectCard({
       {/* TODO: keep #FF3B30 local as the destructive action color for delete confirmation actions. */}
       <Link
         href={href}
-        className="block w-full max-w-[75%] border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
+        className="block w-[320px] max-w-full border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
       >
         <div className="space-y-4">
           <div className="space-y-2">

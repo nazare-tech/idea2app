@@ -9,7 +9,7 @@ type ActiveProject = {
   name: string
   description: string | null
   href: string
-  updatedAt: string
+  updatedAt: string | null
 }
 
 export default async function ProjectsPage() {
@@ -62,7 +62,7 @@ export default async function ProjectsPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,max-content))] gap-6">
             {activeProjects.map((project) => (
               <DashboardProjectCard
                 key={project.id}
