@@ -1,4 +1,5 @@
 import { createClient as createServerClient } from "@/lib/supabase/server"
+import { getProjectUrl } from "@/lib/project-routing"
 import { redirect } from "next/navigation"
 
 const UNTITLED_PROJECT_NAME = "Untitled"
@@ -23,12 +24,12 @@ export default async function NewProjectPage() {
       category: "other",
       status: "draft",
     })
-    .select("id")
+    .select("id, name")
     .single()
 
   if (error || !data?.id) {
     redirect("/projects?error=failed_to_create_project")
   }
 
-  redirect(`/projects/${data.id}?new=1`)
+  redirect(`${getProjectUrl(data)}?new=1`)
 }

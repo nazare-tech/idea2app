@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { DashboardProjectCard } from "@/components/projects/dashboard-project-card"
 import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
+import { getProjectUrl } from "@/lib/project-routing"
 
 type ActiveProject = {
   id: string
@@ -28,7 +29,7 @@ export default async function ProjectsPage() {
     id: project.id,
     name: project.name,
     description: project.description ?? null,
-    href: `/projects/${project.id}`,
+    href: getProjectUrl(project),
   }))
 
   return (
