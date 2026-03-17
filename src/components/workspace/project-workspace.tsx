@@ -957,13 +957,13 @@ export function ProjectWorkspace({
         }
       >
         <div className="inline-flex items-center min-w-0">
-          <Link href="/projects" className="inline-flex h-7 w-7 shrink-0 items-center justify-center">
+          <Link href="/projects" className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
             <Image
               src="/idea2app-logo.jpg"
               alt="Idea2App logo"
-              width={28}
-              height={28}
-              className="h-7 w-7 rounded-md object-cover"
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-md object-cover"
             />
           </Link>
           <span className="truncate pl-3 font-semibold tracking-tight">{projectName}</span>

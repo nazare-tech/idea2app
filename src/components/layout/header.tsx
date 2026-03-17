@@ -27,13 +27,13 @@ interface HeaderProps {
 export function Header({ user, children, rightContent }: HeaderProps) {
   const brand = (
     <Link href="/projects" className="inline-flex items-center">
-      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
         <Image
           src="/idea2app-logo.jpg"
           alt="Idea2App logo"
-          width={28}
-          height={28}
-          className="h-7 w-7 rounded-md object-cover"
+          width={40}
+          height={40}
+          className="h-10 w-10 rounded-md object-cover"
         />
       </span>
     </Link>
