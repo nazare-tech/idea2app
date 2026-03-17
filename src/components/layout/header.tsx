@@ -7,11 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { useRouter } from "next/navigation"
-import { ChevronDown, Plus } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -70,12 +69,6 @@ export function Header({ user, children, rightContent }: HeaderProps) {
 
         <div className="flex items-center gap-4">
           {rightContent}
-          <Link href="/projects/new" prefetch={false}>
-            <Button size="sm" className="gap-2">
-              <Plus className="ui-icon-16" />
-            New Project
-          </Button>
-        </Link>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
