@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
@@ -86,6 +86,8 @@ export function ProjectWorkspace({
   isNewProject = false,
 }: ProjectWorkspaceProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [projectName, setProjectName] = useState(project.name)
   const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
@@ -105,6 +107,20 @@ export function ProjectWorkspace({
   }, [project.description])
 
   const getPersistedActiveDocument = useCallback((): DocumentType | null => {
+    const tab = searchParams.get("tab")
+    if (
+      tab === "prompt" ||
+      tab === "competitive" ||
+      tab === "prd" ||
+      tab === "mvp" ||
+      tab === "mockups" ||
+      tab === "techspec" ||
+      tab === "deploy" ||
+      tab === "launch"
+    ) {
+      return tab
+    }
+
     if (typeof window === "undefined") return null
 
     try {
@@ -114,6 +130,7 @@ export function ProjectWorkspace({
         stored === "competitive" ||
         stored === "prd" ||
         stored === "mvp" ||
+        stored === "mockups" ||
         stored === "techspec" ||
         stored === "deploy" ||
         stored === "launch"
@@ -125,7 +142,7 @@ export function ProjectWorkspace({
     }
 
     return null
-  }, [activeDocumentStorageKey])
+  }, [activeDocumentStorageKey, searchParams])
 
   const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
     if (isNewProject || isPromptOnlyMode) return "prompt"
@@ -298,7 +315,13 @@ export function ProjectWorkspace({
     } catch {
       // Ignore localStorage write errors
     }
-  }, [activeDocument, activeDocumentStorageKey, isPromptOnlyMode])
+
+    const nextParams = new URLSearchParams(searchParams.toString())
+    if (nextParams.get("tab") !== activeDocument) {
+      nextParams.set("tab", activeDocument)
+      router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false })
+    }
+  }, [activeDocument, activeDocumentStorageKey, isPromptOnlyMode, pathname, router, searchParams])
 
   const checkIfContentIncreased = useCallback((docType: DocumentType, remoteCount?: number): boolean => {
     const key = getStorageKey(docType)
@@ -581,6 +604,10 @@ export function ProjectWorkspace({
     }
 
     setActiveDocument(type)
+
+    const nextParams = new URLSearchParams(searchParams.toString())
+    nextParams.set("tab", type)
+    router.push(`${pathname}?${nextParams.toString()}`, { scroll: false })
   }
 
   // Reset to latest version (index 0) when switching documents

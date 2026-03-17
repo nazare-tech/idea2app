@@ -14,7 +14,6 @@ import {
   Sparkles,
   Loader2,
   Download,
-  Copy,
   GripVertical,
   ChevronDown,
   FileDown,
@@ -143,7 +142,6 @@ export function ContentEditor({
   streamContent,
 }: ContentEditorProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [documentWidth, setDocumentWidth] = useState(
     documentType === "mockups" ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH
   )
@@ -293,13 +291,6 @@ export function ContentEditor({
     await onUpdateDescription(summary)
   }
 
-  const handleCopyContent = async () => {
-    if (!content) return
-    await navigator.clipboard.writeText(content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   const handleDownloadPDF = async () => {
     if (!content) return
     setDownloadingPdf(true)
@@ -424,44 +415,35 @@ export function ContentEditor({
             </div>
 
             <div className="ui-row-gap-3">
-              {content && (
-                <>
-                  <button
-                    onClick={handleCopyContent}
-                    className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    <span className="text-xs ui-font-medium">{copied ? "Copied!" : "Copy"}</span>
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        disabled={downloadingPdf}
-                        className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {downloadingPdf ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Download className="h-3.5 w-3.5" />
-                        )}
-                        <span className="text-xs ui-font-medium">
-                          {downloadingPdf ? "Generating..." : "Download"}
-                        </span>
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={handleDownloadPDF}>
-                        <FileDown className="h-3.5 w-3.5 mr-2" />
-                        <span className="text-xs ui-font-medium">PDF</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDownloadMarkdown}>
-                        <FileDown className="h-3.5 w-3.5 mr-2" />
-                        <span className="text-xs ui-font-medium">Markdown</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
+              {content && !isMockupsDocument && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      disabled={downloadingPdf}
+                      className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {downloadingPdf ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5" />
+                      )}
+                      <span className="text-xs ui-font-medium">
+                        {downloadingPdf ? "Generating..." : "Download"}
+                      </span>
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleDownloadPDF}>
+                      <FileDown className="h-3.5 w-3.5 mr-2" />
+                      <span className="text-xs ui-font-medium">PDF</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDownloadMarkdown}>
+                      <FileDown className="h-3.5 w-3.5 mr-2" />
+                      <span className="text-xs ui-font-medium">Markdown</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               <div className="relative group">
                 <button
