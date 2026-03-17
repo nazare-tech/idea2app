@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { MouseEvent } from "react"
 
@@ -12,7 +12,7 @@ interface DashboardProjectCardProps {
   name: string
   description: string | null
   href: string
-  updatedAt: string
+  updatedAt: string | null
   showDelete?: boolean
 }
 
@@ -28,6 +28,10 @@ export function DashboardProjectCard({
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const lastEditedLabel = useMemo(() => {
+    if (!updatedAt) {
+      return "Last edited: recently"
+    }
+
     try {
       return `Last edited: ${formatDistanceToNow(new Date(updatedAt), { addSuffix: true })}`
     } catch {
@@ -75,7 +79,7 @@ export function DashboardProjectCard({
       {/* TODO: keep #FF3B30 local as the destructive action color for delete confirmation actions. */}
       <Link
         href={href}
-        className="block min-h-[176px] max-h-[176px] border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
+        className="block w-full max-w-[75%] border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
       >
         <div className="space-y-4">
           <div className="space-y-2">
@@ -86,12 +90,8 @@ export function DashboardProjectCard({
               {lastEditedLabel}
             </p>
           </div>
-          <p className="ui-font-mono min-h-[36px] overflow-hidden line-clamp-2 text-[12px] leading-[1.5] text-text-secondary">
+          <p className="ui-font-mono overflow-hidden line-clamp-2 text-[12px] leading-[1.5] text-text-secondary">
             {description || "No prompt captured yet."}
-          </p>
-          <div className="h-2" />
-          <p className="inline-flex items-center gap-2 text-sm ui-font-medium text-text-primary">
-            Open project <ArrowRight className="ui-icon-16" />
           </p>
         </div>
       </Link>
