@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import { ProjectWorkspace } from "@/components/workspace/project-workspace"
@@ -6,6 +7,50 @@ import { buildProjectRef, parseProjectRef } from "@/lib/project-routing"
 interface ProjectPageProps {
   params: Promise<{ projectRef: string }>
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+async function getProjectForCurrentUser(projectRef: string) {
+  const parsedProjectRef = parseProjectRef(projectRef)
+  if (!parsedProjectRef) {
+    return null
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return null
+  }
+
+  const { data: project, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", parsedProjectRef.id)
+    .eq("user_id", user.id)
+    .single()
+
+  if (error || !project) {
+    return null
+  }
+
+  return { project, parsedProjectRef }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ projectRef: string }> }): Promise<Metadata> {
+  const { projectRef } = await params
+  const result = await getProjectForCurrentUser(projectRef)
+
+  if (!result) {
+    return {
+      title: "Project | Idea2App",
+    }
+  }
+
+  return {
+    title: `${result.project.name} | Idea2App`,
+  }
 }
 
 export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
