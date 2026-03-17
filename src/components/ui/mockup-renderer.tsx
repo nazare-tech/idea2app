@@ -724,16 +724,54 @@ function JsonRenderPage({ page }: { page: MockupPage }) {
 // ---- Multi-page interactive mockup viewer ----
 
 function MockupViewer({ pages }: { pages: MockupPage[] }) {
+  const [selectedIndex, setSelectedIndex] = React.useState(0)
+  const selectedPage = pages[Math.min(selectedIndex, pages.length - 1)]
+
+  React.useEffect(() => {
+    if (selectedIndex > pages.length - 1) {
+      setSelectedIndex(0)
+    }
+  }, [pages.length, selectedIndex])
+
+  if (!selectedPage) return null
+
   return (
-    <div className="space-y-6">
-      {pages.map((page, index) => (
-        <div key={`${page.title}-${index}`} className="space-y-2">
-          <div className="text-xs font-medium text-muted-foreground border-l-2 border-primary pl-2">
-            Option {index + 1}: {page.title}
-          </div>
-          <SinglePageViewer page={page} />
+    <div className="space-y-4 w-full">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-sm font-medium text-foreground">Mockup options</p>
+          <p className="text-xs text-muted-foreground">Compare one direction at a time in a shared preview pane.</p>
         </div>
-      ))}
+
+        <div className="flex flex-wrap gap-2">
+          {pages.map((page, index) => {
+            const isActive = index === selectedIndex
+            const optionLabel = page.title.match(/Option\s+([A-Z])/i)?.[1]?.toUpperCase() || String.fromCharCode(65 + index)
+            const optionTitle = page.title.replace(/^Option\s+[A-Z]\s*-?\s*/i, "").trim() || `Option ${optionLabel}`
+
+            return (
+              <button
+                key={`${page.title}-${index}`}
+                type="button"
+                onClick={() => setSelectedIndex(index)}
+                className={[
+                  "inline-flex min-w-[132px] flex-col items-start rounded-lg border px-4 py-3 text-left transition-colors",
+                  isActive
+                    ? "border-primary bg-primary/5 text-foreground shadow-sm"
+                    : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                ].join(" ")}
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.16em]">Option {optionLabel}</span>
+                <span className="mt-1 text-sm font-medium leading-tight">{optionTitle}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-muted/10 p-3 md:p-4">
+        <SinglePageViewer page={selectedPage} />
+      </div>
     </div>
   )
 }

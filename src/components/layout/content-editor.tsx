@@ -121,6 +121,7 @@ const documentConfig: Record<
 const MIN_DOCUMENT_WIDTH = 640 // Minimum width for readability (tablet size)
 const MAX_DOCUMENT_WIDTH = 1400 // Maximum width for optimal reading experience
 const DEFAULT_DOCUMENT_WIDTH = 896 // Default max-w-4xl in pixels
+const FULL_WIDTH_DOCUMENT = Number.MAX_SAFE_INTEGER
 
 export function ContentEditor({
   documentType,
@@ -143,7 +144,9 @@ export function ContentEditor({
 }: ContentEditorProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [documentWidth, setDocumentWidth] = useState(DEFAULT_DOCUMENT_WIDTH)
+  const [documentWidth, setDocumentWidth] = useState(
+    documentType === "mockups" ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH
+  )
   const [isResizing, setIsResizing] = useState(false)
   const [resizeEdge, setResizeEdge] = useState<'left' | 'right' | null>(null)
   const [selectedDocModel, setSelectedDocModel] = useState(DEFAULT_DOCUMENT_MODEL)
@@ -162,6 +165,11 @@ export function ContentEditor({
   const containerRef = useRef<HTMLDivElement>(null)
 
   const config = documentConfig[documentType]
+  const isMockupsDocument = documentType === "mockups"
+
+  useEffect(() => {
+    setDocumentWidth(isMockupsDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH)
+  }, [isMockupsDocument])
 
   // Handle mouse move during resize
   useEffect(() => {
@@ -540,28 +548,35 @@ export function ContentEditor({
                 {/* Document Container with Resize Handles */}
                 <div
                   className="transition-all relative"
-                  style={{ width: `${documentWidth}px` }}
+                  style={isMockupsDocument ? { width: "100%" } : { width: `${documentWidth}px` }}
                 >
-                  <div className="bg-card border border-border rounded-lg p-8 relative">
-                    {/* Left Resize Handle */}
-                    <div
-                      className="absolute left-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
-                      onMouseDown={(e) => handleResizeStart('left', e)}
-                    >
-                      <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
-                        <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
-                      </div>
-                    </div>
+                  <div className={cn(
+                    "bg-card border border-border rounded-lg relative",
+                    isMockupsDocument ? "p-4 md:p-6" : "p-8"
+                  )}>
+                    {!isMockupsDocument && (
+                      <>
+                        {/* Left Resize Handle */}
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
+                          onMouseDown={(e) => handleResizeStart('left', e)}
+                        >
+                          <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
+                            <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
+                          </div>
+                        </div>
 
-                    {/* Right Resize Handle */}
-                    <div
-                      className="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
-                      onMouseDown={(e) => handleResizeStart('right', e)}
-                    >
-                      <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
-                        <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
-                      </div>
-                    </div>
+                        {/* Right Resize Handle */}
+                        <div
+                          className="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
+                          onMouseDown={(e) => handleResizeStart('right', e)}
+                        >
+                          <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
+                            <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
+                          </div>
+                        </div>
+                      </>
+                    )}
                     {/* isGenerating is the sole render gate — streamStages is intentionally
                         ignored when isGenerating is false, preventing stale stage UI */}
                     {isGenerating ? (
