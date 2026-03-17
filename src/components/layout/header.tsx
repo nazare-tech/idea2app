@@ -37,7 +37,6 @@ export function Header({ user, children, rightContent }: HeaderProps) {
           className="h-7 w-7 rounded-md object-cover"
         />
       </span>
-      <span className="pl-3 text-lg font-bold tracking-tight">Idea2App</span>
     </Link>
   )
   const router = useRouter()

@@ -37,8 +37,8 @@ export function DashboardShell({
               </span>
             }
           >
-            <Link href="/projects" className="inline-flex items-center">
-              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center">
+            <div className="inline-flex items-center">
+              <Link href="/projects" className="inline-flex h-7 w-7 shrink-0 items-center justify-center">
                 <Image
                   src="/idea2app-logo.jpg"
                   alt="Idea2App logo"
@@ -46,9 +46,9 @@ export function DashboardShell({
                   height={28}
                   className="h-7 w-7 rounded-md object-cover"
                 />
-              </span>
-              <span className="pl-3 text-lg font-bold tracking-tight">Idea2App</span>
-            </Link>
+              </Link>
+              <span className="pl-3 text-lg font-bold tracking-tight">Projects</span>
+            </div>
           </Header>
         )}
         <main className="flex-1 overflow-y-auto">

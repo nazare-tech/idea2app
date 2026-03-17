@@ -956,8 +956,8 @@ export function ProjectWorkspace({
           ) : undefined
         }
       >
-        <Link href="/projects" className="inline-flex items-center">
-          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center">
+        <div className="inline-flex items-center min-w-0">
+          <Link href="/projects" className="inline-flex h-7 w-7 shrink-0 items-center justify-center">
             <Image
               src="/idea2app-logo.jpg"
               alt="Idea2App logo"
@@ -965,9 +965,9 @@ export function ProjectWorkspace({
               height={28}
               className="h-7 w-7 rounded-md object-cover"
             />
-          </span>
-          <span className="pl-3 font-semibold tracking-tight">Idea2App</span>
-        </Link>
+          </Link>
+          <span className="truncate pl-3 font-semibold tracking-tight">{projectName}</span>
+        </div>
       </Header>
 
       <div className="flex flex-1 overflow-hidden">
