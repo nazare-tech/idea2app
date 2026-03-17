@@ -90,7 +90,7 @@ export function DashboardProjectCard({
               {lastEditedLabel}
             </p>
           </div>
-          <p className="ui-font-mono overflow-hidden line-clamp-2 text-[12px] leading-[1.5] text-text-secondary">
+          <p className="ui-font-mono min-h-[36px] overflow-hidden line-clamp-2 text-[12px] leading-[1.5] text-text-secondary">
             {description || "No prompt captured yet."}
           </p>
         </div>
