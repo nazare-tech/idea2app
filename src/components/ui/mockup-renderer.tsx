@@ -773,6 +773,10 @@ function JsonRenderPage({ page }: { page: MockupPage }) {
 
 // ---- Multi-page interactive mockup viewer ----
 
+function getOptionLabel(title: string, index: number) {
+  return title.match(/Option\s+([A-Z])/i)?.[1]?.toUpperCase() || String.fromCharCode(65 + index)
+}
+
 function MockupViewer({ pages }: { pages: MockupPage[] }) {
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const hiddenExportRefs = React.useRef<Array<HTMLDivElement | null>>([])
@@ -809,15 +813,14 @@ function MockupViewer({ pages }: { pages: MockupPage[] }) {
       <div className="flex flex-col gap-3">
         <div>
           <p className="text-sm font-medium text-foreground">Mockup options</p>
-          <p className="text-xs text-muted-foreground">Compare one direction at a time in a shared preview pane.</p>
+          <p className="text-xs text-muted-foreground">Compare 3 variations of the same screen in a shared preview pane.</p>
         </div>
 
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div className="flex flex-wrap gap-2">
             {pages.map((page, index) => {
               const isActive = index === selectedIndex
-              const optionLabel = page.title.match(/Option\s+([A-Z])/i)?.[1]?.toUpperCase() || String.fromCharCode(65 + index)
-              const optionTitle = page.title.replace(/^Option\s+[A-Z]\s*-?\s*/i, "").trim() || `Option ${optionLabel}`
+              const optionLabel = getOptionLabel(page.title, index)
 
               return (
                 <button
@@ -832,7 +835,7 @@ function MockupViewer({ pages }: { pages: MockupPage[] }) {
                   ].join(" ")}
                 >
                   <span className="text-xs font-semibold uppercase tracking-[0.16em]">Option {optionLabel}</span>
-                  <span className="mt-1 text-sm font-medium leading-tight">{optionTitle}</span>
+                  <span className="mt-1 text-sm font-medium leading-tight">Variation {optionLabel}</span>
                 </button>
               )
             })}
@@ -882,9 +885,7 @@ function MockupViewer({ pages }: { pages: MockupPage[] }) {
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-muted/10 p-3 md:p-4">
-        <SinglePageViewer page={selectedPage} />
-      </div>
+      <SinglePageViewer page={selectedPage} selectedIndex={selectedIndex} />
 
       <div className="pointer-events-none absolute -left-[99999px] top-0 opacity-0" aria-hidden="true">
         {pages.map((page, index) => (
@@ -901,16 +902,17 @@ function MockupViewer({ pages }: { pages: MockupPage[] }) {
 
 // ---- Single-page viewer (for JSON Patch results) ----
 
-function SinglePageViewer({ page }: { page: MockupPage }) {
+function SinglePageViewer({ page, selectedIndex }: { page: MockupPage; selectedIndex: number }) {
   const [viewport, setViewport] = React.useState<Viewport>("desktop")
   const vp = viewportConfig[viewport]
+  const optionLabel = getOptionLabel(page.title, selectedIndex)
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-0 w-full self-start">
       <div className="flex items-center justify-between rounded-t-xl border border-border bg-muted/30 px-3 py-1.5">
         <div className="flex items-center gap-2">
           <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-foreground">{page.title}</span>
+          <span className="text-xs font-medium text-foreground">Variation {optionLabel}</span>
         </div>
 
         <div className="flex items-center rounded-md border border-border bg-background p-0.5">
@@ -1104,6 +1106,7 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
     return (
       <div className={className}>
         <SinglePageViewer
+          selectedIndex={0}
           page={addFallbackProsConsIfMissing(
             {
               title: "Wireframe",
@@ -1145,7 +1148,7 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
     // Single page
     return (
       <div className={className}>
-        <SinglePageViewer page={pages[0]} />
+        <SinglePageViewer page={pages[0]} selectedIndex={0} />
       </div>
     )
   }
