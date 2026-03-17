@@ -31,11 +31,7 @@ export function DashboardShell({
         {shouldShowHeader && (
           <Header
             user={user}
-            rightContent={
-              <span className="text-sm text-foreground/80">
-                Credits: {credits >= 999999 ? "∞" : credits.toLocaleString()}
-              </span>
-            }
+            credits={credits}
           >
             <div className="inline-flex items-center">
               <Link href="/projects" className="inline-flex h-10 w-10 shrink-0 items-center justify-center">

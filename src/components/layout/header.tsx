@@ -22,9 +22,10 @@ interface HeaderProps {
   }
   children?: React.ReactNode
   rightContent?: React.ReactNode
+  credits?: number
 }
 
-export function Header({ user, children, rightContent }: HeaderProps) {
+export function Header({ user, children, rightContent, credits }: HeaderProps) {
   const brand = (
     <Link href="/projects" className="inline-flex items-center">
       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
@@ -93,6 +94,11 @@ export function Header({ user, children, rightContent }: HeaderProps) {
             align="end"
             forceMount
           >
+            {typeof credits === "number" && (
+              <DropdownMenuItem className="cursor-default focus:bg-transparent focus:text-text-primary">
+                <span className="text-sm ui-font-medium">Credits: {credits >= 999999 ? "∞" : credits.toLocaleString()}</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
               <Link
                 href="/settings?tab=profile"

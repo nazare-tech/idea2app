@@ -22,6 +22,7 @@ interface Analysis {
   type: string
   content: string
   created_at: string | null
+  metadata?: Record<string, unknown> | null
 }
 
 interface PRD {
@@ -561,6 +562,21 @@ export function ProjectWorkspace({
     }
   }
 
+  const getDocumentMetadata = (
+    type: DocumentType
+  ): Record<string, unknown> | null => {
+    const versionIndex = selectedVersionIndex[type] || 0
+
+    switch (type) {
+      case "competitive":
+        return analyses.filter(a => a.type === "competitive-analysis")[versionIndex]?.metadata || null
+      case "launch":
+        return analyses.filter(a => a.type === "launch-plan")[versionIndex]?.metadata || null
+      default:
+        return null
+    }
+  }
+
   const getTotalVersions = (type: DocumentType): number => {
     return getVersionsForDocument(type).length
   }
@@ -948,13 +964,7 @@ export function ProjectWorkspace({
       <Header
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         user={user as any}
-        rightContent={
-          activeDocument === "prompt" ? (
-            <span className="hidden md:inline-flex items-center gap-2 text-sm">
-              Credits: {credits >= 999999 ? "∞" : credits.toLocaleString()}
-            </span>
-          ) : undefined
-        }
+        credits={credits}
       >
         <div className="inline-flex items-center min-w-0">
           <Link href="/projects" className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
@@ -993,6 +1003,7 @@ export function ProjectWorkspace({
             projectName={projectName}
             projectDescription={project.description || ""}
             content={getDocumentContent(activeDocument)}
+            documentMetadata={getDocumentMetadata(activeDocument)}
             onGenerateContent={handleGenerateContent}
             onUpdateDescription={handleUpdateDescription}
             onUpdateContent={handleUpdateContent}
