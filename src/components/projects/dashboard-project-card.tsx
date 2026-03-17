@@ -65,17 +65,17 @@ export function DashboardProjectCard({
       {/* TODO: keep #FF3B30 local as the destructive action color for delete confirmation actions. */}
       <Link
         href={href}
-        className="block rounded-2xl border border-border-subtle bg-[#1A1A1A] p-5 transition hover:bg-[#1f1f1f] min-h-[176px] max-h-[176px]"
+        className="block min-h-[176px] max-h-[176px] rounded-2xl border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
       >
         <div className="space-y-4">
-          <h2 className="text-[18px] leading-tight font-bold tracking-[-0.4px] text-white line-clamp-1">
+          <h2 className="line-clamp-1 text-[18px] font-bold leading-tight tracking-[-0.4px] text-text-primary">
             {name}
           </h2>
-          <p className="ui-font-mono text-[12px] leading-[1.5] text-text-muted line-clamp-2 overflow-hidden min-h-[36px]">
+          <p className="ui-font-mono min-h-[36px] overflow-hidden line-clamp-2 text-[12px] leading-[1.5] text-text-secondary">
             {description || "No prompt captured yet."}
           </p>
           <div className="h-2" />
-          <p className="inline-flex items-center gap-2 text-sm ui-font-medium text-white">
+          <p className="inline-flex items-center gap-2 text-sm ui-font-medium text-text-primary">
             Open project <ArrowRight className="ui-icon-16" />
           </p>
         </div>

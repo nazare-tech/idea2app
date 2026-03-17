@@ -33,20 +33,20 @@ export default async function ProjectsPage() {
 
   return (
     <div className="flex flex-col h-full bg-background px-6 py-6 md:px-12 md:py-6 lg:px-[56px] lg:py-6">
-      <section className="rounded-2xl border border-border-subtle bg-text-primary p-8 text-white">
+      <section className="rounded-2xl border border-border-subtle bg-white p-8 text-text-primary shadow-sm">
         <header className="mb-7">
-          <h1 className="font-bold text-[24px] leading-tight tracking-[-0.5px] text-white">
+          <h1 className="font-bold text-[24px] leading-tight tracking-[-0.5px] text-text-primary">
             Projects
           </h1>
-          <p className="mt-2 text-sm text-text-muted">
+          <p className="mt-2 text-sm text-text-secondary">
             Manage and organize your AI-powered applications.
           </p>
         </header>
 
         {activeProjects.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/30 bg-[#1f1f1f] p-8 text-center">
-            <p className="text-base text-text-muted">No projects yet.</p>
-            <p className="mt-1 text-sm text-text-muted/80">
+          <div className="rounded-xl border border-dashed border-border-subtle bg-background p-8 text-center">
+            <p className="text-base text-text-primary">No projects yet.</p>
+            <p className="mt-1 text-sm text-text-secondary">
               Create your first idea to get started.
             </p>
             <Link href="/projects/new" className="mt-4 inline-block">
