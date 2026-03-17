@@ -121,7 +121,8 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   return (
     <ProjectWorkspace
       project={project}
-      analyses={analyses || []}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      analyses={(analyses as any) || []}
       prds={prds || []}
       mvpPlans={mvpPlans || []}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
