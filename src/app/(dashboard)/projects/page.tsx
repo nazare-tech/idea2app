@@ -2,7 +2,6 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { DashboardProjectCard } from "@/components/projects/dashboard-project-card"
-import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
 import { getProjectUrl } from "@/lib/project-routing"
 
 type ActiveProject = {
@@ -70,9 +69,6 @@ export default async function ProjectsPage() {
         )}
       </section>
 
-      <div className="h-[1px] bg-border-subtle my-6" />
-
-      <InspirationProjectsSection />
     </div>
   )
 }
