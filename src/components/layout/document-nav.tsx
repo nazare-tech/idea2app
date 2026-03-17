@@ -122,39 +122,6 @@ export function DocumentNav({
 
   return (
     <div className="flex h-full w-[280px] flex-col bg-card border-r border-border">
-      {/* Project label */}
-      <div className="px-6 pt-6 pb-3">
-        {isEditingProjectName ? (
-          <input
-            ref={projectNameInputRef}
-            value={projectNameDraft}
-            onChange={(e) => setProjectNameDraft(e.target.value)}
-            onBlur={saveProjectName}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault()
-                saveProjectName()
-              }
-
-              if (event.key === "Escape") {
-                event.preventDefault()
-                cancelProjectNameEdit()
-              }
-            }}
-            className="w-full rounded-md border border-border bg-transparent px-2 py-1.5 text-sm font-semibold leading-tight text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setIsEditingProjectName(true)}
-            className="text-sm font-semibold text-foreground leading-tight truncate text-left hover:text-primary transition-colors"
-            aria-label="Rename project"
-          >
-            {projectName}
-          </button>
-        )}
-      </div>
-
       {/* Section Label */}
       <div className="px-6 pt-6 pb-3">
         <p className="text-[10px] font-medium tracking-[1px] font-mono text-muted-foreground">
