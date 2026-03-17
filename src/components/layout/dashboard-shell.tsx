@@ -37,7 +37,7 @@ export function DashboardShell({
               </span>
             }
           >
-            <Link href="/projects" className="inline-flex items-center gap-2">
+            <Link href="/projects" className="inline-flex items-center gap-2.5">
               <Image
                 src="/idea2app-logo.jpg"
                 alt="Idea2App logo"
@@ -45,7 +45,7 @@ export function DashboardShell({
                 height={28}
                 className="h-7 w-7 rounded-md object-cover"
               />
-              <span className="text-lg font-bold tracking-tight">Idea2App</span>
+              <span className="ml-1 text-lg font-bold tracking-tight">Idea2App</span>
             </Link>
           </Header>
         )}
