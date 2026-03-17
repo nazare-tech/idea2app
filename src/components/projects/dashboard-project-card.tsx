@@ -65,7 +65,7 @@ export function DashboardProjectCard({
       {/* TODO: keep #FF3B30 local as the destructive action color for delete confirmation actions. */}
       <Link
         href={href}
-        className="block min-h-[176px] max-h-[176px] rounded-2xl border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
+        className="block min-h-[176px] max-h-[176px] border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
       >
         <div className="space-y-4">
           <h2 className="line-clamp-1 text-[18px] font-bold leading-tight tracking-[-0.4px] text-text-primary">
