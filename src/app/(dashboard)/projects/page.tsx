@@ -9,6 +9,7 @@ type ActiveProject = {
   name: string
   description: string | null
   href: string
+  updatedAt: string
 }
 
 export default async function ProjectsPage() {
@@ -29,6 +30,7 @@ export default async function ProjectsPage() {
     name: project.name,
     description: project.description ?? null,
     href: getProjectUrl(project),
+    updatedAt: project.updated_at,
   }))
 
   return (
@@ -68,6 +70,7 @@ export default async function ProjectsPage() {
                 name={project.name}
                 description={project.description}
                 href={project.href}
+                updatedAt={project.updatedAt}
                 showDelete
               />
             ))}

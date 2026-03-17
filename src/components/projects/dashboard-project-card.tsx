@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowRight, Trash2 } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
 import type { MouseEvent } from "react"
 
 interface DashboardProjectCardProps {
@@ -11,6 +12,7 @@ interface DashboardProjectCardProps {
   name: string
   description: string | null
   href: string
+  updatedAt: string
   showDelete?: boolean
 }
 
@@ -19,11 +21,19 @@ export function DashboardProjectCard({
   name,
   description,
   href,
+  updatedAt,
   showDelete = false,
 }: DashboardProjectCardProps) {
   const router = useRouter()
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const lastEditedLabel = useMemo(() => {
+    try {
+      return `Last edited: ${formatDistanceToNow(new Date(updatedAt), { addSuffix: true })}`
+    } catch {
+      return "Last edited: recently"
+    }
+  }, [updatedAt])
 
   const handleDeletePrompt = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
@@ -68,9 +78,14 @@ export function DashboardProjectCard({
         className="block min-h-[176px] max-h-[176px] border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
       >
         <div className="space-y-4">
-          <h2 className="line-clamp-1 text-[18px] font-bold leading-tight tracking-[-0.4px] text-text-primary">
-            {name}
-          </h2>
+          <div className="space-y-2">
+            <h2 className="line-clamp-1 text-[18px] font-bold leading-tight tracking-[-0.4px] text-text-primary">
+              {name}
+            </h2>
+            <p className="text-[12px] text-text-secondary">
+              {lastEditedLabel}
+            </p>
+          </div>
           <p className="ui-font-mono min-h-[36px] overflow-hidden line-clamp-2 text-[12px] leading-[1.5] text-text-secondary">
             {description || "No prompt captured yet."}
           </p>
