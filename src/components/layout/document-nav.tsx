@@ -122,13 +122,6 @@ export function DocumentNav({
 
   return (
     <div className="flex h-full w-[280px] flex-col bg-card border-r border-border">
-      {/* Section Label */}
-      <div className="px-6 pt-6 pb-3">
-        <p className="text-[10px] font-medium tracking-[1px] font-mono text-muted-foreground">
-          DOCUMENTS
-        </p>
-      </div>
-
       {/* Document List */}
       <nav className="flex-1 overflow-y-auto">
         {documents.map((doc, index) => {
