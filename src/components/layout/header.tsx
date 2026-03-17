@@ -13,6 +13,7 @@ import { uiStylePresets } from "@/lib/ui-style-presets"
 import { useRouter } from "next/navigation"
 import { ChevronDown, Plus } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 interface HeaderProps {
   user?: {
@@ -25,6 +26,18 @@ interface HeaderProps {
 }
 
 export function Header({ user, children, rightContent }: HeaderProps) {
+  const brand = (
+    <Link href="/projects" className="inline-flex items-center gap-2">
+      <Image
+        src="/idea2app-logo.jpg"
+        alt="Idea2App logo"
+        width={28}
+        height={28}
+        className="h-7 w-7 rounded-md object-cover"
+      />
+      <span className="text-lg font-bold tracking-tight">Idea2App</span>
+    </Link>
+  )
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -51,7 +64,7 @@ export function Header({ user, children, rightContent }: HeaderProps) {
   return (
     <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-xl px-6 ui-row-between">
         <div className="flex items-center gap-4">
-        {children || <h1 className="ui-section-title">Dashboard</h1>}
+        {children || brand || <h1 className="ui-section-title">Dashboard</h1>}
       </div>
 
         <div className="flex items-center gap-4">

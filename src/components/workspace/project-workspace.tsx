@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
@@ -956,6 +957,13 @@ export function ProjectWorkspace({
         }
       >
         <Link href="/projects" className="inline-flex items-center gap-2">
+          <Image
+            src="/idea2app-logo.jpg"
+            alt="Idea2App logo"
+            width={28}
+            height={28}
+            className="h-7 w-7 rounded-md object-cover"
+          />
           <span className="font-semibold tracking-tight">Idea2App</span>
         </Link>
       </Header>

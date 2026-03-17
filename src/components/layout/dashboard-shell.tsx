@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Header } from "@/components/layout/header"
 
 interface DashboardShellProps {
@@ -37,6 +38,13 @@ export function DashboardShell({
             }
           >
             <Link href="/projects" className="inline-flex items-center gap-2">
+              <Image
+                src="/idea2app-logo.jpg"
+                alt="Idea2App logo"
+                width={28}
+                height={28}
+                className="h-7 w-7 rounded-md object-cover"
+              />
               <span className="text-lg font-bold tracking-tight">Idea2App</span>
             </Link>
           </Header>
