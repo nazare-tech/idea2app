@@ -1,0 +1,80 @@
+import test from "node:test"
+import assert from "node:assert/strict"
+import { renderToStaticMarkup } from "react-dom/server"
+import { CompetitiveAnalysisDocument } from "./competitive-analysis-document"
+import {
+  COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
+  COMPETITIVE_ANALYSIS_V2_SECTION_ORDER,
+  type CompetitiveAnalysisV2SectionName,
+} from "@/lib/competitive-analysis-v2"
+
+function buildV2Fixture() {
+  const sections: Record<CompetitiveAnalysisV2SectionName, string> = {
+    "Executive Summary":
+      "This category has real demand, but underserved workflows still exist for smaller teams.",
+    "Founder Verdict":
+      "A focused entrant can win.\n\n- **Verdict**: Enter with a wedge\n- **Why now**: Buyers want automation\n- **Biggest risk**: Incumbent copy",
+    "Direct Competitors":
+      "### Competitor One\n- **Overview**: Broad platform\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Generalist\n- **Strengths**: Strong distribution\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market",
+    "Feature and Workflow Matrix":
+      "| Product | Setup | Collaboration |\n|---|---|---|\n| Competitor One | Medium | Strong |",
+    "Pricing and Packaging":
+      "| Product | Free Tier | Pricing Model |\n|---|---|---|\n| Competitor One | No | Per seat |",
+    "Audience Segments": "- SMB teams remain under-served.",
+    "Competitive Landscape Overview":
+      "- The top of the market is crowded.\n- Clear workflow differentiation still matters.",
+    "Positioning Map":
+      "- **X-axis**: Ease of setup\n- **Y-axis**: Collaboration depth\n\n| Competitor | X Score | Y Score | Placement Rationale |\n|---|---:|---:|---|\n| Competitor One | 5 | 8 | Broad platform |",
+    "GTM / Distribution Signals": "- SEO is strong.\n- Integrations matter.",
+    "Gap Analysis": "- Teams want faster setup.\n- Transparent pricing is scarce.",
+    "Differentiation Wedges": "- Lead with transparent pricing.",
+    "Moat and Defensibility": "- Integration depth is the best moat.",
+    "SWOT Analysis":
+      "| | Positive | Negative |\n|---|---|---|\n| **Internal** | Focus | Small team |\n| **External** | White space | Copy risk |",
+    "Risks and Countermoves": "- Incumbents can copy a visible wedge.",
+    "MVP Wedge Recommendation":
+      "Ship one workflow first.\n\n- **Target user**: SMB operator\n- **Core loop**: Weekly task automation",
+    "Strategic Recommendations":
+      "1. Validate pricing willingness.\n2. Launch narrow.\n3. Invest in integrations.",
+  }
+
+  return `# Competitive Analysis: Example Product\n\n${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.map(
+    (heading) => `## ${heading}\n${sections[heading]}`
+  ).join("\n\n")}`
+}
+
+test("competitive v2 document renders modules-first hybrid UI", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveAnalysisDocument
+      content={buildV2Fixture()}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      currentVersion={0}
+      projectId="project-1"
+      onContentUpdate={() => {}}
+      onUpgrade={() => {}}
+      isUpgrading={false}
+    />
+  )
+
+  assert.match(html, /Modules/)
+  assert.match(html, /Markdown/)
+  assert.match(html, /Founder Verdict/)
+  assert.doesNotMatch(html, /predates Competitive Research v2/)
+})
+
+test("legacy competitive document renders migration notice", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveAnalysisDocument
+      content={"# Competitive Analysis: Legacy\n\n## Market Overview\nLegacy content"}
+      metadata={null}
+      currentVersion={0}
+      projectId="project-1"
+      onContentUpdate={() => {}}
+      onUpgrade={() => {}}
+      isUpgrading={false}
+    />
+  )
+
+  assert.match(html, /predates Competitive Research v2/i)
+  assert.match(html, /Regenerate as V2/)
+})

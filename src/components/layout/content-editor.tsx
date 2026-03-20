@@ -21,6 +21,7 @@ import {
 import { DocumentType } from "./document-nav"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
+import { CompetitiveAnalysisDocument } from "@/components/analysis/competitive-analysis-document"
 import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
 import { PromptChatInterface } from "@/components/chat/prompt-chat-interface"
 import {
@@ -48,6 +49,7 @@ interface ContentEditorProps {
   projectName: string
   projectDescription: string
   content: string | null
+  documentMetadata?: Record<string, unknown> | null
   onGenerateContent: (model?: string, options?: { marketingBrief?: MarketingBrief }) => Promise<void>
   onUpdateDescription: (description: string) => Promise<void>
   onUpdateContent?: (newContent: string) => Promise<void>
@@ -128,6 +130,7 @@ export function ContentEditor({
   projectName,
   projectDescription,
   content,
+  documentMetadata,
   onGenerateContent,
   onUpdateDescription,
   onUpdateContent,
@@ -586,6 +589,16 @@ export function ContentEditor({
                     ) : content ? (
                       documentType === "mockups" ? (
                         <MockupRenderer content={content} />
+                      ) : documentType === "competitive" ? (
+                        <CompetitiveAnalysisDocument
+                          content={content}
+                          metadata={documentMetadata}
+                          currentVersion={currentVersion}
+                          projectId={projectId}
+                          onContentUpdate={onUpdateContent}
+                          onUpgrade={() => onGenerateContent(selectedDocModel)}
+                          isUpgrading={isGenerating}
+                        />
                       ) : (
                         <MarkdownRenderer
                           content={content}

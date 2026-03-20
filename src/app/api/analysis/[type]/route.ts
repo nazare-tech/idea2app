@@ -6,6 +6,10 @@ import { type AnalysisType } from "@/lib/utils"
 import { getTokenCost } from "@/lib/token-economics"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { linkifyBareUrls } from "@/lib/markdown-links"
+import {
+  COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
+  COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION,
+} from "@/lib/competitive-analysis-v2"
 
 const encoder = new TextEncoder()
 
@@ -15,6 +19,24 @@ function createStreamSender(controller: ReadableStreamDefaultController) {
 }
 
 export const maxDuration = 300 // 5 min — competitive analysis pipeline (Perplexity + Tavily + synthesis) can take up to ~70s
+
+function buildAnalysisMetadata(
+  type: string,
+  result: { source: string; model: string }
+) {
+  const metadata: Record<string, string> = {
+    source: result.source,
+    model: result.model,
+    generated_at: new Date().toISOString(),
+  }
+
+  if (type === "competitive-analysis") {
+    metadata.document_version = COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION
+    metadata.prompt_version = COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION
+  }
+
+  return metadata
+}
 
 interface AnalysisParams {
   params: Promise<{ type: string }>
@@ -142,19 +164,21 @@ export async function POST(request: Request, { params }: AnalysisParams) {
             }
 
             // Save to DB — same as non-streaming path
-            const metadata = {
-              source: streamResult.source,
-              model: streamResult.model,
-              generated_at: new Date().toISOString(),
-            }
+            const contentWithLinks = linkifyBareUrls(streamResult.content)
+            const metadata = buildAnalysisMetadata(type, streamResult)
             if (type === "prd") {
-              await supabase.from("prds").insert({ project_id: projectId!, content: streamResult.content })
+              await supabase.from("prds").insert({ project_id: projectId!, content: contentWithLinks })
             } else if (type === "mvp-plan") {
-              await supabase.from("mvp_plans").insert({ project_id: projectId!, content: streamResult.content })
+              await supabase.from("mvp_plans").insert({ project_id: projectId!, content: contentWithLinks })
             } else if (type === "tech-spec") {
-              await supabase.from("tech_specs").insert({ project_id: projectId!, content: streamResult.content })
+              await supabase.from("tech_specs").insert({ project_id: projectId!, content: contentWithLinks })
             } else {
-              await supabase.from("analyses").insert({ project_id: projectId!, type, content: streamResult.content, metadata })
+              await supabase.from("analyses").insert({
+                project_id: projectId!,
+                type,
+                content: contentWithLinks,
+                metadata,
+              })
             }
 
             await supabase
@@ -235,11 +259,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
     const contentWithLinks = linkifyBareUrls(result.content)
 
-    const metadata = {
-      source: result.source,
-      model: result.model,
-      generated_at: new Date().toISOString(),
-    }
+    const metadata = buildAnalysisMetadata(type, result)
 
     // Store the result based on type — always include source/model metadata
     if (type === "prd") {
