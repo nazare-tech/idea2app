@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Sora, IBM_Plex_Mono } from "next/font/google"
+import { Sora, IBM_Plex_Mono, Space_Grotesk } from "next/font/google"
 import "./globals.css"
 import { AgentationWrapper } from "@/components/AgentationWrapper"
 
@@ -13,6 +13,12 @@ const ibmPlexMono = IBM_Plex_Mono({
   variable: "--font-ibm-plex-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+})
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
 })
 
 export const metadata: Metadata = {
@@ -29,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${sora.variable} ${ibmPlexMono.variable} antialiased min-h-screen bg-background`}
+        className={`${sora.variable} ${ibmPlexMono.variable} ${spaceGrotesk.variable} antialiased min-h-screen bg-background`}
       >
         {children}
         <AgentationWrapper />

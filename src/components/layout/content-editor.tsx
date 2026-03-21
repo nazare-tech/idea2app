@@ -145,8 +145,12 @@ export function ContentEditor({
   streamContent,
 }: ContentEditorProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const isMockupsDocument = documentType === "mockups"
+  const isCompetitiveDocument = documentType === "competitive"
+  const isFullWidthDocument = isMockupsDocument || isCompetitiveDocument
+
   const [documentWidth, setDocumentWidth] = useState(
-    documentType === "mockups" ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH
+    isFullWidthDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH
   )
   const [isResizing, setIsResizing] = useState(false)
   const [resizeEdge, setResizeEdge] = useState<'left' | 'right' | null>(null)
@@ -166,11 +170,10 @@ export function ContentEditor({
   const containerRef = useRef<HTMLDivElement>(null)
 
   const config = documentConfig[documentType]
-  const isMockupsDocument = documentType === "mockups"
 
   useEffect(() => {
-    setDocumentWidth(isMockupsDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH)
-  }, [isMockupsDocument])
+    setDocumentWidth(isFullWidthDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH)
+  }, [isFullWidthDocument])
 
   // Handle mouse move during resize
   useEffect(() => {
@@ -419,34 +422,51 @@ export function ContentEditor({
 
             <div className="ui-row-gap-3">
               {content && !isMockupsDocument && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      disabled={downloadingPdf}
-                      className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {downloadingPdf ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Download className="h-3.5 w-3.5" />
-                      )}
-                      <span className="text-xs ui-font-medium">
-                        {downloadingPdf ? "Generating..." : "Download"}
-                      </span>
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleDownloadPDF}>
-                      <FileDown className="h-3.5 w-3.5 mr-2" />
-                      <span className="text-xs ui-font-medium">PDF</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDownloadMarkdown}>
-                      <FileDown className="h-3.5 w-3.5 mr-2" />
-                      <span className="text-xs ui-font-medium">Markdown</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                isCompetitiveDocument ? (
+                  <button
+                    onClick={handleDownloadPDF}
+                    disabled={downloadingPdf}
+                    className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {downloadingPdf ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <FileDown className="h-3.5 w-3.5" />
+                    )}
+                    <span className="text-xs ui-font-medium">
+                      {downloadingPdf ? "Generating PDF..." : "Download PDF"}
+                    </span>
+                  </button>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        disabled={downloadingPdf}
+                        className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {downloadingPdf ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        <span className="text-xs ui-font-medium">
+                          {downloadingPdf ? "Generating..." : "Download"}
+                        </span>
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleDownloadPDF}>
+                        <FileDown className="h-3.5 w-3.5 mr-2" />
+                        <span className="text-xs ui-font-medium">PDF</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleDownloadMarkdown}>
+                        <FileDown className="h-3.5 w-3.5 mr-2" />
+                        <span className="text-xs ui-font-medium">Markdown</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )
               )}
               <div className="relative group">
                 <button
@@ -533,13 +553,17 @@ export function ContentEditor({
                 {/* Document Container with Resize Handles */}
                 <div
                   className="transition-all relative"
-                  style={isMockupsDocument ? { width: "100%" } : { width: `${documentWidth}px` }}
+                  style={isFullWidthDocument ? { width: "100%" } : { width: `${documentWidth}px` }}
                 >
                   <div className={cn(
-                    "bg-card border border-border rounded-lg relative",
-                    isMockupsDocument ? "p-4 md:p-6" : "p-8"
+                    "border border-border relative",
+                    isMockupsDocument
+                      ? "rounded-lg bg-card p-4 md:p-6"
+                      : isCompetitiveDocument
+                        ? "rounded-none bg-white p-0"
+                        : "rounded-lg bg-card p-8"
                   )}>
-                    {!isMockupsDocument && (
+                    {!isFullWidthDocument && (
                       <>
                         {/* Left Resize Handle */}
                         <div
@@ -572,6 +596,7 @@ export function ContentEditor({
                           currentStep={streamCurrentStep ?? 0}
                           streamContent={streamContent ?? ""}
                           projectId={projectId}
+                          showLiveContent={!isCompetitiveDocument}
                         />
                       ) : (
                         <div className="flex flex-col items-center justify-center py-24">

@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import {
   COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
   COMPETITIVE_ANALYSIS_V2_SECTION_ORDER,
+  getCompetitiveAnalysisStructuredData,
   getCompetitiveAnalysisViewModel,
   parseCompetitiveAnalysisV2,
   type CompetitiveAnalysisV2SectionName,
@@ -17,7 +18,7 @@ function buildV2Fixture(
     "Founder Verdict":
       "A focused entrant can win if it avoids the broad all-in-one category fight.\n\n- **Verdict**: Worth entering with a narrow wedge\n- **Why now**: Teams want automation tied to outcomes\n- **Biggest risk**: Fast incumbent copy",
     "Direct Competitors":
-      "### Competitor One\n- **Overview**: Strong incumbent\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Broad platform\n- **Strengths**: Distribution and integrations\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market teams\n\n### Competitor Two\n- **Overview**: Specialist player\n- **Core Product/Service**: Single workflow tool\n- **Market Positioning**: Best-of-breed\n- **Strengths**: Fast setup\n- **Limitations**: Narrow scope\n- **Pricing Model**: Usage-based\n- **Target Audience**: Operators",
+      "### [Competitor One](https://competitor-one.example) (conservative inference)\n- **Overview**: Strong incumbent\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Broad platform\n- **Strengths**: Distribution and integrations\n- **Key Edge**: Distribution + integrations\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market teams\n\n### Competitor Two\n- **Overview**: Specialist player\n- **Core Product/Service**: Single workflow tool\n- **Market Positioning**: Best-of-breed\n- **Strengths**: Fast setup\n- **Key Edge**: Fastest setup in category\n- **Limitations**: Narrow scope\n- **Pricing Model**: Usage-based\n- **Target Audience**: Operators",
     "Feature and Workflow Matrix":
       "| Product | Setup | Collaboration | Automation |\n|---|---|---|---|\n| Competitor One | Medium | Strong | Medium |\n| Competitor Two | Fast | Weak | Strong |",
     "Pricing and Packaging":
@@ -55,11 +56,21 @@ function buildV2Fixture(
 
 test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   const parsed = parseCompetitiveAnalysisV2(buildV2Fixture())
+  const structured = getCompetitiveAnalysisStructuredData(parsed)
 
   assert.equal(parsed.isValid, true)
   assert.equal(parsed.headings.length, 16)
   assert.equal(parsed.competitorEntries.length, 2)
   assert.match(parsed.sections["Pricing and Packaging"] ?? "", /Pricing Model/)
+  assert.equal(structured.directCompetitors[0]?.heading, "Competitor One")
+  assert.equal(
+    structured.directCompetitors[0]?.websiteUrl,
+    "https://competitor-one.example"
+  )
+  assert.equal(structured.directCompetitors[0]?.fields["Strengths"], "Distribution and integrations")
+  assert.equal(structured.directCompetitors[0]?.fields["Key Edge"], "Distribution + integrations")
+  assert.equal(structured.positioningMap.points[0]?.x, 4)
+  assert.equal(structured.swotAnalysis.matrix?.externalNegative, "Incumbent copy risk")
 })
 
 test("legacy metadata defaults competitive research to markdown view", () => {

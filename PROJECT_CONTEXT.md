@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-03-16 (Competitive Research V2 Hybrid Modules + Legacy Handling)
+**Last Updated**: 2026-03-20 (Competitive Research Pencil UI + Typed Module Rendering)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -26,7 +26,7 @@
   - 1 credit per edit
   - Supports Competitive Research, PRD, MVP Plan, and Tech Spec documents
 - **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
-- **Competitive Analysis**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a hybrid modules dashboard + raw markdown view. Core modules now include founder verdict, competitor profiles, workflow matrix, pricing, audience segments, positioning, GTM signals, gap analysis, differentiation wedges, moat/defensibility, SWOT, risks, MVP wedge recommendation, and strategic recommendations.
+- **Competitive Analysis**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a full-width Pencil-faithful designed page, not generic markdown. The UI is built from typed parsing of the stored markdown source and includes founder verdict, competitor profiles, workflow matrix, pricing, audience segments, positioning, GTM signals, gap analysis, differentiation wedges, moat/defensibility, SWOT, risks, MVP wedge recommendation, and strategic recommendations. Direct competitor entries now expect linked H3 headings plus concise fields for overview, core product, positioning, strengths, key edge, limitations, pricing model, and target audience so the app can render dense competitor cards and a fast-comparison table. Legacy or malformed documents fall back to markdown with upgrade guidance.
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans
 - **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD
@@ -75,6 +75,7 @@
 | **jspdf** | 4.0.0 | Client-side PDF generation |
 | **html2canvas** | 1.4.1 | HTML-to-canvas rendering (used for PDF) |
 | **Sora** | (Google Font) | Primary sans-serif typeface |
+| **Space Grotesk** | (Google Font) | Display typeface for Competitive Research and Pencil-inspired editorial headings |
 | **IBM Plex Mono** | (Google Font) | Monospace typeface for labels/code |
 
 ### Backend & Services
@@ -199,7 +200,7 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 
 - **`ProjectSidebar`** — persistent app-level navigation; lists all user projects, search, sign-out. Dark background (`#000`), rendered server-side and passed to client.
 - **`DocumentNav`** — pipeline-step navigation within a single project. Shows status badges (Done / In Progress / Pending) for each document stage.
-  - **`ContentEditor`** — renders the active document. Handles editing the prompt, triggering generation, displaying rendered Markdown, version switching, copy-to-clipboard, and PDF export. Competitive Research now uses a dedicated hybrid renderer for v2 docs.
+- **`ContentEditor`** — renders the active document. Handles editing the prompt, triggering generation, displaying rendered content, version switching, copy-to-clipboard, and PDF export. Competitive Research now uses a dedicated full-width renderer for v2 docs and only falls back to markdown for legacy or invalid versions.
 - **`ProjectWorkspace`** — orchestrator component that connects all three columns. Manages active document state, version selection, and dispatches API calls.
 
 ### Key Design Patterns
@@ -398,7 +399,7 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 - Competitive Research v2 lives in markdown only; `analyses.content` remains the source of truth.
 - New competitive-analysis rows include metadata:
   - `document_version: "competitive-analysis-v2"`
-  - `prompt_version: "competitive-analysis-v2-2026-03-16"`
+  - `prompt_version: "competitive-analysis-v2-2026-03-20"`
 - Existing competitive-analysis rows without `document_version` are treated as legacy.
 - The Competitive Research tab defaults to a modules dashboard only for valid v2 docs. Legacy docs and malformed edited v2 docs fall back to raw markdown view.
 - Legacy migration policy is manual: preserve old versions exactly as-is and regenerate project-by-project to create a new v2 version.

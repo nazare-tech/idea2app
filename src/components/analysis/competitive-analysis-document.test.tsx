@@ -13,9 +13,9 @@ function buildV2Fixture() {
     "Executive Summary":
       "This category has real demand, but underserved workflows still exist for smaller teams.",
     "Founder Verdict":
-      "A focused entrant can win.\n\n- **Verdict**: Enter with a wedge\n- **Why now**: Buyers want automation\n- **Biggest risk**: Incumbent copy",
+      "Win with a narrow wedge.\n\n- **Verdict**: Enter with a wedge\n- **Why now**: Buyers want automation\n- **Biggest risk**: Incumbent copy",
     "Direct Competitors":
-      "### Competitor One\n- **Overview**: Broad platform\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Generalist\n- **Strengths**: Strong distribution\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market",
+      "### [Competitor One](https://competitor-one.example)\n- **Overview**: Broad platform\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Generalist\n- **Strengths**: Strong distribution\n- **Key Edge**: Distribution engine\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market",
     "Feature and Workflow Matrix":
       "| Product | Setup | Collaboration |\n|---|---|---|\n| Competitor One | Medium | Strong |",
     "Pricing and Packaging":
@@ -56,10 +56,15 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
     />
   )
 
-  assert.match(html, /Modules/)
-  assert.match(html, /Markdown/)
+  assert.match(html, /Competitive Research/)
+  assert.match(html, /Competitor Profiles &amp; Fast Comparison/)
   assert.match(html, /Founder Verdict/)
+  assert.match(html, /Win with a narrow wedge\./)
+  assert.match(html, /href="https:\/\/competitor-one\.example"/)
+  assert.match(html, /Key Edge/)
+  assert.match(html, /Distribution engine/)
   assert.doesNotMatch(html, /predates Competitive Research v2/)
+  assert.doesNotMatch(html, /Markdown/)
 })
 
 test("legacy competitive document renders migration notice", () => {

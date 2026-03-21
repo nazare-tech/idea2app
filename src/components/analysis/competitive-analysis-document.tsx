@@ -1,15 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
-import { AlertTriangle, RefreshCw, LayoutGrid, FileText } from "lucide-react"
+import { useMemo } from "react"
+import { AlertTriangle, ArrowUpRight, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  type CompetitiveAnalysisV2SectionName,
-  type CompetitiveAnalysisView,
+  type CompetitiveAnalysisCompetitorProfile,
+  type CompetitiveAnalysisPositioningPoint,
+  type CompetitiveAnalysisStructuredData,
+  type CompetitiveAnalysisSwotMatrix,
   getCompetitiveAnalysisViewModel,
 } from "@/lib/competitive-analysis-v2"
 
@@ -23,186 +22,792 @@ interface CompetitiveAnalysisDocumentProps {
   isUpgrading: boolean
 }
 
-type CardTone = "default" | "muted" | "dark"
+const displayFontClass = "font-[family:var(--font-display)]"
 
-function SectionMarkdown({
-  content,
-  tone = "default",
-}: {
-  content: string
-  tone?: CardTone
-}) {
-  const proseClasses = cn(
-    "prose prose-sm max-w-none",
-    "[&_p]:leading-relaxed [&_p]:mb-3 [&_ul]:my-3 [&_ul]:space-y-1.5 [&_ol]:my-3 [&_ol]:space-y-1.5",
-    "[&_li]:leading-relaxed [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm",
-    "[&_th]:border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold",
-    "[&_td]:border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top",
-    "[&_h3]:mt-0 [&_h3]:mb-3 [&_h3]:text-base [&_h3]:font-semibold",
-    "[&_h4]:mt-0 [&_h4]:mb-2 [&_h4]:text-sm [&_h4]:font-semibold",
-    "[&_strong]:font-semibold [&_code]:rounded-none [&_code]:px-1.5 [&_code]:py-0.5",
-    tone === "dark"
-      ? "[&_p]:text-white/80 [&_li]:text-white/80 [&_h3]:text-white [&_h4]:text-white [&_strong]:text-white [&_code]:bg-white/10 [&_code]:text-white [&_th]:border-white/10 [&_th]:bg-white/10 [&_th]:text-white [&_td]:border-white/10 [&_td]:text-white/80 [&_a]:text-white [&_blockquote]:border-l-white/40 [&_blockquote]:text-white/70"
-      : "[&_p]:text-[#666666] [&_li]:text-[#666666] [&_h3]:text-[#0A0A0A] [&_h4]:text-[#0A0A0A] [&_strong]:text-[#0A0A0A] [&_code]:bg-black/[0.04] [&_code]:text-[#0A0A0A] [&_th]:border-[#E5E5E5] [&_th]:bg-[#0A0A0A] [&_th]:text-white [&_td]:border-[#E5E5E5] [&_td]:text-[#666666] [&_a]:text-[#DC2626] [&_blockquote]:border-l-[#DC2626] [&_blockquote]:text-[#666666]"
-  )
-
-  return (
-    <div className={proseClasses}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-    </div>
-  )
-}
-
-function SectionCard({
+function PencilCard({
   title,
-  children,
-  tone = "default",
+  kicker,
+  dark = false,
   className,
+  children,
 }: {
   title: string
-  children: React.ReactNode
-  tone?: CardTone
+  kicker?: string
+  dark?: boolean
   className?: string
+  children: React.ReactNode
 }) {
   return (
     <section
       className={cn(
         "border rounded-none",
-        tone === "dark"
-          ? "border-[#0A0A0A] bg-[#0A0A0A]"
-          : tone === "muted"
-            ? "border-[#E5E5E5] bg-[#F5F5F5]"
-            : "border-[#E5E5E5] bg-white",
+        dark ? "border-[#0A0A0A] bg-[#0A0A0A]" : "border-[#E0E0E0] bg-white",
         className
       )}
     >
-      <div className="border-b border-inherit px-6 py-4">
-        <p
+      <div className="space-y-2 px-6 py-5">
+        {kicker ? (
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#FF3B30]">
+            {kicker}
+          </p>
+        ) : null}
+        <h2
           className={cn(
-            "font-mono text-[11px] uppercase tracking-[0.16em]",
-            tone === "dark" ? "text-white/60" : "text-[#777777]"
+            displayFontClass,
+            "text-[22px] font-bold tracking-[-0.03em]",
+            dark ? "text-white" : "text-[#0A0A0A]"
           )}
         >
           {title}
-        </p>
+        </h2>
       </div>
-      <div className="px-6 py-5">{children}</div>
+      <div className="px-6 pb-6">{children}</div>
     </section>
   )
 }
 
-function SectionPair({
-  left,
-  right,
-  sections,
+function ParagraphStack({
+  paragraphs,
+  dark = false,
+  className,
 }: {
-  left: { title: CompetitiveAnalysisV2SectionName; tone?: CardTone }
-  right: { title: CompetitiveAnalysisV2SectionName; tone?: CardTone }
-  sections: Partial<Record<CompetitiveAnalysisV2SectionName, string>>
+  paragraphs: string[]
+  dark?: boolean
+  className?: string
 }) {
   return (
-    <div className="grid gap-6 xl:grid-cols-2">
-      <SectionCard title={left.title} tone={left.tone}>
-        <SectionMarkdown content={sections[left.title] ?? ""} tone={left.tone} />
-      </SectionCard>
-      <SectionCard title={right.title} tone={right.tone}>
-        <SectionMarkdown content={sections[right.title] ?? ""} tone={right.tone} />
-      </SectionCard>
+    <div className={cn("space-y-3", className)}>
+      {paragraphs.map((paragraph, index) => (
+        <p
+          key={`${paragraph}-${index}`}
+          className={cn(
+            "text-[13px] leading-6",
+            dark ? "text-white/78" : "text-[#666666]"
+          )}
+        >
+          {paragraph}
+        </p>
+      ))}
     </div>
   )
 }
 
-function CompetitiveModules({
-  sections,
-  competitorEntries,
+function NumberedList({
+  items,
+  dark = false,
 }: {
-  sections: Partial<Record<CompetitiveAnalysisV2SectionName, string>>
-  competitorEntries: Array<{ heading: string; content: string }>
+  items: string[]
+  dark?: boolean
+}) {
+  return (
+    <ol className="space-y-3">
+      {items.map((item, index) => (
+        <li key={`${item}-${index}`} className="flex gap-3">
+          <span
+            className={cn(
+              "w-7 shrink-0 pt-0.5 font-mono text-[11px] font-medium",
+              dark ? "text-[#FF3B30]" : "text-[#999999]"
+            )}
+          >
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <p
+            className={cn(
+              "text-[12px] leading-5",
+              dark ? "text-white/82" : "text-[#0A0A0A]"
+            )}
+          >
+            {item}
+          </p>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function MarketSignalStrip({ items }: { items: string[] }) {
+  if (items.length === 0) return null
+
+  return (
+    <div className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-2">
+      {items.slice(0, 3).map((item, index) => (
+        <div
+          key={`${item}-${index}`}
+          className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3"
+        >
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#999999]">
+            Signal {String(index + 1).padStart(2, "0")}
+          </p>
+          <p className="mt-2 text-[12px] leading-5 text-[#0A0A0A]">{item}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function DataTable({
+  headers,
+  rows,
+}: {
+  headers: string[]
+  rows: string[][]
+}) {
+  if (headers.length === 0) return null
+
+  return (
+    <div className="overflow-x-auto border border-[#E0E0E0]">
+      <table className="min-w-full border-collapse">
+        <thead>
+          <tr className="bg-[#0A0A0A]">
+            {headers.map((header) => (
+              <th
+                key={header}
+                className="border border-[#0A0A0A] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-white"
+              >
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr
+              key={`row-${rowIndex}`}
+              className={rowIndex % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"}
+            >
+              {headers.map((header, cellIndex) => (
+                <td
+                  key={`${header}-${cellIndex}`}
+                  className="border border-[#E0E0E0] px-4 py-3 text-[12px] leading-5 text-[#0A0A0A] align-top"
+                >
+                  {row[cellIndex] ?? ""}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function SnapshotHero({
+  structured,
+}: {
+  structured: CompetitiveAnalysisStructuredData
 }) {
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <SectionCard title="Executive Summary">
-          <SectionMarkdown content={sections["Executive Summary"] ?? ""} />
-        </SectionCard>
-        <SectionCard title="Founder Verdict" tone="dark">
-          <div className="space-y-4">
-            <SectionMarkdown
-              content={sections["Founder Verdict"] ?? ""}
-              tone="dark"
-            />
-          </div>
-        </SectionCard>
-      </div>
+      <PencilCard
+        title="Market Snapshot & Entry Thesis"
+        kicker="Category Snapshot"
+      >
+        <ParagraphStack paragraphs={structured.executiveSummary} />
+        <MarketSignalStrip items={structured.competitiveLandscapeOverview} />
+      </PencilCard>
 
-      <SectionCard title="Direct Competitors">
-        {competitorEntries.length > 0 ? (
-          <div className="grid gap-4 xl:grid-cols-2">
-            {competitorEntries.map((competitor, index) => (
-              <div
-                key={`${competitor.heading}-${index}`}
+      <PencilCard title="Founder Verdict" kicker="Founder Verdict" dark>
+        <ParagraphStack
+          paragraphs={structured.founderVerdict.paragraphs}
+          dark={true}
+        />
+        <div className="pt-5">
+          <NumberedList items={structured.founderVerdict.bullets} dark={true} />
+        </div>
+      </PencilCard>
+    </div>
+  )
+}
+
+function CompetitorField({
+  label,
+  value,
+}: {
+  label: string
+  value?: string
+}) {
+  if (!value) return null
+
+  return (
+    <div className="flex items-start gap-3">
+      <p className="w-24 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9E9E9E]">
+        {label}
+      </p>
+      <p className="flex-1 text-[11px] leading-[1.45] font-medium text-[#E6E6E6]">
+        {value}
+      </p>
+    </div>
+  )
+}
+
+function getCompetitorTag(competitor: CompetitiveAnalysisCompetitorProfile) {
+  const haystack = [
+    competitor.fields["Target Audience"],
+    competitor.fields["Market Positioning"],
+    competitor.fields["Core Product/Service"],
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+
+  if (haystack.includes("editor")) return "EDITOR"
+  if (haystack.includes("creator")) return "CREATOR"
+  if (haystack.includes("podcast")) return "PODCAST"
+  if (haystack.includes("meeting") || haystack.includes("knowledge")) return "TEAM"
+  if (haystack.includes("enterprise")) return "ENTERPRISE"
+  return "PROFILE"
+}
+
+function getCompetitorPitch(competitor: CompetitiveAnalysisCompetitorProfile) {
+  return (
+    competitor.fields["Market Positioning"] ??
+    competitor.fields["Overview"] ??
+    competitor.fields["Core Product/Service"] ??
+    ""
+  )
+}
+
+function getCompetitorKeyEdge(competitor: CompetitiveAnalysisCompetitorProfile) {
+  return (
+    competitor.fields["Key Edge"] ??
+    competitor.fields["Strengths"] ??
+    competitor.fields["Core Product/Service"] ??
+    ""
+  )
+}
+
+function FastComparisonTable({
+  competitors,
+}: {
+  competitors: CompetitiveAnalysisCompetitorProfile[]
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[1010px] border border-[#E0E0E0]">
+        <div className="grid grid-cols-[180px_220px_150px_220px_minmax(240px,1fr)] gap-3 bg-[#0A0A0A] px-5 py-4">
+          {["Competitor", "Positioning", "Pricing", "Audience", "Key Edge"].map(
+            (label) => (
+              <p
+                key={label}
+                className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-white"
+              >
+                {label}
+              </p>
+            )
+          )}
+        </div>
+
+        {competitors.map((competitor, index) => (
+          <div
+            key={`${competitor.heading}-comparison`}
+            className={cn(
+              "grid grid-cols-[180px_220px_150px_220px_minmax(240px,1fr)] gap-3 px-5 py-4",
+              index > 0 && "border-t border-[#E0E0E0]"
+            )}
+          >
+            <div>
+              {competitor.websiteUrl ? (
+                <a
+                  href={competitor.websiteUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 transition-opacity hover:opacity-80"
+                >
+                  <span
+                    className={cn(
+                      displayFontClass,
+                      "text-[13px] font-semibold text-[#0A0A0A]"
+                    )}
+                  >
+                    {competitor.heading}
+                  </span>
+                  <ArrowUpRight className="h-3.5 w-3.5 text-[#0A0A0A]" />
+                </a>
+              ) : (
+                <p
+                  className={cn(
+                    displayFontClass,
+                    "text-[13px] font-semibold text-[#0A0A0A]"
+                  )}
+                >
+                  {competitor.heading}
+                </p>
+              )}
+            </div>
+            <p className="text-[12px] leading-5 text-[#666666]">
+              {competitor.fields["Market Positioning"] ?? ""}
+            </p>
+            <p className="text-[12px] leading-5 text-[#666666]">
+              {competitor.fields["Pricing Model"] ?? ""}
+            </p>
+            <p className="text-[12px] leading-5 text-[#666666]">
+              {competitor.fields["Target Audience"] ?? ""}
+            </p>
+            <p className="text-[12px] leading-5 text-[#FF3B30]">
+              {getCompetitorKeyEdge(competitor)}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CompetitorProfiles({
+  competitors,
+}: {
+  competitors: CompetitiveAnalysisCompetitorProfile[]
+}) {
+  return (
+    <div className="space-y-6">
+      <PencilCard
+        title="Competitor Profiles & Fast Comparison"
+        kicker="Competitive Intelligence"
+      >
+        <p className="mb-5 text-[13px] leading-6 text-[#666666]">
+          Track how the field competes on positioning, pricing model, audience
+          fit, and operational depth.
+        </p>
+        <FastComparisonTable competitors={competitors} />
+
+        <div className="mt-5 grid gap-4 xl:grid-cols-2">
+          {competitors.map((competitor, index) => {
+            return (
+              <article
+                key={competitor.heading}
                 className={cn(
-                  "border rounded-none px-5 py-4",
-                  index % 2 === 0 ? "bg-[#FAFAFA]" : "bg-white"
+                  "border px-5 py-5",
+                  competitors.length % 2 === 1 &&
+                    index === competitors.length - 1 &&
+                    "xl:col-span-2",
+                  "border-[#0A0A0A] bg-[#0A0A0A]"
                 )}
               >
-                <h3 className="mb-3 text-base font-semibold tracking-tight text-[#0A0A0A]">
-                  {competitor.heading}
-                </h3>
-                <SectionMarkdown content={competitor.content} />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    {competitor.websiteUrl ? (
+                      <a
+                        href={competitor.websiteUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
+                      >
+                        <h3
+                          className={cn(
+                            displayFontClass,
+                            "text-[18px] font-semibold tracking-[-0.03em] text-white"
+                          )}
+                        >
+                          {competitor.heading}
+                        </h3>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-white" />
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <h3
+                          className={cn(
+                            displayFontClass,
+                            "text-[18px] font-semibold tracking-[-0.03em] text-white"
+                          )}
+                        >
+                          {competitor.heading}
+                        </h3>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-white" />
+                      </div>
+                    )}
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[#FF3B30]">
+                      {getCompetitorTag(competitor)}
+                    </p>
+                  </div>
+                  {getCompetitorPitch(competitor) ? (
+                    <p className="text-[11px] leading-[1.35] text-[#FF7A73]">
+                      {getCompetitorPitch(competitor)}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  <CompetitorField
+                    label="Overview"
+                    value={competitor.fields["Overview"]}
+                  />
+                  <CompetitorField
+                    label="Core"
+                    value={competitor.fields["Core Product/Service"]}
+                  />
+                  <CompetitorField
+                    label="Positioning"
+                    value={competitor.fields["Market Positioning"]}
+                  />
+                  <CompetitorField
+                    label="Strengths"
+                    value={competitor.fields["Strengths"]}
+                  />
+                  <CompetitorField
+                    label="Limitations"
+                    value={competitor.fields["Limitations"]}
+                  />
+                </div>
+
+                <div className="mt-5 grid gap-2 border-t border-white/10 pt-3 md:grid-cols-2">
+                  <p className="font-mono text-[10px] font-medium text-[#BDBDBD]">
+                    Pricing: {competitor.fields["Pricing Model"] ?? "Unknown"}
+                  </p>
+                  <p className="font-mono text-[10px] font-medium text-[#BDBDBD]">
+                    Audience: {competitor.fields["Target Audience"] ?? "Unknown"}
+                  </p>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </PencilCard>
+    </div>
+  )
+}
+
+function CompactTableCard({
+  title,
+  kicker,
+  paragraphs,
+  headers,
+  rows,
+}: {
+  title: string
+  kicker?: string
+  paragraphs: string[]
+  headers: string[]
+  rows: string[][]
+}) {
+  return (
+    <PencilCard title={title} kicker={kicker}>
+      <ParagraphStack paragraphs={paragraphs} />
+      <div className={paragraphs.length > 0 ? "pt-5" : ""}>
+        <DataTable headers={headers} rows={rows} />
+      </div>
+    </PencilCard>
+  )
+}
+
+function clamp(value: number | null, fallback: number) {
+  if (value === null || Number.isNaN(value)) return fallback
+  return Math.min(10, Math.max(0, value))
+}
+
+function pointTone(point: CompetitiveAnalysisPositioningPoint, index: number) {
+  if (/your|our|concept|idea|product/i.test(point.competitor)) {
+    return "accent"
+  }
+  if (index === 0) return "dark"
+  if (index === 1) return "muted"
+  return "light"
+}
+
+function PositioningMap({
+  title,
+  positioningMap,
+}: {
+  title: string
+  positioningMap: CompetitiveAnalysisStructuredData["positioningMap"]
+}) {
+  return (
+    <PencilCard title={title}>
+      <div className="space-y-4">
+        {(positioningMap.xAxis || positioningMap.yAxis) && (
+          <div className="grid gap-2 md:grid-cols-2">
+            <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#999999]">
+                X Axis
+              </p>
+              <p className="mt-1 text-[12px] leading-5 text-[#0A0A0A]">
+                {positioningMap.xAxis ?? "Not specified"}
+              </p>
+            </div>
+            <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#999999]">
+                Y Axis
+              </p>
+              <p className="mt-1 text-[12px] leading-5 text-[#0A0A0A]">
+                {positioningMap.yAxis ?? "Not specified"}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="relative h-[320px] border border-[#E0E0E0] bg-[#FAFAFA]">
+          <div className="absolute inset-x-[10%] top-1/2 h-px bg-[#E0E0E0]" />
+          <div className="absolute inset-y-[10%] left-1/2 w-px bg-[#E0E0E0]" />
+          <p className="absolute bottom-3 left-4 w-[38%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+            Low {positioningMap.xAxis ?? "X"}
+          </p>
+          <p className="absolute bottom-3 right-4 w-[38%] whitespace-normal text-right font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+            High {positioningMap.xAxis ?? "X"}
+          </p>
+          <p className="absolute left-4 top-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]">
+            High {positioningMap.yAxis ?? "Y"}
+          </p>
+          <p className="absolute right-4 top-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]">
+            Map
+          </p>
+
+          {positioningMap.points.map((point, index) => {
+            const normalizedX = clamp(point.x, index * 2 + 3)
+            const normalizedY = clamp(point.y, 8 - index * 2)
+            const tone = pointTone(point, index)
+
+            return (
+              <div
+                key={`${point.competitor}-${index}`}
+                className={cn(
+                  "absolute -translate-x-1/2 -translate-y-1/2 border px-3 py-2",
+                  tone === "accent"
+                    ? "border-[#FF3B30] bg-[#FF3B30] text-white"
+                    : tone === "dark"
+                      ? "border-[#0A0A0A] bg-[#0A0A0A] text-white"
+                      : tone === "muted"
+                        ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
+                        : "border-[#E0E0E0] bg-white text-[#0A0A0A]"
+                )}
+                style={{
+                  left: `${10 + normalizedX * 8}%`,
+                  top: `${90 - normalizedY * 8}%`,
+                }}
+              >
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em]">
+                  {point.competitor}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+
+        {positioningMap.points.length > 0 ? (
+          <div className="space-y-3">
+            {positioningMap.points.map((point) => (
+              <div
+                key={`${point.competitor}-rationale`}
+                className="border border-[#E0E0E0] px-4 py-3"
+              >
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#999999]">
+                  {point.competitor}
+                </p>
+                <p className="mt-1 text-[12px] leading-5 text-[#0A0A0A]">
+                  {point.rationale}
+                </p>
               </div>
             ))}
           </div>
-        ) : (
-          <SectionMarkdown content={sections["Direct Competitors"] ?? ""} />
-        )}
-      </SectionCard>
-
-      <SectionCard title="Feature and Workflow Matrix">
-        <SectionMarkdown content={sections["Feature and Workflow Matrix"] ?? ""} />
-      </SectionCard>
-
-      <SectionPair
-        left={{ title: "Pricing and Packaging" }}
-        right={{ title: "Audience Segments", tone: "muted" }}
-        sections={sections}
-      />
-
-      <SectionPair
-        left={{ title: "Competitive Landscape Overview" }}
-        right={{ title: "Positioning Map" }}
-        sections={sections}
-      />
-
-      <SectionPair
-        left={{ title: "GTM / Distribution Signals" }}
-        right={{ title: "Gap Analysis", tone: "muted" }}
-        sections={sections}
-      />
-
-      <SectionPair
-        left={{ title: "Differentiation Wedges" }}
-        right={{ title: "Moat and Defensibility" }}
-        sections={sections}
-      />
-
-      <SectionPair
-        left={{ title: "SWOT Analysis" }}
-        right={{ title: "Risks and Countermoves", tone: "muted" }}
-        sections={sections}
-      />
-
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <SectionCard title="MVP Wedge Recommendation">
-          <SectionMarkdown content={sections["MVP Wedge Recommendation"] ?? ""} />
-        </SectionCard>
-        <SectionCard title="Strategic Recommendations" tone="dark">
-          <SectionMarkdown
-            content={sections["Strategic Recommendations"] ?? ""}
-            tone="dark"
-          />
-        </SectionCard>
+        ) : null}
       </div>
+    </PencilCard>
+  )
+}
+
+function SWOTQuadrant({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: "mint" | "rose" | "blue" | "amber"
+}) {
+  return (
+    <div
+      className={cn(
+        "border p-5",
+        tone === "mint" && "border-[#D1FAE5] bg-[#F0FDF4]",
+        tone === "rose" && "border-[#FECACA] bg-[#FEF2F2]",
+        tone === "blue" && "border-[#BFDBFE] bg-[#EFF6FF]",
+        tone === "amber" && "border-[#FED7AA] bg-[#FFF7ED]"
+      )}
+    >
+      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]">
+        {label}
+      </p>
+      <p className="mt-2 text-[12px] leading-5 text-[#0A0A0A]">{value}</p>
+    </div>
+  )
+}
+
+function SWOTCard({
+  matrix,
+  paragraphs,
+  tableHeaders,
+  rows,
+}: {
+  matrix: CompetitiveAnalysisSwotMatrix | null
+  paragraphs: string[]
+  tableHeaders: string[]
+  rows: string[][]
+}) {
+  return (
+    <PencilCard title="SWOT Analysis">
+      <ParagraphStack paragraphs={paragraphs} />
+      {matrix ? (
+        <div className={paragraphs.length > 0 ? "grid gap-4 pt-5 md:grid-cols-2" : "grid gap-4 md:grid-cols-2"}>
+          <SWOTQuadrant
+            label={`Internal / ${matrix.positiveLabel}`}
+            value={matrix.internalPositive}
+            tone="mint"
+          />
+          <SWOTQuadrant
+            label={`Internal / ${matrix.negativeLabel}`}
+            value={matrix.internalNegative}
+            tone="rose"
+          />
+          <SWOTQuadrant
+            label={`External / ${matrix.positiveLabel}`}
+            value={matrix.externalPositive}
+            tone="blue"
+          />
+          <SWOTQuadrant
+            label={`External / ${matrix.negativeLabel}`}
+            value={matrix.externalNegative}
+            tone="amber"
+          />
+        </div>
+      ) : rows.length > 0 ? (
+        <div className={paragraphs.length > 0 ? "pt-5" : ""}>
+          <DataTable headers={tableHeaders} rows={rows} />
+        </div>
+      ) : null}
+    </PencilCard>
+  )
+}
+
+function SmallListCard({
+  title,
+  kicker,
+  items,
+  dark = false,
+}: {
+  title: string
+  kicker?: string
+  items: string[]
+  dark?: boolean
+}) {
+  return (
+    <PencilCard title={title} kicker={kicker} dark={dark}>
+      <NumberedList items={items} dark={dark} />
+    </PencilCard>
+  )
+}
+
+function MVPCard({
+  paragraphs,
+  bullets,
+}: {
+  paragraphs: string[]
+  bullets: string[]
+}) {
+  return (
+    <PencilCard title="Launch with one sharp workflow, not a platform." kicker="MVP Wedge" dark>
+      <ParagraphStack paragraphs={paragraphs} dark={true} />
+      <div className="pt-5">
+        <NumberedList items={bullets} dark={true} />
+      </div>
+    </PencilCard>
+  )
+}
+
+function CompetitiveResearchPage({
+  structured,
+}: {
+  structured: CompetitiveAnalysisStructuredData
+}) {
+  return (
+    <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
+      <header className="border border-[#E0E0E0] bg-white px-6 py-5">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
+          Market Intelligence
+        </p>
+        <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <h1
+              className={cn(
+                displayFontClass,
+                "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
+              )}
+            >
+              Competitive Research
+            </h1>
+            <p className="mt-2 max-w-3xl text-[13px] leading-6 text-[#666666]">
+              Compare positioning, pricing, workflow depth, distribution signals,
+              and whitespace opportunities without falling back to raw markdown.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <SnapshotHero structured={structured} />
+
+      <CompetitorProfiles competitors={structured.directCompetitors} />
+
+      <CompactTableCard
+        title="Feature and Workflow Matrix"
+        paragraphs={structured.featureMatrix.paragraphs}
+        headers={structured.featureMatrix.table?.headers ?? []}
+        rows={structured.featureMatrix.table?.rows ?? []}
+      />
+
+      <PositioningMap
+        title="Competitive Positioning Map"
+        positioningMap={structured.positioningMap}
+      />
+
+      <CompactTableCard
+        title="Pricing And Packaging"
+        paragraphs={structured.pricingAndPackaging.paragraphs}
+        headers={structured.pricingAndPackaging.table?.headers ?? []}
+        rows={structured.pricingAndPackaging.table?.rows ?? []}
+      />
+
+      <SmallListCard
+        title="Audience Segments"
+        items={structured.audienceSegments}
+      />
+
+      <SmallListCard
+        title="GTM / Distribution Signals"
+        items={structured.gtmSignals}
+        dark={true}
+      />
+
+      <SmallListCard title="Gap Analysis" items={structured.gapAnalysis} />
+
+      <SmallListCard
+        title="Differentiation Wedges"
+        items={structured.differentiationWedges}
+        dark={true}
+      />
+
+      <SmallListCard
+        title="Moat And Defensibility"
+        items={structured.moatAndDefensibility}
+      />
+
+      <SWOTCard
+        matrix={structured.swotAnalysis.matrix}
+        paragraphs={structured.swotAnalysis.paragraphs}
+        tableHeaders={structured.swotAnalysis.table?.headers ?? []}
+        rows={structured.swotAnalysis.table?.rows ?? []}
+      />
+
+      <SmallListCard
+        title="Risks And Countermoves"
+        items={structured.risksAndCountermoves}
+      />
+
+      <MVPCard
+        paragraphs={structured.mvpWedgeRecommendation.paragraphs}
+        bullets={structured.mvpWedgeRecommendation.bullets}
+      />
+
+      <SmallListCard
+        title="Strategic Recommendations"
+        items={structured.strategicRecommendations}
+      />
     </div>
   )
 }
@@ -210,7 +815,6 @@ function CompetitiveModules({
 export function CompetitiveAnalysisDocument({
   content,
   metadata,
-  currentVersion = 0,
   projectId,
   onContentUpdate,
   onUpgrade,
@@ -220,43 +824,6 @@ export function CompetitiveAnalysisDocument({
     () => getCompetitiveAnalysisViewModel(content, metadata),
     [content, metadata]
   )
-  const viewResetKey = `${currentVersion}-${viewModel.documentVersion}`
-
-  return (
-    <CompetitiveAnalysisDocumentInner
-      key={viewResetKey}
-      content={content}
-      viewModel={viewModel}
-      projectId={projectId}
-      onContentUpdate={onContentUpdate}
-      onUpgrade={onUpgrade}
-      isUpgrading={isUpgrading}
-    />
-  )
-}
-
-function CompetitiveAnalysisDocumentInner({
-  content,
-  viewModel,
-  projectId,
-  onContentUpdate,
-  onUpgrade,
-  isUpgrading,
-}: {
-  content: string
-  viewModel: ReturnType<typeof getCompetitiveAnalysisViewModel>
-  projectId: string
-  onContentUpdate?: (newContent: string) => void
-  onUpgrade: () => void
-  isUpgrading: boolean
-}) {
-  const [activeView, setActiveView] = useState<CompetitiveAnalysisView>(
-    viewModel.defaultView
-  )
-  const selectedView =
-    viewModel.canRenderModules || activeView !== "modules"
-      ? activeView
-      : "markdown"
 
   return (
     <div className="space-y-4">
@@ -269,7 +836,7 @@ function CompetitiveAnalysisDocumentInner({
               </p>
               <p className="text-sm text-[#666666]">
                 Existing versions stay intact. Regenerating creates a new v2
-                version with the modules dashboard.
+                version with the designed modules view.
               </p>
             </div>
             <button
@@ -292,53 +859,23 @@ function CompetitiveAnalysisDocumentInner({
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#DC2626]" />
           <div className="space-y-1">
             <p className="font-semibold text-[#7F1D1D]">
-              Modules view unavailable
+              Designed modules view unavailable
             </p>
             <p className="text-sm text-[#991B1B]">{viewModel.warning}</p>
           </div>
         </div>
       )}
 
-      <Tabs
-        value={selectedView}
-        onValueChange={(value) => setActiveView(value as CompetitiveAnalysisView)}
-      >
-        <TabsList className="h-auto rounded-none border border-[#E5E5E5] bg-white p-1">
-          <TabsTrigger
-            value="modules"
-            disabled={!viewModel.canRenderModules}
-            className="rounded-none border-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] data-[state=active]:bg-[#0A0A0A] data-[state=active]:text-white data-[state=active]:shadow-none"
-          >
-            <LayoutGrid className="mr-2 h-3.5 w-3.5" />
-            Modules
-          </TabsTrigger>
-          <TabsTrigger
-            value="markdown"
-            className="rounded-none border-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] data-[state=active]:bg-[#0A0A0A] data-[state=active]:text-white data-[state=active]:shadow-none"
-          >
-            <FileText className="mr-2 h-3.5 w-3.5" />
-            Markdown
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="modules" className="mt-4">
-          {viewModel.canRenderModules ? (
-            <CompetitiveModules
-              sections={viewModel.parsed.sections}
-              competitorEntries={viewModel.parsed.competitorEntries}
-            />
-          ) : null}
-        </TabsContent>
-
-        <TabsContent value="markdown" className="mt-4">
-          <MarkdownRenderer
-            content={content}
-            projectId={projectId}
-            enableInlineEditing={true}
-            onContentUpdate={onContentUpdate}
-          />
-        </TabsContent>
-      </Tabs>
+      {viewModel.canRenderModules ? (
+        <CompetitiveResearchPage structured={viewModel.structured} />
+      ) : (
+        <MarkdownRenderer
+          content={content}
+          projectId={projectId}
+          enableInlineEditing={true}
+          onContentUpdate={onContentUpdate}
+        />
+      )}
     </div>
   )
 }

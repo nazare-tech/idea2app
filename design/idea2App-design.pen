@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.9",
   "children": [
     {
       "type": "frame",
@@ -9667,9 +9667,11 @@
                 {
                   "type": "frame",
                   "id": "b9Xdm",
+                  "x": 0,
+                  "y": 0,
                   "name": "Links",
                   "enabled": false,
-                  "height": "fill_container",
+                  "height": "fill_container(0)",
                   "gap": 32,
                   "alignItems": "center",
                   "children": [
@@ -9708,9 +9710,11 @@
                 {
                   "type": "frame",
                   "id": "fqd0a",
+                  "x": 0,
+                  "y": 0,
                   "name": "Nav Ctas",
                   "enabled": false,
-                  "height": "fill_container",
+                  "height": "fill_container(0)",
                   "gap": 12,
                   "alignItems": "center",
                   "children": [
@@ -14898,7 +14902,8 @@
                   "fill": "#666666",
                   "content": "Track positioning, momentum and whitespace opportunities in one view",
                   "fontFamily": "Inter",
-                  "fontSize": 14
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -15024,7 +15029,8 @@
                       "content": "Leaders are investing in AI-assisted onboarding and faster time-to-value claims. Gaps remain in transparent pricing and team-level collaboration workflows.",
                       "lineHeight": 1.5,
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -15515,7 +15521,8 @@
                           "content": "Track who is winning on velocity, enterprise fit, and defensibility.",
                           "lineHeight": 1.5,
                           "fontFamily": "Inter",
-                          "fontSize": 14
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -17039,7 +17046,8 @@
                       "content": "Market leaders own distribution; challengers win with differentiated formats and tighter creator economics.",
                       "lineHeight": 1.5,
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -17155,7 +17163,8 @@
                                   "content": "Top show quality and host credibility create strong retention in core tech and business segments.",
                                   "lineHeight": 1.45,
                                   "fontFamily": "Inter",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -17194,7 +17203,8 @@
                                   "content": "Limited short-form distribution and slow experiment cadence reduce reach versus fast-moving competitors.",
                                   "lineHeight": 1.45,
                                   "fontFamily": "Inter",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -17243,7 +17253,8 @@
                                   "content": "Bundle flagship episodes into themed mini-series and repurpose clips to capture discovery traffic.",
                                   "lineHeight": 1.45,
                                   "fontFamily": "Inter",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -17282,7 +17293,8 @@
                                   "content": "Platform-native podcast tools are compressing production advantage and raising ad inventory pressure.",
                                   "lineHeight": 1.45,
                                   "fontFamily": "Inter",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -17355,7 +17367,8 @@
                           "content": "Publish 5-7 high-signal clips per episode across YouTube Shorts and LinkedIn to improve top-of-funnel discovery by an estimated 25-35%.",
                           "lineHeight": 1.5,
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -17407,7 +17420,8 @@
                           "content": "Reframe long catalog episodes into 3 narrative tracks (AI Ops, Founder Playbooks, GTM) to sharpen audience fit and sponsor alignment.",
                           "lineHeight": 1.5,
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -17459,7 +17473,1164 @@
                           "content": "Secure two newsletter and one community distribution partner per quarter to reduce CAC volatility and de-risk paid acquisition.",
                           "lineHeight": 1.5,
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "xSXNS",
+      "x": 19470,
+      "y": -256,
+      "name": "Competitor Profiles Refresh",
+      "width": 1700,
+      "height": 1300,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": [
+        32,
+        40
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "M4UYG",
+          "name": "Header",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 6,
+          "children": [
+            {
+              "type": "text",
+              "id": "vRpZI",
+              "name": "kicker",
+              "fill": "#777777",
+              "content": "COMPETITIVE INTELLIGENCE",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 12,
+              "fontWeight": "600",
+              "letterSpacing": 1.2
+            },
+            {
+              "type": "text",
+              "id": "18OB5",
+              "name": "title",
+              "fill": "#0A0A0A",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Competitor Profiles & Fast Comparison - Refreshed",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 28,
+              "fontWeight": "700",
+              "letterSpacing": -0.6
+            },
+            {
+              "type": "text",
+              "id": "1XFc2",
+              "name": "sub",
+              "fill": "#666666",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Designed for the actual Idea2App data shape: overview, core product, positioning, strengths, limitations, pricing model, and target audience.",
+              "lineHeight": 1.5,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "NWY1r",
+          "name": "Profiles Row",
+          "width": "fill_container",
+          "gap": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "l86Yv",
+              "name": "Competitor Card A",
+              "width": "fill_container",
+              "fill": "#0A0A0A",
+              "layout": "vertical",
+              "gap": 10,
+              "padding": [
+                20,
+                22
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "YRyy0",
+                  "name": "card1linkRow",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "keCse",
+                      "fill": "#FFFFFF",
+                      "content": "Descript",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 20,
+                      "fontWeight": "700",
+                      "letterSpacing": -0.4
+                    },
+                    {
+                      "type": "icon_font",
+                      "id": "UviC1",
+                      "width": 20,
+                      "height": 20,
+                      "iconFontName": "arrow-up-right",
+                      "iconFontFamily": "lucide",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "IeKgJ",
+                  "name": "card1sub",
+                  "fill": "#FF3B30",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Creator-focused editing suite with transcript-native workflows.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "5OUuO",
+                  "name": "card1body",
+                  "fill": "#D0D0D0",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "OVERVIEW\nAudio/video editor built around transcript editing.\n\nCORE PRODUCT\nTranscription, editing, screen capture, export.\n\nPOSITIONING\nCreator-first production workflow.\n\nSTRENGTHS\nEditing depth, creator familiarity.\n\nLIMITATIONS\nCan feel heavier than lightweight summarizers.\n\nPRICING MODEL\nSubscription tiers.\n\nTARGET AUDIENCE\nPodcasters, editors, creator teams.",
+                  "lineHeight": 1.55,
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 10,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "GCmWs",
+              "name": "Competitor Card B",
+              "width": "fill_container",
+              "fill": "#0A0A0A",
+              "layout": "vertical",
+              "gap": 10,
+              "padding": [
+                20,
+                22
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "dWklW",
+                  "name": "card2linkRow",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "u4iXu",
+                      "fill": "#FFFFFF",
+                      "content": "Otter.ai",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 20,
+                      "fontWeight": "700",
+                      "letterSpacing": -0.4
+                    },
+                    {
+                      "type": "icon_font",
+                      "id": "GbMRM",
+                      "width": 20,
+                      "height": 20,
+                      "iconFontName": "arrow-up-right",
+                      "iconFontFamily": "lucide",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "RUSlC",
+                  "name": "card2sub",
+                  "fill": "#FF3B30",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Meeting intelligence product with searchable transcripts and team summaries.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Fxizf",
+                  "name": "card2body",
+                  "fill": "#D0D0D0",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "OVERVIEW\nAutomated speech-to-text plus searchable knowledge capture.\n\nCORE PRODUCT\nRecording, transcription, summaries, team search.\n\nPOSITIONING\nBroad productivity and meeting memory.\n\nSTRENGTHS\nTeam utility, searchable archive.\n\nLIMITATIONS\nLess creator-specific than editing-led tools.\n\nPRICING MODEL\nFree + per-user plans.\n\nTARGET AUDIENCE\nMeeting-heavy teams, operators, knowledge workers.",
+                  "lineHeight": 1.55,
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 10,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "fVvwK",
+              "name": "Competitor Card C",
+              "width": "fill_container",
+              "fill": "#0A0A0A",
+              "layout": "vertical",
+              "gap": 10,
+              "padding": [
+                20,
+                22
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "xmqDq",
+                  "name": "card3linkRow",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "5N6lH",
+                      "fill": "#FFFFFF",
+                      "content": "Podcastle",
+                      "fontFamily": "Space Grotesk",
+                      "fontSize": 20,
+                      "fontWeight": "700",
+                      "letterSpacing": -0.4
+                    },
+                    {
+                      "type": "icon_font",
+                      "id": "40UdL",
+                      "width": 20,
+                      "height": 20,
+                      "iconFontName": "arrow-up-right",
+                      "iconFontFamily": "lucide",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "f4uuM",
+                  "name": "card3sub",
+                  "fill": "#FF3B30",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "End-to-end podcast creation platform emphasizing speed and AI assistance.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "AkN3f",
+                  "name": "card3body",
+                  "fill": "#D0D0D0",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "OVERVIEW\nProduction platform for recording, editing, and publishing.\n\nCORE PRODUCT\nRecording, editing, hosting-adjacent creation tools.\n\nPOSITIONING\nSimplified production for creators.\n\nSTRENGTHS\nEnd-to-end narrative, streamlined flow.\n\nLIMITATIONS\nMay be narrower outside podcast production.\n\nPRICING MODEL\nSubscription plans.\n\nTARGET AUDIENCE\nPodcast creators and small media teams.",
+                  "lineHeight": 1.55,
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 10,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "XT0I2",
+          "name": "Fast Comparison",
+          "width": "fill_container",
+          "stroke": {
+            "thickness": 1,
+            "fill": "#E0E0E0"
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "7mzsc",
+              "name": "Table Header",
+              "width": "fill_container",
+              "fill": "#0A0A0A",
+              "gap": 12,
+              "padding": [
+                16,
+                20
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "UaEXS",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width",
+                  "width": 180,
+                  "content": "COMPETITOR",
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 10,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "tqTTw",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width",
+                  "width": 220,
+                  "content": "POSITIONING",
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 10,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "wZZ6o",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width",
+                  "width": 150,
+                  "content": "PRICING",
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 10,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "a8yQh",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width",
+                  "width": 220,
+                  "content": "AUDIENCE",
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 10,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "U3NGy",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width",
+                  "width": 762,
+                  "content": "KEY EDGE",
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 10,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "l8OXH",
+              "name": "Row 1",
+              "width": "fill_container",
+              "gap": 12,
+              "padding": [
+                18,
+                20
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "V3aES",
+                  "fill": "#0A0A0A",
+                  "textGrowth": "fixed-width",
+                  "width": 180,
+                  "content": "Descript",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "rDGX1",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": 220,
+                  "content": "Creator-first editor",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "IgqSv",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": 150,
+                  "content": "Subscription",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "FONm8",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": 220,
+                  "content": "Podcasters + editors",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "eQdDL",
+                  "fill": "#FF3B30",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Transcript-native editing",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "7yhZ5",
+              "name": "Row 2",
+              "width": "fill_container",
+              "stroke": {
+                "thickness": {
+                  "top": 1
+                },
+                "fill": "#E0E0E0"
+              },
+              "gap": 12,
+              "padding": [
+                18,
+                20
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "WmB4M",
+                  "fill": "#0A0A0A",
+                  "textGrowth": "fixed-width",
+                  "width": 180,
+                  "content": "Otter.ai",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "l0ug3",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": 220,
+                  "content": "Meeting memory + search",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "ItsQR",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": 150,
+                  "content": "Free + per-user",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "YEZKz",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": 220,
+                  "content": "Knowledge teams",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "do6lZ",
+                  "fill": "#FF3B30",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Searchable conversation archive",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "3SEDM",
+              "name": "Row 3",
+              "width": "fill_container",
+              "stroke": {
+                "thickness": {
+                  "top": 1
+                },
+                "fill": "#E0E0E0"
+              },
+              "gap": 12,
+              "padding": [
+                18,
+                20
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "7pETZ",
+                  "fill": "#0A0A0A",
+                  "textGrowth": "fixed-width",
+                  "width": 180,
+                  "content": "Podcastle",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "UHWOZ",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": 220,
+                  "content": "Fast creator workflow",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "EaiA1",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": 150,
+                  "content": "Subscription",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "fumcR",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": 220,
+                  "content": "Podcast creators",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Obvuc",
+                  "fill": "#FF3B30",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "All-in-one recording-to-editing flow",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "gOdyg",
+          "name": "Dense Card Variations",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "yjJJe",
+              "name": "denseTitle",
+              "fill": "#111111",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "2 More Information-Dense Card Approaches",
+              "fontFamily": "Space Grotesk",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "mZGbv",
+              "name": "denseSub",
+              "fill": "#666666",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Same data, compressed into faster-scanning layouts.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "EMhf2",
+              "name": "denseRow",
+              "width": "fill_container",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "6VrPy",
+                  "name": "Dense Variant A Container",
+                  "width": "fill_container",
+                  "fill": "#0A0A0A",
+                  "cornerRadius": 10,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#1F1F1F"
+                  },
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "NVlXM",
+                      "name": "header",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "7QHxQ",
+                          "name": "headerLeft",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Re0hD",
+                              "name": "brand",
+                              "fill": "#FFFFFF",
+                              "content": "Descript",
+                              "fontFamily": "Sora",
+                              "fontSize": 16,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "9LDTa",
+                              "name": "positioning",
+                              "fill": "#CCCCCC",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Creator-first production workflow",
+                              "fontFamily": "IBM Plex Mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "v11Zm",
+                          "name": "pricePill",
+                          "fill": "#171717",
+                          "cornerRadius": 999,
+                          "padding": [
+                            4,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Ya9lL",
+                              "name": "pricePillText",
+                              "fill": "#FAFAFA",
+                              "content": "Subscription",
+                              "fontFamily": "IBM Plex Mono",
+                              "fontSize": 10,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "CgBdg",
+                      "name": "divider",
+                      "fill": "#1E1E1E",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rYR21",
+                      "name": "overviewBlock",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 3,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "WxtVr",
+                          "name": "overviewLabel",
+                          "fill": "#999999",
+                          "content": "OVERVIEW",
+                          "fontFamily": "IBM Plex Mono",
+                          "fontSize": 10,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "IJ9L7",
+                          "name": "overviewText",
+                          "fill": "#FAFAFA",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Audio/video editor built around transcript editing.",
+                          "fontFamily": "Sora",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "A8wBJ",
+                      "name": "infoGrid",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "2V41D",
+                          "name": "colA",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "cpzRA",
+                              "name": "coreProduct",
+                              "fill": "#FAFAFA",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "CORE PRODUCT\nTranscription editing\nscreen capture\nexport",
+                              "lineHeight": 1.3,
+                              "fontFamily": "IBM Plex Mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "0HFJx",
+                              "name": "strengths",
+                              "fill": "#D4D4D4",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "STRENGTHS\nEditing depth\ncreator familiarity",
+                              "lineHeight": 1.3,
+                              "fontFamily": "Sora",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PMZvb",
+                          "name": "colB",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "PMk05",
+                              "name": "positioningBlock",
+                              "fill": "#FAFAFA",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "POSITIONING\nCreator-first production workflow",
+                              "lineHeight": 1.3,
+                              "fontFamily": "Sora",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "rOsL7",
+                              "name": "limitations",
+                              "fill": "#B5B5B5",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "LIMITATIONS\nCan feel heavier than lightweight summarizers",
+                              "lineHeight": 1.3,
+                              "fontFamily": "Sora",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VKbE1",
+                      "name": "footer",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "3o7mA",
+                          "name": "pricingBadge",
+                          "fill": "#151515",
+                          "cornerRadius": 999,
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wbApD",
+                              "name": "pricingText",
+                              "fill": "#CCCCCC",
+                              "content": "Pricing: Subscription tiers",
+                              "fontFamily": "IBM Plex Mono",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "YmEoq",
+                          "name": "audience",
+                          "fill": "#E5E5E5",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Target: Podcasters, editors, creator teams",
+                          "fontFamily": "Sora",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "2WPL1",
+                  "name": "Dense Variant B Container",
+                  "width": 392,
+                  "fill": "#0A0A0A",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 14,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "r5ejF",
+                      "name": "vbh",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "group",
+                          "id": "NOSLf",
+                          "name": "Title link",
+                          "layout": "horizontal",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "JZfi5",
+                              "name": "vbTitle",
+                              "fill": "#FFFFFF",
+                              "content": "Descript",
+                              "fontFamily": "Space Grotesk",
+                              "fontSize": 18,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "k0P6w",
+                              "width": 16,
+                              "height": 16,
+                              "iconFontName": "arrow-up-right",
+                              "iconFontFamily": "lucide",
+                              "fill": "#FFFFFF"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "kWssC",
+                          "name": "vbTag",
+                          "fill": "#FF3B30",
+                          "content": "EDITOR",
+                          "fontFamily": "IBM Plex Mono",
+                          "fontSize": 10,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "V0tAQ",
+                      "name": "vbPitch",
+                      "fill": "#FF7A73",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Creator-focused editing suite with transcript-native workflows.",
+                      "lineHeight": 1.35,
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qK0a4",
+                      "name": "rows",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "6yj3m",
+                          "name": "r1",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "N5CEg",
+                              "name": "r1l",
+                              "fill": "#9E9E9E",
+                              "textGrowth": "fixed-width",
+                              "width": 96,
+                              "content": "Overview",
+                              "fontFamily": "IBM Plex Mono",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "4RHHJ",
+                              "name": "r1v",
+                              "fill": "#E6E6E6",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Audio/video editor built around transcript editing.",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Y7lf5",
+                          "name": "r2",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "jHarz",
+                              "name": "r2l",
+                              "fill": "#9E9E9E",
+                              "textGrowth": "fixed-width",
+                              "width": 96,
+                              "content": "Core",
+                              "fontFamily": "IBM Plex Mono",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "evoYT",
+                              "name": "r2v",
+                              "fill": "#E6E6E6",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Transcription, editing, screen capture, export.",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "t9QqZ",
+                          "name": "r3",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "3nTyU",
+                              "name": "r3l",
+                              "fill": "#9E9E9E",
+                              "textGrowth": "fixed-width",
+                              "width": 96,
+                              "content": "Positioning",
+                              "fontFamily": "IBM Plex Mono",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "tlU8s",
+                              "name": "r3v",
+                              "fill": "#E6E6E6",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Creator-first production workflow.",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PUTw6",
+                          "name": "r4",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "VU0r9",
+                              "name": "r4l",
+                              "fill": "#9E9E9E",
+                              "textGrowth": "fixed-width",
+                              "width": 96,
+                              "content": "Strengths",
+                              "fontFamily": "IBM Plex Mono",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "lQkLv",
+                              "name": "r4v",
+                              "fill": "#E6E6E6",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Editing depth, creator familiarity.",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Je1Ly",
+                          "name": "r5",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "TPpmD",
+                              "name": "r5l",
+                              "fill": "#9E9E9E",
+                              "textGrowth": "fixed-width",
+                              "width": 96,
+                              "content": "Limitations",
+                              "fontFamily": "IBM Plex Mono",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "sYkj2",
+                              "name": "r5v",
+                              "fill": "#E6E6E6",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Can feel heavier than lightweight summarizers.",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cokmt",
+                      "name": "meta",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qFsoJ",
+                          "name": "price",
+                          "fill": "#BDBDBD",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Pricing: Subscription tiers",
+                          "fontFamily": "IBM Plex Mono",
+                          "fontSize": 10,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "81BfR",
+                          "name": "aud",
+                          "fill": "#BDBDBD",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Audience: Podcasters, editors, creator teams",
+                          "fontFamily": "IBM Plex Mono",
+                          "fontSize": 10,
+                          "fontWeight": "500"
                         }
                       ]
                     }

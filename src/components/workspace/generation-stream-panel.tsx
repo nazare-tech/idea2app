@@ -10,6 +10,7 @@ interface GenerationStreamPanelProps {
   currentStep: number  // 0 = not started, 1+ = that step is active
   streamContent: string
   projectId: string
+  showLiveContent?: boolean
 }
 
 export function GenerationStreamPanel({
@@ -18,7 +19,10 @@ export function GenerationStreamPanel({
   currentStep,
   streamContent,
   projectId,
+  showLiveContent = true,
 }: GenerationStreamPanelProps) {
+  const shouldShowContent = showLiveContent && Boolean(streamContent)
+
   return (
     <div className="flex flex-col gap-6 py-8 px-4">
       {/* Stage progress */}
@@ -59,7 +63,7 @@ export function GenerationStreamPanel({
       </div>
 
       {/* Live streaming content */}
-      {streamContent && (
+      {shouldShowContent && (
         <>
           <div className="border-t border-border" />
           <MarkdownRenderer
@@ -71,10 +75,14 @@ export function GenerationStreamPanel({
       )}
 
       {/* Waiting state before first token arrives */}
-      {!streamContent && currentStep > 0 && (
+      {!shouldShowContent && currentStep > 0 && (
         <div className="flex items-center gap-2 text-muted-foreground text-sm">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          <span>Waiting for content...</span>
+          <span>
+            {showLiveContent
+              ? "Waiting for content..."
+              : "Preparing final module view..."}
+          </span>
         </div>
       )}
     </div>

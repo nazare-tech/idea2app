@@ -36,28 +36,30 @@ ${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.map((heading) => `## ${heading}`).join("
 
 REQUIRED SECTION SHAPES
 - \`Executive Summary\`: 2-3 sentences on the category, market pressure, and the most important conclusion
-- \`Founder Verdict\`: one short paragraph plus 3 concise bullets covering verdict, why now, and biggest risk
-- \`Direct Competitors\`: include 3-5 competitors; use one \`### [Competitor Name]\` block per competitor with these bullets:
+- \`Founder Verdict\`: one punchy standalone verdict line of 2-8 words (headline style, no label or colon) followed by exactly 3 concise bullets covering verdict, why now, and biggest risk
+- \`Direct Competitors\`: include 3-5 competitors; format each competitor heading as \`### [Competitor Name](https://competitor-site.example)\` and include these bullets in exactly this order:
   - **Overview**
   - **Core Product/Service**
   - **Market Positioning**
   - **Strengths**
+  - **Key Edge**
   - **Limitations**
   - **Pricing Model**
   - **Target Audience**
+  - Keep every bullet concise and UI-ready; \`Key Edge\` should be a short differentiator phrase, not a paragraph
 - \`Feature and Workflow Matrix\`: a markdown table comparing competitors and the user's concept across workflow-critical dimensions
 - \`Pricing and Packaging\`: a markdown table comparing pricing model, free tier, packaging motion, and notable pricing gaps
-- \`Audience Segments\`: short ranked bullets for the most important buyer/user segments, including who is well served vs under-served
-- \`Competitive Landscape Overview\`: concise bullets on saturation, battlegrounds, trends, and what matters strategically
+- \`Audience Segments\`: 3-5 short ranked bullets for the most important buyer/user segments, including who is well served vs under-served
+- \`Competitive Landscape Overview\`: 3-5 concise bullets on saturation, battlegrounds, trends, and what matters strategically
 - \`Positioning Map\`: start with 2 bullets that define the X-axis and Y-axis, then include a markdown table with columns for competitor, x score, y score, and placement rationale
-- \`GTM / Distribution Signals\`: short bullets on likely acquisition/distribution channels competitors use and where an indie entrant can still win
-- \`Gap Analysis\`: short ranked bullets for unmet needs and whitespace opportunities
-- \`Differentiation Wedges\`: short ranked bullets describing concrete product/positioning wedges
-- \`Moat and Defensibility\`: short bullets covering switching costs, data/network effects, integrations, workflow lock-in, or why defensibility is weak
+- \`GTM / Distribution Signals\`: 3-5 short bullets on likely acquisition/distribution channels competitors use and where an indie entrant can still win
+- \`Gap Analysis\`: 3-5 short ranked bullets for unmet needs and whitespace opportunities
+- \`Differentiation Wedges\`: 3-5 short ranked bullets describing concrete product/positioning wedges
+- \`Moat and Defensibility\`: 3-5 short bullets covering switching costs, data/network effects, integrations, workflow lock-in, or why defensibility is weak
 - \`SWOT Analysis\`: a valid markdown table with Internal/External and Positive/Negative dimensions
-- \`Risks and Countermoves\`: short bullets describing what could fail and how incumbents might respond
-- \`MVP Wedge Recommendation\`: one short paragraph plus concise bullets for target user, core loop, and upgrade trigger
-- \`Strategic Recommendations\`: 3-5 specific, actionable recommendations in ranked order
+- \`Risks and Countermoves\`: 3-5 short bullets describing what could fail and how incumbents might respond
+- \`MVP Wedge Recommendation\`: one short paragraph followed by concise bullets for target user, core loop, and upgrade trigger
+- \`Strategic Recommendations\`: 3-5 specific, actionable recommendations in ranked order using numbered list formatting
 
 FALLBACK LANGUAGE RULE
 - If evidence is weak for any section, explicitly say so in that section using wording like:
