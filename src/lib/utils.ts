@@ -36,5 +36,18 @@ export function formatRelativeTime(date: string | Date): string {
 
 export const CREDIT_COSTS = BASE_ACTION_TOKENS
 
+// 1–2 credits for Explain the Idea chat messages based on input length
+export function calculatePromptChatCredits(messageLength: number): number {
+  return messageLength >= 200 ? 2 : 1
+}
+
+// 2–5 credits for AI text edits based on total tokens used
+export function calculateDocumentEditCredits(totalTokens: number): number {
+  if (totalTokens < 1000) return 2
+  if (totalTokens < 2000) return 3
+  if (totalTokens < 4000) return 4
+  return 5
+}
+
 export type AnalysisType = 'competitive-analysis' | 'gap-analysis' | 'prd' | 'mvp-plan' | 'tech-spec' | 'mockup'
 export type AppType = 'static' | 'dynamic' | 'spa' | 'pwa'
