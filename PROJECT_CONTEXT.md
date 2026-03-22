@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-03-22 (Shared UI Registry + Auth/Chat/Billing Component Consolidation)
+**Last Updated**: 2026-03-22 (Shared UI Registry + Auth/Chat/Billing/Nav Consolidation)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -208,6 +208,7 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 - **Document registry** — document labels, titles, icons, credit cost, and nav visibility now come from a shared typed registry in `src/lib/document-definitions.ts`, used by both `DocumentNav` and `ContentEditor`.
 - **Shared auth building blocks** — auth pages now reuse `AuthHeader`, `AuthField`, and `AuthPasswordField` instead of repeating per-page header and form-field implementations.
 - **Shared chat primitives** — the general chat and prompt chat surfaces now share composer, avatar, copy button, markdown body, load-more button, and thinking-state primitives plus reusable hooks for copy feedback, textarea autosize, and NDJSON stream consumption.
+- **Shared stacked tab navigation** — project document navigation and preferences navigation now use the same stacked tab-nav component so visual changes to the left-side tab pattern can be made in one place.
 - **Shared account utilities** — credit formatting, billing portal navigation, brand wordmark rendering, and auth sign-out are centralized in shared utilities/hooks/components and reused across dashboard header/sidebar, billing, settings, and auth views.
 
 ### Key Design Patterns

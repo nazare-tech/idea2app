@@ -23,6 +23,9 @@ export function DashboardShell({
   const shouldShowHeader = pathname
     ? pathname === "/projects/new" || !pathname.startsWith("/projects/")
     : true
+  const brandConfig = pathname?.startsWith("/preferences")
+    ? { href: "/preferences?tab=profile", label: "Preferences" }
+    : { href: "/projects", label: "Projects" }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -32,7 +35,11 @@ export function DashboardShell({
             user={user}
             credits={credits}
           >
-            <BrandWordmark href="/projects" label="Projects" labelClassName="text-lg font-bold tracking-tight" />
+            <BrandWordmark
+              href={brandConfig.href}
+              label={brandConfig.label}
+              labelClassName="text-lg font-bold tracking-tight"
+            />
           </Header>
         )}
         <main className="flex-1 overflow-y-auto">

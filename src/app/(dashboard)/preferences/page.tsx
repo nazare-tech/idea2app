@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState, type ComponentType } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +15,7 @@ import { Bell, CreditCard, KeyRound, Lock, Shield, Settings, User } from "lucide
 import { SettingsMessage } from "@/components/settings/settings-message"
 import { SettingsSectionCard } from "@/components/settings/settings-section-card"
 import { useBillingPortal } from "@/hooks/use-billing-portal"
+import { StackedTabNav, type StackedTabNavItem } from "@/components/layout/stacked-tab-nav"
 
 type MessageState = { type: "success" | "error"; text: string }
 type SettingsTab = "profile" | "settings" | "subscriptions"
@@ -100,8 +101,15 @@ export default function SettingsPage() {
   const getTabHref = (tab: SettingsTab) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", tab)
-    return `/settings?${params.toString()}`
+    return `/preferences?${params.toString()}`
   }
+
+  const preferenceNavItems: StackedTabNavItem[] = settingsTabs.map((tab) => ({
+    key: tab.value,
+    label: tab.label,
+    icon: tab.icon,
+    href: getTabHref(tab.value),
+  }))
 
   useEffect(() => {
     async function load() {
@@ -237,42 +245,20 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="bg-white text-text-primary">
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-8 lg:px-[56px] lg:py-8">
-        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-          <aside className="h-fit">
-            <h2 className="text-[18px] ui-font-semibold mb-2 hidden lg:block">Account</h2>
-            <div className="grid grid-cols-3 gap-2 lg:block lg:ui-stack-2">
-              {settingsTabs.map((tab) => {
-                const Icon = tab.icon
-                const isActive = activeTab === tab.value
-
-                return (
-                  <Link
-                    key={tab.value}
-                    href={getTabHref(tab.value)}
-                    className={`group inline-flex lg:flex ui-row-gap-2 justify-center lg:justify-start rounded-md border px-3 py-3 transition ${
-                      isActive
-                        ? "border-text-primary bg-text-primary text-white"
-                        : "border-border-subtle bg-white text-text-primary hover:border-[#B5B5B5]"
-                    }`}
-                  >
-                    <Icon className="ui-icon-16" />
-                    <div className="leading-tight">
-                      <span className="ui-font-medium">{tab.label}</span>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          </aside>
+    <div className="min-h-[calc(100vh-4rem)] bg-white text-text-primary">
+      <main className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1440px] flex-col px-4 py-6 sm:px-8 lg:px-[56px] lg:py-8">
+        <div className="grid min-h-[calc(100vh-4rem-3rem)] flex-1 items-stretch gap-6 lg:grid-cols-[280px_1fr]">
+          <StackedTabNav
+            items={preferenceNavItems}
+            activeKey={activeTab}
+            className="w-full self-stretch lg:w-[280px]"
+          />
 
           <section className="space-y-5">
             {activeTab === "profile" && (
-              <>
+              <Card className={`${uiStylePresets.settingsSurface} overflow-hidden`}>
                 {isDev && (
-                <Card className="border-border-subtle bg-[#FFF9E7]">
-                  <CardHeader>
+                  <div className="bg-[#FFF9E7] px-6 py-5">
                     <div className="ui-row-gap-3">
                       <div className={uiStylePresets.settingsIconBadge}>
                         <Shield className="h-5 w-5" />
@@ -282,123 +268,138 @@ export default function SettingsPage() {
                         <CardDescription>Unlimited credits enabled for testing and development.</CardDescription>
                       </div>
                     </div>
-                  </CardHeader>
-                </Card>
-              )}
+                  </div>
+                )}
 
-              <SettingsSectionCard
-                icon={User}
-                title="Profile"
-                description="Update your personal information"
-              >
-                  {profileMessage && (
-                    <SettingsMessage tone={profileMessage.type}>
-                      {profileMessage.text}
-                    </SettingsMessage>
-                  )}
+                <div className={isDev ? "border-t border-border-subtle" : undefined}>
+                  <div className="space-y-4 px-6 py-5">
+                    <div className="ui-row-gap-3">
+                      <div className={uiStylePresets.settingsIconBadge}>
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-[16px]">Profile</CardTitle>
+                        <CardDescription>Update your personal information</CardDescription>
+                      </div>
+                    </div>
 
-                  <div className="ui-stack-2">
-                    <Label htmlFor="email">Email</Label>
-                    <div className="ui-row-gap-2">
+                    {profileMessage && (
+                      <SettingsMessage tone={profileMessage.type}>
+                        {profileMessage.text}
+                      </SettingsMessage>
+                    )}
+
+                    <div className="ui-stack-2">
+                      <Label htmlFor="email">Email</Label>
+                      <div className="ui-row-gap-2">
+                        <Input
+                          id="email"
+                          type="email"
+                          value={email}
+                          disabled
+                          className="opacity-60"
+                        />
+                        <Badge variant="outline" className="gap-1">
+                          <Mail />
+                          Verified
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="ui-stack-2">
+                      <Label htmlFor="fullName">Full Name</Label>
                       <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        disabled
-                        className="opacity-60"
+                        id="fullName"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Your full name"
                       />
-                      <Badge variant="outline" className="gap-1">
-                        <Mail />
-                        Verified
-                      </Badge>
+                    </div>
+
+                    <div className="ui-stack-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Choose a username"
+                      />
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button onClick={handleSave} disabled={saving}>
+                        {saving ? (
+                          <>
+                            <Spinner size="sm" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save Changes"
+                        )}
+                      </Button>
                     </div>
                   </div>
 
-                  <div className="ui-stack-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Your full name"
-                    />
-                  </div>
+                  <div className="border-t border-border-subtle px-6 py-5">
+                    <div className="space-y-4">
+                      <div className="ui-row-gap-3">
+                        <div className={uiStylePresets.settingsIconBadge}>
+                          <Lock className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-[16px]">Change Password</CardTitle>
+                          <CardDescription>Set a new password for your account</CardDescription>
+                        </div>
+                      </div>
 
-                  <div className="ui-stack-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Choose a username"
-                    />
-                  </div>
-
-                  <div className="flex justify-end">
-                    <Button onClick={handleSave} disabled={saving}>
-                      {saving ? (
-                        <>
-                          <Spinner size="sm" />
-                          Saving...
-                        </>
-                      ) : (
-                        "Save Changes"
+                      {passwordMessage && (
+                        <SettingsMessage tone={passwordMessage.type}>
+                          {passwordMessage.text}
+                        </SettingsMessage>
                       )}
-                    </Button>
-                  </div>
-              </SettingsSectionCard>
 
-              <SettingsSectionCard
-                icon={Lock}
-                title="Change Password"
-                description="Set a new password for your account"
-              >
-                  {passwordMessage && (
-                    <SettingsMessage tone={passwordMessage.type}>
-                      {passwordMessage.text}
-                    </SettingsMessage>
-                  )}
+                      <div className="ui-stack-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="At least 6 characters"
+                        />
+                      </div>
 
-                  <div className="ui-stack-2">
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="At least 6 characters"
-                    />
-                  </div>
-
-                  <div className="ui-stack-2">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Repeat the new password"
-                    />
-                  </div>
+                      <div className="ui-stack-2">
+                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Repeat the new password"
+                        />
+                      </div>
 
                       <div className="flex justify-end">
-                    <Button onClick={handlePasswordChange} disabled={passwordSaving}>
-                      {passwordSaving ? (
-                        <>
-                          <Spinner size="sm" />
-                          Updating...
-                        </>
-                      ) : (
-                        <>
-                          <KeyRound className="ui-icon-16" />
-                          Change Password
-                        </>
-                      )}
-                    </Button>
+                        <Button onClick={handlePasswordChange} disabled={passwordSaving}>
+                          {passwordSaving ? (
+                            <>
+                              <Spinner size="sm" />
+                              Updating...
+                            </>
+                          ) : (
+                            <>
+                              <KeyRound className="ui-icon-16" />
+                              Change Password
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-              </SettingsSectionCard>
-            </>
-          )}
+                </div>
+              </Card>
+            )}
 
           {activeTab === "settings" && (
             <SettingsSectionCard

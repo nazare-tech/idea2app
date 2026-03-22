@@ -21,7 +21,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Projects", href: "/projects", icon: FolderKanban },
   { name: "Billing", href: "/billing", icon: CreditCard },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Preferences", href: "/preferences?tab=profile", icon: Settings },
 ]
 
 interface SidebarProps {
@@ -46,7 +46,8 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4">
         {navigation.map((item) => {
-          const isActive = pathname.startsWith(item.href)
+          const itemPath = item.href.split("?")[0]
+          const isActive = pathname.startsWith(itemPath)
           return (
             <Link
               key={item.name}

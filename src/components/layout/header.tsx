@@ -84,7 +84,7 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
             )}
             <DropdownMenuItem asChild>
               <Link
-                href="/settings?tab=profile"
+                href="/preferences?tab=profile"
                 className={uiStylePresets.headerOutlineTab}
               >
                 <span>Profile</span>
@@ -92,7 +92,7 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link
-                href="/settings?tab=settings"
+                href="/preferences?tab=settings"
                 className={uiStylePresets.headerOutlineTab}
               >
                 <span>Settings</span>
@@ -100,7 +100,7 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link
-                href="/settings?tab=subscriptions"
+                href="/preferences?tab=subscriptions"
                 className={uiStylePresets.headerOutlineTab}
               >
                 <span>Subscriptions</span>
