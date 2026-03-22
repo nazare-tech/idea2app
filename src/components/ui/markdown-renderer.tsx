@@ -690,25 +690,25 @@ export function MarkdownRenderer({
   }, [content, pendingEdit])
 
   const proseClasses = `
-    prose prose-sm max-w-none
+    prose max-w-none text-[14px]
     [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-6 [&_h1]:text-gray-900 [&_h1]:border-b [&_h1]:border-gray-200 [&_h1]:pb-2
     [&_h2]:text-xl [&_h2]:ui-font-semibold [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-gray-900
     [&_h3]:text-lg [&_h3]:ui-font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-gray-900
     [&_h4]:text-base [&_h4]:ui-font-semibold [&_h4]:mb-2 [&_h4]:mt-3 [&_h4]:text-gray-900
-    [&_p]:text-gray-700 [&_p]:mb-3 [&_p]:leading-relaxed
+    [&_p]:text-[14px] [&_p]:text-gray-700 [&_p]:mb-3 [&_p]:leading-relaxed
     [&_ul]:my-3 [&_ul]:space-y-1 [&_ul]:pl-6
     [&_ol]:my-3 [&_ol]:space-y-1 [&_ol]:pl-6
-    [&_li]:text-gray-700 [&_li]:leading-relaxed
+    [&_li]:text-[14px] [&_li]:text-gray-700 [&_li]:leading-relaxed
     [&_strong]:text-gray-900 [&_strong]:ui-font-semibold
     [&_em]:text-gray-700 [&_em]:italic
     [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary/80 [&_a]:transition-colors
-    [&_code]:text-primary [&_code]:bg-[rgba(220,38,38,0.06)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:ui-font-mono
+    [&_code]:text-primary [&_code]:bg-[rgba(220,38,38,0.06)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[14px] [&_code]:ui-font-mono
     [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded-lg [&_pre]:ui-p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:ui-font-mono
-    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-gray-900 [&_pre_code]:ui-font-mono [&_pre_code]:whitespace-pre [&_pre_code]:text-sm [&_pre_code]:leading-relaxed
-    [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_blockquote]:my-3
+    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-gray-900 [&_pre_code]:ui-font-mono [&_pre_code]:whitespace-pre [&_pre_code]:text-[14px] [&_pre_code]:leading-relaxed
+    [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[14px] [&_blockquote]:text-gray-500 [&_blockquote]:my-3
     [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse
     [&_th]:border [&_th]:border-gray-200 [&_th]:bg-[#EFF6FF] [&_th]:ui-px-4 [&_th]:ui-py-2 [&_th]:text-left [&_th]:ui-font-semibold [&_th]:text-gray-800
-    [&_td]:border [&_td]:border-gray-200 [&_td]:ui-px-4 [&_td]:ui-py-2 [&_td]:text-gray-700
+    [&_td]:border [&_td]:border-gray-200 [&_td]:ui-px-4 [&_td]:ui-py-2 [&_td]:text-[14px] [&_td]:text-gray-700
     [&_hr]:border-gray-200 [&_hr]:my-4
   `.trim()
 

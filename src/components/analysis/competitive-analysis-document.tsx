@@ -535,15 +535,15 @@ function PositioningMap({
         )}
 
         <div className="relative h-[320px] border border-[#E0E0E0] bg-[#FAFAFA]">
-          <div className="absolute inset-x-[10%] top-1/2 h-px bg-[#E0E0E0]" />
-          <div className="absolute inset-y-[10%] left-1/2 w-px bg-[#E0E0E0]" />
-          <p className="absolute bottom-3 left-4 w-[38%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+          <div className="absolute inset-x-[14%] top-1/2 h-px bg-[#E0E0E0]" />
+          <div className="absolute inset-y-[14%] left-1/2 w-px bg-[#E0E0E0]" />
+          <p className="absolute bottom-3 left-4 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
             Low {positioningMap.xAxis ?? "X"}
           </p>
-          <p className="absolute bottom-3 right-4 w-[38%] whitespace-normal text-right font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+          <p className="absolute bottom-3 right-4 max-w-[24%] whitespace-normal text-right font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
             High {positioningMap.xAxis ?? "X"}
           </p>
-          <p className="absolute left-4 top-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]">
+          <p className="absolute left-4 top-3 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
             High {positioningMap.yAxis ?? "Y"}
           </p>
           <p className="absolute right-4 top-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]">
@@ -569,8 +569,8 @@ function PositioningMap({
                         : "border-[#E0E0E0] bg-white text-[#0A0A0A]"
                 )}
                 style={{
-                  left: `${10 + normalizedX * 8}%`,
-                  top: `${90 - normalizedY * 8}%`,
+                  left: `${14 + normalizedX * 7.2}%`,
+                  top: `${86 - normalizedY * 7.2}%`,
                 }}
               >
                 <p className="font-mono text-[10px] uppercase tracking-[0.12em]">

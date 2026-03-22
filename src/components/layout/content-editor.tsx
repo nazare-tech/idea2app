@@ -155,6 +155,7 @@ export function ContentEditor({
   const [isResizing, setIsResizing] = useState(false)
   const [resizeEdge, setResizeEdge] = useState<'left' | 'right' | null>(null)
   const [selectedDocModel, setSelectedDocModel] = useState(DEFAULT_DOCUMENT_MODEL)
+  const [selectedPromptModel, setSelectedPromptModel] = useState(DEFAULT_DOCUMENT_MODEL)
   const [marketingBrief, setMarketingBrief] = useState<MarketingBrief>({
     targetAudience: "",
     stage: "",
@@ -401,25 +402,38 @@ export function ContentEditor({
       `}</style>
       <div className="flex h-full flex-col bg-background">
         {/* Header */}
-        {documentType !== "prompt" && (
-          <div className="ui-row-between px-10 py-5 border-b border-border">
-            <div className="flex items-center gap-4">
-              <config.icon className="h-[18px] w-[18px] text-primary" />
-              <div>
-                <h1 className="text-xl ui-font-semibold text-foreground ui-tracking-tight">
-                  {config.title}
-                </h1>
-                <p className="text-[11px] text-muted-foreground ui-font-mono">
-                  {config.subtitle}
-                </p>
-              </div>
-              <div className="h-6 w-px bg-border/60 mx-1" />
-              <DocumentModelSelector
-                selectedModel={selectedDocModel}
-                onModelChange={setSelectedDocModel}
-              />
+        <div className="ui-row-between px-10 py-5 border-b border-border">
+          <div className="flex items-center gap-4">
+            <config.icon className="h-[18px] w-[18px] text-primary" />
+            <div>
+              <h1 className="text-xl ui-font-semibold text-foreground ui-tracking-tight">
+                {config.title}
+              </h1>
+              <p className="text-[11px] text-muted-foreground ui-font-mono">
+                {config.subtitle}
+              </p>
             </div>
+            {documentType !== "prompt" && (
+              <>
+                <div className="h-6 w-px bg-border/60 mx-1" />
+                <DocumentModelSelector
+                  selectedModel={selectedDocModel}
+                  onModelChange={setSelectedDocModel}
+                />
+              </>
+            )}
+            {documentType === "prompt" && (
+              <>
+                <div className="h-6 w-px bg-border/60 mx-1" />
+                <DocumentModelSelector
+                  selectedModel={selectedPromptModel}
+                  onModelChange={setSelectedPromptModel}
+                />
+              </>
+            )}
+          </div>
 
+          {documentType !== "prompt" ? (
             <div className="ui-row-gap-3">
               {content && !isMockupsDocument && (
                 isCompetitiveDocument ? (
@@ -498,8 +512,12 @@ export function ContentEditor({
                 )}
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-[11px] text-muted-foreground ui-font-mono">
+              Guided conversation
+            </div>
+          )}
+        </div>
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
@@ -508,6 +526,7 @@ export function ContentEditor({
               projectId={projectId}
               projectName={projectName}
               initialIdea={projectDescription}
+              selectedModel={selectedPromptModel}
               onIdeaSummary={handleIdeaSummary}
             />
           ) : (

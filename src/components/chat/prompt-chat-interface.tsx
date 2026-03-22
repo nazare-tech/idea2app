@@ -1,17 +1,11 @@
 "use client"
 
+import Image from "next/image"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Bot, User, Copy, Check, ChevronDown, Send, Sparkles, ArrowUp } from "lucide-react"
+import { Bot, User, Copy, Check, Send } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/lib/prompt-chat-config"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Spinner } from "@/components/ui/spinner"
 
 interface Message {
@@ -29,6 +23,7 @@ interface PromptChatInterfaceProps {
   projectId: string
   projectName: string
   initialIdea: string
+  selectedModel: string
   onIdeaSummary?: (summary: string) => void
 }
 
@@ -40,21 +35,38 @@ type StreamEvent =
 
 const PAGE_SIZE = 40
 
+function AssistantAvatar({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md shadow-sm",
+        className
+      )}
+    >
+      <Image
+        src="/idea2app-logo.jpg"
+        alt="Idea2App logo"
+        width={32}
+        height={32}
+        className="object-cover scale-[1.7]"
+      />
+    </div>
+  )
+}
+
 export function PromptChatInterface({
   projectId,
   projectName,
   initialIdea,
+  selectedModel,
   onIdeaSummary,
 }: PromptChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL)
   const [conversationStage, setConversationStage] = useState<"initial" | "refining" | "summarized">("initial")
   const [isFirstLoad, setIsFirstLoad] = useState(true)
-  const [mounted, setMounted] = useState(false)
-  const [isFocused, setIsFocused] = useState(false)
   const [hasMoreMessages, setHasMoreMessages] = useState(false)
   const [messagesLoading, setMessagesLoading] = useState(false)
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
@@ -89,11 +101,6 @@ export function PromptChatInterface({
     }
 
     return deduped
-  }, [])
-
-  // Prevent hydration mismatch with Radix UI dropdowns
-  useEffect(() => {
-    setMounted(true)
   }, [])
 
   const loadMessages = useCallback(async (options?: { before?: string | null }) => {
@@ -432,63 +439,11 @@ export function PromptChatInterface({
     }
   }
 
-  const currentModel = AVAILABLE_MODELS.find((m) => m.id === selectedModel)
-  const currentModelName = currentModel?.name || selectedModel
-
-  // Get short model name for the pill
-  const getShortModelName = (name: string) => {
-    if (name.includes("Claude")) return name.replace("Claude ", "")
-    if (name.includes("GPT-4")) return name.replace("GPT-", "")
-    if (name.includes("Gemini")) return name.split(" ")[1] || name
-    if (name.includes("Llama")) return "Llama 3.3"
-    if (name.includes("DeepSeek")) return "DeepSeek"
-    return name
-  }
-
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
         <div className="max-w-3xl mx-auto px-4 py-6">
-          <div className="mb-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm ui-font-semibold text-foreground/80 tracking-wide">
-                {projectName}
-              </h2>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => messagesContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-                  className="text-xs text-muted-foreground hover:text-foreground ui-row-gap-2"
-                >
-                  <ArrowUp className="h-3.5 w-3.5" />
-                </button>
-                {mounted && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs ui-font-semibold hover:bg-muted/50">
-                        {isFocused ? <Sparkles className="h-3 w-3 text-primary/70" /> : <Sparkles className="h-3 w-3 text-primary/70" />}
-                        <span>{getShortModelName(currentModelName)}</span>
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      {AVAILABLE_MODELS.map((model) => (
-                        <DropdownMenuItem
-                          key={model.id}
-                          onClick={() => setSelectedModel(model.id)}
-                          onPointerDown={() => setIsFocused(false)}
-                        >
-                          <span>{model.name}</span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            </div>
-          </div>
-
           {messages.length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center text-center py-16 px-4">
               <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-6 border border-primary/10 shadow-lg shadow-primary/5">
@@ -531,9 +486,7 @@ export function PromptChatInterface({
               )}
             >
               {message.role === "assistant" && (
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/60 shadow-sm">
-                  <Bot className="h-4 w-4 text-foreground/60" />
-                </div>
+                <AssistantAvatar />
               )}
 
               <div
@@ -547,7 +500,7 @@ export function PromptChatInterface({
                 {message.role === "user" ? (
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                 ) : (
-                  <div className="prose prose-sm max-w-none dark:prose-invert [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2 [&_li]:my-1">
+                  <div className="prose max-w-none text-sm dark:prose-invert [&_p]:text-sm [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:my-1 [&_li]:text-sm [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {message.content}
                     </ReactMarkdown>
@@ -581,9 +534,7 @@ export function PromptChatInterface({
 
           {messagesLoading && messages.length > 0 && (
             <div className="flex gap-3 justify-start mb-4">
-              <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl border border-border/60 bg-muted/60">
-                <Bot className="h-4 w-4 text-foreground/60" />
-              </div>
+              <AssistantAvatar />
               <div className="rounded-xl px-1 py-1">
                 <div className="ui-row-gap-2">
                   <Spinner size="sm" />
@@ -607,8 +558,6 @@ export function PromptChatInterface({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
                 placeholder="Type your business idea update or question..."
                 className="w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[48px] max-h-[160px]"
                 rows={1}
