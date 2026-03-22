@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Bot, User, Copy, Check, ChevronDown, Sparkles, ArrowUp } from "lucide-react"
+import { Bot, User, Copy, Check, ChevronDown, Send, Sparkles, ArrowUp } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/lib/prompt-chat-config"
@@ -500,12 +500,6 @@ export function PromptChatInterface({
               <p className="text-sm text-muted-foreground max-w-md mb-8 leading-relaxed">
                 Start by sharing your idea. I&apos;ll ask focused questions to refine it, then help you move from concept to research and PRD-ready planning.
               </p>
-              {initialIdea && (
-                <div className="w-full max-w-xl bg-card border border-border/50 rounded-2xl p-5 mb-8 shadow-sm">
-                  <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-widest">Your Initial Idea</p>
-                  <p className="text-sm text-foreground leading-relaxed">{initialIdea}</p>
-                </div>
-              )}
             </div>
           )}
 
@@ -532,7 +526,8 @@ export function PromptChatInterface({
             <div
               key={message.id}
               className={cn(
-                "mb-6 flex gap-3 group animate-fade-up pl-[100px]"
+                "mb-6 flex gap-3 group animate-fade-up",
+                message.role === "user" && "pl-[100px]"
               )}
             >
               {message.role === "assistant" && (
@@ -603,10 +598,10 @@ export function PromptChatInterface({
       </div>
 
       {/* Input */}
-      <div className="border-t border-border/70 p-4 bg-card/40">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-end gap-3" ref={composerRef}>
-            <div className="flex-1 relative">
+      <div className="flex border-t border-border/70 p-4 bg-card/40">
+        <div className="w-full max-w-3xl mx-auto">
+          <div className="flex items-start gap-3" ref={composerRef}>
+            <div className="relative min-h-12 min-w-0 flex-[0_1_calc(100%-44px)]">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -615,7 +610,7 @@ export function PromptChatInterface({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 placeholder="Type your business idea update or question..."
-                className="w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[48px] max-h-[160px]"
+                className="w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[48px] max-h-[160px]"
                 rows={1}
                 disabled={loading}
               />
@@ -626,10 +621,10 @@ export function PromptChatInterface({
               disabled={loading || !input.trim() || requestInFlight.current}
               className={cn(
                 "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground transition-colors",
-                (loading || !input.trim() || requestInFlight.current) && "opacity-60 cursor-not-allowed"
+                (loading || !input.trim() || requestInFlight.current) && "cursor-not-allowed opacity-60"
               )}
             >
-              {loading ? <Spinner size="sm" /> : <Sparkles className="h-4 w-4" />}
+              {loading ? <Spinner size="sm" /> : <Send className="h-4 w-4" />}
             </button>
           </div>
         </div>
