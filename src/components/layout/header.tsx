@@ -7,12 +7,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { HeaderLogo } from "@/components/layout/header-logo"
 import { createClient } from "@/lib/supabase/client"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { useRouter } from "next/navigation"
 import { ChevronDown } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 
 interface HeaderProps {
   user?: {
@@ -26,19 +26,7 @@ interface HeaderProps {
 }
 
 export function Header({ user, children, rightContent, credits }: HeaderProps) {
-  const brand = (
-    <Link href="/projects" className="inline-flex items-center">
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
-        <Image
-          src="/idea2app-logo.jpg"
-          alt="Idea2App logo"
-          width={40}
-          height={40}
-          className="h-10 w-10 rounded-md object-cover"
-        />
-      </span>
-    </Link>
-  )
+  const brand = <HeaderLogo />
   const router = useRouter()
 
   const handleSignOut = async () => {

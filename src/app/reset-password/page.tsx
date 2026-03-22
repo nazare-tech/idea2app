@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { Lightbulb } from "lucide-react"
+import { HeaderLogo } from "@/components/layout/header-logo"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
 export default function ResetPasswordPage() {
@@ -180,9 +180,7 @@ function AuthHeader() {
   return (
     <header className="mt-10">
         <div className="mt-6 ui-row-gap-3">
-        <div className={uiStylePresets.authTopIconBadge}>
-          <Lightbulb className="h-5 w-5" />
-        </div>
+        <HeaderLogo href="/" size={32} className={uiStylePresets.authTopIconBadge} />
         <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
       </div>
     </header>

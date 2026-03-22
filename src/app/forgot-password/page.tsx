@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { Check, Lightbulb } from "lucide-react"
+import { Check } from "lucide-react"
+import { HeaderLogo } from "@/components/layout/header-logo"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
 export default function ForgotPasswordPage() {
@@ -53,9 +54,7 @@ export default function ForgotPasswordPage() {
           <Card className={uiStylePresets.authCardCompact}>
             <CardHeader className="ui-stack-2 ui-px-8 pt-8">
               <div className="ui-row-gap-3">
-                <div className={uiStylePresets.authTopIconBadge}>
-                  <Lightbulb className="h-5 w-5" />
-                </div>
+                <HeaderLogo href="/" size={32} className={uiStylePresets.authTopIconBadge} />
                 <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
               </div>
               <CardTitle className="text-4xl tracking-[-0.02em]">Forgot your password?</CardTitle>
@@ -142,9 +141,7 @@ function AuthHeader() {
         <header className="border-b border-border bg-card">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between ui-px-4 md:px-8 lg:px-12 xl:px-16">
         <Link href="/" className="inline-flex items-center gap-2">
-          <div className={uiStylePresets.authTopIconBadge}>
-            <Lightbulb className="h-5 w-5" />
-          </div>
+          <HeaderLogo href="/" size={32} className={uiStylePresets.authTopIconBadge} />
           <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
         </Link>
       </div>

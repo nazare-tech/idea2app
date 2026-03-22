@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
+import { HeaderLogo } from "@/components/layout/header-logo"
 import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stream"
+import { Pencil } from "lucide-react"
 
 
 interface Project {
@@ -91,12 +93,24 @@ export function ProjectWorkspace({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [projectName, setProjectName] = useState(project.name)
+  const [draftProjectName, setDraftProjectName] = useState(project.name)
+  const [isEditingProjectName, setIsEditingProjectName] = useState(false)
+  const [isSavingProjectName, setIsSavingProjectName] = useState(false)
   const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
+  const projectNameInputRef = useRef<HTMLInputElement>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
 
   useEffect(() => {
     setProjectName(project.name)
+    setDraftProjectName(project.name)
   }, [project.name])
+
+  useEffect(() => {
+    if (isEditingProjectName) {
+      projectNameInputRef.current?.focus()
+      projectNameInputRef.current?.select()
+    }
+  }, [isEditingProjectName])
 
   useEffect(() => {
     setIsPromptOnlyMode(isNewProject)
@@ -615,6 +629,26 @@ export function ProjectWorkspace({
     }
   }
 
+  const finishProjectRename = async () => {
+    const nextName = draftProjectName.trim() || "Untitled"
+    setIsEditingProjectName(false)
+
+    if (nextName === projectName) {
+      setDraftProjectName(projectName)
+      return
+    }
+
+    setIsSavingProjectName(true)
+    try {
+      await handleProjectNameUpdate(nextName)
+      setDraftProjectName(nextName)
+    } catch {
+      setDraftProjectName(projectName)
+    } finally {
+      setIsSavingProjectName(false)
+    }
+  }
+
   const handleDocumentSelect = (type: DocumentType) => {
     if (isPromptOnlyMode && type !== "prompt") {
       return
@@ -967,16 +1001,45 @@ export function ProjectWorkspace({
         credits={credits}
       >
         <div className="inline-flex items-center min-w-0">
-          <Link href="/projects" className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
-            <Image
-              src="/idea2app-logo.jpg"
-              alt="Idea2App logo"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-md object-cover"
-            />
+          <HeaderLogo />
+          <Link
+            href="/projects"
+            className="pl-3 text-sm font-medium text-text-secondary transition-colors hover:text-foreground"
+          >
+            Projects
           </Link>
-          <span className="truncate pl-3 font-semibold tracking-tight">{projectName}</span>
+          <span className="px-2 text-text-secondary">/</span>
+          {isEditingProjectName ? (
+            <input
+              ref={projectNameInputRef}
+              value={draftProjectName}
+              onChange={(event) => setDraftProjectName(event.target.value)}
+              onBlur={() => {
+                void finishProjectRename()
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault()
+                  void finishProjectRename()
+                }
+                if (event.key === "Escape") {
+                  setDraftProjectName(projectName)
+                  setIsEditingProjectName(false)
+                }
+              }}
+              className="h-9 w-[min(28rem,55vw)] max-w-full rounded-lg border border-border/70 bg-background px-3 text-sm font-semibold tracking-tight text-foreground outline-none ring-0 focus:border-primary/60"
+              disabled={isSavingProjectName}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditingProjectName(true)}
+              className="ui-row-gap-2 min-w-0 text-left"
+            >
+              <span className="truncate font-semibold tracking-tight">{projectName}</span>
+              <Pencil className="h-3.5 w-3.5 text-text-secondary" />
+            </button>
+          )}
         </div>
       </Header>
 

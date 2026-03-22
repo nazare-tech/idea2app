@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { HeaderLogo } from "@/components/layout/header-logo"
 import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { PRICING_CARD_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
@@ -129,7 +130,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
         <div className={`${container} ui-row-between h-16`}>
           <div className="ui-row-gap-3">
-            <div className="h-9 w-9 rounded-sm bg-primary text-white flex items-center justify-center font-bold">I</div>
+            <HeaderLogo href="/" size={36} className="rounded-sm" />
             <span className="text-lg font-semibold tracking-[0.01em]">Idea2App</span>
           </div>
 

@@ -1,9 +1,8 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import Link from "next/link"
-import Image from "next/image"
 import { Header } from "@/components/layout/header"
+import { HeaderLogo } from "@/components/layout/header-logo"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -33,16 +32,8 @@ export function DashboardShell({
             user={user}
             credits={credits}
           >
-            <div className="inline-flex items-center">
-              <Link href="/projects" className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
-                <Image
-                  src="/idea2app-logo.jpg"
-                  alt="Idea2App logo"
-                  width={40}
-                  height={40}
-                  className="h-10 w-10 rounded-md object-cover"
-                />
-              </Link>
+            <div className="inline-flex items-center min-w-0">
+              <HeaderLogo />
               <span className="pl-3 text-lg font-bold tracking-tight">Projects</span>
             </div>
           </Header>

@@ -73,6 +73,12 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
 
   const projectId = parsedProjectRef.id
 
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("full_name, avatar_url")
+    .eq("id", user!.id)
+    .single()
+
   const { data: project, error } = await supabase
     .from("projects")
     .select("*")
@@ -130,7 +136,11 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       techSpecs={techSpecs || []}
       deployments={deployments || []}
       credits={credits?.balance || 0}
-      user={user}
+      user={{
+        email: user?.email,
+        full_name: profileData?.full_name ?? undefined,
+        avatar_url: profileData?.avatar_url ?? undefined,
+      }}
       isNewProject={isNewProject}
     />
   )

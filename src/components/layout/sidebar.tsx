@@ -3,12 +3,12 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { HeaderLogo } from "@/components/layout/header-logo"
 import {
   LayoutDashboard,
   FolderKanban,
   CreditCard,
   Settings,
-  Lightbulb,
   LogOut,
   Coins,
 } from "lucide-react"
@@ -42,9 +42,7 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
     <div className="flex h-full w-64 flex-col border-r border-[var(--color-surface-ghost)] bg-[rgba(8,8,14,0.8)] backdrop-blur-xl">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2.5 px-6 border-b border-[var(--color-surface-ghost)]">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-text-accent to-[#7c3aed] flex items-center justify-center shadow-[0_0_12px_var(--color-accent-primary-mid)]">
-          <Lightbulb className="ui-icon-16 text-white" />
-        </div>
+        <HeaderLogo href="/projects" size={32} className="rounded-lg shadow-[0_0_12px_var(--color-accent-primary-mid)]" />
         <span className="ui-section-title">Idea2App</span>
       </div>
 

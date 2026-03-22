@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { Check, Eye, EyeOff, Lightbulb } from "lucide-react"
+import { Check, Eye, EyeOff } from "lucide-react"
+import { HeaderLogo } from "@/components/layout/header-logo"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
 type AuthMode = "signin" | "signup"
@@ -205,9 +206,7 @@ function AuthScreen() {
             <div className="w-full lg:h-full lg:flex lg:flex-col">
               <header className="h-[104px] w-full ui-px-6 py-5">
                 <Link href="/" className="inline-flex h-full items-center gap-3">
-                  <div className={uiStylePresets.authIconCircle}>
-                    <Lightbulb className="ui-icon-16" />
-                  </div>
+                  <HeaderLogo href="/" size={32} className={uiStylePresets.authIconCircle} />
                   <span className="text-lg ui-font-semibold tracking-[0.05em]">Idea2App</span>
                 </Link>
               </header>
@@ -328,9 +327,7 @@ function AuthHeader() {
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between ui-px-4 md:px-8 lg:px-12 xl:px-16">
         <Link href="/" className="inline-flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Lightbulb className="ui-icon-16" />
-          </div>
+          <HeaderLogo href="/" size={32} />
           <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
         </Link>
       </div>

@@ -532,22 +532,21 @@ export function PromptChatInterface({
             <div
               key={message.id}
               className={cn(
-                "flex gap-3 mb-6 group animate-fade-up",
-                message.role === "user" ? "justify-end" : "justify-start"
+                "mb-6 flex gap-3 group animate-fade-up pl-[100px]"
               )}
             >
               {message.role === "assistant" && (
-                <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 mt-0.5 border border-primary/10 shadow-sm">
-                  <Bot className="h-4 w-4 text-primary/70" />
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/60 shadow-sm">
+                  <Bot className="h-4 w-4 text-foreground/60" />
                 </div>
               )}
 
               <div
                 className={cn(
-                  "rounded-2xl px-4 py-3 max-w-[85%] relative",
+                  "relative max-w-[85%]",
                   message.role === "user"
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                    : "bg-card border border-border/50 shadow-sm"
+                    ? "rounded-2xl border border-border/60 bg-muted px-4 py-3 text-foreground shadow-sm"
+                    : "px-1 py-1 text-foreground"
                 )}
               >
                 {message.role === "user" ? (
@@ -578,7 +577,7 @@ export function PromptChatInterface({
               </div>
 
               {message.role === "user" && (
-                <div className="h-8 w-8 rounded-xl bg-surface-mid border border-surface-strong flex items-center justify-center shrink-0 mt-1">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/60">
                   <User className="h-4 w-4 text-muted-foreground" />
                 </div>
               )}
@@ -587,10 +586,10 @@ export function PromptChatInterface({
 
           {messagesLoading && messages.length > 0 && (
             <div className="flex gap-3 justify-start mb-4">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mt-0.5">
-                <Bot className="h-4 w-4 text-primary/70" />
+              <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl border border-border/60 bg-muted/60">
+                <Bot className="h-4 w-4 text-foreground/60" />
               </div>
-              <div className="rounded-2xl px-4 py-3 border border-border/50 bg-card">
+              <div className="rounded-xl px-1 py-1">
                 <div className="ui-row-gap-2">
                   <Spinner size="sm" />
                   <span className="text-sm ui-text-muted">Thinking...</span>
@@ -626,7 +625,7 @@ export function PromptChatInterface({
               onClick={handleSend}
               disabled={loading || !input.trim() || requestInFlight.current}
               className={cn(
-                "h-12 w-12 rounded-2xl shrink-0 ui-row-gap-2 bg-primary text-primary-foreground transition-colors",
+                "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground transition-colors",
                 (loading || !input.trim() || requestInFlight.current) && "opacity-60 cursor-not-allowed"
               )}
             >
