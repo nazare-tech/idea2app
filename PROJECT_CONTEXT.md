@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-03-20 (Competitive Research Pencil UI + Typed Module Rendering)
+**Last Updated**: 2026-03-22 (Shared UI Registry + Auth/Chat/Billing Component Consolidation)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -203,6 +203,13 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 - **`ContentEditor`** — renders the active document. Handles editing the prompt, triggering generation, displaying rendered content, version switching, copy-to-clipboard, and PDF export. Competitive Research now uses a dedicated full-width renderer for v2 docs and only falls back to markdown for legacy or invalid versions.
 - **`ProjectWorkspace`** — orchestrator component that connects all three columns. Manages active document state, version selection, and dispatches API calls.
 
+### Shared UI Architecture
+
+- **Document registry** — document labels, titles, icons, credit cost, and nav visibility now come from a shared typed registry in `src/lib/document-definitions.ts`, used by both `DocumentNav` and `ContentEditor`.
+- **Shared auth building blocks** — auth pages now reuse `AuthHeader`, `AuthField`, and `AuthPasswordField` instead of repeating per-page header and form-field implementations.
+- **Shared chat primitives** — the general chat and prompt chat surfaces now share composer, avatar, copy button, markdown body, load-more button, and thinking-state primitives plus reusable hooks for copy feedback, textarea autosize, and NDJSON stream consumption.
+- **Shared account utilities** — credit formatting, billing portal navigation, brand wordmark rendering, and auth sign-out are centralized in shared utilities/hooks/components and reused across dashboard header/sidebar, billing, settings, and auth views.
+
 ### Key Design Patterns
 
 1. **App Router with Route Groups**: Organized routes with shared layouts using `(group-name)` syntax
@@ -213,9 +220,10 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 6. **TypeScript-First**: Strict typing throughout, auto-generated database types
 7. **Component Composition**: Radix UI primitives + CVA for variants
 8. **Optimistic UI Updates**: Immediate feedback with graceful error handling
-9. **Path Aliases**: Clean imports using `@/*` aliases
-10. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
-11. **Non-Intrusive Selection Handling**: Text selection captured only on `mouseup` with `requestAnimationFrame` to ensure browser finalizes selection first, preventing interference during drag operations
+9. **Shared UI Registries + Hooks**: Repeated view metadata and repeated client behaviors (documents, credits, billing portal, auth sign-out, chat interactions) are centralized into typed registries and reusable hooks/components before page-level assembly
+10. **Path Aliases**: Clean imports using `@/*` aliases
+11. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
+12. **Non-Intrusive Selection Handling**: Text selection captured only on `mouseup` with `requestAnimationFrame` to ensure browser finalizes selection first, preventing interference during drag operations
 
 ### Inline Editing Technical Implementation
 
@@ -1140,12 +1148,24 @@ export const CREDIT_COSTS = {
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
 | [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view — now uses PromptChatInterface for Prompt tab and a dedicated Competitive Research hybrid renderer for v2 competitive-analysis docs |
+| [src/lib/document-definitions.ts](src/lib/document-definitions.ts) | Shared typed document registry for workspace tabs, editor titles, icons, credit cost, and nav visibility |
 | [src/components/analysis/competitive-analysis-document.tsx](src/components/analysis/competitive-analysis-document.tsx) | **NEW** — Competitive Research v2 hybrid modules/markdown renderer with legacy notice and upgrade CTA |
 | [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | **UPDATED** — Markdown renderer with beautiful-mermaid diagrams, syntax highlighting, and inline AI editing. Features: (1) Mermaid diagram expansion - diagrams fit within document width with an expand button (bottom-right, visible on hover) that opens a full-screen modal with margins; (2) Conditional component rendering (minimal components when no pending edit); (3) Mouseup-based selection capture to prevent interference during text selection. Mermaid diagrams are styled via globals.css with theme-appropriate colors for both light and dark modes. |
 | [src/components/ui/inline-ai-editor.tsx](src/components/ui/inline-ai-editor.tsx) | **NEW** — Inline AI editing popup with diff preview and apply/reject actions |
 | [src/components/ui/selection-toolbar.tsx](src/components/ui/selection-toolbar.tsx) | **NEW** — Text selection toolbar that shows "Edit with AI" button |
 | [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | General chat UI component |
 | [src/components/chat/prompt-chat-interface.tsx](src/components/chat/prompt-chat-interface.tsx) | **NEW** — Prompt tab chat with model selection and follow-up questions |
+| [src/components/chat/chat-primitives.tsx](src/components/chat/chat-primitives.tsx) | Shared chat presentation primitives used by both chat surfaces |
+| [src/components/auth/auth-header.tsx](src/components/auth/auth-header.tsx) | Shared auth header variants for auth, forgot-password, and reset-password views |
+| [src/components/auth/auth-field.tsx](src/components/auth/auth-field.tsx) | Shared labeled auth input field |
+| [src/components/auth/auth-password-field.tsx](src/components/auth/auth-password-field.tsx) | Shared auth password field with show/hide toggle |
+| [src/components/ui/model-selector.tsx](src/components/ui/model-selector.tsx) | Shared grouped model selector used by prompt and document model pickers |
+| [src/hooks/use-billing-portal.ts](src/hooks/use-billing-portal.ts) | Shared client hook to open Stripe billing portal |
+| [src/hooks/use-auth-signout.ts](src/hooks/use-auth-signout.ts) | Shared client hook for Supabase sign-out + redirect |
+| [src/hooks/use-auto-resizing-textarea.ts](src/hooks/use-auto-resizing-textarea.ts) | Shared hook for composer textarea autosizing |
+| [src/hooks/use-copy-feedback.ts](src/hooks/use-copy-feedback.ts) | Shared hook for clipboard copy feedback state |
+| [src/lib/credits.ts](src/lib/credits.ts) | Shared credit formatting and unlimited-credit helpers |
+| [src/lib/ndjson-stream.ts](src/lib/ndjson-stream.ts) | Shared NDJSON stream reader used by chat UIs |
 | [src/app/api/document-edit/route.ts](src/app/api/document-edit/route.ts) | **NEW** — API endpoint for inline AI document editing |
 | [src/app/api/analyses/[id]/route.ts](src/app/api/analyses/[id]/route.ts) | **NEW** — PATCH endpoint to update analysis content |
 | [src/app/api/prds/[id]/route.ts](src/app/api/prds/[id]/route.ts) | **NEW** — PATCH endpoint to update PRD content |

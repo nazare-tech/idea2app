@@ -1,17 +1,19 @@
 "use client"
 
+import Image from "next/image"
 import { Suspense, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { Check, Eye, EyeOff } from "lucide-react"
-import { HeaderLogo } from "@/components/layout/header-logo"
+import { Check } from "lucide-react"
 import { uiStylePresets } from "@/lib/ui-style-presets"
+import { AuthHeader } from "@/components/auth/auth-header"
+import { AuthField } from "@/components/auth/auth-field"
+import { AuthPasswordField } from "@/components/auth/auth-password-field"
+import { BrandWordmark } from "@/components/layout/brand-wordmark"
 
 type AuthMode = "signin" | "signup"
 
@@ -65,8 +67,6 @@ function AuthScreen() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [fullName, setFullName] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(queryError || queryMessage)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -203,12 +203,13 @@ function AuthScreen() {
           </aside>
 
           <div className="flex w-full flex-1">
-            <div className="w-full lg:h-full lg:flex lg:flex-col">
+              <div className="w-full lg:h-full lg:flex lg:flex-col">
               <header className="h-[104px] w-full ui-px-6 py-5">
-                <Link href="/" className="inline-flex h-full items-center gap-3">
-                  <HeaderLogo href="/" size={32} className={uiStylePresets.authIconCircle} />
-                  <span className="text-lg ui-font-semibold tracking-[0.05em]">Idea2App</span>
-                </Link>
+                <BrandWordmark
+                  className="h-full"
+                  logoClassName={uiStylePresets.authIconCircle}
+                  labelClassName="text-lg"
+                />
               </header>
 
               <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
@@ -225,7 +226,7 @@ function AuthScreen() {
                       disabled={loading}
                       className={uiStylePresets.authSocialButton}
                     >
-                      <img src="/google-logo.svg" alt="Google" className="h-4 w-4" />
+                      <Image src="/google-logo.svg" alt="Google" width={16} height={16} className="h-4 w-4" />
                       Continue with Google
                     </button>
 
@@ -241,7 +242,7 @@ function AuthScreen() {
                       {error && <p className={uiStylePresets.authErrorPill}>{error}</p>}
 
                       {mode === "signup" && (
-                        <FormField
+                        <AuthField
                           id="fullName"
                           label="Full name"
                           placeholder="John Doe"
@@ -251,7 +252,7 @@ function AuthScreen() {
                         />
                       )}
 
-                      <FormField
+                      <AuthField
                         id="email"
                         type="email"
                         label="Email"
@@ -261,7 +262,7 @@ function AuthScreen() {
                         disabled={loading}
                       />
 
-                      <PasswordField
+                      <AuthPasswordField
                         id="password"
                         label="Password"
                         placeholder={mode === "signup" ? "Create a password" : "Enter your password"}
@@ -269,12 +270,10 @@ function AuthScreen() {
                         onChange={setPassword}
                         minLength={6}
                         disabled={loading}
-                        showPassword={showPassword}
-                        onToggleShow={() => setShowPassword((prev) => !prev)}
                       />
 
                       {mode === "signup" && (
-                        <PasswordField
+                        <AuthPasswordField
                           id="confirmPassword"
                           label="Confirm password"
                           placeholder="Re-enter your password"
@@ -282,8 +281,6 @@ function AuthScreen() {
                           onChange={setConfirmPassword}
                           minLength={6}
                           disabled={loading}
-                          showPassword={showConfirmPassword}
-                          onToggleShow={() => setShowConfirmPassword((prev) => !prev)}
                         />
                       )}
 
@@ -318,110 +315,6 @@ function AuthScreen() {
           </div>
         </main>
       </section>
-    </div>
-  )
-}
-
-function AuthHeader() {
-  return (
-    <header className="border-b border-border bg-card">
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between ui-px-4 md:px-8 lg:px-12 xl:px-16">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <HeaderLogo href="/" size={32} />
-          <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
-        </Link>
-      </div>
-    </header>
-  )
-}
-
-function PasswordField({
-  id,
-  label,
-  placeholder,
-  value,
-  onChange,
-  disabled,
-  minLength,
-  showPassword,
-  onToggleShow,
-}: {
-  id: string
-  label: string
-  placeholder: string
-  value: string
-  onChange: (value: string) => void
-  disabled: boolean
-  minLength?: number
-  showPassword: boolean
-  onToggleShow: () => void
-}) {
-  return (
-    <div className="ui-stack-2">
-      <Label htmlFor={id} className={uiStylePresets.authFieldLabel}>
-        {label}
-      </Label>
-      <div className="relative">
-        <Input
-          id={id}
-          type={showPassword ? "text" : "password"}
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          required
-          disabled={disabled}
-          minLength={minLength}
-          className={uiStylePresets.authFieldInput}
-        />
-        <button
-          type="button"
-          onClick={onToggleShow}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          tabIndex={-1}
-          aria-label={showPassword ? "Hide password" : "Show password"}
-        >
-          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function FormField({
-  id,
-  type = "text",
-  label,
-  placeholder,
-  value,
-  onChange,
-  disabled,
-  minLength,
-}: {
-  id: string
-  type?: string
-  label: string
-  placeholder: string
-  value: string
-  onChange: (value: string) => void
-  disabled: boolean
-  minLength?: number
-}) {
-  return (
-    <div className="ui-stack-2">
-      <Label htmlFor={id} className={uiStylePresets.authFieldLabel}>
-        {label}
-      </Label>
-      <Input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required
-        disabled={disabled}
-        minLength={minLength}
-        className={uiStylePresets.authFieldInput}
-      />
     </div>
   )
 }

@@ -3,7 +3,7 @@ import path from 'node:path'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import puppeteer from 'puppeteer'
-import { MockupRenderer } from '/Users/bast/.openclaw/workspace/idea2app/src/components/ui/mockup-renderer'
+import { MockupRenderer } from '@/components/ui/mockup-renderer'
 
 const option = (label: string, title: string, pros: string[], cons: string[], spec: unknown) => {
   return [`## Option ${label} - ${title}`, 'Pros:', ...pros.map((item) => `- ${item}`), 'Cons:', ...cons.map((item) => `- ${item}`), '```json', JSON.stringify(spec), '```'].join('\n')

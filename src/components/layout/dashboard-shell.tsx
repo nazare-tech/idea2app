@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { Header } from "@/components/layout/header"
-import { HeaderLogo } from "@/components/layout/header-logo"
+import { BrandWordmark } from "@/components/layout/brand-wordmark"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -32,10 +32,7 @@ export function DashboardShell({
             user={user}
             credits={credits}
           >
-            <div className="inline-flex items-center min-w-0">
-              <HeaderLogo />
-              <span className="pl-3 text-lg font-bold tracking-tight">Projects</span>
-            </div>
+            <BrandWordmark href="/projects" label="Projects" labelClassName="text-lg font-bold tracking-tight" />
           </Header>
         )}
         <main className="flex-1 overflow-y-auto">

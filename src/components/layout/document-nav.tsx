@@ -1,18 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
-  PenLine,
-  Search,
-  FileText,
-  Target,
-  LayoutGrid,
-  Code,
-  Megaphone,
-} from "lucide-react"
+  NAV_DOCUMENT_DEFINITIONS,
+  type DocumentType,
+} from "@/lib/document-definitions"
 
-export type DocumentType = "prompt" | "competitive" | "prd" | "mvp" | "mockups" | "techspec" | "deploy" | "launch"
+export type { DocumentType } from "@/lib/document-definitions"
 
 interface DocumentStatus {
   type: DocumentType
@@ -28,21 +22,6 @@ interface DocumentNavProps {
   shouldFocusName?: boolean
   onProjectNameUpdate?: (name: string) => Promise<void> | void
 }
-
-const documents: {
-  type: DocumentType
-  label: string
-  description: string
-  icon: React.ElementType
-}[] = [
-  { type: "prompt", label: "Explain the idea", description: "", icon: PenLine },
-  { type: "competitive", label: "Competitive Research", description: "", icon: Search },
-  { type: "prd", label: "PRD", description: "", icon: FileText },
-  { type: "mvp", label: "MVP Plan", description: "", icon: Target },
-  { type: "mockups", label: "Mockups", description: "", icon: LayoutGrid },
-  { type: "techspec", label: "Tech Spec", description: "", icon: Code },
-  { type: "launch", label: "Marketing", description: "", icon: Megaphone },
-]
 
 function StatusBadge({ status }: { status: "done" | "in_progress" | "pending" }) {
   const statusConfig = {
@@ -61,18 +40,11 @@ function StatusBadge({ status }: { status: "done" | "in_progress" | "pending" })
 }
 
 export function DocumentNav({
-  projectName,
   activeDocument,
   onDocumentSelect,
   documentStatuses,
   isNewProject = false,
-  shouldFocusName = false,
-  onProjectNameUpdate,
 }: DocumentNavProps) {
-  const [isEditingProjectName, setIsEditingProjectName] = useState(shouldFocusName)
-  const [projectNameDraft, setProjectNameDraft] = useState(projectName)
-  const projectNameInputRef = useRef<HTMLInputElement>(null)
-
   const getStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
     const docStatus = documentStatuses.find(d => d.type === type)
     return docStatus?.status || "pending"
@@ -82,52 +54,14 @@ export function DocumentNav({
     return !(isNewProject && type !== "prompt")
   }
 
-  useEffect(() => {
-    setProjectNameDraft(projectName)
-  }, [projectName])
-
-  useEffect(() => {
-    if (shouldFocusName) {
-      setIsEditingProjectName(true)
-    }
-  }, [shouldFocusName])
-
-  useEffect(() => {
-    if (isEditingProjectName) {
-      projectNameInputRef.current?.focus()
-      projectNameInputRef.current?.setSelectionRange(projectNameDraft.length, projectNameDraft.length)
-    }
-  }, [isEditingProjectName, projectNameDraft.length])
-
-  const saveProjectName = async () => {
-    const trimmedName = projectNameDraft.trim() || "Untitled"
-    setProjectNameDraft(trimmedName)
-    setIsEditingProjectName(false)
-
-    try {
-      if (onProjectNameUpdate) {
-        await onProjectNameUpdate(trimmedName)
-      }
-    } catch (error) {
-      console.error("Failed to update project name:", error)
-      setProjectNameDraft(projectName)
-      setIsEditingProjectName(true)
-    }
-  }
-
-  const cancelProjectNameEdit = () => {
-    setProjectNameDraft(projectName)
-    setIsEditingProjectName(false)
-  }
-
   return (
     <div className="flex h-full w-[280px] flex-col bg-card border-r border-border">
       {/* Document List */}
       <nav className="flex-1 overflow-y-auto">
-        {documents.map((doc, index) => {
+        {NAV_DOCUMENT_DEFINITIONS.map((doc, index) => {
           const isActive = activeDocument === doc.type
           const status = getStatus(doc.type)
-          const isLast = index === documents.length - 1
+          const isLast = index === NAV_DOCUMENT_DEFINITIONS.length - 1
 
           return (
             <button

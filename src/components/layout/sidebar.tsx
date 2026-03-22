@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { HeaderLogo } from "@/components/layout/header-logo"
+import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import {
   LayoutDashboard,
   FolderKanban,
@@ -12,9 +12,10 @@ import {
   LogOut,
   Coins,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { useAuthSignOut } from "@/hooks/use-auth-signout"
+import { CreditBalance } from "@/components/ui/credit-balance"
+import { hasUnlimitedCredits } from "@/lib/credits"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -29,21 +30,17 @@ interface SidebarProps {
 
 export function Sidebar({ credits = 0 }: SidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
-
-  const handleSignOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push("/")
-    router.refresh()
-  }
+  const handleSignOut = useAuthSignOut()
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-[var(--color-surface-ghost)] bg-[rgba(8,8,14,0.8)] backdrop-blur-xl">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2.5 px-6 border-b border-[var(--color-surface-ghost)]">
-        <HeaderLogo href="/projects" size={32} className="rounded-lg shadow-[0_0_12px_var(--color-accent-primary-mid)]" />
-        <span className="ui-section-title">Idea2App</span>
+        <BrandWordmark
+          href="/projects"
+          logoClassName="rounded-lg shadow-[0_0_12px_var(--color-accent-primary-mid)]"
+          labelClassName="ui-section-title tracking-normal"
+        />
       </div>
 
       {/* Navigation */}
@@ -76,13 +73,13 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
             <span>Credits</span>
           </div>
           <p className="text-2xl font-black ui-tracking-tight">
-            {credits >= 999999 ? (
-              <span className="gradient-text">Unlimited</span>
-            ) : (
-              credits.toLocaleString()
-            )}
+            <CreditBalance
+              credits={credits}
+              className="text-2xl font-black ui-tracking-tight"
+              unlimitedClassName="gradient-text"
+            />
           </p>
-          {credits < 999999 && credits < 20 && (
+          {!hasUnlimitedCredits(credits) && credits < 20 && (
             <Link href="/billing">
               <Button size="sm" className="w-full mt-3">
                 Get More Credits

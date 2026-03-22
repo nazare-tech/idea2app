@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
 import { HeaderLogo } from "@/components/layout/header-logo"
 import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stream"
 import { Pencil } from "lucide-react"
+import { DOCUMENT_TYPES, isDocumentType } from "@/lib/document-definitions"
 
 
 interface Project {
@@ -124,16 +124,7 @@ export function ProjectWorkspace({
 
   const getPersistedActiveDocument = useCallback((): DocumentType | null => {
     const tab = searchParams.get("tab")
-    if (
-      tab === "prompt" ||
-      tab === "competitive" ||
-      tab === "prd" ||
-      tab === "mvp" ||
-      tab === "mockups" ||
-      tab === "techspec" ||
-      tab === "deploy" ||
-      tab === "launch"
-    ) {
+    if (isDocumentType(tab)) {
       return tab
     }
 
@@ -141,16 +132,7 @@ export function ProjectWorkspace({
 
     try {
       const stored = localStorage.getItem(activeDocumentStorageKey)
-      if (
-        stored === "prompt" ||
-        stored === "competitive" ||
-        stored === "prd" ||
-        stored === "mvp" ||
-        stored === "mockups" ||
-        stored === "techspec" ||
-        stored === "deploy" ||
-        stored === "launch"
-      ) {
+      if (isDocumentType(stored)) {
         return stored
       }
     } catch {
@@ -171,25 +153,11 @@ export function ProjectWorkspace({
     return "prompt"
   })
   const [generatingDocuments, setGeneratingDocuments] = useState<Record<DocumentType, boolean>>({
-    prompt: false,
-    competitive: false,
-    prd: false,
-    mvp: false,
-    mockups: false,
-    techspec: false,
-    deploy: false,
-    launch: false,
-  })
+    ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, false])),
+  } as Record<DocumentType, boolean>)
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<Record<DocumentType, number>>({
-    prompt: 0,
-    competitive: 0,
-    prd: 0,
-    mvp: 0,
-    mockups: 0,
-    techspec: 0,
-    deploy: 0,
-    launch: 0,
-  })
+    ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, 0])),
+  } as Record<DocumentType, number>)
   // Local content overrides for immediate UI updates after inline edits
   // Key format: `${documentType}-${recordId}` -> updated content
   const [localContentOverrides, setLocalContentOverrides] = useState<Record<string, string>>({})
@@ -274,7 +242,7 @@ export function ProjectWorkspace({
       localStorage.removeItem(key)
       return false
     }
-  }, [project.id, getStorageKey])
+  }, [getStorageKey])
 
   const canSelectDocument = useCallback((documentType: DocumentType) => {
     return !(isPromptOnlyMode && documentType !== "prompt")
@@ -847,7 +815,7 @@ export function ProjectWorkspace({
             setStreamCurrentStep(stage.step)
           },
           onToken: (content) => setStreamContent(prev => prev + content),
-          onDone: (_model) => { didGenerate = true },
+          onDone: () => { didGenerate = true },
           onError: (message) => {
             streamError = message
           },

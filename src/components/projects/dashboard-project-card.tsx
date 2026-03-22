@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { MouseEvent } from "react"
 

@@ -13,13 +13,40 @@ interface HeaderLogoProps {
   href?: string
   size?: number
   className?: string
+  linked?: boolean
 }
 
 export function HeaderLogo({
   href = "/projects",
   size = 24,
   className,
+  linked = true,
 }: HeaderLogoProps) {
+  const content = (
+    <Image
+      src="/idea2app-logo.jpg"
+      alt="Idea2App logo"
+      width={size}
+      height={size}
+      className="object-cover scale-[1.7]"
+      style={{ width: size, height: size }}
+    />
+  )
+
+  if (!linked) {
+    return (
+      <span
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md",
+          className
+        )}
+        style={{ width: size, height: size }}
+      >
+        {content}
+      </span>
+    )
+  }
+
   return (
     <Link
       href={href}
@@ -29,14 +56,7 @@ export function HeaderLogo({
       )}
       style={{ width: size, height: size }}
     >
-      <Image
-        src="/idea2app-logo.jpg"
-        alt="Idea2App logo"
-        width={size}
-        height={size}
-        className="object-cover scale-[1.7]"
-        style={{ width: size, height: size }}
-      />
+      {content}
     </Link>
   )
 }

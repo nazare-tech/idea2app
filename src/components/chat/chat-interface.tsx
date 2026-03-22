@@ -1,14 +1,20 @@
 "use client"
 
-import { useState, useRef, useEffect, useMemo } from "react"
-
-import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/spinner"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
-import { uiStylePresets } from "@/lib/ui-style-presets"
-import { Send, Bot, User, Copy, Check } from "lucide-react"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+import { consumeNdjsonStream } from "@/lib/ndjson-stream"
+import { formatRemainingCredits } from "@/lib/credits"
+import { useCopyFeedback } from "@/hooks/use-copy-feedback"
+import { useAutoResizingTextarea } from "@/hooks/use-auto-resizing-textarea"
+import {
+  ChatAssistantAvatar,
+  ChatComposer,
+  ChatCopyButton,
+  ChatLoadMoreButton,
+  ChatMarkdownBody,
+  ChatThinkingIndicator,
+  ChatUserAvatar,
+} from "@/components/chat/chat-primitives"
 
 interface Message {
   id: string
@@ -37,51 +43,26 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [visibleMessageCount, setVisibleMessageCount] = useState(MESSAGE_PAGE_SIZE)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const textareaRef = useAutoResizingTextarea(input, 200)
+  const { copiedId, copyText } = useCopyFeedback()
 
-  const visibleMessages = useMemo(() => {
-    return messages.slice(-Math.min(visibleMessageCount, messages.length))
-  }, [messages, visibleMessageCount])
+  const visibleMessages = useMemo(
+    () => messages.slice(-Math.min(visibleMessageCount, messages.length)),
+    [messages, visibleMessageCount]
+  )
   const canLoadMore = visibleMessages.length < messages.length
 
-  const scrollToBottom = () => {
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  useEffect(() => {
-    scrollToBottom()
   }, [messages])
-
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`
-    }
-  }, [input])
 
   const loadMoreMessages = () => {
     setVisibleMessageCount((prev) => Math.min(prev + MESSAGE_PAGE_SIZE, messages.length))
   }
 
-  const handleCopy = async (content: string, id: string) => {
-    await navigator.clipboard.writeText(content)
-    setCopiedId(id)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
-
   const parseChatStream = async (response: Response, userTempId: string, assistantTempId: string) => {
-    if (!response.body) {
-      throw new Error("Chat stream did not provide response body")
-    }
-
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ""
-
     const appendToken = (token: string) => {
       setMessages((prev) =>
         prev.map((message) =>
@@ -102,42 +83,30 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
       )
     }
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split("\n")
-      buffer = lines.pop() || ""
-
-      for (const line of lines) {
-        if (!line.trim()) continue
-
-        const event = JSON.parse(line) as StreamEvent
-        if (event.type === "start") {
-          setMessages((prev) =>
-            prev.map((message) =>
-              message.id === userTempId ? event.userMessage : message
-            )
+    await consumeNdjsonStream<StreamEvent>(response, async (event) => {
+      if (event.type === "start") {
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === userTempId ? event.userMessage : message
           )
-          continue
-        }
-
-        if (event.type === "token") {
-          appendToken(event.content)
-          continue
-        }
-
-        if (event.type === "done") {
-          finalizeMessage(event.userMessage, event.assistantMessage)
-          return
-        }
-
-        if (event.type === "error") {
-          throw new Error(event.error || "Chat stream error")
-        }
+        )
+        return
       }
-    }
+
+      if (event.type === "token") {
+        appendToken(event.content)
+        return
+      }
+
+      if (event.type === "done") {
+        finalizeMessage(event.userMessage, event.assistantMessage)
+        return
+      }
+
+      if (event.type === "error") {
+        throw new Error(event.error || "Chat stream error")
+      }
+    })
   }
 
   const handleSend = async () => {
@@ -147,7 +116,6 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
     setInput("")
     setLoading(true)
 
-    // Optimistic update - add user message
     const tempUserMsg: Message = {
       id: `temp-${Date.now()}`,
       project_id: projectId,
@@ -208,61 +176,50 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
       }
 
       if (data.messages) {
-        setMessages(dedupeMessages([...(data.messages as Message[])]) )
+        setMessages(dedupeMessages([...(data.messages as Message[])]))
       } else {
         throw new Error("No message data returned")
       }
     } catch (error) {
       console.error("Chat error:", error)
       setMessages((prev) =>
-        prev.filter((message) => message.id !== tempUserMsg.id && message.id !== assistantTempMsg.id).concat([
-          {
-            id: `error-${Date.now()}`,
-            project_id: projectId,
-            role: "assistant",
-            content: "Sorry, I encountered an error. Please try again.",
-            metadata: null,
-            created_at: new Date().toISOString(),
-          },
-        ])
+        prev
+          .filter((message) => message.id !== tempUserMsg.id && message.id !== assistantTempMsg.id)
+          .concat([
+            {
+              id: `error-${Date.now()}`,
+              project_id: projectId,
+              role: "assistant",
+              content: "Sorry, I encountered an error. Please try again.",
+              metadata: null,
+              created_at: new Date().toISOString(),
+            },
+          ])
       )
     } finally {
       setLoading(false)
     }
   }
 
-  const dedupeMessages = (items: Message[]) => {
-    const seen = new Set<string>()
-    const deduped: Message[] = []
-
-    for (const message of items) {
-      if (seen.has(message.id)) continue
-      seen.add(message.id)
-      deduped.push(message)
-    }
-
-    return deduped
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault()
       handleSend()
     }
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-320px)] min-h-[400px]">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-4 pb-4">
+    <div className="flex min-h-[400px] flex-col h-[calc(100vh-320px)]">
+      <div className="flex-1 space-y-4 overflow-y-auto pb-4">
         {canLoadMore && (
           <div className="px-4 pt-2">
-            <button
-              onClick={loadMoreMessages}
-              className="mx-auto block rounded-lg border border-surface-strong bg-surface-ink-soft px-3 py-1.5 text-xs text-foreground hover:bg-surface-mid transition-colors"
-            >
-              Load earlier messages
-            </button>
+            <div className="mx-auto block w-fit">
+              <ChatLoadMoreButton
+                onClick={loadMoreMessages}
+                label="Load earlier messages"
+                className="border-surface-strong bg-surface-ink-soft text-foreground hover:bg-surface-mid"
+              />
+            </div>
           </div>
         )}
 
@@ -270,107 +227,73 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
           <div
             key={message.id}
             className={cn(
-              "flex gap-3 group",
+              "group flex gap-3",
               message.role === "user" ? "justify-end" : "justify-start"
             )}
           >
-            {message.role !== "user" && (
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[var(--color-accent-primary-soft)] to-[#7c3aed]/20 border border-[var(--color-accent-primary)] flex items-center justify-center shrink-0 mt-1">
-                <Bot className={uiStylePresets.chatBrandIcon} />
-              </div>
-            )}
+            {message.role !== "user" && <ChatAssistantAvatar />}
 
             <div
               className={cn(
-                "rounded-2xl px-4 py-3 max-w-[80%] relative",
+                "relative max-w-[80%] rounded-2xl px-4 py-3",
                 message.role === "user"
                   ? "bg-gradient-to-r from-[var(--color-text-accent)] to-[#7c3aed] text-white shadow-[0_0_15px_var(--color-accent-primary)]"
-                  : "bg-[var(--color-surface-ink-soft)] backdrop-blur-sm border border-surface-mid"
+                  : "border border-surface-mid bg-[var(--color-surface-ink-soft)] backdrop-blur-sm"
               )}
             >
               {message.role === "user" ? (
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <p className="whitespace-pre-wrap text-sm">{message.content}</p>
               ) : (
-                <div className="prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-[var(--color-text-accent)] [&_code]:text-[var(--color-text-accent)] [&_code]:bg-[var(--color-accent-primary-whisper)]">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {message.content}
-                  </ReactMarkdown>
-                </div>
+                <ChatMarkdownBody
+                  content={message.content}
+                  className="prose prose-invert prose-sm max-w-none [&_p]:text-foreground [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-[var(--color-text-accent)] [&_code]:text-[var(--color-text-accent)] [&_code]:bg-[var(--color-accent-primary-whisper)]"
+                />
               )}
 
-              {/* Copy button */}
-              <button
-                onClick={() => handleCopy(message.content, message.id)}
-                className={cn(
-                  "absolute -bottom-3 right-2 p-1.5 rounded-lg bg-[var(--color-surface-ink-strong)] border border-surface-strong opacity-0 group-hover:opacity-100 transition-all duration-200 hover:border-[var(--color-accent-primary-mid)]",
-                  message.role === "user" && "hidden"
-                )}
-              >
-                {copiedId === message.id ? (
-                  <Check className="h-3 w-3 text-[#34d399]" />
-                ) : (
-                  <Copy className="h-3 w-3 text-muted-foreground" />
-                )}
-              </button>
+              {message.role !== "user" && (
+                <ChatCopyButton
+                  copied={copiedId === message.id}
+                  onClick={() => {
+                    void copyText(message.content, message.id)
+                  }}
+                  className="border-surface-strong bg-[var(--color-surface-ink-strong)] hover:border-[var(--color-accent-primary-mid)]"
+                />
+              )}
             </div>
 
             {message.role === "user" && (
-              <div className="h-8 w-8 rounded-xl bg-surface-mid border border-surface-strong flex items-center justify-center shrink-0 mt-1">
-                <User className="ui-icon-16 text-muted-foreground" />
-              </div>
+              <ChatUserAvatar className="border-surface-strong bg-surface-mid" />
             )}
           </div>
         ))}
 
         {loading && visibleMessages.length > 0 && (
-          <div className="flex gap-3">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[var(--color-accent-primary-soft)] to-[#7c3aed]/20 border border-[var(--color-accent-primary)] flex items-center justify-center shrink-0">
-                <Bot className={uiStylePresets.chatBrandIcon} />
-            </div>
-            <div className="bg-[var(--color-surface-ink-soft)] border border-surface-mid rounded-2xl px-4 py-3">
-              <div className="ui-row-gap-2">
-                <Spinner size="sm" />
-                <span className="ui-text-sm-muted">Thinking...</span>
-              </div>
-            </div>
-          </div>
+          <ChatThinkingIndicator
+            assistantAvatar={<ChatAssistantAvatar className="mt-0" />}
+            contentClassName="border border-surface-mid bg-[var(--color-surface-ink-soft)]"
+          />
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-surface-mid pt-4">
-        <div className="flex items-end gap-3">
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Describe your business idea or ask a question..."
-              className="w-full rounded-2xl border border-surface-strong bg-surface-soft px-4 py-3 pr-12 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[48px] max-h-[200px] transition-all duration-200"
-              rows={1}
-              disabled={loading}
-            />
-          </div>
-          <Button
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            size="icon"
-            className="h-12 w-12 rounded-2xl shrink-0"
-          >
-            {loading ? (
-              <Spinner size="sm" />
-            ) : (
-              <Send className="ui-icon-16" />
-            )}
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          {credits >= 999999 ? "Unlimited credits" : `${credits} credits remaining`} | Press Enter to send, Shift+Enter for new line
-        </p>
-      </div>
+      <ChatComposer
+        value={input}
+        onChange={setInput}
+        onKeyDown={handleKeyDown}
+        onSend={handleSend}
+        disabled={loading || !input.trim()}
+        loading={loading}
+        placeholder="Describe your business idea or ask a question..."
+        textareaRef={textareaRef}
+        className="border-t border-surface-mid pt-4"
+        textareaClassName="max-h-[200px] border-surface-strong bg-surface-soft pr-12 transition-all duration-200"
+        footer={
+          <p className="mt-2 text-xs text-muted-foreground">
+            {formatRemainingCredits(credits)} | Press Enter to send, Shift+Enter for new line
+          </p>
+        }
+      />
     </div>
   )
 }
@@ -378,10 +301,12 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
 function dedupeMessages(messages: Message[]) {
   const seen = new Set<string>()
   const deduped: Message[] = []
+
   for (const message of messages) {
     if (seen.has(message.id)) continue
     seen.add(message.id)
     deduped.push(message)
   }
+
   return deduped
 }

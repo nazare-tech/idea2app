@@ -1,12 +1,12 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { HeaderLogo } from "@/components/layout/header-logo"
 import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { PRICING_CARD_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
 import { formatPrice } from "@/lib/utils"
 import { ArrowRight, CloudUpload, GitBranch, ListChecks, Rocket, ScanSearch, FileText } from "lucide-react"
+import { BrandWordmark } from "@/components/layout/brand-wordmark"
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -129,10 +129,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white text-text-primary">
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
         <div className={`${container} ui-row-between h-16`}>
-          <div className="ui-row-gap-3">
-            <HeaderLogo href="/" size={36} className="rounded-sm" />
-            <span className="text-lg font-semibold tracking-[0.01em]">Idea2App</span>
-          </div>
+          <BrandWordmark href="/" logoSize={36} logoClassName="rounded-sm" labelClassName="text-lg font-semibold tracking-[0.01em]" />
 
           <div className="hidden items-center gap-8 md:flex">
             {navLinks.map((item) => (

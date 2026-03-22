@@ -5,12 +5,11 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { HeaderLogo } from "@/components/layout/header-logo"
 import { uiStylePresets } from "@/lib/ui-style-presets"
+import { AuthHeader } from "@/components/auth/auth-header"
+import { AuthPasswordField } from "@/components/auth/auth-password-field"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -104,7 +103,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <section className="mx-auto flex min-h-screen max-w-[480px] flex-col ui-px-4 pb-6 md:px-8">
-        <AuthHeader />
+        <AuthHeader variant="stacked" />
         <div className="mt-12">
           <Card className={uiStylePresets.authCardCompact}>
             <CardHeader className="ui-stack-2">
@@ -116,38 +115,24 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={handleReset}>
               <CardContent className="space-y-5">
-                <div className="ui-stack-2">
-                  <Label htmlFor="password" className={uiStylePresets.authFieldLabel}>
-                    New password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="New password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    required
-                    disabled={loading}
-                    minLength={6}
-                    className={uiStylePresets.authFieldInput}
-                  />
-                </div>
-                <div className="ui-stack-2">
-                  <Label htmlFor="confirmPassword" className={uiStylePresets.authFieldLabel}>
-                    Confirm new password
-                  </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    required
-                    disabled={loading}
-                    minLength={6}
-                    className={uiStylePresets.authFieldInput}
-                  />
-                </div>
+                <AuthPasswordField
+                  id="password"
+                  label="New password"
+                  placeholder="New password"
+                  value={password}
+                  onChange={setPassword}
+                  disabled={loading}
+                  minLength={6}
+                />
+                <AuthPasswordField
+                  id="confirmPassword"
+                  label="Confirm new password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={setConfirmPassword}
+                  disabled={loading}
+                  minLength={6}
+                />
 
                 {error && (
                   <p className={uiStylePresets.authErrorPill}>
@@ -173,16 +158,5 @@ export default function ResetPasswordPage() {
         </div>
       </section>
     </div>
-  )
-}
-
-function AuthHeader() {
-  return (
-    <header className="mt-10">
-        <div className="mt-6 ui-row-gap-3">
-        <HeaderLogo href="/" size={32} className={uiStylePresets.authTopIconBadge} />
-        <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
-      </div>
-    </header>
   )
 }

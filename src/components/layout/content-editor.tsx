@@ -3,18 +3,9 @@
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import {
-  PenLine,
-  Search,
-  FileText,
-  Target,
-  LayoutGrid,
-  Code,
-  Rocket,
-  Megaphone,
   Sparkles,
   Loader2,
   Download,
-  GripVertical,
   ChevronDown,
   FileDown,
 } from "lucide-react"
@@ -34,6 +25,7 @@ import { DocumentModelSelector } from "@/components/ui/document-model-selector"
 import { DEFAULT_DOCUMENT_MODEL } from "@/lib/prompt-chat-config"
 import { GenerationStreamPanel } from "@/components/workspace/generation-stream-panel"
 import type { StreamStage } from "@/lib/parse-document-stream"
+import { getDocumentDefinition } from "@/lib/document-definitions"
 
 interface MarketingBrief {
   targetAudience: string
@@ -64,60 +56,6 @@ interface ContentEditorProps {
   onVersionChange?: (version: number) => void
 }
 
-const documentConfig: Record<
-  DocumentType,
-  { title: string; subtitle: string; icon: React.ElementType; creditCost: number }
-> = {
-  prompt: {
-    title: "Explain the idea",
-    subtitle: "Define your project requirements and goals",
-    icon: PenLine,
-    creditCost: 0,
-  },
-  competitive: {
-    title: "Competitive Research",
-    subtitle: "Market analysis and competitor insights",
-    icon: Search,
-    creditCost: 15,
-  },
-  prd: {
-    title: "PRD",
-    subtitle: "Product requirements document",
-    icon: FileText,
-    creditCost: 10,
-  },
-  mvp: {
-    title: "MVP Plan",
-    subtitle: "Minimum viable product development plan",
-    icon: Target,
-    creditCost: 15,
-  },
-  mockups: {
-    title: "Mockups",
-    subtitle: "Interactive UI mockups showing information architecture",
-    icon: LayoutGrid,
-    creditCost: 30,
-  },
-  techspec: {
-    title: "Tech Spec",
-    subtitle: "Technical specifications and architecture",
-    icon: Code,
-    creditCost: 15,
-  },
-  deploy: {
-    title: "Deploy",
-    subtitle: "Generate and deploy your application",
-    icon: Rocket,
-    creditCost: 5,
-  },
-  launch: {
-    title: "Marketing",
-    subtitle: "Generate launch plan and distribution copy",
-    icon: Megaphone,
-    creditCost: 5,
-  },
-}
-
 // Width constraints for document resizing
 const MIN_DOCUMENT_WIDTH = 640 // Minimum width for readability (tablet size)
 const MAX_DOCUMENT_WIDTH = 1400 // Maximum width for optimal reading experience
@@ -138,8 +76,6 @@ export function ContentEditor({
   credits,
   prerequisiteValidation,
   currentVersion = 0,
-  totalVersions = 0,
-  onVersionChange,
   streamStages,
   streamCurrentStep,
   streamContent,
@@ -170,7 +106,7 @@ export function ContentEditor({
   const pendingDocumentWidthRef = useRef<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const config = documentConfig[documentType]
+  const config = getDocumentDefinition(documentType)
 
   useEffect(() => {
     setDocumentWidth(isFullWidthDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH)

@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState, type ComponentType } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +12,9 @@ import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { Bell, CreditCard, KeyRound, Lock, Shield, Settings, User } from "lucide-react"
+import { SettingsMessage } from "@/components/settings/settings-message"
+import { SettingsSectionCard } from "@/components/settings/settings-section-card"
+import { useBillingPortal } from "@/hooks/use-billing-portal"
 
 type MessageState = { type: "success" | "error"; text: string }
 type SettingsTab = "profile" | "settings" | "subscriptions"
@@ -78,13 +81,13 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [passwordSaving, setPasswordSaving] = useState(false)
-  const [subscriptionLoading, setSubscriptionLoading] = useState(false)
   const [profileMessage, setProfileMessage] = useState<MessageState | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<MessageState | null>(null)
   const [subscriptionMessage, setSubscriptionMessage] = useState<MessageState | null>(null)
   const [isDev, setIsDev] = useState(false)
   const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null)
   const [subscriptionPlanName, setSubscriptionPlanName] = useState("")
+  const { loading: subscriptionLoading, openBillingPortal } = useBillingPortal()
 
   const searchParams = useSearchParams()
 
@@ -98,25 +101,6 @@ export default function SettingsPage() {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", tab)
     return `/settings?${params.toString()}`
-  }
-
-  const renderMessage = (message: MessageState | null) => {
-    if (!message) return null
-
-    return (
-      <>
-      {/* TODO: keep success/error color pairs intentionally local to the account settings domain. */}
-      <div
-        className={`p-3 rounded-xl text-sm border ${
-          message.type === "success"
-            ? "bg-[rgba(34,197,94,0.08)] border-[rgba(34,197,94,0.25)] text-[#15803d]"
-            : "bg-[rgba(255,59,48,0.08)] border-[rgba(255,59,48,0.25)] text-[#b91c1c]"
-        }`}
-      >
-        {message.text}
-      </div>
-      </>
-    )
   }
 
   useEffect(() => {
@@ -238,37 +222,11 @@ export default function SettingsPage() {
     }
   }
 
-  const handleManageSubscription = async () => {
-    setSubscriptionLoading(true)
-    setSubscriptionMessage(null)
-
-    try {
-      const response = await fetch("/api/stripe/portal", {
-        method: "POST",
-      })
-      const data = await response.json()
-
-      if (data?.url) {
-        window.location.href = data.url
-        return
-      }
-
-      setSubscriptionMessage({ type: "error", text: data?.error || "Unable to open billing portal." })
-    } catch {
-      setSubscriptionMessage({ type: "error", text: "Unable to open billing portal." })
-    } finally {
-      setSubscriptionLoading(false)
-    }
-  }
-
   const formatRenewalDate = (value: string | null) => {
     if (!value) return "Not set"
 
     return new Date(value).toLocaleDateString()
   }
-
-  const activeTabConfig = settingsTabs.find((tab) => tab.value === activeTab) ?? settingsTabs[0]
-  const badgeText = (fullName || username || email || "A").slice(0, 2).toUpperCase()
 
   if (loading) {
     return (
@@ -282,7 +240,7 @@ export default function SettingsPage() {
     <div className="bg-white text-text-primary">
       <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-8 lg:px-[56px] lg:py-8">
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-          <aside className="rounded border border-border-subtle bg-[#F8F8F8] p-4 lg:p-6 h-fit">
+          <aside className="h-fit">
             <h2 className="text-[18px] ui-font-semibold mb-2 hidden lg:block">Account</h2>
             <div className="grid grid-cols-3 gap-2 lg:block lg:ui-stack-2">
               {settingsTabs.map((tab) => {
@@ -310,13 +268,6 @@ export default function SettingsPage() {
           </aside>
 
           <section className="space-y-5">
-            <div>
-              <h1 className="text-[30px] sm:text-[36px] font-bold tracking-[-0.03em] leading-tight">
-                {activeTabConfig.label}
-              </h1>
-              <p className="text-text-secondary mt-1">{activeTabConfig.description}</p>
-            </div>
-
             {activeTab === "profile" && (
               <>
                 {isDev && (
@@ -327,7 +278,7 @@ export default function SettingsPage() {
                         <Shield className="h-5 w-5" />
                       </div>
                       <div>
-                        <CardTitle>Developer Account</CardTitle>
+                        <CardTitle className="text-[16px]">Developer Account</CardTitle>
                         <CardDescription>Unlimited credits enabled for testing and development.</CardDescription>
                       </div>
                     </div>
@@ -335,20 +286,16 @@ export default function SettingsPage() {
                 </Card>
               )}
 
-              <Card className={uiStylePresets.settingsSurface}>
-                <CardHeader>
-                  <div className="ui-row-gap-3">
-                    <div className={uiStylePresets.settingsIconBadge}>
-                      <User className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <CardTitle>Profile</CardTitle>
-                      <CardDescription>Update your personal information</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {renderMessage(profileMessage)}
+              <SettingsSectionCard
+                icon={User}
+                title="Profile"
+                description="Update your personal information"
+              >
+                  {profileMessage && (
+                    <SettingsMessage tone={profileMessage.type}>
+                      {profileMessage.text}
+                    </SettingsMessage>
+                  )}
 
                   <div className="ui-stack-2">
                     <Label htmlFor="email">Email</Label>
@@ -399,23 +346,18 @@ export default function SettingsPage() {
                       )}
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+              </SettingsSectionCard>
 
-              <Card className={uiStylePresets.settingsSurface}>
-                <CardHeader>
-                  <div className="ui-row-gap-3">
-                    <div className={uiStylePresets.settingsIconBadge}>
-                      <Lock className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <CardTitle>Change Password</CardTitle>
-                      <CardDescription>Set a new password for your account</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {renderMessage(passwordMessage)}
+              <SettingsSectionCard
+                icon={Lock}
+                title="Change Password"
+                description="Set a new password for your account"
+              >
+                  {passwordMessage && (
+                    <SettingsMessage tone={passwordMessage.type}>
+                      {passwordMessage.text}
+                    </SettingsMessage>
+                  )}
 
                   <div className="ui-stack-2">
                     <Label htmlFor="new-password">New Password</Label>
@@ -454,25 +396,16 @@ export default function SettingsPage() {
                       )}
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+              </SettingsSectionCard>
             </>
           )}
 
           {activeTab === "settings" && (
-            <Card className={uiStylePresets.settingsSurface}>
-              <CardHeader>
-                <div className="ui-row-gap-3">
-                  <div className={uiStylePresets.settingsIconBadge}>
-                    <Settings className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <CardTitle>Settings</CardTitle>
-                    <CardDescription>Configure account and app behavior</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <SettingsSectionCard
+              icon={Settings}
+              title="Settings"
+              description="Configure account and app behavior"
+            >
                 <div className="rounded-xl border border-border-subtle bg-white p-4 text-sm text-text-secondary">
                   Additional account-level settings and preferences can be added here.
                 </div>
@@ -485,25 +418,20 @@ export default function SettingsPage() {
                     Notification preferences are not yet configurable in this build.
                   </p>
                 </div>
-              </CardContent>
-            </Card>
+            </SettingsSectionCard>
           )}
 
           {activeTab === "subscriptions" && (
-            <Card className={uiStylePresets.settingsSurface}>
-              <CardHeader>
-                <div className="ui-row-gap-3">
-                  <div className={uiStylePresets.settingsIconBadge}>
-                    <CreditCard className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <CardTitle>Manage Subscriptions</CardTitle>
-                    <CardDescription>View and update your current plan</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {renderMessage(subscriptionMessage)}
+            <SettingsSectionCard
+              icon={CreditCard}
+              title="Manage Subscriptions"
+              description="View and update your current plan"
+            >
+                {subscriptionMessage && (
+                  <SettingsMessage tone={subscriptionMessage.type}>
+                    {subscriptionMessage.text}
+                  </SettingsMessage>
+                )}
 
                 {subscription ? (
                   <div className={uiStylePresets.settingsInfoCard}>
@@ -525,7 +453,16 @@ export default function SettingsPage() {
                         {formatRenewalDate(subscription.current_period_end)}
                       </p>
                     </div>
-                    <Button onClick={handleManageSubscription} disabled={subscriptionLoading}>
+                    <Button
+                      onClick={async () => {
+                        setSubscriptionMessage(null)
+                        const result = await openBillingPortal()
+                        if (!result.ok && result.error) {
+                          setSubscriptionMessage({ type: "error", text: result.error })
+                        }
+                      }}
+                      disabled={subscriptionLoading}
+                    >
                       {subscriptionLoading ? (
                         <>
                           <Spinner size="sm" />
@@ -548,7 +485,13 @@ export default function SettingsPage() {
                         </Button>
                       </Link>
                       <Button
-                        onClick={handleManageSubscription}
+                        onClick={async () => {
+                          setSubscriptionMessage(null)
+                          const result = await openBillingPortal()
+                          if (!result.ok && result.error) {
+                            setSubscriptionMessage({ type: "error", text: result.error })
+                          }
+                        }}
                         variant="secondary"
                         disabled={subscriptionLoading}
                       >
@@ -564,8 +507,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+            </SettingsSectionCard>
           )}
           </section>
         </div>

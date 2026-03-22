@@ -1,12 +1,21 @@
 "use client"
 
-import Image from "next/image"
-import { useState, useRef, useEffect, useCallback } from "react"
-import { cn } from "@/lib/utils"
-import { Bot, User, Copy, Check, Send } from "lucide-react"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { Bot } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
+import { cn } from "@/lib/utils"
+import { consumeNdjsonStream } from "@/lib/ndjson-stream"
+import { useCopyFeedback } from "@/hooks/use-copy-feedback"
+import { useAutoResizingTextarea } from "@/hooks/use-auto-resizing-textarea"
+import {
+  ChatAssistantAvatar,
+  ChatComposer,
+  ChatCopyButton,
+  ChatLoadMoreButton,
+  ChatMarkdownBody,
+  ChatThinkingIndicator,
+  ChatUserAvatar,
+} from "@/components/chat/chat-primitives"
 
 interface Message {
   id: string
@@ -30,29 +39,16 @@ interface PromptChatInterfaceProps {
 type StreamEvent =
   | { type: "start"; userMessage: Message }
   | { type: "token"; content: string }
-  | { type: "done"; userMessage: Message; assistantMessage: Message; stage: "refining" | "summarized"; summary: string | null }
+  | {
+      type: "done"
+      userMessage: Message
+      assistantMessage: Message
+      stage: "refining" | "summarized"
+      summary: string | null
+    }
   | { type: "error"; error: string }
 
 const PAGE_SIZE = 40
-
-function AssistantAvatar({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md shadow-sm",
-        className
-      )}
-    >
-      <Image
-        src="/idea2app-logo.jpg"
-        alt="Idea2App logo"
-        width={32}
-        height={32}
-        className="object-cover scale-[1.7]"
-      />
-    </div>
-  )
-}
 
 export function PromptChatInterface({
   projectId,
@@ -64,7 +60,6 @@ export function PromptChatInterface({
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [conversationStage, setConversationStage] = useState<"initial" | "refining" | "summarized">("initial")
   const [isFirstLoad, setIsFirstLoad] = useState(true)
   const [hasMoreMessages, setHasMoreMessages] = useState(false)
@@ -73,9 +68,9 @@ export function PromptChatInterface({
   const [earliestCursor, setEarliestCursor] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const composerRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useAutoResizingTextarea(input, 160)
   const requestInFlight = useRef(false)
+  const { copiedId, copyText } = useCopyFeedback()
 
   const dedupeMessages = useCallback((messageList: Message[]) => {
     if (!messageList.length) return []
@@ -125,49 +120,72 @@ export function PromptChatInterface({
     return { pageMessages, hasMore: Boolean(data.hasMore), stage: data.stage || "initial" }
   }, [projectId, dedupeMessages])
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
   useEffect(() => {
-    scrollToBottom()
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`
+  const parseStreamResponse = useCallback(async (
+    response: Response,
+    tempUserMessageId: string,
+    tempAssistantMessageId: string
+  ) => {
+    const appendToken = (token: string) => {
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === tempAssistantMessageId
+            ? { ...message, content: `${message.content}${token}` }
+            : message
+        )
+      )
     }
-  }, [input])
 
-  // Load existing messages and start conversation if needed
-  useEffect(() => {
-    const loadInitialMessages = async () => {
-      setMessagesLoading(true)
-      try {
-        const result = await loadMessages()
+    const finalizeMessages = (
+      userMessage: Message,
+      assistantMessage: Message,
+      stage: "refining" | "summarized",
+      summary: string | null
+    ) => {
+      setMessages((prev) =>
+        prev.map((message) => {
+          if (message.id === tempUserMessageId) return userMessage
+          if (message.id === tempAssistantMessageId) return assistantMessage
+          return message
+        })
+      )
+      setConversationStage(stage)
+      if (summary && onIdeaSummary) onIdeaSummary(summary)
+    }
 
-        setMessages(result.pageMessages)
-        setHasMoreMessages(result.hasMore)
-        setEarliestCursor(result.pageMessages[0]?.created_at || null)
-        setConversationStage(result.stage)
-
-        if (result.pageMessages.length === 0 && initialIdea && isFirstLoad) {
-          setIsFirstLoad(false)
-          await startConversation()
-        }
-      } catch (error) {
-        console.error("Error loading messages:", error)
-      } finally {
-        setMessagesLoading(false)
+    await consumeNdjsonStream<StreamEvent>(response, async (event) => {
+      if (event.type === "start") {
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === tempUserMessageId ? event.userMessage : message
+          )
+        )
+        return
       }
-    }
 
-    if (projectId) {
-      loadInitialMessages()
-    }
-  }, [projectId, initialIdea, isFirstLoad, loadMessages])
+      if (event.type === "token") {
+        appendToken(event.content)
+        return
+      }
+
+      if (event.type === "done") {
+        finalizeMessages(
+          event.userMessage,
+          event.assistantMessage,
+          event.stage,
+          event.summary
+        )
+        return
+      }
+
+      if (event.type === "error") {
+        throw new Error(event.error || "Failed to process response")
+      }
+    })
+  }, [onIdeaSummary])
 
   const startConversation = useCallback(async (overrideIdea?: string) => {
     if (requestInFlight.current) return
@@ -231,7 +249,34 @@ export function PromptChatInterface({
       requestInFlight.current = false
       setLoading(false)
     }
-  }, [conversationStage, initialIdea, loadMessages, projectId, selectedModel])
+  }, [conversationStage, dedupeMessages, initialIdea, parseStreamResponse, projectId, selectedModel])
+
+  useEffect(() => {
+    const loadInitialMessages = async () => {
+      setMessagesLoading(true)
+      try {
+        const result = await loadMessages()
+
+        setMessages(result.pageMessages)
+        setHasMoreMessages(result.hasMore)
+        setEarliestCursor(result.pageMessages[0]?.created_at || null)
+        setConversationStage(result.stage)
+
+        if (result.pageMessages.length === 0 && initialIdea && isFirstLoad) {
+          setIsFirstLoad(false)
+          await startConversation()
+        }
+      } catch (error) {
+        console.error("Error loading messages:", error)
+      } finally {
+        setMessagesLoading(false)
+      }
+    }
+
+    if (projectId) {
+      loadInitialMessages()
+    }
+  }, [projectId, initialIdea, isFirstLoad, loadMessages, startConversation])
 
   const loadOlderMessages = async () => {
     if (!hasMoreMessages || !earliestCursor || isLoadingOlder || loading) return
@@ -260,88 +305,6 @@ export function PromptChatInterface({
     }
   }
 
-  const handleCopy = async (content: string, id: string) => {
-    await navigator.clipboard.writeText(content)
-    setCopiedId(id)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
-
-  const parseStreamResponse = async (
-    response: Response,
-    tempUserMessageId: string,
-    tempAssistantMessageId: string
-  ) => {
-    if (!response.body) {
-      throw new Error("Stream response had no body")
-    }
-
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ""
-
-    const appendToken = (token: string) => {
-      setMessages((prev) =>
-        prev.map((message) =>
-          message.id === tempAssistantMessageId
-            ? { ...message, content: `${message.content}${token}` }
-            : message
-        )
-      )
-    }
-
-    const finalizeMessages = (
-      userMessage: Message,
-      assistantMessage: Message,
-      stage: "refining" | "summarized",
-      summary: string | null
-    ) => {
-      setMessages((prev) =>
-        prev.map((message) => {
-          if (message.id === tempUserMessageId) return userMessage
-          if (message.id === tempAssistantMessageId) return assistantMessage
-          return message
-        })
-      )
-      setConversationStage(stage)
-      if (summary && onIdeaSummary) onIdeaSummary(summary)
-    }
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split("\n")
-      buffer = lines.pop() || ""
-
-      for (const line of lines) {
-        if (!line.trim()) continue
-
-        const event = JSON.parse(line) as StreamEvent
-
-        if (event.type === "start") {
-          setMessages((prev) =>
-            prev.map((message) =>
-              message.id === tempUserMessageId ? event.userMessage : message
-            )
-          )
-        } else if (event.type === "token") {
-          appendToken(event.content)
-        } else if (event.type === "done") {
-          finalizeMessages(
-            event.userMessage,
-            event.assistantMessage,
-            event.stage,
-            event.summary
-          )
-          return
-        } else if (event.type === "error") {
-          throw new Error(event.error || "Failed to process response")
-        }
-      }
-    }
-  }
-
   const handleSend = async () => {
     if (!input.trim() || loading || requestInFlight.current) return
 
@@ -351,7 +314,6 @@ export function PromptChatInterface({
     setInput("")
     setLoading(true)
 
-    // Optimistic update - add user message
     const tempUserMsg: Message = {
       id: `temp-${Date.now()}`,
       role: "user",
@@ -404,14 +366,11 @@ export function PromptChatInterface({
           )
         )
       } else if (data.messages) {
-        setMessages((prev) =>
-          dedupeMessages(prev.concat(data.messages))
-        )
+        setMessages((prev) => dedupeMessages(prev.concat(data.messages)))
       }
 
       setConversationStage(data.stage || conversationStage)
 
-      // If we got a summary, notify parent
       if (data.stage === "summarized" && data.summary && onIdeaSummary) {
         onIdeaSummary(data.summary)
       }
@@ -432,27 +391,26 @@ export function PromptChatInterface({
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault()
       handleSend()
     }
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      {/* Messages Area */}
+    <div className="flex h-full flex-col bg-background">
       <div className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
-        <div className="max-w-3xl mx-auto px-4 py-6">
+        <div className="mx-auto max-w-3xl px-4 py-6">
           {messages.length === 0 && !loading && (
-            <div className="flex flex-col items-center justify-center text-center py-16 px-4">
-              <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-6 border border-primary/10 shadow-lg shadow-primary/5">
+            <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg shadow-primary/5">
                 <Bot className="h-10 w-10 text-primary/50" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2 tracking-tight">
+              <h3 className="mb-2 text-xl font-semibold tracking-tight text-foreground">
                 Welcome to {projectName}
               </h3>
-              <p className="text-sm text-muted-foreground max-w-md mb-8 leading-relaxed">
+              <p className="mb-8 max-w-md text-sm leading-relaxed text-muted-foreground">
                 Start by sharing your idea. I&apos;ll ask focused questions to refine it, then help you move from concept to research and PRD-ready planning.
               </p>
             </div>
@@ -460,14 +418,12 @@ export function PromptChatInterface({
 
           {hasMoreMessages && (
             <div className="mb-4 flex justify-center">
-              <button
-                type="button"
+              <ChatLoadMoreButton
                 onClick={loadOlderMessages}
                 disabled={isLoadingOlder}
-                className="rounded-lg border border-border/70 bg-card px-3 py-1.5 text-xs ui-font-medium text-foreground/80 hover:bg-muted/50 disabled:opacity-60"
-              >
-                {isLoadingOlder ? "Loading..." : "Load earlier messages"}
-              </button>
+                label={isLoadingOlder ? "Loading..." : "Load earlier messages"}
+                className="border-border/70 bg-card ui-font-medium text-foreground/80 hover:bg-muted/50"
+              />
             </div>
           )}
 
@@ -481,13 +437,11 @@ export function PromptChatInterface({
             <div
               key={message.id}
               className={cn(
-                "mb-6 flex gap-3 group animate-fade-up",
+                "group mb-6 flex gap-3 animate-fade-up",
                 message.role === "user" && "pl-[100px]"
               )}
             >
-              {message.role === "assistant" && (
-                <AssistantAvatar />
-              )}
+              {message.role === "assistant" && <ChatAssistantAvatar variant="logo" />}
 
               <div
                 className={cn(
@@ -498,84 +452,54 @@ export function PromptChatInterface({
                 )}
               >
                 {message.role === "user" ? (
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
                 ) : (
-                  <div className="prose max-w-none text-sm dark:prose-invert [&_p]:text-sm [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:my-1 [&_li]:text-sm [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {message.content}
-                    </ReactMarkdown>
-                  </div>
+                  <ChatMarkdownBody
+                    content={message.content}
+                    className="prose max-w-none text-sm dark:prose-invert [&_p]:text-sm [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:my-1 [&_li]:text-sm [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2"
+                  />
                 )}
 
-                {/* Copy button for assistant messages */}
                 {message.role === "assistant" && (
-                  <button
-                    onClick={() => handleCopy(message.content, message.id)}
-                    className={cn(
-                      "absolute -bottom-3 right-2 p-1.5 rounded-lg bg-background/90 border border-border/40 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:border-primary/50"
-                    )}
-                  >
-                    {copiedId === message.id ? (
-                      <Check className="h-3 w-3 text-[#34d399]" />
-                    ) : (
-                      <Copy className="h-3 w-3 text-muted-foreground" />
-                    )}
-                  </button>
+                  <ChatCopyButton
+                    copied={copiedId === message.id}
+                    onClick={() => {
+                      void copyText(message.content, message.id)
+                    }}
+                  />
                 )}
               </div>
 
-              {message.role === "user" && (
-                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/60">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                </div>
-              )}
+              {message.role === "user" && <ChatUserAvatar />}
             </div>
           ))}
 
           {messagesLoading && messages.length > 0 && (
-            <div className="flex gap-3 justify-start mb-4">
-              <AssistantAvatar />
-              <div className="rounded-xl px-1 py-1">
-                <div className="ui-row-gap-2">
-                  <Spinner size="sm" />
-                  <span className="text-sm ui-text-muted">Thinking...</span>
-                </div>
-              </div>
-            </div>
+            <ChatThinkingIndicator
+              className="mb-4 justify-start"
+              assistantAvatar={<ChatAssistantAvatar variant="logo" />}
+              contentClassName="px-1 py-1"
+            />
           )}
 
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Input */}
-      <div className="flex border-t border-border/70 p-4 bg-card/40">
-        <div className="w-full max-w-3xl mx-auto">
-          <div className="flex items-start gap-3" ref={composerRef}>
-            <div className="relative min-h-12 min-w-0 flex-[0_1_calc(100%-44px)]">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your business idea update or question..."
-                className="w-full rounded-2xl border border-surface-strong bg-background px-4 py-3 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0 focus-visible:border-[var(--color-accent-primary-mid)] placeholder:text-text-secondary min-h-[48px] max-h-[160px]"
-                rows={1}
-                disabled={loading}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={loading || !input.trim() || requestInFlight.current}
-              className={cn(
-                "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground transition-colors",
-                (loading || !input.trim() || requestInFlight.current) && "cursor-not-allowed opacity-60"
-              )}
-            >
-              {loading ? <Spinner size="sm" /> : <Send className="h-4 w-4" />}
-            </button>
-          </div>
+      <div className="border-t border-border/70 bg-card/40 p-4">
+        <div className="mx-auto w-full max-w-3xl">
+          <ChatComposer
+            value={input}
+            onChange={setInput}
+            onKeyDown={handleKeyDown}
+            onSend={handleSend}
+            disabled={loading || !input.trim() || requestInFlight.current}
+            loading={loading}
+            placeholder="Type your business idea update or question..."
+            textareaRef={textareaRef}
+            innerClassName="items-start"
+            textareaClassName="max-h-[160px] border-surface-strong bg-background"
+          />
         </div>
       </div>
     </div>

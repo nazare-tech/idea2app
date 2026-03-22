@@ -9,6 +9,8 @@ import { Spinner } from "@/components/ui/spinner"
 import { formatPrice } from "@/lib/utils"
 import { BASE_ACTION_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
 import { Check, Coins, Zap, CreditCard, Crown } from "lucide-react"
+import { useBillingPortal } from "@/hooks/use-billing-portal"
+import { CreditBalance } from "@/components/ui/credit-balance"
 
 interface Plan {
   id: string
@@ -35,6 +37,7 @@ export default function BillingPage() {
   const [credits, setCredits] = useState(0)
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
+  const { loading: billingPortalLoading, openBillingPortal } = useBillingPortal()
 
   useEffect(() => {
     async function load() {
@@ -111,22 +114,6 @@ export default function BillingPage() {
     }
   }
 
-  const handleManageSubscription = async () => {
-    try {
-      const response = await fetch("/api/stripe/portal", {
-        method: "POST",
-      })
-
-      const data = await response.json()
-
-      if (data.url) {
-        window.location.href = data.url
-      }
-    } catch (error) {
-      console.error("Portal error:", error)
-    }
-  }
-
   const getPlanIcon = (name: string) => {
     switch (name.toLowerCase()) {
       case "free":
@@ -191,9 +178,12 @@ export default function BillingPage() {
                 variant="outline"
                 size="sm"
                 className="mt-4"
-                onClick={handleManageSubscription}
+                onClick={() => {
+                  void openBillingPortal()
+                }}
+                disabled={billingPortalLoading}
               >
-                Manage Subscription
+                {billingPortalLoading ? "Opening..." : "Manage Subscription"}
               </Button>
             )}
           </CardContent>
@@ -212,9 +202,11 @@ Token Balance
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-black tracking-tight">
-              {credits >= 999999 ? (
-                <span className="gradient-text">Unlimited</span>
-              ) : credits.toLocaleString()}
+              <CreditBalance
+                credits={credits}
+                className="text-2xl font-black tracking-tight"
+                unlimitedClassName="gradient-text"
+              />
             </p>
             <p className="text-sm text-muted-foreground mt-1">
               Tokens are used for analyses and app generation (1 token = {tokenValueLabel})

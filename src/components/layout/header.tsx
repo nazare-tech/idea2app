@@ -7,12 +7,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { HeaderLogo } from "@/components/layout/header-logo"
-import { createClient } from "@/lib/supabase/client"
+import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { uiStylePresets } from "@/lib/ui-style-presets"
-import { useRouter } from "next/navigation"
 import { ChevronDown } from "lucide-react"
 import Link from "next/link"
+import { useAuthSignOut } from "@/hooks/use-auth-signout"
+import { CreditBalance } from "@/components/ui/credit-balance"
 
 interface HeaderProps {
   user?: {
@@ -26,15 +26,8 @@ interface HeaderProps {
 }
 
 export function Header({ user, children, rightContent, credits }: HeaderProps) {
-  const brand = <HeaderLogo />
-  const router = useRouter()
-
-  const handleSignOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push("/")
-    router.refresh()
-  }
+  const brand = <BrandWordmark href="/projects" logoSize={24} />
+  const handleSignOut = useAuthSignOut()
 
   const initials = user?.full_name
     ?.split(" ")
@@ -84,7 +77,9 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
           >
             {typeof credits === "number" && (
               <DropdownMenuItem className="cursor-default focus:bg-transparent focus:text-text-primary">
-                <span className="text-sm ui-font-medium">Credits: {credits >= 999999 ? "∞" : credits.toLocaleString()}</span>
+                <span className="text-sm ui-font-medium">
+                  Credits: <CreditBalance credits={credits} compact />
+                </span>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>

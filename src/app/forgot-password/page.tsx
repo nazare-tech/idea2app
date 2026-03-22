@@ -4,13 +4,13 @@ import { useState } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { Check } from "lucide-react"
-import { HeaderLogo } from "@/components/layout/header-logo"
 import { uiStylePresets } from "@/lib/ui-style-presets"
+import { AuthHeader } from "@/components/auth/auth-header"
+import { AuthField } from "@/components/auth/auth-field"
+import { BrandWordmark } from "@/components/layout/brand-wordmark"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -51,12 +51,9 @@ export default function ForgotPasswordPage() {
         <section className="mx-auto flex min-h-screen max-w-[1440px] flex-col ui-px-4 pb-6 md:px-8 lg:px-12 xl:px-16">
         <AuthHeader />
         <main className="flex flex-1 items-center justify-center ui-px-4 py-12">
-          <Card className={uiStylePresets.authCardCompact}>
+            <Card className={uiStylePresets.authCardCompact}>
             <CardHeader className="ui-stack-2 ui-px-8 pt-8">
-              <div className="ui-row-gap-3">
-                <HeaderLogo href="/" size={32} className={uiStylePresets.authTopIconBadge} />
-                <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
-              </div>
+              <BrandWordmark logoClassName={uiStylePresets.authTopIconBadge} />
               <CardTitle className="text-4xl tracking-[-0.02em]">Forgot your password?</CardTitle>
               <p className="ui-text-sm-muted">
                 Enter the email for your account and we&apos;ll send you a reset link.
@@ -91,21 +88,15 @@ export default function ForgotPasswordPage() {
                     </p>
                   )}
 
-                  <div className="ui-stack-2">
-                    <Label htmlFor="email" className={uiStylePresets.authFieldLabel}>
-                      Email address
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      required
-                      disabled={loading}
-                      className={uiStylePresets.authFieldInput}
-                    />
-                  </div>
+                  <AuthField
+                    id="email"
+                    type="email"
+                    label="Email address"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={setEmail}
+                    disabled={loading}
+                  />
 
                   <Button type="submit" className={uiStylePresets.authPrimaryButton} disabled={loading}>
                     {loading ? (
@@ -133,18 +124,5 @@ export default function ForgotPasswordPage() {
         </main>
       </section>
     </div>
-  )
-}
-
-function AuthHeader() {
-  return (
-        <header className="border-b border-border bg-card">
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between ui-px-4 md:px-8 lg:px-12 xl:px-16">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <HeaderLogo href="/" size={32} className={uiStylePresets.authTopIconBadge} />
-          <span className="text-base ui-font-semibold tracking-[0.05em]">Idea2App</span>
-        </Link>
-      </div>
-    </header>
   )
 }

@@ -338,7 +338,7 @@ function parseJsonRenderPages(raw: string): MockupPage[] {
   if (options.length > 0) {
     const pages: MockupPage[] = []
 
-    options.slice(0, 3).forEach((option, index) => {
+    options.slice(0, 3).forEach((option) => {
       try {
         const json = option.json.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim()
         const spec = JSON.parse(json) as Spec
