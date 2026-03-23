@@ -20,7 +20,7 @@ export function ChatAssistantAvatar({
     return (
       <div
         className={cn(
-          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md shadow-sm",
+          "mt-0 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md shadow-sm",
           className
         )}
       >
@@ -156,7 +156,8 @@ interface ChatComposerProps {
   onChange: (value: string) => void
   onKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void
   onSend: () => void
-  disabled: boolean
+  disabled?: boolean
+  sendDisabled?: boolean
   loading: boolean
   placeholder: string
   textareaRef: React.RefObject<HTMLTextAreaElement | null>
@@ -173,17 +174,20 @@ export function ChatComposer({
   onChange,
   onKeyDown,
   onSend,
-  disabled,
+  disabled = false,
+  sendDisabled,
   loading,
   placeholder,
   textareaRef,
-  rows = 1,
+  rows = 5,
   className,
   innerClassName,
   textareaClassName,
   sendButtonClassName,
   footer,
 }: ChatComposerProps) {
+  const isSendDisabled = sendDisabled ?? disabled
+
   return (
     <div className={className}>
       <div className={cn("flex items-end gap-3", innerClassName)}>
@@ -205,11 +209,15 @@ export function ChatComposer({
         <Button
           type="button"
           onClick={onSend}
-          disabled={disabled}
+          disabled={isSendDisabled}
           size="icon"
           className={cn("h-12 w-12 shrink-0 rounded-2xl", sendButtonClassName)}
         >
-          {loading ? <Spinner size="sm" /> : <Send className="h-4 w-4" />}
+          {loading ? (
+            <Spinner size="sm" className="text-primary-foreground" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </Button>
       </div>
       {footer}

@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Bot } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 import { consumeNdjsonStream } from "@/lib/ndjson-stream"
@@ -52,7 +51,6 @@ const PAGE_SIZE = 40
 
 export function PromptChatInterface({
   projectId,
-  projectName,
   initialIdea,
   selectedModel,
   onIdeaSummary,
@@ -195,6 +193,21 @@ export function PromptChatInterface({
 
     requestInFlight.current = true
     setLoading(true)
+
+    const tempUserMsg: Message = {
+      id: `temp-${Date.now()}`,
+      role: "user",
+      content: ideaToUse,
+      created_at: new Date().toISOString(),
+    }
+    const tempAssistantMsg: Message = {
+      id: `assistant-temp-${Date.now()}`,
+      role: "assistant",
+      content: "",
+      created_at: new Date().toISOString(),
+    }
+    setMessages((prev) => dedupeMessages([...prev, tempUserMsg, tempAssistantMsg]))
+
     try {
       const response = await fetch("/api/prompt-chat", {
         method: "POST",
@@ -209,20 +222,12 @@ export function PromptChatInterface({
       })
 
       if (response.headers.get("content-type")?.includes("application/x-ndjson")) {
-        const tempUserMsg: Message = {
-          id: `temp-${Date.now()}`,
-          role: "user",
-          content: ideaToUse,
-          created_at: new Date().toISOString(),
+        if (!response.ok && response.status !== 200) {
+          const errorText = await response.text()
+          throw new Error(errorText || "Failed to start conversation")
         }
-        const assistantTempMsg: Message = {
-          id: `assistant-temp-${Date.now()}`,
-          role: "assistant",
-          content: "",
-          created_at: new Date().toISOString(),
-        }
-        setMessages((prev) => [...prev, tempUserMsg, assistantTempMsg])
-        await parseStreamResponse(response, tempUserMsg.id, assistantTempMsg.id)
+
+        await parseStreamResponse(response, tempUserMsg.id, tempAssistantMsg.id)
         return
       }
 
@@ -233,17 +238,31 @@ export function PromptChatInterface({
       }
 
       if (data.userMessage && data.assistantMessage) {
-        setMessages(dedupeMessages([
-          data.userMessage as Message,
-          data.assistantMessage as Message,
-        ]))
+        setMessages((prev) =>
+          dedupeMessages(
+            prev
+              .filter((message) => message.id !== tempUserMsg.id)
+              .filter((message) => message.id !== tempAssistantMsg.id)
+              .concat(data.userMessage as Message, data.assistantMessage as Message)
+          )
+        )
       } else if (Array.isArray(data.messages)) {
-        setMessages(dedupeMessages(data.messages))
+        setMessages((prev) =>
+          dedupeMessages(
+            prev
+              .filter((message) => message.id !== tempUserMsg.id)
+              .filter((message) => message.id !== tempAssistantMsg.id)
+              .concat(data.messages as Message[])
+          )
+        )
       }
 
       setConversationStage(data.stage || conversationStage)
     } catch (error) {
       console.error("Chat error:", error)
+      setMessages((prev) =>
+        prev.filter((message) => message.id !== tempUserMsg.id && message.id !== tempAssistantMsg.id)
+      )
       alert(error instanceof Error ? error.message : "An error occurred")
     } finally {
       requestInFlight.current = false
@@ -398,24 +417,26 @@ export function PromptChatInterface({
     }
   }
 
+  const hasPendingAssistantMessage = loading && messages.some(
+    (message) =>
+      message.role === "assistant" &&
+      message.id.startsWith("assistant-temp-") &&
+      !message.content.trim()
+  )
+
+  const visibleMessages = messages.filter(
+    (message) =>
+      !(
+        message.role === "assistant" &&
+        message.id.startsWith("assistant-temp-") &&
+        !message.content.trim()
+      )
+  )
+
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
         <div className="mx-auto max-w-3xl px-4 py-6">
-          {messages.length === 0 && !loading && (
-            <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-primary/10 bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg shadow-primary/5">
-                <Bot className="h-10 w-10 text-primary/50" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold tracking-tight text-foreground">
-                Welcome to {projectName}
-              </h3>
-              <p className="mb-8 max-w-md text-sm leading-relaxed text-muted-foreground">
-                Start by sharing your idea. I&apos;ll ask focused questions to refine it, then help you move from concept to research and PRD-ready planning.
-              </p>
-            </div>
-          )}
-
           {hasMoreMessages && (
             <div className="mb-4 flex justify-center">
               <ChatLoadMoreButton
@@ -433,7 +454,7 @@ export function PromptChatInterface({
             </div>
           )}
 
-          {messages.map((message) => (
+          {visibleMessages.map((message) => (
             <div
               key={message.id}
               className={cn(
@@ -456,7 +477,7 @@ export function PromptChatInterface({
                 ) : (
                   <ChatMarkdownBody
                     content={message.content}
-                    className="prose max-w-none text-sm dark:prose-invert [&_p]:text-sm [&_p]:text-foreground [&_p]:leading-relaxed [&_li]:my-1 [&_li]:text-sm [&_li]:text-foreground [&_strong]:text-foreground [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:text-primary [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_ol]:text-foreground [&_ul]:text-foreground [&_ol]:my-2 [&_ul]:my-2"
+                    className="prose max-w-none text-sm dark:prose-invert [&>*:first-child]:mt-0 [&_p]:my-3 [&_p]:text-sm [&_p]:leading-relaxed [&_p]:text-foreground [&_strong]:font-semibold [&_strong]:text-foreground [&_h1]:mb-4 [&_h1]:mt-2 [&_h1]:border-b [&_h1]:border-border/60 [&_h1]:pb-2 [&_h1]:text-[1.5rem] [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:text-foreground [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:text-[1.1rem] [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-foreground [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-foreground [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-7 [&_ol]:text-foreground [&_ol>li::marker]:font-semibold [&_ol>li::marker]:text-foreground [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:text-foreground [&_li]:my-1.5 [&_li]:text-sm [&_li]:leading-relaxed [&_li]:text-foreground [&_li_p]:my-1 [&_a]:text-primary [&_a]:no-underline hover:[&_a]:underline [&_code]:rounded [&_code]:bg-primary/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-primary"
                   />
                 )}
 
@@ -474,7 +495,7 @@ export function PromptChatInterface({
             </div>
           ))}
 
-          {messagesLoading && messages.length > 0 && (
+          {hasPendingAssistantMessage && (
             <ChatThinkingIndicator
               className="mb-4 justify-start"
               assistantAvatar={<ChatAssistantAvatar variant="logo" />}
@@ -493,10 +514,12 @@ export function PromptChatInterface({
             onChange={setInput}
             onKeyDown={handleKeyDown}
             onSend={handleSend}
-            disabled={loading || !input.trim() || requestInFlight.current}
+            disabled={loading || requestInFlight.current}
+            sendDisabled={loading || !input.trim() || requestInFlight.current}
             loading={loading}
             placeholder="Type your business idea update or question..."
             textareaRef={textareaRef}
+            rows={5}
             innerClassName="items-start"
             textareaClassName="max-h-[160px] border-surface-strong bg-background"
           />

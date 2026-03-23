@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
+import { APP_HEADER_LOGO_SIZE } from "@/components/layout/header-logo"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { ChevronDown } from "lucide-react"
 import Link from "next/link"
@@ -26,7 +27,7 @@ interface HeaderProps {
 }
 
 export function Header({ user, children, rightContent, credits }: HeaderProps) {
-  const brand = <BrandWordmark href="/projects" logoSize={24} />
+  const brand = <BrandWordmark href="/projects" logoSize={APP_HEADER_LOGO_SIZE} />
   const handleSignOut = useAuthSignOut()
 
   const initials = user?.full_name

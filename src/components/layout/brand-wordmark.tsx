@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { HeaderLogo } from "@/components/layout/header-logo"
+import { APP_HEADER_LOGO_SIZE, HeaderLogo } from "@/components/layout/header-logo"
 
 interface BrandWordmarkProps {
   href?: string
@@ -18,7 +18,7 @@ export function BrandWordmark({
   className,
   label = "Idea2App",
   labelClassName,
-  logoSize = 32,
+  logoSize = APP_HEADER_LOGO_SIZE,
   logoClassName,
 }: BrandWordmarkProps) {
   return (

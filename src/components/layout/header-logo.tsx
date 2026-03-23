@@ -4,6 +4,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
+export const APP_HEADER_LOGO_SIZE = 32
+
 /**
  * Shared header logo.
  * The source file includes a large white canvas, so we scale it inside an
@@ -18,7 +20,7 @@ interface HeaderLogoProps {
 
 export function HeaderLogo({
   href = "/projects",
-  size = 24,
+  size = APP_HEADER_LOGO_SIZE,
   className,
   linked = true,
 }: HeaderLogoProps) {

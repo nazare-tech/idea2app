@@ -6,7 +6,7 @@ import Link from "next/link"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
-import { HeaderLogo } from "@/components/layout/header-logo"
+import { APP_HEADER_LOGO_SIZE, HeaderLogo } from "@/components/layout/header-logo"
 import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stream"
 import { Pencil } from "lucide-react"
 import { DOCUMENT_TYPES, isDocumentType } from "@/lib/document-definitions"
@@ -969,7 +969,7 @@ export function ProjectWorkspace({
         credits={credits}
       >
         <div className="inline-flex items-center min-w-0">
-          <HeaderLogo />
+          <HeaderLogo size={APP_HEADER_LOGO_SIZE} />
           <Link
             href="/projects"
             className="pl-3 text-sm font-medium text-text-secondary transition-colors hover:text-foreground"
