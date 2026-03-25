@@ -2,9 +2,12 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
+import { WaitlistForm } from "@/components/landing/waitlist-form"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { PRICING_CARD_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
 import { formatPrice } from "@/lib/utils"
+import { createServiceClient } from "@/lib/supabase/service"
+import { isWaitlistMode, WAITLIST_LIMIT } from "@/lib/waitlist"
 import { ArrowRight, CloudUpload, GitBranch, ListChecks, Rocket, ScanSearch, FileText } from "lucide-react"
 
 const navLinks = [
@@ -123,7 +126,24 @@ function SectionCard({ children }: { children: ReactNode }) {
   return <section className={`${container} py-8 md:py-10`}>{children}</section>
 }
 
-export default function LandingPage() {
+/** Fetches the current registered user count from the profiles table. */
+async function getUserCount(): Promise<number> {
+  try {
+    const supabase = createServiceClient()
+    const { count, error } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+    if (error) return 0
+    return count ?? 0
+  } catch {
+    return 0
+  }
+}
+
+export default async function LandingPage() {
+  const userCount = await getUserCount()
+  const waitlistMode = isWaitlistMode(userCount)
+
   return (
     <div className="min-h-screen bg-white text-text-primary">
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
@@ -142,14 +162,22 @@ export default function LandingPage() {
           </div>
 
           <div className="hidden ui-row-gap-3 md:flex">
+            {/* Sign In is always visible — existing users still need to log in */}
             <Link href="/auth?mode=signin">
               <Button variant="outline" className="h-10 px-6 border-border-subtle bg-white text-text-primary">
                 Sign In
               </Button>
             </Link>
-            <Link href="/auth?mode=signup">
-              <Button className="h-10 px-6 bg-primary text-primary-foreground">Get Started</Button>
-            </Link>
+
+            {waitlistMode ? (
+              <a href="#waitlist">
+                <Button className="h-10 px-6 bg-primary text-primary-foreground">Join Waitlist</Button>
+              </a>
+            ) : (
+              <Link href="/auth?mode=signup">
+                <Button className="h-10 px-6 bg-primary text-primary-foreground">Get Started</Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -157,27 +185,36 @@ export default function LandingPage() {
       <SectionCard>
         <div className="flex items-center justify-center pt-10 pb-8 md:pt-14">
           <div className="inline-flex items-center rounded-full border border-border-subtle px-4 py-2 text-xs font-medium tracking-[0.16em] text-text-secondary">
-            Lean-in Workflow For Builders
+            {waitlistMode
+              ? `${WAITLIST_LIMIT} early-access spots filled — join the waitlist`
+              : "Lean-in Workflow For Builders"}
           </div>
         </div>
 
         <h1 className="max-w-[980px] mx-auto text-center text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.95] tracking-[-0.06em] font-semibold">
-          Build your startup idea this weekend — not “someday.”
+          Build your startup idea this weekend — not &ldquo;someday.&rdquo;
         </h1>
 
         <p className="mx-auto mt-6 max-w-[780px] text-center text-[20px] leading-relaxed text-text-secondary">
-          Turn one idea into research, MVP plan, and actionable mockups in minutes. No fluff. No “where do I start?” spiral.
+          Turn one idea into research, MVP plan, and actionable mockups in minutes. No fluff. No &ldquo;where do I start?&rdquo; spiral.
         </p>
 
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-          <Link href="/auth?mode=signup">
-            <Button className="h-14 px-7 bg-primary text-base font-semibold text-white">Get Started</Button>
-          </Link>
-          <Link href="#features">
-            <Button variant="outline" className="h-14 px-7 border-border-subtle text-base font-semibold bg-white text-text-primary">
-              See How It Works
-            </Button>
-          </Link>
+        {/* Hero CTA — waitlist input or sign-up buttons */}
+        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:gap-4">
+          {waitlistMode ? (
+            <WaitlistForm showSecondary />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+              <Link href="/auth?mode=signup">
+                <Button className="h-14 px-7 bg-primary text-base font-semibold text-white">Get Started</Button>
+              </Link>
+              <Link href="#features">
+                <Button variant="outline" className="h-14 px-7 border-border-subtle text-base font-semibold bg-white text-text-primary">
+                  See How It Works
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
 
         <div className="mx-auto mt-12 grid w-full max-w-[780px] gap-4 sm:grid-cols-3">
@@ -302,20 +339,29 @@ export default function LandingPage() {
         </section>
       </SectionCard>
 
+      {/* Bottom CTA */}
       <section className="border-t border-border-subtle py-16 md:py-20">
         <div className={`${container} text-center`}>
           <h2 className="mx-auto max-w-[860px] text-[clamp(2rem,4.6vw,4rem)] leading-[0.96] tracking-[-0.06em] font-semibold">
-            Stop waiting. Start building.
+            {waitlistMode ? "Secure your spot before it fills up." : "Stop waiting. Start building."}
           </h2>
           <p className="mx-auto mt-6 max-w-[760px] text-xl text-text-secondary">
-            Get early access and turn your next idea into research, plans, and mockups you can actually execute.
+            {waitlistMode
+              ? "Join the waitlist and be first to know when the next batch of spots opens."
+              : "Get early access and turn your next idea into research, plans, and mockups you can actually execute."}
           </p>
-          <Link href="/auth?mode=signup" className="inline-block mt-8">
-            <Button className="h-14 px-8 text-base font-semibold bg-primary text-white">
-              Get Started
-              <ArrowRight className="ml-2 ui-icon-16" />
-            </Button>
-          </Link>
+          <div className="mt-8 flex justify-center">
+            {waitlistMode ? (
+              <WaitlistForm />
+            ) : (
+              <Link href="/auth?mode=signup" className="inline-block">
+                <Button className="h-14 px-8 text-base font-semibold bg-primary text-white">
+                  Get Started
+                  <ArrowRight className="ml-2 ui-icon-16" />
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 
