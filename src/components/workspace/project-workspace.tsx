@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
@@ -174,9 +174,71 @@ export function ProjectWorkspace({
     setStreamContent("")
   }, [])
 
-  // Generate All state
-  const [generateAllProgress, setGenerateAllProgress] = useState<GenerateAllProgress | null>(null)
-  const [generateAllDismissed, setGenerateAllDismissed] = useState(false)
+  // Generate All state — persisted to localStorage so progress survives refresh / navigation
+  const generateAllDismissedKey = `generate_all_dismissed_${project.id}`
+
+  const [generateAllProgress, _setGenerateAllProgress] = useState<GenerateAllProgress | null>(() => {
+    if (typeof window === "undefined") return null
+    try {
+      const stored = localStorage.getItem(`generate_all_progress_${project.id}`)
+      if (!stored) return null
+      const parsed = JSON.parse(stored) as GenerateAllProgress
+      const restored = { ...parsed }
+
+      // For each item stuck in "generating", determine the true status:
+      //   1. Artifact exists in server data → it completed → "done"
+      //   2. Still active in generatingDocuments localStorage (within 10 min) → truly generating → keep "generating"
+      //   3. Otherwise → generation was interrupted → "error"
+      const checks: Array<[keyof GenerateAllProgress, DocumentType, boolean]> = [
+        ["competitive", "competitive", analyses.some(a => a.type === "competitive-analysis")],
+        ["prd",         "prd",         prds.length > 0],
+        ["mvp",         "mvp",         mvpPlans.length > 0],
+        ["techspec",    "techspec",    techSpecs.length > 0],
+        ["mockups",     "mockups",     mockups.length > 0],
+      ]
+      for (const [key, docType, docExists] of checks) {
+        if (restored[key] !== "generating") continue
+        if (docExists) {
+          restored[key] = "done"
+        } else {
+          const docEntry = localStorage.getItem(`generating_${project.id}_${docType}`)
+          let isStillGenerating = false
+          if (docEntry) {
+            try {
+              const { timestamp } = JSON.parse(docEntry)
+              isStillGenerating = Date.now() - timestamp <= 600000
+            } catch {}
+          }
+          restored[key] = isStillGenerating ? "generating" : "error"
+        }
+      }
+      return restored
+    } catch {
+      return null
+    }
+  })
+
+  const setGenerateAllProgress = useCallback(
+    (valueOrFn: GenerateAllProgress | null | ((prev: GenerateAllProgress | null) => GenerateAllProgress | null)) => {
+      _setGenerateAllProgress(prev => {
+        const next = typeof valueOrFn === "function" ? valueOrFn(prev) : valueOrFn
+        try {
+          if (next === null) {
+            localStorage.removeItem(`generate_all_progress_${project.id}`)
+          } else {
+            localStorage.setItem(`generate_all_progress_${project.id}`, JSON.stringify(next))
+          }
+        } catch {}
+        return next
+      })
+    },
+    [project.id]
+  )
+
+  const [generateAllDismissed, setGenerateAllDismissed] = useState(() => {
+    if (typeof window === "undefined") return false
+    return localStorage.getItem(`generate_all_dismissed_${project.id}`) === "true"
+  })
 
   const GENERATE_ALL_MODEL = "google/gemini-3.1-pro-preview"
 
@@ -447,6 +509,43 @@ export function ProjectWorkspace({
     isPromptOnlyMode,
   ])
 
+  // Sync generateAllProgress when the polling loop marks a document as completed.
+  // This handles the case where the user navigates away during generation and comes back:
+  // the background API call may still finish, polling detects it, and we need to mark the
+  // corresponding generateAllProgress key as "done" instead of leaving it stuck on "generating".
+  const prevGeneratingRef = useRef<Record<DocumentType, boolean> | null>(null)
+  useEffect(() => {
+    const prev = prevGeneratingRef.current
+    prevGeneratingRef.current = generatingDocuments
+
+    // Skip on first render (no previous state to compare against)
+    if (!prev || !generateAllProgress) return
+
+    const GA_KEY_MAP: Array<[keyof GenerateAllProgress, DocumentType]> = [
+      ["competitive", "competitive"],
+      ["prd",         "prd"],
+      ["mvp",         "mvp"],
+      ["techspec",    "techspec"],
+      ["mockups",     "mockups"],
+    ]
+
+    // Find keys that just transitioned from generating → not-generating
+    const justCompleted = GA_KEY_MAP.filter(
+      ([key, type]) => prev[type] && !generatingDocuments[type] && generateAllProgress[key] === "generating"
+    )
+
+    if (justCompleted.length > 0) {
+      setGenerateAllProgress(curr => {
+        if (!curr) return curr
+        const next = { ...curr }
+        for (const [key] of justCompleted) {
+          if (next[key] === "generating") next[key] = "done"
+        }
+        return next
+      })
+    }
+  }, [generatingDocuments, generateAllProgress, setGenerateAllProgress])
+
 
   const getDocumentStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
     // Check if document is currently generating
@@ -682,6 +781,13 @@ export function ProjectWorkspace({
       }
       /** Called with the full generated text once streaming completes */
       onGeneratedContent?: (content: string) => void
+      /**
+       * When true, skip router.refresh() after generation completes.
+       * Used by handleGenerateAll to prevent mid-sequence dep-chain churn
+       * that causes the polling effect to restart between documents.
+       * The caller is responsible for calling router.refresh() itself.
+       */
+      skipRefresh?: boolean
     }
   ) => {
     const generatingType = documentTypeOverride ?? activeDocument
@@ -843,12 +949,12 @@ export function ProjectWorkspace({
 
     if (wasStreaming) {
       // DB save already committed before server sent 'done'; no delay needed
-      router.refresh()
+      if (!hooks?.skipRefresh) router.refresh()
       clearStreamState()
     } else {
       // Wait a moment for database transaction to complete
       await new Promise(resolve => setTimeout(resolve, 500))
-      router.refresh()
+      if (!hooks?.skipRefresh) router.refresh()
     }
   }
 
@@ -896,12 +1002,25 @@ export function ProjectWorkspace({
             else if (type === "prd") ctx.prd = content
             else if (type === "mvp") ctx.mvpPlan = content
           },
+          // Skip the per-doc router.refresh() to prevent mid-sequence dependency
+          // churn. When router.refresh() fires after each doc, it delivers new
+          // server props (e.g. updated `analyses`), which changes `getInitialCount`
+          // → `checkIfContentIncreased` → `saveGeneratingState` references, causing
+          // the polling useEffect to re-run. In that brief window the next doc's
+          // generatingDocuments flag may not yet be committed, making the polling
+          // think nothing is generating and clearing the loading state.
+          skipRefresh: true,
         })
         setGenerateAllProgress(prev => prev ? { ...prev, [key]: "done" } : prev)
       } catch {
         setGenerateAllProgress(prev => prev ? { ...prev, [key]: "error" } : prev)
         // Continue with remaining artifacts even on error
       }
+      // Refresh after each doc so the next doc can reference the freshly-saved
+      // content from the server (e.g. PRD tab shows competitive analysis).
+      // We do this AFTER state updates commit so the polling effect sees the
+      // correct generatingDocuments before any dep-chain churn from the refresh.
+      router.refresh()
     }
   }
 
@@ -1084,7 +1203,10 @@ export function ProjectWorkspace({
             generateAllProgress={generateAllProgress}
             generateAllCreditCost={generateAllCreditCost}
             onGenerateAll={handleGenerateAll}
-            onGenerateAllDismiss={() => setGenerateAllDismissed(true)}
+            onGenerateAllDismiss={() => {
+              try { localStorage.setItem(generateAllDismissedKey, "true") } catch {}
+              setGenerateAllDismissed(true)
+            }}
             onNavigateToArtifact={handleDocumentSelect}
             onGenerateAllRetry={handleGenerateAllRetry}
           />
