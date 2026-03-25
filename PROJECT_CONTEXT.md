@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-03-03 (Centralized System Prompts with Injection Protection)
+**Last Updated**: 2026-03-20 (Competitive Research Pencil UI + Typed Module Rendering)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -26,7 +26,7 @@
   - 1 credit per edit
   - Supports Competitive Research, PRD, MVP Plan, and Tech Spec documents
 - **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
-- **Competitive Analysis**: AI-generated competitive landscape analysis, market positioning, and SWOT analysis
+- **Competitive Analysis**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a full-width Pencil-faithful designed page, not generic markdown. The UI is built from typed parsing of the stored markdown source and includes founder verdict, competitor profiles, workflow matrix, pricing, audience segments, positioning, GTM signals, gap analysis, differentiation wedges, moat/defensibility, SWOT, risks, MVP wedge recommendation, and strategic recommendations. Direct competitor entries now expect linked H3 headings plus concise fields for overview, core product, positioning, strengths, key edge, limitations, pricing model, and target audience so the app can render dense competitor cards and a fast-comparison table. Legacy or malformed documents fall back to markdown with upgrade guidance.
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans
 - **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD
@@ -75,6 +75,7 @@
 | **jspdf** | 4.0.0 | Client-side PDF generation |
 | **html2canvas** | 1.4.1 | HTML-to-canvas rendering (used for PDF) |
 | **Sora** | (Google Font) | Primary sans-serif typeface |
+| **Space Grotesk** | (Google Font) | Display typeface for Competitive Research and Pencil-inspired editorial headings |
 | **IBM Plex Mono** | (Google Font) | Monospace typeface for labels/code |
 
 ### Backend & Services
@@ -199,7 +200,7 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 
 - **`ProjectSidebar`** — persistent app-level navigation; lists all user projects, search, sign-out. Dark background (`#000`), rendered server-side and passed to client.
 - **`DocumentNav`** — pipeline-step navigation within a single project. Shows status badges (Done / In Progress / Pending) for each document stage.
-- **`ContentEditor`** — renders the active document. Handles editing the prompt, triggering generation, displaying rendered Markdown, version switching, copy-to-clipboard, and PDF export.
+- **`ContentEditor`** — renders the active document. Handles editing the prompt, triggering generation, displaying rendered content, version switching, copy-to-clipboard, and PDF export. Competitive Research now uses a dedicated full-width renderer for v2 docs and only falls back to markdown for legacy or invalid versions.
 - **`ProjectWorkspace`** — orchestrator component that connects all three columns. Manages active document state, version selection, and dispatches API calls.
 
 ### Key Design Patterns
@@ -392,6 +393,16 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | `app-generation.ts` | `APP_TYPE_PROMPTS`, `buildAppGenerationPrompt()` | `api/generate-app/` |
 | `legacy-fallback.ts` | `LEGACY_ANALYSIS_PROMPTS` | `openrouter.ts` (gap-analysis fallback) |
 | `index.ts` | Barrel re-export of all above | Everything |
+
+### Competitive Research V2 Contract
+
+- Competitive Research v2 lives in markdown only; `analyses.content` remains the source of truth.
+- New competitive-analysis rows include metadata:
+  - `document_version: "competitive-analysis-v2"`
+  - `prompt_version: "competitive-analysis-v2-2026-03-20"`
+- Existing competitive-analysis rows without `document_version` are treated as legacy.
+- The Competitive Research tab defaults to a modules dashboard only for valid v2 docs. Legacy docs and malformed edited v2 docs fall back to raw markdown view.
+- Legacy migration policy is manual: preserve old versions exactly as-is and regenerate project-by-project to create a new v2 version.
 
 ### Security Rules
 
@@ -910,6 +921,7 @@ docker run -p 3000:3000 idea2app
   - Uses in-house pipelines (`src/lib/analysis-pipelines.ts`):
     - Competitive: Perplexity → Tavily → OpenRouter synthesis (graceful degradation)
     - PRD/MVP/Tech Spec: Direct OpenRouter calls with detailed system prompts
+  - Competitive-analysis inserts metadata with `document_version` and `prompt_version` for renderer compatibility
 
 - **POST /api/mockups/generate**: Generate ASCII art mockups (NEW)
   - Body: `{ projectId, mvpPlan, projectName, model? }`
@@ -1127,7 +1139,8 @@ export const CREDIT_COSTS = {
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Three-column workspace orchestrator |
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
-| [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view — now uses PromptChatInterface for Prompt tab |
+| [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view — now uses PromptChatInterface for Prompt tab and a dedicated Competitive Research hybrid renderer for v2 competitive-analysis docs |
+| [src/components/analysis/competitive-analysis-document.tsx](src/components/analysis/competitive-analysis-document.tsx) | **NEW** — Competitive Research v2 hybrid modules/markdown renderer with legacy notice and upgrade CTA |
 | [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | **UPDATED** — Markdown renderer with beautiful-mermaid diagrams, syntax highlighting, and inline AI editing. Features: (1) Mermaid diagram expansion - diagrams fit within document width with an expand button (bottom-right, visible on hover) that opens a full-screen modal with margins; (2) Conditional component rendering (minimal components when no pending edit); (3) Mouseup-based selection capture to prevent interference during text selection. Mermaid diagrams are styled via globals.css with theme-appropriate colors for both light and dark modes. |
 | [src/components/ui/inline-ai-editor.tsx](src/components/ui/inline-ai-editor.tsx) | **NEW** — Inline AI editing popup with diff preview and apply/reject actions |
 | [src/components/ui/selection-toolbar.tsx](src/components/ui/selection-toolbar.tsx) | **NEW** — Text selection toolbar that shows "Edit with AI" button |
@@ -1141,6 +1154,7 @@ export const CREDIT_COSTS = {
 | [src/app/api/mockups/[id]/route.ts](src/app/api/mockups/[id]/route.ts) | **NEW** — PATCH endpoint to update mockup content |
 | [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | PATCH endpoint to update tech spec content |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
+| [src/lib/competitive-analysis-v2.ts](src/lib/competitive-analysis-v2.ts) | **NEW** — Competitive Research v2 section contract, legacy/v2 view model helpers, and parser utilities |
 | [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (competitive, PRD, MVP, tech spec) |
 | [src/lib/perplexity.ts](src/lib/perplexity.ts) | Perplexity API client for competitor search |
 | [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction |

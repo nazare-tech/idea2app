@@ -7,12 +7,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { useRouter } from "next/navigation"
-import { ChevronDown, Plus } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 interface HeaderProps {
   user?: {
@@ -22,9 +22,23 @@ interface HeaderProps {
   }
   children?: React.ReactNode
   rightContent?: React.ReactNode
+  credits?: number
 }
 
-export function Header({ user, children, rightContent }: HeaderProps) {
+export function Header({ user, children, rightContent, credits }: HeaderProps) {
+  const brand = (
+    <Link href="/projects" className="inline-flex items-center">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
+        <Image
+          src="/idea2app-logo.jpg"
+          alt="Idea2App logo"
+          width={40}
+          height={40}
+          className="h-10 w-10 rounded-md object-cover"
+        />
+      </span>
+    </Link>
+  )
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -51,17 +65,11 @@ export function Header({ user, children, rightContent }: HeaderProps) {
   return (
     <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-xl px-6 ui-row-between">
         <div className="flex items-center gap-4">
-        {children || <h1 className="ui-section-title">Dashboard</h1>}
+        {children || brand || <h1 className="ui-section-title">Dashboard</h1>}
       </div>
 
         <div className="flex items-center gap-4">
           {rightContent}
-          <Link href="/projects/new" prefetch={false}>
-            <Button size="sm" className="gap-2">
-              <Plus className="ui-icon-16" />
-            New Project
-          </Button>
-        </Link>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -86,6 +94,11 @@ export function Header({ user, children, rightContent }: HeaderProps) {
             align="end"
             forceMount
           >
+            {typeof credits === "number" && (
+              <DropdownMenuItem className="cursor-default focus:bg-transparent focus:text-text-primary">
+                <span className="text-sm ui-font-medium">Credits: {credits >= 999999 ? "∞" : credits.toLocaleString()}</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
               <Link
                 href="/settings?tab=profile"

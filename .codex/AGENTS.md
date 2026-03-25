@@ -58,3 +58,28 @@
 * **Simplicity First**: Make every change as simple as possible. Impact minimal code.
 * **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
 * **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+
+## Frontend Design Standard (Impeccable)
+
+For any frontend/UI work in this repo, use the vendored Impeccable design guidance under `.codex/impeccable/`.
+
+### Required flow for frontend tasks
+
+1. Read `.codex/impeccable/skills/frontend-design/SKILL.md`
+2. Consult relevant references under `.codex/impeccable/skills/frontend-design/reference/`
+3. Implement with a clear aesthetic direction instead of generic AI UI patterns
+4. Before returning control, run a self-review using:
+   - `.codex/impeccable/skills/polish/SKILL.md`
+   - `.codex/impeccable/skills/audit/SKILL.md`
+5. If changes are visual, capture a screenshot as part of validation
+
+### Anti-slop defaults
+
+Avoid generic AI-style frontend choices unless explicitly requested:
+- no default Inter/Roboto/system-font look
+- no purple-blue gradient clichés
+- no cards-inside-cards layout spam
+- no gray text on colored backgrounds
+- no decorative glassmorphism everywhere
+
+Prefer intentional typography, tinted neutrals, clear hierarchy, strong spacing rhythm, and purposeful motion.

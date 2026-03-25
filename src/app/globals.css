@@ -71,6 +71,7 @@
   --surface-ink-strong: rgba(12,12,20,0.9);
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
+  --font-display: var(--font-space-grotesk);
 }
 
 @theme inline {
@@ -124,6 +125,7 @@
   --color-surface-strong: var(--surface-strong);
   --font-sans: var(--font-sora);
   --font-mono: var(--font-ibm-plex-mono);
+  --font-display: var(--font-space-grotesk);
 }
 
 * {

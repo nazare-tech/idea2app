@@ -7,7 +7,7 @@
     "build": "next build && node ./scripts/guard-webpack-chunky.mjs",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/mockup-format-contract.test.ts",
+    "test": "node --import tsx --test src/lib/*.test.ts src/components/analysis/*.test.tsx",
     "guard:chunky": "node ./scripts/guard-webpack-chunky.mjs",
     "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs"
   },

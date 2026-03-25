@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
@@ -21,6 +22,7 @@ interface Analysis {
   type: string
   content: string
   created_at: string | null
+  metadata?: Record<string, unknown> | null
 }
 
 interface PRD {
@@ -86,6 +88,8 @@ export function ProjectWorkspace({
   isNewProject = false,
 }: ProjectWorkspaceProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [projectName, setProjectName] = useState(project.name)
   const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
@@ -105,6 +109,20 @@ export function ProjectWorkspace({
   }, [project.description])
 
   const getPersistedActiveDocument = useCallback((): DocumentType | null => {
+    const tab = searchParams.get("tab")
+    if (
+      tab === "prompt" ||
+      tab === "competitive" ||
+      tab === "prd" ||
+      tab === "mvp" ||
+      tab === "mockups" ||
+      tab === "techspec" ||
+      tab === "deploy" ||
+      tab === "launch"
+    ) {
+      return tab
+    }
+
     if (typeof window === "undefined") return null
 
     try {
@@ -114,6 +132,7 @@ export function ProjectWorkspace({
         stored === "competitive" ||
         stored === "prd" ||
         stored === "mvp" ||
+        stored === "mockups" ||
         stored === "techspec" ||
         stored === "deploy" ||
         stored === "launch"
@@ -125,7 +144,7 @@ export function ProjectWorkspace({
     }
 
     return null
-  }, [activeDocumentStorageKey])
+  }, [activeDocumentStorageKey, searchParams])
 
   const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
     if (isNewProject || isPromptOnlyMode) return "prompt"
@@ -298,7 +317,13 @@ export function ProjectWorkspace({
     } catch {
       // Ignore localStorage write errors
     }
-  }, [activeDocument, activeDocumentStorageKey, isPromptOnlyMode])
+
+    const nextParams = new URLSearchParams(searchParams.toString())
+    if (nextParams.get("tab") !== activeDocument) {
+      nextParams.set("tab", activeDocument)
+      router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false })
+    }
+  }, [activeDocument, activeDocumentStorageKey, isPromptOnlyMode, pathname, router, searchParams])
 
   const checkIfContentIncreased = useCallback((docType: DocumentType, remoteCount?: number): boolean => {
     const key = getStorageKey(docType)
@@ -537,6 +562,21 @@ export function ProjectWorkspace({
     }
   }
 
+  const getDocumentMetadata = (
+    type: DocumentType
+  ): Record<string, unknown> | null => {
+    const versionIndex = selectedVersionIndex[type] || 0
+
+    switch (type) {
+      case "competitive":
+        return analyses.filter(a => a.type === "competitive-analysis")[versionIndex]?.metadata || null
+      case "launch":
+        return analyses.filter(a => a.type === "launch-plan")[versionIndex]?.metadata || null
+      default:
+        return null
+    }
+  }
+
   const getTotalVersions = (type: DocumentType): number => {
     return getVersionsForDocument(type).length
   }
@@ -581,6 +621,10 @@ export function ProjectWorkspace({
     }
 
     setActiveDocument(type)
+
+    const nextParams = new URLSearchParams(searchParams.toString())
+    nextParams.set("tab", type)
+    router.push(`${pathname}?${nextParams.toString()}`, { scroll: false })
   }
 
   // Reset to latest version (index 0) when switching documents
@@ -920,17 +964,20 @@ export function ProjectWorkspace({
       <Header
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         user={user as any}
-        rightContent={
-          activeDocument === "prompt" ? (
-            <span className="hidden md:inline-flex items-center gap-2 text-sm">
-              Credits: {credits >= 999999 ? "∞" : credits.toLocaleString()}
-            </span>
-          ) : undefined
-        }
+        credits={credits}
       >
-        <Link href="/projects" className="inline-flex items-center gap-2">
-          <span className="font-semibold tracking-tight">Idea2App</span>
-        </Link>
+        <div className="inline-flex items-center min-w-0">
+          <Link href="/projects" className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
+            <Image
+              src="/idea2app-logo.jpg"
+              alt="Idea2App logo"
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-md object-cover"
+            />
+          </Link>
+          <span className="truncate pl-3 font-semibold tracking-tight">{projectName}</span>
+        </div>
       </Header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -956,6 +1003,7 @@ export function ProjectWorkspace({
             projectName={projectName}
             projectDescription={project.description || ""}
             content={getDocumentContent(activeDocument)}
+            documentMetadata={getDocumentMetadata(activeDocument)}
             onGenerateContent={handleGenerateContent}
             onUpdateDescription={handleUpdateDescription}
             onUpdateContent={handleUpdateContent}

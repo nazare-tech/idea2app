@@ -42,15 +42,15 @@ export async function updateSession(request: NextRequest) {
   )
 
   if (isProtectedPath && !user) {
-    // Redirect to login if accessing protected route without auth
+    // Redirect to auth if accessing protected route without auth
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = '/auth'
     url.searchParams.set('redirect', request.nextUrl.pathname)
     return NextResponse.redirect(url)
   }
 
   // Redirect authenticated users away from auth pages
-  const authPaths = ['/login', '/signup', '/forgot-password', '/reset-password']
+  const authPaths = ['/auth', '/forgot-password', '/reset-password']
   const isAuthPath = authPaths.some(path =>
     request.nextUrl.pathname === path
   )

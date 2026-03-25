@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Header } from "@/components/layout/header"
 
 interface DashboardShellProps {
@@ -30,15 +31,20 @@ export function DashboardShell({
         {shouldShowHeader && (
           <Header
             user={user}
-            rightContent={
-              <span className="text-sm text-foreground/80">
-                Credits: {credits >= 999999 ? "∞" : credits.toLocaleString()}
-              </span>
-            }
+            credits={credits}
           >
-            <Link href="/projects" className="inline-flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tight">Idea2App</span>
-            </Link>
+            <div className="inline-flex items-center">
+              <Link href="/projects" className="inline-flex h-10 w-10 shrink-0 items-center justify-center">
+                <Image
+                  src="/idea2app-logo.jpg"
+                  alt="Idea2App logo"
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-md object-cover"
+                />
+              </Link>
+              <span className="pl-3 text-lg font-bold tracking-tight">Projects</span>
+            </div>
           </Header>
         )}
         <main className="flex-1 overflow-y-auto">

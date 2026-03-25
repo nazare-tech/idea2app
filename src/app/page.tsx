@@ -142,12 +142,12 @@ export default function LandingPage() {
           </div>
 
           <div className="hidden ui-row-gap-3 md:flex">
-            <Link href="/login">
-              <Button variant="outline" className="h-10 border-text-primary px-6 text-sm font-semibold">
+            <Link href="/auth?mode=signin">
+              <Button variant="outline" className="h-10 px-6 border-border-subtle bg-white text-text-primary">
                 Sign In
               </Button>
             </Link>
-            <Link href="/signup">
+            <Link href="/auth?mode=signup">
               <Button className="h-10 px-6 bg-primary text-primary-foreground">Get Started</Button>
             </Link>
           </div>
@@ -170,8 +170,8 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-          <Link href="/signup">
-            <Button className="h-14 px-7 bg-primary text-base font-semibold text-white">Get Early Access</Button>
+          <Link href="/auth?mode=signup">
+            <Button className="h-14 px-7 bg-primary text-base font-semibold text-white">Get Started</Button>
           </Link>
           <Link href="#features">
             <Button variant="outline" className="h-14 px-7 border-border-subtle text-base font-semibold bg-white text-text-primary">
@@ -310,9 +310,9 @@ export default function LandingPage() {
           <p className="mx-auto mt-6 max-w-[760px] text-xl text-text-secondary">
             Get early access and turn your next idea into research, plans, and mockups you can actually execute.
           </p>
-          <Link href="/signup" className="inline-block mt-8">
+          <Link href="/auth?mode=signup" className="inline-block mt-8">
             <Button className="h-14 px-8 text-base font-semibold bg-primary text-white">
-              Get Early Access
+              Get Started
               <ArrowRight className="ml-2 ui-icon-16" />
             </Button>
           </Link>

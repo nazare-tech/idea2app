@@ -14,7 +14,6 @@ import {
   Sparkles,
   Loader2,
   Download,
-  Copy,
   GripVertical,
   ChevronDown,
   FileDown,
@@ -22,6 +21,7 @@ import {
 import { DocumentType } from "./document-nav"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
+import { CompetitiveAnalysisDocument } from "@/components/analysis/competitive-analysis-document"
 import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
 import { PromptChatInterface } from "@/components/chat/prompt-chat-interface"
 import {
@@ -49,6 +49,7 @@ interface ContentEditorProps {
   projectName: string
   projectDescription: string
   content: string | null
+  documentMetadata?: Record<string, unknown> | null
   onGenerateContent: (model?: string, options?: { marketingBrief?: MarketingBrief }) => Promise<void>
   onUpdateDescription: (description: string) => Promise<void>
   onUpdateContent?: (newContent: string) => Promise<void>
@@ -121,6 +122,7 @@ const documentConfig: Record<
 const MIN_DOCUMENT_WIDTH = 640 // Minimum width for readability (tablet size)
 const MAX_DOCUMENT_WIDTH = 1400 // Maximum width for optimal reading experience
 const DEFAULT_DOCUMENT_WIDTH = 896 // Default max-w-4xl in pixels
+const FULL_WIDTH_DOCUMENT = Number.MAX_SAFE_INTEGER
 
 export function ContentEditor({
   documentType,
@@ -128,6 +130,7 @@ export function ContentEditor({
   projectName,
   projectDescription,
   content,
+  documentMetadata,
   onGenerateContent,
   onUpdateDescription,
   onUpdateContent,
@@ -142,8 +145,13 @@ export function ContentEditor({
   streamContent,
 }: ContentEditorProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [documentWidth, setDocumentWidth] = useState(DEFAULT_DOCUMENT_WIDTH)
+  const isMockupsDocument = documentType === "mockups"
+  const isCompetitiveDocument = documentType === "competitive"
+  const isFullWidthDocument = isMockupsDocument || isCompetitiveDocument
+
+  const [documentWidth, setDocumentWidth] = useState(
+    isFullWidthDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH
+  )
   const [isResizing, setIsResizing] = useState(false)
   const [resizeEdge, setResizeEdge] = useState<'left' | 'right' | null>(null)
   const [selectedDocModel, setSelectedDocModel] = useState(DEFAULT_DOCUMENT_MODEL)
@@ -162,6 +170,10 @@ export function ContentEditor({
   const containerRef = useRef<HTMLDivElement>(null)
 
   const config = documentConfig[documentType]
+
+  useEffect(() => {
+    setDocumentWidth(isFullWidthDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH)
+  }, [isFullWidthDocument])
 
   // Handle mouse move during resize
   useEffect(() => {
@@ -283,13 +295,6 @@ export function ContentEditor({
   const handleIdeaSummary = async (summary: string) => {
     // Update the project description with the summary
     await onUpdateDescription(summary)
-  }
-
-  const handleCopyContent = async () => {
-    if (!content) return
-    await navigator.clipboard.writeText(content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleDownloadPDF = async () => {
@@ -416,15 +421,23 @@ export function ContentEditor({
             </div>
 
             <div className="ui-row-gap-3">
-              {content && (
-                <>
+              {content && !isMockupsDocument && (
+                isCompetitiveDocument ? (
                   <button
-                    onClick={handleCopyContent}
-                    className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors"
+                    onClick={handleDownloadPDF}
+                    disabled={downloadingPdf}
+                    className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Copy className="h-3.5 w-3.5" />
-                    <span className="text-xs ui-font-medium">{copied ? "Copied!" : "Copy"}</span>
+                    {downloadingPdf ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <FileDown className="h-3.5 w-3.5" />
+                    )}
+                    <span className="text-xs ui-font-medium">
+                      {downloadingPdf ? "Generating PDF..." : "Download PDF"}
+                    </span>
                   </button>
+                ) : (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
@@ -453,7 +466,7 @@ export function ContentEditor({
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </>
+                )
               )}
               <div className="relative group">
                 <button
@@ -540,28 +553,39 @@ export function ContentEditor({
                 {/* Document Container with Resize Handles */}
                 <div
                   className="transition-all relative"
-                  style={{ width: `${documentWidth}px` }}
+                  style={isFullWidthDocument ? { width: "100%" } : { width: `${documentWidth}px` }}
                 >
-                  <div className="bg-card border border-border rounded-lg p-8 relative">
-                    {/* Left Resize Handle */}
-                    <div
-                      className="absolute left-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
-                      onMouseDown={(e) => handleResizeStart('left', e)}
-                    >
-                      <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
-                        <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
-                      </div>
-                    </div>
+                  <div className={cn(
+                    "border border-border relative",
+                    isMockupsDocument
+                      ? "rounded-lg bg-card p-4 md:p-6"
+                      : isCompetitiveDocument
+                        ? "rounded-none bg-white p-0"
+                        : "rounded-lg bg-card p-8"
+                  )}>
+                    {!isFullWidthDocument && (
+                      <>
+                        {/* Left Resize Handle */}
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
+                          onMouseDown={(e) => handleResizeStart('left', e)}
+                        >
+                          <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
+                            <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
+                          </div>
+                        </div>
 
-                    {/* Right Resize Handle */}
-                    <div
-                      className="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
-                      onMouseDown={(e) => handleResizeStart('right', e)}
-                    >
-                      <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
-                        <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
-                      </div>
-                    </div>
+                        {/* Right Resize Handle */}
+                        <div
+                          className="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
+                          onMouseDown={(e) => handleResizeStart('right', e)}
+                        >
+                          <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
+                            <div className="w-1 h-full bg-border group-hover:bg-primary transition-colors rounded-full" />
+                          </div>
+                        </div>
+                      </>
+                    )}
                     {/* isGenerating is the sole render gate — streamStages is intentionally
                         ignored when isGenerating is false, preventing stale stage UI */}
                     {isGenerating ? (
@@ -572,6 +596,7 @@ export function ContentEditor({
                           currentStep={streamCurrentStep ?? 0}
                           streamContent={streamContent ?? ""}
                           projectId={projectId}
+                          showLiveContent={!isCompetitiveDocument}
                         />
                       ) : (
                         <div className="flex flex-col items-center justify-center py-24">
@@ -589,6 +614,16 @@ export function ContentEditor({
                     ) : content ? (
                       documentType === "mockups" ? (
                         <MockupRenderer content={content} />
+                      ) : documentType === "competitive" ? (
+                        <CompetitiveAnalysisDocument
+                          content={content}
+                          metadata={documentMetadata}
+                          currentVersion={currentVersion}
+                          projectId={projectId}
+                          onContentUpdate={onUpdateContent}
+                          onUpgrade={() => onGenerateContent(selectedDocModel)}
+                          isUpgrading={isGenerating}
+                        />
                       ) : (
                         <MarkdownRenderer
                           content={content}

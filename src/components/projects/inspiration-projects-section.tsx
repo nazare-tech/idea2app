@@ -37,6 +37,7 @@ const inspirationProjects = [
     categoryClass: "text-[#FF3B30]",
     href: "/projects",
   },
+
 ]
 
 export function InspirationProjectsSection() {

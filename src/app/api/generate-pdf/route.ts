@@ -1,9 +1,23 @@
 import { NextResponse } from "next/server"
+import { existsSync } from "node:fs"
 import puppeteer from "puppeteer"
 import { marked } from "marked"
 import { renderMermaid } from "beautiful-mermaid"
 
 export const maxDuration = 300 // 5 minutes for large PDFs
+
+function resolveChromeExecutablePath() {
+  const candidates = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+  ].filter((value): value is string => Boolean(value))
+
+  return candidates.find((candidate) => existsSync(candidate))
+}
 
 export async function POST(request: Request) {
   try {
@@ -23,9 +37,11 @@ export async function POST(request: Request) {
     const html = generateHTMLTemplate(htmlContent, projectName, analysisType)
 
     // Launch Puppeteer and generate PDF
+    const executablePath = resolveChromeExecutablePath()
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      ...(executablePath ? { executablePath } : {}),
     })
 
     const page = await browser.newPage()
