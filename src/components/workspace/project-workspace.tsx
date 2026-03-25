@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -8,6 +8,7 @@ import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
 import { Header } from "@/components/layout/header"
 import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stream"
+import { buildProjectRef } from "@/lib/project-routing"
 
 
 interface Project {
@@ -92,11 +93,25 @@ export function ProjectWorkspace({
   const searchParams = useSearchParams()
   const [projectName, setProjectName] = useState(project.name)
   const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
+  const [isEditingHeaderTitle, setIsEditingHeaderTitle] = useState(false)
+  const [headerTitleDraft, setHeaderTitleDraft] = useState(project.name)
+  const headerTitleInputRef = useRef<HTMLInputElement>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
 
   useEffect(() => {
     setProjectName(project.name)
   }, [project.name])
+
+  useEffect(() => {
+    setHeaderTitleDraft(projectName)
+  }, [projectName])
+
+  useEffect(() => {
+    if (isEditingHeaderTitle) {
+      headerTitleInputRef.current?.focus()
+      headerTitleInputRef.current?.select()
+    }
+  }, [isEditingHeaderTitle])
 
   useEffect(() => {
     setIsPromptOnlyMode(isNewProject)
@@ -608,6 +623,11 @@ export function ProjectWorkspace({
       if (!response.ok) {
         throw new Error("Failed to update project name")
       }
+
+      // Update URL slug to reflect new name
+      const newProjectRef = buildProjectRef(project.id, trimmedName)
+      const nextParams = new URLSearchParams(searchParams.toString())
+      router.replace(`/projects/${newProjectRef}${nextParams.toString() ? `?${nextParams.toString()}` : ""}`, { scroll: false })
     } catch (error) {
       setProjectName(previousProjectName)
       console.error("Error updating project name:", error)
@@ -976,7 +996,37 @@ export function ProjectWorkspace({
               className="h-10 w-10 rounded-md object-cover"
             />
           </Link>
-          <span className="truncate pl-3 font-semibold tracking-tight">{projectName}</span>
+          {isEditingHeaderTitle ? (
+            <input
+              ref={headerTitleInputRef}
+              value={headerTitleDraft}
+              onChange={(e) => setHeaderTitleDraft(e.target.value)}
+              onBlur={async () => {
+                setIsEditingHeaderTitle(false)
+                await handleProjectNameUpdate(headerTitleDraft)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur()
+                } else if (e.key === "Escape") {
+                  setHeaderTitleDraft(projectName)
+                  setIsEditingHeaderTitle(false)
+                }
+              }}
+              className="pl-3 font-semibold tracking-tight bg-transparent border-b border-primary outline-none w-48 min-w-0"
+            />
+          ) : (
+            <span
+              className="truncate pl-3 font-semibold tracking-tight cursor-pointer hover:opacity-70 transition-opacity"
+              onClick={() => {
+                setHeaderTitleDraft(projectName)
+                setIsEditingHeaderTitle(true)
+              }}
+              title="Click to rename"
+            >
+              {projectName}
+            </span>
+          )}
         </div>
       </Header>
 

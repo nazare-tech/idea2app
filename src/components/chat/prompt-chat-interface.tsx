@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Bot, User, Copy, Check, ChevronDown, Sparkles, ArrowUp } from "lucide-react"
+import { Bot, User, Copy, Check, ChevronDown, Sparkles, ArrowUp, PenLine } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { AVAILABLE_MODELS, DEFAULT_MODEL } from "@/lib/prompt-chat-config"
@@ -450,43 +450,33 @@ export function PromptChatInterface({
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
         <div className="max-w-3xl mx-auto px-4 py-6">
-          <div className="mb-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm ui-font-semibold text-foreground/80 tracking-wide">
-                {projectName}
-              </h2>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => messagesContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-                  className="text-xs text-muted-foreground hover:text-foreground ui-row-gap-2"
-                >
-                  <ArrowUp className="h-3.5 w-3.5" />
-                </button>
-                {mounted && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs ui-font-semibold hover:bg-muted/50">
-                        {isFocused ? <Sparkles className="h-3 w-3 text-primary/70" /> : <Sparkles className="h-3 w-3 text-primary/70" />}
-                        <span>{getShortModelName(currentModelName)}</span>
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      {AVAILABLE_MODELS.map((model) => (
-                        <DropdownMenuItem
-                          key={model.id}
-                          onClick={() => setSelectedModel(model.id)}
-                          onPointerDown={() => setIsFocused(false)}
-                        >
-                          <span>{model.name}</span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            </div>
+          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
+            <PenLine className="h-4 w-4 shrink-0 text-primary" />
+            <p className="text-[13px] font-semibold text-foreground flex-1 min-w-0 truncate">
+              {projectName}
+            </p>
+            {mounted && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs ui-font-semibold hover:bg-muted/50">
+                    <Sparkles className="h-3 w-3 text-primary/70" />
+                    <span>{getShortModelName(currentModelName)}</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {AVAILABLE_MODELS.map((model) => (
+                    <DropdownMenuItem
+                      key={model.id}
+                      onClick={() => setSelectedModel(model.id)}
+                      onPointerDown={() => setIsFocused(false)}
+                    >
+                      <span>{model.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {messages.length === 0 && !loading && (
@@ -626,11 +616,11 @@ export function PromptChatInterface({
               onClick={handleSend}
               disabled={loading || !input.trim() || requestInFlight.current}
               className={cn(
-                "h-12 w-12 rounded-2xl shrink-0 ui-row-gap-2 bg-primary text-primary-foreground transition-colors",
+                "h-12 w-12 rounded-2xl shrink-0 flex items-center justify-center bg-primary text-primary-foreground transition-colors",
                 (loading || !input.trim() || requestInFlight.current) && "opacity-60 cursor-not-allowed"
               )}
             >
-              {loading ? <Spinner size="sm" /> : <Sparkles className="h-4 w-4" />}
+              {loading ? <Spinner size="sm" /> : <ArrowUp className="h-4 w-4" />}
             </button>
           </div>
         </div>
