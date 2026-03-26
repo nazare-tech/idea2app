@@ -69,6 +69,26 @@ export function PromptChatInterface({
   const textareaRef = useAutoResizingTextarea(input, 160)
   const requestInFlight = useRef(false)
   const { copiedId, copyText } = useCopyFeedback()
+  const draftStorageKey = `prompt_draft_${projectId}`
+
+  useEffect(() => {
+    const savedDraft = window.localStorage.getItem(draftStorageKey)
+    if (savedDraft !== null) {
+      setInput(savedDraft)
+      return
+    }
+
+    setInput("")
+  }, [draftStorageKey])
+
+  useEffect(() => {
+    if (!input.trim()) {
+      window.localStorage.removeItem(draftStorageKey)
+      return
+    }
+
+    window.localStorage.setItem(draftStorageKey, input)
+  }, [draftStorageKey, input])
 
   const dedupeMessages = useCallback((messageList: Message[]) => {
     if (!messageList.length) return []
@@ -395,6 +415,7 @@ export function PromptChatInterface({
       }
     } catch (error) {
       console.error("Chat error:", error)
+      setInput(userMessage)
       setMessages((prev) =>
         prev.filter((m) => m.id !== tempUserMsg.id && m.id !== tempAssistantMsg.id).concat({
           id: `error-${Date.now()}`,
