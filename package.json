@@ -9,10 +9,12 @@
     "lint": "eslint",
     "test": "node --import tsx --test src/lib/*.test.ts src/components/analysis/*.test.tsx",
     "guard:chunky": "node ./scripts/guard-webpack-chunky.mjs",
-    "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs"
+    "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs",
+    "stitch:fixture": "node scripts/stitch-fetch-fixture.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@google/stitch-sdk": "^0.0.3",
     "@json-render/core": "^0.11.0",
     "@json-render/react": "^0.11.0",
     "@json-render/shadcn": "^0.11.0",
@@ -59,7 +61,7 @@
     "eslint-config-next": "16.1.4",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "tsx": "^4.20.6"
+    "tsx": "^4.20.6",
+    "typescript": "^5"
   }
 }

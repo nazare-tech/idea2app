@@ -647,6 +647,189 @@ function parseMockupContent(raw: string): Section[] {
   return sections
 }
 
+// ---- Stitch HTML mockup types, parsing, and viewer ----
+
+interface StitchOption {
+  label: string
+  title: string
+  htmlUrl: string
+  imageUrl: string
+}
+
+interface StitchContent {
+  type: "stitch"
+  options: StitchOption[]
+}
+
+function parseStitchContent(content: string): StitchContent | null {
+  try {
+    const parsed = JSON.parse(content)
+    if (parsed?.type === "stitch" && Array.isArray(parsed.options) && parsed.options.length > 0) {
+      return parsed as StitchContent
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function StitchMockupViewer({ data }: { data: StitchContent }) {
+  const [selectedIndex, setSelectedIndex] = React.useState(0)
+  const [downloading, setDownloading] = React.useState(false)
+  const [viewport, setViewport] = React.useState<Viewport>("desktop")
+  // Cache fetched HTML per option label so we don't re-fetch on tab switch
+  const [htmlCache, setHtmlCache] = React.useState<Record<string, string>>({})
+  const [loadingHtml, setLoadingHtml] = React.useState(false)
+
+  const selectedOption = data.options[Math.min(selectedIndex, data.options.length - 1)]
+  const vp = viewportConfig[viewport]
+
+  // Fetch HTML through the server-side proxy whenever the selected option changes.
+  // Google's CDN sends X-Frame-Options headers that block direct iframe src embedding,
+  // so we fetch the content server-side (no CORS) and render it via srcdoc instead.
+  React.useEffect(() => {
+    if (!selectedOption?.htmlUrl) return
+    if (htmlCache[selectedOption.label]) return // already cached
+
+    setLoadingHtml(true)
+    const proxyUrl = `/api/stitch/html?url=${encodeURIComponent(selectedOption.htmlUrl)}`
+    fetch(proxyUrl)
+      .then((res) => res.text())
+      .then((html) => {
+        setHtmlCache((prev) => ({ ...prev, [selectedOption.label]: html }))
+      })
+      .catch((err) => console.error("[StitchViewer] Failed to load HTML:", err))
+      .finally(() => setLoadingHtml(false))
+  }, [selectedOption?.label, selectedOption?.htmlUrl, htmlCache])
+
+  const handleDownload = React.useCallback(async (index: number) => {
+    const option = data.options[index]
+    if (!option) return
+    setDownloading(true)
+    try {
+      // Use cached HTML if available, otherwise fetch via proxy
+      const html = htmlCache[option.label]
+        ?? await fetch(`/api/stitch/html?url=${encodeURIComponent(option.htmlUrl)}`).then((r) => r.text())
+      const blob = new Blob([html], { type: "text/html" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `mockup-option-${option.label.toLowerCase()}.html`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } finally {
+      setDownloading(false)
+    }
+  }, [data.options, htmlCache])
+
+  if (!selectedOption) return null
+
+  const currentHtml = htmlCache[selectedOption.label]
+
+  return (
+    <div className="space-y-4 w-full">
+      <div className="flex flex-col gap-3">
+        <div>
+          <p className="text-sm font-medium text-foreground">Mockup options</p>
+          <p className="text-xs text-muted-foreground">Compare 3 AI-generated designs. Each is a fully rendered HTML mockup.</p>
+        </div>
+
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {data.options.map((option, index) => (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => setSelectedIndex(index)}
+                className={[
+                  "inline-flex min-w-[132px] flex-col items-start rounded-lg border px-4 py-3 text-left transition-colors",
+                  index === selectedIndex
+                    ? "border-primary bg-primary/5 text-foreground shadow-sm"
+                    : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                ].join(" ")}
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.16em]">Option {option.label}</span>
+                <span className="mt-1 text-sm font-medium leading-tight">{option.title}</span>
+              </button>
+            ))}
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="ui-row-gap-2 h-fit rounded-md border border-border px-4 py-2 text-xs font-medium transition-colors hover:bg-muted/50 disabled:opacity-50"
+                disabled={downloading}
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>{downloading ? "Downloading..." : "Download"}</span>
+                <ChevronDown className="h-3 w-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {data.options.map((option, index) => (
+                <DropdownMenuItem key={option.label} onClick={() => handleDownload(index)}>
+                  <FileDown className="mr-2 h-3.5 w-3.5" />
+                  <span className="text-xs">Option {option.label} (HTML)</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div className="space-y-0 w-full">
+        <div className="flex items-center justify-between rounded-t-xl border border-border bg-muted/30 px-3 py-1.5">
+          <div className="flex items-center gap-2">
+            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground">Variation {selectedOption.label}</span>
+          </div>
+          <div className="flex items-center rounded-md border border-border bg-background p-0.5">
+            {(Object.entries(viewportConfig) as [Viewport, typeof vp][]).map(([key, config]) => {
+              const Icon = config.icon
+              return (
+                <button
+                  key={key}
+                  onClick={() => setViewport(key)}
+                  title={config.label}
+                  className={`p-1 rounded transition-colors ${key === viewport ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-b-xl border-x border-b border-border bg-muted/10">
+          <div className="flex justify-center bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
+            <div className="w-full bg-white transition-all duration-300 ease-out" style={{ maxWidth: vp.width }}>
+              {loadingHtml && !currentHtml ? (
+                <div className="flex items-center justify-center bg-white" style={{ height: "800px" }}>
+                  <div className="flex flex-col items-center gap-3 text-zinc-400">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-500" />
+                    <span className="text-xs">Loading design...</span>
+                  </div>
+                </div>
+              ) : (
+                <iframe
+                  key={selectedOption.label}
+                  srcDoc={currentHtml}
+                  className="w-full border-0"
+                  style={{ height: "800px" }}
+                  title={`Mockup Option ${selectedOption.label}`}
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---- Viewport presets ----
 
 type Viewport = "desktop" | "tablet" | "mobile"
@@ -1075,6 +1258,17 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
  * or as ASCII art wireframes (legacy). Auto-detects the format.
  */
 export function MockupRenderer({ content, className = "" }: MockupRendererProps) {
+  // ── Stitch format: { type: "stitch", options: [...] } ──────────────────
+  const stitchData = React.useMemo(() => parseStitchContent(content), [content])
+
+  if (stitchData) {
+    return (
+      <div className={className}>
+        <StitchMockupViewer data={stitchData} />
+      </div>
+    )
+  }
+
   // Memoize format detection and parsing to avoid re-parsing on every render
   const patchSpec = React.useMemo(() => {
     if (isJsonPatchContent(content)) {

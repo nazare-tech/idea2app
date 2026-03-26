@@ -1,275 +1,146 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { CREDIT_COSTS } from "@/lib/utils"
-import OpenAI from "openai"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
-import { buildMockupPrompt } from "@/lib/prompts"
-import { hasThreeOptionProsConsContract } from "@/lib/mockup-format-contract"
+import { StitchToolClient, extractProjectId, extractFirstScreenId, extractVariantScreenIds } from "@/lib/stitch/client"
 
 const encoder = new TextEncoder()
 
 const OPTION_LABELS = ["A", "B", "C"]
-
-interface LegacyOptionChunk {
-  title: string
-  json: string
-}
-
-function isValidMockupStructure(content: string): boolean {
-  return hasThreeOptionProsConsContract(content)
-}
-
-function extractLegacyOptionChunks(content: string): LegacyOptionChunk[] {
-  const lines = content.split("\n")
-  const chunks: LegacyOptionChunk[] = []
-  let currentTitle = "Screen"
-
-  let i = 0
-  while (i < lines.length) {
-    const line = lines[i].trim()
-
-    const headingMatch = line.match(/^(#{1,6})\s*(.+)$/)
-    if (headingMatch) {
-      currentTitle = headingMatch[2]
-        .replace(/^`+|`+$/g, "")
-        .replace(/:\s*$/, "")
-        .trim() || "Screen"
-      i += 1
-      continue
-    }
-
-    if (/^```json\s*$/i.test(line)) {
-      const startLine = i
-      i += 1
-
-      while (i < lines.length && !/^```\s*$/.test(lines[i].trim())) {
-        i += 1
-      }
-
-      if (i < lines.length) {
-        const block = lines.slice(startLine, i + 1).join("\n")
-        chunks.push({ title: currentTitle, json: block })
-      }
-      i += 1
-      continue
-    }
-
-    i += 1
-  }
-
-  return chunks
-}
-
-function buildLegacyTemplate(content: string): string | null {
-  return normalizeLegacyOptionTemplate(content)
-}
-
-function cleanSectionTitle(rawTitle: string): string {
-  return rawTitle
-    .replace(/^(\`|\`{3,})\s*|\s+\`?\`{3,}$/g, "")
-    .replace(/^\s*Option\s*[A-C]\s*-\s*Option\s*[A-C]\s*[-:]?\s*/i, "")
-    .replace(/^\s*Option\s*[A-C]\s*[-:]?/i, "")
-    .replace(/^\s*-\s*/, "")
-    .trim()
-}
-
-function buildFallbackProsCons(title: string, json: string, optionLabel: string): { pros: string[]; cons: string[] } {
-  const normalizedTitle = (title || "").toLowerCase()
-  const normalizedJson = (json || "").toLowerCase()
-  const text = `${normalizedTitle} ${normalizedJson}`
-  const has = (pattern: RegExp) => pattern.test(text)
-
-  const pros: string[] = []
-  const cons: string[] = []
-
-  if (has(/wizard|step|\btab\b|\btabs?\b/)) {
-    pros.push(`${optionLabel}: Uses an explicit progression pattern to reduce cognitive load during setup.`)
-  }
-
-  if (has(/faq|question|table|faqs?|help/)) {
-    pros.push("Groups operational details into structured blocks, making information easy to scan and maintain.")
-  }
-
-  if (has(/nav|menu|sidebar|navigation/)) {
-    pros.push("Provides obvious wayfinding so users can jump between configuration, analytics, and content tasks quickly.")
-  }
-
-  if (has(/form|input|textbox|combobox|select/)) {
-    pros.push("Keeps agent setup and management operations directly editable in a single screen.")
-  }
-
-  if (has(/card|grid/)) {
-    pros.push("Uses modular cards/grids to keep functional areas visually separated and scannable.")
-  }
-
-  if (has(/button/) && has(/save|deploy|preview|play/)) {
-    pros.push("Places high-value actions near relevant content, making completion flow straightforward.")
-  }
-
-  if (pros.length < 2) {
-    pros.push(`${optionLabel}: Keeps layout hierarchy explicit for faster handoff to implementation.`)
-    pros.push("Reduces visual ambiguity with short labels and clearly grouped controls.")
-  }
-
-  if (has(/dashboard|chart|stat|analytics/)) {
-    cons.push("Adds data synchronization and freshness requirements that raise backend implementation complexity.")
-  }
-
-  if (has(/integration|api|webhook|voice|tts|booking/)) {
-    cons.push("Needs platform/API integration work, which increases testing surface and operational assumptions.")
-  }
-
-  if (has(/wizard|step|flow|onboard/)) {
-    cons.push("Requires explicit state and validation logic to avoid getting users stuck between flow stages.")
-  }
-
-  if (has(/faq|table|responsive|mobile/)) {
-    cons.push("Dense content-heavy sections need careful responsive tuning for mobile readability.")
-  }
-
-  if (cons.length < 2) {
-    cons.push("Multiple interactive regions demand stronger keyboard/focus treatment for accessibility.")
-    cons.push("Live business data should be validated before exposing advanced controls in production.")
-  }
-
-  return {
-    pros: pros.slice(0, 4),
-    cons: cons.slice(0, 4),
-  }
-}
-
-function normalizeLegacyOptionTemplate(content: string): string | null {
-  const chunks = extractLegacyOptionChunks(content)
-
-  if (!chunks.length) return null
-
-  const sections = [...chunks]
-
-  while (sections.length < 3 && sections.length > 0) {
-    sections.push({
-      title: `Alternative ${sections.length + 1}`,
-      json: sections[sections.length - 1].json,
-    })
-  }
-
-  const selectedSections = sections.slice(0, 3)
-
-  const output: string[] = []
-
-  for (let i = 0; i < selectedSections.length; i += 1) {
-    const section = selectedSections[i]
-    const label = OPTION_LABELS[i] || `${i + 1}`
-    const cleanedTitle = cleanSectionTitle(section.title)
-    const title = cleanedTitle || `Option ${label}`
-    const fallback = buildFallbackProsCons(title, section.json, `Option ${label}`)
-
-    output.push(`### Option ${label} - ${title}`)
-    output.push("Pros:")
-    fallback.pros.forEach((item) => {
-      output.push(`- ${item}`)
-    })
-    output.push("Cons:")
-    fallback.cons.forEach((item) => {
-      output.push(`- ${item}`)
-    })
-    output.push(section.json)
-    output.push("")
-  }
-
-  return output.join("\n")
-}
-
-function sanitizeMockupProsCons(content: string): string {
-  const chunks = extractLegacyOptionChunks(content)
-  if (chunks.length < 3) return content
-
-  const selected = chunks.slice(0, 3)
-  const lines: string[] = []
-
-  for (let i = 0; i < selected.length; i += 1) {
-    const section = selected[i]
-    const label = OPTION_LABELS[i] || `${i + 1}`
-    const title = cleanSectionTitle(section.title) || `Option ${label}`
-    const fallback = buildFallbackProsCons(title, section.json, `Option ${label}`)
-
-    lines.push(`### Option ${label} - ${title}`)
-    lines.push("Pros:")
-    fallback.pros.forEach((item) => lines.push(`- ${item}`))
-    lines.push("Cons:")
-    fallback.cons.forEach((item) => lines.push(`- ${item}`))
-    lines.push(section.json)
-    lines.push("")
-  }
-
-  return lines.join("\n")
-}
-
-async function enforceMockupFormat({
-  client,
-  content,
-  mvpPlan,
-  projectName,
-  model,
-}: {
-  client: OpenAI,
-  content: string,
-  mvpPlan: string,
-  projectName: string,
-  model: string,
-}): Promise<string> {
-  if (isValidMockupStructure(content)) {
-    return sanitizeMockupProsCons(content)
-  }
-
-  const fallbackPrompt =
-    `You are a strict formatter. Convert the mockup result below into the required template exactly.\n` +
-    `Required: exactly 3 options labeled Option A/B/C.\n` +
-    `For each option include: heading, Pros section (2-4 bullets), Cons section (2-4 bullets), and ONE json-render code block.\n` +
-    `Preserve the JSON blocks whenever possible; only adjust surrounding prose as needed.\n\n` +
-    `Source output:\n\n${content}\n\n` +
-    `Project name: ${projectName}\n` +
-    `MVP context: ${mvpPlan}`
-
-  try {
-    const rewriteResp = await client.chat.completions.create({
-      model,
-      messages: [{ role: "user", content: fallbackPrompt }],
-      max_tokens: 20000,
-    })
-
-    const rewritten = rewriteResp.choices?.[0]?.message?.content?.trim() || ""
-    if (rewritten && isValidMockupStructure(rewritten)) {
-      return sanitizeMockupProsCons(rewritten)
-    }
-
-    const normalizedRewrite = normalizeLegacyOptionTemplate(rewritten)
-    if (normalizedRewrite) {
-      return normalizedRewrite
-    }
-
-    const legacy = buildLegacyTemplate(content)
-    if (legacy) {
-      return legacy
-    }
-  } catch (error) {
-    console.warn("[Mockup] format enforcement failed, using deterministic fallback", error)
-  }
-
-  const legacy = buildLegacyTemplate(content)
-  if (legacy) {
-    return legacy
-  }
-
-  console.warn("[Mockup] format enforcement failed, using original generated content")
-  return content
-}
 
 function createStreamSender(controller: ReadableStreamDefaultController) {
   return (event: object) =>
     controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"))
 }
 
-export const maxDuration = 300 // 5 min — AI generation can be slow
+/**
+ * Build a natural-language prompt for Stitch from the MVP plan.
+ * Stitch uses Gemini — concise, descriptive prompts work best.
+ */
+function buildStitchPrompt(mvpPlan: string, projectName: string): string {
+  return (
+    `Design the main application screen for "${projectName}".\n\n` +
+    `MVP context:\n${mvpPlan}\n\n` +
+    `Create a modern, polished, production-ready UI. ` +
+    `Focus on the primary user-facing screen with all key features visible and accessible.`
+  )
+}
+
+/**
+ * Generate 3 Stitch design variants using direct tool calls.
+ *
+ * We bypass the high-level SDK methods (project.generate / screen.variants)
+ * because they have no null-safety on the response path:
+ *   raw.outputComponents[0].design.screens[0]  ← crashes when design is undefined
+ *
+ * Using StitchToolClient.callTool() directly lets us apply defensive extraction.
+ */
+async function generateStitchMockup(
+  mvpPlan: string,
+  projectName: string,
+  send?: (event: object) => void
+): Promise<string> {
+  if (!process.env.STITCH_API_KEY) {
+    throw new Error("STITCH_API_KEY environment variable is not configured")
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type Raw = Record<string, any>
+
+  const client = new StitchToolClient({ apiKey: process.env.STITCH_API_KEY })
+
+  /** Pull bare screen ID from a list_screens item */
+  function screenIdFromItem(item: Raw): string {
+    const name: string = item?.name || item?.id || item?.screenId || ""
+    if (name.includes("/screens/")) return name.split("/screens/")[1]
+    return name
+  }
+
+  try {
+    send?.({ type: "stage", message: "Creating design project...", step: 1, totalSteps: 4 })
+
+    const projectRaw = await client.callTool<Raw>("create_project", { title: projectName })
+    console.log("[Stitch] create_project raw:", JSON.stringify(projectRaw))
+    const stitchProjectId = extractProjectId(projectRaw)
+
+    send?.({ type: "stage", message: "Generating initial design...", step: 2, totalSteps: 4 })
+
+    const prompt = buildStitchPrompt(mvpPlan, projectName)
+    const generateRaw = await client.callTool<Raw>("generate_screen_from_text", {
+      projectId: stitchProjectId,
+      prompt,
+      deviceType: "DESKTOP",
+    })
+    console.log("[Stitch] generate_screen_from_text raw:", JSON.stringify(generateRaw))
+
+    // The API may return only design-system metadata in outputComponents (no screens).
+    // Fall back to listing the project's screens to get the generated screen ID.
+    let initialScreenId: string
+    try {
+      initialScreenId = extractFirstScreenId(generateRaw)
+    } catch {
+      console.log("[Stitch] No screen in generate response — listing screens to find it")
+      const listRaw = await client.callTool<Raw>("list_screens", { projectId: stitchProjectId })
+      console.log("[Stitch] list_screens raw:", JSON.stringify(listRaw))
+      const listed: Raw[] = listRaw?.screens || []
+      if (listed.length === 0) throw new Error("[Stitch] No screens found after generate_screen_from_text")
+      initialScreenId = screenIdFromItem(listed[0])
+    }
+
+    console.log("[Stitch] initialScreenId:", initialScreenId)
+    send?.({ type: "stage", message: "Generating 3 design variants...", step: 3, totalSteps: 4 })
+
+    const variantsRaw = await client.callTool<Raw>("generate_variants", {
+      projectId: stitchProjectId,
+      selectedScreenIds: [initialScreenId],
+      prompt: "Generate 3 visually distinct design alternatives with different layouts and color schemes",
+      variantOptions: { variantCount: 3, creativeRange: "EXPLORE", aspects: ["COLOR_SCHEME", "LAYOUT"] },
+      deviceType: "DESKTOP",
+    })
+    console.log("[Stitch] generate_variants raw:", JSON.stringify(variantsRaw))
+
+    // Extract variant screen IDs from response, or fall back to listing all screens
+    let variantIds = extractVariantScreenIds(variantsRaw)
+    if (variantIds.length === 0) {
+      console.log("[Stitch] No variants in response — listing screens to find them")
+      const listRaw2 = await client.callTool<Raw>("list_screens", { projectId: stitchProjectId })
+      console.log("[Stitch] list_screens (post-variants) raw:", JSON.stringify(listRaw2))
+      const allScreens: Raw[] = listRaw2?.screens || []
+      variantIds = allScreens
+        .map(screenIdFromItem)
+        .filter((id) => id && id !== initialScreenId)
+        .slice(0, 3)
+    }
+
+    if (variantIds.length === 0) {
+      throw new Error("[Stitch] generate_variants returned no variant screens")
+    }
+
+    send?.({ type: "stage", message: "Fetching design assets...", step: 4, totalSteps: 4 })
+
+    const options = await Promise.all(
+      variantIds.slice(0, 3).map(async (screenId, i) => {
+        const screenRaw = await client.callTool<Raw>("get_screen", {
+          projectId: stitchProjectId,
+          screenId,
+          name: `projects/${stitchProjectId}/screens/${screenId}`,
+        })
+        return {
+          label: OPTION_LABELS[i],
+          title: `Design Variant ${OPTION_LABELS[i]}`,
+          htmlUrl: screenRaw?.htmlCode?.downloadUrl || "",
+          imageUrl: screenRaw?.screenshot?.downloadUrl || "",
+        }
+      })
+    )
+
+    return JSON.stringify({ type: "stitch", options })
+  } finally {
+    await client.close()
+  }
+}
+
+export const maxDuration = 300 // 5 min — Stitch generation can take time
 
 export async function POST(request: Request) {
   const timer = new MetricsTimer()
@@ -277,7 +148,6 @@ export async function POST(request: Request) {
   let errorType: string | undefined
   let errorMessage: string | undefined
   let creditsConsumed = 0
-  let modelUsed: string | undefined
   let userId: string | undefined
   let projectId: string | undefined
   let isStreaming = false
@@ -299,7 +169,7 @@ export async function POST(request: Request) {
 
     const body = await request.json()
     projectId = body.projectId
-    const { mvpPlan, projectName, model, stream: streamRequested } = body
+    const { mvpPlan, projectName, stream: streamRequested } = body
 
     if (!projectId || !mvpPlan || !projectName) {
       statusCode = 400
@@ -310,9 +180,6 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-
-    // Validate model (optional - if not provided, use default)
-    const selectedModel = model || process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4"
 
     // Verify project ownership
     const { data: project } = await supabase
@@ -359,52 +226,16 @@ export async function POST(request: Request) {
           const send = createStreamSender(controller)
 
           try {
-            const openrouterClient = new OpenAI({
-              baseURL: "https://openrouter.ai/api/v1",
-              apiKey: process.env.OPENROUTER_API_KEY || "",
-            })
+            const content = await generateStitchMockup(mvpPlan, projectName, send)
 
-            if (!process.env.OPENROUTER_API_KEY) {
-              throw new Error("OpenRouter API key not configured")
-            }
-
-            send({ type: "stage", message: "Generating UI mockups...", step: 1, totalSteps: 2 })
-
-            const streamResp = await openrouterClient.chat.completions.create({
-              model: selectedModel,
-              messages: [{ role: "user", content: buildMockupPrompt(mvpPlan, projectName) }],
-              max_tokens: 16384,
-              stream: true,
-            })
-
-            let generatedContent = ""
-            for await (const chunk of streamResp) {
-              const token = chunk.choices?.[0]?.delta?.content ?? ""
-              if (token) {
-                generatedContent += token
-                send({ type: "token", content: token })
-              }
-            }
-
-            if (!generatedContent) throw new Error("No content returned from OpenRouter")
-
-            const normalizedContent = await enforceMockupFormat({
-              client: openrouterClient,
-              content: generatedContent,
-              mvpPlan,
-              projectName,
-              model: selectedModel,
-            })
-
-            send({ type: "stage", message: "Saving mockups...", step: 2, totalSteps: 2 })
-            modelUsed = selectedModel
+            send({ type: "stage", message: "Saving mockups...", step: 4, totalSteps: 4 })
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (supabase as any).from("mockups").insert({
               project_id: projectId!,
-              content: normalizedContent,
-              model_used: selectedModel,
-              metadata: { source: "openrouter", model: selectedModel, generated_at: new Date().toISOString() },
+              content,
+              model_used: "stitch",
+              metadata: { source: "stitch", generated_at: new Date().toISOString() },
             })
 
             await supabase
@@ -412,9 +243,8 @@ export async function POST(request: Request) {
               .update({ status: "active", updated_at: new Date().toISOString() })
               .eq("id", projectId!)
 
-            send({ type: "done", model: selectedModel })
+            send({ type: "done", model: "stitch" })
 
-            // Track metrics for successful streaming request
             trackAPIMetrics({
               endpoint: `/api/mockups/generate`,
               method: "POST",
@@ -424,8 +254,8 @@ export async function POST(request: Request) {
               statusCode: 200,
               responseTimeMs: timer.getElapsedMs(),
               creditsConsumed,
-              modelUsed: selectedModel,
-              aiSource: "openrouter",
+              modelUsed: "stitch",
+              aiSource: "stitch",
               errorType: undefined,
               errorMessage: undefined,
             })
@@ -436,7 +266,6 @@ export async function POST(request: Request) {
             errorType = "generation_error"
             errorMessage = msg
 
-            // Track metrics for failed streaming request
             trackAPIMetrics({
               endpoint: `/api/mockups/generate`,
               method: "POST",
@@ -447,7 +276,7 @@ export async function POST(request: Request) {
               responseTimeMs: timer.getElapsedMs(),
               creditsConsumed,
               modelUsed: undefined,
-              aiSource: "openrouter",
+              aiSource: "stitch",
               errorType: "generation_error",
               errorMessage: msg,
             })
@@ -463,70 +292,33 @@ export async function POST(request: Request) {
     }
     // ─── End streaming path ─────────────────────────────────────────────
 
-    // Generate mockup using OpenRouter
-    const openrouter = new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: process.env.OPENROUTER_API_KEY || "",
-    })
-
-    if (!process.env.OPENROUTER_API_KEY) {
-      throw new Error("OpenRouter API key not configured")
-    }
-
-    const response = await openrouter.chat.completions.create({
-      model: selectedModel,
-      messages: [
-        {
-          role: "user",
-          content: buildMockupPrompt(mvpPlan, projectName),
-        },
-      ],
-      max_tokens: 16384, // Large limit for multiple JSON spec pages
-    })
-
-    const rawContent = response.choices[0]?.message?.content
-
-    if (!rawContent) {
-      throw new Error("No content returned from OpenRouter")
-    }
-
-    const content = await enforceMockupFormat({
-      client: openrouter,
-      content: rawContent,
-      mvpPlan,
-      projectName,
-      model: selectedModel,
-    })
-
-    modelUsed = selectedModel
+    // Non-streaming path
+    const content = await generateStitchMockup(mvpPlan, projectName)
 
     const metadata = {
-      source: "openrouter",
-      model: selectedModel,
+      source: "stitch",
       generated_at: new Date().toISOString(),
     }
 
-    // Store the mockup in database
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from("mockups").insert({
       project_id: projectId,
       content,
-      model_used: selectedModel,
+      model_used: "stitch",
       metadata,
     })
 
-    // Update project
     await supabase
       .from("projects")
       .update({ status: "active", updated_at: new Date().toISOString() })
       .eq("id", projectId)
 
-    console.log(`[Mockup] project=${projectId} model=${selectedModel}`)
+    console.log(`[Mockup] project=${projectId} model=stitch`)
 
     return NextResponse.json({
       content,
-      model: selectedModel,
-      source: "openrouter",
+      model: "stitch",
+      source: "stitch",
     })
   } catch (error) {
     console.error("Mockup generation error:", error)
@@ -538,7 +330,6 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   } finally {
-    // Track metrics (fire and forget - won't block response)
     if (!isStreaming && userId) {
       trackAPIMetrics({
         endpoint: `/api/mockups/generate`,
@@ -549,8 +340,8 @@ export async function POST(request: Request) {
         statusCode,
         responseTimeMs: timer.getElapsedMs(),
         creditsConsumed,
-        modelUsed,
-        aiSource: "openrouter",
+        modelUsed: "stitch",
+        aiSource: "stitch",
         errorType,
         errorMessage,
       })
