@@ -49,3 +49,6 @@ next-env.d.ts
 
 # local design exports
 /design/idea2App-design.json
+
+# Stitch test fixture (contains short-lived download URLs)
+src/lib/stitch/test-fixture.json
