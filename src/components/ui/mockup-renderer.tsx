@@ -1258,9 +1258,23 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
  * or as ASCII art wireframes (legacy). Auto-detects the format.
  */
 export function MockupRenderer({ content, className = "" }: MockupRendererProps) {
-  // ── Stitch format: { type: "stitch", options: [...] } ──────────────────
+  // All hooks must be called unconditionally before any early return (Rules of Hooks)
   const stitchData = React.useMemo(() => parseStitchContent(content), [content])
 
+  const patchSpec = React.useMemo(() => {
+    if (stitchData) return null // skip when stitch format detected
+    if (isJsonPatchContent(content)) {
+      return applyJsonPatches(content)
+    }
+    return null
+  }, [content, stitchData])
+
+  const isJsonRender = React.useMemo(
+    () => !stitchData && !patchSpec && isJsonRenderContent(content),
+    [content, stitchData, patchSpec]
+  )
+
+  // ── Stitch format: { type: "stitch", options: [...] } ──────────────────
   if (stitchData) {
     return (
       <div className={className}>
@@ -1268,19 +1282,6 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
       </div>
     )
   }
-
-  // Memoize format detection and parsing to avoid re-parsing on every render
-  const patchSpec = React.useMemo(() => {
-    if (isJsonPatchContent(content)) {
-      return applyJsonPatches(content)
-    }
-    return null
-  }, [content])
-
-  const isJsonRender = React.useMemo(
-    () => !patchSpec && isJsonRenderContent(content),
-    [content, patchSpec]
-  )
 
   // JSON Patch format — reconstruct spec from streaming patches
   if (patchSpec) {
