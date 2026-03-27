@@ -568,7 +568,7 @@ export function ContentEditor({
                       )
                     ) : content ? (
                       documentType === "mockups" ? (
-                        <MockupRenderer content={content} />
+                        <MockupRenderer content={content} projectName={projectName} />
                       ) : documentType === "competitive" ? (
                         <CompetitiveAnalysisDocument
                           content={content}

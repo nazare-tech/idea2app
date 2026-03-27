@@ -16,6 +16,7 @@ import {
 interface MockupRendererProps {
   content: string
   className?: string
+  projectName?: string
 }
 
 // ---- JSON-render mockup types and parsing ----
@@ -673,7 +674,7 @@ function parseStitchContent(content: string): StitchContent | null {
   }
 }
 
-function StitchMockupViewer({ data }: { data: StitchContent }) {
+function StitchMockupViewer({ data, projectName }: { data: StitchContent; projectName?: string }) {
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const [downloading, setDownloading] = React.useState(false)
   const [viewport, setViewport] = React.useState<Viewport>("desktop")
@@ -714,7 +715,8 @@ function StitchMockupViewer({ data }: { data: StitchContent }) {
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `mockup-option-${option.label.toLowerCase()}.html`
+      const prefix = projectName ? `${projectName.toLowerCase().replace(/\s+/g, "-")}-` : ""
+      a.download = `${prefix}mockup-option-${option.label.toLowerCase()}.html`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -960,7 +962,7 @@ function getOptionLabel(title: string, index: number) {
   return title.match(/Option\s+([A-Z])/i)?.[1]?.toUpperCase() || String.fromCharCode(65 + index)
 }
 
-function MockupViewer({ pages }: { pages: MockupPage[] }) {
+function MockupViewer({ pages, projectName }: { pages: MockupPage[]; projectName?: string }) {
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const hiddenExportRefs = React.useRef<Array<HTMLDivElement | null>>([])
   const selectedPage = pages[Math.min(selectedIndex, pages.length - 1)]
@@ -982,7 +984,8 @@ function MockupViewer({ pages }: { pages: MockupPage[] }) {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = `mockup-option-${optionLabel.toLowerCase()}.html`
+    const prefix = projectName ? `${projectName.toLowerCase().replace(/\s+/g, "-")}-` : ""
+    link.download = `${prefix}mockup-option-${optionLabel.toLowerCase()}.html`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -1257,7 +1260,7 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
  * Renders mockup content — either as interactive json-render components (new)
  * or as ASCII art wireframes (legacy). Auto-detects the format.
  */
-export function MockupRenderer({ content, className = "" }: MockupRendererProps) {
+export function MockupRenderer({ content, className = "", projectName }: MockupRendererProps) {
   // All hooks must be called unconditionally before any early return (Rules of Hooks)
   const stitchData = React.useMemo(() => parseStitchContent(content), [content])
 
@@ -1278,7 +1281,7 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
   if (stitchData) {
     return (
       <div className={className}>
-        <StitchMockupViewer data={stitchData} />
+        <StitchMockupViewer data={stitchData} projectName={projectName} />
       </div>
     )
   }
@@ -1293,7 +1296,7 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
     if (pages.length > 1) {
       return (
         <div className={className}>
-          <MockupViewer pages={pages.map((page, index) => addFallbackProsConsIfMissing(page, index))} />
+          <MockupViewer pages={pages.map((page, index) => addFallbackProsConsIfMissing(page, index))} projectName={projectName} />
         </div>
       )
     }
@@ -1335,7 +1338,7 @@ export function MockupRenderer({ content, className = "" }: MockupRendererProps)
     if (pages.length > 1) {
       return (
         <div className={className}>
-          <MockupViewer pages={pages.map((page, index) => addFallbackProsConsIfMissing(page, index))} />
+          <MockupViewer pages={pages.map((page, index) => addFallbackProsConsIfMissing(page, index))} projectName={projectName} />
         </div>
       )
     }
