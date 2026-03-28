@@ -145,9 +145,11 @@ export function ProjectWorkspace({
   const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
     if (isNewProject || isPromptOnlyMode) return "prompt"
 
-    const persistedDocument = getPersistedActiveDocument()
-    if (persistedDocument && !(isPromptOnlyMode && persistedDocument !== "prompt")) {
-      return persistedDocument
+    // Only use searchParams for initial render to avoid hydration mismatch.
+    // localStorage is restored in the useEffect below after hydration.
+    const tab = searchParams.get("tab")
+    if (isDocumentType(tab)) {
+      return tab
     }
 
     return "prompt"
@@ -280,7 +282,10 @@ export function ProjectWorkspace({
       return
     }
 
-    const persistedDocument = getPersistedActiveDocument()
+    // Only restore from the URL tab param — ignore localStorage so that
+    // removing ?tab= from the URL always resets to "prompt".
+    const tab = searchParams.get("tab")
+    const persistedDocument = isDocumentType(tab) ? tab : null
 
     if (!persistedDocument || !canSelectDocument(persistedDocument)) {
       setActiveDocument("prompt")

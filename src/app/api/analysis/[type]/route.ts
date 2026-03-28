@@ -88,7 +88,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     // Validate analysis type
-    const validTypes = ["competitive-analysis", "prd", "mvp-plan", "tech-spec"]
+    const validTypes = ["competitive-analysis", "prd", "mvp-plan"]
     if (!validTypes.includes(type)) {
       statusCode = 400
       errorType = "validation_error"

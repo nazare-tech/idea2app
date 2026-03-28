@@ -93,7 +93,7 @@ export const DOCUMENT_DEFINITIONS: DocumentDefinition[] = [
     description: "",
     icon: Code,
     creditCost: 15,
-    showInNav: true,
+    showInNav: false,
   },
   {
     type: "deploy",

@@ -29,6 +29,9 @@ export async function PATCH(
 
     userId = user.id
 
+    // Tech Spec feature is currently disabled
+    return NextResponse.json({ error: "Tech spec feature is currently unavailable" }, { status: 410 })
+
     // Parse request
     const { content } = await request.json()
 
