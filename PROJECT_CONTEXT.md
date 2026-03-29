@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-03-22 (Shared UI Registry + Auth/Chat/Billing/Nav Consolidation)
+**Last Updated**: 2026-03-29 (Waitlist Landing Flow + Stitch Integration + Current Route Map)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -32,6 +32,15 @@
 - **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD
 - **Mockup Generation**: ASCII art mockups showing information architecture based on MVP plans (with AI model selection)
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
+- **Landing Page + Waitlist Gate**: The marketing landing page now switches between standard signup CTAs and a public waitlist flow once the early-access user cap is reached. Features:
+  - Dynamic CTA mode based on current `profiles` count
+  - Public `waitlist` table for email capture
+  - Shared `WaitlistForm` component on the landing page
+  - Fail-open API behavior so CTA rendering does not block on Supabase errors
+- **Stitch HTML Proxy + SDK Integration**: Mockup and design workflows now include Stitch integration helpers. Features:
+  - `@google/stitch-sdk` client wrapper in `src/lib/stitch/client.ts`
+  - Server-side HTML proxy route for safe rendering of Stitch-hosted HTML
+  - Support for extracting project IDs and generated screen IDs from Stitch responses
 - **App Generation**: Automated code generation for multiple app types:
   - Static websites (HTML/CSS/JS)
   - Dynamic websites (Next.js)
@@ -49,7 +58,8 @@
 5. User validates/refines the summary through continued conversation
 6. User generates various analyses (competitive, PRD, MVP plan, mockups, tech specs)
 7. User generates a working prototype/application
-8. User deploys the generated application
+8. If early-access capacity is full, new visitors join the waitlist instead of signing up immediately
+9. User deploys the generated application
 
 ---
 
@@ -59,7 +69,7 @@
 
 | Technology | Version | Purpose |
 |-----------|---------|---------|
-| **Next.js** | 16.1.4 | Full-stack React framework with App Router |
+| **Next.js** | 16.1.6 | Full-stack React framework with App Router |
 | **React** | 19.2.3 | UI library with React Server Components |
 | **TypeScript** | 5 | Type-safe JavaScript |
 | **Tailwind CSS** | 4.x | Utility-first CSS framework |
@@ -86,6 +96,7 @@
 | **@supabase/supabase-js** | 2.91.1 | Supabase client library |
 | **@supabase/ssr** | 0.8.0 | Server-side rendering utilities |
 | **Anthropic Claude** | 0.71.2 | AI SDK for app generation |
+| **@google/stitch-sdk** | 0.0.3 | Stitch client SDK used for mockup/design generation helpers |
 | **OpenRouter** | 6.16.0 | API wrapper for AI analysis |
 | **Stripe** | 20.2.0 | Payment processing and subscriptions |
 | **Perplexity** | - | AI-powered competitor search (sonar-pro model, OpenAI-compatible API) |
@@ -103,7 +114,7 @@
 
 ### Build & Runtime
 
-- **Build Tool**: Next.js built-in (Webpack)
+- **Build Tool**: Next.js built-in (Turbopack in dev, Next.js production build for release)
 - **Dev Server**: Next.js dev server with HMR
 - **Package Manager**: npm
 - **Runtime**: Node.js (Latest LTS)
@@ -177,6 +188,17 @@
    - Server saves deployment record
    - Returns generated code to client
 
+5. **Landing + Waitlist Flow**:
+   - Landing page fetches the current registered-user count via Supabase service role access
+   - `isWaitlistMode(userCount)` compares the count against `WAITLIST_LIMIT`
+   - If the cap is reached, `/` renders waitlist CTAs and posts email captures to `/api/waitlist`
+   - Waitlist inserts go into the public `waitlist` table with uniqueness and email-format constraints
+
+6. **Stitch Proxy Flow**:
+   - Server receives a Stitch HTML download URL via `/api/stitch/html`
+   - Route validates the URL host against the allowed Google Stitch CDN domains
+   - Server fetches the HTML and returns it without frame-blocking headers so the app can render it safely
+
 ### Workspace Layout (Three-Column)
 
 The project workspace (`/projects/[id]`) uses a three-column layout inspired by Pencil:
@@ -224,7 +246,8 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 9. **Shared UI Registries + Hooks**: Repeated view metadata and repeated client behaviors (documents, credits, billing portal, auth sign-out, chat interactions) are centralized into typed registries and reusable hooks/components before page-level assembly
 10. **Path Aliases**: Clean imports using `@/*` aliases
 11. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
-12. **Non-Intrusive Selection Handling**: Text selection captured only on `mouseup` with `requestAnimationFrame` to ensure browser finalizes selection first, preventing interference during drag operations
+12. **Progressive Loading Over Blocking Loads**: Prefer lazy loading, streaming, pagination, and incremental rendering where possible so users see useful content quickly instead of waiting on large up-front payloads
+13. **Non-Intrusive Selection Handling**: Text selection captured only on `mouseup` with `requestAnimationFrame` to ensure browser finalizes selection first, preventing interference during drag operations
 
 ### Inline Editing Technical Implementation
 
@@ -282,19 +305,21 @@ The `MarkdownRenderer` component includes an interactive Mermaid diagram viewer 
 ```
 src/
 ├── app/                          # Next.js App Router
-│   ├── (auth)/                   # Auth route group (no layout)
-│   │   ├── login/page.tsx        # Login page
-│   │   ├── signup/page.tsx       # Signup page
-│   │   └── callback/route.ts     # OAuth callback handler
+│   ├── auth/page.tsx             # Shared auth entry page
+│   ├── login/page.tsx            # Login page
+│   ├── signup/page.tsx           # Signup page
+│   ├── forgot-password/page.tsx  # Password reset request page
+│   ├── reset-password/page.tsx   # Password reset completion page
+│   ├── callback/route.ts         # OAuth callback handler
 │   ├── (dashboard)/              # Dashboard route group (shared layout)
 │   │   ├── layout.tsx            # ProjectSidebar + main content layout
 │   │   ├── dashboard/page.tsx    # Main dashboard
 │   │   ├── projects/
 │   │   │   ├── page.tsx          # Projects list
 │   │   │   ├── new/page.tsx      # Create project
-│   │   │   └── [id]/page.tsx     # Project workspace (main app)
+│   │   │   └── [projectRef]/page.tsx # Project workspace (main app)
 │   │   ├── billing/page.tsx      # Billing & subscription plans
-│   │   └── settings/page.tsx     # User settings
+│   │   └── preferences/page.tsx  # User preferences
 │   ├── api/                      # API routes
 │   │   ├── chat/route.ts         # POST chat messages (general chat)
 │   │   ├── prompt-chat/route.ts  # GET/POST Prompt tab AI chat with follow-up questions
@@ -304,6 +329,10 @@ src/
 │   │   ├── prds/[id]/route.ts         # PATCH update PRD content
 │   │   ├── mvp-plans/[id]/route.ts    # PATCH update MVP plan content
 │   │   ├── tech-specs/[id]/route.ts   # PATCH update tech spec content
+│   │   ├── waitlist/route.ts          # GET/POST waitlist status + signup
+│   │   ├── stitch/html/route.ts       # Proxy Stitch-hosted HTML for safe rendering
+│   │   ├── generate-pdf/route.ts      # PDF generation support route
+│   │   ├── launch/plan/route.ts       # Launch-plan generation route
 │   │   ├── generate-app/route.ts      # POST generate app code
 │   │   ├── projects/[id]/route.ts     # PATCH/GET project details
 │   │   └── stripe/
@@ -311,7 +340,7 @@ src/
 │   │       ├── portal/route.ts        # Customer portal
 │   │       └── webhook/route.ts       # Stripe webhooks
 │   ├── globals.css               # Global styles + Tailwind
-│   ├── page.tsx                  # Landing page
+│   ├── page.tsx                  # Landing page with dynamic signup/waitlist CTA mode
 │   └── layout.tsx                # Root layout (fonts, metadata)
 │
 ├── components/                   # React components
@@ -347,6 +376,8 @@ src/
 │   ├── stripe.ts                 # Stripe singleton
 │   ├── openrouter.ts             # OpenRouter AI API (chat, gap-analysis fallback)
 │   ├── analysis-pipelines.ts     # In-house analysis orchestration (competitive, PRD, MVP, tech spec)
+│   ├── stitch/client.ts          # Stitch SDK wrapper + response parsers
+│   ├── waitlist.ts               # Waitlist business rules and validation
 │   ├── perplexity.ts             # Perplexity API client (competitor search)
 │   ├── tavily.ts                 # Tavily API client (URL content extraction)
 │   ├── pdf-utils.ts              # PDF export: renders Markdown → HTML → canvas → jsPDF
@@ -365,7 +396,7 @@ src/
 
 | Directory | Purpose | When to Add/Modify |
 |-----------|---------|-------------------|
-| `app/(auth)/` | Authentication pages | Adding new auth methods or flows |
+| `app/` auth routes | Authentication pages and entry points | Adding new auth methods or flows |
 | `app/(dashboard)/` | Protected app pages | Adding new dashboard features |
 | `app/api/` | Backend API endpoints | Creating new API functionality |
 | `components/ui/` | Reusable UI components | Adding new UI primitives |
@@ -373,7 +404,7 @@ src/
 | `components/workspace/` | Workspace orchestration | Changing the project workspace flow or column layout |
 | `components/chat/` | Chat feature components | Enhancing chat functionality |
 | `components/analysis/` | Analysis feature components | Adding analysis features |
-| `lib/` | Business logic & external APIs | Integrating new services |
+| `lib/` | Business logic & external APIs | Integrating new services like waitlist logic, Stitch, or AI pipelines |
 | `lib/prompts/` | **All AI system prompts** — one file per document type | Editing any AI prompt or adding new document generation features |
 | `lib/supabase/` | Database & auth logic | Database operations |
 | `lib/pdf-utils.ts` | PDF export logic | Changing PDF styling or export behaviour |
@@ -714,6 +745,9 @@ PERPLEXITY_API_KEY=pplx-xxx...
 # Tavily (URL content extraction in competitive analysis)
 TAVILY_API_KEY=tvly-xxx...
 
+# Stitch / Google design generation
+STITCH_API_KEY=stitch_xxx...
+
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
@@ -742,6 +776,7 @@ npm install
    - `mvp_plans` - MVP development plans
    - `tech_specs` - Technical specifications
    - `deployments` - Generated app deployments
+   - `waitlist` - Public early-access waitlist email captures
    - `credits` - Credit balance tracking
    - `credits_history` - Credit transaction log
    - `plans` - Subscription plans
@@ -792,12 +827,15 @@ npm run lint
 npm run lint -- --fix
 ```
 
-### Testing (Not configured yet)
+### Testing
 
 ```bash
-# Add test framework when needed
-# Recommended: Jest + React Testing Library
+# Run the current test suite
+npm test
 ```
+
+- Uses Node's built-in test runner via `tsx`
+- Current coverage includes library-level and selected component tests
 
 ### Deployment
 
@@ -820,10 +858,14 @@ docker run -p 3000:3000 idea2app
 
 ```json
 {
-  "dev": "next dev",           // Development server
-  "build": "next build",       // Production build
-  "start": "next start",       // Production server
-  "lint": "eslint"             // Run linting
+  "dev": "next dev",                                       // Development server
+  "build": "next build && node ./scripts/guard-webpack-chunky.mjs", // Production build + chunky bundle guard
+  "start": "next start",                                  // Production server
+  "lint": "eslint",                                       // Run linting
+  "test": "node --import tsx --test src/lib/*.test.ts src/components/analysis/*.test.tsx",
+  "guard:chunky": "node ./scripts/guard-webpack-chunky.mjs",
+  "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs",
+  "stitch:fixture": "node scripts/stitch-fetch-fixture.mjs"
 }
 ```
 
@@ -878,6 +920,11 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `user_id`, `plan_id`, `stripe_subscription_id`, `status`, `current_period_end`
   - RLS: Users can only view their own subscription
 
+- **waitlist**: Public early-access waitlist submissions
+  - Fields: `id`, `email`, `created_at`
+  - Constraints: unique email, server-validated format
+  - RLS: Public insert allowed, reads remain admin/service-role only
+
 ---
 
 ## 8. API Endpoints Overview
@@ -885,6 +932,17 @@ docker run -p 3000:3000 idea2app
 ### Authentication
 - **Auth flow**: Handled by Supabase (email/password, OAuth)
 - **Callback**: `GET /callback` - OAuth callback handler
+
+### Landing + Waitlist
+- **GET /api/waitlist**: Get current waitlist mode state
+  - Returns: `{ userCount, isWaitlistMode, limit }`
+  - Used by landing page CTA logic and waitlist UI
+
+- **POST /api/waitlist**: Add an email to the public waitlist
+  - Body: `{ email }`
+  - Returns: `{ success: true }` or `{ error }`
+  - Duplicate emails return `409`
+  - No auth required
 
 ### Chat
 - **POST /api/chat**: Send chat message, get AI response (general chat)
@@ -940,6 +998,11 @@ docker run -p 3000:3000 idea2app
   - Uses OpenRouter directly (not N8N)
   - Route `maxDuration`: 300s (AI generation can be slow)
   - Generates ASCII art diagrams showing site map, page layouts, and user flows
+
+- **GET /api/stitch/html**: Proxy Stitch-hosted HTML through the server
+  - Query: `?url=<encoded-url>`
+  - Validates the hostname against allowed Google Stitch CDN hosts
+  - Returns raw HTML suitable for safe iframe/srcdoc rendering
 
 - **PATCH /api/analyses/[id]**: Update analysis content
   - Body: `{ content }`
@@ -1143,8 +1206,12 @@ export const CREDIT_COSTS = {
 | [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout — renders `ProjectSidebar` + children |
 | [src/app/(dashboard)/projects/[id]/page.tsx](src/app/(dashboard)/projects/[id]/page.tsx) | Project page — fetches data server-side, passes to `ProjectWorkspace` |
 | [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details |
+| [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering |
+| [src/components/landing/waitlist-form.tsx](src/components/landing/waitlist-form.tsx) | Public waitlist email capture form for the landing page |
 | [src/app/api/prompt-chat/route.ts](src/app/api/prompt-chat/route.ts) | **NEW** — GET/POST Prompt tab AI chat with follow-up questions |
 | [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation using in-house pipelines |
+| [src/app/api/waitlist/route.ts](src/app/api/waitlist/route.ts) | Waitlist status endpoint and public waitlist signup handler |
+| [src/app/api/stitch/html/route.ts](src/app/api/stitch/html/route.ts) | Server-side proxy for Stitch HTML downloads |
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Three-column workspace orchestrator |
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
@@ -1181,7 +1248,9 @@ export const CREDIT_COSTS = {
 | [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export: Markdown → HTML → canvas → jsPDF |
 | [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | **NEW** — System prompts, question strategies, and AI models for Prompt chat |
+| [src/lib/stitch/client.ts](src/lib/stitch/client.ts) | Stitch SDK wrapper and raw response parsing helpers |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
+| [src/lib/waitlist.ts](src/lib/waitlist.ts) | Waitlist thresholds and email validation helpers |
 | [src/lib/supabase/client.ts](src/lib/supabase/client.ts) | Browser Supabase client |
 | [src/lib/stripe.ts](src/lib/stripe.ts) | Stripe singleton client — lazy-initialized with Proxy export |
 | [src/app/api/stripe/checkout/route.ts](src/app/api/stripe/checkout/route.ts) | POST — creates Stripe checkout session for subscription upgrade |
@@ -1194,6 +1263,7 @@ export const CREDIT_COSTS = {
 | [src/types/database.ts](src/types/database.ts) | Database type definitions |
 | [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
 | [migrations/create_mockups_table.sql](migrations/create_mockups_table.sql) | **NEW** — Database migration for mockups table |
+| [supabase/migrations/20260325000000_create_waitlist.sql](supabase/migrations/20260325000000_create_waitlist.sql) | Waitlist table migration with public insert policy |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Setup guide for Prompt tab AI chat feature |
 
 ---
