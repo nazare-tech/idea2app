@@ -21,6 +21,15 @@
 - Build one feature at a time and confirm it works before moving on, don't jump ahead
 - After making changes, give me suggestions on what to do next (what to run, where to look, etc.)
 - If I ask for something that doesn't make sense, tell me — don't just do it
+- When using Codex, use subagents where necessary for parallelizable or well-scoped work, including codebase exploration, implementation, and verification, instead of doing everything serially in one agent
+- Prefer lazy loading, streaming, pagination, and progressive rendering where appropriate rather than making the user wait for large content loads up front
+- When I ask for a change, do your best to test that change before returning control to me
+- If I ask for a visual/UI change, add it to your test plan and visually confirm the change actually happened before returning control to me
+- For backend or non-visual changes, still do your best to verify behavior with the best available tests, logs, requests, or local validation before returning control to me
+- Before making a medium or large change, think about whether the work should be re-architected across multiple files instead of patched in one place
+- Look for opportunities to break large functions into smaller functions when that will improve clarity, reuse, or testability
+- Look for similar logic duplicated across files and centralize it when that makes the codebase simpler and easier to maintain
+- Prefer reusing existing UI components and patterns rather than creating one-off components for a single screen or change
 
 ## Available Skills
 
@@ -126,4 +135,3 @@ Guide for creating new skills that extend Codex's capabilities.
 2. **Or describe what you need**: Say "Deploy to Vercel" instead of memorizing commands
 3. **Context matters**: Some skills work best with specific file types or project setups
 4. **Combine skills**: Use multiple skills in sequence (e.g., `/frontend-design` then `/deploy`)
-
