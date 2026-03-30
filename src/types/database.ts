@@ -161,6 +161,59 @@ export type Database = {
           },
         ]
       }
+      generation_queues: {
+        Row: {
+          id: string
+          project_id: string
+          user_id: string
+          status: string
+          queue: Json
+          current_index: number
+          model_selections: Json
+          started_at: string
+          completed_at: string | null
+          error_info: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          user_id: string
+          status?: string
+          queue: Json
+          current_index?: number
+          model_selections: Json
+          started_at?: string
+          completed_at?: string | null
+          error_info?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          user_id?: string
+          status?: string
+          queue?: Json
+          current_index?: number
+          model_selections?: Json
+          started_at?: string
+          completed_at?: string | null
+          error_info?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_queues_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string

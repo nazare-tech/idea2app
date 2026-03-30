@@ -15,6 +15,8 @@ import {
   ChatThinkingIndicator,
   ChatUserAvatar,
 } from "@/components/chat/chat-primitives"
+import { GenerateAllBlock } from "@/components/workspace/generate-all-block"
+import { useGenerateAll } from "@/stores/generate-all-store"
 
 interface Message {
   id: string
@@ -33,6 +35,7 @@ interface PromptChatInterfaceProps {
   initialIdea: string
   selectedModel: string
   onIdeaSummary?: (summary: string) => void
+  credits?: number
 }
 
 type StreamEvent =
@@ -54,11 +57,18 @@ export function PromptChatInterface({
   initialIdea,
   selectedModel,
   onIdeaSummary,
+  credits = 0,
 }: PromptChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [conversationStage, setConversationStage] = useState<"initial" | "refining" | "summarized">("initial")
+  // If the project already has a description the conversation was previously summarized.
+  // Initialize to "summarized" so the GenerateAllBlock renders immediately on re-mount
+  // (e.g. after navigating away and back) instead of waiting for a chat message.
+  const [conversationStage, setConversationStage] = useState<"initial" | "refining" | "summarized">(
+    () => (initialIdea ? "summarized" : "initial"),
+  )
+  const generateAllStatus = useGenerateAll(projectId, (s) => s.status)
   const [isFirstLoad, setIsFirstLoad] = useState(true)
   const [hasMoreMessages, setHasMoreMessages] = useState(false)
   const [messagesLoading, setMessagesLoading] = useState(false)
@@ -522,6 +532,13 @@ export function PromptChatInterface({
               assistantAvatar={<ChatAssistantAvatar variant="logo" />}
               contentClassName="px-1 py-1"
             />
+          )}
+
+          {/* Generate All block — shown after summary exists, or while active */}
+          {(conversationStage === "summarized" || generateAllStatus !== "idle") && (
+            <div className="mb-6 mt-2">
+              <GenerateAllBlock projectId={projectId} credits={credits} />
+            </div>
           )}
 
           <div ref={messagesEndRef} />

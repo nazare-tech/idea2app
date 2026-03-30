@@ -26,6 +26,7 @@ import { DEFAULT_DOCUMENT_MODEL } from "@/lib/prompt-chat-config"
 import { GenerationStreamPanel } from "@/components/workspace/generation-stream-panel"
 import type { StreamStage } from "@/lib/parse-document-stream"
 import { getDocumentDefinition } from "@/lib/document-definitions"
+import { useGenerateAll } from "@/stores/generate-all-store"
 
 interface MarketingBrief {
   targetAudience: string
@@ -261,9 +262,14 @@ export function ContentEditor({
     URL.revokeObjectURL(url)
   }
 
+  const generateAllStatus = useGenerateAll(projectId, (s) => s.status)
+  const isGenerateAllRunning = generateAllStatus === "running"
+
   const isMarketingBriefComplete = documentType !== "launch" || Object.values(marketingBrief).every(v => v.trim().length > 0)
-  const canGenerate = credits >= config.creditCost && (prerequisiteValidation?.canGenerate ?? true) && isMarketingBriefComplete
-  const disabledReason = !prerequisiteValidation?.canGenerate
+  const canGenerate = credits >= config.creditCost && (prerequisiteValidation?.canGenerate ?? true) && isMarketingBriefComplete && !isGenerateAllRunning
+  const disabledReason = isGenerateAllRunning
+    ? "Generate All is in progress"
+    : !prerequisiteValidation?.canGenerate
     ? prerequisiteValidation?.reason
     : credits < config.creditCost
       ? `Insufficient credits (need ${config.creditCost})`
@@ -464,6 +470,7 @@ export function ContentEditor({
               initialIdea={projectDescription}
               selectedModel={selectedPromptModel}
               onIdeaSummary={handleIdeaSummary}
+              credits={credits}
             />
           ) : (
             <div className="h-full overflow-y-auto p-10 relative">

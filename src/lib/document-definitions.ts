@@ -52,7 +52,7 @@ export const DOCUMENT_DEFINITIONS: DocumentDefinition[] = [
     subtitle: "Market analysis and competitor insights",
     description: "",
     icon: Search,
-    creditCost: 15,
+    creditCost: 10,
     showInNav: true,
   },
   {
@@ -72,7 +72,7 @@ export const DOCUMENT_DEFINITIONS: DocumentDefinition[] = [
     subtitle: "Minimum viable product development plan",
     description: "",
     icon: Target,
-    creditCost: 15,
+    creditCost: 10,
     showInNav: true,
   },
   {
@@ -131,4 +131,22 @@ export function isDocumentType(value: string | null | undefined): value is Docum
 
 export function getDocumentDefinition(type: DocumentType): DocumentDefinition {
   return DOCUMENT_DEFINITION_MAP[type]
+}
+
+/** Ordered list of document types for Generate All pipeline */
+export const GENERATE_ALL_QUEUE_ORDER: DocumentType[] = [
+  "competitive",
+  "prd",
+  "mvp",
+  "mockups",
+  "launch",
+]
+
+/** Default AI models for each Generate All document type */
+export const GENERATE_ALL_DEFAULT_MODELS: Record<string, string> = {
+  competitive: "x-ai/grok-4-1-fast",
+  prd: "x-ai/grok-4-1-fast",
+  mvp: "x-ai/grok-4-1-fast",
+  mockups: "x-ai/grok-4-1-fast",
+  launch: "x-ai/grok-4-1-fast",
 }

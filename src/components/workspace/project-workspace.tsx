@@ -10,6 +10,9 @@ import { APP_HEADER_LOGO_SIZE, HeaderLogo } from "@/components/layout/header-log
 import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stream"
 import { Pencil } from "lucide-react"
 import { DOCUMENT_TYPES, isDocumentType } from "@/lib/document-definitions"
+import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
+import type { GenerateDocumentFn } from "@/stores/generate-all-store"
+import { createClient as createSupabaseClient } from "@/lib/supabase/client"
 
 
 interface Project {
@@ -277,7 +280,11 @@ export function ProjectWorkspace({
   }, [loadGeneratingState])
 
   useEffect(() => {
-    if (isNewProject) {
+    // Use isPromptOnlyMode (client state) instead of isNewProject (server prop tied to ?new=1 URL
+    // param). The ?new=1 param is never stripped from the URL, so isNewProject stays true after
+    // the first render even once the user has a project description. isPromptOnlyMode correctly
+    // reflects whether the user should be locked to the prompt tab.
+    if (isPromptOnlyMode) {
       setActiveDocument("prompt")
       return
     }
@@ -293,7 +300,7 @@ export function ProjectWorkspace({
     }
 
     setActiveDocument(persistedDocument)
-  }, [isNewProject, getPersistedActiveDocument, canSelectDocument])
+  }, [isPromptOnlyMode, searchParams, canSelectDocument])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -306,7 +313,13 @@ export function ProjectWorkspace({
     }
 
     const nextParams = new URLSearchParams(searchParams.toString())
-    if (nextParams.get("tab") !== activeDocument) {
+    const urlTab = nextParams.get("tab")
+    // Only push when activeDocument is leading the URL (e.g. tab click via handleDocumentSelect
+    // already set both state and URL to the same value, so this is a no-op in the common case).
+    // If the URL already has a valid doc type that differs from activeDocument it means the URL
+    // changed first (Link click, browser back/fwd) — effect 282 will sync activeDocument to it.
+    // Overriding the URL here would create an infinite redirect loop.
+    if (urlTab !== activeDocument && !isDocumentType(urlTab)) {
       nextParams.set("tab", activeDocument)
       router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false })
     }
@@ -857,6 +870,154 @@ export function ProjectWorkspace({
     }
   }
 
+  // Generate a specific document type (decoupled from activeDocument state).
+  // Used by GenerateAllContext for sequential pipeline generation.
+  const generateDocument: GenerateDocumentFn = useCallback(
+    async (docType, model, options) => {
+      setGeneratingDocuments(prev => ({ ...prev, [docType]: true }))
+      saveGeneratingState(docType, true)
+
+      try {
+        const endpointMap: Record<string, string> = {
+          competitive: "/api/analysis/competitive-analysis",
+          prd: "/api/analysis/prd",
+          mvp: "/api/analysis/mvp-plan",
+          mockups: "/api/mockups/generate",
+          launch: "/api/launch/plan",
+        }
+        const endpoint = endpointMap[docType]
+        if (!endpoint) throw new Error(`Unsupported document type: ${docType}`)
+
+        // Fetch prerequisites fresh from Supabase, with closure values as a fallback.
+        // Supabase is preferred because router.refresh() may not have propagated into
+        // the useCallback closure yet. If the Supabase query returns null (e.g. auth
+        // hiccup or timing race), the closure value (kept fresh by _updateCallbacks
+        // on every render) is used instead.
+        let competitiveContent: string | undefined
+        let prdContent: string | undefined
+        let mvpContent: string | undefined
+
+        const supabase = createSupabaseClient()
+
+        if (docType === "prd") {
+          const { data } = await supabase
+            .from("analyses")
+            .select("content")
+            .eq("project_id", project.id)
+            .eq("type", "competitive-analysis")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          competitiveContent =
+            data?.content ??
+            analyses.find((a) => a.type === "competitive-analysis")?.content
+        } else if (docType === "mvp") {
+          const { data } = await supabase
+            .from("prds")
+            .select("content")
+            .eq("project_id", project.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          prdContent = data?.content ?? prds[0]?.content
+        } else if (docType === "mockups") {
+          const { data } = await supabase
+            .from("mvp_plans")
+            .select("content")
+            .eq("project_id", project.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          mvpContent = data?.content ?? mvpPlans[0]?.content
+        }
+
+        // Use external signal (from Generate All) if provided, otherwise create our own
+        const externalSignal = options?.signal
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 300000)
+
+        // If an external signal is provided, link it to our controller
+        if (externalSignal) {
+          if (externalSignal.aborted) {
+            controller.abort()
+          } else {
+            externalSignal.addEventListener("abort", () => controller.abort(), { once: true })
+          }
+        }
+
+        let response: Response
+        try {
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              projectId: project.id,
+              idea: project.description,
+              name: projectName,
+              ...(model && { model }),
+              ...(docType !== "launch" && { stream: true }),
+              ...(docType === "prd" && competitiveContent && {
+                competitiveAnalysis: competitiveContent,
+              }),
+              ...(docType === "mvp" && prdContent && {
+                prd: prdContent,
+              }),
+              ...(docType === "mockups" && mvpContent && {
+                mvpPlan: mvpContent,
+                projectName: project.name,
+              }),
+              ...(docType === "launch" && options?.marketingBrief && {
+                marketingBrief: options.marketingBrief,
+              }),
+            }),
+          })
+        } finally {
+          clearTimeout(timeoutId)
+        }
+
+        if (!response.ok) {
+          let errorMsg = "Failed to generate content"
+          try {
+            const errorData = await response.json()
+            if (errorData?.error) errorMsg = errorData.error
+          } catch {
+            // ignore parse errors
+          }
+          throw new Error(errorMsg)
+        }
+
+        const contentType = response.headers.get("Content-Type") ?? ""
+        if (contentType.includes("application/x-ndjson")) {
+          let streamError: string | undefined
+          await parseDocumentStream(response, {
+            onStage: () => {},
+            onToken: () => {},
+            onDone: () => {},
+            onError: (message) => { streamError = message },
+          })
+          if (streamError) throw new Error(streamError)
+        }
+
+        // Success — refresh data
+        router.refresh()
+        return true
+      } catch (error) {
+        // Re-throw abort errors so the caller can distinguish cancellation from failure
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw error
+        }
+        console.error(`Error generating ${docType}:`, error)
+        if (error instanceof Error) throw error
+        throw new Error("Unknown generation error")
+      } finally {
+        setGeneratingDocuments(prev => ({ ...prev, [docType]: false }))
+        saveGeneratingState(docType, false)
+      }
+    },
+    [project, projectName, router, saveGeneratingState, analyses, prds, mvpPlans],
+  )
+
   const handleUpdateDescription = async (description: string) => {
     try {
       const response = await fetch(`/api/projects/${project.id}`, {
@@ -967,6 +1128,12 @@ export function ProjectWorkspace({
   }
 
   return (
+    <>
+    <GenerateAllHydrator
+      projectId={project.id}
+      generateDocument={generateDocument}
+      getDocumentStatus={getDocumentStatus}
+    />
     <div className="flex flex-col h-screen">
       <Header
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1019,6 +1186,7 @@ export function ProjectWorkspace({
       <div className="flex flex-1 overflow-hidden">
         {/* Document Navigation */}
         <DocumentNav
+          projectId={project.id}
           projectName={projectName}
           activeDocument={activeDocument}
           onDocumentSelect={handleDocumentSelect}
@@ -1056,5 +1224,6 @@ export function ProjectWorkspace({
         </div>
       </div>
     </div>
+    </>
   )
 }

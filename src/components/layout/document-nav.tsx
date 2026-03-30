@@ -9,6 +9,7 @@ import {
   NAV_DOCUMENT_DEFINITIONS,
   type DocumentType,
 } from "@/lib/document-definitions"
+import { GenerateAllNavBadge } from "@/components/workspace/generate-all-nav-badge"
 
 export type { DocumentType } from "@/lib/document-definitions"
 
@@ -18,6 +19,7 @@ interface DocumentStatus {
 }
 
 interface DocumentNavProps {
+  projectId: string
   projectName: string
   activeDocument: DocumentType
   onDocumentSelect: (type: DocumentType) => void
@@ -44,6 +46,7 @@ function StatusBadge({ status }: { status: "done" | "in_progress" | "pending" })
 }
 
 export function DocumentNav({
+  projectId,
   activeDocument,
   onDocumentSelect,
   documentStatuses,
@@ -65,7 +68,9 @@ export function DocumentNav({
     icon: doc.icon,
     disabled: !canSelectDocument(doc.type),
     onSelect: () => onDocumentSelect(doc.type),
-    trailing: doc.type !== "prompt" ? <StatusBadge status={getStatus(doc.type)} /> : undefined,
+    trailing: doc.type === "prompt"
+      ? <GenerateAllNavBadge projectId={projectId} />
+      : <StatusBadge status={getStatus(doc.type)} />,
   }))
 
   return (
