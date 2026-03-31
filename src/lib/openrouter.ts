@@ -4,8 +4,8 @@ import { LEGACY_ANALYSIS_PROMPTS, buildGeneralChatSystemPrompt } from "@/lib/pro
 // ─── Model Configuration ───────────────────────────────────────────
 // Change these to switch which OpenRouter model powers each feature.
 // Browse available models at: https://openrouter.ai/models
-const CHAT_MODEL = process.env.OPENROUTER_CHAT_MODEL || "anthropic/claude-sonnet-4"
-const ANALYSIS_MODEL = process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4"
+const CHAT_MODEL = process.env.OPENROUTER_CHAT_MODEL || "anthropic/claude-sonnet-4-6"
+const ANALYSIS_MODEL = process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4-6"
 // ────────────────────────────────────────────────────────────────────
 
 const openrouter = new OpenAI({

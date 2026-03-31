@@ -10,7 +10,7 @@ const openrouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY || "",
 })
 
-const CHAT_MODEL = process.env.OPENROUTER_CHAT_MODEL || "anthropic/claude-sonnet-4"
+const CHAT_MODEL = process.env.OPENROUTER_CHAT_MODEL || "anthropic/claude-sonnet-4-6"
 
 type ChatStreamEvent =
   | { type: "start"; userMessage: unknown }

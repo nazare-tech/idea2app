@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { DocumentModelSelector } from "@/components/ui/document-model-selector"
-import { DEFAULT_DOCUMENT_MODEL } from "@/lib/prompt-chat-config"
+import { TAB_DEFAULT_MODELS, DEFAULT_DOCUMENT_MODEL } from "@/lib/prompt-chat-config"
 import { GenerationStreamPanel } from "@/components/workspace/generation-stream-panel"
 import type { StreamStage } from "@/lib/parse-document-stream"
 import { getDocumentDefinition } from "@/lib/document-definitions"
@@ -91,8 +91,8 @@ export function ContentEditor({
   )
   const [isResizing, setIsResizing] = useState(false)
   const [resizeEdge, setResizeEdge] = useState<'left' | 'right' | null>(null)
-  const [selectedDocModel, setSelectedDocModel] = useState(DEFAULT_DOCUMENT_MODEL)
-  const [selectedPromptModel, setSelectedPromptModel] = useState(DEFAULT_DOCUMENT_MODEL)
+  const [selectedDocModel, setSelectedDocModel] = useState(TAB_DEFAULT_MODELS[documentType] ?? DEFAULT_DOCUMENT_MODEL)
+  const [selectedPromptModel, setSelectedPromptModel] = useState(TAB_DEFAULT_MODELS.prompt)
   const [marketingBrief, setMarketingBrief] = useState<MarketingBrief>({
     targetAudience: "",
     stage: "",
@@ -112,6 +112,11 @@ export function ContentEditor({
   useEffect(() => {
     setDocumentWidth(isFullWidthDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH)
   }, [isFullWidthDocument])
+
+  // Reset model selector to the tab's default whenever the active tab changes
+  useEffect(() => {
+    setSelectedDocModel(TAB_DEFAULT_MODELS[documentType] ?? DEFAULT_DOCUMENT_MODEL)
+  }, [documentType])
 
   // Handle mouse move during resize
   useEffect(() => {

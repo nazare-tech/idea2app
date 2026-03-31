@@ -130,9 +130,9 @@ export default function BillingPage() {
   }
 
   const tokenValueLabel = formatPrice(TOKEN_VALUE_CENTS)
-  const fullReportFast = estimateFullReportTokens("grok-4-1-fast")
-  const fullReportBalanced = estimateFullReportTokens("anthropic/claude-sonnet-4")
-  const fullReportThinking = estimateFullReportTokens("openai/gpt-5-mini")
+  const fullReportFast = estimateFullReportTokens("openai/gpt-5.4-mini")
+  const fullReportBalanced = estimateFullReportTokens("anthropic/claude-sonnet-4-6")
+  const fullReportThinking = estimateFullReportTokens("google/gemini-3.1-pro-preview")
 
   if (loading) {
     return (

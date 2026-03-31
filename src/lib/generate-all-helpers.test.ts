@@ -9,11 +9,11 @@ import { GENERATE_ALL_ACTION_MAP, getTokenCost } from "./token-economics"
 // =============================================================================
 
 const DEFAULT_MODELS: Record<string, string> = {
-  competitive: "x-ai/grok-4-1-fast",
-  prd: "x-ai/grok-4-1-fast",
-  mvp: "x-ai/grok-4-1-fast",
-  mockups: "stitch",
-  launch: "x-ai/grok-4-1-fast",
+  competitive: "google/gemini-3.1-pro-preview",
+  prd:         "anthropic/claude-sonnet-4-6",
+  mvp:         "anthropic/claude-sonnet-4-6",
+  mockups:     "stitch",
+  launch:      "openai/gpt-5.4-mini",
 }
 
 // Status functions for common scenarios

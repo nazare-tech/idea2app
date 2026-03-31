@@ -5,43 +5,48 @@ export { PROMPT_CHAT_SYSTEM, IDEA_SUMMARY_PROMPT, POST_SUMMARY_SYSTEM } from "@/
 // Available AI models from OpenRouter
 export const AVAILABLE_MODELS = [
   {
-    id: "anthropic/claude-sonnet-4",
-    name: "Claude Sonnet 4",
+    id: "anthropic/claude-sonnet-4-6",
+    name: "Claude Sonnet 4.6",
     description: "Balanced performance and speed",
   },
   {
-    id: "anthropic/claude-opus-4",
-    name: "Claude Opus 4",
-    description: "Most capable, best for complex tasks",
+    id: "google/gemini-3.1-pro-preview",
+    name: "Gemini 3.1 Pro Preview",
+    description: "Think longer for complex tasks",
   },
   {
-    id: "openai/gpt-4o",
-    name: "GPT-4o",
-    description: "Fast and capable",
-  },
-  {
-    id: "openai/gpt-4-turbo",
-    name: "GPT-4 Turbo",
-    description: "High performance",
+    id: "openai/gpt-5.4-mini",
+    name: "GPT-5.4 Mini",
+    description: "Fastest for quick answers",
   },
   {
     id: "google/gemini-2.5-flash",
     name: "Gemini 2.5 Flash",
-    description: "Latest fast Gemini model",
+    description: "Fast and efficient from Google",
   },
   {
-    id: "meta-llama/llama-3.3-70b-instruct",
-    name: "Llama 3.3 70B",
-    description: "Open source, capable",
-  },
-  {
-    id: "deepseek/deepseek-chat",
-    name: "DeepSeek Chat",
+    id: "deepseek/deepseek-v3-2",
+    name: "DeepSeek V3.2",
     description: "Cost-effective alternative",
+  },
+  {
+    id: "moonshotai/kimi-k2.5",
+    name: "Kimi K2.5",
+    description: "Powerful reasoning from Moonshot",
+  },
+  {
+    id: "anthropic/claude-haiku-4-5",
+    name: "Claude Haiku 4.5",
+    description: "Fast and lightweight from Anthropic",
+  },
+  {
+    id: "qwen/qwen3.5-flash",
+    name: "Qwen 3.5 Flash",
+    description: "Fast model from Alibaba",
   },
 ]
 
-export const DEFAULT_MODEL = "anthropic/claude-sonnet-4"
+export const DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
 
 // ─── Document Tab Model Selection ─────────────────────────────────
 // These models appear in the AI model selector on document tabs
@@ -57,61 +62,61 @@ export interface DocumentModel {
 
 export const DOCUMENT_PRIMARY_MODELS: DocumentModel[] = [
   {
-    id: "x-ai/grok-4-1-fast",
-    name: "Grok 4.1 Fast",
-    description: "Fastest for quick answers",
-    badge: "Fastest",
-  },
-  {
-    id: "openai/gpt-5-mini",
-    name: "GPT-5 Mini",
-    description: "Most efficient for everyday tasks",
-    badge: "Efficient",
-  },
-  {
     id: "google/gemini-3.1-pro-preview",
     name: "Gemini 3.1 Pro Preview",
     description: "Think longer for complex tasks",
     badge: "Thinking",
   },
+  {
+    id: "anthropic/claude-sonnet-4-6",
+    name: "Claude Sonnet 4.6",
+    description: "Balanced performance and speed",
+    badge: "Efficient",
+  },
+  {
+    id: "openai/gpt-5.4-mini",
+    name: "GPT-5.4 Mini",
+    description: "Fastest for quick answers",
+    badge: "Fastest",
+  },
 ]
 
 export const DOCUMENT_MORE_MODELS: DocumentModel[] = [
-  {
-    id: "anthropic/claude-sonnet-4",
-    name: "Claude Sonnet 4",
-    description: "Balanced performance and speed",
-  },
-  {
-    id: "anthropic/claude-opus-4",
-    name: "Claude Opus 4",
-    description: "Most capable from Anthropic",
-  },
-  {
-    id: "openai/gpt-4o",
-    name: "GPT-4o",
-    description: "Fast and capable",
-  },
   {
     id: "google/gemini-2.5-flash",
     name: "Gemini 2.5 Flash",
     description: "Fast and efficient from Google",
   },
   {
-    id: "deepseek/deepseek-r1",
-    name: "DeepSeek R1",
-    description: "Advanced reasoning model",
+    id: "deepseek/deepseek-v3-2",
+    name: "DeepSeek V3.2",
+    description: "Cost-effective alternative",
   },
   {
-    id: "x-ai/grok-3",
-    name: "Grok 3",
-    description: "Powerful model from xAI",
+    id: "moonshotai/kimi-k2.5",
+    name: "Kimi K2.5",
+    description: "Powerful reasoning from Moonshot",
   },
   {
-    id: "meta-llama/llama-4-maverick",
-    name: "Llama 4 Maverick",
-    description: "Open source from Meta",
+    id: "anthropic/claude-haiku-4-5",
+    name: "Claude Haiku 4.5",
+    description: "Fast and lightweight from Anthropic",
+  },
+  {
+    id: "qwen/qwen3.5-flash",
+    name: "Qwen 3.5 Flash",
+    description: "Fast model from Alibaba",
   },
 ]
 
-export const DEFAULT_DOCUMENT_MODEL = "openai/gpt-5-mini"
+// Per-tab default model selections
+export const TAB_DEFAULT_MODELS: Record<string, string> = {
+  prompt:      "anthropic/claude-sonnet-4-6",   // Explain the Prompt
+  competitive: "google/gemini-3.1-pro-preview",  // Competitive Research
+  prd:         "anthropic/claude-sonnet-4-6",    // PRD
+  mvp:         "anthropic/claude-sonnet-4-6",    // MVP
+  mockups:     "anthropic/claude-sonnet-4-6",    // Mockups
+  launch:      "openai/gpt-5.4-mini",            // Marketing Plan
+}
+
+export const DEFAULT_DOCUMENT_MODEL = "anthropic/claude-sonnet-4-6"

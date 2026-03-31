@@ -70,9 +70,9 @@ const steps = [
 ]
 
 const tokenUsdLabel = formatPrice(TOKEN_VALUE_CENTS)
-const fullReportTokensFast = estimateFullReportTokens("grok-4-1-fast")
-const fullReportTokensBalanced = estimateFullReportTokens("anthropic/claude-sonnet-4")
-const fullReportTokensThinking = estimateFullReportTokens("openai/gpt-5-mini")
+const fullReportTokensFast = estimateFullReportTokens("openai/gpt-5.4-mini")
+const fullReportTokensBalanced = estimateFullReportTokens("anthropic/claude-sonnet-4-6")
+const fullReportTokensThinking = estimateFullReportTokens("google/gemini-3.1-pro-preview")
 
 const plans = [
   {

@@ -10,7 +10,7 @@ const openrouter = new OpenAI({
 })
 
 const DEFAULT_MODEL =
-  process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4"
+  process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4-6"
 
 // ─── Type Definitions ────────────────────────────────────────────────
 

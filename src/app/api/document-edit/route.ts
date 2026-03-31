@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     }
 
     // Determine which model to use
-    const selectedModel = model || process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4"
+    const selectedModel = model || process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4-6"
     modelUsed = selectedModel
     aiSource = "openrouter"
 
