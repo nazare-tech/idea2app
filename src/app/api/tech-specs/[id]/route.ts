@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 
 export async function PATCH(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const timer = new MetricsTimer()
@@ -15,7 +15,7 @@ export async function PATCH(
 
   try {
     const supabase = await createClient()
-    const { id } = await params
+    const { id: _id } = await params
 
     // Auth check
     const {
@@ -31,62 +31,6 @@ export async function PATCH(
 
     // Tech Spec feature is currently disabled
     return NextResponse.json({ error: "Tech spec feature is currently unavailable" }, { status: 410 })
-
-    // Parse request
-    const { content } = await request.json()
-
-    if (!content) {
-      statusCode = 400
-      errorType = "validation_error"
-      errorMessage = "Content is required"
-      return NextResponse.json({ error: "Content is required" }, { status: 400 })
-    }
-
-    // Verify the tech spec belongs to the user's project
-    const { data: techSpec, error: fetchError } = await supabase
-      .from("tech_specs")
-      .select("project_id, projects!inner(user_id)")
-      .eq("id", id)
-      .single()
-
-    if (fetchError || !techSpec) {
-      statusCode = 404
-      errorType = "not_found"
-      errorMessage = "Tech spec not found"
-      return NextResponse.json({ error: "Tech spec not found" }, { status: 404 })
-    }
-
-    projectId = techSpec!.project_id
-
-    // Type assertion to access nested project data
-    const projectData = techSpec.projects as unknown as { user_id: string }
-    if (projectData.user_id !== user.id) {
-      statusCode = 403
-      errorType = "unauthorized"
-      errorMessage = "Unauthorized"
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-    }
-
-    // Update the tech spec
-    const { data: updated, error: updateError } = await supabase
-      .from("tech_specs")
-      .update({ content, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single()
-
-    if (updateError) {
-      console.error("Error updating tech spec:", updateError)
-      statusCode = 500
-      errorType = "server_error"
-      errorMessage = updateError.message
-      return NextResponse.json(
-        { error: "Failed to update tech spec" },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ data: updated })
   } catch (error) {
     console.error("Error in tech-specs PATCH:", error)
     statusCode = 500
