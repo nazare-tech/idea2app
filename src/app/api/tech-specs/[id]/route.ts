@@ -56,7 +56,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Tech spec not found" }, { status: 404 })
     }
 
-    projectId = techSpec.project_id
+    projectId = techSpec!.project_id
 
     // Type assertion to access nested project data
     const projectData = techSpec.projects as unknown as { user_id: string }
