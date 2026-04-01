@@ -26,7 +26,18 @@ import { TAB_DEFAULT_MODELS, DEFAULT_DOCUMENT_MODEL } from "@/lib/prompt-chat-co
 import { GenerationStreamPanel } from "@/components/workspace/generation-stream-panel"
 import type { StreamStage } from "@/lib/parse-document-stream"
 import { getDocumentDefinition } from "@/lib/document-definitions"
+import { getTokenCost, type TokenBillableAction } from "@/lib/token-economics"
 import { useGenerateAll } from "@/stores/generate-all-store"
+
+// Maps document tab types to their billable action key in token-economics
+const DOC_TYPE_TO_ACTION: Partial<Record<DocumentType, TokenBillableAction>> = {
+  competitive: "competitive-analysis",
+  prd: "prd",
+  mvp: "mvp-plan",
+  mockups: "mockup",
+  techspec: "tech-spec",
+  launch: "launch-plan",
+}
 
 interface MarketingBrief {
   targetAudience: string
@@ -108,6 +119,13 @@ export function ContentEditor({
   const containerRef = useRef<HTMLDivElement>(null)
 
   const config = getDocumentDefinition(documentType)
+
+  // Recalculate credit cost based on the currently selected model.
+  // Mockups use a fixed-cost SDK regardless of model, so model is ignored there.
+  const action = DOC_TYPE_TO_ACTION[documentType]
+  const dynamicCreditCost = action
+    ? getTokenCost(action, documentType === "mockups" ? undefined : selectedDocModel)
+    : config.creditCost
 
   useEffect(() => {
     setDocumentWidth(isFullWidthDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH)
@@ -271,13 +289,13 @@ export function ContentEditor({
   const isGenerateAllRunning = generateAllStatus === "running"
 
   const isMarketingBriefComplete = documentType !== "launch" || Object.values(marketingBrief).every(v => v.trim().length > 0)
-  const canGenerate = credits >= config.creditCost && (prerequisiteValidation?.canGenerate ?? true) && isMarketingBriefComplete && !isGenerateAllRunning
+  const canGenerate = credits >= dynamicCreditCost && (prerequisiteValidation?.canGenerate ?? true) && isMarketingBriefComplete && !isGenerateAllRunning
   const disabledReason = isGenerateAllRunning
     ? "Generate All is in progress"
     : !prerequisiteValidation?.canGenerate
     ? prerequisiteValidation?.reason
-    : credits < config.creditCost
-      ? `Insufficient credits (need ${config.creditCost})`
+    : credits < dynamicCreditCost
+      ? `Insufficient credits (need ${dynamicCreditCost})`
       : !isMarketingBriefComplete
         ? "Complete all marketing brief fields first"
         : undefined
@@ -446,7 +464,7 @@ export function ContentEditor({
                     <Sparkles className="h-3.5 w-3.5" />
                   )}
                   <span className="text-xs ui-font-semibold">
-                    {isGenerating ? "Generating..." : content ? `Regenerate (${config.creditCost} credits)` : `Generate (${config.creditCost} credits)`}
+                    {isGenerating ? "Generating..." : content ? `Regenerate (${dynamicCreditCost} credits)` : `Generate (${dynamicCreditCost} credits)`}
                   </span>
                 </button>
                 {!canGenerate && disabledReason && !isGenerating && (
