@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     // before the trigger was installed.
     if (user) {
       await supabase.from("credits").upsert(
-        { user_id: user.id, balance: 100 },
+        { user_id: user.id, balance: 150 },
         { onConflict: "user_id", ignoreDuplicates: true }
       )
     }
