@@ -1,5 +1,6 @@
 import OpenAI from "openai"
 import { COMPETITOR_SEARCH_SYSTEM_PROMPT, buildCompetitorSearchUserPrompt } from "@/lib/prompts"
+import { withRetry } from "@/lib/with-retry"
 
 // Perplexity uses an OpenAI-compatible interface with a different base URL
 const perplexity = new OpenAI({
@@ -25,15 +26,19 @@ export async function searchCompetitors(
     throw new Error("Perplexity API key not configured")
   }
 
-  const response = await perplexity.chat.completions.create({
-    model: "sonar-pro",
-    messages: [
-      { role: "system", content: COMPETITOR_SEARCH_SYSTEM_PROMPT },
-      { role: "user", content: buildCompetitorSearchUserPrompt(idea, name) },
-    ],
-    max_tokens: 2048,
-    temperature: 0.2,
-  })
+  const response = await withRetry(
+    () =>
+      perplexity.chat.completions.create({
+        model: "sonar-pro",
+        messages: [
+          { role: "system", content: COMPETITOR_SEARCH_SYSTEM_PROMPT },
+          { role: "user", content: buildCompetitorSearchUserPrompt(idea, name) },
+        ],
+        max_tokens: 2048,
+        temperature: 0.2,
+      }),
+    { label: "Perplexity competitor search" }
+  )
 
   const rawResponse = response.choices[0]?.message?.content || ""
 

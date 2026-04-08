@@ -1,3 +1,5 @@
+import { withRetry } from "@/lib/with-retry"
+
 export interface TavilyExtractResult {
   url: string
   content: string
@@ -25,22 +27,27 @@ export async function extractCompetitorInfo(
     return { results: [], failed_results: [] }
   }
 
-  const response = await fetch("https://api.tavily.com/extract", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.TAVILY_API_KEY}`,
+  return withRetry(
+    async () => {
+      const response = await fetch("https://api.tavily.com/extract", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.TAVILY_API_KEY}`,
+        },
+        body: JSON.stringify({
+          urls: cleanUrls,
+        }),
+        signal: AbortSignal.timeout(30000), // 30s timeout
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Tavily extract failed: ${response.status} - ${errorText}`)
+      }
+
+      return response.json()
     },
-    body: JSON.stringify({
-      urls: cleanUrls,
-    }),
-    signal: AbortSignal.timeout(30000), // 30s timeout
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Tavily extract failed: ${response.status} - ${errorText}`)
-  }
-
-  return response.json()
+    { label: "Tavily URL extraction" }
+  )
 }

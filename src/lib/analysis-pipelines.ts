@@ -167,7 +167,7 @@ export async function runCompetitiveAnalysis(
     max_tokens: 8192,
     temperature: 0.3,
     stream: callbacks?.onToken ? true : false,
-  })
+  }, { signal: AbortSignal.timeout(120_000) })
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
@@ -199,7 +199,7 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
     max_tokens: 8192,
     temperature: 0.3,
     stream: callbacks?.onToken ? true : false,
-  })
+  }, { signal: AbortSignal.timeout(120_000) })
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
@@ -229,7 +229,7 @@ export async function runMVPPlan(
     max_tokens: 8192,
     temperature: 0.3,
     stream: callbacks?.onToken ? true : false,
-  })
+  }, { signal: AbortSignal.timeout(120_000) })
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
@@ -257,7 +257,7 @@ export async function runTechSpec(
     max_tokens: 8192,
     temperature: 0.3,
     stream: callbacks?.onToken ? true : false,
-  })
+  }, { signal: AbortSignal.timeout(120_000) })
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
