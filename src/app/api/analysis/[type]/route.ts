@@ -210,6 +210,23 @@ export async function POST(request: Request, { params }: AnalysisParams) {
             errorType = "generation_error"
             errorMessage = msg
             statusCode = 500
+
+            // Refund credits on generation failure
+            if (creditsConsumed > 0) {
+              try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await (supabase.rpc as any)("refund_credits", {
+                  p_user_id: userId!,
+                  p_amount: creditsConsumed,
+                  p_action: analysisType!,
+                  p_description: `${analysisType} generation failed for "${name}" — credits refunded`,
+                })
+                send({ type: "refund", credits: creditsConsumed })
+              } catch (refundErr) {
+                console.error("[Analysis] Credit refund failed:", refundErr)
+              }
+            }
+
             // Track metrics for failed streaming request
             trackAPIMetrics({
               endpoint: `/api/analysis/${type}`,
@@ -305,6 +322,24 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
+
+    // Refund credits on generation failure
+    if (creditsConsumed > 0 && userId) {
+      try {
+        const supabase = await createClient()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.rpc as any)("refund_credits", {
+          p_user_id: userId,
+          p_amount: creditsConsumed,
+          p_action: analysisType || "unknown",
+          p_description: `${analysisType} generation failed — credits refunded`,
+        })
+        console.log(`[Analysis] Refunded ${creditsConsumed} credits to user ${userId}`)
+      } catch (refundErr) {
+        console.error("[Analysis] Credit refund failed:", refundErr)
+      }
+    }
+
     return NextResponse.json(
       { error: "Failed to generate analysis. Please try again." },
       { status: 500 }

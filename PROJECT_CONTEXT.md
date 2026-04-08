@@ -173,7 +173,7 @@
    - Client requests analysis (competitive, PRD, MVP plan, or tech spec) from the workspace `ContentEditor`
    - Server checks credits, deducts if available
    - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`):
-     - **Competitive Analysis**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail.
+     - **Competitive Analysis**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail. External API calls (Perplexity, Tavily) use `withRetry` (3 retries, exponential backoff). All OpenRouter synthesis calls have a 120s `AbortSignal` timeout.
      - **PRD**: OpenRouter LLM call with detailed system prompt, receives `competitiveAnalysis` as context
      - **MVP Plan**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
      - **Tech Spec**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
@@ -239,7 +239,7 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 2. **Server Components by Default**: Pages default to server components; interactive components explicitly marked `"use client"`
 3. **Middleware-based Auth**: Global authentication protection at the middleware level
 4. **Credit System with Database Functions**: PostgreSQL stored procedures for atomic credit operations
-5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter); PRD/MVP/Tech Spec use direct OpenRouter calls with detailed prompts
+5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter) with retry logic on external calls; PRD/MVP/Tech Spec use direct OpenRouter calls with detailed prompts. All LLM synthesis calls have 120s abort timeouts. Credits are refunded via `refund_credits` RPC on generation failure.
 6. **TypeScript-First**: Strict typing throughout, auto-generated database types
 7. **Component Composition**: Radix UI primitives + CVA for variants
 8. **Optimistic UI Updates**: Immediate feedback with graceful error handling
@@ -379,7 +379,8 @@ src/
 │   ├── stitch/client.ts          # Stitch SDK wrapper + response parsers
 │   ├── waitlist.ts               # Waitlist business rules and validation
 │   ├── perplexity.ts             # Perplexity API client (competitor search)
-│   ├── tavily.ts                 # Tavily API client (URL content extraction)
+│   ├── tavily.ts                 # Tavily API client (URL content extraction, with retry)
+│   ├── with-retry.ts             # Shared retry utility for external API calls (exponential backoff)
 │   ├── pdf-utils.ts              # PDF export: renders Markdown → HTML → canvas → jsPDF
 │   ├── prompt-chat-config.ts     # System prompts and AI models for Prompt chat
 │   └── utils.ts                  # Utility functions & CREDIT_COSTS
