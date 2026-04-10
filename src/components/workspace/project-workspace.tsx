@@ -1131,7 +1131,7 @@ export function ProjectWorkspace({
     <>
     <GenerateAllHydrator
       projectId={project.id}
-      generateDocument={generateDocument}
+      onStepComplete={router.refresh}
       getDocumentStatus={getDocumentStatus}
     />
     <div className="flex flex-col h-screen">
