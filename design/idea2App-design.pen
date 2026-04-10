@@ -18393,7 +18393,7 @@
                             {
                               "type": "icon_font",
                               "id": "k0P6w",
-                              "width": 16,
+                              "width": 20.062502798298635,
                               "height": 16,
                               "iconFontName": "arrow-up-right",
                               "iconFontFamily": "lucide",
@@ -18649,977 +18649,533 @@
       "y": -256,
       "name": "AI Project Manager v4 - Idea Intake Wizard",
       "width": 1440,
-      "height": 900,
-      "fill": "$swiss-white",
+      "height": 1080,
+      "fill": "#EEF1F5",
+      "layout": "vertical",
       "children": [
         {
           "type": "frame",
-          "id": "lBQo4",
-          "name": "Project Sidebar",
-          "width": 260,
+          "id": "ZsGui",
+          "name": "Wizard Shell",
+          "width": "fill_container",
           "height": "fill_container",
-          "fill": "$bg-sidebar",
-          "layout": "vertical",
-          "padding": [
-            24,
-            0
-          ],
           "children": [
             {
               "type": "frame",
-              "id": "Re7dK",
-              "name": "Sidebar Header",
-              "width": "fill_container",
-              "gap": 12,
-              "padding": [
-                0,
-                24
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "M56u8",
-                  "name": "logoMark",
-                  "width": 32,
-                  "height": 32,
-                  "fill": "$red-primary",
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "dOJjP",
-                      "name": "logoText",
-                      "fill": "$off-white",
-                      "content": "P",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 16,
-                      "fontWeight": "700"
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "lfZ7i",
-                  "name": "brandName",
-                  "fill": "$off-white",
-                  "content": "PROJECTS",
-                  "fontFamily": "$font-mono",
-                  "fontSize": 11,
-                  "fontWeight": "500",
-                  "letterSpacing": 1
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "Uua7H",
-              "name": "New Project Row",
-              "width": "fill_container",
-              "padding": [
-                16,
-                24
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "mJuNc",
-                  "name": "newBtn",
-                  "fill": "$red-primary",
-                  "gap": 8,
-                  "padding": [
-                    8,
-                    16
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "RSotD",
-                      "name": "plusIcon",
-                      "width": 14,
-                      "height": 14,
-                      "iconFontName": "plus",
-                      "iconFontFamily": "lucide",
-                      "fill": "$off-white"
-                    },
-                    {
-                      "type": "text",
-                      "id": "eAvm2",
-                      "name": "newLabel",
-                      "fill": "$off-white",
-                      "content": "New Project",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 12,
-                      "fontWeight": "600"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "Tw2ja",
-              "name": "Search Row",
-              "width": "fill_container",
-              "padding": [
-                0,
-                16
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "pkRo5",
-                  "name": "searchBox",
-                  "width": "fill_container",
-                  "height": 36,
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1,
-                    "fill": "#333333"
-                  },
-                  "gap": 8,
-                  "padding": [
-                    0,
-                    12
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "CwpIG",
-                      "name": "searchIcon",
-                      "width": 14,
-                      "height": 14,
-                      "iconFontName": "search",
-                      "iconFontFamily": "lucide",
-                      "fill": "$gray-500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "5qMjI",
-                      "name": "searchText",
-                      "fill": "$gray-500",
-                      "content": "Search projects...",
-                      "fontFamily": "$font-mono",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "z8HzT",
-              "name": "divider1",
-              "width": "fill_container",
-              "height": 1,
-              "fill": "#222222"
-            },
-            {
-              "type": "frame",
-              "id": "oiwI5",
-              "name": "Project List",
+              "id": "Colig",
+              "name": "Page Content",
               "width": "fill_container",
               "height": "fill_container",
               "layout": "vertical",
               "children": [
                 {
                   "type": "frame",
-                  "id": "z2BpN",
-                  "name": "Project 1 - Active",
+                  "id": "5htXE",
+                  "name": "Idea Wizard App",
                   "width": "fill_container",
-                  "fill": "#1A1A1A",
-                  "gap": 12,
-                  "padding": [
-                    12,
-                    24
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "EbzOK",
-                      "name": "proj1icon",
-                      "width": 16,
-                      "height": 16,
-                      "iconFontName": "folder",
-                      "iconFontFamily": "lucide",
-                      "fill": "$red-primary"
-                    },
-                    {
-                      "type": "text",
-                      "id": "JF9YL",
-                      "name": "proj1text",
-                      "fill": "$off-white",
-                      "content": "E-Commerce Platform",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 13,
-                      "fontWeight": "600"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "rPsjT",
-                  "name": "Project 2",
-                  "width": "fill_container",
-                  "gap": 12,
-                  "padding": [
-                    12,
-                    24
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "QBXPZ",
-                      "name": "proj2icon",
-                      "width": 16,
-                      "height": 16,
-                      "iconFontName": "folder",
-                      "iconFontFamily": "lucide",
-                      "fill": "$gray-500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "WC3tF",
-                      "name": "proj2text",
-                      "fill": "$gray-500",
-                      "content": "Mobile Banking App",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "RcElD",
-                  "name": "Project 3",
-                  "width": "fill_container",
-                  "gap": 12,
-                  "padding": [
-                    12,
-                    24
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "yx1HO",
-                      "name": "proj3icon",
-                      "width": 16,
-                      "height": 16,
-                      "iconFontName": "folder",
-                      "iconFontFamily": "lucide",
-                      "fill": "$gray-500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "BNOmM",
-                      "name": "proj3text",
-                      "fill": "$gray-500",
-                      "content": "Analytics Dashboard",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "splR7",
-                  "name": "Project 4",
-                  "width": "fill_container",
-                  "gap": 12,
-                  "padding": [
-                    12,
-                    24
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "kqr3D",
-                      "name": "proj4icon",
-                      "width": 16,
-                      "height": 16,
-                      "iconFontName": "folder",
-                      "iconFontFamily": "lucide",
-                      "fill": "$gray-500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "VXp6A",
-                      "name": "proj4text",
-                      "fill": "$gray-500",
-                      "content": "CRM System",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "HBa2o",
-                  "name": "Project 5",
-                  "width": "fill_container",
-                  "gap": 12,
-                  "padding": [
-                    12,
-                    24
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "afzxn",
-                      "name": "proj5icon",
-                      "width": 16,
-                      "height": 16,
-                      "iconFontName": "folder",
-                      "iconFontFamily": "lucide",
-                      "fill": "$gray-500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "KD2YY",
-                      "name": "proj5text",
-                      "fill": "$gray-500",
-                      "content": "AI Content Writer",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "nGBar",
-                  "name": "Project 6",
-                  "width": "fill_container",
-                  "gap": 12,
-                  "padding": [
-                    12,
-                    24
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "kBxXB",
-                      "name": "proj6icon",
-                      "width": 16,
-                      "height": 16,
-                      "iconFontName": "folder",
-                      "iconFontFamily": "lucide",
-                      "fill": "$gray-500"
-                    },
-                    {
-                      "type": "text",
-                      "id": "MIBhQ",
-                      "name": "proj6text",
-                      "fill": "$gray-500",
-                      "content": "Supply Chain Tool",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "TSeyf",
-              "name": "divider2",
-              "width": "fill_container",
-              "height": 1,
-              "fill": "#222222"
-            },
-            {
-              "type": "frame",
-              "id": "0h5Js",
-              "name": "Sidebar Footer",
-              "width": "fill_container",
-              "gap": 12,
-              "padding": [
-                12,
-                24
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "1utxe",
-                  "name": "avatar",
-                  "width": 28,
-                  "height": 28,
-                  "fill": "$gray-dark",
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "4w1AM",
-                      "name": "avatarText",
-                      "fill": "$off-white",
-                      "content": "MK",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 10,
-                      "fontWeight": "600"
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "MzvZp",
-                  "name": "userName",
-                  "fill": "$gray-500",
-                  "content": "Mukul K.",
-                  "fontFamily": "$font-heading",
-                  "fontSize": 12,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "icon_font",
-                  "id": "Kus4R",
-                  "name": "settingsIcon",
-                  "width": 16,
-                  "height": 16,
-                  "iconFontName": "settings",
-                  "iconFontFamily": "lucide",
-                  "fill": "$gray-500"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "bStyt",
-          "name": "vertDivider1",
-          "width": 1,
-          "height": "fill_container",
-          "fill": "$border"
-        },
-        {
-          "type": "frame",
-          "id": "SW759",
-          "name": "Wizard Flow Pane",
-          "width": 280,
-          "height": "fill_container",
-          "fill": "$swiss-white",
-          "layout": "vertical",
-          "children": [
-            {
-              "type": "frame",
-              "id": "ejoka",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 6,
-              "padding": [
-                24,
-                24,
-                16,
-                24
-              ],
-              "children": [
-                {
-                  "type": "text",
-                  "id": "7oSIo",
-                  "fill": "$swiss-subtle",
-                  "content": "CURRENT PROJECT",
-                  "fontFamily": "$font-mono",
-                  "fontSize": 10,
-                  "fontWeight": "500",
-                  "letterSpacing": 1
-                },
-                {
-                  "type": "text",
-                  "id": "FzWHn",
-                  "fill": "$swiss-black",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "Idea Intake Rebuild",
-                  "fontFamily": "$swiss-display",
-                  "fontSize": 20,
-                  "fontWeight": "700",
-                  "letterSpacing": -1
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "J8loL",
-              "width": "fill_container",
-              "height": 1,
-              "fill": "$swiss-border"
-            },
-            {
-              "type": "frame",
-              "id": "6vcxy",
-              "width": "fill_container",
-              "height": "fill_container",
-              "layout": "vertical",
-              "justifyContent": "space_between",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "9Tgo5",
-                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#F7F8FA",
                   "layout": "vertical",
                   "children": [
                     {
                       "type": "frame",
-                      "id": "SH2Iq",
+                      "id": "oDBEr",
+                      "name": "Wizard States",
                       "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 20,
                       "padding": [
-                        16,
                         24,
-                        8,
-                        24
+                        32,
+                        32,
+                        32
                       ],
                       "children": [
-                        {
-                          "type": "text",
-                          "id": "hgAWW",
-                          "fill": "$swiss-subtle",
-                          "content": "EXPLAIN THE IDEA",
-                          "fontFamily": "$font-mono",
-                          "fontSize": 10,
-                          "fontWeight": "500",
-                          "letterSpacing": 1
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "w0asc",
-                      "width": "fill_container",
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": {
-                          "bottom": 1
-                        },
-                        "fill": "$swiss-border"
-                      },
-                      "gap": 12,
-                      "padding": [
-                        14,
-                        24
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "YF3OE",
-                          "fill": "$swiss-red",
-                          "content": "01",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 15,
-                          "fontWeight": "700"
-                        },
                         {
                           "type": "frame",
-                          "id": "9gLVH",
+                          "id": "vg8b6",
+                          "name": "Top States",
                           "width": "fill_container",
                           "layout": "vertical",
-                          "gap": 2,
+                          "gap": 16,
                           "children": [
                             {
-                              "type": "text",
-                              "id": "zxZ4f",
-                              "fill": "$swiss-black",
-                              "content": "Describe the idea",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 15,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "text",
-                              "id": "k1vZ3",
-                              "fill": "$swiss-muted",
-                              "textGrowth": "fixed-width",
+                              "type": "frame",
+                              "id": "08EZ8",
+                              "name": "Module Container",
                               "width": "fill_container",
-                              "content": "Initial brief captured and locked in",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 12
+                              "gap": 16,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "9lciY",
+                                  "name": "Empty State",
+                                  "width": "fill_container",
+                                  "fill": "#FFFFFF",
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#E6E8EC"
+                                  },
+                                  "layout": "vertical",
+                                  "gap": 20,
+                                  "padding": 18,
+                                  "children": [
+                                    {
+                                      "type": "group",
+                                      "id": "oXkbg",
+                                      "layout": "vertical",
+                                      "gap": 16,
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "vU4qW",
+                                          "name": "emptyTitle",
+                                          "fill": "#0D1320",
+                                          "content": "Start with your core idea",
+                                          "fontFamily": "Space Grotesk",
+                                          "fontSize": 22,
+                                          "fontWeight": "700",
+                                          "letterSpacing": -0.4
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "Hx04x",
+                                          "name": "ideaInput",
+                                          "width": "fill_container",
+                                          "height": 200,
+                                          "fill": "#F8FAFC",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            12,
+                                            14
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "8c7gF",
+                                              "name": "ideaHint",
+                                              "fill": "#94A3B8",
+                                              "content": "Describe your business idea in a few sentences",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "8XSOT",
+                                      "name": "emptyFooter",
+                                      "width": "fill_container",
+                                      "justifyContent": "end",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "thf0P",
+                                          "name": "emptyBtn",
+                                          "fill": "#0D1320",
+                                          "padding": [
+                                            10,
+                                            14
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "VsTBf",
+                                              "name": "emptyBtnTxt",
+                                              "fill": "#FFFFFF",
+                                              "content": "Next",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 12,
+                                              "fontWeight": "600"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
                             }
                           ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "hH58i",
-                          "fill": "$swiss-green",
-                          "content": "Done",
-                          "fontFamily": "$font-mono",
-                          "fontSize": 10,
-                          "fontWeight": "500"
                         }
                       ]
-                    },
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "MKl8B",
+      "x": 22890,
+      "y": -256,
+      "name": "Idea Intake - Active Only",
+      "width": 1440,
+      "height": 1080,
+      "fill": "#EEF1F5",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "1H5OJ",
+          "name": "Wizard Shell",
+          "width": "fill_container",
+          "height": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "XzG6G",
+              "name": "Page Content",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "grTkb",
+                  "name": "Idea Wizard App",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#F7F8FA",
+                  "layout": "vertical",
+                  "children": [
                     {
                       "type": "frame",
-                      "id": "Pwf2Y",
+                      "id": "bamEH",
+                      "name": "Wizard States",
                       "width": "fill_container",
-                      "fill": "$swiss-surface",
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": {
-                          "left": 3
-                        },
-                        "fill": "$swiss-red"
-                      },
-                      "gap": 12,
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
                       "padding": [
-                        16,
-                        24
+                        24,
+                        32,
+                        32,
+                        32
                       ],
-                      "alignItems": "center",
+                      "justifyContent": "space_between",
                       "children": [
                         {
-                          "type": "text",
-                          "id": "ehZGv",
-                          "fill": "$swiss-red",
-                          "content": "02",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 15,
-                          "fontWeight": "700"
-                        },
-                        {
                           "type": "frame",
-                          "id": "QuLXM",
+                          "id": "Ftxwr",
+                          "name": "Idea Panel",
                           "width": "fill_container",
+                          "fill": "#FFFFFF",
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#E6E8EC"
+                          },
                           "layout": "vertical",
-                          "gap": 2,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "Iil7q",
-                              "fill": "$swiss-black",
-                              "content": "Clarifying questions",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 15,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "text",
-                              "id": "Tt7Gd",
-                              "fill": "$swiss-muted",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "Answer the missing details before summary",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 12
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "qUgr8",
-                          "fill": "$swiss-black",
+                          "gap": 8,
                           "padding": [
-                            4,
-                            10
+                            14,
+                            16
                           ],
                           "children": [
                             {
                               "type": "text",
-                              "id": "n6aRh",
-                              "fill": "$swiss-white",
-                              "content": "Active",
-                              "fontFamily": "$swiss-body",
+                              "id": "vWE3F",
+                              "name": "ideaLabel",
+                              "fill": "#6B7280",
+                              "content": "Your idea",
+                              "fontFamily": "Inter",
                               "fontSize": 11,
                               "fontWeight": "600"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "kOGwZ",
-                      "width": "fill_container",
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": {
-                          "bottom": 1
-                        },
-                        "fill": "$swiss-border"
-                      },
-                      "gap": 12,
-                      "padding": [
-                        14,
-                        24
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "Oj6Sh",
-                          "fill": "$swiss-subtle",
-                          "content": "03",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 15,
-                          "fontWeight": "700"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "EHlIP",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 2,
-                          "children": [
+                            },
                             {
                               "type": "text",
-                              "id": "fmNa6",
-                              "fill": "$swiss-black",
-                              "content": "Confirm the summary",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 15,
+                              "id": "W8Lwq",
+                              "name": "ideaValue",
+                              "fill": "#0D1320",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "An AI project manager that helps teams turn rough ideas into validated product plans.",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
                               "fontWeight": "500"
-                            },
-                            {
-                              "type": "text",
-                              "id": "5NrV3",
-                              "fill": "$swiss-muted",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "Approve the structured brief for downstream generation",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 12
                             }
                           ]
                         },
                         {
-                          "type": "text",
-                          "id": "3b8hr",
-                          "fill": "$swiss-subtle",
-                          "content": "Pending",
-                          "fontFamily": "$font-mono",
-                          "fontSize": 10,
-                          "fontWeight": "500"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "looHN",
-                  "width": "fill_container",
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": {
-                      "top": 1
-                    },
-                    "fill": "$swiss-border"
-                  },
-                  "layout": "vertical",
-                  "gap": 12,
-                  "padding": [
-                    20,
-                    24,
-                    24,
-                    24
-                  ],
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "1Bg2j",
-                      "fill": "$swiss-subtle",
-                      "content": "UNLOCKS NEXT",
-                      "fontFamily": "$font-mono",
-                      "fontSize": 10,
-                      "fontWeight": "500",
-                      "letterSpacing": 1
-                    },
-                    {
-                      "type": "frame",
-                      "id": "e2WGx",
-                      "width": "fill_container",
-                      "gap": 12,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "XWgHC",
-                          "fill": "$swiss-red",
-                          "content": "04",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 14,
-                          "fontWeight": "700"
-                        },
-                        {
                           "type": "frame",
-                          "id": "DTLkd",
+                          "id": "0ULVc",
+                          "name": "activeBottom",
                           "width": "fill_container",
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#0D132012",
+                            "offset": {
+                              "x": 0,
+                              "y": -6
+                            },
+                            "blur": 18
+                          },
                           "layout": "vertical",
-                          "gap": 2,
+                          "gap": 16,
                           "children": [
                             {
-                              "type": "text",
-                              "id": "38EMU",
-                              "fill": "$swiss-black",
-                              "content": "Competitive Research",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 14,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "text",
-                              "id": "GU7v3",
-                              "fill": "$swiss-muted",
-                              "textGrowth": "fixed-width",
+                              "type": "frame",
+                              "id": "1s5d4",
+                              "name": "Module Container",
                               "width": "fill_container",
-                              "content": "Validate the market and compare the alternatives",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 12
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "4S0J2",
-                      "width": "fill_container",
-                      "gap": 12,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "NhKZI",
-                          "fill": "$swiss-red",
-                          "content": "05",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 14,
-                          "fontWeight": "700"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "LT5Tu",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 2,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "NKo1R",
-                              "fill": "$swiss-black",
-                              "content": "PRD",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 14,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "text",
-                              "id": "cLNnG",
-                              "fill": "$swiss-muted",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "Turn the brief into scope, features, and requirements",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 12
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "aSUuf",
-                      "width": "fill_container",
-                      "gap": 12,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "qjEDM",
-                          "fill": "$swiss-red",
-                          "content": "06",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 14,
-                          "fontWeight": "700"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "QvvxY",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 2,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "vVYsd",
-                              "fill": "$swiss-black",
-                              "content": "Tech Spec",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 14,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "text",
-                              "id": "zuZBD",
-                              "fill": "$swiss-muted",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "Define the stack, architecture, and implementation plan",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 12
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "BeO5Z",
-                      "width": "fill_container",
-                      "gap": 12,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "0Bb46",
-                          "fill": "$swiss-red",
-                          "content": "07",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 14,
-                          "fontWeight": "700"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "ivtGl",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 2,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "Y8kdg",
-                              "fill": "$swiss-black",
-                              "content": "Generate App",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 14,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "text",
-                              "id": "9jKUY",
-                              "fill": "$swiss-muted",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "Launch code generation once the upstream docs are ready",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 12
+                              "gap": 16,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "wXytj",
+                                  "name": "Active Question State",
+                                  "width": "fill_container",
+                                  "fill": "#FFFFFF",
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#E6E8EC"
+                                  },
+                                  "layout": "vertical",
+                                  "gap": 12,
+                                  "padding": 18,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "PEPQ4",
+                                      "name": "activeQ",
+                                      "fill": "#0D1320",
+                                      "textGrowth": "fixed-width",
+                                      "width": "fill_container",
+                                      "content": "What stage is your product currently in?",
+                                      "fontFamily": "Space Grotesk",
+                                      "fontSize": 20,
+                                      "fontWeight": "700",
+                                      "letterSpacing": -0.3
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "g6Q0S",
+                                      "x": 18,
+                                      "y": 56,
+                                      "name": "activeProg",
+                                      "enabled": false,
+                                      "width": "fill_container(1080)",
+                                      "gap": 8,
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "AVlFj",
+                                          "name": "ap1",
+                                          "width": "fill_container",
+                                          "height": 6,
+                                          "fill": "#0D1320"
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "alx4W",
+                                          "name": "ap2",
+                                          "width": "fill_container",
+                                          "height": 6,
+                                          "fill": "#0D1320"
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "0LyNw",
+                                          "name": "ap3",
+                                          "width": "fill_container",
+                                          "height": 6,
+                                          "fill": "#E5E7EB"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "eQS6a",
+                                      "name": "aOpts",
+                                      "width": "fill_container",
+                                      "layout": "vertical",
+                                      "gap": 8,
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "c6ePj",
+                                          "name": "aA",
+                                          "width": "fill_container",
+                                          "fill": "#FFFFFF",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "YERYO",
+                                              "name": "aAt",
+                                              "fill": "#0F172A",
+                                              "content": "A. Just an idea",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "NesE0",
+                                          "name": "aB",
+                                          "width": "fill_container",
+                                          "fill": "#FFFFFF",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "gPVkd",
+                                              "name": "aBt",
+                                              "fill": "#0F172A",
+                                              "content": "B. Prototype built",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "hfTQL",
+                                          "name": "aC",
+                                          "width": "fill_container",
+                                          "fill": "#FFFFFF",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "uxawU",
+                                              "name": "aCt",
+                                              "fill": "#0F172A",
+                                              "content": "C. Early users",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "cyWsX",
+                                          "name": "aD",
+                                          "width": "fill_container",
+                                          "fill": "#FFFFFF",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "dIAg8",
+                                              "name": "aDt",
+                                              "fill": "#0F172A",
+                                              "content": "D. Growing revenue",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "tKU2I",
+                                          "name": "aE",
+                                          "width": "fill_container",
+                                          "fill": "#FFFFFF",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "3lfto",
+                                              "name": "aEt",
+                                              "fill": "#0F172A",
+                                              "content": "E. Best guess",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "sDdqZ",
+                                      "name": "emptyFooter",
+                                      "width": "fill_container",
+                                      "justifyContent": "end",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "IBwUD",
+                                          "name": "emptyBtn",
+                                          "fill": "#0D1320",
+                                          "padding": [
+                                            10,
+                                            14
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "i3hZn",
+                                              "name": "emptyBtnTxt",
+                                              "fill": "#FFFFFF",
+                                              "content": "Next",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 12,
+                                              "fontWeight": "600"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
                             }
                           ]
                         }
@@ -19630,828 +19186,372 @@
               ]
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "gj7PZ",
+      "x": 24450,
+      "y": -256,
+      "name": "Idea Intake - Single Select Only",
+      "width": 1440,
+      "height": 1080,
+      "fill": "#EEF1F5",
+      "layout": "vertical",
+      "children": [
         {
           "type": "frame",
-          "id": "qbcJL",
-          "name": "vertDivider2",
-          "width": 1,
-          "height": "fill_container",
-          "fill": "$border"
-        },
-        {
-          "type": "frame",
-          "id": "jruSS",
-          "name": "Content Editor Pane",
+          "id": "hpJo7",
+          "name": "Wizard Shell",
           "width": "fill_container",
           "height": "fill_container",
-          "fill": "$swiss-white",
-          "layout": "vertical",
           "children": [
             {
               "type": "frame",
-              "id": "Sxy6b",
-              "width": "fill_container",
-              "stroke": {
-                "align": "inside",
-                "thickness": {
-                  "bottom": 1
-                },
-                "fill": "$swiss-border"
-              },
-              "padding": [
-                20,
-                56
-              ],
-              "justifyContent": "space_between",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "fNDfs",
-                  "layout": "vertical",
-                  "gap": 4,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "EP654",
-                      "fill": "$swiss-subtle",
-                      "content": "STEP 02 / 03",
-                      "fontFamily": "$font-mono",
-                      "fontSize": 11,
-                      "fontWeight": "500",
-                      "letterSpacing": 1
-                    },
-                    {
-                      "type": "text",
-                      "id": "Vh9WV",
-                      "fill": "$swiss-black",
-                      "content": "Clarify the opportunity",
-                      "fontFamily": "$swiss-display",
-                      "fontSize": 28,
-                      "fontWeight": "700",
-                      "letterSpacing": -1
-                    },
-                    {
-                      "type": "text",
-                      "id": "opEYp",
-                      "fill": "$swiss-muted",
-                      "textGrowth": "fixed-width",
-                      "width": 620,
-                      "content": "Replace the chat flow with a structured intake wizard that asks tailored questions and ends in a reusable idea summary.",
-                      "fontFamily": "$swiss-body",
-                      "fontSize": 14
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "zGTR8",
-                  "gap": 12,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "hcnR3",
-                      "fill": "$swiss-surface",
-                      "padding": [
-                        6,
-                        10
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "eKBZU",
-                          "fill": "$swiss-black",
-                          "content": "2 of 5 answered",
-                          "fontFamily": "$swiss-body",
-                          "fontSize": 11,
-                          "fontWeight": "600"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "89yPO",
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1,
-                        "fill": "$swiss-border"
-                      },
-                      "padding": [
-                        10,
-                        18
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "Gl45S",
-                          "fill": "$swiss-black",
-                          "content": "Save draft",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 13,
-                          "fontWeight": "500"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "bJqbj",
+              "id": "0UY4w",
+              "name": "Page Content",
               "width": "fill_container",
               "height": "fill_container",
-              "gap": 24,
-              "padding": [
-                32,
-                56,
-                40,
-                56
-              ],
+              "layout": "vertical",
               "children": [
                 {
                   "type": "frame",
-                  "id": "GPGwf",
+                  "id": "KeqtI",
+                  "name": "Idea Wizard App",
                   "width": "fill_container",
                   "height": "fill_container",
+                  "fill": "#F7F8FA",
                   "layout": "vertical",
-                  "gap": 20,
                   "children": [
                     {
                       "type": "frame",
-                      "id": "OJ4og",
+                      "id": "MdFdp",
+                      "name": "Wizard States",
                       "width": "fill_container",
-                      "fill": "$swiss-black",
+                      "height": "fill_container",
                       "layout": "vertical",
-                      "gap": 14,
+                      "gap": 16,
                       "padding": [
                         24,
-                        28
+                        32,
+                        32,
+                        32
                       ],
+                      "justifyContent": "space_between",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "TSQxc",
+                          "id": "mWilx",
+                          "name": "Idea Panel",
                           "width": "fill_container",
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
+                          "fill": "#FFFFFF",
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#E6E8EC"
+                          },
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": [
+                            14,
+                            16
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QG60E",
+                              "name": "ideaLabel",
+                              "fill": "#6B7280",
+                              "content": "Your idea",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "1MbaQ",
+                              "name": "ideaValue",
+                              "fill": "#0D1320",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "An AI project manager that helps teams turn rough ideas into validated product plans.",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "WWo6j",
+                          "name": "singleBottom",
+                          "width": "fill_container",
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#0D132012",
+                            "offset": {
+                              "x": 0,
+                              "y": -6
+                            },
+                            "blur": 18
+                          },
+                          "layout": "vertical",
+                          "gap": 16,
                           "children": [
                             {
                               "type": "frame",
-                              "id": "bBPoA",
-                              "gap": 12,
-                              "alignItems": "center",
+                              "id": "Aq7oO",
+                              "name": "Module Container",
+                              "width": "fill_container",
+                              "gap": 16,
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "iWlwp",
-                                  "fill": "$swiss-red",
-                                  "content": "01",
-                                  "fontFamily": "$swiss-display",
-                                  "fontSize": 16,
-                                  "fontWeight": "700"
-                                },
-                                {
                                   "type": "frame",
-                                  "id": "pH5a6",
+                                  "id": "8TdL3",
+                                  "name": "Single Select State",
+                                  "width": "fill_container",
+                                  "fill": "#FFFFFF",
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#E6E8EC"
+                                  },
                                   "layout": "vertical",
-                                  "gap": 2,
+                                  "gap": 12,
+                                  "padding": 18,
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "GNij8",
-                                      "fill": "$swiss-white",
-                                      "content": "Idea brief",
-                                      "fontFamily": "$swiss-display",
-                                      "fontSize": 18,
-                                      "fontWeight": "600"
+                                      "id": "VimWn",
+                                      "x": 18,
+                                      "y": 18,
+                                      "name": "sTag",
+                                      "enabled": false,
+                                      "fill": "#6B7280",
+                                      "content": "Single-select State • Single-choice",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "500"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "5x5ZP",
-                                      "fill": "$swiss-subtle",
-                                      "content": "Complete",
-                                      "fontFamily": "$swiss-body",
-                                      "fontSize": 12
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "text",
-                              "id": "95mj0",
-                              "fill": "$swiss-red",
-                              "content": "Edit",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 13,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "3FYkH",
-                          "fill": "$swiss-white",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "An AI guided storefront builder for independent brands that need better recommendations, tighter inventory visibility, and a cleaner checkout flow.",
-                          "lineHeight": 1.5,
-                          "fontFamily": "$swiss-body",
-                          "fontSize": 15
-                        },
-                        {
-                          "type": "text",
-                          "id": "XinLP",
-                          "fill": "$swiss-subtle",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "This step captures the rough direction. The next form sharpens audience, differentiation, business model, and success criteria.",
-                          "lineHeight": 1.5,
-                          "fontFamily": "$swiss-body",
-                          "fontSize": 12
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "59fQq",
-                      "width": "fill_container",
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1,
-                        "fill": "$swiss-border"
-                      },
-                      "layout": "vertical",
-                      "gap": 18,
-                      "padding": [
-                        24,
-                        28
-                      ],
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "qqV3X",
-                          "width": "fill_container",
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "iHGVD",
-                              "width": "fill_container",
-                              "layout": "vertical",
-                              "gap": 4,
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "RzNBt",
-                                  "fill": "$swiss-red",
-                                  "content": "02 TAILORED QUESTIONS",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500",
-                                  "letterSpacing": 1
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "kY6Ll",
-                                  "fill": "$swiss-black",
-                                  "textGrowth": "fixed-width",
-                                  "width": "fill_container",
-                                  "content": "Answer what the system still needs",
-                                  "fontFamily": "$swiss-display",
-                                  "fontSize": 20,
-                                  "fontWeight": "700",
-                                  "letterSpacing": -0.5
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "QoAB0",
-                              "fill": "$swiss-surface",
-                              "padding": [
-                                6,
-                                10
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "b10Mb",
-                                  "fill": "$swiss-black",
-                                  "content": "2 / 5 complete",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 11,
-                                  "fontWeight": "600"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "PLxwj",
-                          "width": "fill_container",
-                          "fill": "$swiss-surface",
-                          "stroke": {
-                            "align": "inside",
-                            "thickness": 1,
-                            "fill": "$swiss-border"
-                          },
-                          "layout": "vertical",
-                          "gap": 8,
-                          "padding": [
-                            14,
-                            16
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "UqaF7",
-                              "width": "fill_container",
-                              "justifyContent": "space_between",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "430HV",
-                                  "fill": "$swiss-red",
-                                  "content": "Q1",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500",
-                                  "letterSpacing": 1
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "6VRfE",
-                                  "fill": "$swiss-subtle",
-                                  "content": "Answered",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "text",
-                              "id": "MFATi",
-                              "fill": "$swiss-black",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "Who is the primary buyer and user for this product?",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 14,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "66ufc",
-                              "width": "fill_container",
-                              "fill": "$swiss-white",
-                              "stroke": {
-                                "align": "inside",
-                                "thickness": 1,
-                                "fill": "$swiss-border"
-                              },
-                              "padding": [
-                                12,
-                                14
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "a1hC5",
-                                  "fill": "$swiss-black",
-                                  "textGrowth": "fixed-width",
-                                  "width": "fill_container",
-                                  "content": "Founders and operators at small ecommerce brands with lean teams.",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "SMxBC",
-                          "width": "fill_container",
-                          "fill": "$swiss-surface",
-                          "stroke": {
-                            "align": "inside",
-                            "thickness": 1,
-                            "fill": "$swiss-border"
-                          },
-                          "layout": "vertical",
-                          "gap": 8,
-                          "padding": [
-                            14,
-                            16
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "t9v26",
-                              "width": "fill_container",
-                              "justifyContent": "space_between",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "vGHsu",
-                                  "fill": "$swiss-red",
-                                  "content": "Q2",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500",
-                                  "letterSpacing": 1
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "YkM1J",
-                                  "fill": "$swiss-subtle",
-                                  "content": "Answered",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "text",
-                              "id": "WHlnF",
-                              "fill": "$swiss-black",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "What problem feels urgent enough that they will switch?",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 14,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "jYdsH",
-                              "width": "fill_container",
-                              "fill": "$swiss-white",
-                              "stroke": {
-                                "align": "inside",
-                                "thickness": 1,
-                                "fill": "$swiss-border"
-                              },
-                              "padding": [
-                                12,
-                                14
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "N2EBP",
-                                  "fill": "$swiss-black",
-                                  "textGrowth": "fixed-width",
-                                  "width": "fill_container",
-                                  "content": "Inventory and merchandising decisions are slow, manual, and disconnected from checkout performance.",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "q4Mu3",
-                          "width": "fill_container",
-                          "fill": "$swiss-surface",
-                          "stroke": {
-                            "align": "inside",
-                            "thickness": 1,
-                            "fill": "$swiss-border"
-                          },
-                          "layout": "vertical",
-                          "gap": 8,
-                          "padding": [
-                            14,
-                            16
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "o0RVj",
-                              "width": "fill_container",
-                              "justifyContent": "space_between",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "nxOIk",
-                                  "fill": "$swiss-red",
-                                  "content": "Q3",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500",
-                                  "letterSpacing": 1
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "7E5a8",
-                                  "fill": "$swiss-subtle",
-                                  "content": "Open",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "text",
-                              "id": "X0cMz",
-                              "fill": "$swiss-black",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "What makes this meaningfully different from existing commerce tools?",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 14,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "qtdDs",
-                              "width": "fill_container",
-                              "fill": "$swiss-white",
-                              "stroke": {
-                                "align": "inside",
-                                "thickness": 1,
-                                "fill": "$swiss-border"
-                              },
-                              "padding": [
-                                12,
-                                14
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "gkgA3",
-                                  "fill": "$swiss-subtle",
-                                  "textGrowth": "fixed-width",
-                                  "width": "fill_container",
-                                  "content": "Type the wedge, insight, or workflow advantage here",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "7trZo",
-                          "width": "fill_container",
-                          "fill": "$swiss-surface",
-                          "stroke": {
-                            "align": "inside",
-                            "thickness": 1,
-                            "fill": "$swiss-border"
-                          },
-                          "layout": "vertical",
-                          "gap": 8,
-                          "padding": [
-                            14,
-                            16
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "Om5B1",
-                              "width": "fill_container",
-                              "justifyContent": "space_between",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "Fqw45",
-                                  "fill": "$swiss-red",
-                                  "content": "Q4",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500",
-                                  "letterSpacing": 1
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "g9WlT",
-                                  "fill": "$swiss-subtle",
-                                  "content": "Open",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "text",
-                              "id": "XZv1u",
-                              "fill": "$swiss-black",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "How will the business make money in the first version?",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 14,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "nu1MO",
-                              "width": "fill_container",
-                              "fill": "$swiss-white",
-                              "stroke": {
-                                "align": "inside",
-                                "thickness": 1,
-                                "fill": "$swiss-border"
-                              },
-                              "padding": [
-                                12,
-                                14
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "GczXW",
-                                  "fill": "$swiss-subtle",
-                                  "textGrowth": "fixed-width",
-                                  "width": "fill_container",
-                                  "content": "Type the pricing model or sales motion here",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "S3umX",
-                          "width": "fill_container",
-                          "fill": "$swiss-surface",
-                          "stroke": {
-                            "align": "inside",
-                            "thickness": 1,
-                            "fill": "$swiss-border"
-                          },
-                          "layout": "vertical",
-                          "gap": 8,
-                          "padding": [
-                            14,
-                            16
-                          ],
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "lpb6P",
-                              "width": "fill_container",
-                              "justifyContent": "space_between",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "0m7gp",
-                                  "fill": "$swiss-red",
-                                  "content": "Q5",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500",
-                                  "letterSpacing": 1
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "X4OLY",
-                                  "fill": "$swiss-subtle",
-                                  "content": "Open",
-                                  "fontFamily": "$font-mono",
-                                  "fontSize": 10,
-                                  "fontWeight": "500"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "text",
-                              "id": "rAQ2P",
-                              "fill": "$swiss-black",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "What does success look like in the first 90 days?",
-                              "fontFamily": "$swiss-display",
-                              "fontSize": 14,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "M8uqQ",
-                              "width": "fill_container",
-                              "fill": "$swiss-white",
-                              "stroke": {
-                                "align": "inside",
-                                "thickness": 1,
-                                "fill": "$swiss-border"
-                              },
-                              "padding": [
-                                12,
-                                14
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "hxrIx",
-                                  "fill": "$swiss-subtle",
-                                  "textGrowth": "fixed-width",
-                                  "width": "fill_container",
-                                  "content": "Type the target metric, outcome, or launch milestone here",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "v1S9u",
-                          "width": "fill_container",
-                          "stroke": {
-                            "align": "inside",
-                            "thickness": {
-                              "top": 1
-                            },
-                            "fill": "$swiss-border"
-                          },
-                          "padding": [
-                            18,
-                            0,
-                            0,
-                            0
-                          ],
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "JqST1",
-                              "fill": "$swiss-muted",
-                              "textGrowth": "fixed-width",
-                              "width": 340,
-                              "content": "Questions adapt to whether the idea is a product, service, or marketplace.",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 12
-                            },
-                            {
-                              "type": "frame",
-                              "id": "DTnvX",
-                              "gap": 12,
-                              "children": [
-                                {
-                                  "type": "frame",
-                                  "id": "bzUHD",
-                                  "stroke": {
-                                    "align": "inside",
-                                    "thickness": 1,
-                                    "fill": "$swiss-border"
-                                  },
-                                  "padding": [
-                                    10,
-                                    18
-                                  ],
-                                  "children": [
+                                      "id": "OPlMp",
+                                      "name": "sQ",
+                                      "fill": "#0D1320",
+                                      "content": "Who is your primary buyer?",
+                                      "fontFamily": "Space Grotesk",
+                                      "fontSize": 20,
+                                      "fontWeight": "700",
+                                      "letterSpacing": -0.3
+                                    },
                                     {
-                                      "type": "text",
-                                      "id": "zZgQv",
-                                      "fill": "$swiss-black",
-                                      "content": "Back",
-                                      "fontFamily": "$swiss-display",
-                                      "fontSize": 13,
-                                      "fontWeight": "500"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "zLByt",
-                                  "fill": "$swiss-red",
-                                  "padding": [
-                                    12,
-                                    20
-                                  ],
-                                  "children": [
+                                      "type": "frame",
+                                      "id": "gWlWt",
+                                      "name": "sOpts",
+                                      "width": "fill_container",
+                                      "layout": "vertical",
+                                      "gap": 8,
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "5DkNV",
+                                          "name": "sA",
+                                          "width": "fill_container",
+                                          "fill": "#FFFFFF",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "ViFia",
+                                              "name": "sAt",
+                                              "fill": "#0F172A",
+                                              "content": "A. Solo founders",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "5VNDy",
+                                          "name": "sB",
+                                          "width": "fill_container",
+                                          "fill": "#FFFFFF",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "KVaEY",
+                                              "name": "sBt",
+                                              "fill": "#0F172A",
+                                              "content": "B. SMB teams",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "C16MI",
+                                          "name": "sC",
+                                          "width": "fill_container",
+                                          "fill": "#0D1320",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#0D1320"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "MPXMN",
+                                              "name": "sCt",
+                                              "fill": "#FFFFFF",
+                                              "content": "C. Mid-market operators",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "600"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "R2Oxc",
+                                          "name": "sD",
+                                          "width": "fill_container",
+                                          "fill": "#FFFFFF",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "7pqhM",
+                                              "name": "sDt",
+                                              "fill": "#0F172A",
+                                              "content": "D. Enterprise IT",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "b12Fb",
+                                          "name": "sE",
+                                          "width": "fill_container",
+                                          "fill": "#FFFFFF",
+                                          "stroke": {
+                                            "thickness": 1,
+                                            "fill": "#D8DEE8"
+                                          },
+                                          "padding": [
+                                            10,
+                                            12
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "SpzrS",
+                                              "name": "sEt",
+                                              "fill": "#0F172A",
+                                              "content": "E. Other",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "normal"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
                                     {
-                                      "type": "text",
-                                      "id": "o2v8t",
-                                      "fill": "$swiss-white",
-                                      "content": "Next: Review summary",
-                                      "fontFamily": "$swiss-display",
-                                      "fontSize": 13,
-                                      "fontWeight": "600"
+                                      "type": "frame",
+                                      "id": "N6hn6",
+                                      "x": 18,
+                                      "y": 280,
+                                      "name": "sFoot",
+                                      "enabled": false,
+                                      "width": "fill_container(1080)",
+                                      "justifyContent": "space_between",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "24ByU",
+                                          "name": "sBack",
+                                          "fill": "#475569",
+                                          "content": "← Back",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "600"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "68qo8",
+                                          "name": "sCont",
+                                          "fill": "#0D1320",
+                                          "content": "Continue →",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "600"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "aohDd",
+                                      "name": "emptyFooter",
+                                      "width": "fill_container",
+                                      "justifyContent": "end",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "fF3NN",
+                                          "name": "emptyBtn",
+                                          "fill": "#0D1320",
+                                          "padding": [
+                                            10,
+                                            14
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "1mVk1",
+                                              "name": "emptyBtnTxt",
+                                              "fill": "#FFFFFF",
+                                              "content": "Next",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 12,
+                                              "fontWeight": "600"
+                                            }
+                                          ]
+                                        }
+                                      ]
                                     }
                                   ]
                                 }
@@ -20462,329 +19562,690 @@
                       ]
                     }
                   ]
-                },
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "nTI3b",
+      "x": 26010,
+      "y": -256,
+      "name": "Idea Intake - Multi Select Only",
+      "width": 1440,
+      "height": 1080,
+      "fill": "#EEF1F5",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "n64nT",
+          "name": "Wizard Shell",
+          "width": "fill_container",
+          "height": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Ou3Sa",
+              "name": "Page Content",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "children": [
                 {
                   "type": "frame",
-                  "id": "75PCW",
-                  "width": 320,
+                  "id": "0978j",
+                  "name": "Idea Wizard App",
+                  "width": "fill_container",
                   "height": "fill_container",
+                  "fill": "#F7F8FA",
                   "layout": "vertical",
-                  "gap": 20,
                   "children": [
                     {
                       "type": "frame",
-                      "id": "uVVVY",
+                      "id": "4zayf",
+                      "name": "Wizard States",
                       "width": "fill_container",
-                      "fill": "$swiss-black",
+                      "height": "fill_container",
                       "layout": "vertical",
-                      "gap": 14,
-                      "padding": 24,
+                      "gap": 16,
+                      "padding": [
+                        24,
+                        32,
+                        32,
+                        32
+                      ],
                       "children": [
                         {
-                          "type": "text",
-                          "id": "y3kQW",
-                          "fill": "$swiss-subtle",
-                          "content": "03 SUMMARY REVIEW",
-                          "fontFamily": "$font-mono",
-                          "fontSize": 10,
-                          "fontWeight": "500",
-                          "letterSpacing": 1
-                        },
-                        {
-                          "type": "text",
-                          "id": "40pEb",
-                          "fill": "$swiss-white",
-                          "textGrowth": "fixed-width",
+                          "type": "frame",
+                          "id": "eog5g",
+                          "name": "Idea Panel",
                           "width": "fill_container",
-                          "content": "We turn the answers into a structured brief",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 18,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "text",
-                          "id": "9d0aq",
-                          "fill": "$swiss-subtle",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "Generated immediately after the last required answer. The user can refine it later without starting over.",
-                          "lineHeight": 1.5,
-                          "fontFamily": "$swiss-body",
-                          "fontSize": 12
+                          "fill": "#FFFFFF",
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#E6E8EC"
+                          },
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": [
+                            14,
+                            16
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Hvszk",
+                              "name": "ideaLabel",
+                              "fill": "#6B7280",
+                              "content": "Your idea",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "0tftF",
+                              "name": "ideaValue",
+                              "fill": "#0D1320",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "An AI project manager that helps teams turn rough ideas into validated product plans.",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "500"
+                            }
+                          ]
                         },
                         {
                           "type": "frame",
-                          "id": "MyYlt",
+                          "id": "jXm6q",
+                          "name": "Bottom Spacer",
                           "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ouo5D",
+                          "name": "multiBottom2",
+                          "width": "fill_container",
+                          "fill": "#FFFFFF",
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#E6E8EC"
+                          },
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#0D132012",
+                            "offset": {
+                              "x": 0,
+                              "y": -6
+                            },
+                            "blur": 18
+                          },
                           "layout": "vertical",
-                          "gap": 10,
+                          "gap": 12,
+                          "padding": 18,
                           "children": [
                             {
-                              "type": "frame",
-                              "id": "cOOo2",
+                              "type": "text",
+                              "id": "rdbdF",
+                              "x": 18,
+                              "y": 18,
+                              "name": "mTag",
+                              "enabled": false,
+                              "fill": "#6B7280",
+                              "content": "Multi-select State • Multi-choice",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "vvSmw",
+                              "name": "mQ",
+                              "fill": "#0D1320",
+                              "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "gap": 10,
-                              "alignItems": "center",
+                              "content": "Which outcomes matter most in the first 6 months?",
+                              "fontFamily": "Space Grotesk",
+                              "fontSize": 20,
+                              "fontWeight": "700",
+                              "letterSpacing": -0.3
+                            },
+                            {
+                              "type": "frame",
+                              "id": "t0dw4",
+                              "name": "mOpts",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 8,
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "wMihR",
-                                  "fill": "$swiss-red",
-                                  "content": "01",
-                                  "fontFamily": "$swiss-display",
-                                  "fontSize": 13,
-                                  "fontWeight": "700"
+                                  "type": "frame",
+                                  "id": "xwtim",
+                                  "name": "mA",
+                                  "width": "fill_container",
+                                  "fill": "#0D1320",
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#0D1320"
+                                  },
+                                  "padding": [
+                                    10,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "P4JYw",
+                                      "name": "mAt",
+                                      "fill": "#FFFFFF",
+                                      "content": "A. Validate demand quickly",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 13,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
                                 },
                                 {
-                                  "type": "text",
-                                  "id": "MwLlw",
-                                  "fill": "$swiss-white",
-                                  "content": "Core concept",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13,
-                                  "fontWeight": "500"
+                                  "type": "frame",
+                                  "id": "Hoz7b",
+                                  "name": "mB",
+                                  "width": "fill_container",
+                                  "fill": "#FFFFFF",
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#D8DEE8"
+                                  },
+                                  "padding": [
+                                    10,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "k54Xe",
+                                      "name": "mBt",
+                                      "fill": "#0F172A",
+                                      "content": "B. Raise investment",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "YYJL9",
+                                  "name": "mC",
+                                  "width": "fill_container",
+                                  "fill": "#0D1320",
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#0D1320"
+                                  },
+                                  "padding": [
+                                    10,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "csunA",
+                                      "name": "mCt",
+                                      "fill": "#FFFFFF",
+                                      "content": "C. Improve user retention",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 13,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "p683y",
+                                  "name": "mD",
+                                  "width": "fill_container",
+                                  "fill": "#FFFFFF",
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#D8DEE8"
+                                  },
+                                  "padding": [
+                                    10,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "LfRnd",
+                                      "name": "mDt",
+                                      "fill": "#0F172A",
+                                      "content": "D. Automate operations",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "EEPnO",
+                                  "name": "mE",
+                                  "width": "fill_container",
+                                  "fill": "#0D1320",
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "#0D1320"
+                                  },
+                                  "padding": [
+                                    10,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "madXb",
+                                      "name": "mEt",
+                                      "fill": "#FFFFFF",
+                                      "content": "E. All of the above",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 13,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
                                 }
                               ]
                             },
                             {
                               "type": "frame",
-                              "id": "77B2l",
-                              "width": "fill_container",
-                              "gap": 10,
-                              "alignItems": "center",
+                              "id": "rXzv3",
+                              "x": 18,
+                              "y": 280,
+                              "name": "mFoot",
+                              "enabled": false,
+                              "width": "fill_container(1080)",
+                              "justifyContent": "space_between",
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "e4DvO",
-                                  "fill": "$swiss-red",
-                                  "content": "02",
-                                  "fontFamily": "$swiss-display",
-                                  "fontSize": 13,
-                                  "fontWeight": "700"
+                                  "id": "Tb2jm",
+                                  "name": "mBack",
+                                  "fill": "#475569",
+                                  "content": "← Back",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "600"
                                 },
                                 {
                                   "type": "text",
-                                  "id": "Twv7R",
-                                  "fill": "$swiss-white",
-                                  "content": "Problem statement",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13,
-                                  "fontWeight": "500"
+                                  "id": "5yGE9",
+                                  "name": "mCont",
+                                  "fill": "#0D1320",
+                                  "content": "Continue →",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "600"
                                 }
                               ]
                             },
                             {
                               "type": "frame",
-                              "id": "XW7hO",
+                              "id": "6FOEY",
+                              "name": "emptyFooter",
                               "width": "fill_container",
-                              "gap": 10,
+                              "justifyContent": "end",
                               "alignItems": "center",
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "C05Yy",
-                                  "fill": "$swiss-red",
-                                  "content": "03",
-                                  "fontFamily": "$swiss-display",
-                                  "fontSize": 13,
-                                  "fontWeight": "700"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "R7m0a",
-                                  "fill": "$swiss-white",
-                                  "content": "Target audience",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13,
-                                  "fontWeight": "500"
+                                  "type": "frame",
+                                  "id": "eM2Se",
+                                  "name": "emptyBtn",
+                                  "fill": "#0D1320",
+                                  "padding": [
+                                    10,
+                                    14
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "W923S",
+                                      "name": "emptyBtnTxt",
+                                      "fill": "#FFFFFF",
+                                      "content": "Next",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
                                 }
                               ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "aW9iU",
+                          "x": 32,
+                          "y": 932,
+                          "name": "Step Progress",
+                          "enabled": false,
+                          "width": "fill_container(1116)",
+                          "fill": "#FFFFFF",
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#E6E8EC"
+                          },
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": [
+                            10,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "5PgNf",
+                              "name": "msMeta",
+                              "fill": "#0D1320",
+                              "content": "Step 4 of 6",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "600"
                             },
                             {
                               "type": "frame",
-                              "id": "nMzjQ",
+                              "id": "Gcnk6",
+                              "name": "msBars",
                               "width": "fill_container",
-                              "gap": 10,
-                              "alignItems": "center",
+                              "gap": 6,
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "LIRWT",
-                                  "fill": "$swiss-red",
-                                  "content": "04",
-                                  "fontFamily": "$swiss-display",
-                                  "fontSize": 13,
-                                  "fontWeight": "700"
+                                  "type": "frame",
+                                  "id": "mSR98",
+                                  "name": "msB1",
+                                  "width": "fill_container",
+                                  "height": 6,
+                                  "fill": "#0D1320"
                                 },
                                 {
-                                  "type": "text",
-                                  "id": "JFjEX",
-                                  "fill": "$swiss-white",
-                                  "content": "Value proposition",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13,
-                                  "fontWeight": "500"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "xT8y0",
-                              "width": "fill_container",
-                              "gap": 10,
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "sC9qj",
-                                  "fill": "$swiss-red",
-                                  "content": "05",
-                                  "fontFamily": "$swiss-display",
-                                  "fontSize": 13,
-                                  "fontWeight": "700"
+                                  "type": "frame",
+                                  "id": "NeelD",
+                                  "name": "msB2",
+                                  "width": "fill_container",
+                                  "height": 6,
+                                  "fill": "#0D1320"
                                 },
                                 {
-                                  "type": "text",
-                                  "id": "ObqJH",
-                                  "fill": "$swiss-white",
-                                  "content": "Business model and success metrics",
-                                  "fontFamily": "$swiss-body",
-                                  "fontSize": 13,
-                                  "fontWeight": "500"
+                                  "type": "frame",
+                                  "id": "U6KKx",
+                                  "name": "msB3",
+                                  "width": "fill_container",
+                                  "height": 6,
+                                  "fill": "#0D1320"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "AGPaX",
+                                  "name": "msB4",
+                                  "width": "fill_container",
+                                  "height": 6,
+                                  "fill": "#0D1320"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "ygaFQ",
+                                  "name": "msB5",
+                                  "width": "fill_container",
+                                  "height": 6,
+                                  "fill": "#E5E7EB"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "mLLIl",
+                                  "name": "msB6",
+                                  "width": "fill_container",
+                                  "height": 6,
+                                  "fill": "#E5E7EB"
                                 }
                               ]
                             }
                           ]
                         }
                       ]
-                    },
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "qfmAb",
+      "x": 27559,
+      "y": -256,
+      "name": "Idea Intake - AI Summary Only",
+      "width": 1440,
+      "height": 1224,
+      "fill": "#EEF1F5",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "7onxv",
+          "name": "Wizard Shell",
+          "width": "fill_container",
+          "height": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "YdEEo",
+              "name": "Page Content",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "g2pRX",
+                  "name": "Idea Wizard App",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#F7F8FA",
+                  "layout": "vertical",
+                  "children": [
                     {
                       "type": "frame",
-                      "id": "KspvD",
+                      "id": "1o2uI",
+                      "name": "Wizard States",
                       "width": "fill_container",
-                      "stroke": {
-                        "align": "inside",
-                        "thickness": 1,
-                        "fill": "$swiss-border"
-                      },
+                      "height": "fill_container",
                       "layout": "vertical",
-                      "gap": 12,
-                      "padding": 20,
+                      "gap": 20,
+                      "padding": [
+                        24,
+                        32,
+                        32,
+                        32
+                      ],
+                      "justifyContent": "space_between",
                       "children": [
-                        {
-                          "type": "text",
-                          "id": "oZC7v",
-                          "fill": "$swiss-black",
-                          "content": "What unlocks next",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 16,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "text",
-                          "id": "zASMV",
-                          "fill": "$swiss-muted",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "Once the summary is approved, the rest of the workflow can generate in sequence.",
-                          "lineHeight": 1.5,
-                          "fontFamily": "$swiss-body",
-                          "fontSize": 12
-                        },
                         {
                           "type": "frame",
-                          "id": "6NxZ6",
+                          "id": "NFdSM",
+                          "name": "Generated Idea Brief",
                           "width": "fill_container",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 16,
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#E6E8EC"
+                          },
                           "layout": "vertical",
-                          "gap": 10,
+                          "gap": 16,
+                          "padding": 24,
                           "children": [
                             {
-                              "type": "text",
-                              "id": "91jvi",
-                              "fill": "$swiss-black",
-                              "content": "Competitive Research",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 13,
-                              "fontWeight": "600"
+                              "type": "frame",
+                              "id": "6Qczz",
+                              "name": "summaryHeader",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "cOMqT",
+                                  "name": "summaryHeadLeft",
+                                  "gap": 12,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "z39Ki",
+                                      "x": 0,
+                                      "y": 0.5,
+                                      "name": "summaryBadge",
+                                      "enabled": false,
+                                      "fill": "#EFF6FF",
+                                      "cornerRadius": 999,
+                                      "padding": [
+                                        6,
+                                        10
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "5J2Ms",
+                                          "name": "summaryBadgeText",
+                                          "fill": "#1D4ED8",
+                                          "content": "AI Summary Ready",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "600"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "CeLnf",
+                                      "name": "summaryTitle",
+                                      "fill": "#0D1320",
+                                      "content": "Generated Idea Brief",
+                                      "fontFamily": "Space Grotesk",
+                                      "fontSize": 22,
+                                      "fontWeight": "700",
+                                      "letterSpacing": -0.4
+                                    }
+                                  ]
+                                }
+                              ]
                             },
                             {
                               "type": "text",
-                              "id": "QMDi1",
-                              "fill": "$swiss-black",
-                              "content": "PRD",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 13,
-                              "fontWeight": "600"
+                              "id": "sn0Q6",
+                              "name": "summaryBody",
+                              "fill": "#1F2937",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "# Business Idea Summary\n\n## Core Concept\nA local gourmet bakery service selling curated mini dessert boxes (brownies, cookies, and other mini desserts) for gifting, birthdays, events, and corporate orders, delivered via local pickup and same-day/local delivery with future expansion to scheduled corporate bulk fulfillment.\n\n## Problem Statement\nCustomers need attractive, ready-to-gift dessert solutions without the time, skill, or coordination of sourcing multiple items. Businesses need reliable, branded gifting options for employees and clients. This saves time, reduces event planning friction, and provides a memorable, edible gift option.\n\n## Target Audience\nIndividual gift-givers (age 20–60, urban/suburban residents), birthday hosts and party planners, event planners, and corporate buyers (HR/event teams, office managers) in a single city/metropolitan area initially. Customers value convenience, aesthetics, and high-quality artisanal food.\n\n## Value Proposition\nHigh-quality, artisanal mini-dessert boxes that are immediately giftable — combining curated variety, premium recipes, attractive packaging, and fast local fulfillment (including same-day delivery). Offers corporate customization (branding, messages) and subscription options for recurring gifting.\n\n## Key Features/Offerings\n- Curated mini dessert boxes: assortments of mini brownies, cookies, and seasonal/specialty treats  \n- Aesthetic, gift-ready packaging and personalization (notes, branded inserts)  \n- Local pickup and same-day local delivery (initial focus)  \n- Subscription monthly boxes for recurring consumers  \n- Tiered pricing and discounts for bulk/corporate orders, plus enterprise pricing and scheduled corporate deliveries  \n- Add-ons: custom branding, personalized messages, premium upgrades, dietary options (potential future offering)  \n\n## Business Model\nRevenue from direct-to-consumer single-box sales, subscription recurring revenue, bulk corporate contracts and event orders, add-on fees (branding, personalization), and delivery/pickup fees. Margins driven by pricing tiers, volume discounts, and efficient local production.\n\n## Market Positioning\nPositioned as a premium, local artisan gifting option between mass-market gift-boxes and single-item local bakeries. Competitive advantages are curated mini assortments, strong gift presentation, same-day local fulfillment, and corporate customization capabilities. Constraints to manage include product shelf-life, freshness, and production capacity in scaling.\n\n## Success Metrics\n- Monthly orders and revenue (DTC and corporate)  \n- Average order value (AOV) and contribution margin per box  \n- Corporate contract count and average contract value  \n- Repeat purchase rate / subscription retention  \n- Percentage of same-day deliveries met on time  \n- Customer satisfaction / NPS and unpack/unbox social shares  \n- Food cost percentage and production throughput utilization\n\nFeel free to continue refining your idea or ask any questions!",
+                              "lineHeight": 1.5,
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "500"
                             },
                             {
-                              "type": "text",
-                              "id": "CFjx2",
-                              "fill": "$swiss-black",
-                              "content": "Tech Spec",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 13,
-                              "fontWeight": "600"
+                              "type": "frame",
+                              "id": "UdDSe",
+                              "x": 24,
+                              "y": 153,
+                              "name": "highlights",
+                              "enabled": false,
+                              "width": "fill_container(1068)",
+                              "fill": "#F7F8FA",
+                              "cornerRadius": 10,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "#E6E8EC"
+                              },
+                              "layout": "vertical",
+                              "gap": 8,
+                              "padding": 14,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cIZXg",
+                                  "name": "h1",
+                                  "fill": "#0D1320",
+                                  "content": "- Core audience: early-stage B2B SaaS founders",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "ugkaG",
+                                  "name": "h2",
+                                  "fill": "#0D1320",
+                                  "content": "- Primary value: compresses strategy work from days to minutes",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "IaQhd",
+                                  "name": "h3",
+                                  "fill": "#0D1320",
+                                  "content": "- Monetization: tiered subscription with credit-based generation",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                }
+                              ]
                             },
                             {
-                              "type": "text",
-                              "id": "BTuHg",
-                              "fill": "$swiss-black",
-                              "content": "Generate App",
-                              "fontFamily": "$swiss-body",
-                              "fontSize": 13,
-                              "fontWeight": "600"
+                              "type": "frame",
+                              "id": "N7q9A",
+                              "name": "summaryActions",
+                              "width": "fill_container",
+                              "justifyContent": "end",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "2fJO4",
+                                  "name": "primaryCta",
+                                  "fill": "#0D1320",
+                                  "cornerRadius": 10,
+                                  "padding": [
+                                    10,
+                                    16
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "iXVlZ",
+                                      "name": "primaryCtaText",
+                                      "fill": "#FFFFFF",
+                                      "content": "Continue to Competitive analysis",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 13,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
                             }
                           ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "XTZ8X",
-                      "width": "fill_container",
-                      "fill": "$swiss-surface",
-                      "layout": "vertical",
-                      "gap": 8,
-                      "padding": 20,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "oCW3b",
-                          "fill": "$swiss-black",
-                          "content": "System behavior",
-                          "fontFamily": "$swiss-display",
-                          "fontSize": 16,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "text",
-                          "id": "NkWqX",
-                          "fill": "$swiss-muted",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "• Ask 4 to 5 questions based on the idea type",
-                          "fontFamily": "$swiss-body",
-                          "fontSize": 12
-                        },
-                        {
-                          "type": "text",
-                          "id": "DDxFa",
-                          "fill": "$swiss-muted",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "• Generate one structured summary instead of another chat loop",
-                          "fontFamily": "$swiss-body",
-                          "fontSize": 12
-                        },
-                        {
-                          "type": "text",
-                          "id": "Jx3c2",
-                          "fill": "$swiss-muted",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "• Re-summary is possible later when the idea changes",
-                          "fontFamily": "$swiss-body",
-                          "fontSize": 12
                         }
                       ]
                     }
