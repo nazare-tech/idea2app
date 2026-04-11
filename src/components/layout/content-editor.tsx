@@ -539,8 +539,6 @@ export function ContentEditor({
                           metadata={documentMetadata}
                           currentVersion={currentVersion}
                           projectId={projectId}
-                          onUpgrade={() => onGenerateContent(undefined)}
-                          isUpgrading={isGenerating}
                         />
                       ) : (
                         <MarkdownRenderer
