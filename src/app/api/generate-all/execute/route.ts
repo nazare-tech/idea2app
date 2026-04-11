@@ -34,6 +34,7 @@ import { generateStitchMockup } from "@/lib/stitch-pipeline"
 import { getTokenCost } from "@/lib/token-economics"
 import { linkifyBareUrls } from "@/lib/markdown-links"
 import { GENERATE_ALL_ACTION_MAP } from "@/lib/token-economics"
+import { GENERATE_ALL_DEFAULT_MODELS } from "@/lib/document-definitions"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/database"
 
@@ -286,7 +287,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No queue found — call /start first" }, { status: 404 })
   }
 
-  const modelSelections: Record<string, string> = (queueRow.model_selections as Record<string, string>) ?? {}
   const queue: QueueItem[] = (queueRow.queue as unknown as QueueItem[]) ?? []
 
   // Determine pending items in order
@@ -315,7 +315,7 @@ export async function POST(request: Request) {
     }
 
     const action = GENERATE_ALL_ACTION_MAP[item.docType]
-    const model = modelSelections[item.docType]
+    const model = GENERATE_ALL_DEFAULT_MODELS[item.docType]
     const creditCost = action ? getTokenCost(action, model) : item.creditCost
 
     // Deduct credits for this step
