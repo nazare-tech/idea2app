@@ -36,6 +36,7 @@ interface PromptChatInterfaceProps {
   initialIdea: string
   selectedModel?: string
   onIdeaSummary?: (summary: string) => void
+  onProjectNameGenerated?: (name: string) => void
   credits?: number
 }
 
@@ -48,6 +49,7 @@ type StreamEvent =
       assistantMessage: Message
       stage: "refining" | "summarized"
       summary: string | null
+      projectName?: string | null
     }
   | { type: "error"; error: string }
 
@@ -58,6 +60,7 @@ export function PromptChatInterface({
   initialIdea,
   selectedModel = DEFAULT_MODELS.prompt,
   onIdeaSummary,
+  onProjectNameGenerated,
   credits = 0,
 }: PromptChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -172,7 +175,8 @@ export function PromptChatInterface({
       userMessage: Message,
       assistantMessage: Message,
       stage: "refining" | "summarized",
-      summary: string | null
+      summary: string | null,
+      projectName?: string | null
     ) => {
       setMessages((prev) =>
         prev.map((message) => {
@@ -183,6 +187,7 @@ export function PromptChatInterface({
       )
       setConversationStage(stage)
       if (summary && onIdeaSummary) onIdeaSummary(summary)
+      if (projectName && onProjectNameGenerated) onProjectNameGenerated(projectName)
     }
 
     await consumeNdjsonStream<StreamEvent>(response, async (event) => {
@@ -205,7 +210,8 @@ export function PromptChatInterface({
           event.userMessage,
           event.assistantMessage,
           event.stage,
-          event.summary
+          event.summary,
+          event.projectName
         )
         return
       }
@@ -214,7 +220,7 @@ export function PromptChatInterface({
         throw new Error(event.error || "Failed to process response")
       }
     })
-  }, [onIdeaSummary])
+  }, [onIdeaSummary, onProjectNameGenerated])
 
   const startConversation = useCallback(async (overrideIdea?: string) => {
     if (requestInFlight.current) return
@@ -423,6 +429,9 @@ export function PromptChatInterface({
 
       if (data.stage === "summarized" && data.summary && onIdeaSummary) {
         onIdeaSummary(data.summary)
+      }
+      if (data.projectName && onProjectNameGenerated) {
+        onProjectNameGenerated(data.projectName)
       }
     } catch (error) {
       console.error("Chat error:", error)
