@@ -13,11 +13,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { projectId, queue, modelSelections } = body
+    const { projectId, queue } = body
 
-    if (!projectId || !queue || !modelSelections) {
+    if (!projectId || !queue) {
       return NextResponse.json(
-        { error: "projectId, queue, and modelSelections are required" },
+        { error: "projectId and queue are required" },
         { status: 400 },
       )
     }
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
           status: "running",
           queue,
           current_index: 0,
-          model_selections: modelSelections,
+          model_selections: {},
           started_at: new Date().toISOString(),
           completed_at: null,
           error_info: null,
