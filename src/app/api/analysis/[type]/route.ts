@@ -11,6 +11,14 @@ import {
   COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION,
 } from "@/lib/competitive-analysis-v2"
 
+// Fixed default models per analysis type — user model selection removed
+const ANALYSIS_DEFAULT_MODELS: Record<string, string> = {
+  "competitive-analysis": "google/gemini-3.1-pro-preview",
+  "prd":                  "anthropic/claude-sonnet-4-6",
+  "mvp-plan":             "anthropic/claude-sonnet-4-6",
+  "tech-spec":            "anthropic/claude-sonnet-4-6",
+}
+
 const encoder = new TextEncoder()
 
 function createStreamSender(controller: ReadableStreamDefaultController) {
@@ -75,7 +83,8 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
     const body = await request.json()
     projectId = body.projectId
-    const { idea, name, competitiveAnalysis, prd, model, stream: streamRequested } = body
+    const { idea, name, competitiveAnalysis, prd, stream: streamRequested } = body
+    const model = ANALYSIS_DEFAULT_MODELS[type] ?? "anthropic/claude-sonnet-4-6"
 
     if (!projectId || !idea || !name) {
       statusCode = 400
