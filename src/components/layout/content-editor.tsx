@@ -47,6 +47,7 @@ interface ContentEditorProps {
   documentMetadata?: Record<string, unknown> | null
   onGenerateContent: (model?: string, options?: { marketingBrief?: MarketingBrief }) => Promise<void>
   onUpdateDescription: (description: string) => Promise<void>
+  onProjectNameGenerated?: (name: string) => void
   isGenerating: boolean
   streamStages?: StreamStage[]
   streamCurrentStep?: number
@@ -73,6 +74,7 @@ export function ContentEditor({
   documentMetadata,
   onGenerateContent,
   onUpdateDescription,
+  onProjectNameGenerated,
   isGenerating,
   credits,
   prerequisiteValidation,
@@ -427,6 +429,7 @@ export function ContentEditor({
               projectName={projectName}
               initialIdea={projectDescription}
               onIdeaSummary={handleIdeaSummary}
+              onProjectNameGenerated={onProjectNameGenerated}
               credits={credits}
             />
           ) : (
