@@ -105,6 +105,7 @@ export function ProjectWorkspace({
   const [nameJustSet, setNameJustSet] = useState(false)
   const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
   const projectNameInputRef = useRef<HTMLInputElement>(null)
+  const nameJustSetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
 
   useEffect(() => {
@@ -128,6 +129,12 @@ export function ProjectWorkspace({
       setIsPromptOnlyMode(false)
     }
   }, [project.description])
+
+  useEffect(() => {
+    return () => {
+      if (nameJustSetTimerRef.current) clearTimeout(nameJustSetTimerRef.current)
+    }
+  }, [])
 
   const getPersistedActiveDocument = useCallback((): DocumentType | null => {
     const tab = searchParams.get("tab")
@@ -645,7 +652,8 @@ export function ProjectWorkspace({
     setDraftProjectName(name)
     setIsNameSet(true)
     setNameJustSet(true)
-    setTimeout(() => setNameJustSet(false), 1200)
+    if (nameJustSetTimerRef.current) clearTimeout(nameJustSetTimerRef.current)
+    nameJustSetTimerRef.current = setTimeout(() => setNameJustSet(false), 1200)
   }, [])
 
   const handleDocumentSelect = (type: DocumentType) => {
@@ -1045,7 +1053,7 @@ export function ProjectWorkspace({
 
       router.refresh()
       // Fallback: unblock name editing if AI name generation failed silently
-      setTimeout(() => setIsNameSet(prev => prev || true), 3000)
+      if (!isNameSet) setTimeout(() => setIsNameSet(true), 3000)
     } catch (error) {
       console.error("Error updating description:", error)
     }
@@ -1102,7 +1110,7 @@ export function ProjectWorkspace({
             >
               <span
                 className="truncate font-semibold tracking-tight"
-                style={nameJustSet ? { animation: "fadeIn 0.7s ease forwards" } : undefined}
+                style={nameJustSet ? { animation: "projectNameFadeIn 0.7s ease forwards" } : undefined}
               >
                 {projectName}
               </span>
