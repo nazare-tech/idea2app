@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
@@ -10,6 +11,7 @@ import { createServiceClient } from "@/lib/supabase/service"
 import { isWaitlistMode, WAITLIST_LIMIT } from "@/lib/waitlist"
 import { ArrowRight, CloudUpload, GitBranch, ListChecks, Rocket, ScanSearch, FileText } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
+import { AuthModal } from "@/components/auth/auth-modal"
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -161,7 +163,7 @@ export default async function LandingPage() {
 
           <div className="hidden ui-row-gap-3 md:flex">
             {/* Sign In is always visible — existing users still need to log in */}
-            <Link href="/auth?mode=signin">
+            <Link href="/?modal=auth&mode=signin" scroll={false}>
               <Button variant="outline" className="h-10 px-6 border-border-subtle bg-white text-text-primary">
                 Sign In
               </Button>
@@ -172,7 +174,7 @@ export default async function LandingPage() {
                 <Button className="h-10 px-6 bg-primary text-primary-foreground">Join Waitlist</Button>
               </a>
             ) : (
-              <Link href="/auth?mode=signup">
+              <Link href="/?modal=auth&mode=signup" scroll={false}>
                 <Button className="h-10 px-6 bg-primary text-primary-foreground">Get Started</Button>
               </Link>
             )}
@@ -203,7 +205,7 @@ export default async function LandingPage() {
             <WaitlistForm showSecondary />
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-              <Link href="/auth?mode=signup">
+              <Link href="/?modal=auth&mode=signup" scroll={false}>
                 <Button className="h-14 px-7 bg-primary text-base font-semibold text-white">Get Started</Button>
               </Link>
               <Link href="#features">
@@ -352,7 +354,7 @@ export default async function LandingPage() {
             {waitlistMode ? (
               <WaitlistForm />
             ) : (
-              <Link href="/auth?mode=signup" className="inline-block">
+              <Link href="/?modal=auth&mode=signup" scroll={false} className="inline-block">
                 <Button className="h-14 px-8 text-base font-semibold bg-primary text-white">
                   Get Started
                   <ArrowRight className="ml-2 ui-icon-16" />
@@ -373,6 +375,10 @@ export default async function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <Suspense>
+        <AuthModal />
+      </Suspense>
     </div>
   )
 }
