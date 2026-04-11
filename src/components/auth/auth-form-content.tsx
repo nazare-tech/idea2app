@@ -45,6 +45,11 @@ const modeLabels: Record<
 interface AuthFormContentProps {
   initialMode: AuthMode
   redirectTo?: string
+  /**
+   * Called after a successful credential sign-in.
+   * Caller is responsible for navigation and router.refresh()
+   * so server components re-read the updated session.
+   */
   onSuccess: () => void
   onModeChange?: (mode: AuthMode) => void
 }
@@ -76,8 +81,14 @@ export function AuthFormContent({
     e.preventDefault()
     if (loading) return
     setError(null)
-    setLoading(true)
 
+    // Client-side validation before loading state
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Passwords do not match.")
+      return
+    }
+
+    setLoading(true)
     try {
       const supabase = createClient()
 
@@ -85,11 +96,6 @@ export function AuthFormContent({
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) { setError(error.message); return }
         onSuccess()
-        return
-      }
-
-      if (password !== confirmPassword) {
-        setError("Passwords do not match.")
         return
       }
 
@@ -143,6 +149,13 @@ export function AuthFormContent({
           We&apos;ve sent a confirmation link to <strong>{email}</strong>.
           Open it to verify your account.
         </p>
+        <button
+          type="button"
+          onClick={() => { setSuccess(false); switchMode("signin") }}
+          className={`mt-4 ${uiStylePresets.authLinkUnderline}`}
+        >
+          Back to sign in
+        </button>
       </div>
     )
   }
