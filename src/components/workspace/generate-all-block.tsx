@@ -6,28 +6,15 @@ import {
   AlertCircle,
   ArrowUpRight,
   Check,
-  ChevronDown,
   Loader2,
-  MoreHorizontal,
   Sparkles,
   X,
   Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useGenerateAllStore, type QueueItemStatus } from "@/stores/generate-all-store"
+import { GENERATE_ALL_DEFAULT_MODELS } from "@/lib/document-definitions"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  DOCUMENT_PRIMARY_MODELS,
-  DOCUMENT_MORE_MODELS,
-} from "@/lib/prompt-chat-config"
 
 // ---------------------------------------------------------------------------
 // Tab navigation map — each docType maps to its URL search param value
@@ -48,30 +35,6 @@ const TAB_MAP: Record<string, string> = {
 const FIXED_METHOD: Partial<Record<string, string>> = {
   mockups: "Stitch SDK",
   launch: "Template",
-}
-
-const ALL_MODELS = [...DOCUMENT_PRIMARY_MODELS, ...DOCUMENT_MORE_MODELS]
-
-function getModelOption(modelId: string) {
-  return ALL_MODELS.find((m) => m.id === modelId)
-}
-
-function getDotColor(badge?: string): string {
-  switch (badge) {
-    case "Fastest":  return "bg-red-500"
-    case "Efficient": return "bg-emerald-500"
-    case "Thinking": return "bg-blue-500"
-    default:         return "bg-muted-foreground/30"
-  }
-}
-
-function getBadgeColor(badge: string): string {
-  switch (badge) {
-    case "Fastest":  return "text-red-500"
-    case "Efficient": return "text-emerald-500"
-    case "Thinking": return "text-blue-500"
-    default:         return "text-muted-foreground"
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -117,23 +80,21 @@ function StepIndicator({
 }
 
 // ---------------------------------------------------------------------------
-// Model pill — shows the selected model or a fixed method label
+// Model pill — shows the fixed model or a fixed method label (read-only)
 // ---------------------------------------------------------------------------
 
 function ModelPill({
   docType,
   selectedModel,
   status,
-  onModelChange,
 }: {
   docType: string
   selectedModel: string
   status: QueueItemStatus
-  onModelChange: (model: string) => void
 }) {
   const fixedMethod = FIXED_METHOD[docType]
 
-  // Fixed items (Stitch SDK, Template) — never interactive
+  // Fixed items (Stitch SDK, Template) — always read-only
   if (fixedMethod) {
     return (
       <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/60 px-2.5 py-1.5">
@@ -146,88 +107,19 @@ function ModelPill({
     )
   }
 
-  const option = getModelOption(selectedModel)
-  const dotColor = getDotColor(option?.badge)
-  const badgeColor = option?.badge ? getBadgeColor(option.badge) : ""
-
-  // Interactive dropdown — shown when idle or when running and still pending
-  const isInteractive = status === "pending"
-
-  if (!isInteractive) {
-    return (
-      <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/60 px-2.5 py-1.5 opacity-60">
-        <div className={cn("h-1.5 w-1.5 rounded-full", dotColor)} />
-        <span className="text-[11px] text-muted-foreground">
-          {option?.name ?? selectedModel?.split("/").pop() ?? "Unknown"}
-        </span>
-        {option?.badge && (
-          <span className={cn("text-[10px] font-bold uppercase tracking-wide", badgeColor)}>
-            {option.badge}
-          </span>
-        )}
-      </div>
-    )
-  }
+  // Show short model name (last segment after "/")
+  const shortName = selectedModel.split("/").pop() ?? selectedModel
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/60 px-2.5 py-1.5 transition-colors hover:bg-secondary">
-          <div className={cn("h-1.5 w-1.5 rounded-full", dotColor)} />
-          <span className="text-[11px] text-foreground/80">
-            {option?.name ?? selectedModel?.split("/").pop() ?? "Unknown"}
-          </span>
-          {option?.badge && (
-            <span className={cn("text-[10px] font-bold uppercase tracking-wide", badgeColor)}>
-              {option.badge}
-            </span>
-          )}
-          <ChevronDown className="h-3 w-3 text-muted-foreground/60" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 rounded-xl border-border/50 p-2 shadow-xl">
-        {[
-          { options: DOCUMENT_PRIMARY_MODELS },
-          { label: "More models", options: DOCUMENT_MORE_MODELS, compact: true },
-        ].map((group, groupIndex) => (
-          <div key={group.label ?? groupIndex}>
-            {groupIndex > 0 && <DropdownMenuSeparator className="my-2" />}
-            {group.label && (
-              <DropdownMenuLabel className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                <MoreHorizontal className="h-3 w-3" />
-                {group.label}
-              </DropdownMenuLabel>
-            )}
-            <div className={cn(group.compact && "max-h-[200px] overflow-y-auto")}>
-              {group.options.map((model) => {
-                const mDot = getDotColor(model.badge)
-                const mBadge = model.badge ? getBadgeColor(model.badge) : ""
-                const isSelected = selectedModel === model.id
-                return (
-                  <DropdownMenuItem
-                    key={model.id}
-                    onClick={() => onModelChange(model.id)}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-lg p-2.5",
-                      isSelected && "bg-primary/5",
-                    )}
-                  >
-                    <div className={cn("h-2 w-2 shrink-0 rounded-full", mDot)} />
-                    <span className="flex-1 text-sm font-medium">{model.name}</span>
-                    {model.badge && (
-                      <span className={cn("text-[10px] font-bold uppercase tracking-wide", mBadge)}>
-                        {model.badge}
-                      </span>
-                    )}
-                    {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
-                  </DropdownMenuItem>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div
+      className={cn(
+        "flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/60 px-2.5 py-1.5",
+        status !== "pending" && "opacity-60",
+      )}
+    >
+      <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+      <span className="text-[11px] text-muted-foreground">{shortName}</span>
+    </div>
   )
 }
 
@@ -270,14 +162,12 @@ export function GenerateAllBlock({
   const {
     status,
     queue,
-    modelSelections,
     totalCredits,
     creditsUsed,
     startedAt,
     error,
     startGenerateAll,
     cancelGenerateAll,
-    updateModelSelection,
   } = useGenerateAllStore(projectId)
 
   const isRunning     = status === "running"
@@ -497,9 +387,8 @@ export function GenerateAllBlock({
                 {showModelPill && (
                   <ModelPill
                     docType={item.docType}
-                    selectedModel={modelSelections[item.docType]}
+                    selectedModel={GENERATE_ALL_DEFAULT_MODELS[item.docType as keyof typeof GENERATE_ALL_DEFAULT_MODELS] ?? ""}
                     status={item.status}
-                    onModelChange={(model) => updateModelSelection(item.docType, model)}
                   />
                 )}
                 {showNavLink && (
