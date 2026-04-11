@@ -6,7 +6,6 @@ import {
   Sparkles,
   Loader2,
   Download,
-  ChevronDown,
   FileDown,
 } from "lucide-react"
 import { DocumentType } from "./document-nav"
@@ -15,14 +14,6 @@ import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import { CompetitiveAnalysisDocument } from "@/components/analysis/competitive-analysis-document"
 import { downloadMarkdownAsPDF } from "@/lib/pdf-utils"
 import { PromptChatInterface } from "@/components/chat/prompt-chat-interface"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { DocumentModelSelector } from "@/components/ui/document-model-selector"
-import { TAB_DEFAULT_MODELS, DEFAULT_DOCUMENT_MODEL } from "@/lib/prompt-chat-config"
 import { GenerationStreamPanel } from "@/components/workspace/generation-stream-panel"
 import type { StreamStage } from "@/lib/parse-document-stream"
 import { getDocumentDefinition } from "@/lib/document-definitions"
@@ -56,7 +47,6 @@ interface ContentEditorProps {
   documentMetadata?: Record<string, unknown> | null
   onGenerateContent: (model?: string, options?: { marketingBrief?: MarketingBrief }) => Promise<void>
   onUpdateDescription: (description: string) => Promise<void>
-  onUpdateContent?: (newContent: string) => Promise<void>
   isGenerating: boolean
   streamStages?: StreamStage[]
   streamCurrentStep?: number
@@ -83,7 +73,6 @@ export function ContentEditor({
   documentMetadata,
   onGenerateContent,
   onUpdateDescription,
-  onUpdateContent,
   isGenerating,
   credits,
   prerequisiteValidation,
@@ -102,8 +91,6 @@ export function ContentEditor({
   )
   const [isResizing, setIsResizing] = useState(false)
   const [resizeEdge, setResizeEdge] = useState<'left' | 'right' | null>(null)
-  const [selectedDocModel, setSelectedDocModel] = useState(TAB_DEFAULT_MODELS[documentType] ?? DEFAULT_DOCUMENT_MODEL)
-  const [selectedPromptModel, setSelectedPromptModel] = useState(TAB_DEFAULT_MODELS.prompt)
   const [marketingBrief, setMarketingBrief] = useState<MarketingBrief>({
     targetAudience: "",
     stage: "",
@@ -120,21 +107,15 @@ export function ContentEditor({
 
   const config = getDocumentDefinition(documentType)
 
-  // Recalculate credit cost based on the currently selected model.
-  // Mockups use a fixed-cost SDK regardless of model, so model is ignored there.
+  // Recalculate credit cost based on document type.
   const action = DOC_TYPE_TO_ACTION[documentType]
   const dynamicCreditCost = action
-    ? getTokenCost(action, documentType === "mockups" ? undefined : selectedDocModel)
+    ? getTokenCost(action, undefined)
     : config.creditCost
 
   useEffect(() => {
     setDocumentWidth(isFullWidthDocument ? FULL_WIDTH_DOCUMENT : DEFAULT_DOCUMENT_WIDTH)
   }, [isFullWidthDocument])
-
-  // Reset model selector to the tab's default whenever the active tab changes
-  useEffect(() => {
-    setSelectedDocModel(TAB_DEFAULT_MODELS[documentType] ?? DEFAULT_DOCUMENT_MODEL)
-  }, [documentType])
 
   // Handle mouse move during resize
   useEffect(() => {
@@ -271,20 +252,6 @@ export function ContentEditor({
     }
   }
 
-  const handleDownloadMarkdown = () => {
-    if (!content) return
-    const filename = `${config.title.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.md`
-    const blob = new Blob([content], { type: "text/markdown" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
-
   const generateAllStatus = useGenerateAll(projectId, (s) => s.status)
   const isGenerateAllRunning = generateAllStatus === "running"
 
@@ -378,24 +345,6 @@ export function ContentEditor({
                 {config.subtitle}
               </p>
             </div>
-            {documentType !== "prompt" && (
-              <>
-                <div className="h-6 w-px bg-border/60 mx-1" />
-                <DocumentModelSelector
-                  selectedModel={selectedDocModel}
-                  onModelChange={setSelectedDocModel}
-                />
-              </>
-            )}
-            {documentType === "prompt" && (
-              <>
-                <div className="h-6 w-px bg-border/60 mx-1" />
-                <DocumentModelSelector
-                  selectedModel={selectedPromptModel}
-                  onModelChange={setSelectedPromptModel}
-                />
-              </>
-            )}
           </div>
 
           {documentType !== "prompt" ? (
@@ -417,65 +366,51 @@ export function ContentEditor({
                     </span>
                   </button>
                 ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        disabled={downloadingPdf}
-                        className="ui-row-gap-2 ui-px-4 ui-py-2 border border-border rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {downloadingPdf ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Download className="h-3.5 w-3.5" />
-                        )}
-                        <span className="text-xs ui-font-medium">
-                          {downloadingPdf ? "Generating..." : "Download"}
-                        </span>
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={handleDownloadPDF}>
-                        <FileDown className="h-3.5 w-3.5 mr-2" />
-                        <span className="text-xs ui-font-medium">PDF</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDownloadMarkdown}>
-                        <FileDown className="h-3.5 w-3.5 mr-2" />
-                        <span className="text-xs ui-font-medium">Markdown</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <button
+                    onClick={handleDownloadPDF}
+                    disabled={downloadingPdf || isGenerating}
+                    className="ui-row-gap-2 px-3 ui-py-2 rounded-md border border-border text-xs ui-font-semibold transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {downloadingPdf ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    <span>Download PDF</span>
+                  </button>
                 )
               )}
-              <div className="relative group">
-                <button
-                  onClick={() => onGenerateContent(selectedDocModel, documentType === "launch" ? { marketingBrief } : undefined)}
-                  disabled={isGenerating || !canGenerate}
-                  className={cn(
-                    "ui-row-gap-2 px-5 ui-py-2 rounded-md transition-colors",
-                    canGenerate
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "bg-muted text-muted-foreground cursor-not-allowed"
-                  )}
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                  <span className="text-xs ui-font-semibold">
-                    {isGenerating ? "Generating..." : content ? `Regenerate (${dynamicCreditCost} credits)` : `Generate (${dynamicCreditCost} credits)`}
-                  </span>
-                </button>
-                {!canGenerate && disabledReason && !isGenerating && (
-                  <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
-                    <div className="bg-popover text-popover-foreground ui-px-3 ui-py-2 rounded-md text-xs shadow-lg border border-border whitespace-nowrap">
-                      {disabledReason}
-                      <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-popover"></div>
+              {!content && (
+                <div className="relative group">
+                  <button
+                    onClick={() => onGenerateContent(undefined, documentType === "launch" ? { marketingBrief } : undefined)}
+                    disabled={isGenerating || !canGenerate}
+                    className={cn(
+                      "ui-row-gap-2 px-5 ui-py-2 rounded-md transition-colors",
+                      canGenerate
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "bg-muted text-muted-foreground cursor-not-allowed"
+                    )}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    <span className="text-xs ui-font-semibold">
+                      {isGenerating ? "Generating..." : `Generate (${dynamicCreditCost} credits)`}
+                    </span>
+                  </button>
+                  {!canGenerate && disabledReason && !isGenerating && (
+                    <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10">
+                      <div className="bg-popover text-popover-foreground ui-px-3 ui-py-2 rounded-md text-xs shadow-lg border border-border whitespace-nowrap">
+                        {disabledReason}
+                        <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-popover"></div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-[11px] text-muted-foreground ui-font-mono">
@@ -491,7 +426,6 @@ export function ContentEditor({
               projectId={projectId}
               projectName={projectName}
               initialIdea={projectDescription}
-              selectedModel={selectedPromptModel}
               onIdeaSummary={handleIdeaSummary}
               credits={credits}
             />
@@ -605,16 +539,13 @@ export function ContentEditor({
                           metadata={documentMetadata}
                           currentVersion={currentVersion}
                           projectId={projectId}
-                          onContentUpdate={onUpdateContent}
-                          onUpgrade={() => onGenerateContent(selectedDocModel)}
+                          onUpgrade={() => onGenerateContent(undefined)}
                           isUpgrading={isGenerating}
                         />
                       ) : (
                         <MarkdownRenderer
                           content={content}
                           projectId={projectId}
-                          enableInlineEditing={true}
-                          onContentUpdate={onUpdateContent}
                         />
                       )
                     ) : (
