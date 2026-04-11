@@ -4,12 +4,7 @@ import React, { useEffect, useState, useRef, useMemo, useCallback, useSyncExtern
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { renderMermaid } from "beautiful-mermaid"
-import { Check, X, Maximize2, Minimize2, RotateCcw } from "lucide-react"
-import { SelectionToolbar } from "./selection-toolbar"
-import { InlineAiEditor } from "./inline-ai-editor"
-
-// Unique marker for inline diff - use something very unlikely to appear in content
-const DIFF_MARKER = "\u200B___INLINE_DIFF_MARKER___\u200B"
+import { Maximize2, Minimize2, RotateCcw } from "lucide-react"
 
 interface LazySyntaxHighlighterModule {
   Highlighter: React.ComponentType<{
@@ -109,8 +104,6 @@ interface MarkdownRendererProps {
   content: string
   className?: string
   projectId?: string
-  enableInlineEditing?: boolean
-  onContentUpdate?: (newContent: string) => void
   /** Disable remarkGfm (tables, etc.) — useful for ASCII art content where │ gets misinterpreted as table syntax */
   disableGfm?: boolean
 }
@@ -378,317 +371,8 @@ export function MarkdownRenderer({
   content,
   className = "",
   projectId,
-  enableInlineEditing = false,
-  onContentUpdate,
   disableGfm = false,
 }: MarkdownRendererProps) {
-  const [selection, setSelection] = useState<{
-    text: string
-    position: { top: number; left: number; width: number }
-  } | null>(null)
-  const [showEditor, setShowEditor] = useState(false)
-  // Store editor data separately so it persists when browser selection changes
-  const [editorData, setEditorData] = useState<{
-    text: string
-    position: { top: number; left: number }
-  } | null>(null)
-  // Store pending edit for inline diff display
-  const [pendingEdit, setPendingEdit] = useState<{
-    originalText: string
-    suggestedText: string
-  } | null>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  // Track if editing just completed (to prevent immediate re-selection)
-  const editingJustCompletedRef = useRef(false)
-  // Cooldown timer ref
-  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Only check selection on mouseup - no interference during selection
-  useEffect(() => {
-    if (!enableInlineEditing) return
-
-    const handleMouseUp = () => {
-      // Don't check if editing UI is active
-      if (editingJustCompletedRef.current) {
-        return
-      }
-
-      // Use requestAnimationFrame to ensure browser has finalized selection
-      requestAnimationFrame(() => {
-        const sel = window.getSelection()
-
-        // No selection or collapsed selection
-        if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
-          setSelection(null)
-          return
-        }
-
-        let range = sel.getRangeAt(0)
-
-        // Snap to word boundaries for cleaner editing
-        if (range.startContainer.nodeType === Node.TEXT_NODE && range.endContainer.nodeType === Node.TEXT_NODE) {
-          try {
-            const newRange = range.cloneRange()
-
-            // Expand start
-            while (newRange.startOffset > 0) {
-              const charBefore = newRange.startContainer.textContent?.charAt(newRange.startOffset - 1)
-              if (charBefore && /[\w]/.test(charBefore)) {
-                newRange.setStart(newRange.startContainer, newRange.startOffset - 1)
-              } else {
-                break
-              }
-            }
-
-            // Expand end
-            while (newRange.endOffset < (newRange.endContainer.textContent?.length || 0)) {
-              const charAfter = newRange.endContainer.textContent?.charAt(newRange.endOffset)
-              if (charAfter && /[\w]/.test(charAfter)) {
-                newRange.setEnd(newRange.endContainer, newRange.endOffset + 1)
-              } else {
-                break
-              }
-            }
-
-            // Update selection to show the snapped range
-            sel.removeAllRanges()
-            sel.addRange(newRange)
-            range = newRange
-          } catch (e) {
-            console.warn("Failed to snap selection to word", e)
-          }
-        }
-
-        const selectedText = range.toString().trim()
-        if (!selectedText) {
-          setSelection(null)
-          return
-        }
-
-        // Check if selection is within our content
-        // range is already updated or original
-        const contentEl = contentRef.current
-        if (!contentEl) {
-          setSelection(null)
-          return
-        }
-
-        // Verify selection is in our content area
-        if (!contentEl.contains(range.startContainer) && !contentEl.contains(range.endContainer)) {
-          setSelection(null)
-          return
-        }
-
-        const rect = range.getBoundingClientRect()
-
-        setSelection({
-          text: selectedText,
-          position: {
-            top: rect.top + window.scrollY,
-            left: rect.left + window.scrollX,
-            width: rect.width,
-          },
-        })
-      })
-    }
-
-    document.addEventListener("mouseup", handleMouseUp)
-
-    return () => {
-      document.removeEventListener("mouseup", handleMouseUp)
-    }
-  }, [enableInlineEditing])
-
-  // Cleanup cooldown timer on unmount
-  useEffect(() => {
-    return () => {
-      if (cooldownTimerRef.current) {
-        clearTimeout(cooldownTimerRef.current)
-      }
-    }
-  }, [])
-
-  const handleEditClick = useCallback(() => {
-    if (!selection) return
-    // Store the selection data for the editor before showing it
-    setEditorData({
-      text: selection.text,
-      position: {
-        top: selection.position.top + 100,
-        left: selection.position.left + selection.position.width / 2,
-      },
-    })
-    setShowEditor(true)
-    // Clear the selection state to hide the toolbar
-    setSelection(null)
-  }, [selection])
-
-  // Called when AI generates a suggestion - show diff inline
-  const handleSuggestionReady = useCallback((suggestedText: string) => {
-    if (!editorData) return
-
-    const originalText = editorData.text
-
-    // Check if the original text exists in the content
-    // If not found, keep popup open to show its own diff view
-    if (!content.includes(originalText)) {
-      return
-    }
-
-    // Store the pending edit for inline display
-    setPendingEdit({
-      originalText,
-      suggestedText,
-    })
-
-    // Close the editor popup (diff will show inline)
-    setShowEditor(false)
-    setSelection(null)
-    window.getSelection()?.removeAllRanges()
-  }, [editorData, content])
-
-  // Helper to clear all editing state with cooldown
-  const clearEditingState = useCallback(() => {
-    // Set cooldown flag to prevent immediate re-selection
-    editingJustCompletedRef.current = true
-
-    // Clear browser selection
-    window.getSelection()?.removeAllRanges()
-
-    // Clear all state
-    setSelection(null)
-    setEditorData(null)
-    setPendingEdit(null)
-    setShowEditor(false)
-
-    // Clear any existing cooldown timer
-    if (cooldownTimerRef.current) {
-      clearTimeout(cooldownTimerRef.current)
-    }
-
-    // Remove cooldown after a short delay
-    cooldownTimerRef.current = setTimeout(() => {
-      editingJustCompletedRef.current = false
-    }, 150)
-  }, [])
-
-  // Accept the inline diff
-  const handleAcceptEdit = useCallback(() => {
-    if (!pendingEdit || !onContentUpdate) return
-
-    // Replace the original text with the suggested text
-    const updatedContent = content.replace(pendingEdit.originalText, pendingEdit.suggestedText)
-
-    // Clear all editing state with cooldown
-    clearEditingState()
-
-    // Then trigger the content update
-    onContentUpdate(updatedContent)
-  }, [pendingEdit, content, onContentUpdate, clearEditingState])
-
-  // Reject the inline diff
-  const handleRejectEdit = useCallback(() => {
-    clearEditingState()
-  }, [clearEditingState])
-
-  // Handler for direct apply from popup (when user clicks Apply in popup)
-  const handleApplyEdit = useCallback((newText: string) => {
-    if (!editorData) {
-      console.error("[InlineEdit] No editorData available")
-      return
-    }
-    if (!onContentUpdate) {
-      console.error("[InlineEdit] No onContentUpdate callback provided")
-      return
-    }
-
-    const selectedText = editorData.text
-
-    // Try to find and replace the selected text
-    let updatedContent: string
-
-    if (content.includes(selectedText)) {
-      // Direct match found - simple case
-      updatedContent = content.replace(selectedText, newText)
-    } else {
-      // No direct match - the selected text from rendered HTML differs from markdown source
-      // This happens when selection spans markdown formatting (bullets, bold, etc.)
-      // Use word-based matching to find the span in the original content
-
-      const selectedWords = selectedText
-        .replace(/\s+/g, ' ')
-        .trim()
-        .split(' ')
-        .filter(w => w.length >= 3)
-
-      if (selectedWords.length >= 2) {
-        const firstWord = selectedWords[0]
-        const secondWord = selectedWords[1]
-        const lastWord = selectedWords[selectedWords.length - 1]
-        const secondLastWord = selectedWords.length > 2 ? selectedWords[selectedWords.length - 2] : null
-
-        // Find where the first word appears in content
-        let startIdx = -1
-        let searchPos = 0
-
-        while ((startIdx = content.indexOf(firstWord, searchPos)) !== -1) {
-          const afterFirst = content.substring(startIdx + firstWord.length, startIdx + firstWord.length + 100)
-          if (afterFirst.includes(secondWord)) {
-            break
-          }
-          searchPos = startIdx + 1
-        }
-
-        if (startIdx !== -1) {
-          let endIdx = -1
-          let lastWordSearchPos = startIdx
-          let lastWordIdx = -1
-
-          while ((lastWordIdx = content.indexOf(lastWord, lastWordSearchPos)) !== -1) {
-            if (lastWordIdx > startIdx + 5000) break
-
-            if (secondLastWord) {
-              const beforeLast = content.substring(Math.max(startIdx, lastWordIdx - 200), lastWordIdx)
-              if (beforeLast.includes(secondLastWord)) {
-                endIdx = lastWordIdx + lastWord.length
-              }
-            } else {
-              endIdx = lastWordIdx + lastWord.length
-            }
-
-            lastWordSearchPos = lastWordIdx + 1
-          }
-
-          if (endIdx !== -1 && endIdx > startIdx) {
-            updatedContent = content.substring(0, startIdx) + newText + content.substring(endIdx)
-          } else {
-            updatedContent = content
-          }
-        } else {
-          updatedContent = content
-        }
-      } else {
-        updatedContent = content
-      }
-    }
-
-    // Clear all editing state with cooldown
-    clearEditingState()
-
-    onContentUpdate(updatedContent)
-  }, [editorData, content, onContentUpdate, clearEditingState])
-
-  const handleCancelEdit = useCallback(() => {
-    clearEditingState()
-  }, [clearEditingState])
-
-  // Create content with inline diff marker when there's a pending edit
-  const displayContent = useMemo(() => {
-    if (!pendingEdit) return content
-    // Replace the original text with a marker that we'll render as the diff
-    return content.replace(pendingEdit.originalText, DIFF_MARKER)
-  }, [content, pendingEdit])
-
   const proseClasses = `
     prose max-w-none text-[14px]
     [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-6 [&_h1]:text-gray-900 [&_h1]:border-b [&_h1]:border-gray-200 [&_h1]:pb-2
@@ -712,218 +396,37 @@ export function MarkdownRenderer({
     [&_hr]:border-gray-200 [&_hr]:my-4
   `.trim()
 
-  // Custom renderer for text nodes to handle diff markers
-  const renderTextWithDiff = useCallback((text: string) => {
-    if (!pendingEdit || !text.includes(DIFF_MARKER)) {
-      return text
-    }
+  // Custom code component for syntax highlighting and mermaid diagrams
+  const components = useMemo(() => ({
+    code: ({ className, children, ...props }: { className?: string; children?: React.ReactNode }) => {
+      const match = /language-(\w+)/.exec(className || "")
+      const language = match ? match[1] : ""
 
-    const parts = text.split(DIFF_MARKER)
-    return (
-      <>
-        {parts[0]}
-        <span id="inline-diff-wrapper" className="inline-diff-wrapper inline">
-          {/* Original text - strikethrough with red background */}
-          <span className="bg-red-100 text-red-700 line-through decoration-red-400/60 decoration-2 px-1 py-0.5 rounded-sm">
-            {pendingEdit.originalText}
-          </span>
-          {/* Suggested text - green background */}
-          <span className="bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded-sm ml-1">
-            {pendingEdit.suggestedText}
-          </span>
-          {/* Accept/Reject buttons inline */}
-          <span className="inline-flex items-center gap-1 ml-2 align-middle">
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleAcceptEdit()
-              }}
-              onMouseDown={(e) => e.preventDefault()}
-              className="inline-flex items-center justify-center w-5 h-5 rounded bg-emerald-500 hover:bg-emerald-600 text-white transition-colors shadow-sm"
-              title="Accept edit (Enter)"
-            >
-              <Check className="w-3 h-3" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleRejectEdit()
-              }}
-              onMouseDown={(e) => e.preventDefault()}
-              className="inline-flex items-center justify-center w-5 h-5 rounded bg-gray-400 hover:bg-gray-500 text-white transition-colors shadow-sm"
-              title="Reject edit (Esc)"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </span>
-        </span>
-        {parts[1]}
-      </>
-    )
-  }, [pendingEdit, handleAcceptEdit, handleRejectEdit])
-
-  // Keyboard shortcuts for accepting/rejecting inline diff
-  useEffect(() => {
-    if (!pendingEdit) return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault()
-        handleAcceptEdit()
-      } else if (e.key === "Escape") {
-        e.preventDefault()
-        handleRejectEdit()
+      if (language === "mermaid") {
+        return <MermaidDiagram code={String(children).replace(/\n$/, "")} />
       }
-    }
 
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [pendingEdit, handleAcceptEdit, handleRejectEdit])
-
-  // Scroll to inline diff when it appears
-  useEffect(() => {
-    if (!pendingEdit) return
-
-    // Small delay to ensure the diff is rendered
-    const timer = setTimeout(() => {
-      const diffElement = document.getElementById("inline-diff-wrapper")
-      if (diffElement) {
-        diffElement.scrollIntoView({ behavior: "smooth", block: "center" })
+      if (language) {
+        return (
+          <LazySyntaxHighlighter
+            language={language}
+            code={String(children).replace(/\n$/, "")}
+          />
+        )
       }
-    }, 100)
 
-    return () => clearTimeout(timer)
-  }, [pendingEdit])
-
-  // Base code component for syntax highlighting
-  const codeComponent = useCallback(({ className, children, ...props }: { className?: string; children?: React.ReactNode }) => {
-    const match = /language-(\w+)/.exec(className || "")
-    const language = match ? match[1] : ""
-
-    if (language === "mermaid") {
-      return <MermaidDiagram code={String(children).replace(/\n$/, "")} />
-    }
-
-    if (language) {
-      return (
-        <LazySyntaxHighlighter
-          language={language}
-          code={String(children).replace(/\n$/, "")}
-        />
-      )
-    }
-
-    return <code className={className} {...props}>{children}</code>
-  }, [])
-
-  // Only create diff-handling components when there's a pending edit
-  // Otherwise use minimal components to allow normal text selection (like PromptChatInterface)
-  const markdownComponents = useMemo(() => {
-    // When no pending edit, only use code component for syntax highlighting
-    // This matches how PromptChatInterface works and allows proper text selection
-    if (!pendingEdit) {
-      return { code: codeComponent }
-    }
-
-    // When there's a pending edit, add diff marker processing
-    const processChildren = (children: React.ReactNode): React.ReactNode => {
-      return React.Children.map(children, (child) => {
-        if (typeof child === "string") {
-          if (child.includes(DIFF_MARKER)) {
-            return renderTextWithDiff(child)
-          }
-          return child
-        }
-
-        if (React.isValidElement(child)) {
-          const childElement = child as React.ReactElement<{ children?: React.ReactNode }>
-          if (childElement.props && childElement.props.children) {
-            const childrenStr = React.Children.toArray(childElement.props.children)
-              .filter((c): c is string => typeof c === "string")
-              .join("")
-
-            if (childrenStr.includes(DIFF_MARKER)) {
-              return React.cloneElement(childElement, {}, processChildren(childElement.props.children))
-            }
-          }
-        }
-
-        return child
-      })
-    }
-
-    return {
-      code: ({ className, children, ...props }: { className?: string; children?: React.ReactNode }) => {
-        const match = /language-(\w+)/.exec(className || "")
-        const language = match ? match[1] : ""
-
-        if (language === "mermaid") {
-          return <MermaidDiagram code={String(children).replace(/\n$/, "")} />
-        }
-
-        if (language) {
-          return (
-            <LazySyntaxHighlighter
-              language={language}
-              code={String(children).replace(/\n$/, "")}
-            />
-          )
-        }
-
-        const codeContent = String(children)
-        if (codeContent.includes(DIFF_MARKER)) {
-          return <code className={className} {...props}>{renderTextWithDiff(codeContent)}</code>
-        }
-
-        return <code className={className} {...props}>{children}</code>
-      },
-      p: ({ children, ...props }: { children?: React.ReactNode }) => <p {...props}>{processChildren(children)}</p>,
-      li: ({ children, ...props }: { children?: React.ReactNode }) => <li {...props}>{processChildren(children)}</li>,
-      h1: ({ children, ...props }: { children?: React.ReactNode }) => <h1 {...props}>{processChildren(children)}</h1>,
-      h2: ({ children, ...props }: { children?: React.ReactNode }) => <h2 {...props}>{processChildren(children)}</h2>,
-      h3: ({ children, ...props }: { children?: React.ReactNode }) => <h3 {...props}>{processChildren(children)}</h3>,
-      h4: ({ children, ...props }: { children?: React.ReactNode }) => <h4 {...props}>{processChildren(children)}</h4>,
-      blockquote: ({ children, ...props }: { children?: React.ReactNode }) => <blockquote {...props}>{processChildren(children)}</blockquote>,
-      strong: ({ children, ...props }: { children?: React.ReactNode }) => <strong {...props}>{processChildren(children)}</strong>,
-      em: ({ children, ...props }: { children?: React.ReactNode }) => <em {...props}>{processChildren(children)}</em>,
-      td: ({ children, ...props }: { children?: React.ReactNode }) => <td {...props}>{processChildren(children)}</td>,
-      th: ({ children, ...props }: { children?: React.ReactNode }) => <th {...props}>{processChildren(children)}</th>,
-    }
-  }, [pendingEdit, codeComponent, renderTextWithDiff])
+      return <code className={className} {...props}>{children}</code>
+    },
+  }), [])
 
   return (
-    <>
-      <div ref={contentRef} className={`${proseClasses} ${className}`}>
-        <ReactMarkdown
-          remarkPlugins={disableGfm ? [] : [remarkGfm]}
-          components={markdownComponents}
-        >
-          {displayContent}
-        </ReactMarkdown>
-      </div>
-
-      {/* Show selection toolbar when text is selected */}
-      {enableInlineEditing && selection && !showEditor && !pendingEdit && (
-        <SelectionToolbar
-          onEditClick={handleEditClick}
-          position={selection.position}
-        />
-      )}
-
-      {/* Show inline editor when edit button is clicked */}
-      {enableInlineEditing && showEditor && editorData && projectId && (
-        <InlineAiEditor
-          selectedText={editorData.text}
-          fullContent={content}
-          onApply={handleApplyEdit}
-          onCancel={handleCancelEdit}
-          onSuggestionReady={handleSuggestionReady}
-          position={editorData.position}
-          projectId={projectId}
-        />
-      )}
-    </>
+    <div className={`${proseClasses} ${className}`}>
+      <ReactMarkdown
+        remarkPlugins={disableGfm ? [] : [remarkGfm]}
+        components={components}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   )
 }
