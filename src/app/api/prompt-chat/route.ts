@@ -419,8 +419,11 @@ export async function POST(request: Request) {
                   ],
                   max_tokens: 20,
                 })
-                const rawName = nameResponse.choices[0]?.message?.content?.trim()
-                if (rawName) {
+                const rawName = nameResponse.choices[0]?.message?.content
+                  ?.trim()
+                  .replace(/\n/g, " ")
+                  .replace(/\s{2,}/g, " ")
+                if (rawName && rawName.length <= 80) {
                   generatedProjectName = rawName
                   await supabase
                     .from("projects")
@@ -540,8 +543,11 @@ export async function POST(request: Request) {
           ],
           max_tokens: 20,
         })
-        const rawName = nameResponse.choices[0]?.message?.content?.trim()
-        if (rawName) {
+        const rawName = nameResponse.choices[0]?.message?.content
+          ?.trim()
+          .replace(/\n/g, " ")
+          .replace(/\s{2,}/g, " ")
+        if (rawName && rawName.length <= 80) {
           generatedProjectName = rawName
           await supabase
             .from("projects")
