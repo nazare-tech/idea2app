@@ -8,8 +8,6 @@ import {
 } from "@/lib/document-definitions"
 import {
   estimateGenerateAllCost,
-  GENERATE_ALL_ACTION_MAP,
-  getTokenCost,
 } from "@/lib/token-economics"
 import {
   buildQueue,
@@ -61,7 +59,6 @@ interface GenerateAllState {
   status: GenerateAllStatus
   queue: QueueItem[]
   currentIndex: number
-  modelSelections: Record<string, string>
   totalCredits: number
   creditsUsed: number
   startedAt: Date | null
@@ -81,7 +78,6 @@ interface GenerateAllActions {
   hydrate: () => Promise<void>
   startGenerateAll: () => Promise<void>
   cancelGenerateAll: () => Promise<void>
-  updateModelSelection: (docType: string, modelId: string) => void
 }
 
 type GenerateAllStore = GenerateAllState & GenerateAllActions
@@ -195,7 +191,6 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
     status: "idle",
     queue: [],
     currentIndex: 0,
-    modelSelections: { ...GENERATE_ALL_DEFAULT_MODELS },
     totalCredits: 0,
     creditsUsed: 0,
     startedAt: null,
@@ -210,14 +205,13 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       // Only sync state when idle — no-op during generation
       if (get().status !== "idle") return
 
-      const { modelSelections } = get()
-      const newQueue = buildQueue(modelSelections, getDocStatus)
+      const newQueue = buildQueue(GENERATE_ALL_DEFAULT_MODELS, getDocStatus)
       const skipTypes = new Set<string>(
         GENERATE_ALL_QUEUE_ORDER.filter(
           (dt) => getDocStatus(dt as DocumentType) === "done",
         ),
       )
-      const newTotal = estimateGenerateAllCost(modelSelections, skipTypes)
+      const newTotal = estimateGenerateAllCost(GENERATE_ALL_DEFAULT_MODELS, skipTypes)
       set(() => ({ queue: newQueue, totalCredits: newTotal }))
     },
 
@@ -267,7 +261,6 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
           set(() => ({
             queue: dbRow.queue,
             currentIndex: dbRow.current_index,
-            modelSelections: dbRow.model_selections ?? get().modelSelections,
             startedAt: dbRow.started_at ? new Date(dbRow.started_at) : null,
             status: dbRow.status as GenerateAllStatus,
             error: dbRow.error_info?.message ?? null,
@@ -316,7 +309,6 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
             set(() => ({
               queue: hydratedQueue,
               currentIndex: nextPending,
-              modelSelections: dbRow.model_selections ?? get().modelSelections,
               startedAt: dbRow.started_at ? new Date(dbRow.started_at) : null,
               status: "running",
             }))
@@ -335,7 +327,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       if (get().status === "running") return
 
       const freshQueue = buildQueue(
-        get().modelSelections,
+        GENERATE_ALL_DEFAULT_MODELS,
         getDocStatusRef.current ?? (() => "pending" as const),
       )
 
@@ -361,7 +353,6 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
           body: JSON.stringify({
             projectId,
             queue: freshQueue,
-            modelSelections: get().modelSelections,
           }),
         })
       } catch (err) {
@@ -413,28 +404,6 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       } catch (err) {
         console.error("[GenerateAll] Failed to persist cancellation:", err)
       }
-    },
-
-    updateModelSelection: (docType, modelId) => {
-      set((s) => {
-        const newSelections = { ...s.modelSelections, [docType]: modelId }
-
-        const newQueue = s.queue.map((item) => {
-          if (item.docType !== docType) return item
-          const action = GENERATE_ALL_ACTION_MAP[docType]
-          return {
-            ...item,
-            creditCost: action ? getTokenCost(action, modelId) : item.creditCost,
-          }
-        })
-
-        const skipTypes = new Set<string>(
-          newQueue.filter((q) => q.status === "skipped").map((q) => q.docType),
-        )
-        const newTotal = estimateGenerateAllCost(newSelections, skipTypes)
-
-        return { modelSelections: newSelections, totalCredits: newTotal, queue: newQueue }
-      })
     },
   }))
 }
