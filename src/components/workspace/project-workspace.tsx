@@ -99,6 +99,10 @@ export function ProjectWorkspace({
   const [draftProjectName, setDraftProjectName] = useState(project.name)
   const [isEditingProjectName, setIsEditingProjectName] = useState(false)
   const [isSavingProjectName, setIsSavingProjectName] = useState(false)
+  const [isNameSet, setIsNameSet] = useState(
+    project.name !== "Untitled" || !!project.description
+  )
+  const [nameJustSet, setNameJustSet] = useState(false)
   const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
   const projectNameInputRef = useRef<HTMLInputElement>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
@@ -628,12 +632,21 @@ export function ProjectWorkspace({
     try {
       await handleProjectNameUpdate(nextName)
       setDraftProjectName(nextName)
+      setIsNameSet(true)
     } catch {
       setDraftProjectName(projectName)
     } finally {
       setIsSavingProjectName(false)
     }
   }
+
+  const handleProjectNameGenerated = useCallback((name: string) => {
+    setProjectName(name)
+    setDraftProjectName(name)
+    setIsNameSet(true)
+    setNameJustSet(true)
+    setTimeout(() => setNameJustSet(false), 1200)
+  }, [])
 
   const handleDocumentSelect = (type: DocumentType) => {
     if (isPromptOnlyMode && type !== "prompt") {
@@ -1031,6 +1044,8 @@ export function ProjectWorkspace({
       }
 
       router.refresh()
+      // Fallback: unblock name editing if AI name generation failed silently
+      setTimeout(() => setIsNameSet(prev => prev || true), 3000)
     } catch (error) {
       console.error("Error updating description:", error)
     }
@@ -1079,15 +1094,29 @@ export function ProjectWorkspace({
               className="h-9 w-[min(28rem,55vw)] max-w-full rounded-lg border border-border/70 bg-background px-3 text-sm font-semibold tracking-tight text-foreground outline-none ring-0 focus:border-primary/60"
               disabled={isSavingProjectName}
             />
-          ) : (
+          ) : isNameSet ? (
             <button
               type="button"
               onClick={() => setIsEditingProjectName(true)}
               className="ui-row-gap-2 min-w-0 text-left"
             >
-              <span className="truncate font-semibold tracking-tight">{projectName}</span>
+              <span
+                className="truncate font-semibold tracking-tight"
+                style={nameJustSet ? { animation: "fadeIn 0.7s ease forwards" } : undefined}
+              >
+                {projectName}
+              </span>
               <Pencil className="h-3.5 w-3.5 text-text-secondary" />
             </button>
+          ) : (
+            <div className="flex items-center gap-2 cursor-default select-none">
+              <span className="truncate font-semibold tracking-tight text-muted-foreground">
+                {projectName}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/40 bg-violet-950/40 px-2 py-0.5 text-[10px] font-medium text-violet-400">
+                ✦ AI naming
+              </span>
+            </div>
           )}
         </div>
       </Header>
@@ -1119,6 +1148,7 @@ export function ProjectWorkspace({
             documentMetadata={getDocumentMetadata(activeDocument)}
             onGenerateContent={handleGenerateContent}
             onUpdateDescription={handleUpdateDescription}
+            onProjectNameGenerated={handleProjectNameGenerated}
             isGenerating={generatingDocuments[activeDocument]}
             streamStages={streamStages}
             streamCurrentStep={streamCurrentStep}

@@ -724,3 +724,8 @@ body {
   border-bottom-color: #595959 !important;
   color: #333333 !important;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
