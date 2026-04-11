@@ -1,53 +1,14 @@
 "use client"
 
-import Image from "next/image"
 import { Suspense, useMemo, useState } from "react"
-import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import { Check } from "lucide-react"
 import { uiStylePresets } from "@/lib/ui-style-presets"
-import { AuthHeader } from "@/components/auth/auth-header"
-import { AuthField } from "@/components/auth/auth-field"
-import { AuthPasswordField } from "@/components/auth/auth-password-field"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
+import { AuthFormContent } from "@/components/auth/auth-form-content"
 
 type AuthMode = "signin" | "signup"
-
-const modeLabels: Record<
-  AuthMode,
-  {
-    title: string
-    subtitle: string
-    submit: string
-    loading: string
-    alternateLine: string
-    alternateAction: string
-    alternateHref: string
-  }
-> = {
-  signin: {
-    title: "Welcome back",
-    subtitle: "Sign in to continue to Idea2App.",
-    submit: "Sign in",
-    loading: "Signing in...",
-    alternateLine: "Don’t have an account?",
-    alternateAction: "Create account",
-    alternateHref: "/auth?mode=signup",
-  },
-  signup: {
-    title: "Create account",
-    subtitle: "Join Idea2App and start building.",
-    submit: "Create account",
-    loading: "Creating account...",
-    alternateLine: "Already have an account?",
-    alternateAction: "Sign in",
-    alternateHref: "/auth?mode=signin",
-  },
-}
 
 function AuthScreen() {
   const router = useRouter()
@@ -62,126 +23,7 @@ function AuthScreen() {
     return rawMode === "signup" ? "signup" : "signin"
   }, [searchParams])
 
-  const mode = defaultMode
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [fullName, setFullName] = useState("")
-  const [error, setError] = useState<string | null>(queryError || queryMessage)
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-
-  const copy = modeLabels[mode]
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (loading) return
-    setError(null)
-    setLoading(true)
-
-    try {
-      const supabase = createClient()
-
-      if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-
-        if (error) {
-          setError(error.message)
-          return
-        }
-
-        router.push(redirect)
-        router.refresh()
-        return
-      }
-
-      if (password !== confirmPassword) {
-        setError("Passwords do not match.")
-        return
-      }
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-          emailRedirectTo: `${window.location.origin}/callback?next=${redirect}`,
-        },
-      })
-
-      if (error) {
-        setError(error.message)
-        return
-      }
-
-      setSuccess(true)
-    } catch {
-      setError("An unexpected error occurred")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleGoogleAuth = async () => {
-    if (loading) return
-    setError(null)
-    setLoading(true)
-
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/callback?next=${redirect}`,
-        },
-      })
-
-      if (error) {
-        setError(error.message)
-      }
-    } catch {
-      setError("An unexpected error occurred")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <section className="flex min-h-screen w-full flex-col">
-          <AuthHeader />
-          <main className="flex min-h-screen w-full items-center justify-center px-6">
-            <Card className={`${uiStylePresets.authCardCompact} p-8 text-center`}>
-              <CardHeader>
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-bg">
-                  <Check className="h-6 w-6 text-success" />
-                </div>
-                <CardTitle className="text-2xl">Check your email</CardTitle>
-                <p className="ui-text-sm-muted">
-                  We&apos;ve sent a confirmation link to <strong>{email}</strong>.
-                  Open it to verify your account.
-                </p>
-              </CardHeader>
-              <CardFooter className="pb-2 pt-2">
-                <Link
-                  href={`/auth?mode=signin&redirect=${encodeURIComponent(redirect)}`}
-                  className={uiStylePresets.authLinkUnderline}
-                >
-                  Continue to sign in
-                </Link>
-              </CardFooter>
-            </Card>
-          </main>
-        </section>
-      </div>
-    )
-  }
+  const [externalError] = useState<string | null>(queryError || queryMessage)
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -203,7 +45,7 @@ function AuthScreen() {
           </aside>
 
           <div className="flex w-full flex-1">
-              <div className="w-full lg:h-full lg:flex lg:flex-col">
+            <div className="w-full lg:h-full lg:flex lg:flex-col">
               <header className="h-[104px] w-full ui-px-6 py-5">
                 <BrandWordmark
                   className="h-full"
@@ -213,102 +55,21 @@ function AuthScreen() {
               </header>
 
               <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
+                {externalError && (
+                  <p className={uiStylePresets.authErrorPill}>{externalError}</p>
+                )}
                 <Card className={uiStylePresets.authCardContainer}>
-                  <CardHeader className="ui-stack-2 ui-px-8 pt-8">
-                    <CardTitle className="text-3xl tracking-[-0.02em]">{copy.title}</CardTitle>
-                    <p className="ui-text-sm-muted">{copy.subtitle}</p>
-                  </CardHeader>
-
-                  <div className="ui-px-8">
-                    <button
-                      type="button"
-                      onClick={handleGoogleAuth}
-                      disabled={loading}
-                      className={uiStylePresets.authSocialButton}
-                    >
-                      <Image src="/google-logo.svg" alt="Google" width={16} height={16} className="h-4 w-4" />
-                      Continue with Google
-                    </button>
-
-                    <div className="mt-5 flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className={uiStylePresets.authDividerLine} />
-                      <span>OR</span>
-                      <span className={uiStylePresets.authDividerLine} />
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleSubmit}>
-                    <CardContent className="space-y-5 ui-px-8 pt-3">
-                      {error && <p className={uiStylePresets.authErrorPill}>{error}</p>}
-
-                      {mode === "signup" && (
-                        <AuthField
-                          id="fullName"
-                          label="Full name"
-                          placeholder="John Doe"
-                          value={fullName}
-                          onChange={setFullName}
-                          disabled={loading}
-                        />
-                      )}
-
-                      <AuthField
-                        id="email"
-                        type="email"
-                        label="Email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={setEmail}
-                        disabled={loading}
-                      />
-
-                      <AuthPasswordField
-                        id="password"
-                        label="Password"
-                        placeholder={mode === "signup" ? "Create a password" : "Enter your password"}
-                        value={password}
-                        onChange={setPassword}
-                        minLength={6}
-                        disabled={loading}
-                      />
-
-                      {mode === "signup" && (
-                        <AuthPasswordField
-                          id="confirmPassword"
-                          label="Confirm password"
-                          placeholder="Re-enter your password"
-                          value={confirmPassword}
-                          onChange={setConfirmPassword}
-                          minLength={6}
-                          disabled={loading}
-                        />
-                      )}
-
-                      <Button
-                        type="submit"
-                        className={uiStylePresets.authDestructiveButton}
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <Spinner size="sm" />
-                            {copy.loading}
-                          </>
-                        ) : (
-                          copy.submit
-                        )}
-                      </Button>
-                    </CardContent>
-                  </form>
-
-                  <CardFooter className="ui-px-8 pb-8 pt-2">
-                    <p className="w-full text-center ui-text-sm-muted">
-                      {copy.alternateLine}{" "}
-                      <Link href={copy.alternateHref} className={uiStylePresets.authLinkUnderline}>
-                        {copy.alternateAction}
-                      </Link>
-                    </p>
-                  </CardFooter>
+                  <AuthFormContent
+                    initialMode={defaultMode}
+                    redirectTo={redirect}
+                    onSuccess={() => {
+                      router.push(redirect)
+                      router.refresh()
+                    }}
+                    onModeChange={(mode) => {
+                      router.replace(`/auth?mode=${mode}&redirect=${encodeURIComponent(redirect)}`, { scroll: false })
+                    }}
+                  />
                 </Card>
               </div>
             </div>
