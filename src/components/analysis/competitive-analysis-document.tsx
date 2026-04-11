@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { AlertTriangle, ArrowUpRight, RefreshCw } from "lucide-react"
+import { AlertTriangle, ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import {
@@ -18,8 +18,6 @@ interface CompetitiveAnalysisDocumentProps {
   currentVersion?: number
   projectId: string
   onContentUpdate?: (newContent: string) => void
-  onUpgrade: () => void
-  isUpgrading: boolean
 }
 
 const displayFontClass = "font-[family:var(--font-display)]"
@@ -817,8 +815,6 @@ export function CompetitiveAnalysisDocument({
   metadata,
   projectId,
   onContentUpdate,
-  onUpgrade,
-  isUpgrading,
 }: CompetitiveAnalysisDocumentProps) {
   const viewModel = useMemo(
     () => getCompetitiveAnalysisViewModel(content, metadata),
@@ -827,33 +823,6 @@ export function CompetitiveAnalysisDocument({
 
   return (
     <div className="space-y-4">
-      {viewModel.legacyNotice && (
-        <div className="border border-[#E5E5E5] bg-[#FFF7ED] px-5 py-4 rounded-none">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <p className="font-semibold text-[#0A0A0A]">
-                {viewModel.legacyNotice}
-              </p>
-              <p className="text-sm text-[#666666]">
-                Existing versions stay intact. Regenerating creates a new v2
-                version with the designed modules view.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onUpgrade}
-              disabled={isUpgrading}
-              className="inline-flex items-center gap-2 rounded-none border border-[#0A0A0A] bg-[#0A0A0A] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RefreshCw
-                className={cn("h-4 w-4", isUpgrading && "animate-spin")}
-              />
-              {isUpgrading ? "Regenerating..." : "Regenerate as V2"}
-            </button>
-          </div>
-        </div>
-      )}
-
       {viewModel.warning && (
         <div className="flex items-start gap-3 border border-[#FCA5A5] bg-[#FEF2F2] px-5 py-4 rounded-none">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#DC2626]" />
@@ -872,7 +841,6 @@ export function CompetitiveAnalysisDocument({
         <MarkdownRenderer
           content={content}
           projectId={projectId}
-          enableInlineEditing={true}
           onContentUpdate={onContentUpdate}
         />
       )}
