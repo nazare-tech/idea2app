@@ -11,7 +11,7 @@ import { uiStylePresets } from "@/lib/ui-style-presets"
 import { AuthField } from "@/components/auth/auth-field"
 import { AuthPasswordField } from "@/components/auth/auth-password-field"
 
-type AuthMode = "signin" | "signup"
+export type AuthMode = "signin" | "signup"
 
 const modeLabels: Record<
   AuthMode,
