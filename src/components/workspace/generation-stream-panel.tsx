@@ -69,7 +69,6 @@ export function GenerationStreamPanel({
           <MarkdownRenderer
             content={streamContent}
             projectId={projectId}
-            enableInlineEditing={false}
           />
         </>
       )}

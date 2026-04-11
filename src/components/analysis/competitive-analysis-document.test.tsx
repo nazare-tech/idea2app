@@ -50,9 +50,6 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
       metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
       currentVersion={0}
       projectId="project-1"
-      onContentUpdate={() => {}}
-      onUpgrade={() => {}}
-      isUpgrading={false}
     />
   )
 
@@ -67,19 +64,17 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
   assert.doesNotMatch(html, /Markdown/)
 })
 
-test("legacy competitive document renders migration notice", () => {
+test("legacy competitive document falls back to markdown renderer", () => {
   const html = renderToStaticMarkup(
     <CompetitiveAnalysisDocument
       content={"# Competitive Analysis: Legacy\n\n## Market Overview\nLegacy content"}
       metadata={null}
       currentVersion={0}
       projectId="project-1"
-      onContentUpdate={() => {}}
-      onUpgrade={() => {}}
-      isUpgrading={false}
     />
   )
 
-  assert.match(html, /predates Competitive Research v2/i)
-  assert.match(html, /Regenerate as V2/)
+  // Legacy content falls back to MarkdownRenderer (no regenerate button since feature was removed)
+  assert.match(html, /Competitive Analysis: Legacy/i)
+  assert.doesNotMatch(html, /Regenerate as V2/)
 })

@@ -17,7 +17,6 @@ interface CompetitiveAnalysisDocumentProps {
   metadata?: Record<string, unknown> | null
   currentVersion?: number
   projectId: string
-  onContentUpdate?: (newContent: string) => void
 }
 
 const displayFontClass = "font-[family:var(--font-display)]"
@@ -814,7 +813,6 @@ export function CompetitiveAnalysisDocument({
   content,
   metadata,
   projectId,
-  onContentUpdate,
 }: CompetitiveAnalysisDocumentProps) {
   const viewModel = useMemo(
     () => getCompetitiveAnalysisViewModel(content, metadata),
@@ -841,7 +839,6 @@ export function CompetitiveAnalysisDocument({
         <MarkdownRenderer
           content={content}
           projectId={projectId}
-          onContentUpdate={onContentUpdate}
         />
       )}
     </div>
