@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-04-10 (Phase 1: Credit Refunds + Retry Logic + Timeouts; Phase 2: Server-Side Generate All)
+**Last Updated**: 2026-04-11 (Phase 3: UI Simplification — removed AI model selection, Edit with AI, Regenerate option, Download Markdown)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -12,25 +12,16 @@
 ### Core Functionality
 
 - **Prompt Tab AI Chat**: Interactive AI conversation in the Prompt tab that asks tailored follow-up questions to refine business ideas. Features:
-  - Model selection (Claude, GPT-4, Gemini, Llama, etc.)
   - Context-aware question generation based on idea type (tool, marketplace, service, etc.)
   - Automatic idea summarization after sufficient context gathering
   - Configurable system prompts for customization
   - Persistent conversation history
-- **Inline AI Document Editing**: Select any text in generated documents and edit it with AI assistance. Features:
-  - Text selection toolbar that appears on highlight
-  - Non-intrusive selection capture (only on mouseup, no interference during drag)
-  - Conditional component rendering for optimal performance
-  - Inline editor with diff preview (shows before/after)
-  - Context-aware editing using full document as context
-  - 1 credit per edit
-  - Supports Competitive Research, PRD, MVP Plan, and Tech Spec documents
 - **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
 - **Competitive Analysis**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a full-width Pencil-faithful designed page, not generic markdown. The UI is built from typed parsing of the stored markdown source and includes founder verdict, competitor profiles, workflow matrix, pricing, audience segments, positioning, GTM signals, gap analysis, differentiation wedges, moat/defensibility, SWOT, risks, MVP wedge recommendation, and strategic recommendations. Direct competitor entries now expect linked H3 headings plus concise fields for overview, core product, positioning, strengths, key edge, limitations, pricing model, and target audience so the app can render dense competitor cards and a fast-comparison table. Legacy or malformed documents fall back to markdown with upgrade guidance.
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans
 - **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD
-- **Mockup Generation**: ASCII art mockups showing information architecture based on MVP plans (with AI model selection)
+- **Mockup Generation**: ASCII art mockups showing information architecture based on MVP plans
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **App Generation**: Automated code generation for multiple app types:
   - Static websites (HTML/CSS/JS)
@@ -236,24 +227,9 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 9. **Shared UI Registries + Hooks**: Repeated view metadata and repeated client behaviors (documents, credits, billing portal, auth sign-out, chat interactions) are centralized into typed registries and reusable hooks/components before page-level assembly
 10. **Path Aliases**: Clean imports using `@/*` aliases
 11. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
-12. **Non-Intrusive Selection Handling**: Text selection captured only on `mouseup` with `requestAnimationFrame` to ensure browser finalizes selection first, preventing interference during drag operations
-
-### Inline Editing Technical Implementation
-
-The inline AI editing feature in `MarkdownRenderer` uses a sophisticated approach to avoid interfering with native browser text selection:
-
-**Selection Capture Strategy**:
-- Uses `mouseup` event listener instead of continuous `selectionchange` tracking
-- Wraps selection capture in `requestAnimationFrame` to ensure browser has finalized the selection
-- No state updates during the drag operation, preventing React re-renders that could interrupt selection
-
-**Conditional Component Rendering**:
-- When there's **no pending edit** (normal viewing), ReactMarkdown uses minimal custom components (only `code` for syntax highlighting)
-- This matches how PromptChatInterface renders and allows normal browser text selection
-- When there **is a pending edit** (showing diff), all custom component renderers (p, li, h1, h2, etc.) are added to process the diff marker
-- Components are memoized with `useMemo` to prevent unnecessary re-renders
-
-**Result**: Users can select text across multiple elements (like list items) without any JavaScript interference, exactly like selecting text in the Prompt editor tab.
+12. **Fixed Default Models Per Tab**: AI model selection was removed from the UI. Each pipeline uses a fixed default defined in `src/lib/prompt-chat-config.ts` → `DEFAULT_MODELS`. Change models there — one place for all tabs.
+13. **Generate-Once Documents**: The Generate button is hidden after a document is successfully generated. Failed generations (no content saved) naturally re-expose the button for retry.
+14. **PDF-Only Export**: Documents export as PDF only (markdown download removed). The header shows a single "Download PDF" button.
 
 ### Mermaid Diagram Expansion Feature
 
@@ -310,8 +286,7 @@ src/
 │   ├── api/                      # API routes
 │   │   ├── chat/route.ts         # POST chat messages (general chat)
 │   │   ├── prompt-chat/route.ts  # GET/POST Prompt tab AI chat with follow-up questions
-│   │   ├── document-edit/route.ts     # POST inline AI document editing
-│   │   ├── analysis/[type]/route.ts   # POST run analysis (in-house pipelines)
+│   │   ├── analysis/[type]/route.ts   # POST run analysis (in-house pipelines, fixed model per type)
 │   │   ├── analyses/[id]/route.ts     # PATCH update analysis content
 │   │   ├── prds/[id]/route.ts         # PATCH update PRD content
 │   │   ├── mvp-plans/[id]/route.ts    # PATCH update MVP plan content
@@ -339,9 +314,7 @@ src/
 │   │   ├── input.tsx, textarea.tsx, label.tsx
 │   │   ├── badge.tsx, avatar.tsx, spinner.tsx
 │   │   ├── dropdown-menu.tsx, tabs.tsx  # Radix UI
-│   │   ├── markdown-renderer.tsx # Markdown with Mermaid + syntax highlighting + inline AI editing
-│   │   ├── inline-ai-editor.tsx  # Inline AI editing popup component
-│   │   ├── selection-toolbar.tsx # Text selection toolbar ("Edit with AI" button)
+│   │   ├── markdown-renderer.tsx # Markdown with Mermaid + syntax highlighting
 │   │   └── ...
 │   ├── layout/                   # Layout components
 │   │   ├── sidebar.tsx           # Legacy dashboard sidebar (retained)
@@ -354,7 +327,7 @@ src/
 │   │   └── generate-all-hydrator.tsx  # Keeps store callbacks fresh; triggers hydrate() once per project
 │   ├── chat/                     # Chat feature
 │   │   ├── chat-interface.tsx    # General chat UI
-│   │   └── prompt-chat-interface.tsx  # Prompt tab AI chat with model selection
+│   │   └── prompt-chat-interface.tsx  # Prompt tab AI chat (uses DEFAULT_MODELS.prompt)
 │   └── analysis/                 # Analysis feature
 │       └── analysis-panel.tsx    # Analysis/PRD/TechSpec UI
 │
@@ -371,7 +344,7 @@ src/
 │   ├── tavily.ts                 # Tavily API client (URL content extraction, with retry)
 │   ├── with-retry.ts             # Shared retry utility for external API calls (3 retries, exponential backoff on 429/5xx)
 │   ├── pdf-utils.ts              # PDF export: renders Markdown → HTML → canvas → jsPDF
-│   ├── prompt-chat-config.ts     # System prompts and AI models for Prompt chat
+│   ├── prompt-chat-config.ts     # DEFAULT_MODELS (per-tab fixed models) + DEFAULT_MODEL fallback
 │   └── utils.ts                  # Utility functions & CREDIT_COSTS
 │
 ├── types/                        # TypeScript types
@@ -420,7 +393,7 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | `tech-spec.ts` | `TECH_SPEC_SYSTEM_PROMPT` | `analysis-pipelines.ts` |
 | `prompt-chat.ts` | `PROMPT_CHAT_SYSTEM`, `IDEA_SUMMARY_PROMPT`, `POST_SUMMARY_SYSTEM` | `prompt-chat-config.ts`, `api/prompt-chat/` |
 | `general-chat.ts` | `buildGeneralChatSystemPrompt()` | `openrouter.ts` |
-| `document-edit.ts` | `DOCUMENT_EDIT_SYSTEM_PROMPT`, `buildDocumentEditUserPrompt()` | `api/document-edit/` |
+| ~~`document-edit.ts`~~ | *(deleted — Edit with AI feature removed)* | — |
 | `mockups.ts` | `buildMockupPrompt()` | `api/mockups/generate/` |
 | `competitor-search.ts` | `COMPETITOR_SEARCH_SYSTEM_PROMPT`, `buildCompetitorSearchUserPrompt()` | `perplexity.ts` |
 | `app-generation.ts` | `APP_TYPE_PROMPTS`, `buildAppGenerationPrompt()` | `api/generate-app/` |
