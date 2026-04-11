@@ -430,7 +430,7 @@ export function PromptChatInterface({
       if (data.stage === "summarized" && data.summary && onIdeaSummary) {
         onIdeaSummary(data.summary)
       }
-      if (data.projectName && onProjectNameGenerated) {
+      if (data.stage === "summarized" && data.projectName && onProjectNameGenerated) {
         onProjectNameGenerated(data.projectName)
       }
     } catch (error) {
