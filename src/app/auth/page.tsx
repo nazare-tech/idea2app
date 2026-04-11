@@ -1,14 +1,12 @@
 "use client"
 
-import { Suspense, useMemo, useState } from "react"
+import { Suspense, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
-import { AuthFormContent } from "@/components/auth/auth-form-content"
-
-type AuthMode = "signin" | "signup"
+import { AuthFormContent, type AuthMode } from "@/components/auth/auth-form-content"
 
 function AuthScreen() {
   const router = useRouter()
@@ -23,7 +21,7 @@ function AuthScreen() {
     return rawMode === "signup" ? "signup" : "signin"
   }, [searchParams])
 
-  const [externalError] = useState<string | null>(queryError || queryMessage)
+  const externalError = queryError || queryMessage || null
 
   return (
     <div className="min-h-screen bg-background text-foreground">
