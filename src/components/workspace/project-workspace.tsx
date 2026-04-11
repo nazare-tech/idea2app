@@ -1036,97 +1036,6 @@ export function ProjectWorkspace({
     }
   }
 
-  const handleUpdateContent = async (newContent: string) => {
-    try {
-      const versionIndex = selectedVersionIndex[activeDocument] || 0
-
-      // Determine which table and ID to update based on document type
-      let endpoint = ""
-      let recordId = ""
-
-      switch (activeDocument) {
-        case "competitive":
-          const compAnalysis = analyses.filter(a => a.type === "competitive-analysis")[versionIndex]
-          if (compAnalysis) {
-            endpoint = `/api/analyses/${compAnalysis.id}`
-            recordId = compAnalysis.id
-          }
-          break
-        case "prd":
-          const prd = prds[versionIndex]
-          if (prd) {
-            endpoint = `/api/prds/${prd.id}`
-            recordId = prd.id
-          }
-          break
-        case "mvp":
-          const mvp = mvpPlans[versionIndex]
-          if (mvp) {
-            endpoint = `/api/mvp-plans/${mvp.id}`
-            recordId = mvp.id
-          }
-          break
-        case "mockups":
-          const mockup = mockups[versionIndex]
-          if (mockup) {
-            endpoint = `/api/mockups/${mockup.id}`
-            recordId = mockup.id
-          }
-          break
-        case "techspec":
-          const techSpec = techSpecs[versionIndex]
-          if (techSpec) {
-            endpoint = `/api/tech-specs/${techSpec.id}`
-            recordId = techSpec.id
-          }
-          break
-        case "launch":
-          const launchPlan = analyses.filter(a => a.type === "launch-plan")[versionIndex]
-          if (launchPlan) {
-            endpoint = `/api/analyses/${launchPlan.id}`
-            recordId = launchPlan.id
-          }
-          break
-        default:
-          return
-      }
-
-      if (!endpoint || !recordId) {
-        throw new Error("Cannot update content: no record found")
-      }
-
-      // Update local state immediately for instant UI feedback
-      const overrideKey = `${activeDocument}-${recordId}`
-      setLocalContentOverrides(prev => ({
-        ...prev,
-        [overrideKey]: newContent,
-      }))
-
-      // Persist to backend
-      const response = await fetch(endpoint, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newContent }),
-      })
-
-      if (!response.ok) {
-        // Revert local override on error
-        setLocalContentOverrides(prev => {
-          const updated = { ...prev }
-          delete updated[overrideKey]
-          return updated
-        })
-        throw new Error("Failed to update content")
-      }
-
-      // Clear local override after successful save (server data will be fresh on next refresh)
-      // Keep it for now to avoid flicker - it will be cleared on page navigation
-    } catch (error) {
-      console.error("Error updating content:", error)
-      alert(error instanceof Error ? error.message : "Failed to update content")
-    }
-  }
-
   return (
     <>
     <GenerateAllHydrator
@@ -1210,7 +1119,6 @@ export function ProjectWorkspace({
             documentMetadata={getDocumentMetadata(activeDocument)}
             onGenerateContent={handleGenerateContent}
             onUpdateDescription={handleUpdateDescription}
-            onUpdateContent={handleUpdateContent}
             isGenerating={generatingDocuments[activeDocument]}
             streamStages={streamStages}
             streamCurrentStep={streamCurrentStep}

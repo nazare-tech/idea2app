@@ -17,6 +17,7 @@ import {
 } from "@/components/chat/chat-primitives"
 import { GenerateAllBlock } from "@/components/workspace/generate-all-block"
 import { useGenerateAll } from "@/stores/generate-all-store"
+import { DEFAULT_MODELS } from "@/lib/prompt-chat-config"
 
 interface Message {
   id: string
@@ -33,7 +34,7 @@ interface PromptChatInterfaceProps {
   projectId: string
   projectName: string
   initialIdea: string
-  selectedModel: string
+  selectedModel?: string
   onIdeaSummary?: (summary: string) => void
   credits?: number
 }
@@ -55,7 +56,7 @@ const PAGE_SIZE = 40
 export function PromptChatInterface({
   projectId,
   initialIdea,
-  selectedModel,
+  selectedModel = DEFAULT_MODELS.prompt,
   onIdeaSummary,
   credits = 0,
 }: PromptChatInterfaceProps) {
