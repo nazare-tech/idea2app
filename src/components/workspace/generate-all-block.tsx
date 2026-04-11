@@ -13,7 +13,6 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useGenerateAllStore, type QueueItemStatus } from "@/stores/generate-all-store"
-import { GENERATE_ALL_DEFAULT_MODELS } from "@/lib/document-definitions"
 import { Button } from "@/components/ui/button"
 
 // ---------------------------------------------------------------------------
@@ -26,15 +25,6 @@ const TAB_MAP: Record<string, string> = {
   mvp: "mvp",
   mockups: "mockups",
   launch: "launch",
-}
-
-// ---------------------------------------------------------------------------
-// Fixed method labels — items that use a specific tool rather than an AI model
-// ---------------------------------------------------------------------------
-
-const FIXED_METHOD: Partial<Record<string, string>> = {
-  mockups: "Stitch SDK",
-  launch: "Template",
 }
 
 // ---------------------------------------------------------------------------
@@ -75,50 +65,6 @@ function StepIndicator({
       <span className="text-[11px] font-semibold text-muted-foreground font-heading">
         {index + 1}
       </span>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Model pill — shows the fixed model or a fixed method label (read-only)
-// ---------------------------------------------------------------------------
-
-function ModelPill({
-  docType,
-  selectedModel,
-  status,
-}: {
-  docType: string
-  selectedModel: string
-  status: QueueItemStatus
-}) {
-  const fixedMethod = FIXED_METHOD[docType]
-
-  // Fixed items (Stitch SDK, Template) — always read-only
-  if (fixedMethod) {
-    return (
-      <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/60 px-2.5 py-1.5">
-        <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
-        <span className="text-[11px] text-muted-foreground">{fixedMethod}</span>
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-          FIXED
-        </span>
-      </div>
-    )
-  }
-
-  // Show short model name (last segment after "/")
-  const shortName = selectedModel.split("/").pop() ?? selectedModel
-
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/60 px-2.5 py-1.5",
-        status !== "pending" && "opacity-60",
-      )}
-    >
-      <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
-      <span className="text-[11px] text-muted-foreground">{shortName}</span>
     </div>
   )
 }
@@ -333,7 +279,6 @@ export function GenerateAllBlock({
         {queue.map((item, i) => {
           const isGenerating = item.status === "generating"
           const isDone       = item.status === "done" || item.status === "skipped"
-          const showModelPill = item.status !== "skipped"
           const showNavLink  =
             isDone && TAB_MAP[item.docType]
 
@@ -382,21 +327,12 @@ export function GenerateAllBlock({
                 )}
               </div>
 
-              {/* Right: model pill + optional nav link */}
-              <div className="flex shrink-0 items-center gap-2">
-                {showModelPill && (
-                  <ModelPill
-                    docType={item.docType}
-                    selectedModel={GENERATE_ALL_DEFAULT_MODELS[item.docType as keyof typeof GENERATE_ALL_DEFAULT_MODELS] ?? ""}
-                    status={item.status}
-                  />
-                )}
-                {showNavLink && (
-                  <Link href={`?tab=${TAB_MAP[item.docType]}`}>
-                    <ArrowUpRight className="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
-                  </Link>
-                )}
-              </div>
+              {/* Right: optional nav link */}
+              {showNavLink && (
+                <Link href={`?tab=${TAB_MAP[item.docType]}`}>
+                  <ArrowUpRight className="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
+                </Link>
+              )}
             </div>
           )
         })}
