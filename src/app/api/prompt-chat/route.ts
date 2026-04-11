@@ -26,7 +26,7 @@ type PromptChatMessage = {
 type PromptChatStreamEvent =
   | { type: "start"; userMessage: unknown }
   | { type: "token"; content: string }
-  | { type: "done"; userMessage: unknown; assistantMessage: unknown; stage: string; summary: string | null }
+  | { type: "done"; userMessage: unknown; assistantMessage: unknown; stage: string; summary: string | null; projectName: string | null }
   | { type: "error"; error: string }
 
 function dedupePromptChatMessages(messages: PromptChatMessage[] = []) {
@@ -405,6 +405,33 @@ export async function POST(request: Request) {
 
             modelUsed = selectedModel
 
+            // Generate a project name if still "Untitled" and we just summarized
+            let generatedProjectName: string | null = null
+            if (stage === "summary" && assistantContent && project.name === "Untitled") {
+              try {
+                const nameResponse = await openrouter.chat.completions.create({
+                  model: selectedModel,
+                  messages: [
+                    {
+                      role: "user",
+                      content: `Given this business idea summary, generate a short project name (3–6 words, title case, no quotes, no punctuation at end). Return only the name, nothing else.\n\nSummary:\n${assistantContent}`,
+                    },
+                  ],
+                  max_tokens: 20,
+                })
+                const rawName = nameResponse.choices[0]?.message?.content?.trim()
+                if (rawName) {
+                  generatedProjectName = rawName
+                  await supabase
+                    .from("projects")
+                    .update({ name: generatedProjectName, updated_at: new Date().toISOString() })
+                    .eq("id", projectId!)
+                }
+              } catch (nameError) {
+                console.error("[PromptChat] Project name generation failed (non-fatal):", nameError)
+              }
+            }
+
             let conversationStage: "refining" | "summarized" = "refining"
             if (stage === "summary") {
               conversationStage = "summarized"
@@ -418,6 +445,7 @@ export async function POST(request: Request) {
               assistantMessage,
               stage: conversationStage,
               summary: stage === "summary" ? assistantContent : null,
+              projectName: generatedProjectName,
             })
           } catch (streamError) {
             console.error("Prompt chat stream error:", streamError)
@@ -498,6 +526,33 @@ export async function POST(request: Request) {
         .eq("id", projectId)
     }
 
+    // Generate a project name if still "Untitled" and we just summarized
+    let generatedProjectName: string | null = null
+    if (stage === "summary" && assistantContent && project.name === "Untitled") {
+      try {
+        const nameResponse = await openrouter.chat.completions.create({
+          model: selectedModel,
+          messages: [
+            {
+              role: "user",
+              content: `Given this business idea summary, generate a short project name (3–6 words, title case, no quotes, no punctuation at end). Return only the name, nothing else.\n\nSummary:\n${assistantContent}`,
+            },
+          ],
+          max_tokens: 20,
+        })
+        const rawName = nameResponse.choices[0]?.message?.content?.trim()
+        if (rawName) {
+          generatedProjectName = rawName
+          await supabase
+            .from("projects")
+            .update({ name: generatedProjectName, updated_at: new Date().toISOString() })
+            .eq("id", projectId)
+        }
+      } catch (nameError) {
+        console.error("[PromptChat] Project name generation failed (non-fatal):", nameError)
+      }
+    }
+
     console.log(`[PromptChat] project=${projectId} model=${selectedModel} stage=${stage}`)
 
     return NextResponse.json({
@@ -505,6 +560,7 @@ export async function POST(request: Request) {
       assistantMessage,
       stage: conversationStage,
       summary: stage === "summary" ? assistantContent : null,
+      projectName: generatedProjectName,
     })
   } catch (error) {
     console.error("POST /api/prompt-chat error:", error)
