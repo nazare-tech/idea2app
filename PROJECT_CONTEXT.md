@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-03-29 (Waitlist Landing Flow + Stitch Integration + Current Route Map)
+**Last Updated**: 2026-04-10 (Waitlist + Stitch Integration; Credit Refunds + Server-Side Generate All)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -169,18 +169,29 @@
    - Server saves message to database
    - Response streamed back to client
 
-3. **Analysis Flow**:
+3. **Analysis Flow** (individual tab generation):
    - Client requests analysis (competitive, PRD, MVP plan, or tech spec) from the workspace `ContentEditor`
-   - Server checks credits, deducts if available
+   - Server checks credits, deducts if available; refunds via `refund_credits` RPC on generation failure
    - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`):
-     - **Competitive Analysis**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail. External API calls (Perplexity, Tavily) use `withRetry` (3 retries, exponential backoff). All OpenRouter synthesis calls have a 120s `AbortSignal` timeout.
+     - **Competitive Analysis**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail. External API calls use `withRetry` (3 retries, exponential backoff on 429/5xx). All OpenRouter synthesis calls have a 120s `AbortSignal` timeout.
      - **PRD**: OpenRouter LLM call with detailed system prompt, receives `competitiveAnalysis` as context
      - **MVP Plan**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
      - **Tech Spec**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
    - Result saved to the appropriate table (`analyses`, `prds`, `mvp_plans`, or `tech_specs`)
    - Page reloads to surface the new version
 
-4. **App Generation Flow**:
+4. **Generate All Flow** (server-side, durable):
+   - Client calls `startGenerateAll()` in `generate-all-store.ts`
+   - Store persists queue to DB via `POST /api/generate-all/start`
+   - Store fires `POST /api/generate-all/execute` as fire-and-forget (server runs up to 300s even if user closes tab)
+   - Store polls `GET /api/generate-all/status` every 3s to reflect server-side progress
+   - When server marks a step "done", store calls `onStepComplete()` → `router.refresh()` to reload the document
+   - Server-side execute route runs each step sequentially: competitive → prd → mvp → mockups → launch
+   - Per-step: checks cancellation, deducts credits, runs pipeline, saves result, updates DB queue row
+   - On step failure: refunds that step's credits, marks item + queue as error, stops
+   - Generation is durable — survives browser tab close, page refresh, and network interruptions
+
+5. **App Generation Flow**:
    - Client requests app generation
    - Server validates credits (5 credits required)
    - Server calls Anthropic Claude with project context
@@ -240,6 +251,7 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 3. **Middleware-based Auth**: Global authentication protection at the middleware level
 4. **Credit System with Database Functions**: PostgreSQL stored procedures for atomic credit operations
 5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter) with retry logic on external calls; PRD/MVP/Tech Spec use direct OpenRouter calls with detailed prompts. All LLM synthesis calls have 120s abort timeouts. Credits are refunded via `refund_credits` RPC on generation failure.
+6. **Server-Side Generate All**: "Generate All" orchestration runs on the server (`/api/generate-all/execute`, `maxDuration=300`) instead of in the browser. The Zustand store fires the execute request fire-and-forget and polls DB every 3s. This makes generation durable across tab close, refresh, and network interruptions.
 6. **TypeScript-First**: Strict typing throughout, auto-generated database types
 7. **Component Composition**: Radix UI primitives + CVA for variants
 8. **Optimistic UI Updates**: Immediate feedback with graceful error handling
@@ -334,6 +346,12 @@ src/
 │   │   ├── generate-pdf/route.ts      # PDF generation support route
 │   │   ├── launch/plan/route.ts       # Launch-plan generation route
 │   │   ├── generate-app/route.ts      # POST generate app code
+│   │   ├── generate-all/
+│   │   │   ├── start/route.ts         # POST create/reset generation_queues row
+│   │   │   ├── execute/route.ts       # POST server-side pipeline orchestrator (maxDuration=300)
+│   │   │   ├── status/route.ts        # GET read queue row for polling
+│   │   │   ├── update/route.ts        # PATCH update queue fields
+│   │   │   └── cancel/route.ts        # POST mark queue as cancelled
 │   │   ├── projects/[id]/route.ts     # PATCH/GET project details
 │   │   └── stripe/
 │   │       ├── checkout/route.ts      # Create checkout session
@@ -361,7 +379,8 @@ src/
 │   │   ├── document-nav.tsx      # Pipeline-step navigation within a project
 │   │   └── content-editor.tsx    # Active document view (edit/generate/export)
 │   ├── workspace/                # Workspace orchestration
-│   │   └── project-workspace.tsx # Three-column layout orchestrator
+│   │   ├── project-workspace.tsx      # Three-column layout orchestrator
+│   │   └── generate-all-hydrator.tsx  # Keeps store callbacks fresh; triggers hydrate() once per project
 │   ├── chat/                     # Chat feature
 │   │   ├── chat-interface.tsx    # General chat UI
 │   │   └── prompt-chat-interface.tsx  # Prompt tab AI chat with model selection
@@ -377,10 +396,11 @@ src/
 │   ├── openrouter.ts             # OpenRouter AI API (chat, gap-analysis fallback)
 │   ├── analysis-pipelines.ts     # In-house analysis orchestration (competitive, PRD, MVP, tech spec)
 │   ├── stitch/client.ts          # Stitch SDK wrapper + response parsers
+│   ├── stitch-pipeline.ts        # Shared Stitch mockup generation logic (used by mockup route + generate-all execute)
 │   ├── waitlist.ts               # Waitlist business rules and validation
-│   ├── perplexity.ts             # Perplexity API client (competitor search)
+│   ├── perplexity.ts             # Perplexity API client (competitor search, with retry)
 │   ├── tavily.ts                 # Tavily API client (URL content extraction, with retry)
-│   ├── with-retry.ts             # Shared retry utility for external API calls (exponential backoff)
+│   ├── with-retry.ts             # Shared retry utility for external API calls (3 retries, exponential backoff on 429/5xx)
 │   ├── pdf-utils.ts              # PDF export: renders Markdown → HTML → canvas → jsPDF
 │   ├── prompt-chat-config.ts     # System prompts and AI models for Prompt chat
 │   └── utils.ts                  # Utility functions & CREDIT_COSTS
@@ -388,7 +408,10 @@ src/
 ├── types/                        # TypeScript types
 │   └── database.ts               # Supabase DB types (auto-generated)
 │
-├── hooks/                        # React hooks (empty currently)
+├── stores/                       # Zustand client state
+│   └── generate-all-store.ts     # Generate All pipeline state + polling loop
+│
+├── hooks/                        # React hooks
 │
 └── middleware.ts                 # Auth middleware (root level)
 ```
@@ -782,12 +805,14 @@ npm install
    - `credits_history` - Credit transaction log
    - `plans` - Subscription plans
    - `subscriptions` - User subscriptions
+   - `generation_queues` - Generate All pipeline state (status, queue JSON, model_selections, current_index, started_at, completed_at, error_info)
 
 3. Enable Row Level Security (RLS) on all tables
 4. Create PostgreSQL stored functions:
-   - `consume_credits(user_id, amount, action, description)`
-   - `add_credits(user_id, amount, action, description)`
-   - `get_credit_balance(user_id)`
+   - `consume_credits(user_id, amount, action, description)` — atomically deduct credits
+   - `add_credits(user_id, amount, action, description)` — add credits (subscription refill, purchases)
+   - `get_credit_balance(user_id)` — read current balance
+   - `refund_credits(user_id, amount, action, description)` — add credits back on generation failure (see `migrations/005_create_refund_credits.sql`)
 
 5. Configure authentication:
    - Enable email/password auth
@@ -917,6 +942,11 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `user_id`, `amount`, `balance_after`, `action`, `description`, `created_at`
   - RLS: Users can only view their own credit history
 
+- **generation_queues**: Generate All pipeline state (one row per project per user)
+  - Fields: `id`, `project_id`, `user_id`, `status` (running/completed/cancelled/error), `queue` (JSON array of QueueItem), `model_selections` (JSON), `current_index`, `started_at`, `completed_at`, `error_info` (JSON)
+  - RLS: Users can only access their own queue rows
+  - Upserted on conflict `(project_id, user_id)` — only one active queue per project
+
 - **subscriptions**: User subscriptions
   - Fields: `id`, `user_id`, `plan_id`, `stripe_subscription_id`, `status`, `current_period_end`
   - RLS: Users can only view their own subscription
@@ -991,14 +1021,40 @@ docker run -p 3000:3000 idea2app
     - PRD/MVP/Tech Spec: Direct OpenRouter calls with detailed system prompts
   - Competitive-analysis inserts metadata with `document_version` and `prompt_version` for renderer compatibility
 
-- **POST /api/mockups/generate**: Generate ASCII art mockups (NEW)
-  - Body: `{ projectId, mvpPlan, projectName, model? }`
-    - `model` is optional; defaults to `OPENROUTER_ANALYSIS_MODEL` if not provided
-  - Returns: `{ content, model, source }`
-  - Cost: 15 credits
-  - Uses OpenRouter directly (not N8N)
-  - Route `maxDuration`: 300s (AI generation can be slow)
-  - Generates ASCII art diagrams showing site map, page layouts, and user flows
+- **POST /api/mockups/generate**: Generate Stitch UI mockups
+  - Body: `{ projectId, mvpPlan, projectName, stream? }`
+  - Returns: `{ content, model, source }` — content is JSON with `{ type: "stitch", options: [{label, title, htmlUrl, imageUrl}] }`
+  - Cost: 30 credits
+  - Uses Google Stitch SDK (3 design variants)
+  - Route `maxDuration`: 300s
+  - Generation logic extracted to `src/lib/stitch-pipeline.ts` (shared with Generate All execute route)
+
+### Generate All
+
+- **POST /api/generate-all/start**: Initialize a generation queue in DB
+  - Body: `{ projectId, queue, modelSelections }`
+  - Upserts a `generation_queues` row with `status: "running"`
+
+- **POST /api/generate-all/execute**: Server-side pipeline orchestrator
+  - Body: `{ projectId }`
+  - Reads queue from DB, runs each pending step sequentially
+  - Steps: competitive → prd → mvp → mockups → launch
+  - Per-step: deducts credits, runs pipeline, saves to correct table, updates DB
+  - Checks for cancellation before each step
+  - Refunds credits on step failure
+  - Route `maxDuration`: 300s — durable even if browser tab closes
+
+- **GET /api/generate-all/status**: Poll for queue progress
+  - Query: `?projectId=xxx`
+  - Returns `{ queue: generation_queues_row }`
+  - Called every 3s by the Zustand store while generation is running
+
+- **PATCH /api/generate-all/update**: Update queue fields
+  - Body: `{ projectId, queue?, current_index?, status?, error_info?, completed_at? }`
+
+- **POST /api/generate-all/cancel**: Cancel a running queue
+  - Body: `{ projectId }`
+  - Marks pending/generating items as cancelled in DB
 
 - **GET /api/stitch/html**: Proxy Stitch-hosted HTML through the server
   - Query: `?url=<encoded-url>`
@@ -1079,6 +1135,7 @@ docker run -p 3000:3000 idea2app
 ### Credit Management
 
 - **Consumption**: Atomic operation via `consume_credits()` stored procedure
+- **Refund**: Via `refund_credits()` — called on generation failure in both streaming and non-streaming analysis paths, and per-step in Generate All execute route. Logs to `credits_history` with `_refund` suffix action.
 - **Addition**: Via `add_credits()` (subscription refill, purchases)
 - **Balance Check**: Real-time via `get_credit_balance()`
 - **History**: All transactions logged in `credits_history`
@@ -1191,6 +1248,16 @@ export const CREDIT_COSTS = {
 - Competitive analysis uses a 3-step pipeline: if Perplexity or Tavily fail, the pipeline degrades gracefully (logs warnings, continues with available data)
 - Check server logs for `[CompetitiveAnalysis]` prefixed messages to trace pipeline step failures
 - Ensure `PERPLEXITY_API_KEY` and `TAVILY_API_KEY` are set in environment for full competitive analysis quality
+- External API calls (Perplexity, Tavily) retry up to 3 times on 429/5xx errors with 1s/2s/4s backoff
+
+**Generate All Issues**
+- If generation appears stuck: check `generation_queues` row in Supabase — `status`, `current_index`, and `queue` show the live server state
+- If credits were lost without a document being generated: the `refund_credits` RPC must exist in Supabase (run `migrations/005_create_refund_credits.sql`)
+- After running the migration, regenerate database types: `npx supabase gen types typescript --project-id <id> > src/types/database.ts` to remove the `(supabase.rpc as any)` casts
+- Cancellation: the execute route checks DB `status === "cancelled"` before each step — cancel takes effect at the next step boundary (up to ~2min for a slow step like mockups)
+
+**database.ts Corruption**
+- If `src/types/database.ts` contains a BOM or npm install prompt at the top (UTF-16 encoding artifact from `supabase gen types` with npx), restore it from git: `git checkout <clean-commit> -- src/types/database.ts`
 
 **PDF Export Issues**
 - PDF export uses `html2canvas` which renders off-screen; ensure the page is not navigated away during generation
@@ -1239,14 +1306,19 @@ export const CREDIT_COSTS = {
 | [src/app/api/analyses/[id]/route.ts](src/app/api/analyses/[id]/route.ts) | **NEW** — PATCH endpoint to update analysis content |
 | [src/app/api/prds/[id]/route.ts](src/app/api/prds/[id]/route.ts) | **NEW** — PATCH endpoint to update PRD content |
 | [src/app/api/mvp-plans/[id]/route.ts](src/app/api/mvp-plans/[id]/route.ts) | PATCH endpoint to update MVP plan content |
-| [src/app/api/mockups/generate/route.ts](src/app/api/mockups/generate/route.ts) | **NEW** — POST endpoint to generate ASCII art mockups using OpenRouter with optional model selection |
+| [src/app/api/mockups/generate/route.ts](src/app/api/mockups/generate/route.ts) | POST endpoint to generate Stitch UI mockups. Imports `generateStitchMockup` from `stitch-pipeline.ts`. |
 | [src/app/api/mockups/[id]/route.ts](src/app/api/mockups/[id]/route.ts) | **NEW** — PATCH endpoint to update mockup content |
 | [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | PATCH endpoint to update tech spec content |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
 | [src/lib/competitive-analysis-v2.ts](src/lib/competitive-analysis-v2.ts) | **NEW** — Competitive Research v2 section contract, legacy/v2 view model helpers, and parser utilities |
-| [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (competitive, PRD, MVP, tech spec) |
-| [src/lib/perplexity.ts](src/lib/perplexity.ts) | Perplexity API client for competitor search |
-| [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction |
+| [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (competitive, PRD, MVP, tech spec). All OpenRouter calls have 120s AbortSignal timeout. |
+| [src/lib/stitch-pipeline.ts](src/lib/stitch-pipeline.ts) | Shared Stitch mockup generation (extracted from mockup route — also used by generate-all execute route) |
+| [src/lib/with-retry.ts](src/lib/with-retry.ts) | Shared retry utility — 3 retries, exponential backoff [1s/2s/4s], retries on 429/5xx/network errors |
+| [src/lib/perplexity.ts](src/lib/perplexity.ts) | Perplexity API client for competitor search (wrapped with withRetry) |
+| [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction (wrapped with withRetry) |
+| [src/stores/generate-all-store.ts](src/stores/generate-all-store.ts) | Zustand store for Generate All UI state. Fires execute route fire-and-forget; polls status every 3s. |
+| [src/components/workspace/generate-all-hydrator.tsx](src/components/workspace/generate-all-hydrator.tsx) | Thin bridge: keeps store callbacks fresh each render; runs one-time DB hydration per project |
+| [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=300). Sequential per-step execution with credit deduction/refund and DB state tracking. |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export: Markdown → HTML → canvas → jsPDF |
 | [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | **NEW** — System prompts, question strategies, and AI models for Prompt chat |
 | [src/lib/stitch/client.ts](src/lib/stitch/client.ts) | Stitch SDK wrapper and raw response parsing helpers |
@@ -1265,6 +1337,7 @@ export const CREDIT_COSTS = {
 | [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
 | [migrations/create_mockups_table.sql](migrations/create_mockups_table.sql) | **NEW** — Database migration for mockups table |
 | [supabase/migrations/20260325000000_create_waitlist.sql](supabase/migrations/20260325000000_create_waitlist.sql) | Waitlist table migration with public insert policy |
+| [migrations/005_create_refund_credits.sql](migrations/005_create_refund_credits.sql) | PostgreSQL `refund_credits` RPC — adds credits back + logs to credits_history on generation failure. **Run this in Supabase SQL editor before regenerating database types.** |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Setup guide for Prompt tab AI chat feature |
 
 ---
