@@ -43,7 +43,7 @@ export function AuthPasswordField({
       <button
         type="button"
         onClick={() => setShowPassword((current) => !current)}
-        className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
+        className="absolute right-3 top-[38px] text-text-secondary hover:text-foreground"
         tabIndex={-1}
         aria-label={showPassword ? "Hide password" : "Show password"}
       >

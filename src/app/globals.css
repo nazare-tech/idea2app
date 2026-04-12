@@ -17,7 +17,7 @@
   --secondary: #F5F0EB;
   --secondary-foreground: #1C1917;
   --muted: #F5F0EB;
-  --muted-foreground: #8A8480;
+  --muted-foreground: #6B7280;
   --accent: #F5F0EB;
   --accent-foreground: #1C1917;
   --destructive: #C0392B;
@@ -48,7 +48,7 @@
 
   /* Gray scale */
   --gray-300: #CCCCCC;
-  --gray-500: #999999;
+  --gray-500: #6B7280;
   --gray-700: #666666;
   --gray-dark: #333333;
 
@@ -56,7 +56,7 @@
      them as var(--text-primary) etc. without creating a circular CSS variable */
   --text-primary: #1C1917;
   --text-secondary: #4A4040;
-  --text-muted: #8A8480;
+  --text-muted: #6B7280;
   --text-accent: #F4A261;
   --border-subtle: #EAE0D8;
   --border-strong: #E8DDD5;

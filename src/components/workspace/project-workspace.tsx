@@ -1121,7 +1121,7 @@ export function ProjectWorkspace({
               <span className="truncate font-semibold tracking-tight text-muted-foreground">
                 {projectName}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/40 bg-violet-950/40 px-2 py-0.5 text-[10px] font-medium text-violet-400">
+              <span className="inline-flex items-center gap-1 rounded-full border border-violet-300 bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-800">
                 ✦ AI naming
               </span>
             </div>

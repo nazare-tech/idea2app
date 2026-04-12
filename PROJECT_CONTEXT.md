@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-04-11 (Waitlist + Stitch; UI Simplification; Server-Side Generate All)
+**Last Updated**: 2026-04-12 (Waitlist + Stitch; UI Simplification; Auth Modal + Accessibility fixes)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -14,6 +14,7 @@
 - **Prompt Tab AI Chat**: Interactive AI conversation in the Prompt tab that asks tailored follow-up questions to refine business ideas. Features:
   - Context-aware question generation based on idea type (tool, marketplace, service, etc.)
   - Automatic idea summarization after sufficient context gathering
+  - **AI-generated project name**: after the idea summary is produced, a second server-side AI call extracts a short 3–6 word title-case name and saves it to `projects.name`. The name streams back to the frontend via the `done` event's `projectName` field. Until the name is set, the workspace header shows "Untitled" in muted text with a `✦ AI naming` badge (editing disabled). On receipt the name fades in and the pencil icon reappears.
   - Configurable system prompts for customization
   - Persistent conversation history
 - **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
@@ -43,9 +44,9 @@
 ### User Workflow
 
 1. User creates a project and submits an initial business idea
-2. **[NEW]** User is directed to the Prompt tab where AI asks 4-5 tailored follow-up questions
+2. User is directed to the Prompt tab where AI asks 4-5 tailored follow-up questions
 3. User answers questions to clarify missing context (target audience, features, business model, etc.)
-4. AI synthesizes responses and generates a comprehensive idea summary
+4. AI synthesizes responses and generates a comprehensive idea summary; a second AI call automatically generates and saves a short project name
 5. User validates/refines the summary through continued conversation
 6. User generates various analyses (competitive, PRD, MVP plan, mockups, tech specs)
 7. User generates a working prototype/application
@@ -148,7 +149,9 @@
 ### Data Flow
 
 1. **Authentication Flow**:
-   - User logs in via Supabase Auth
+   - User logs in via Supabase Auth (email/password or Google OAuth)
+   - Sign In / Sign Up on the landing page open an `AuthModal` overlay (Radix Dialog) via URL params `?modal=auth&mode=signin|signup`. The `/auth` page is preserved for email confirmation redirects and direct URL access.
+   - Both the modal and the `/auth` page share the `AuthFormContent` component
    - JWT stored in HTTP-only cookie
    - Middleware validates auth on every request
    - Protected routes redirect unauthorized users
@@ -160,7 +163,14 @@
    - Server saves message to database
    - Response streamed back to client
 
-3. **Analysis Flow** (individual tab generation):
+3. **Prompt Tab AI Name Generation** (sub-flow within Prompt Chat):
+   - When `stage === "summary"` and `project.name === "Untitled"`, the `/api/prompt-chat` route makes a second AI call after saving the description
+   - A short name (3–6 words, title case) is saved to `projects.name` in Supabase
+   - The `done` stream event includes a `projectName` field
+   - `PromptChatInterface` fires `onProjectNameGenerated(name)` on receipt → `ProjectWorkspace` updates header state (`isNameSet = true`, fade-in animation)
+   - If name generation fails, it is silent — the `done` event emits without `projectName` and a 3 s fallback timer unblocks editing
+
+4. **Analysis Flow** (individual tab generation):
    - Client requests analysis (competitive, PRD, MVP plan, or tech spec) from the workspace `ContentEditor`
    - Server checks credits, deducts if available; refunds via `refund_credits` RPC on generation failure
    - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`):
@@ -171,7 +181,7 @@
    - Result saved to the appropriate table (`analyses`, `prds`, `mvp_plans`, or `tech_specs`)
    - Page reloads to surface the new version
 
-4. **Generate All Flow** (server-side, durable):
+5. **Generate All Flow** (server-side, durable):
    - Client calls `startGenerateAll()` in `generate-all-store.ts`
    - Store persists queue to DB via `POST /api/generate-all/start`
    - Store fires `POST /api/generate-all/execute` as fire-and-forget (server runs up to 300s even if user closes tab)
@@ -182,7 +192,7 @@
    - On step failure: refunds that step's credits, marks item + queue as error, stops
    - Generation is durable — survives browser tab close, page refresh, and network interruptions
 
-5. **App Generation Flow**:
+6. **App Generation Flow**:
    - Client requests app generation
    - Server validates credits (5 credits required)
    - Server calls Anthropic Claude with project context
@@ -230,7 +240,8 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 ### Shared UI Architecture
 
 - **Document registry** — document labels, titles, icons, credit cost, and nav visibility now come from a shared typed registry in `src/lib/document-definitions.ts`, used by both `DocumentNav` and `ContentEditor`.
-- **Shared auth building blocks** — auth pages now reuse `AuthHeader`, `AuthField`, and `AuthPasswordField` instead of repeating per-page header and form-field implementations.
+- **Shared auth building blocks** — `AuthFormContent` is the single source of form logic (email/password/Google, validation, success state). It is used by both the `/auth` page and the `AuthModal` overlay. `AuthField` and `AuthPasswordField` are reusable field primitives. `AuthMode` type is exported from `auth-form-content.tsx`.
+- **Auth Modal** — `src/components/auth/auth-modal.tsx` is a `"use client"` Radix UI Dialog. It reads `?modal=auth&mode=signin|signup` from the URL, opens over the landing page with a dark blurred overlay (`bg-black/65 backdrop-blur-[4px]`), and closes by clearing URL params. Sign In / Sign Up links on the landing page use `?modal=auth&mode=...` instead of navigating to `/auth`.
 - **Shared chat primitives** — the general chat and prompt chat surfaces now share composer, avatar, copy button, markdown body, load-more button, and thinking-state primitives plus reusable hooks for copy feedback, textarea autosize, and NDJSON stream consumption.
 - **Shared stacked tab navigation** — project document navigation and preferences navigation now use the same stacked tab-nav component so visual changes to the left-side tab pattern can be made in one place.
 - **Shared account utilities** — credit formatting, billing portal navigation, brand wordmark rendering, and auth sign-out are centralized in shared utilities/hooks/components and reused across dashboard header/sidebar, billing, settings, and auth views.
@@ -253,6 +264,9 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 13. **Fixed Default Models Per Tab**: AI model selection was removed from the UI. Each pipeline uses a fixed default defined in `src/lib/prompt-chat-config.ts` → `DEFAULT_MODELS`. Change models there — one place for all tabs.
 14. **Generate-Once Documents**: The Generate button is hidden after a document is successfully generated. Failed generations (no content saved) naturally re-expose the button for retry.
 15. **PDF-Only Export**: Documents export as PDF only (markdown download removed). The header shows a single "Download PDF" button.
+16. **AI-Generated Project Name**: New projects start as "Untitled" with a locked header (`✦ AI naming` badge, pencil hidden). After Prompt tab Q&A completes, the server generates a short name server-side and streams it back via the `done` event's `projectName` field. `isNameSet` state (in `ProjectWorkspace`) gates editing — initialized as `project.name !== "Untitled" || !!project.description` so existing projects are never locked.
+17. **URL-Driven Auth Modal**: Landing page auth uses `?modal=auth&mode=signin|signup` URL params to drive a Radix Dialog modal, keeping users in context. The `/auth` page is unchanged and still used for email confirmation redirects. Both surfaces share `AuthFormContent`. No new dependencies — `@radix-ui/react-dialog` was already installed.
+18. **WCAG AA Contrast Compliance**: `--muted-foreground` and `--text-muted` are `#6B7280` (4.61:1 on white). Form labels use `text-text-secondary` (#666666, 5.74:1). The `✦ AI naming` badge uses `bg-violet-100 text-violet-800` (8.4:1). Never use `#999999` for text on white backgrounds — it fails at 2.85:1.
 
 ### Mermaid Diagram Expansion Feature
 
@@ -354,6 +368,11 @@ src/
 │   ├── workspace/                # Workspace orchestration
 │   │   ├── project-workspace.tsx      # Three-column layout orchestrator
 │   │   └── generate-all-hydrator.tsx  # Keeps store callbacks fresh; triggers hydrate() once per project
+│   ├── auth/                     # Auth components
+│   │   ├── auth-form-content.tsx # Shared form logic (email, password, Google OAuth, mode-switching)
+│   │   ├── auth-modal.tsx        # Radix Dialog modal for landing page Sign In / Sign Up
+│   │   ├── auth-field.tsx        # Reusable email/text input field
+│   │   └── auth-password-field.tsx  # Password field with show/hide toggle
 │   ├── chat/                     # Chat feature
 │   │   ├── chat-interface.tsx    # General chat UI
 │   │   └── prompt-chat-interface.tsx  # Prompt tab AI chat (uses DEFAULT_MODELS.prompt)
@@ -617,10 +636,16 @@ The app uses CSS custom properties (defined in `globals.css`) rather than hard-c
 "bg-card"                       // #FFFFFF (content cards)
 "bg-secondary"                  // #F5F5F5 (inputs, sub-surfaces)
 
+// Text hierarchy (all pass WCAG AA on white)
+"text-foreground"               // #000000 (primary body text)
+"text-text-secondary"           // #666666 (5.74:1 on white) — labels, captions
+"text-muted-foreground"         // #6B7280 (4.61:1 on white) — subtitles, placeholders, hints
+"text-text-muted"               // #6B7280 — same token via CSS var
+
 // Sidebar (dark theme — always use sidebar-* tokens)
 "bg-sidebar-bg"                 // #000000
 "text-sidebar-foreground"       // #FAFAFA
-"text-sidebar-muted"            // #999999
+"text-sidebar-muted"            // #999999 (sidebar is dark, so this passes on #000)
 "border-sidebar-border"         // #222222
 
 // Status badges

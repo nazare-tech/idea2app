@@ -178,7 +178,7 @@ export function AuthFormContent({
           Continue with Google
         </button>
 
-        <div className="mt-5 flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="mt-5 flex items-center gap-4 text-xs text-text-secondary">
           <span className={uiStylePresets.authDividerLine} />
           <span>OR</span>
           <span className={uiStylePresets.authDividerLine} />
