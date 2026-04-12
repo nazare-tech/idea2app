@@ -10,7 +10,7 @@ export const uiStylePresets = {
   authDestructiveButton:
     "h-12 w-full bg-[#FF3B30] text-white",
   authFieldLabel:
-    "text-[13px] text-muted-foreground",
+    "text-[13px] font-medium text-text-secondary",
   authCardCompact:
     "w-full max-w-[480px] border-border-subtle bg-card",
   authTopIconBadge:

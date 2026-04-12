@@ -74,7 +74,6 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
           <DropdownMenuContent
             className="w-[260px] border border-border-subtle bg-white p-2 text-text-primary"
             align="end"
-            forceMount
           >
             {typeof credits === "number" && (
               <DropdownMenuItem className="cursor-default focus:bg-transparent focus:text-text-primary">
