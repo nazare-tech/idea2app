@@ -99,7 +99,7 @@ export async function POST(request: Request) {
           try {
             const content = await generateStitchMockup(mvpPlan, projectName, send)
 
-            send({ type: "stage", message: "Saving mockups...", step: 4, totalSteps: 4 })
+            send({ type: "stage", message: "Saving mockups...", step: 6, totalSteps: 6 })
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (supabase as any).from("mockups").insert({
