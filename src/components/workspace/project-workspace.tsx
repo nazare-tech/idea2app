@@ -337,7 +337,7 @@ export function ProjectWorkspace({
     // Overriding the URL here would create an infinite redirect loop.
     if (urlTab !== activeDocument && !isDocumentType(urlTab)) {
       nextParams.set("tab", activeDocument)
-      router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false })
+      window.history.replaceState(null, "", `${pathname}?${nextParams.toString()}`)
     }
   }, [activeDocument, activeDocumentStorageKey, isPromptOnlyMode, pathname, router, searchParams])
 
@@ -722,9 +722,14 @@ export function ProjectWorkspace({
 
     setActiveDocument(type)
 
-    const nextParams = new URLSearchParams(searchParams.toString())
-    nextParams.set("tab", type)
-    router.push(`${pathname}?${nextParams.toString()}`, { scroll: false })
+    // Use window.history directly to avoid triggering Next.js RSC re-fetch.
+    // router.push/replace with only search param changes re-fetches all server data,
+    // causing a visible freeze. We only need the URL updated for deep-linking.
+    if (typeof window !== "undefined") {
+      const nextParams = new URLSearchParams(window.location.search)
+      nextParams.set("tab", type)
+      window.history.pushState(null, "", `${pathname}?${nextParams.toString()}`)
+    }
 
     // If switching away from prompt, default to "overview" as the active nav key
     if (type !== "prompt") {
