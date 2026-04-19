@@ -55,14 +55,15 @@ Replaces the current three-part workspace header. Matches the Pencil design node
 
 | Section | Content | Styling |
 |---------|---------|---------|
-| **Left** | Red square icon (24x24, corner-radius 4px, `#FF3B30`) with white initial letter (Space Grotesk 13px bold) + Project name (`#666666`, Inter 14px medium) | `gap: 12px`, horizontal flex |
+| **Left** | Red square icon (24x24, corner-radius 4px, `#FF3B30`) with white initial letter (Space Grotesk 13px bold) + App/website name — e.g., "Idea2App" (`#666666`, Inter 14px medium). This is the **brand wordmark**, not the project name. | `gap: 12px`, horizontal flex |
 | **Center** | "Projects" (`#666666`, Inter 14px medium, clickable link to `/dashboard`) + "/" (`#999999`, Inter 14px normal) + Project name (`#0A0A0A`, Inter 14px semibold) + pencil icon (`#999999`, lucide `pencil`, 14px) | Absolutely positioned center, `gap: 12px` between breadcrumb items, `gap: 8px` between name + pencil icon |
 | **Right** | Dark avatar circle (28x28, `#111111`, white initials Inter 11px bold) + User name (`#0A0A0A`, Inter 13px medium) + chevron-down icon (`#999999`, lucide, 16px) | Pill shape (`border-radius: 999px`), bg `#FAFAFA`, border `#E5E5E5` 1px, padding `8px 12px`, `gap: 10px` |
 | **Container** | White bg (`#FFFFFF`), height 64px, bottom border `#E5E5E5` 1px, `justify-content: space-between`, padding `0 24px` | Full width |
 
 ### Behavior
-- Clicking "Projects" in breadcrumb navigates to the project list (`/dashboard` or `/projects`)
-- Project name + pencil icon enables inline editing (reuses existing `onProjectNameUpdate` logic)
+- Left side shows the app brand wordmark (e.g., "Idea2App"), clickable as a home link to `/dashboard`
+- Clicking "Projects" in center breadcrumb navigates to the project list (`/dashboard` or `/projects`)
+- Project name + pencil icon in center breadcrumb enables inline editing (reuses existing `onProjectNameUpdate` logic)
 - Avatar dropdown shows user menu (sign out, settings) — reuses existing dropdown patterns
 
 ---
