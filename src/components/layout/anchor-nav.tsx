@@ -16,6 +16,10 @@ interface AnchorNavProps {
   activeSectionId: string | null
   /** Callback when user clicks a tab or sub-tab */
   onNavigate: (sectionId: string) => void
+  /** Whether prompt/idea brief is complete */
+  promptStatus: NavStatus
+  /** Callback to switch to prompt view */
+  onSwitchToPrompt: () => void
 }
 
 function SpinnerIcon({ className }: { className?: string }) {
@@ -141,6 +145,8 @@ export function AnchorNav({
   activeKey,
   activeSectionId,
   onNavigate,
+  promptStatus,
+  onSwitchToPrompt,
 }: AnchorNavProps) {
   const getStatus = (item: DocumentNavItem): NavStatus => {
     return documentStatuses[item.sourceType] || "pending"
@@ -148,6 +154,33 @@ export function AnchorNav({
 
   return (
     <nav className="sticky top-0 flex h-[calc(100vh-64px)] w-[300px] shrink-0 flex-col gap-2.5 overflow-y-auto bg-[#FAFAFA] px-6 py-5">
+      {/* Prompt/Idea Brief tab */}
+      <button
+        type="button"
+        onClick={onSwitchToPrompt}
+        className={cn(
+          "flex w-full items-center gap-2 rounded-md p-2 mb-2 transition-colors",
+          promptStatus === "done" ? "bg-[#F5F5F5]" : "bg-white",
+          "hover:bg-[#F0F0F0]"
+        )}
+      >
+        <div className={cn(
+          "h-4 w-1 shrink-0 rounded-sm",
+          promptStatus === "done" ? "bg-[#22C55E]" : "bg-[#CCCCCC]"
+        )} />
+        <span className={cn(
+          "flex-1 text-left text-base font-bold",
+          promptStatus === "done" ? "text-[#0A0A0A]" : "text-[#777777]"
+        )}>
+          Idea Brief
+        </span>
+        {promptStatus === "done" && (
+          <div className="h-1.5 w-1.5 rounded-full bg-[#22C55E] opacity-45" />
+        )}
+      </button>
+      <div className="h-px bg-[#E5E5E5] mb-2" />
+
+      {/* Document tabs */}
       {SCROLLABLE_NAV_ITEMS.map((item) => (
         <NavTab
           key={item.key}

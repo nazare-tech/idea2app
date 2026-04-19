@@ -1218,7 +1218,19 @@ export function ProjectWorkspace({
 
         {activeDocument === "prompt" ? (
           /* Prompt/Chat view — full width, existing ContentEditor */
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Prompt exit bar — only visible when project has content */}
+            {project.description && (
+              <div className="flex items-center gap-2 border-b border-border/40 px-6 py-2 bg-secondary/30">
+                <button
+                  type="button"
+                  onClick={() => handleDocumentSelect("competitive")}
+                  className="text-xs font-medium text-text-secondary hover:text-foreground transition-colors"
+                >
+                  ← View Documents
+                </button>
+              </div>
+            )}
             <ContentEditor
               documentType="prompt"
               projectId={project.id}
@@ -1247,6 +1259,8 @@ export function ProjectWorkspace({
               activeKey={activeNavKey}
               activeSectionId={activeSectionId}
               onNavigate={handleScrollNavigate}
+              promptStatus={getDocumentStatus("prompt")}
+              onSwitchToPrompt={() => handleDocumentSelect("prompt")}
             />
             <ScrollableContent
               ref={scrollContainerRef}
