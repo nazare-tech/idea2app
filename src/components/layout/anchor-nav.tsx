@@ -69,40 +69,45 @@ function NavTab({
       ? "bg-[#FF3B30]"
       : "bg-[#CCCCCC]"
 
-  // Container styles
+  // Container styles — active (clicked) = black, hover = light gray
   const containerBg = isInProgress
     ? "bg-[#0A0A0A]"
-    : isActive && isDone
-      ? "bg-[#F5F5F5]"
-      : "bg-white"
+    : isActive
+      ? "bg-[#0A0A0A]"
+      : "bg-white hover:bg-[#F0F0F0]"
 
-  // Title color
-  const titleColor = isInProgress
+  // Title color — white when active or in-progress (dark bg)
+  const titleColor = isInProgress || isActive
     ? "text-white"
     : isPending
       ? "text-[#777777]"
       : "text-[#0A0A0A]"
 
-  // Sub-tab color
-  const subColor = isInProgress
-    ? "text-white"
+  // Sub-tab color — white when active or in-progress (dark bg)
+  const subColor = isInProgress || isActive
+    ? "text-white/70"
     : isPending
       ? "text-[#999999]"
       : "text-[#777777]"
 
+  // Connector line color — lighter on dark bg
+  const connectorColor = isInProgress || isActive
+    ? "border-white/20"
+    : "border-[#E5E5E5]"
+
   return (
-    <div className={cn("rounded-md p-2", containerBg)}>
+    <div className={cn("rounded-md p-2 transition-colors", containerBg)}>
       {/* Tab title row */}
       <button
         type="button"
         onClick={() => onNavigate(item.key)}
-        className="flex w-full items-center gap-2"
+        className="flex w-full cursor-pointer items-center gap-2"
       >
         <div className={cn("h-4 w-1 shrink-0 rounded-sm", barColor)} />
         <span className={cn("flex-1 text-left text-base font-bold", titleColor)}>
           {item.label}
         </span>
-        {isDone && (
+        {isDone && !isActive && (
           <div className="h-1.5 w-1.5 rounded-full bg-[#22C55E] opacity-45" />
         )}
         {isInProgress && (
@@ -111,7 +116,7 @@ function NavTab({
       </button>
 
       {/* Sub-tabs */}
-      <div className="mt-1 ml-[11px] border-l border-[#E5E5E5] pl-2">
+      <div className={cn("mt-1 ml-[11px] border-l pl-2", connectorColor)}>
         {item.sections.map((section, idx) => {
           const isActiveSub = activeSectionId === section.id
           // In-progress items: vary opacity by position
@@ -125,7 +130,7 @@ function NavTab({
               type="button"
               onClick={() => onNavigate(section.id)}
               className={cn(
-                "block w-full text-left text-xs py-[1px]",
+                "block w-full cursor-pointer text-left text-xs py-[1px]",
                 isActiveSub
                   ? "font-semibold text-[#FF3B30]"
                   : cn(subColor, inProgressOpacity)
@@ -159,7 +164,7 @@ export function AnchorNav({
         type="button"
         onClick={onSwitchToPrompt}
         className={cn(
-          "flex w-full items-center gap-2 rounded-md p-2 mb-2 transition-colors",
+          "flex w-full cursor-pointer items-center gap-2 rounded-md p-2 mb-2 transition-colors",
           promptStatus === "done" ? "bg-[#F5F5F5]" : "bg-white",
           "hover:bg-[#F0F0F0]"
         )}
