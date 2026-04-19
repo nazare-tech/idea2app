@@ -2,6 +2,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -41,6 +42,7 @@ export function ProjectHeader({
   user,
   credits,
 }: ProjectHeaderProps) {
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(projectName)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -166,20 +168,23 @@ export function ProjectHeader({
               </span>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem asChild>
-            <Link href="/preferences?tab=profile" className={uiStylePresets.headerOutlineTab}>
-              <span>Profile</span>
-            </Link>
+          <DropdownMenuItem
+            onSelect={() => router.push("/preferences?tab=profile")}
+            className={uiStylePresets.headerOutlineTab}
+          >
+            <span>Profile</span>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/preferences?tab=settings" className={uiStylePresets.headerOutlineTab}>
-              <span>Settings</span>
-            </Link>
+          <DropdownMenuItem
+            onSelect={() => router.push("/preferences?tab=settings")}
+            className={uiStylePresets.headerOutlineTab}
+          >
+            <span>Settings</span>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/preferences?tab=subscriptions" className={uiStylePresets.headerOutlineTab}>
-              <span>Subscriptions</span>
-            </Link>
+          <DropdownMenuItem
+            onSelect={() => router.push("/preferences?tab=subscriptions")}
+            className={uiStylePresets.headerOutlineTab}
+          >
+            <span>Subscriptions</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleSignOut} className={uiStylePresets.headerLogoutItem}>
             <span>Log out</span>
