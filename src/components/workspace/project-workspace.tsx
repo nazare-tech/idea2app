@@ -1225,7 +1225,7 @@ export function ProjectWorkspace({
                 <button
                   type="button"
                   onClick={() => handleDocumentSelect("competitive")}
-                  className="text-xs font-medium text-text-secondary hover:text-foreground transition-colors"
+                  className="cursor-pointer text-xs font-medium text-text-secondary hover:text-foreground transition-colors"
                 >
                   ← View Documents
                 </button>
