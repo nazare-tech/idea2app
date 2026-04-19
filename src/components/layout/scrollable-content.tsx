@@ -1,7 +1,7 @@
 // src/components/layout/scrollable-content.tsx
 "use client"
 
-import React, { forwardRef, useMemo, useState, useEffect, useCallback } from "react"
+import React, { forwardRef, useRef, useMemo, useState, useEffect } from "react"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import {
@@ -9,7 +9,6 @@ import {
   CompetitiveDetailSection,
 } from "@/components/analysis/competitive-analysis-document"
 import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
-import type { DocumentType } from "@/lib/document-definitions"
 import type { StreamStage } from "@/lib/parse-document-stream"
 
 interface DocumentData {
@@ -24,7 +23,6 @@ interface DocumentData {
 interface ScrollableContentProps {
   projectId: string
   projectName: string
-  /** Content and state for each source document type */
   documents: Record<string, DocumentData>
 }
 
@@ -69,8 +67,9 @@ function DocumentWrapper({
 }
 
 /**
- * Renders a markdown document and injects anchor divs at H2 boundaries
- * so sub-section scroll targeting works from the AnchorNav.
+ * Renders a markdown document as a single MarkdownRenderer instance.
+ * After the DOM renders, injects anchor IDs onto H2 elements by position
+ * so sub-tab scroll targeting works from the AnchorNav.
  */
 function MarkdownDocumentSection({
   content,
@@ -81,61 +80,25 @@ function MarkdownDocumentSection({
   projectId: string
   navKey: string
 }) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const navItem = SCROLLABLE_NAV_ITEMS.find((item) => item.key === navKey)
   const sections = navItem?.sections ?? []
 
-  // Split markdown content at H2 headings and wrap each in an anchor div
-  const chunks = useMemo(() => {
-    if (sections.length === 0) return [{ id: null, content }]
-
-    // Split at ## headings (H2)
-    const h2Regex = /^(## .+)$/gm
-    const parts: { id: string | null; content: string }[] = []
-    let lastIndex = 0
-    let sectionIdx = 0
-    let match: RegExpExecArray | null
-
-    while ((match = h2Regex.exec(content)) !== null) {
-      // Content before this heading (or between headings)
-      if (match.index > lastIndex) {
-        const before = content.slice(lastIndex, match.index).trim()
-        if (before && parts.length === 0) {
-          parts.push({ id: null, content: before })
-        }
+  // After render, stamp anchor IDs onto H2 headings by their ordinal position.
+  // This is intentionally post-render DOM work so it doesn't block the initial paint.
+  useEffect(() => {
+    if (!containerRef.current || sections.length === 0) return
+    const h2s = containerRef.current.querySelectorAll("h2")
+    h2s.forEach((h2, idx) => {
+      if (idx < sections.length) {
+        h2.id = sections[idx].id
       }
-
-      // Find the next H2 or end of content
-      const nextMatch = h2Regex.exec(content)
-      const endIdx = nextMatch ? nextMatch.index : content.length
-
-      // Reset regex position for the loop
-      if (nextMatch) {
-        h2Regex.lastIndex = match.index + match[0].length
-      }
-
-      const sectionContent = content.slice(match.index, endIdx).trim()
-      const sectionId = sectionIdx < sections.length ? sections[sectionIdx].id : null
-      parts.push({ id: sectionId, content: sectionContent })
-      sectionIdx++
-
-      lastIndex = endIdx
-    }
-
-    // If no H2 headings found, return the whole content
-    if (parts.length === 0) {
-      return [{ id: sections[0]?.id ?? null, content }]
-    }
-
-    return parts
+    })
   }, [content, sections])
 
   return (
-    <div className="space-y-6">
-      {chunks.map((chunk, idx) => (
-        <div key={chunk.id ?? idx} id={chunk.id ?? undefined}>
-          <MarkdownRenderer content={chunk.content} projectId={projectId} />
-        </div>
-      ))}
+    <div ref={containerRef}>
+      <MarkdownRenderer content={content} projectId={projectId} />
     </div>
   )
 }
@@ -215,7 +178,6 @@ function MockupsSection({ content }: { content: string }) {
     }
   }, [content])
 
-  // Stitch format: render each concept as a separate anchored card
   if (stitchData && stitchData.length > 0) {
     return (
       <div className="space-y-8">
@@ -232,7 +194,6 @@ function MockupsSection({ content }: { content: string }) {
     )
   }
 
-  // Fallback: render with the original MockupRenderer
   return <MockupRenderer content={content} />
 }
 
@@ -244,12 +205,23 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
     const mockupsData = documents["mockups"]
     const launchData = documents["launch"]
 
+    // Defer rendering of all sections below the first one to the next animation
+    // frame. This allows the browser to paint the initial layout (first section +
+    // skeletons) before doing the heavy markdown/structured-data rendering work,
+    // preventing the "Page Unresponsive" freeze when switching to document view.
+    const [renderDeferred, setRenderDeferred] = useState(false)
+
+    useEffect(() => {
+      const id = requestAnimationFrame(() => setRenderDeferred(true))
+      return () => cancelAnimationFrame(id)
+    }, [])
+
     return (
       <div
         ref={ref}
         className="flex-1 overflow-y-auto bg-[#FAFAFA] px-6 py-5 space-y-3"
       >
-        {/* Overview (competitive analysis — summary portion) */}
+        {/* Overview — rendered immediately (first visible section) */}
         <DocumentWrapper navKey="overview">
           {competitiveData?.isGenerating ? (
             <DocumentSkeleton label="Overview" />
@@ -264,9 +236,12 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        {/* Market Research (competitive analysis — detail portion) */}
+        {/* All sections below are deferred to next animation frame */}
+
         <DocumentWrapper navKey="market-research">
-          {competitiveData?.isGenerating ? (
+          {!renderDeferred ? (
+            <DocumentSkeleton label="Market Research" />
+          ) : competitiveData?.isGenerating ? (
             <DocumentSkeleton label="Market Research" />
           ) : competitiveData?.content ? (
             <CompetitiveDetailSection
@@ -279,9 +254,10 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        {/* PRD */}
         <DocumentWrapper navKey="prd">
-          {prdData?.isGenerating ? (
+          {!renderDeferred ? (
+            <DocumentSkeleton label="PRD" />
+          ) : prdData?.isGenerating ? (
             <DocumentSkeleton label="PRD" />
           ) : prdData?.content ? (
             <MarkdownDocumentSection
@@ -294,9 +270,10 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        {/* MVP Plan */}
         <DocumentWrapper navKey="mvp">
-          {mvpData?.isGenerating ? (
+          {!renderDeferred ? (
+            <DocumentSkeleton label="MVP Plan" />
+          ) : mvpData?.isGenerating ? (
             <DocumentSkeleton label="MVP Plan" />
           ) : mvpData?.content ? (
             <MarkdownDocumentSection
@@ -309,9 +286,10 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        {/* Mockups */}
         <DocumentWrapper navKey="mockups">
-          {mockupsData?.isGenerating ? (
+          {!renderDeferred ? (
+            <DocumentSkeleton label="Mockups" />
+          ) : mockupsData?.isGenerating ? (
             <DocumentSkeleton label="Mockups" />
           ) : mockupsData?.content ? (
             <MockupsSection content={mockupsData.content} />
@@ -320,9 +298,10 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        {/* Marketing */}
         <DocumentWrapper navKey="launch">
-          {launchData?.isGenerating ? (
+          {!renderDeferred ? (
+            <DocumentSkeleton label="Marketing" />
+          ) : launchData?.isGenerating ? (
             <DocumentSkeleton label="Marketing" />
           ) : launchData?.content ? (
             <MarkdownDocumentSection
