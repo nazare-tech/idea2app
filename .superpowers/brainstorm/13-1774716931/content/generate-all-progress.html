@@ -1,0 +1,391 @@
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .prompt-tab-context {
+    max-width: 780px;
+    margin: 0 auto;
+    font-family: 'Sora', -apple-system, sans-serif;
+  }
+
+  /* ====== GENERATE ALL BLOCK ====== */
+  .generate-all-block {
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .ga-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .ga-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0a0a0a;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ga-header h3 .icon {
+    width: 20px; height: 20px;
+    background: #DC2626;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+  }
+  .ga-header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ga-progress-text {
+    font-size: 12px;
+    color: #999;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .ga-cancel-btn {
+    font-size: 12px;
+    font-weight: 600;
+    color: #DC2626;
+    background: none;
+    border: 1px solid #DC262630;
+    border-radius: 6px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Sora', sans-serif;
+  }
+  .ga-cancel-btn:hover {
+    background: #DC262608;
+    border-color: #DC262660;
+  }
+
+  /* Progress bar */
+  .ga-progress-bar-container {
+    padding: 0 24px 16px;
+  }
+  .ga-progress-bar {
+    height: 3px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .ga-progress-fill {
+    height: 100%;
+    background: #DC2626;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  /* Queue items */
+  .ga-queue { padding: 0; }
+  .ga-queue-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid #f5f5f5;
+    gap: 14px;
+    transition: all 0.2s;
+  }
+  .ga-queue-item:last-child { border-bottom: none; }
+
+  /* Step indicators */
+  .ga-step-indicator {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .ga-step-indicator.done {
+    background: #ECFDF5;
+    border: 1.5px solid #22C55E;
+    color: #22C55E;
+  }
+  .ga-step-indicator.active {
+    background: #EFF6FF;
+    border: 1.5px solid #3B82F6;
+    color: #3B82F6;
+    animation: pulse-ring 2s ease-in-out infinite;
+  }
+  .ga-step-indicator.pending {
+    background: transparent;
+    border: 1.5px solid #e5e5e5;
+    color: #ccc;
+  }
+
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.15); }
+    50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08); }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .ga-item-info { flex: 1; min-width: 0; }
+  .ga-item-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0a0a0a;
+  }
+  .ga-item-name.done { color: #999; }
+  .ga-item-name.pending { color: #ccc; }
+
+  .ga-item-status {
+    font-size: 11px;
+    margin-top: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .ga-item-status.done-text { color: #22C55E; }
+  .ga-item-status.active-text { color: #3B82F6; }
+  .ga-item-status.pending-text { color: #ccc; }
+
+  /* Model tag (non-interactive during generation) */
+  .ga-model-tag {
+    font-size: 10px;
+    color: #999;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f5f5f5;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Active item highlight */
+  .ga-queue-item.is-active {
+    background: #EFF6FF08;
+  }
+  .ga-queue-item.is-done {
+    opacity: 0.7;
+  }
+
+  /* Status badges */
+  .ga-status-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .ga-status-badge.done { background: #ECFDF5; color: #22C55E; }
+  .ga-status-badge.active { background: #EFF6FF; color: #3B82F6; }
+  .ga-status-badge.pending { background: transparent; border: 1px solid #e5e5e5; color: #ccc; }
+
+  /* Footer */
+  .ga-footer {
+    padding: 14px 24px;
+    border-top: 1px solid #e5e5e5;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ga-elapsed {
+    font-size: 11px;
+    color: #999;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .ga-credits-used {
+    font-size: 11px;
+    color: #999;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ====== GLOBAL NAV BADGE ====== */
+  .nav-badge-demo {
+    margin-top: 32px;
+    padding: 20px;
+    background: #111;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .nav-badge-demo .label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #888;
+    transition: all 0.15s;
+  }
+  .nav-item.active-nav {
+    background: #1a1a1a;
+    color: #fafafa;
+  }
+  .nav-item .nav-icon {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    background: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #888;
+  }
+  .nav-item .nav-badge {
+    margin-left: auto;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .nav-badge.generating {
+    background: #3B82F620;
+    color: #60A5FA;
+    animation: badge-pulse 2s ease-in-out infinite;
+  }
+  .nav-badge.done-nav {
+    background: #22C55E20;
+    color: #4ADE80;
+  }
+  @keyframes badge-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+</style>
+
+<h2>Generate All — In Progress State</h2>
+<p class="subtitle">Shows the block while generation is running. Competitive is done, PRD is actively generating, rest are queued.</p>
+
+<div class="prompt-tab-context">
+  <div class="generate-all-block">
+    <div class="ga-header">
+      <h3>
+        <span class="icon">⚡</span>
+        Generating Documents
+        <span class="ga-header-right">
+          <span class="ga-progress-text">2 / 5</span>
+          <button class="ga-cancel-btn">Stop</button>
+        </span>
+      </h3>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="ga-progress-bar-container">
+      <div class="ga-progress-bar">
+        <div class="ga-progress-fill" style="width: 30%;"></div>
+      </div>
+    </div>
+
+    <div class="ga-queue">
+      <!-- Done: Competitive Research -->
+      <div class="ga-queue-item is-done">
+        <div class="ga-step-indicator done">✓</div>
+        <div class="ga-item-info">
+          <div class="ga-item-name done">Competitive Research</div>
+          <div class="ga-item-status done-text">Completed · 5 credits used</div>
+        </div>
+        <span class="ga-model-tag">grok-4.1-fast</span>
+      </div>
+
+      <!-- Active: PRD -->
+      <div class="ga-queue-item is-active">
+        <div class="ga-step-indicator active">
+          <svg width="12" height="12" viewBox="0 0 12 12" style="animation: spin 1s linear infinite;">
+            <circle cx="6" cy="6" r="4.5" fill="none" stroke="#3B82F6" stroke-width="1.5" stroke-dasharray="20 8" />
+          </svg>
+        </div>
+        <div class="ga-item-info">
+          <div class="ga-item-name">Product Requirements</div>
+          <div class="ga-item-status active-text">Synthesizing research data...</div>
+        </div>
+        <span class="ga-model-tag">grok-4.1-fast</span>
+      </div>
+
+      <!-- Pending: MVP Plan -->
+      <div class="ga-queue-item">
+        <div class="ga-step-indicator pending">3</div>
+        <div class="ga-item-info">
+          <div class="ga-item-name pending">MVP Plan</div>
+          <div class="ga-item-status pending-text">Queued</div>
+        </div>
+        <span class="ga-model-tag" style="opacity: 0.4;">grok-4.1-fast</span>
+      </div>
+
+      <!-- Pending: Mockups -->
+      <div class="ga-queue-item">
+        <div class="ga-step-indicator pending">4</div>
+        <div class="ga-item-info">
+          <div class="ga-item-name pending">Mockups</div>
+          <div class="ga-item-status pending-text">Queued</div>
+        </div>
+        <span class="ga-model-tag" style="opacity: 0.4;">stitch</span>
+      </div>
+
+      <!-- Pending: Launch Plan -->
+      <div class="ga-queue-item">
+        <div class="ga-step-indicator pending">5</div>
+        <div class="ga-item-info">
+          <div class="ga-item-name pending">Launch Plan</div>
+          <div class="ga-item-status pending-text">Queued</div>
+        </div>
+        <span class="ga-model-tag" style="opacity: 0.4;">template</span>
+      </div>
+    </div>
+
+    <!-- Footer: Elapsed + Credits used -->
+    <div class="ga-footer">
+      <span class="ga-elapsed">⏱ 1m 24s elapsed</span>
+      <span class="ga-credits-used">5 / 45 credits used</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== GLOBAL NAV BADGE DEMO ====== -->
+<h2 style="margin-top: 40px;">Global Progress Badge — DocumentNav Sidebar</h2>
+<p class="subtitle">How the generation progress appears in the sidebar navigation so users see status from any tab.</p>
+
+<div class="prompt-tab-context">
+  <div class="nav-badge-demo">
+    <div class="label">Document Nav (Dark Sidebar)</div>
+
+    <div class="nav-item active-nav">
+      <span class="nav-icon">✏</span>
+      Explain the idea
+      <span class="nav-badge generating">2/5</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">🔍</span>
+      Competitive Research
+      <span class="nav-badge done-nav">Done</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">📋</span>
+      PRD
+      <span class="nav-badge generating">●●●</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">🚀</span>
+      MVP Plan
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">🎨</span>
+      Mockups
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">📢</span>
+      Launch Plan
+    </div>
+  </div>
+</div>

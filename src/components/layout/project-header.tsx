@@ -84,7 +84,7 @@ export function ProjectHeader({
     <header className="flex h-16 items-center justify-between border-b border-border/40 bg-white px-6">
       {/* Left: Brand wordmark */}
       <Link href="/projects" className="flex items-center gap-3">
-        <HeaderLogo size={APP_HEADER_LOGO_SIZE} />
+        <HeaderLogo size={APP_HEADER_LOGO_SIZE} linked={false} />
         <span className="text-sm font-medium text-text-secondary">
           Idea2App
         </span>

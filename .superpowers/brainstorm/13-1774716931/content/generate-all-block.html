@@ -1,0 +1,329 @@
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .prompt-tab-context {
+    max-width: 780px;
+    margin: 0 auto;
+    font-family: 'Sora', -apple-system, sans-serif;
+  }
+
+  /* Simulated chat summary bubble */
+  .summary-bubble {
+    background: #f5f5f5;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+  }
+  .summary-bubble .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #999;
+    margin-bottom: 8px;
+  }
+
+  /* ====== GENERATE ALL BLOCK ====== */
+  .generate-all-block {
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .ga-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .ga-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0a0a0a;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ga-header h3 .icon {
+    width: 20px; height: 20px;
+    background: #DC2626;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+  }
+  .ga-header p {
+    font-size: 13px;
+    color: #999;
+    margin-left: 28px;
+  }
+
+  /* Queue items */
+  .ga-queue {
+    padding: 0;
+  }
+  .ga-queue-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid #f5f5f5;
+    gap: 14px;
+    transition: background 0.15s;
+  }
+  .ga-queue-item:last-child { border-bottom: none; }
+  .ga-queue-item:hover { background: #fafafa; }
+
+  .ga-step-number {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #999;
+    flex-shrink: 0;
+  }
+  .ga-step-number.done {
+    background: #ECFDF5;
+    border-color: #22C55E;
+    color: #22C55E;
+  }
+
+  .ga-item-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .ga-item-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0a0a0a;
+  }
+  .ga-item-credits {
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Model selector per item */
+  .ga-model-select {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fafafa;
+    font-size: 11px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .ga-model-select:hover {
+    border-color: #ccc;
+    background: #f5f5f5;
+  }
+  .ga-model-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #DC2626;
+  }
+  .ga-model-badge {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #DC262610;
+    color: #DC2626;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .ga-chevron {
+    color: #ccc;
+    font-size: 10px;
+  }
+
+  /* Footer with total + button */
+  .ga-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fafafa;
+  }
+
+  .ga-total {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .ga-total-label {
+    font-size: 11px;
+    color: #999;
+    font-weight: 500;
+  }
+  .ga-total-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0a0a0a;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .ga-total-value span {
+    font-size: 12px;
+    font-weight: 500;
+    color: #999;
+  }
+
+  .ga-generate-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: #DC2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Sora', sans-serif;
+  }
+  .ga-generate-btn:hover {
+    background: #b91c1c;
+  }
+  .ga-generate-btn .sparkle {
+    font-size: 14px;
+  }
+
+  /* Status badges for done items */
+  .ga-done-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #ECFDF5;
+    color: #22C55E;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+</style>
+
+<h2>Generate All — Idle State</h2>
+<p class="subtitle">How the block appears in the Prompt tab after idea summary. Model selectors per doc, credit totals, and defaults shown.</p>
+
+<div class="prompt-tab-context">
+  <!-- Simulated summary context -->
+  <div class="summary-bubble">
+    <div class="label">✨ AI Summary</div>
+    Your idea is a SaaS platform that helps freelancers manage invoices, track time, and automate tax calculations. Target audience: freelance designers and developers...
+  </div>
+
+  <!-- ====== THE GENERATE ALL BLOCK ====== -->
+  <div class="generate-all-block">
+    <div class="ga-header">
+      <h3>
+        <span class="icon">⚡</span>
+        Generate All Documents
+      </h3>
+      <p>Create your complete business plan in one click</p>
+    </div>
+
+    <div class="ga-queue">
+      <!-- Item 1: Competitive Research -->
+      <div class="ga-queue-item">
+        <div class="ga-step-number">1</div>
+        <div class="ga-item-info">
+          <div class="ga-item-name">Competitive Research</div>
+          <div class="ga-item-credits">5 credits</div>
+        </div>
+        <div class="ga-model-select">
+          <span class="ga-model-dot"></span>
+          Grok 4.1 Fast
+          <span class="ga-model-badge">Fastest</span>
+          <span class="ga-chevron">▾</span>
+        </div>
+      </div>
+
+      <!-- Item 2: PRD -->
+      <div class="ga-queue-item">
+        <div class="ga-step-number">2</div>
+        <div class="ga-item-info">
+          <div class="ga-item-name">Product Requirements</div>
+          <div class="ga-item-credits">10 credits</div>
+        </div>
+        <div class="ga-model-select">
+          <span class="ga-model-dot"></span>
+          Grok 4.1 Fast
+          <span class="ga-model-badge">Fastest</span>
+          <span class="ga-chevron">▾</span>
+        </div>
+      </div>
+
+      <!-- Item 3: MVP Plan -->
+      <div class="ga-queue-item">
+        <div class="ga-step-number">3</div>
+        <div class="ga-item-info">
+          <div class="ga-item-name">MVP Plan</div>
+          <div class="ga-item-credits">10 credits</div>
+        </div>
+        <div class="ga-model-select">
+          <span class="ga-model-dot"></span>
+          Grok 4.1 Fast
+          <span class="ga-model-badge">Fastest</span>
+          <span class="ga-chevron">▾</span>
+        </div>
+      </div>
+
+      <!-- Item 4: Mockups -->
+      <div class="ga-queue-item">
+        <div class="ga-step-number">4</div>
+        <div class="ga-item-info">
+          <div class="ga-item-name">Mockups</div>
+          <div class="ga-item-credits">15 credits</div>
+        </div>
+        <div class="ga-model-select" style="opacity: 0.5; pointer-events: none;">
+          <span class="ga-model-dot" style="background: #999;"></span>
+          Stitch SDK
+          <span class="ga-model-badge" style="background: #99999915; color: #999;">Fixed</span>
+        </div>
+      </div>
+
+      <!-- Item 5: Launch Plan -->
+      <div class="ga-queue-item">
+        <div class="ga-step-number">5</div>
+        <div class="ga-item-info">
+          <div class="ga-item-name">Launch Plan</div>
+          <div class="ga-item-credits">5 credits</div>
+        </div>
+        <div class="ga-model-select" style="opacity: 0.5; pointer-events: none;">
+          <span class="ga-model-dot" style="background: #999;"></span>
+          Template
+          <span class="ga-model-badge" style="background: #99999915; color: #999;">Fixed</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer: Total + Generate Button -->
+    <div class="ga-footer">
+      <div class="ga-total">
+        <div class="ga-total-label">Estimated total</div>
+        <div class="ga-total-value">45 <span>credits</span></div>
+      </div>
+      <button class="ga-generate-btn">
+        <span class="sparkle">✦</span>
+        Generate All
+      </button>
+    </div>
+  </div>
+</div>
