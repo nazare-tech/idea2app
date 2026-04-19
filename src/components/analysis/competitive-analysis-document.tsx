@@ -809,6 +809,167 @@ function CompetitiveResearchPage({
   )
 }
 
+/**
+ * Overview portion of competitive analysis: executive summary, founder verdict,
+ * strategic recommendations. Used by ScrollableContent for the "Overview" section.
+ */
+export function CompetitiveOverviewSection({
+  content,
+  metadata,
+  projectId,
+}: CompetitiveAnalysisDocumentProps) {
+  const viewModel = useMemo(
+    () => getCompetitiveAnalysisViewModel(content, metadata),
+    [content, metadata]
+  )
+
+  if (!viewModel.canRenderModules) {
+    return <MarkdownRenderer content={content} projectId={projectId} />
+  }
+
+  const { structured } = viewModel
+
+  return (
+    <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
+      <header className="border border-[#E0E0E0] bg-white px-6 py-5">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
+          Market Intelligence
+        </p>
+        <div className="mt-3">
+          <h1
+            className={cn(
+              displayFontClass,
+              "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
+            )}
+          >
+            Overview
+          </h1>
+          <p className="mt-2 max-w-3xl text-[13px] leading-6 text-[#666666]">
+            Executive summary, founder verdict, and strategic direction.
+          </p>
+        </div>
+      </header>
+
+      <div id="overview-executive-summary">
+        <SnapshotHero structured={structured} />
+      </div>
+
+      <div id="overview-founder-verdict">
+        <CompetitorProfiles competitors={structured.directCompetitors} />
+      </div>
+
+      <div id="overview-strategic-recommendations">
+        <SmallListCard
+          title="Strategic Recommendations"
+          items={structured.strategicRecommendations}
+        />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Detail portion of competitive analysis: competitors, matrices, maps, pricing,
+ * gap analysis, moat, SWOT, risks. Used by ScrollableContent for "Market Research".
+ */
+export function CompetitiveDetailSection({
+  content,
+  metadata,
+  projectId,
+}: CompetitiveAnalysisDocumentProps) {
+  const viewModel = useMemo(
+    () => getCompetitiveAnalysisViewModel(content, metadata),
+    [content, metadata]
+  )
+
+  if (!viewModel.canRenderModules) {
+    return null // Overview section already shows fallback markdown
+  }
+
+  const { structured } = viewModel
+
+  return (
+    <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
+      <header className="border border-[#E0E0E0] bg-white px-6 py-5">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
+          Deep Analysis
+        </p>
+        <div className="mt-3">
+          <h1
+            className={cn(
+              displayFontClass,
+              "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
+            )}
+          >
+            Market Research
+          </h1>
+        </div>
+      </header>
+
+      <div id="market-research-direct-competitors">
+        <CompetitorProfiles competitors={structured.directCompetitors} />
+      </div>
+
+      <div id="market-research-feature-matrix">
+        <CompactTableCard
+          title="Feature and Workflow Matrix"
+          paragraphs={structured.featureMatrix.paragraphs}
+          headers={structured.featureMatrix.table?.headers ?? []}
+          rows={structured.featureMatrix.table?.rows ?? []}
+        />
+      </div>
+
+      <div id="market-research-positioning">
+        <PositioningMap
+          title="Competitive Positioning Map"
+          positioningMap={structured.positioningMap}
+        />
+      </div>
+
+      <div id="market-research-pricing">
+        <CompactTableCard
+          title="Pricing And Packaging"
+          paragraphs={structured.pricingAndPackaging.paragraphs}
+          headers={structured.pricingAndPackaging.table?.headers ?? []}
+          rows={structured.pricingAndPackaging.table?.rows ?? []}
+        />
+      </div>
+
+      <div id="market-research-gap-analysis">
+        <SmallListCard title="Gap Analysis" items={structured.gapAnalysis} />
+      </div>
+
+      <div id="market-research-differentiation">
+        <SmallListCard
+          title="Differentiation Wedges"
+          items={structured.differentiationWedges}
+          dark={true}
+        />
+      </div>
+
+      <div id="market-research-moat">
+        <SmallListCard
+          title="Moat And Defensibility"
+          items={structured.moatAndDefensibility}
+        />
+      </div>
+
+      <div id="market-research-risks">
+        <SWOTCard
+          matrix={structured.swotAnalysis.matrix}
+          paragraphs={structured.swotAnalysis.paragraphs}
+          tableHeaders={structured.swotAnalysis.table?.headers ?? []}
+          rows={structured.swotAnalysis.table?.rows ?? []}
+        />
+        <SmallListCard
+          title="Risks And Countermoves"
+          items={structured.risksAndCountermoves}
+        />
+      </div>
+    </div>
+  )
+}
+
 export function CompetitiveAnalysisDocument({
   content,
   metadata,
