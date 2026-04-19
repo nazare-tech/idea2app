@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { DocumentNav, DocumentType } from "@/components/layout/document-nav"
 import { ContentEditor } from "@/components/layout/content-editor"
-import { Header } from "@/components/layout/header"
-import { APP_HEADER_LOGO_SIZE, HeaderLogo } from "@/components/layout/header-logo"
+import { AnchorNav } from "@/components/layout/anchor-nav"
+import { ScrollableContent } from "@/components/layout/scrollable-content"
+import { ProjectHeader } from "@/components/layout/project-header"
 import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stream"
-import { Pencil } from "lucide-react"
-import { DOCUMENT_TYPES, isDocumentType } from "@/lib/document-definitions"
+import { DOCUMENT_TYPES, isDocumentType, type DocumentType } from "@/lib/document-definitions"
+import { SCROLLABLE_NAV_ITEMS, getNavKeyForSection } from "@/lib/document-sections"
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
 import type { GenerateDocumentFn } from "@/stores/generate-all-store"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
@@ -182,6 +181,12 @@ export function ProjectWorkspace({
   const [streamStages, setStreamStages] = useState<StreamStage[]>([])
   const [streamCurrentStep, setStreamCurrentStep] = useState(0)
   const [streamContent, setStreamContent] = useState("")
+
+  // Scroll-nav sync state
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [activeNavKey, setActiveNavKey] = useState<string | null>("overview")
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
+  const isScrollingProgrammatically = useRef(false)
 
   const clearStreamState = useCallback(() => {
     setStreamStages([])
@@ -463,6 +468,60 @@ export function ProjectWorkspace({
     isPromptOnlyMode,
   ])
 
+  // IntersectionObserver: sync scroll position → active nav item
+  useEffect(() => {
+    if (activeDocument === "prompt") return // No observer in prompt mode
+
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isScrollingProgrammatically.current) return
+
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const sectionId = entry.target.getAttribute("data-section")
+            if (sectionId) {
+              // It's a document-level section
+              setActiveNavKey(sectionId)
+            }
+            const subId = entry.target.id
+            if (subId && subId !== sectionId) {
+              setActiveSectionId(subId)
+              const parentKey = getNavKeyForSection(subId)
+              if (parentKey) {
+                setActiveNavKey(parentKey)
+                window.history.replaceState(null, "", `#${subId}`)
+              }
+            } else if (sectionId) {
+              window.history.replaceState(null, "", `#${sectionId}`)
+            }
+          }
+        }
+      },
+      {
+        root: container,
+        rootMargin: "-20% 0px -70% 0px",
+        threshold: 0,
+      }
+    )
+
+    // Observe document-level sections
+    const sections = container.querySelectorAll("[data-section]")
+    sections.forEach((el) => observer.observe(el))
+
+    // Observe sub-sections by ID
+    for (const item of SCROLLABLE_NAV_ITEMS) {
+      for (const section of item.sections) {
+        const el = container.querySelector(`#${CSS.escape(section.id)}`)
+        if (el) observer.observe(el)
+      }
+    }
+
+    return () => observer.disconnect()
+  }, [activeDocument])
+
 
   const getDocumentStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
     // Check if document is currently generating
@@ -666,7 +725,43 @@ export function ProjectWorkspace({
     const nextParams = new URLSearchParams(searchParams.toString())
     nextParams.set("tab", type)
     router.push(`${pathname}?${nextParams.toString()}`, { scroll: false })
+
+    // If switching away from prompt, default to "overview" as the active nav key
+    if (type !== "prompt") {
+      setActiveNavKey(type === "competitive" ? "overview" : type)
+    }
   }
+
+  const handleScrollNavigate = useCallback((targetId: string) => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const target = container.querySelector(`#${CSS.escape(targetId)}`)
+      || container.querySelector(`[data-section="${targetId}"]`)
+    if (!target) return
+
+    isScrollingProgrammatically.current = true
+    target.scrollIntoView({ behavior: "smooth", block: "start" })
+
+    // Update nav state immediately
+    const parentKey = getNavKeyForSection(targetId)
+    if (parentKey) {
+      setActiveNavKey(parentKey)
+      setActiveSectionId(targetId)
+    } else {
+      // It's a top-level key
+      setActiveNavKey(targetId)
+      setActiveSectionId(null)
+    }
+
+    // Update URL hash for deep-linking
+    window.history.replaceState(null, "", `#${targetId}`)
+
+    // Re-enable observer after scroll animation completes
+    setTimeout(() => {
+      isScrollingProgrammatically.current = false
+    }, 800)
+  }, [])
 
   // Reset to latest version (index 0) when switching documents
   useEffect(() => {
@@ -1059,117 +1154,109 @@ export function ProjectWorkspace({
     }
   }
 
+  // Build document data map for ScrollableContent
+  const scrollableDocuments: Record<string, {
+    content: string | null
+    metadata?: Record<string, unknown> | null
+    isGenerating: boolean
+  }> = {
+    competitive: {
+      content: getDocumentContent("competitive"),
+      metadata: getDocumentMetadata("competitive"),
+      isGenerating: generatingDocuments["competitive"],
+    },
+    prd: {
+      content: getDocumentContent("prd"),
+      metadata: null,
+      isGenerating: generatingDocuments["prd"],
+    },
+    mvp: {
+      content: getDocumentContent("mvp"),
+      metadata: null,
+      isGenerating: generatingDocuments["mvp"],
+    },
+    mockups: {
+      content: getDocumentContent("mockups"),
+      metadata: null,
+      isGenerating: generatingDocuments["mockups"],
+    },
+    launch: {
+      content: getDocumentContent("launch"),
+      metadata: null,
+      isGenerating: generatingDocuments["launch"],
+    },
+  }
+
+  // Build status map for AnchorNav (keyed by sourceType)
+  const navDocumentStatuses: Record<string, "done" | "in_progress" | "pending"> = {}
+  for (const item of SCROLLABLE_NAV_ITEMS) {
+    if (!navDocumentStatuses[item.sourceType]) {
+      navDocumentStatuses[item.sourceType] = getDocumentStatus(item.sourceType as DocumentType)
+    }
+  }
+
   return (
     <>
-    <GenerateAllHydrator
-      projectId={project.id}
-      onStepComplete={router.refresh}
-      getDocumentStatus={getDocumentStatus}
-    />
-    <div className="flex flex-col h-screen">
-      <Header
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        user={user as any}
-        credits={credits}
-      >
-        <div className="inline-flex items-center min-w-0">
-          <HeaderLogo size={APP_HEADER_LOGO_SIZE} />
-          <Link
-            href="/projects"
-            className="pl-3 text-sm font-medium text-text-secondary transition-colors hover:text-foreground"
-          >
-            Projects
-          </Link>
-          <span className="px-2 text-text-secondary">/</span>
-          {isEditingProjectName ? (
-            <input
-              ref={projectNameInputRef}
-              value={draftProjectName}
-              onChange={(event) => setDraftProjectName(event.target.value)}
-              onBlur={() => {
-                void finishProjectRename()
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault()
-                  void finishProjectRename()
-                }
-                if (event.key === "Escape") {
-                  setDraftProjectName(projectName)
-                  setIsEditingProjectName(false)
-                }
-              }}
-              className="h-9 w-[min(28rem,55vw)] max-w-full rounded-lg border border-border/70 bg-background px-3 text-sm font-semibold tracking-tight text-foreground outline-none ring-0 focus:border-primary/60"
-              disabled={isSavingProjectName}
-            />
-          ) : isNameSet ? (
-            <button
-              type="button"
-              onClick={() => setIsEditingProjectName(true)}
-              className="ui-row-gap-2 min-w-0 text-left"
-            >
-              <span
-                className="truncate font-semibold tracking-tight"
-                style={nameJustSet ? { animation: "projectNameFadeIn 0.7s ease forwards" } : undefined}
-              >
-                {projectName}
-              </span>
-              <Pencil className="h-3.5 w-3.5 text-text-secondary" />
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 cursor-default select-none">
-              <span className="truncate font-semibold tracking-tight text-muted-foreground">
-                {projectName}
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-violet-300 bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-800">
-                ✦ AI naming
-              </span>
-            </div>
-          )}
-        </div>
-      </Header>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Document Navigation */}
-        <DocumentNav
-          projectId={project.id}
+      <GenerateAllHydrator
+        projectId={project.id}
+        onStepComplete={router.refresh}
+        getDocumentStatus={getDocumentStatus}
+      />
+      <div className="flex flex-col h-screen">
+        <ProjectHeader
           projectName={projectName}
-          activeDocument={activeDocument}
-          onDocumentSelect={handleDocumentSelect}
-          documentStatuses={documentStatuses}
-          isNewProject={isPromptOnlyMode}
-          shouldFocusName={isNewProject}
-          onProjectNameUpdate={handleProjectNameUpdate}
+          isNameSet={isNameSet}
+          nameJustSet={nameJustSet}
+          onStartRename={() => {}}
+          onFinishRename={async (name) => {
+            await handleProjectNameUpdate(name)
+          }}
+          isSavingName={isSavingProjectName}
+          user={user as { email?: string; full_name?: string; avatar_url?: string }}
+          credits={credits}
         />
 
-        {/* Vertical Divider */}
-        <div className="w-px bg-border" />
-
-        {/* Content Editor */}
-        <div className="flex-1 overflow-hidden">
-          <ContentEditor
-            documentType={activeDocument}
-            projectId={project.id}
-            projectName={projectName}
-            projectDescription={project.description || ""}
-            content={getDocumentContent(activeDocument)}
-            documentMetadata={getDocumentMetadata(activeDocument)}
-            onGenerateContent={handleGenerateContent}
-            onUpdateDescription={handleUpdateDescription}
-            onProjectNameGenerated={handleProjectNameGenerated}
-            isGenerating={generatingDocuments[activeDocument]}
-            streamStages={streamStages}
-            streamCurrentStep={streamCurrentStep}
-            streamContent={streamContent}
-            credits={credits}
-            prerequisiteValidation={checkPrerequisites(activeDocument)}
-            currentVersion={selectedVersionIndex[activeDocument] || 0}
-            totalVersions={getTotalVersions(activeDocument)}
-            onVersionChange={(index) => handleVersionChange(activeDocument, index)}
-          />
-        </div>
+        {activeDocument === "prompt" ? (
+          /* Prompt/Chat view — full width, existing ContentEditor */
+          <div className="flex-1 overflow-hidden">
+            <ContentEditor
+              documentType="prompt"
+              projectId={project.id}
+              projectName={projectName}
+              projectDescription={project.description || ""}
+              content={getDocumentContent("prompt")}
+              documentMetadata={null}
+              onGenerateContent={handleGenerateContent}
+              onUpdateDescription={handleUpdateDescription}
+              onProjectNameGenerated={handleProjectNameGenerated}
+              isGenerating={generatingDocuments["prompt"]}
+              streamStages={streamStages}
+              streamCurrentStep={streamCurrentStep}
+              streamContent={streamContent}
+              credits={credits}
+              prerequisiteValidation={checkPrerequisites("prompt")}
+              currentVersion={0}
+              totalVersions={0}
+            />
+          </div>
+        ) : (
+          /* Scrollable document view — 2-column layout */
+          <div className="flex flex-1 overflow-hidden">
+            <AnchorNav
+              documentStatuses={navDocumentStatuses}
+              activeKey={activeNavKey}
+              activeSectionId={activeSectionId}
+              onNavigate={handleScrollNavigate}
+            />
+            <ScrollableContent
+              ref={scrollContainerRef}
+              projectId={project.id}
+              projectName={projectName}
+              documents={scrollableDocuments}
+            />
+          </div>
+        )}
       </div>
-    </div>
     </>
   )
 }
