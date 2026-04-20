@@ -104,19 +104,23 @@ function MarkdownDocumentSection({
 }
 
 /**
- * Renders a single Stitch mockup concept as an iframe card with a header.
+ * Renders a single Stitch mockup concept as a two-column card:
+ * iframe on the left, description + download button on the right.
  */
 function StitchConceptCard({
   label,
   title,
   htmlUrl,
+  description,
 }: {
   label: string
   title: string
   htmlUrl: string
+  description?: string
 }) {
   const [html, setHtml] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     const proxyUrl = `/api/stitch/html?url=${encodeURIComponent(htmlUrl)}`
@@ -128,34 +132,84 @@ function StitchConceptCard({
       .finally(() => setLoading(false))
   }, [htmlUrl])
 
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      // Reuse already-fetched HTML if available, otherwise fetch via proxy
+      const content = html ?? await fetch(`/api/stitch/html?url=${encodeURIComponent(htmlUrl)}`).then((r) => r.text())
+      const blob = new Blob([content], { type: "text/html" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `mockup-option-${label.toLowerCase()}.html`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error("[StitchConcept] Download failed:", err)
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
+    <div className="overflow-hidden rounded-xl border border-border bg-white">
+      {/* Full-width header */}
+      <div className="flex items-center gap-3 border-b border-border px-5 py-3">
         <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           Option {label}
         </span>
         <span className="text-sm font-medium text-foreground">{title}</span>
       </div>
-      <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
-        <div className="flex justify-center bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
-          <div className="w-full bg-white">
-            {loading ? (
-              <div className="flex items-center justify-center bg-white" style={{ height: "600px" }}>
-                <div className="flex flex-col items-center gap-3 text-zinc-400">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-500" />
-                  <span className="text-xs">Loading design...</span>
-                </div>
+
+      {/* Two-column body */}
+      <div className="flex min-h-[600px]">
+        {/* Left: iframe */}
+        <div className="flex-1 bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
+          {loading ? (
+            <div className="flex h-full min-h-[600px] items-center justify-center bg-white">
+              <div className="flex flex-col items-center gap-3 text-zinc-400">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-500" />
+                <span className="text-xs">Loading design...</span>
               </div>
-            ) : (
-              <iframe
-                srcDoc={html ?? ""}
-                className="w-full border-0"
-                style={{ height: "600px" }}
-                title={`Mockup Option ${label}`}
-                sandbox="allow-scripts allow-same-origin"
-              />
+            </div>
+          ) : (
+            <iframe
+              srcDoc={html ?? ""}
+              className="w-full border-0"
+              style={{ height: "600px" }}
+              title={`Mockup Option ${label}`}
+              sandbox="allow-scripts allow-same-origin"
+            />
+          )}
+        </div>
+
+        {/* Right: description + export */}
+        <div className="flex w-72 shrink-0 flex-col justify-between border-l border-border p-5">
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Option {label}
+              </p>
+              <p className="mt-1 text-sm font-medium text-foreground">{title}</p>
+            </div>
+            {description && (
+              <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading || loading}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-xs font-medium transition-colors hover:bg-muted/50 disabled:opacity-50"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+            </svg>
+            <span>{downloading ? "Downloading..." : "Export HTML"}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -170,7 +224,7 @@ function MockupsSection({ content }: { content: string }) {
     try {
       const parsed = JSON.parse(content)
       if (parsed?.type === "stitch" && Array.isArray(parsed.options)) {
-        return parsed.options as { label: string; title: string; htmlUrl: string; imageUrl: string }[]
+        return parsed.options as { label: string; title: string; htmlUrl: string; imageUrl: string; description?: string }[]
       }
       return null
     } catch {
@@ -187,6 +241,7 @@ function MockupsSection({ content }: { content: string }) {
               label={option.label}
               title={option.title}
               htmlUrl={option.htmlUrl}
+              description={option.description}
             />
           </div>
         ))}
