@@ -52,6 +52,52 @@ async function generateStitchDesignPrompt(
 }
 
 /**
+ * Stage 6: Generate a short description for each of the 3 Stitch design options
+ * using a single OpenRouter call. Returns a map of label → description.
+ * Falls back to empty strings on any parse/network failure.
+ */
+async function generateOptionDescriptions(
+  designBrief: string,
+  options: { label: string; title: string }[],
+): Promise<Record<string, string>> {
+  if (!process.env.OPENROUTER_API_KEY) return {}
+
+  const openrouter = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+  })
+
+  const optionList = options.map(o => `${o.label}: ${o.title}`).join("\n")
+
+  try {
+    const response = await openrouter.chat.completions.create({
+      model: "google/gemini-3.1-pro-preview",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a UI design expert. Given a design brief and 3 generated design variants, write a concise 2–3 sentence description for each variant explaining its visual approach, layout strategy, and what makes it distinct from the others. Reply with valid JSON only, no markdown fences.",
+        },
+        {
+          role: "user",
+          content: `Design brief:\n${designBrief}\n\nVariants:\n${optionList}\n\nReply as JSON with label keys: {"A": "...", "B": "...", "C": "..."}`,
+        },
+      ],
+      max_tokens: 512,
+    })
+
+    const raw = response.choices[0]?.message?.content?.trim() ?? ""
+    // Strip markdown fences if model wraps in ```json ... ```
+    const json = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim()
+    const parsed = JSON.parse(json) as Record<string, string>
+    return parsed
+  } catch (err) {
+    console.warn("[Stitch] Failed to generate option descriptions:", err)
+    return {}
+  }
+}
+
+/**
  * Generate 3 Stitch designs: 1 original + 2 variants using direct tool calls.
  *
  * Pipeline:
@@ -91,19 +137,19 @@ export async function generateStitchMockup(
 
   try {
     // ── Stage 1: OpenRouter → Stitch design brief ──────────────────────
-    send?.({ type: "stage", message: "Generating design brief...", step: 1, totalSteps: 5 })
+    send?.({ type: "stage", message: "Generating design brief...", step: 1, totalSteps: 6 })
 
     const stitchPrompt = await generateStitchDesignPrompt(mvpPlan, projectName)
 
     // ── Stage 2: Create Stitch project ────────────────────────────────
-    send?.({ type: "stage", message: "Creating design project...", step: 2, totalSteps: 5 })
+    send?.({ type: "stage", message: "Creating design project...", step: 2, totalSteps: 6 })
 
     const projectRaw = await client.callTool<Raw>("create_project", { title: projectName })
     console.log("[Stitch] create_project raw:", JSON.stringify(projectRaw))
     const stitchProjectId = extractProjectId(projectRaw)
 
     // ── Stage 3: Generate initial screen ─────────────────────────────
-    send?.({ type: "stage", message: "Generating initial design...", step: 3, totalSteps: 5 })
+    send?.({ type: "stage", message: "Generating initial design...", step: 3, totalSteps: 6 })
 
     const generateRaw = await client.callTool<Raw>("generate_screen_from_text", {
       projectId: stitchProjectId,
@@ -127,7 +173,7 @@ export async function generateStitchMockup(
     console.log("[Stitch] initialScreenId:", initialScreenId)
 
     // ── Stage 4: Generate 2 variants ─────────────────────────────────
-    send?.({ type: "stage", message: "Generating 2 design variations...", step: 4, totalSteps: 5 })
+    send?.({ type: "stage", message: "Generating 2 design variations...", step: 4, totalSteps: 6 })
 
     const variantsRaw = await client.callTool<Raw>("generate_variants", {
       projectId: stitchProjectId,
@@ -155,7 +201,7 @@ export async function generateStitchMockup(
     }
 
     // ── Stage 5: Fetch original + 2 variant screens ───────────────────
-    send?.({ type: "stage", message: "Fetching design assets...", step: 5, totalSteps: 5 })
+    send?.({ type: "stage", message: "Fetching design assets...", step: 5, totalSteps: 6 })
 
     // Combine: original screen first, then up to 2 variants
     const screenIds = [initialScreenId, ...variantIds.slice(0, 2)]
@@ -177,7 +223,17 @@ export async function generateStitchMockup(
       }),
     )
 
-    return JSON.stringify({ type: "stitch", options })
+    // ── Stage 6: Generate per-option descriptions (one OpenRouter call) ──
+    send?.({ type: "stage", message: "Generating design descriptions...", step: 6, totalSteps: 6 })
+
+    const descriptions = await generateOptionDescriptions(stitchPrompt, options.map(o => ({ label: o.label, title: o.title })))
+
+    const optionsWithDescriptions = options.map(o => ({
+      ...o,
+      description: descriptions[o.label] ?? "",
+    }))
+
+    return JSON.stringify({ type: "stitch", options: optionsWithDescriptions })
   } finally {
     await client.close()
   }
