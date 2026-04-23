@@ -3,16 +3,15 @@ import { ArrowRight } from "lucide-react"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
 const inspirationProjects = [
-  // TODO: keep #FF3B30 local as intentionally unique project emphasis color.
   {
     category: "FINTECH • CRM",
     title: "Apex Revenue OS",
     description: "+34% qualified pipeline in 60 days",
     action: "View Project",
-    buttonClass: "bg-[#FF3B30] border-[#FF3B30] text-white",
+    buttonClass: "bg-primary border-primary text-primary-foreground",
     cardClass: "bg-text-primary text-white",
     titleClass: "text-white",
-    categoryClass: "text-[#FF3B30]",
+    categoryClass: "text-warm-coral",
     href: "/projects",
   },
   {
@@ -23,7 +22,7 @@ const inspirationProjects = [
     buttonClass: "bg-text-primary border-text-primary text-white",
     cardClass: "bg-white text-text-primary",
     titleClass: "text-text-primary",
-    categoryClass: "text-[#FF3B30]",
+    categoryClass: "text-primary",
     href: "/projects",
   },
   {
@@ -34,7 +33,7 @@ const inspirationProjects = [
     buttonClass: "bg-text-primary border-text-primary text-white",
     cardClass: "bg-white text-text-primary",
     titleClass: "text-text-primary",
-    categoryClass: "text-[#FF3B30]",
+    categoryClass: "text-primary",
     href: "/projects",
   },
 

@@ -47,7 +47,7 @@ export default async function ProjectsPage() {
           </div>
 
           <Link href="/projects/new" className="shrink-0" prefetch={false}>
-            <Button className="bg-[#FF3B30] px-5 text-white">New Project</Button>
+            <Button className="bg-primary px-5 text-white">New Project</Button>
           </Link>
         </header>
 
@@ -58,7 +58,7 @@ export default async function ProjectsPage() {
               Create your first idea to get started.
             </p>
             <Link href="/projects/new" className="mt-4 inline-block">
-              <Button className="bg-[#FF3B30] px-5 text-white">New Project</Button>
+              <Button className="bg-primary px-5 text-white">New Project</Button>
             </Link>
           </div>
         ) : (
