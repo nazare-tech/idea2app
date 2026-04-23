@@ -47,7 +47,7 @@ function PencilCard({
     >
       <div className="space-y-2 px-6 py-5">
         {kicker ? (
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#FF3B30]">
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
             {kicker}
           </p>
         ) : null}
@@ -106,7 +106,7 @@ function NumberedList({
           <span
             className={cn(
               "w-7 shrink-0 pt-0.5 font-mono text-[11px] font-medium",
-              dark ? "text-[#FF3B30]" : "text-[#999999]"
+              dark ? "text-primary" : "text-[#999999]"
             )}
           >
             {String(index + 1).padStart(2, "0")}
@@ -343,7 +343,7 @@ function FastComparisonTable({
             <p className="text-[12px] leading-5 text-[#666666]">
               {competitor.fields["Target Audience"] ?? ""}
             </p>
-            <p className="text-[12px] leading-5 text-[#FF3B30]">
+            <p className="text-[12px] leading-5 text-primary">
               {getCompetitorKeyEdge(competitor)}
             </p>
           </div>
@@ -415,7 +415,7 @@ function CompetitorProfiles({
                         <ArrowUpRight className="h-3.5 w-3.5 text-white" />
                       </div>
                     )}
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[#FF3B30]">
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
                       {getCompetitorTag(competitor)}
                     </p>
                   </div>
@@ -561,7 +561,7 @@ function PositioningMap({
                 className={cn(
                   "absolute -translate-x-1/2 -translate-y-1/2 border px-3 py-2",
                   tone === "accent"
-                    ? "border-[#FF3B30] bg-[#FF3B30] text-white"
+                    ? "border-primary bg-primary text-primary-foreground"
                     : tone === "dark"
                       ? "border-[#0A0A0A] bg-[#0A0A0A] text-white"
                       : tone === "muted"
@@ -856,7 +856,7 @@ export function CompetitiveAnalysisDocument({
 
       {viewModel.warning && (
         <div className="flex items-start gap-3 border border-[#FCA5A5] bg-[#FEF2F2] px-5 py-4 rounded-none">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#DC2626]" />
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
           <div className="space-y-1">
             <p className="font-semibold text-[#7F1D1D]">
               Designed modules view unavailable

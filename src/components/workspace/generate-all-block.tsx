@@ -158,7 +158,7 @@ function ModelPill({
       <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/60 px-2.5 py-1.5 opacity-60">
         <div className={cn("h-1.5 w-1.5 rounded-full", dotColor)} />
         <span className="text-[11px] text-muted-foreground">
-          {option?.name ?? selectedModel.split("/").pop()}
+          {option?.name ?? selectedModel?.split("/").pop() ?? "Unknown"}
         </span>
         {option?.badge && (
           <span className={cn("text-[10px] font-bold uppercase tracking-wide", badgeColor)}>
@@ -175,7 +175,7 @@ function ModelPill({
         <button className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/60 px-2.5 py-1.5 transition-colors hover:bg-secondary">
           <div className={cn("h-1.5 w-1.5 rounded-full", dotColor)} />
           <span className="text-[11px] text-foreground/80">
-            {option?.name ?? selectedModel.split("/").pop()}
+            {option?.name ?? selectedModel?.split("/").pop() ?? "Unknown"}
           </span>
           {option?.badge && (
             <span className={cn("text-[10px] font-bold uppercase tracking-wide", badgeColor)}>

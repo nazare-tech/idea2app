@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Sora, IBM_Plex_Mono, Space_Grotesk } from "next/font/google"
+import Script from "next/script"
 import "./globals.css"
 import { AgentationWrapper } from "@/components/AgentationWrapper"
 
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body
         className={`${sora.variable} ${ibmPlexMono.variable} ${spaceGrotesk.variable} antialiased min-h-screen bg-background`}
       >
+        <Script src="https://mcp.figma.com/mcp/html-to-design/capture.js" strategy="afterInteractive" />
         {children}
         <AgentationWrapper />
       </body>

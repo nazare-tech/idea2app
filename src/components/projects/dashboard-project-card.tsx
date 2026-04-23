@@ -76,7 +76,6 @@ export function DashboardProjectCard({
 
   return (
     <div className="group relative">
-      {/* TODO: keep #FF3B30 local as the destructive action color for delete confirmation actions. */}
       <Link
         href={href}
         className="block w-[320px] max-w-full border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
@@ -102,7 +101,7 @@ export function DashboardProjectCard({
           onClick={handleDeletePrompt}
           disabled={isDeleting}
           aria-label={`Delete ${name}`}
-          className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#FF3B30]/90 text-white opacity-100 md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto"
+          className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-destructive/90 text-white opacity-100 md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto"
         >
           <Trash2 className="ui-icon-16" />
         </button>
@@ -125,7 +124,7 @@ export function DashboardProjectCard({
               environments, deployment history, and collaborator access. This cannot be
               undone.
             </p>
-            <p className="mt-4 text-[12px] leading-[1.5] ui-font-semibold text-[#FF3B30]">
+            <p className="mt-4 text-[12px] leading-[1.5] ui-font-semibold text-destructive">
               Warning: deleting this project is permanent.
             </p>
             <div className="mt-6 flex justify-end gap-3">
@@ -144,7 +143,7 @@ export function DashboardProjectCard({
                   handleDelete()
                 }}
                 disabled={isDeleting}
-                className="h-11 rounded-md bg-[#FF3B30] px-5 text-[13px] ui-font-semibold text-white disabled:opacity-40"
+                className="h-11 rounded-md bg-destructive px-5 text-[13px] ui-font-semibold text-destructive-foreground disabled:opacity-40"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </button>
