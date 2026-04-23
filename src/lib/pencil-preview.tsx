@@ -251,7 +251,7 @@ function renderNode(node: PenNode, parentLayout: "horizontal" | "vertical" | "no
 }
 
 export async function loadPenDocument() {
-  const filePath = path.join(process.cwd(), "design", "idea2App-design.pen")
+  const filePath = path.join(process.cwd(), "design", "idea2App-design v2.pen")
   const raw = await readFile(filePath, "utf8")
   return JSON.parse(raw) as PenDocument
 }

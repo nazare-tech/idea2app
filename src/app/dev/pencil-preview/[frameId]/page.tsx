@@ -1,3 +1,4 @@
+import Script from "next/script"
 import { notFound } from "next/navigation"
 import { PencilFrameView, loadTopLevelPenFrames } from "@/lib/pencil-preview"
 
@@ -21,5 +22,10 @@ export default async function PencilFramePage({
 
   if (!frame) notFound()
 
-  return <PencilFrameView frame={frame} />
+  return (
+    <>
+      <Script src="https://mcp.figma.com/mcp/html-to-design/capture.js" strategy="afterInteractive" />
+      <PencilFrameView frame={frame} />
+    </>
+  )
 }
