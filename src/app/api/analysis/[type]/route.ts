@@ -6,6 +6,7 @@ import { type AnalysisType } from "@/lib/utils"
 import { getTokenCost } from "@/lib/token-economics"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { linkifyBareUrls } from "@/lib/markdown-links"
+import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import {
   COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
   COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION,
@@ -97,7 +98,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     // Validate analysis type
-    const validTypes = ["competitive-analysis", "prd", "mvp-plan"]
+    const validTypes = ["competitive-analysis", "prd", "mvp-plan", "tech-spec"]
     if (!validTypes.includes(type)) {
       statusCode = 400
       errorType = "validation_error"
@@ -122,6 +123,12 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       errorMessage = "Project not found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
+
+    const ideaForGeneration = await getProjectIntakeContextForAi(
+      supabase,
+      projectId,
+      project.description || idea
+    )
 
     // Check and deduct tokens (stored in credits balance)
     const creditCost = getTokenCost(type as AnalysisType, model)
@@ -161,15 +168,15 @@ export async function POST(request: Request, { params }: AnalysisParams) {
             let streamResult: { content: string; source: string; model: string }
 
             if (type === "competitive-analysis") {
-              streamResult = await runCompetitiveAnalysis({ idea, name, model }, callbacks)
+              streamResult = await runCompetitiveAnalysis({ idea: ideaForGeneration, name, model }, callbacks)
             } else if (type === "prd") {
-              streamResult = await runPRD({ idea, name, competitiveAnalysis, model }, callbacks)
+              streamResult = await runPRD({ idea: ideaForGeneration, name, competitiveAnalysis, model }, callbacks)
             } else if (type === "mvp-plan") {
-              streamResult = await runMVPPlan({ idea, name, prd, model }, callbacks)
+              streamResult = await runMVPPlan({ idea: ideaForGeneration, name, prd, model }, callbacks)
             } else if (type === "tech-spec") {
-              streamResult = await runTechSpec({ idea, name, prd, model }, callbacks)
+              streamResult = await runTechSpec({ idea: ideaForGeneration, name, prd, model }, callbacks)
             } else {
-              streamResult = await callOpenRouterFallback(type, idea, name, model)
+              streamResult = await callOpenRouterFallback(type, ideaForGeneration, name, model)
             }
 
             // Save to DB — same as non-streaming path
@@ -267,16 +274,16 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     let result: { content: string; source: string; model: string }
 
     if (type === "competitive-analysis") {
-      result = await runCompetitiveAnalysis({ idea, name, model })
+      result = await runCompetitiveAnalysis({ idea: ideaForGeneration, name, model })
     } else if (type === "prd") {
-      result = await runPRD({ idea, name, competitiveAnalysis, model })
+      result = await runPRD({ idea: ideaForGeneration, name, competitiveAnalysis, model })
     } else if (type === "mvp-plan") {
-      result = await runMVPPlan({ idea, name, prd, model })
+      result = await runMVPPlan({ idea: ideaForGeneration, name, prd, model })
     } else if (type === "tech-spec") {
-      result = await runTechSpec({ idea, name, prd, model })
+      result = await runTechSpec({ idea: ideaForGeneration, name, prd, model })
     } else {
       // gap-analysis still uses OpenRouter fallback
-      result = await callOpenRouterFallback(type, idea, name, model)
+      result = await callOpenRouterFallback(type, ideaForGeneration, name, model)
     }
 
     // Track AI model and source

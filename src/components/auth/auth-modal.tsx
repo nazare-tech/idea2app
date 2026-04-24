@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import * as Dialog from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 import { AuthFormContent, type AuthMode } from "@/components/auth/auth-form-content"
+import { getSafeAuthRedirect } from "@/lib/safe-redirect"
 
 export function AuthModal() {
   const router = useRouter()
@@ -14,17 +15,24 @@ export function AuthModal() {
 
   const isOpen = modalParam === "auth" && (modeParam === "signin" || modeParam === "signup")
   const mode: AuthMode = modeParam === "signup" ? "signup" : "signin"
+  const nextPath = getSafeAuthRedirect(searchParams)
 
   const closeModal = () => {
     router.replace("/", { scroll: false })
   }
 
   const handleModeChange = (nextMode: AuthMode) => {
-    router.replace(`/?modal=auth&mode=${nextMode}`, { scroll: false })
+    const params = new URLSearchParams()
+    params.set("modal", "auth")
+    params.set("mode", nextMode)
+    if (nextPath !== "/projects") {
+      params.set("next", nextPath)
+    }
+    router.replace(`/?${params.toString()}`, { scroll: false })
   }
 
   const handleSuccess = () => {
-    router.push("/dashboard")
+    router.push(nextPath)
     router.refresh()
   }
 
@@ -53,7 +61,7 @@ export function AuthModal() {
 
           <AuthFormContent
             initialMode={mode}
-            redirectTo="/dashboard"
+            redirectTo={nextPath}
             onSuccess={handleSuccess}
             onModeChange={handleModeChange}
           />

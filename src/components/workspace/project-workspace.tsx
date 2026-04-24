@@ -75,6 +75,7 @@ interface ProjectWorkspaceProps {
   credits: number
   user: unknown
   isNewProject?: boolean
+  hasStructuredIntake?: boolean
 }
 
 type WorkspaceGenerationCounts = Partial<Record<DocumentType, number>>
@@ -90,6 +91,7 @@ export function ProjectWorkspace({
   credits,
   user,
   isNewProject = false,
+  hasStructuredIntake = false,
 }: ProjectWorkspaceProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -1251,6 +1253,7 @@ export function ProjectWorkspace({
               streamCurrentStep={streamCurrentStep}
               streamContent={streamContent}
               credits={credits}
+              hasStructuredIntake={hasStructuredIntake}
               prerequisiteValidation={checkPrerequisites("prompt")}
               currentVersion={0}
               totalVersions={0}

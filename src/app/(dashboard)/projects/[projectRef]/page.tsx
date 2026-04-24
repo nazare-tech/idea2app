@@ -113,6 +113,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     { data: techSpecs },
     { data: deployments },
     { data: credits },
+    { data: projectIntake },
   ] = await Promise.all([
     supabase.from("analyses").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
     supabase.from("prds").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
@@ -122,6 +123,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     supabase.from("tech_specs").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
     supabase.from("deployments").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
     supabase.from("credits").select("balance").eq("user_id", user!.id).single(),
+    supabase.from("project_intakes").select("id").eq("project_id", projectId).eq("user_id", user!.id).maybeSingle(),
   ])
 
   return (
@@ -142,6 +144,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         avatar_url: profileData?.avatar_url ?? undefined,
       }}
       isNewProject={isNewProject}
+      hasStructuredIntake={Boolean(projectIntake)}
     />
   )
 }

@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-04-12 (Waitlist + Stitch; UI Simplification; Auth Modal + Accessibility fixes)
+**Last Updated**: 2026-04-23 (Idea Intake Wizard + Pending Auth Handoff)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -11,7 +11,8 @@
 
 ### Core Functionality
 
-- **Prompt Tab AI Chat**: Interactive AI conversation in the Prompt tab that asks tailored follow-up questions to refine business ideas. Features:
+- **Idea Intake Wizard**: Canonical new-project flow at `/projects/new`. Users enter an idea, answer 4-5 AI-generated structured questions, then the app creates the project. The wizard stores readable summaries in `projects.description` and structured intake JSON in `project_intakes`.
+- **Prompt Tab AI Chat**: Interactive AI conversation in the Prompt tab for follow-up refinement after project creation. The old initial Prompt Chat Q&A is no longer the primary new-project intake for wizard-created projects. Features:
   - Context-aware question generation based on idea type (tool, marketplace, service, etc.)
   - Automatic idea summarization after sufficient context gathering
   - **AI-generated project name**: after the idea summary is produced, a second server-side AI call extracts a short 3–6 word title-case name and saves it to `projects.name`. The name streams back to the frontend via the `done` event's `projectName` field. Until the name is set, the workspace header shows "Untitled" in muted text with a `✦ AI naming` badge (editing disabled). On receipt the name fades in and the pencil icon reappears.
@@ -43,15 +44,13 @@
 
 ### User Workflow
 
-1. User creates a project and submits an initial business idea
-2. User is directed to the Prompt tab where AI asks 4-5 tailored follow-up questions
-3. User answers questions to clarify missing context (target audience, features, business model, etc.)
-4. AI synthesizes responses and generates a comprehensive idea summary; a second AI call automatically generates and saves a short project name
-5. User validates/refines the summary through continued conversation
-6. User generates various analyses (competitive, PRD, MVP plan, mockups, tech specs)
-7. User generates a working prototype/application
-8. If early-access capacity is full, new visitors join the waitlist instead of signing up immediately
-9. User deploys the generated application
+1. User starts from the landing idea box or a dashboard New Project action
+2. `/projects/new` opens the Idea Intake Wizard instead of inserting a blank project
+3. Step 1 captures the raw idea or an example idea
+4. Step 2 calls `/api/intake/questions` to generate structured answer-chip questions
+5. Final submit calls `/api/projects/create-from-intake`, enforces monthly project allowance, generates a short project name, creates `projects`, and writes the canonical `project_intakes` row
+6. User lands in the workspace Prompt tab for refinement and downstream document generation without repeating the old initial Prompt Chat Q&A
+7. User generates analyses, PRD, MVP plan, mockups, tech specs, app code, and launch materials
 
 ---
 
@@ -155,25 +154,34 @@
    - JWT stored in HTTP-only cookie
    - Middleware validates auth on every request
    - Protected routes redirect unauthorized users
+   - Auth redirect targets are sanitized through `src/lib/safe-redirect.ts`. Supported internal next paths include `/projects/new?intake=<token>`, `/projects/*`, `/dashboard`, `/billing`, `/preferences`, and `/reset-password`.
 
-2. **Chat Flow**:
+2. **Idea Intake Wizard Flow**:
+   - Landing page idea capture stores same-tab draft text in `sessionStorage`
+   - For auth handoff, `POST /api/intake/pending` stores the idea in `pending_intakes` for 24 hours and returns an opaque token; raw idea text never goes in the URL
+   - Auth modal and `/callback` preserve safe `next=/projects/new?intake=<token>` redirects
+   - `/projects/new` renders `IdeaIntakeWizard`; it loads pending intake by token via `GET /api/intake/pending` or falls back to `sessionStorage`
+   - `POST /api/intake/questions` generates 4-5 typed questions with `single`, `multiple`, and `text` answer modes. If model output is unavailable or invalid, the service falls back to curated questions
+   - `POST /api/projects/create-from-intake` validates answers, checks `canCreateProject()`, builds `idea-intake-v1` JSON, stores the readable summary in `projects.description`, stores the structured payload in `project_intakes`, claims the pending token, and redirects to the canonical workspace URL
+
+3. **Chat Flow**:
    - Client component sends message to `/api/chat`
    - Server validates auth, checks credits
    - Server calls OpenRouter/Anthropic AI
    - Server saves message to database
    - Response streamed back to client
 
-3. **Prompt Tab AI Name Generation** (sub-flow within Prompt Chat):
+4. **Prompt Tab AI Name Generation** (sub-flow within Prompt Chat):
    - When `stage === "summary"` and `project.name === "Untitled"`, the `/api/prompt-chat` route makes a second AI call after saving the description
    - A short name (3–6 words, title case) is saved to `projects.name` in Supabase
    - The `done` stream event includes a `projectName` field
    - `PromptChatInterface` fires `onProjectNameGenerated(name)` on receipt → `ProjectWorkspace` updates header state (`isNameSet = true`, fade-in animation)
    - If name generation fails, it is silent — the `done` event emits without `projectName` and a 3 s fallback timer unblocks editing
 
-4. **Analysis Flow** (individual tab generation):
+5. **Analysis Flow** (individual tab generation):
    - Client requests analysis (competitive, PRD, MVP plan, or tech spec) from the workspace `ContentEditor`
    - Server checks credits, deducts if available; refunds via `refund_credits` RPC on generation failure
-   - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`):
+   - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`). When a `project_intakes` row exists, generation context is formatted through `formatProjectIntakeForAi()` and combined with the human-readable project summary; otherwise `projects.description` is used as the fallback:
      - **Competitive Analysis**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail. External API calls use `withRetry` (3 retries, exponential backoff on 429/5xx). All OpenRouter synthesis calls have a 120s `AbortSignal` timeout.
      - **PRD**: OpenRouter LLM call with detailed system prompt, receives `competitiveAnalysis` as context
      - **MVP Plan**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
@@ -181,7 +189,7 @@
    - Result saved to the appropriate table (`analyses`, `prds`, `mvp_plans`, or `tech_specs`)
    - Page reloads to surface the new version
 
-5. **Generate All Flow** (server-side, durable):
+6. **Generate All Flow** (server-side, durable):
    - Client calls `startGenerateAll()` in `generate-all-store.ts`
    - Store persists queue to DB via `POST /api/generate-all/start`
    - Store fires `POST /api/generate-all/execute` as fire-and-forget (server runs up to 300s even if user closes tab)
@@ -192,7 +200,7 @@
    - On step failure: refunds that step's credits, marks item + queue as error, stops
    - Generation is durable — survives browser tab close, page refresh, and network interruptions
 
-6. **App Generation Flow**:
+7. **App Generation Flow**:
    - Client requests app generation
    - Server validates credits (5 credits required)
    - Server calls Anthropic Claude with project context
@@ -240,8 +248,10 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 ### Shared UI Architecture
 
 - **Document registry** — document labels, titles, icons, credit cost, and nav visibility now come from a shared typed registry in `src/lib/document-definitions.ts`, used by both `DocumentNav` and `ContentEditor`.
+- **Idea intake contracts** — typed question, answer, summary, context, and project-name helpers live in `src/lib/intake-*.ts`, `src/lib/project-name-generation.ts`, and `src/lib/prompts/intake-wizard.ts`. `src/lib/intake-examples.ts` owns the configurable example ideas shown in Step 1.
 - **Shared auth building blocks** — `AuthFormContent` is the single source of form logic (email/password/Google, validation, success state). It is used by both the `/auth` page and the `AuthModal` overlay. `AuthField` and `AuthPasswordField` are reusable field primitives. `AuthMode` type is exported from `auth-form-content.tsx`.
 - **Auth Modal** — `src/components/auth/auth-modal.tsx` is a `"use client"` Radix UI Dialog. It reads `?modal=auth&mode=signin|signup` from the URL, opens over the landing page with a dark blurred overlay (`bg-black/65 backdrop-blur-[4px]`), and closes by clearing URL params. Sign In / Sign Up links on the landing page use `?modal=auth&mode=...` instead of navigating to `/auth`.
+- **Project allowance guard** — `src/lib/project-allowance.ts` resolves monthly project allowance from active `subscriptions` joined to `plans`, explicit plan fields/features when present, plan-name fallbacks, and the active subscription or calendar-month window. The guard runs during final intake project creation before any project row is inserted.
 - **Shared chat primitives** — the general chat and prompt chat surfaces now share composer, avatar, copy button, markdown body, load-more button, and thinking-state primitives plus reusable hooks for copy feedback, textarea autosize, and NDJSON stream consumption.
 - **Shared stacked tab navigation** — project document navigation and preferences navigation now use the same stacked tab-nav component so visual changes to the left-side tab pattern can be made in one place.
 - **Shared account utilities** — credit formatting, billing portal navigation, brand wordmark rendering, and auth sign-out are centralized in shared utilities/hooks/components and reused across dashboard header/sidebar, billing, settings, and auth views.
@@ -267,6 +277,11 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 16. **AI-Generated Project Name**: New projects start as "Untitled" with a locked header (`✦ AI naming` badge, pencil hidden). After Prompt tab Q&A completes, the server generates a short name server-side and streams it back via the `done` event's `projectName` field. `isNameSet` state (in `ProjectWorkspace`) gates editing — initialized as `project.name !== "Untitled" || !!project.description` so existing projects are never locked.
 17. **URL-Driven Auth Modal**: Landing page auth uses `?modal=auth&mode=signin|signup` URL params to drive a Radix Dialog modal, keeping users in context. The `/auth` page is unchanged and still used for email confirmation redirects. Both surfaces share `AuthFormContent`. No new dependencies — `@radix-ui/react-dialog` was already installed.
 18. **WCAG AA Contrast Compliance**: `--muted-foreground` and `--text-muted` are `#6B7280` (4.61:1 on white). Form labels use `text-text-secondary` (#666666, 5.74:1). The `✦ AI naming` badge uses `bg-violet-100 text-violet-800` (8.4:1). Never use `#999999` for text on white backgrounds — it fails at 2.85:1.
+
+### Intake Data Model
+
+- **`pending_intakes`** — short-lived auth handoff table with opaque `token`, `idea_text`, `source`, `expires_at`, `claimed_at`, `claimed_by`, and timestamps. Pending records expire after 24 hours and are claimed after successful project creation.
+- **`project_intakes`** — one canonical structured intake per project, keyed by `project_id`, with `schema_version`, `original_idea`, `questions_json`, `answers_json`, `raw_payload_json`, `generated_summary`, `source`, and timestamps. RLS restricts rows to the owning user.
 
 ### Mermaid Diagram Expansion Feature
 

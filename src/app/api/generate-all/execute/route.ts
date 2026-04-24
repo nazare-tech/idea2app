@@ -33,6 +33,7 @@ import {
 import { generateStitchMockup } from "@/lib/stitch-pipeline"
 import { getTokenCost } from "@/lib/token-economics"
 import { linkifyBareUrls } from "@/lib/markdown-links"
+import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import { GENERATE_ALL_ACTION_MAP } from "@/lib/token-economics"
 import { GENERATE_ALL_DEFAULT_MODELS } from "@/lib/document-definitions"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -88,7 +89,7 @@ async function runStep(
   projectId: string,
   project: { description: string; name: string },
 ): Promise<void> {
-  const idea = project.description
+  const idea = await getProjectIntakeContextForAi(supabase, projectId, project.description)
   const name = project.name
 
   if (docType === "competitive") {

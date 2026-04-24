@@ -10,6 +10,7 @@ import { Check } from "lucide-react"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { AuthField } from "@/components/auth/auth-field"
 import { AuthPasswordField } from "@/components/auth/auth-password-field"
+import { sanitizeInternalRedirect } from "@/lib/safe-redirect"
 
 export type AuthMode = "signin" | "signup"
 
@@ -56,7 +57,7 @@ interface AuthFormContentProps {
 
 export function AuthFormContent({
   initialMode,
-  redirectTo = "/dashboard",
+  redirectTo = "/projects",
   onSuccess,
   onModeChange,
 }: AuthFormContentProps) {
@@ -70,6 +71,13 @@ export function AuthFormContent({
   const [success, setSuccess] = useState(false)
 
   const copy = modeLabels[mode]
+  const safeRedirectTo = sanitizeInternalRedirect(redirectTo)
+
+  const buildCallbackUrl = () => {
+    const callbackUrl = new URL("/callback", window.location.origin)
+    callbackUrl.searchParams.set("next", safeRedirectTo)
+    return callbackUrl.toString()
+  }
 
   const switchMode = (next: AuthMode) => {
     setMode(next)
@@ -104,7 +112,7 @@ export function AuthFormContent({
         password,
         options: {
           data: { full_name: fullName },
-          emailRedirectTo: `${window.location.origin}/callback?next=${redirectTo}`,
+          emailRedirectTo: buildCallbackUrl(),
         },
       })
 
@@ -127,7 +135,7 @@ export function AuthFormContent({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/callback?next=${redirectTo}`,
+          redirectTo: buildCallbackUrl(),
         },
       })
       if (error) setError(error.message)

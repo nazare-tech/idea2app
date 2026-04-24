@@ -7,12 +7,13 @@ import { Spinner } from "@/components/ui/spinner"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthFormContent, type AuthMode } from "@/components/auth/auth-form-content"
+import { getSafeAuthRedirect } from "@/lib/safe-redirect"
 
 function AuthScreen() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const redirect = searchParams.get("redirect") || "/dashboard"
+  const redirect = getSafeAuthRedirect(searchParams)
   const queryError = searchParams.get("error")
   const queryMessage = searchParams.get("message")
 
