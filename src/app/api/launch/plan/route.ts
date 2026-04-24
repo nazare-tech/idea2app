@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
+import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 
 export async function POST(request: Request) {
   const timer = new MetricsTimer()
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
 
     const { data: project } = await supabase
       .from("projects")
-      .select("id")
+      .select("id, description")
       .eq("id", projectId)
       .eq("user_id", user.id)
       .single()
@@ -63,6 +64,12 @@ export async function POST(request: Request) {
       errorType = "not_found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
+
+    const ideaForGeneration = await getProjectIntakeContextForAi(
+      supabase,
+      projectId,
+      project.description || idea
+    )
 
     const { data: consumed } = await supabase.rpc("consume_credits", {
       p_user_id: user.id,
@@ -96,7 +103,7 @@ export async function POST(request: Request) {
 ## Positioning
 - **Product:** ${name}
 - **Who it is for:** ${brief.targetAudience}
-- **Core value prop:** ${idea.slice(0, 240)}${idea.length > 240 ? "..." : ""}
+- **Core value prop:** ${ideaForGeneration.slice(0, 240)}${ideaForGeneration.length > 240 ? "..." : ""}
 
 ## Channel Priority
 ### Immediate (${brief.launchWindow})

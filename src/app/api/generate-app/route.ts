@@ -4,6 +4,7 @@ import { CREDIT_COSTS } from "@/lib/utils"
 import Anthropic from "@anthropic-ai/sdk"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { buildAppGenerationPrompt } from "@/lib/prompts"
+import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 
 const APP_TYPE_CREDITS: Record<string, number> = {
   static: CREDIT_COSTS["app-static"],
@@ -77,6 +78,12 @@ export async function POST(request: Request) {
       errorMessage = "Project not found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
+
+    const ideaForGeneration = await getProjectIntakeContextForAi(
+      supabase,
+      projectId,
+      project.description || idea
+    )
 
     // Check and deduct credits
     const creditCost = APP_TYPE_CREDITS[appType]
@@ -164,7 +171,7 @@ export async function POST(request: Request) {
         apiKey: process.env.ANTHROPIC_API_KEY,
       })
 
-      const prompt = buildAppGenerationPrompt(appType, name, idea, context)
+      const prompt = buildAppGenerationPrompt(appType, name, ideaForGeneration, context)
 
       const response = await anthropic.messages.create({
         model: "claude-sonnet-4-20250514",

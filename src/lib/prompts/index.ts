@@ -9,3 +9,9 @@ export { buildMockupPrompt } from "./mockups"
 export { COMPETITOR_SEARCH_SYSTEM_PROMPT, buildCompetitorSearchUserPrompt } from "./competitor-search"
 export { APP_TYPE_PROMPTS, buildAppGenerationPrompt } from "./app-generation"
 export { LEGACY_ANALYSIS_PROMPTS } from "./legacy-fallback"
+export {
+  INTAKE_QUESTION_SYSTEM_PROMPT,
+  PROJECT_NAME_SYSTEM_PROMPT,
+  buildIntakeQuestionUserPrompt,
+  buildProjectNameUserPrompt,
+} from "./intake-wizard"

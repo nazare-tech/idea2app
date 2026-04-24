@@ -53,6 +53,7 @@ interface ContentEditorProps {
   streamCurrentStep?: number
   streamContent?: string
   credits: number
+  hasStructuredIntake?: boolean
   prerequisiteValidation?: { canGenerate: boolean; reason?: string }
   currentVersion?: number
   totalVersions?: number
@@ -82,6 +83,7 @@ export function ContentEditor({
   streamStages,
   streamCurrentStep,
   streamContent,
+  hasStructuredIntake = false,
 }: ContentEditorProps) {
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const isMockupsDocument = documentType === "mockups"
@@ -431,6 +433,7 @@ export function ContentEditor({
               onIdeaSummary={handleIdeaSummary}
               onProjectNameGenerated={onProjectNameGenerated}
               credits={credits}
+              disableInitialAutoStart={hasStructuredIntake}
             />
           ) : (
             <div className="h-full overflow-y-auto p-10 relative">

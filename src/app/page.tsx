@@ -3,11 +3,13 @@ import { Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
+import { LandingIdeaCapture } from "@/components/landing/landing-idea-capture"
 import { WaitlistForm } from "@/components/landing/waitlist-form"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import { PRICING_CARD_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
 import { formatPrice } from "@/lib/utils"
 import { createServiceClient } from "@/lib/supabase/service"
+import { createClient as createServerClient } from "@/lib/supabase/server"
 import { isWaitlistMode, WAITLIST_LIMIT } from "@/lib/waitlist"
 import { ArrowRight, CloudUpload, GitBranch, ListChecks, Rocket, ScanSearch, FileText } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
@@ -143,8 +145,23 @@ async function getUserCount(): Promise<number> {
   }
 }
 
+async function getIsAuthenticated(): Promise<boolean> {
+  try {
+    const supabase = await createServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    return Boolean(user)
+  } catch {
+    return false
+  }
+}
+
 export default async function LandingPage() {
-  const userCount = await getUserCount()
+  const [userCount, isAuthenticated] = await Promise.all([
+    getUserCount(),
+    getIsAuthenticated(),
+  ])
   const waitlistMode = isWaitlistMode(userCount)
 
   return (
@@ -204,16 +221,14 @@ export default async function LandingPage() {
           {waitlistMode ? (
             <WaitlistForm showSecondary />
           ) : (
-            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-              <Link href="/?modal=auth&mode=signup" scroll={false}>
-                <Button className="h-14 px-7 bg-primary text-base font-semibold text-white">Get Started</Button>
-              </Link>
+            <>
+              <LandingIdeaCapture isAuthenticated={isAuthenticated} />
               <Link href="#features">
                 <Button variant="outline" className="h-14 px-7 border-border-subtle text-base font-semibold bg-white text-text-primary">
                   See How It Works
                 </Button>
               </Link>
-            </div>
+            </>
           )}
         </div>
 
