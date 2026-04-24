@@ -1,35 +1,25 @@
-import { createClient as createServerClient } from "@/lib/supabase/server"
-import { getProjectUrl } from "@/lib/project-routing"
 import { redirect } from "next/navigation"
 
-const UNTITLED_PROJECT_NAME = "Untitled"
+import { IdeaIntakeWizard } from "@/components/projects/idea-intake-wizard"
+import { createClient } from "@/lib/supabase/server"
 
-export default async function NewProjectPage() {
-  const supabase = await createServerClient()
+interface NewProjectPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
 
+export default async function NewProjectPage({ searchParams }: NewProjectPageProps) {
+  const resolvedSearchParams = await searchParams
+  const intakeParam = resolvedSearchParams.intake
+  const pendingToken = Array.isArray(intakeParam) ? intakeParam[0] : intakeParam
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/")
+    const nextPath = `/projects/new${pendingToken ? `?intake=${encodeURIComponent(pendingToken)}` : ""}`
+    redirect(`/?modal=auth&mode=signin&next=${encodeURIComponent(nextPath)}`)
   }
 
-  const { data, error } = await supabase
-    .from("projects")
-    .insert({
-      user_id: user.id,
-      name: UNTITLED_PROJECT_NAME,
-      description: "",
-      category: "other",
-      status: "draft",
-    })
-    .select("id, name")
-    .single()
-
-  if (error || !data?.id) {
-    redirect("/projects?error=failed_to_create_project")
-  }
-
-  redirect(`${getProjectUrl(data)}?new=1`)
+  return <IdeaIntakeWizard pendingToken={pendingToken ?? null} />
 }
