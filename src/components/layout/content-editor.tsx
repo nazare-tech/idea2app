@@ -442,31 +442,31 @@ export function ContentEditor({
                   <p className="mb-3 text-sm font-semibold">Marketing Brief (required)</p>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <input
-                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      className="rounded-xl border border-border-strong bg-background px-3 py-2 text-sm outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
                       placeholder="Target audience (e.g., PMs at SaaS startups)"
                       value={marketingBrief.targetAudience}
                       onChange={(e) => setMarketingBrief(prev => ({ ...prev, targetAudience: e.target.value }))}
                     />
                     <input
-                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      className="rounded-xl border border-border-strong bg-background px-3 py-2 text-sm outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
                       placeholder="Stage (idea / MVP / growth)"
                       value={marketingBrief.stage}
                       onChange={(e) => setMarketingBrief(prev => ({ ...prev, stage: e.target.value }))}
                     />
                     <input
-                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      className="rounded-xl border border-border-strong bg-background px-3 py-2 text-sm outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
                       placeholder="Budget (e.g., $500, $2k/mo)"
                       value={marketingBrief.budget}
                       onChange={(e) => setMarketingBrief(prev => ({ ...prev, budget: e.target.value }))}
                     />
                     <input
-                      className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      className="rounded-xl border border-border-strong bg-background px-3 py-2 text-sm outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
                       placeholder="Launch window (e.g., next 2 weeks)"
                       value={marketingBrief.launchWindow}
                       onChange={(e) => setMarketingBrief(prev => ({ ...prev, launchWindow: e.target.value }))}
                     />
                     <input
-                      className="rounded-md border border-border bg-background px-3 py-2 text-sm md:col-span-2"
+                      className="rounded-xl border border-border-strong bg-background px-3 py-2 text-sm outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light md:col-span-2"
                       placeholder="Channels (comma-separated: PH, X, HN, Reddit, email...)"
                       value={marketingBrief.channels}
                       onChange={(e) => setMarketingBrief(prev => ({ ...prev, channels: e.target.value }))}
@@ -477,7 +477,7 @@ export function ContentEditor({
               <div className="flex justify-center items-start relative" ref={containerRef}>
                 {/* Document Container with Resize Handles */}
                 <div
-                  className="transition-all relative"
+                  className="relative"
                   style={isFullWidthDocument ? { width: "100%" } : { width: `${documentWidth}px` }}
                 >
                   <div className={cn(

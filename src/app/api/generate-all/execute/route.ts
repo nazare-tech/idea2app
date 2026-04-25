@@ -85,7 +85,7 @@ export async function POST(request: Request) {
 
   const queueRow = await fetchQueueRow(queueSupabase, projectId, user.id)
   if (!queueRow) {
-    return NextResponse.json({ error: "No queue found — call /start first" }, { status: 404 })
+    return NextResponse.json({ error: "No queue found: call /start first" }, { status: 404 })
   }
 
   if (queueRow.status === "cancelled") {
@@ -302,8 +302,8 @@ async function executeQueueItem({
           billingSupabase,
           { ...claimed, credit_cost: creditCost },
           wasCancelled
-            ? `${claimed.label} cancelled — credits refunded (Generate All)`
-            : `${claimed.label} failed — credits refunded (Generate All)`,
+            ? `${claimed.label} cancelled: credits refunded (Generate All)`
+            : `${claimed.label} failed: credits refunded (Generate All)`,
         )
         if (refund.error) {
           console.error("[GenerateAll] Credit refund failed:", refund.error)
@@ -401,7 +401,7 @@ async function cancelClaimedItemAfterAcknowledgement({
     const refund = await refundGenerationQueueItemCredits(
       billingSupabase,
       item,
-      `${item.label} cancelled — credits refunded (Generate All)`,
+      `${item.label} cancelled: credits refunded (Generate All)`,
     )
     if (refund.error) {
       console.error("[GenerateAll] Credit refund failed:", refund.error)

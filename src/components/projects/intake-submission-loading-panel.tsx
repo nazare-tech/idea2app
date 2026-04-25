@@ -141,7 +141,7 @@ export function IntakeSubmissionLoadingPanel({
       <main className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-8">
         <section className="w-full max-w-[800px] bg-white px-6 py-8 sm:px-10" aria-label="Project generation progress">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8A8480]">
+            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-[#8A8480]">
               Analyzing your inputs
             </p>
             <h1 className="mt-2 font-[family:var(--font-display)] text-4xl font-bold leading-none text-[#1C1917] sm:text-5xl">

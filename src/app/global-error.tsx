@@ -16,10 +16,10 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body className="min-h-screen bg-white text-text-primary">
+      <body className="min-h-screen bg-background text-text-primary">
         <main className="flex min-h-screen items-center justify-center px-6 py-16">
-          <div className="w-full max-w-xl border border-border-subtle bg-white p-8 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-secondary">
+          <div className="w-full max-w-xl rounded-lg border border-border-subtle bg-white p-8">
+            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-secondary">
               Application Error
             </p>
             <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">
@@ -38,13 +38,13 @@ export default function GlobalError({
               <button
                 type="button"
                 onClick={reset}
-                className="inline-flex h-11 items-center justify-center bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground"
               >
                 Try Again
               </button>
               <Link
                 href="/projects"
-                className="inline-flex h-11 items-center justify-center border border-border-subtle px-5 text-sm font-semibold text-text-primary"
+                className="inline-flex h-11 items-center justify-center rounded-md border border-border-subtle px-5 text-sm font-semibold text-text-primary"
               >
                 Back to Projects
               </Link>

@@ -40,7 +40,7 @@ export function AuthModal() {
     <Dialog.Root open={isOpen} onOpenChange={(open) => { if (!open) closeModal() }}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-[4px]"
+          className="fixed inset-0 z-50 bg-black/65"
         />
         <Dialog.Content
           aria-describedby={undefined}

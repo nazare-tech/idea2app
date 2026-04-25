@@ -236,7 +236,7 @@ function buildLaunchPlanContent(
   const immediateChannels = channels.slice(0, 3)
   const scheduledChannels = channels.slice(3)
 
-  return `# Marketing Plan — ${name}
+  return `# Marketing Plan: ${name}
 
 ## Brief Inputs
 - **Target audience:** ${brief.targetAudience}

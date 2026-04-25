@@ -261,7 +261,7 @@ export default async function LandingPage() {
           </h2>
 
           <div className="mt-8 rounded-none border border-border-subtle bg-[#F5F0EB] p-6 md:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">Signature Feature</p>
+            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">Signature Feature</p>
             <h3 className="mt-3 text-[clamp(1.4rem,2.4vw,2rem)] leading-tight tracking-[-0.03em] font-semibold">
               One idea. Three design directions. Instant clarity.
             </h3>

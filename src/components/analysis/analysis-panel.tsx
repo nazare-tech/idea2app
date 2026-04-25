@@ -65,7 +65,6 @@ const analysisTypes = [
     description: "Analyze competitors, market positioning, and industry landscape",
     icon: BarChart3,
     credits: CREDIT_COSTS["competitive-analysis"],
-    gradient: "from-text-accent to-[#0ea5e9]",
   },
   {
     id: "gap-analysis",
@@ -73,7 +72,6 @@ const analysisTypes = [
     description: "Identify market gaps, opportunities, and potential challenges",
     icon: Search,
     credits: CREDIT_COSTS["gap-analysis"],
-    gradient: "from-[#34d399] to-text-accent",
   },
 ]
 
@@ -84,7 +82,6 @@ const appTypes = [
     description: "HTML/CSS/JS - Simple and fast hosting",
     icon: Globe,
     credits: CREDIT_COSTS["app-static"],
-    gradient: "from-text-accent to-[#0ea5e9]",
   },
   {
     id: "dynamic",
@@ -92,7 +89,6 @@ const appTypes = [
     description: "Next.js with API routes and database",
     icon: Monitor,
     credits: CREDIT_COSTS["app-dynamic"],
-    gradient: "from-[#7c3aed] to-[#a855f7]",
   },
   {
     id: "spa",
@@ -100,7 +96,6 @@ const appTypes = [
     description: "React SPA with state management",
     icon: Smartphone,
     credits: CREDIT_COSTS["app-spa"],
-    gradient: "from-[#f472b6] to-[#fb923c]",
   },
   {
     id: "pwa",
@@ -108,7 +103,6 @@ const appTypes = [
     description: "PWA with offline support and service workers",
     icon: Zap,
     credits: CREDIT_COSTS["app-pwa"],
-    gradient: "from-[#34d399] to-text-accent",
   },
 ]
 
@@ -227,12 +221,12 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         {/* Action Cards */}
         <div className="grid gap-4 md:grid-cols-2">
           {analysisTypes.map((analysis) => (
-            <Card key={analysis.id} className="group hover:border-text-accent/20 transition-all duration-300 hover:shadow-[0_0_25px_var(--color-accent-primary-whisper)]">
+            <Card key={analysis.id} className="transition-colors duration-200 hover:border-primary/30">
               <CardHeader>
                 <div className="ui-row-between">
                   <div className="ui-row-gap-3">
-                    <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${analysis.gradient} flex items-center justify-center shadow-lg`}>
-                      <analysis.icon className="h-5 w-5 text-white" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-secondary">
+                      <analysis.icon className="h-5 w-5 text-text-primary" />
                     </div>
                     <div>
                       <CardTitle className="ui-section-title">{analysis.name}</CardTitle>
@@ -348,8 +342,8 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
           <CardHeader>
             <div className="ui-row-between">
               <div className="ui-row-gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#fb923c] to-[#f472b6] flex items-center justify-center shadow-lg">
-                  <FileText className="h-5 w-5 text-white" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-secondary">
+                  <FileText className="h-5 w-5 text-text-primary" />
                 </div>
                 <div>
                   <CardTitle className="ui-section-title">Product Requirements Document</CardTitle>
@@ -468,8 +462,8 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
           <CardHeader>
             <div className="ui-row-between">
               <div className="ui-row-gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#a855f7] flex items-center justify-center shadow-lg">
-                  <Code className="h-5 w-5 text-white" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-secondary">
+                  <Code className="h-5 w-5 text-text-primary" />
                 </div>
                 <div>
                   <CardTitle className="ui-section-title">Technical Specification</CardTitle>
@@ -584,8 +578,8 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
       <Card>
         <CardHeader>
           <div className="ui-row-gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#34d399] to-text-accent flex items-center justify-center shadow-lg">
-              <Rocket className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-secondary">
+              <Rocket className="h-5 w-5 text-text-primary" />
             </div>
             <div>
               <CardTitle className="ui-section-title">Generate & Deploy Application</CardTitle>
@@ -600,11 +594,11 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
             {appTypes.map((app) => (
               <div
                 key={app.id}
-                className="group p-4 rounded-xl border border-surface-mid bg-[var(--color-surface-whisper)] hover:border-text-accent/20 hover:bg-text-accent/3 transition-all duration-300"
+                className="group rounded-lg border border-border-subtle bg-white p-4 transition-colors duration-200 hover:border-primary/30 hover:bg-secondary/40"
               >
                 <div className="ui-row-gap-3 mb-3">
-                  <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${app.gradient} flex items-center justify-center shadow-lg group-hover:shadow-[0_0_15px_var(--color-accent-primary-soft)] transition-shadow duration-300`}>
-                    <app.icon className="h-5 w-5 text-white" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-secondary">
+                    <app.icon className="h-5 w-5 text-text-primary" />
                   </div>
                   <div>
                     <h4 className="ui-font-semibold ui-tracking-tight">{app.name}</h4>

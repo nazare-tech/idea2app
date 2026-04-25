@@ -45,7 +45,7 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
     : user?.email?.split("@")[0] || "User"
 
   return (
-    <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-xl px-6 ui-row-between">
+    <header className="h-16 border-b border-border-subtle bg-background px-6 ui-row-between">
         <div className="flex items-center gap-4">
         {children || brand || <h1 className="ui-section-title">Dashboard</h1>}
       </div>

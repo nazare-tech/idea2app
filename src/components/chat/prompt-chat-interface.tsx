@@ -509,7 +509,7 @@ export function PromptChatInterface({
                 className={cn(
                   "relative max-w-[85%]",
                   message.role === "user"
-                    ? "rounded-2xl border border-border/60 bg-muted px-4 py-3 text-foreground shadow-sm"
+                    ? "rounded-2xl border border-border/60 bg-muted px-4 py-3 text-foreground"
                     : "px-1 py-1 text-foreground"
                 )}
               >

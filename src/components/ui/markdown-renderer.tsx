@@ -264,7 +264,7 @@ function MermaidDiagram({ code }: { code: string }) {
         {/* Expand button - bottom right */}
         <button
           onClick={() => setIsExpanded(true)}
-          className="absolute bottom-2 right-2 p-2 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transition-all opacity-0 group-hover:opacity-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+          className="absolute bottom-2 right-2 rounded-md border border-gray-300 bg-white p-2 opacity-0 transition-[background-color,border-color,opacity] duration-200 group-hover:opacity-100 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700"
           title="Expand diagram"
           aria-label="Expand diagram"
         >
@@ -275,7 +275,7 @@ function MermaidDiagram({ code }: { code: string }) {
       {/* Expanded modal view */}
       {isExpanded && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           onClick={() => setIsExpanded(false)}
         >
           <div

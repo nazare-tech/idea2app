@@ -21,7 +21,7 @@ export function ChatAssistantAvatar({
     return (
       <div
         className={cn(
-          "mt-0 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md shadow-sm",
+          "mt-0 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-subtle bg-white",
           className
         )}
       >
@@ -39,7 +39,7 @@ export function ChatAssistantAvatar({
   return (
     <div
       className={cn(
-        "mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[var(--color-accent-primary)] bg-gradient-to-br from-[var(--color-accent-primary-soft)] to-[#7c3aed]/20",
+        "mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border-subtle bg-secondary",
         className
       )}
     >
@@ -75,7 +75,7 @@ export function ChatCopyButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "absolute -bottom-3 right-2 rounded-lg border border-border/40 bg-background/90 p-1.5 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-primary/50",
+        "absolute -bottom-3 right-2 rounded-lg border border-border/40 bg-background/90 p-1.5 opacity-0 transition-[border-color,opacity] duration-200 ease-out-expo group-hover:opacity-100 hover:border-primary/50",
         className
       )}
     >
@@ -200,7 +200,7 @@ export function ChatComposer({
             onKeyDown={onKeyDown}
             placeholder={placeholder}
             className={cn(
-              "min-h-[48px] w-full resize-none rounded-2xl border px-4 py-3 text-sm placeholder:text-text-secondary focus-visible:border-[var(--color-accent-primary-mid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0",
+              "min-h-[48px] w-full resize-none rounded-xl border px-4 py-3 text-sm placeholder:text-text-secondary focus-visible:border-[var(--color-accent-primary-mid)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-primary-light)] focus-visible:ring-offset-0",
               textareaClassName
             )}
             rows={rows}

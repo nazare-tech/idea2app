@@ -57,7 +57,7 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
   }
 
   return (
-    <div data-testid="landing-idea-capture" className="w-full max-w-[720px] border border-border-subtle bg-white p-4 shadow-sm sm:p-5">
+    <div data-testid="landing-idea-capture" className="w-full max-w-[720px] border border-border-subtle bg-white p-4 sm:p-5">
       <label htmlFor="landing-idea" className="text-sm font-semibold text-text-primary">
         Start with your idea
       </label>

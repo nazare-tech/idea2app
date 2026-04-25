@@ -77,6 +77,12 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
   --font-display: var(--font-space-grotesk);
+
+  /* Motion tokens */
+  --motion-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 200ms;
+  --motion-duration-slow: 300ms;
 }
 
 @theme inline {
@@ -134,6 +140,7 @@
   --font-sans: var(--font-sora);
   --font-mono: var(--font-ibm-plex-mono);
   --font-display: var(--font-space-grotesk);
+  --ease-out-expo: var(--motion-ease-out-expo);
 }
 
 * {
@@ -267,14 +274,6 @@ body {
   }
 }
 
-/* Gradient text utility */
-.gradient-text {
-  background: linear-gradient(135deg, var(--primary) 0%, #991b1b 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 /* Staggered entrance animation */
 @keyframes fade-up {
   from {
@@ -288,7 +287,7 @@ body {
 }
 
 .animate-fade-up {
-  animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-up 0.4s var(--motion-ease-out-expo) forwards;
 }
 
 /* Smooth bounce for loading dots */
@@ -302,7 +301,7 @@ body {
 }
 
 .animate-bounce {
-  animation: bounce 1.4s infinite ease-in-out;
+  animation: bounce 1.4s var(--motion-ease-out-expo) infinite;
 }
 
 /* Composer bar glow effect */
@@ -320,7 +319,7 @@ body {
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--motion-duration-slow) var(--motion-ease-out-expo);
   pointer-events: none;
 }
 
@@ -337,7 +336,7 @@ body {
 .shimmer {
   background: linear-gradient(90deg, transparent 25%, rgba(0, 0, 0, 0.03) 50%, transparent 75%);
   background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+  animation: shimmer 2s linear infinite;
 }
 
 /* Landing page glass nav */
@@ -771,22 +770,22 @@ body {
 
 /* Active (animating) state */
 .build-map.is-active .build-map__progress {
-  animation: buildMapDraw var(--bm-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: buildMapDraw var(--bm-duration) var(--motion-ease-out-expo) forwards;
 }
 .build-map.is-active .build-map__node {
-  animation: buildMapPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: buildMapPop 0.4s var(--motion-ease-out-expo) forwards;
   animation-delay: var(--bm-delay);
 }
 .build-map.is-active .build-map__connector {
-  animation: buildMapConnectorDraw 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: buildMapConnectorDraw 0.4s var(--motion-ease-out-expo) forwards;
   animation-delay: var(--bm-delay);
 }
 .build-map.is-active .build-map__card-inner {
-  animation: buildMapCardReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: buildMapCardReveal 0.55s var(--motion-ease-out-expo) forwards;
   animation-delay: var(--bm-delay);
 }
 .build-map.is-active .build-map__mobile-card {
-  animation: buildMapMobileReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: buildMapMobileReveal 0.55s var(--motion-ease-out-expo) forwards;
   animation-delay: var(--bm-delay);
 }
 
@@ -813,6 +812,26 @@ body {
 
 /* Reduced-motion: show the final state immediately, no animation. */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .animate-fade-up {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .animate-bounce,
+  .shimmer {
+    animation: none !important;
+  }
+
   .build-map .build-map__progress { stroke-dashoffset: 0 !important; animation: none !important; }
   .build-map .build-map__connector { stroke-dashoffset: 0 !important; animation: none !important; }
   .build-map .build-map__node,

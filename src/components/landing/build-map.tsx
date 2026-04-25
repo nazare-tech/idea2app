@@ -325,7 +325,7 @@ export function BuildMap() {
               <span className="absolute inset-0 rounded-full border-2 border-primary" />
               <span className="h-2 w-2 rounded-full bg-primary" />
             </span>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-muted">Start</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-text-muted">Start</p>
           </div>
 
           {/* Milestone cards */}
@@ -348,7 +348,7 @@ export function BuildMap() {
               <span className="absolute inset-0 rounded-full border-2 border-text-primary" />
               <span className="h-2 w-2 rounded-full bg-text-primary" />
             </span>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-muted">Ready to Build</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-text-muted">Ready to Build</p>
           </div>
         </div>
       </div>

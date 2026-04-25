@@ -132,7 +132,7 @@ function MarketSignalStrip({ items }: { items: string[] }) {
           key={`${item}-${index}`}
           className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3"
         >
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#999999]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
             Signal {String(index + 1).padStart(2, "0")}
           </p>
           <p className="mt-2 text-[12px] leading-5 text-[#0A0A0A]">{item}</p>
@@ -159,7 +159,7 @@ function DataTable({
             {headers.map((header) => (
               <th
                 key={header}
-                className="border border-[#0A0A0A] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-white"
+                className="border border-[#0A0A0A] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-white"
               >
                 {header}
               </th>
@@ -227,7 +227,7 @@ function CompetitorField({
 
   return (
     <div className="flex items-start gap-3">
-      <p className="w-24 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9E9E9E]">
+      <p className="w-24 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9E9E9E]">
         {label}
       </p>
       <p className="flex-1 text-[11px] leading-[1.45] font-medium text-[#E6E6E6]">
@@ -286,7 +286,7 @@ function FastComparisonTable({
             (label) => (
               <p
                 key={label}
-                className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-white"
+                className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-white"
               >
                 {label}
               </p>
@@ -412,7 +412,7 @@ function CompetitorProfiles({
                         <ArrowUpRight className="h-3.5 w-3.5 text-white" />
                       </div>
                     )}
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
                       {getCompetitorTag(competitor)}
                     </p>
                   </div>
@@ -513,7 +513,7 @@ function PositioningMap({
         {(positioningMap.xAxis || positioningMap.yAxis) && (
           <div className="grid gap-2 md:grid-cols-2">
             <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#999999]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
                 X Axis
               </p>
               <p className="mt-1 text-[12px] leading-5 text-[#0A0A0A]">
@@ -521,7 +521,7 @@ function PositioningMap({
               </p>
             </div>
             <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#999999]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
                 Y Axis
               </p>
               <p className="mt-1 text-[12px] leading-5 text-[#0A0A0A]">
@@ -534,16 +534,16 @@ function PositioningMap({
         <div className="relative h-[320px] border border-[#E0E0E0] bg-[#FAFAFA]">
           <div className="absolute inset-x-[14%] top-1/2 h-px bg-[#E0E0E0]" />
           <div className="absolute inset-y-[14%] left-1/2 w-px bg-[#E0E0E0]" />
-          <p className="absolute bottom-3 left-4 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+          <p className="absolute bottom-3 left-4 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.18em] text-[#777777]">
             Low {positioningMap.xAxis ?? "X"}
           </p>
-          <p className="absolute bottom-3 right-4 max-w-[24%] whitespace-normal text-right font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+          <p className="absolute bottom-3 right-4 max-w-[24%] whitespace-normal text-right font-mono text-[10px] uppercase leading-4 tracking-[0.18em] text-[#777777]">
             High {positioningMap.xAxis ?? "X"}
           </p>
-          <p className="absolute left-4 top-3 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+          <p className="absolute left-4 top-3 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.18em] text-[#777777]">
             High {positioningMap.yAxis ?? "Y"}
           </p>
-          <p className="absolute right-4 top-3 font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]">
+          <p className="absolute right-4 top-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[#777777]">
             Map
           </p>
 
@@ -570,7 +570,7 @@ function PositioningMap({
                   top: `${86 - normalizedY * 7.2}%`,
                 }}
               >
-                <p className="font-mono text-[10px] uppercase tracking-[0.12em]">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em]">
                   {point.competitor}
                 </p>
               </div>
@@ -585,7 +585,7 @@ function PositioningMap({
                 key={`${point.competitor}-rationale`}
                 className="border border-[#E0E0E0] px-4 py-3"
               >
-                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#999999]">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
                   {point.competitor}
                 </p>
                 <p className="mt-1 text-[12px] leading-5 text-[#0A0A0A]">
@@ -619,7 +619,7 @@ function SWOTQuadrant({
         tone === "amber" && "border-[#FED7AA] bg-[#FFF7ED]"
       )}
     >
-      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]">
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#777777]">
         {label}
       </p>
       <p className="mt-2 text-[12px] leading-5 text-[#0A0A0A]">{value}</p>

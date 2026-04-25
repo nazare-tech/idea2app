@@ -237,8 +237,8 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
               className={cn(
                 "relative max-w-[80%] rounded-2xl px-4 py-3",
                 message.role === "user"
-                  ? "bg-gradient-to-r from-[var(--color-text-accent)] to-[#7c3aed] text-white shadow-[0_0_15px_var(--color-accent-primary)]"
-                  : "border border-surface-mid bg-[var(--color-surface-ink-soft)] backdrop-blur-sm"
+                  ? "bg-text-primary text-white"
+                  : "border border-border-subtle bg-white"
               )}
             >
               {message.role === "user" ? (
@@ -287,7 +287,7 @@ export function ChatInterface({ projectId, initialMessages, credits }: ChatInter
         placeholder="Describe your business idea or ask a question..."
         textareaRef={textareaRef}
         className="border-t border-surface-mid pt-4"
-        textareaClassName="max-h-[200px] border-surface-strong bg-surface-soft pr-12 transition-all duration-200"
+        textareaClassName="max-h-[200px] border-border-subtle bg-white pr-12 transition-[border-color,box-shadow] duration-200"
         footer={
           <p className="mt-2 text-xs text-muted-foreground">
             {formatRemainingCredits(credits)} | Press Enter to send, Shift+Enter for new line

@@ -42,7 +42,7 @@ export const uiStylePresets = {
   subtleLinkHover:
     "hover:text-text-primary",
   authFormMeta:
-    "text-xs uppercase tracking-[0.12em] text-text-muted",
+    "text-xs uppercase tracking-[0.18em] text-text-muted",
   authCardContainer:
     "mx-auto w-full max-w-[520px] border-border-subtle bg-card",
   authLinkUnderline:

@@ -159,7 +159,7 @@ function StitchConceptCard({
     <div className="overflow-hidden rounded-xl border border-border bg-white">
       {/* Full-width header */}
       <div className="flex items-center gap-3 border-b border-border px-5 py-3">
-        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
           Option {label}
         </span>
         <span className="text-sm font-medium text-foreground">{title}</span>
@@ -191,7 +191,7 @@ function StitchConceptCard({
         <div className="flex w-72 shrink-0 flex-col justify-between border-l border-border p-5">
           <div className="space-y-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Option {label}
               </p>
               <p className="mt-1 text-sm font-medium text-foreground">{title}</p>

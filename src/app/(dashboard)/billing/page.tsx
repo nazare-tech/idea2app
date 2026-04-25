@@ -154,11 +154,11 @@ export default function BillingPage() {
 
       {/* Current Plan & Credits */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="group hover:border-[rgba(0,212,255,0.2)] transition-all duration-300">
+        <Card className="transition-colors duration-200 hover:border-text-primary/20">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border border-[rgba(0,212,255,0.15)] flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.1)]">
-                <CreditCard className="h-5 w-5 text-[#00d4ff]" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-secondary">
+                <CreditCard className="h-5 w-5 text-text-primary" />
               </div>
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Current Plan
@@ -190,11 +190,11 @@ export default function BillingPage() {
           </CardContent>
         </Card>
 
-        <Card className="group hover:border-[rgba(124,58,237,0.2)] transition-all duration-300">
+        <Card className="transition-colors duration-200 hover:border-text-primary/20">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#7c3aed]/20 to-[#f472b6]/20 border border-[rgba(124,58,237,0.15)] flex items-center justify-center shadow-[0_0_15px_rgba(124,58,237,0.1)]">
-                <Coins className="h-5 w-5 text-[#a78bfa]" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-secondary">
+                <Coins className="h-5 w-5 text-primary" />
               </div>
               <CardTitle className="text-sm font-medium text-muted-foreground">
 Token Balance
@@ -206,7 +206,7 @@ Token Balance
               <CreditBalance
                 credits={credits}
                 className="text-2xl font-black tracking-tight"
-                unlimitedClassName="gradient-text"
+                unlimitedClassName="text-primary"
               />
             </p>
             <p className="text-sm text-muted-foreground mt-1">
@@ -229,36 +229,36 @@ Token Balance
             return (
               <Card
                 key={plan.id}
-                className={`relative group transition-all duration-300 hover:-translate-y-1 ${
+                className={`relative transition-[border-color,transform] duration-200 ease-out-expo hover:-translate-y-1 ${
                   isCurrentPlan
-                    ? "border-[rgba(0,212,255,0.4)] shadow-[0_0_25px_rgba(0,212,255,0.15)]"
+                    ? "border-primary"
                     : isPro
-                    ? "border-[rgba(124,58,237,0.3)] shadow-[0_0_25px_rgba(124,58,237,0.1)] hover:shadow-[0_0_35px_rgba(124,58,237,0.2)]"
-                    : "hover:border-[rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,212,255,0.08)]"
+                    ? "border-primary/40 hover:border-primary"
+                    : "hover:border-text-primary/20"
                 }`}
               >
                 {isPro && !isCurrentPlan && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-[#7c3aed] to-[#f472b6] text-white border-0 shadow-[0_0_15px_rgba(124,58,237,0.3)]">Most Popular</Badge>
+                    <Badge>Most Popular</Badge>
                   </div>
                 )}
                 {isCurrentPlan && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-[#00d4ff] to-[#7c3aed] text-white border-0 shadow-[0_0_15px_rgba(0,212,255,0.3)]">Current Plan</Badge>
+                    <Badge>Current Plan</Badge>
                   </div>
                 )}
                 <CardHeader>
-                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center mb-3 border shadow-lg ${
+                  <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-lg border ${
                     isPro
-                      ? "bg-gradient-to-br from-[#7c3aed]/20 to-[#f472b6]/20 border-[rgba(124,58,237,0.2)] shadow-[0_0_20px_rgba(124,58,237,0.15)]"
-                      : "bg-gradient-to-br from-[#00d4ff]/20 to-[#7c3aed]/20 border-[rgba(0,212,255,0.15)] shadow-[0_0_15px_rgba(0,212,255,0.1)]"
+                      ? "border-primary/30 bg-primary/5"
+                      : "border-border-subtle bg-secondary"
                   }`}>
-                    <Icon className={`h-6 w-6 ${isPro ? "text-[#a78bfa]" : "text-[#00d4ff]"}`} />
+                    <Icon className={`h-6 w-6 ${isPro ? "text-primary" : "text-text-primary"}`} />
                   </div>
                   <CardTitle className="font-bold">{plan.name}</CardTitle>
                   <CardDescription>{plan.description}</CardDescription>
                   <div className="mt-2">
-                    <span className={`text-3xl font-black tracking-tight ${isPro ? "gradient-text" : ""}`}>
+                    <span className={`text-3xl font-black tracking-tight ${isPro ? "text-primary" : ""}`}>
                       {isFree ? "Free" : formatPrice(plan.price_monthly)}
                     </span>
                     {!isFree && (
@@ -270,7 +270,7 @@ Token Balance
                   <ul className="space-y-2.5">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-center gap-2.5 text-sm">
-                        <div className="h-5 w-5 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-400/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border-subtle bg-secondary">
                           <Check className="h-3 w-3 text-emerald-400" />
                         </div>
                         {feature}
@@ -331,7 +331,7 @@ Token Balance
             ].map((item) => (
               <div
                 key={item.name}
-                className="flex items-center justify-between p-3.5 rounded-xl bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] hover:border-[rgba(0,212,255,0.15)] hover:bg-[rgba(0,212,255,0.03)] transition-all duration-200"
+                className="flex items-center justify-between rounded-lg border border-border-subtle bg-white p-3.5 transition-colors duration-200 hover:border-text-primary/20 hover:bg-secondary/40"
               >
                 <span className="text-sm font-medium">{item.name}</span>
                 <Badge variant="outline" className="font-mono text-xs">{BASE_ACTION_TOKENS[item.action as keyof typeof BASE_ACTION_TOKENS]} tokens</Badge>
@@ -339,7 +339,7 @@ Token Balance
             ))}
           </div>
 
-          <div className="rounded-xl border border-[rgba(255,255,255,0.08)] p-4 text-sm text-muted-foreground">
+          <div className="rounded-lg border border-border-subtle bg-white p-4 text-sm text-muted-foreground">
             <p>Model multiplier examples (full report = Competitive + PRD + MVP + Tech Spec):</p>
             <ul className="mt-2 space-y-1">
               <li>Fast model: ~{fullReportFast} tokens</li>

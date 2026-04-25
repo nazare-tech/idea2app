@@ -105,7 +105,7 @@ async function cancelQueueItem(
     const refund = await refundGenerationQueueItemCredits(
       billingSupabase,
       item,
-      `${item.label} cancelled — credits refunded (Generate All)`,
+      `${item.label} cancelled: credits refunded (Generate All)`,
     )
     if (refund.error) {
       console.error("[GenerateAll] Credit refund on cancellation failed:", refund.error)

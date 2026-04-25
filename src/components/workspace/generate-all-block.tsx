@@ -254,7 +254,7 @@ export function GenerateAllBlock({
                       : isCancelled
                         ? `${completedCount} / ${totalActionable} completed before cancellation`
                         : isInterrupted
-                          ? `${completedCount} / ${totalActionable} completed — page was refreshed mid-generation`
+                          ? `${completedCount} / ${totalActionable} completed: page was refreshed mid-generation`
                           : "Create your complete business plan in one click"}
               </p>
             </div>
@@ -279,8 +279,8 @@ export function GenerateAllBlock({
         <div className="px-5 pt-3 pb-1">
           <div className="h-[3px] w-full rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
+              className="h-full origin-left rounded-full bg-primary transition-transform duration-500 ease-out-expo"
+              style={{ transform: `scaleX(${progressPercent / 100})` }}
             />
           </div>
         </div>
