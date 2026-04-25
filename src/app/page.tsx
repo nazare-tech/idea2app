@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 import { Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
 import { LandingIdeaCapture } from "@/components/landing/landing-idea-capture"
 import { WaitlistForm } from "@/components/landing/waitlist-form"
 import { PRICING_CARD_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
@@ -14,6 +13,7 @@ import { ArrowRight } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { BuildMap } from "@/components/landing/build-map"
+import { TestimonialBand } from "@/components/landing/testimonial-band"
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -234,6 +234,10 @@ export default async function LandingPage() {
       </SectionCard>
 
       <SectionCard>
+        <TestimonialBand />
+      </SectionCard>
+
+      <SectionCard>
         <section id="features" className="py-3">
           <p className="ui-kicker-label">Features</p>
           <h2 className="mt-4 text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
@@ -274,10 +278,6 @@ export default async function LandingPage() {
             ))}
           </div>
         </section>
-      </SectionCard>
-
-      <SectionCard>
-        <InspirationProjectsSection />
       </SectionCard>
 
       <SectionCard>
