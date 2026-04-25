@@ -8,10 +8,9 @@ import {
   CompetitiveOverviewSection,
   CompetitiveDetailSection,
 } from "@/components/analysis/competitive-analysis-document"
-import { GenerateAllBlock } from "@/components/workspace/generate-all-block"
 import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
 import type { StreamStage } from "@/lib/parse-document-stream"
-import { useGenerateAll } from "@/stores/generate-all-store"
+import { cn } from "@/lib/utils"
 
 interface DocumentData {
   content: string | null
@@ -24,7 +23,6 @@ interface DocumentData {
 
 interface ScrollableContentProps {
   projectId: string
-  credits: number
   documents: Record<string, DocumentData>
 }
 
@@ -50,9 +48,11 @@ function EmptyState({ label }: { label: string }) {
 
 function DocumentWrapper({
   navKey,
+  contentClassName,
   children,
 }: {
   navKey: string
+  contentClassName?: string
   children: React.ReactNode
 }) {
   return (
@@ -61,7 +61,7 @@ function DocumentWrapper({
       className="rounded-lg border border-border-subtle bg-card"
       data-section={navKey}
     >
-      <div className="px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
+      <div className={cn("px-5 py-6 sm:px-8 lg:px-10 lg:py-8", contentClassName)}>
         {children}
       </div>
     </div>
@@ -258,14 +258,12 @@ function MockupsSection({ content, projectId }: { content: string; projectId: st
 }
 
 export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentProps>(
-  function ScrollableContent({ projectId, credits, documents }, ref) {
+  function ScrollableContent({ projectId, documents }, ref) {
     const competitiveData = documents["competitive"]
     const prdData = documents["prd"]
     const mvpData = documents["mvp"]
     const mockupsData = documents["mockups"]
     const launchData = documents["launch"]
-    const generateAllStatus = useGenerateAll(projectId, (state) => state.status)
-
     // Defer rendering of all sections below the first one to the next animation
     // frame. This allows the browser to paint the initial layout (first section +
     // skeletons) before doing the heavy markdown/structured-data rendering work,
@@ -282,12 +280,8 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         ref={ref}
         className="flex-1 space-y-4 overflow-y-auto bg-background px-3 py-3 sm:px-6 sm:py-4 lg:px-8"
       >
-        {generateAllStatus !== "idle" && (
-          <GenerateAllBlock projectId={projectId} credits={credits} />
-        )}
-
         {/* Overview — rendered immediately (first visible section) */}
-        <DocumentWrapper navKey="overview">
+        <DocumentWrapper navKey="overview" contentClassName="space-y-6">
           {competitiveData?.isGenerating ? (
             <DocumentSkeleton label="Overview" />
           ) : competitiveData?.content ? (
@@ -303,7 +297,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
 
         {/* All sections below are deferred to next animation frame */}
 
-        <DocumentWrapper navKey="market-research">
+        <DocumentWrapper navKey="market-research" contentClassName="space-y-6">
           {!renderDeferred ? (
             <DocumentSkeleton label="Market Research" />
           ) : competitiveData?.isGenerating ? (

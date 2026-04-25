@@ -830,7 +830,7 @@ export function CompetitiveOverviewSection({
   const { structured } = viewModel
 
   return (
-    <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
+    <>
       <header className="border border-[#E0E0E0] bg-white px-6 py-5">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Market Intelligence
@@ -864,7 +864,7 @@ export function CompetitiveOverviewSection({
           items={structured.strategicRecommendations}
         />
       </div>
-    </div>
+    </>
   )
 }
 
@@ -875,7 +875,6 @@ export function CompetitiveOverviewSection({
 export function CompetitiveDetailSection({
   content,
   metadata,
-  projectId,
 }: CompetitiveAnalysisDocumentProps) {
   const viewModel = useMemo(
     () => getCompetitiveAnalysisViewModel(content, metadata),
@@ -889,7 +888,7 @@ export function CompetitiveDetailSection({
   const { structured } = viewModel
 
   return (
-    <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
+    <>
       <header className="border border-[#E0E0E0] bg-white px-6 py-5">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Deep Analysis
@@ -966,7 +965,7 @@ export function CompetitiveDetailSection({
           items={structured.risksAndCountermoves}
         />
       </div>
-    </div>
+    </>
   )
 }
 

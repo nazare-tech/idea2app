@@ -1174,7 +1174,6 @@ export function ProjectWorkspace({
           <ScrollableContent
             ref={scrollContainerRef}
             projectId={project.id}
-            credits={credits}
             documents={scrollableDocuments}
           />
         </div>
