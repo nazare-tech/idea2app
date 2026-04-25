@@ -257,7 +257,7 @@ function MermaidDiagram({ code }: { code: string }) {
           dangerouslySetInnerHTML={{ __html: svg }}
           style={{
             fontSize: '14px',
-            fontFamily: 'ui-monospace, 'Fira Mono', monospace',
+            fontFamily: "ui-monospace, 'Fira Mono', monospace",
           }}
         />
 
@@ -308,7 +308,7 @@ function MermaidDiagram({ code }: { code: string }) {
                 dangerouslySetInnerHTML={{ __html: svg }}
                 style={{
                   fontSize: '20px',
-                  fontFamily: 'ui-monospace, 'Fira Mono', monospace',
+                  fontFamily: "ui-monospace, 'Fira Mono', monospace",
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
                   transformOrigin: 'center center',
                   transition: isPanning ? 'none' : 'transform 0.1s ease-out',
