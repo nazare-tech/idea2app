@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useRef, useMemo, useCallback, useSyncExternalStore } from "react"
-import ReactMarkdown from "react-markdown"
+import ReactMarkdown, { type Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { renderMermaid } from "beautiful-mermaid"
 import { Maximize2, Minimize2, RotateCcw } from "lucide-react"
@@ -106,6 +106,91 @@ interface MarkdownRendererProps {
   projectId?: string
   /** Disable remarkGfm (tables, etc.) — useful for ASCII art content where │ gets misinterpreted as table syntax */
   disableGfm?: boolean
+}
+
+type MarkdownTableColumnKind = "compact" | "label" | "prose" | "default"
+
+const COMPACT_TABLE_HEADERS = new Set([
+  "#",
+  "id",
+  "no",
+  "no.",
+  "number",
+  "rank",
+])
+
+const LABEL_TABLE_HEADER_PATTERN =
+  /^(role|owner|priority|status|phase|persona|segment|type|tier|plan|feature|area|category)$/i
+
+const PROSE_TABLE_HEADER_PATTERN =
+  /(responsib|description|summary|goal|metric|target|criteria|notes?|rationale|requirement|story|risk|mitigation|outcome|success|value|problem|solution|action|task|scope|deliverable)/i
+
+function getTextFromReactNode(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node)
+  }
+
+  if (Array.isArray(node)) {
+    return node.map(getTextFromReactNode).join("")
+  }
+
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) {
+    return getTextFromReactNode(node.props.children)
+  }
+
+  return ""
+}
+
+function getHeaderTextsFromReactNode(node: React.ReactNode): string[] {
+  const headers: string[] = []
+
+  React.Children.forEach(node, (child) => {
+    if (!React.isValidElement<{ children?: React.ReactNode }>(child)) {
+      return
+    }
+
+    if (child.type === "th") {
+      headers.push(getTextFromReactNode(child.props.children).trim())
+      return
+    }
+
+    headers.push(...getHeaderTextsFromReactNode(child.props.children))
+  })
+
+  return headers
+}
+
+function getMarkdownTableColumnKind(header: string): MarkdownTableColumnKind {
+  const normalizedHeader = header.trim().toLowerCase()
+
+  if (COMPACT_TABLE_HEADERS.has(normalizedHeader)) {
+    return "compact"
+  }
+
+  if (PROSE_TABLE_HEADER_PATTERN.test(header)) {
+    return "prose"
+  }
+
+  if (LABEL_TABLE_HEADER_PATTERN.test(header)) {
+    return "label"
+  }
+
+  return "default"
+}
+
+function getMarkdownTableColumnStyle(
+  kind: MarkdownTableColumnKind
+): React.CSSProperties {
+  switch (kind) {
+    case "compact":
+      return { width: "64px" }
+    case "label":
+      return { width: "220px" }
+    case "prose":
+      return { width: "420px" }
+    default:
+      return { width: "260px" }
+  }
 }
 
 function MermaidDiagram({ code }: { code: string }) {
@@ -389,15 +474,16 @@ export function MarkdownRenderer({
     [&_pre]:bg-muted/60 [&_pre]:border [&_pre]:border-border-subtle [&_pre]:rounded-lg [&_pre]:ui-p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:ui-font-mono
     [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-text-primary [&_pre_code]:ui-font-mono [&_pre_code]:whitespace-pre [&_pre_code]:text-[14px] [&_pre_code]:leading-relaxed
     [&_blockquote]:border [&_blockquote]:border-border-subtle [&_blockquote]:bg-muted/40 [&_blockquote]:rounded-md [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-[14px] [&_blockquote]:text-text-secondary [&_blockquote]:my-3
-    [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse
-    [&_th]:border [&_th]:border-border-subtle [&_th]:bg-muted [&_th]:ui-px-4 [&_th]:ui-py-2 [&_th]:text-left [&_th]:ui-font-semibold [&_th]:text-text-primary
-    [&_td]:border [&_td]:border-border-subtle [&_td]:ui-px-4 [&_td]:ui-py-2 [&_td]:text-[14px] [&_td]:text-text-secondary
+    [&_table]:w-full [&_table]:min-w-max [&_table]:table-auto [&_table]:border-collapse
+    [&_th]:border [&_th]:border-border-subtle [&_th]:bg-muted [&_th]:px-2 [&_th]:py-2 [&_th]:text-left [&_th]:align-top [&_th]:ui-font-semibold [&_th]:text-text-primary [&_th]:whitespace-normal [&_th]:break-words
+    [&_td]:border [&_td]:border-border-subtle [&_td]:px-2 [&_td]:py-2 [&_td]:align-top [&_td]:text-[14px] [&_td]:leading-relaxed [&_td]:text-text-secondary [&_td]:whitespace-normal [&_td]:break-words [&_td]:[overflow-wrap:anywhere]
     [&_hr]:border-border-subtle [&_hr]:my-4
   `.trim()
 
   // Custom code component for syntax highlighting and mermaid diagrams
-  const components = useMemo(() => ({
-    code: ({ className, children, ...props }: { className?: string; children?: React.ReactNode }) => {
+  const components = useMemo<Components>(() => ({
+    code: ({ node: _node, className, children, ...props }) => {
+      void _node
       const match = /language-(\w+)/.exec(className || "")
       const language = match ? match[1] : ""
 
@@ -415,6 +501,30 @@ export function MarkdownRenderer({
       }
 
       return <code className={className} {...props}>{children}</code>
+    },
+    table: ({ node: _node, children, ...props }) => {
+      void _node
+      const headers = getHeaderTextsFromReactNode(children)
+
+      return (
+        <div className="my-4 w-full overflow-x-auto rounded-lg border border-border-subtle">
+          <table {...props}>
+            {headers.length > 0 ? (
+              <colgroup>
+                {headers.map((header, index) => (
+                  <col
+                    key={`${header}-${index}`}
+                    style={getMarkdownTableColumnStyle(
+                      getMarkdownTableColumnKind(header)
+                    )}
+                  />
+                ))}
+              </colgroup>
+            ) : null}
+            {children}
+          </table>
+        </div>
+      )
     },
   }), [])
 
