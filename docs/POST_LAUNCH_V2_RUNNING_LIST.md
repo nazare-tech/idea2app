@@ -1,6 +1,6 @@
-# Post-MVP Security V2 Running List
+# Post-Launch V2 Running List
 
-Purpose: track security work that should be revisited after the MVP launch.
+Purpose: track security, reliability, architecture, and product hardening work that should be revisited after launch.
 
 Review cadence: every 15 days. During each review, decide what can move into the active implementation queue, what should stay deferred, and what can be closed.
 
@@ -10,6 +10,7 @@ Last updated: 2026-04-25
 
 - 2026-04-25: Created from the security review follow-up decisions. Live HTML previews stay enabled for MVP, while preview isolation/replacement moves here.
 - 2026-04-25: MVP fixes implemented for server-only refunds, PDF export auth, simple in-memory rate limiting, Stripe webhook idempotency, baseline headers, Stitch proxy ownership checks, prompt-chat model hardening, and refund-on-failure paths. Distributed rate limiting, dependency upgrades, live preview replacement/isolation, and single-RPC project creation remain here.
+- 2026-04-25: Renamed from the security-only running list to a generic post-launch V2 list. Added active-document locking and explicit versioning as a reliability/product hardening follow-up.
 
 ## Running List
 
@@ -104,3 +105,25 @@ Future work:
 Review questions:
 - Are users hitting project creation conflicts or lock timeouts?
 - Can project/intake/queue creation move fully into SQL without making the route hard to maintain?
+
+### 6. Add DB-backed active-document locking and explicit document versioning
+
+Status: deferred until after launch unless duplicate races reappear
+Source finding: `plans/prevent-duplicate-active-documents-review.md`
+
+Current MVP decision:
+- Default document generation is generate-missing-only.
+- Direct duplicate requests return `200 OK` with `{ skipped: true, existingDocument }`.
+- Generate All start and execution skip existing active documents without charging credits.
+- Future document versioning must be a separate explicit action.
+
+Future work:
+- Add a DB-backed per-project/document lock around generation so two truly concurrent first-time requests cannot both insert active documents.
+- Design explicit document versioning as its own route/action, such as `createDocumentVersion`, instead of bypassing the default generation guard accidentally.
+- Keep project/document keys stable across versions so the UI still treats each document type as one logical workspace section.
+- Decide whether version rows should stay in current output tables or move behind an explicit `document_versions` abstraction.
+
+Review questions:
+- Are duplicate rows still appearing after the code-level guard?
+- Should versioning be user-facing before or after richer document editing?
+- Does the active-document lock belong in a small SQL RPC, advisory lock, or a dedicated lock table?

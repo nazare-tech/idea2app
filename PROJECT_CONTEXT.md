@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-04-25 (MVP Security Hardening Follow-ups)
+**Last Updated**: 2026-04-25 (Prompt Tab Deprecation + Active Document Guards)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -12,12 +12,7 @@
 ### Core Functionality
 
 - **Idea Intake Wizard**: Canonical new-project flow at `/projects/new`. Users enter an idea, answer 4-5 AI-generated structured questions, then the app creates the project and starts the bundled onboarding document-generation queue. The wizard stores readable summaries in `projects.description`, structured intake JSON in `project_intakes`, and shows the Maker Compass loading state until Overview + Market Research are ready.
-- **Prompt Tab AI Chat**: Interactive AI conversation in the Prompt tab for optional follow-up refinement after project creation. The old initial Prompt Chat Q&A is no longer the primary new-project intake for wizard-created projects, and structured-intake projects do not auto-start Prompt Chat. Features:
-  - Context-aware question generation based on idea type (tool, marketplace, service, etc.)
-  - Automatic idea summarization after sufficient context gathering
-  - **AI-generated project name for legacy Prompt flows**: after the idea summary is produced, a second server-side AI call extracts a short 3–6 word title-case name and saves it to `projects.name`. Wizard-created projects generate the name during `/api/projects/create-from-intake` before the workspace opens.
-  - Configurable system prompts for customization
-  - Persistent conversation history
+- **Prompt Tab AI Chat Deprecated**: The Prompt tab is no longer reachable for any project, including legacy Prompt Chat projects. Direct project URLs with `?tab=prompt` are silently redirected to the workspace Overview, the Idea Brief nav entry is removed, and `/api/prompt-chat` returns `410 Gone`. Historical prompt chat rows are preserved unless explicitly deleted in a separate data cleanup.
 - **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
 - **Competitive Analysis**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a full-width Pencil-faithful designed page, not generic markdown. The UI is built from typed parsing of the stored markdown source and includes founder verdict, competitor profiles, workflow matrix, pricing, audience segments, positioning, GTM signals, gap analysis, differentiation wedges, moat/defensibility, SWOT, risks, MVP wedge recommendation, and strategic recommendations. Direct competitor entries now expect linked H3 headings plus concise fields for overview, core product, positioning, strengths, key edge, limitations, pricing model, and target audience so the app can render dense competitor cards and a fast-comparison table. Legacy or malformed documents fall back to markdown with upgrade guidance.
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
@@ -41,6 +36,7 @@
   - Progressive Web Apps (PWA)
 - **Deployment**: Direct deployment capabilities for generated applications
 - **Project-based Pricing Migration**: Project creation is guarded by monthly project allowance. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
+- **Generate-Missing-Only Documents**: Planning documents are active singletons by default. Direct generation routes and Generate All/onboarding execution check for an existing active document before credits or external AI calls; duplicate attempts return/record a skipped existing output instead of inserting another row. Future document versioning must be a separate explicit product action.
 
 ### User Workflow
 
@@ -178,22 +174,22 @@
    - The project is inserted with that generated name, or with a fallback title derived from the idea if the AI call is unavailable
    - The workspace header is editable immediately for wizard-created projects because `project.description` is already populated
 
-5. **Prompt Tab AI Name Generation** (legacy/follow-up sub-flow within Prompt Chat):
-   - When `stage === "summary"` and `project.name === "Untitled"`, the `/api/prompt-chat` route makes a second AI call after saving the description
-   - A short name (3–6 words, title case) is saved to `projects.name` in Supabase
-   - The `done` stream event includes a `projectName` field
-   - `PromptChatInterface` fires `onProjectNameGenerated(name)` on receipt → `ProjectWorkspace` updates header state (`isNameSet = true`, fade-in animation)
-   - If name generation fails, it is silent — the `done` event emits without `projectName` and a 3 s fallback timer unblocks editing
+5. **Deprecated Prompt Chat Flow**:
+   - Prompt Chat is no longer a supported intake, refinement, or naming path.
+   - Project names are generated during `/api/projects/create-from-intake` for wizard-created projects.
+   - `/api/prompt-chat` is retained only as a deprecated endpoint and returns `410 Gone`.
+   - Project workspace navigation starts at Overview; `?tab=prompt` is blocked and redirected to Overview.
 
 6. **Analysis Flow** (individual tab generation):
    - Client requests analysis (competitive, PRD, MVP plan, or tech spec) from the workspace `ContentEditor`
-   - Server checks credits, deducts if available; refunds through the service-role `refund_credits` RPC on generation failure
+   - Server verifies project ownership and checks `src/lib/active-document-policy.ts` for an existing active document before credit deduction or external generation. Duplicate requests return `200 OK` with `{ skipped: true, reason: "document_already_exists", existingDocument }` and do not charge credits.
+   - If no active document exists, the server checks credits, deducts if available, and refunds through the service-role `refund_credits` RPC on generation failure
    - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`). When a `project_intakes` row exists, generation context is formatted through `formatProjectIntakeForAi()` and combined with the human-readable project summary; otherwise `projects.description` is used as the fallback:
      - **Competitive Analysis**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail. External API calls use `withRetry` (3 retries, exponential backoff on 429/5xx). All OpenRouter synthesis calls have a 120s `AbortSignal` timeout.
      - **PRD**: OpenRouter LLM call with detailed system prompt, receives a bounded competitive-analysis context excerpt so onboarding retries stay under the 120s route timeout
      - **MVP Plan**: OpenRouter LLM call with detailed system prompt, receives a bounded PRD context excerpt so downstream generation is less likely to strand the queue
      - **Tech Spec**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
-   - Result saved to the appropriate table (`analyses`, `prds`, `mvp_plans`, or `tech_specs`)
+   - Result saved to the appropriate table (`analyses`, `prds`, `mvp_plans`, or `tech_specs`). Future row-based versioning should use an explicit versioning route/action rather than the default generate path.
    - Page reloads to surface the new version
 
 7. **Generate All / Onboarding Generation Flow** (server-side, durable):
@@ -208,6 +204,7 @@
    - Manual Generate All starts rebuild the queue server-side from allowed document types. The server derives source, credit status, credit cost, dependencies, attempts, model ids, run ids, and idempotency keys; client-supplied authority fields are ignored.
    - Bundled onboarding generation is trusted only when the parent queue has server-created onboarding metadata (`mode`, `source`, `version`, and `runId`) and item run metadata matches that queue.
    - Server-side execute route runs dependency-aware batches through the shared `generateProjectDocument()` service with max concurrency 2. Competitive and Marketing can run independently; PRD waits on Competitive; MVP waits on PRD; Mockups wait on MVP.
+   - Queue start and execution verify current DB state through `active-document-policy.ts`. Already-existing documents are marked `skipped`, linked to their existing `output_table`/`output_id`, and not charged; stale or retried queue items cannot casually create a second active planning document.
    - Per-step: checks cancellation, optionally deducts credits for legacy/manual runs, runs the pipeline, requires a saved output id before marking the item done, updates the normalized item row, and records `output_table`/`output_id`
    - On step failure: legacy/manual runs refund credits; onboarding runs skip refunds because bundled project creation does not charge per-document credits. Onboarding items retry up to their configured `maxAttempts`.
    - Stale `generating` rows older than the 150s executor lease are reset to `pending` with one retry attempt available from execute/status polling, so interrupted server runs do not strand a queue.
@@ -297,9 +294,9 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 11. **Path Aliases**: Clean imports using `@/*` aliases
 12. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
 13. **Fixed Default Models Per Tab**: AI model selection was removed from the UI. Each pipeline uses a fixed default defined in `src/lib/prompt-chat-config.ts` → `DEFAULT_MODELS`. Change models there — one place for all tabs.
-14. **Generate-Once Documents**: The Generate button is hidden after a document is successfully generated. Failed generations (no content saved) naturally re-expose the button for retry.
+14. **Generate-Missing-Only Documents**: The Generate button is hidden after a document is successfully generated, and server routes also enforce one active planning document per project/document type by default. Direct duplicate API requests return `200 skipped` with existing output metadata and no credit charge. Failed generations (no content saved) naturally re-expose the button for retry. Future versioning must be introduced as a separate explicit action.
 15. **PDF-Only Export**: Documents export as PDF only (markdown download removed). The header shows a single "Download PDF" button.
-16. **AI-Generated Project Name**: Wizard-created projects generate a short name during final intake submission before the workspace opens. Legacy Prompt-tab project starts can still stream a generated name through the Prompt Chat `done` event. `isNameSet` state (in `ProjectWorkspace`) gates editing — initialized as `project.name !== "Untitled" || !!project.description` so existing and wizard-created projects are never locked.
+16. **AI-Generated Project Name**: Wizard-created projects generate a short name during final intake submission before the workspace opens. Legacy Prompt-tab project starts are deprecated and no longer generate project names. `isNameSet` state (in `ProjectWorkspace`) gates editing — initialized as `project.name !== "Untitled" || !!project.description` so existing and wizard-created projects are never locked.
 17. **URL-Driven Auth Modal**: Landing page auth uses `?modal=auth&mode=signin|signup` URL params to drive a Radix Dialog modal, keeping users in context. The `/auth` page is unchanged and still used for email confirmation redirects. Both surfaces share `AuthFormContent`. No new dependencies — `@radix-ui/react-dialog` was already installed.
 18. **WCAG AA Contrast Compliance**: `--muted-foreground` and `--text-muted` are `#6B7280` (4.61:1 on white). Form labels use `text-text-secondary` (#666666, 5.74:1). The `✦ AI naming` badge uses `bg-violet-100 text-violet-800` (8.4:1). Never use `#999999` for text on white backgrounds — it fails at 2.85:1.
 
@@ -364,7 +361,7 @@ src/
 │   │   └── preferences/page.tsx  # User preferences
 │   ├── api/                      # API routes
 │   │   ├── chat/route.ts         # POST chat messages (general chat)
-│   │   ├── prompt-chat/route.ts  # GET/POST Prompt tab AI chat with follow-up questions
+│   │   ├── prompt-chat/route.ts  # Deprecated Prompt Chat endpoint; returns 410 Gone
 │   │   ├── analysis/[type]/route.ts   # POST run analysis (in-house pipelines, fixed model per type)
 │   │   ├── analyses/[id]/route.ts     # PATCH update analysis content
 │   │   ├── prds/[id]/route.ts         # PATCH update PRD content
@@ -416,7 +413,7 @@ src/
 │   │   └── auth-password-field.tsx  # Password field with show/hide toggle
 │   ├── chat/                     # Chat feature
 │   │   ├── chat-interface.tsx    # General chat UI
-│   │   └── prompt-chat-interface.tsx  # Prompt tab AI chat (uses DEFAULT_MODELS.prompt)
+│   │   └── prompt-chat-interface.tsx  # Deprecated Prompt Chat UI component retained for history/cleanup only
 │   └── analysis/                 # Analysis feature
 │       └── analysis-panel.tsx    # Analysis/PRD/TechSpec UI
 │
@@ -961,7 +958,7 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `project_id`, `role` (user/assistant), `content`, `created_at`
   - RLS: Users can only access messages from their projects
 
-- **prompt_chat_messages**: Prompt tab AI chat messages (NEW)
+- **prompt_chat_messages**: Deprecated Prompt Chat history rows retained for migration/cleanup
   - Fields: `id`, `project_id`, `role` (user/assistant/system), `content`, `metadata` (model, stage), `created_at`, `updated_at`
   - RLS: Users can only access messages from their projects
   - Purpose: Stores conversation for idea refinement with follow-up questions
@@ -1038,12 +1035,12 @@ docker run -p 3000:3000 idea2app
   - Returns: `{ id, content, role, created_at }`
   - Cost: 1 credit
 
-- **GET /api/prompt-chat**: Get Prompt tab chat history (NEW)
+- **GET /api/prompt-chat**: Deprecated; returns `410 Gone`
   - Query: `?projectId=xxx`
   - Returns: `{ messages, stage }`
   - Used to load conversation history
 
-- **POST /api/prompt-chat**: Send Prompt chat message with AI refinement (NEW)
+- **POST /api/prompt-chat**: Deprecated; returns `410 Gone`
   - Body: `{ projectId, message, model, isInitial }`
   - Returns: `{ messages, stage, summary? }`
   - Features: Model selection, follow-up questions, auto-summarization
@@ -1080,7 +1077,7 @@ docker run -p 3000:3000 idea2app
 
 - **POST /api/mockups/generate**: Generate Stitch UI mockups
   - Body: `{ projectId, mvpPlan, projectName, stream? }`
-  - Returns: `{ content, model, source }` — content is JSON with `{ type: "stitch", options: [{label, title, htmlUrl, imageUrl}] }`
+  - Returns: `{ content, model, source }` — content is JSON with `{ type: "stitch", options: [{label, title, htmlUrl, imageUrl}] }`; duplicate requests return `200 OK` with `{ skipped: true, existingDocument }`
   - Cost: 30 credits
   - Uses Google Stitch SDK (3 design variants)
   - Route `maxDuration`: 300s
@@ -1090,13 +1087,13 @@ docker run -p 3000:3000 idea2app
 
 - **POST /api/generate-all/start**: Initialize a generation queue in DB
   - Body: `{ projectId, queue }`
-  - Validates the queue, rejects a second start while an existing queue is `queued`/`running`, upserts a `generation_queues` row with `status: "running"`, and replaces the normalized `generation_queue_items` rows
+  - Validates the queue, rejects a second start while an existing queue is `queued`/`running`, marks already-existing active documents as `skipped`, upserts a `generation_queues` row with `status: "running"`, and replaces the normalized `generation_queue_items` rows
 
 - **POST /api/generate-all/execute**: Server-side pipeline orchestrator
   - Body: `{ projectId }`
   - Reads `generation_queue_items`, claims pending runnable items atomically, and executes dependency-aware batches with max concurrency 2
   - Dependencies: competitive → prd → mvp → mockups; launch has no dependency and may run independently
-  - Per-step: deducts credits for legacy/manual runs, skips credit charging for bundled onboarding runs, runs pipeline, saves to the correct table, and records `output_table`/`output_id`
+  - Per-step: checks for an existing active document, deducts credits for legacy/manual runs only when generation is needed, skips credit charging for bundled onboarding runs, runs pipeline, saves to the correct table, and records `output_table`/`output_id`
   - Checks for cancellation before each batch
   - Refunds credits on legacy/manual step failure and marks dependent pending items `blocked`
   - Route `maxDuration`: 300s — durable even if browser tab closes
@@ -1187,7 +1184,7 @@ docker run -p 3000:3000 idea2app
 | Action | Cost |
 |--------|------|
 | Chat message (general) | 1 credit |
-| Prompt chat message (idea refinement) | 1 credit |
+| Prompt chat message (deprecated) | Not available |
 | Inline document edit | 1 credit |
 | Competitive Analysis | 5 credits |
 | PRD Generation | 10 credits |
@@ -1340,7 +1337,7 @@ export const CREDIT_COSTS = {
 | [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details |
 | [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering |
 | [src/components/landing/waitlist-form.tsx](src/components/landing/waitlist-form.tsx) | Public waitlist email capture form for the landing page |
-| [src/app/api/prompt-chat/route.ts](src/app/api/prompt-chat/route.ts) | **NEW** — GET/POST Prompt tab AI chat with follow-up questions |
+| [src/app/api/prompt-chat/route.ts](src/app/api/prompt-chat/route.ts) | Deprecated Prompt Chat endpoint; returns `410 Gone` |
 | [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation using in-house pipelines |
 | [src/app/api/waitlist/route.ts](src/app/api/waitlist/route.ts) | Waitlist status endpoint and public waitlist signup handler |
 | [src/app/api/stitch/html/route.ts](src/app/api/stitch/html/route.ts) | Server-side proxy for Stitch HTML downloads |
@@ -1350,12 +1347,13 @@ export const CREDIT_COSTS = {
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Pipeline-step nav with status badges |
 | [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Document content view — now uses PromptChatInterface for Prompt tab and a dedicated Competitive Research hybrid renderer for v2 competitive-analysis docs |
 | [src/lib/document-definitions.ts](src/lib/document-definitions.ts) | Shared typed document registry for workspace tabs, editor titles, icons, credit cost, and nav visibility |
+| [src/lib/active-document-policy.ts](src/lib/active-document-policy.ts) | Shared active-document identity and lookup helper used to prevent duplicate default document generation across direct APIs and Generate All/onboarding |
 | [src/components/analysis/competitive-analysis-document.tsx](src/components/analysis/competitive-analysis-document.tsx) | **NEW** — Competitive Research v2 hybrid modules/markdown renderer with legacy notice and upgrade CTA |
 | [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | **UPDATED** — Markdown renderer with beautiful-mermaid diagrams, syntax highlighting, and inline AI editing. Features: (1) Mermaid diagram expansion - diagrams fit within document width with an expand button (bottom-right, visible on hover) that opens a full-screen modal with margins; (2) Conditional component rendering (minimal components when no pending edit); (3) Mouseup-based selection capture to prevent interference during text selection. Mermaid diagrams are styled via globals.css with theme-appropriate colors for both light and dark modes. |
 | [src/components/ui/inline-ai-editor.tsx](src/components/ui/inline-ai-editor.tsx) | **NEW** — Inline AI editing popup with diff preview and apply/reject actions |
 | [src/components/ui/selection-toolbar.tsx](src/components/ui/selection-toolbar.tsx) | **NEW** — Text selection toolbar that shows "Edit with AI" button |
 | [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | General chat UI component |
-| [src/components/chat/prompt-chat-interface.tsx](src/components/chat/prompt-chat-interface.tsx) | **NEW** — Prompt tab chat with model selection and follow-up questions |
+| [src/components/chat/prompt-chat-interface.tsx](src/components/chat/prompt-chat-interface.tsx) | Deprecated Prompt Chat UI retained for cleanup/history reference |
 | [src/components/chat/chat-primitives.tsx](src/components/chat/chat-primitives.tsx) | Shared chat presentation primitives used by both chat surfaces |
 | [src/components/auth/auth-header.tsx](src/components/auth/auth-header.tsx) | Shared auth header variants for auth, forgot-password, and reset-password views |
 | [src/components/auth/auth-field.tsx](src/components/auth/auth-field.tsx) | Shared labeled auth input field |
@@ -1385,10 +1383,10 @@ export const CREDIT_COSTS = {
 | [src/components/workspace/generate-all-hydrator.tsx](src/components/workspace/generate-all-hydrator.tsx) | Thin bridge: keeps store callbacks fresh each render; runs one-time DB hydration per project |
 | [src/lib/generation-queue-service.ts](src/lib/generation-queue-service.ts) | Normalized queue item helpers for dependency checks, status computation, item claims, and legacy queue JSON sync. |
 | [src/lib/onboarding-generation.ts](src/lib/onboarding-generation.ts) | Onboarding queue metadata, loading row mapping, run-id helpers, and canonical `#overview` redirect construction. |
-| [src/lib/document-generation-service.ts](src/lib/document-generation-service.ts) | Shared server-side document generation service used by Generate All/onboarding; returns generated output table/id references. |
+| [src/lib/document-generation-service.ts](src/lib/document-generation-service.ts) | Shared server-side document generation service used by Generate All/onboarding; skips and returns existing output table/id references when an active document already exists. |
 | [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=300). Dependency-aware item execution with credit deduction/refund, retries, partial status, and DB state tracking. |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export client helper for `/api/generate-pdf` owned-document export |
-| [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | **NEW** — System prompts, question strategies, and AI models for Prompt chat |
+| [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | Deprecated Prompt Chat prompt/model config retained for cleanup/history reference |
 | [src/lib/stitch/client.ts](src/lib/stitch/client.ts) | Stitch SDK wrapper and raw response parsing helpers |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
 | [src/lib/waitlist.ts](src/lib/waitlist.ts) | Waitlist thresholds and email validation helpers |
@@ -1405,7 +1403,7 @@ export const CREDIT_COSTS = {
 | [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
 | [supabase/migrations/20260425001000_create_mockups_table.sql](supabase/migrations/20260425001000_create_mockups_table.sql) | Supabase migration for mockups table |
 | [supabase/migrations/20260425004000_security_hardening_followups.sql](supabase/migrations/20260425004000_security_hardening_followups.sql) | Security follow-up migration: service-role-only `refund_credits`, Stripe event idempotency table, and project creation locks. |
-| [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Setup guide for Prompt tab AI chat feature |
+| [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Deprecated setup guide for the removed Prompt tab AI chat feature |
 
 ---
 

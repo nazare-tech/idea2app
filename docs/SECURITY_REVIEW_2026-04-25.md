@@ -73,7 +73,7 @@ Recommended fix:
 
 MVP decision:
 - Do not change live HTML preview behavior in the immediate implementation pass.
-- Track isolated previews, screenshot-only previews, and image-model replacement in `docs/POST_MVP_SECURITY_V2_RUNNING_LIST.md`.
+- Track isolated previews, screenshot-only previews, and image-model replacement in `docs/POST_LAUNCH_V2_RUNNING_LIST.md`.
 
 ### 2. Critical - `refund_credits` RPC can mint arbitrary credits if exposed
 
