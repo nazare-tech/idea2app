@@ -1,9 +1,9 @@
 // src/components/layout/anchor-nav.tsx
 "use client"
 
+import { CheckCircle2, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
-import type { DocumentType } from "@/lib/document-definitions"
 
 type NavStatus = "done" | "in_progress" | "pending"
 
@@ -16,15 +16,12 @@ interface AnchorNavProps {
   activeSectionId: string | null
   /** Callback when user clicks a tab or sub-tab */
   onNavigate: (sectionId: string) => void
-  /** Whether prompt/idea brief is complete */
-  promptStatus: NavStatus
-  /** Callback to switch to prompt view */
-  onSwitchToPrompt: () => void
 }
 
 function SpinnerIcon({ className }: { className?: string }) {
   return (
     <svg
+      aria-hidden="true"
       className={cn("animate-spin", className)}
       width="12"
       height="12"
@@ -45,6 +42,34 @@ function SpinnerIcon({ className }: { className?: string }) {
   )
 }
 
+function StatusIcon({
+  status,
+  isActive,
+}: {
+  status: NavStatus
+  isActive?: boolean
+}) {
+  if (status === "done") {
+    return (
+      <CheckCircle2
+        aria-hidden="true"
+        className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-[#22C55E]")}
+      />
+    )
+  }
+
+  if (status === "in_progress") {
+    return <SpinnerIcon className="h-4 w-4 shrink-0 text-primary" />
+  }
+
+  return (
+    <Circle
+      aria-hidden="true"
+      className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-[#999999]")}
+    />
+  )
+}
+
 function NavTab({
   item,
   status,
@@ -58,65 +83,41 @@ function NavTab({
   activeSectionId: string | null
   onNavigate: (id: string) => void
 }) {
-  const isDone = status === "done"
   const isInProgress = status === "in_progress"
   const isPending = status === "pending"
 
-  // Bar color
-  const barColor = isDone
-    ? "bg-[#22C55E]"
+  const containerStyle = isActive
+    ? "border-primary/35 bg-primary/10"
     : isInProgress
-      ? "bg-[#FF3B30]"
-      : "bg-[#CCCCCC]"
+      ? "border-primary/25 bg-primary/5"
+      : "border-[#E5E5E5] bg-white hover:border-[#D6D0CA] hover:bg-[#F5F0EB]"
 
-  // Container styles — active (clicked) = black, hover = light gray
-  const containerBg = isInProgress
-    ? "bg-[#0A0A0A]"
-    : isActive
-      ? "bg-[#0A0A0A]"
-      : "bg-white hover:bg-[#F0F0F0]"
-
-  // Title color — white when active or in-progress (dark bg)
-  const titleColor = isInProgress || isActive
-    ? "text-white"
+  const titleColor = isActive || isInProgress
+    ? "text-[#0A0A0A]"
     : isPending
       ? "text-[#777777]"
       : "text-[#0A0A0A]"
 
-  // Sub-tab color — white when active or in-progress (dark bg)
-  const subColor = isInProgress || isActive
-    ? "text-white/70"
-    : isPending
-      ? "text-[#999999]"
-      : "text-[#777777]"
-
-  // Connector line color — lighter on dark bg
-  const connectorColor = isInProgress || isActive
-    ? "border-white/20"
-    : "border-[#E5E5E5]"
+  const subColor = isPending ? "text-[#999999]" : "text-[#777777]"
 
   return (
-    <div className={cn("min-w-[168px] shrink-0 rounded-md p-2 transition-colors lg:min-w-0 lg:shrink", containerBg)}>
+    <div className={cn("min-w-[168px] shrink-0 rounded-md border p-2 transition-colors lg:min-w-0 lg:shrink", containerStyle)}>
       {/* Tab title row */}
       <button
         type="button"
         onClick={() => onNavigate(item.key)}
-        className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        aria-current={isActive ? "location" : undefined}
+        aria-label={`${item.label}, ${status.replace("_", " ")}`}
+        className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
       >
-        <div className={cn("h-4 w-1 shrink-0 rounded-sm", barColor)} />
-        <span className={cn("flex-1 text-left text-base font-bold", titleColor)}>
+        <span className={cn("flex-1 text-base", isActive ? "font-extrabold" : "font-bold", titleColor)}>
           {item.label}
         </span>
-        {isDone && !isActive && (
-          <div className="h-1.5 w-1.5 rounded-full bg-[#22C55E] opacity-45" />
-        )}
-        {isInProgress && (
-          <SpinnerIcon className="text-[#FF3B30]" />
-        )}
+        <StatusIcon status={status} isActive={isActive} />
       </button>
 
       {/* Sub-tabs */}
-      <div className={cn("mt-1 ml-[11px] hidden border-l pl-2 lg:block", connectorColor)}>
+      <div className="mt-1 ml-2 hidden border-l border-[#E5E5E5] pl-2 lg:block">
         {item.sections.map((section, idx) => {
           const isActiveSub = activeSectionId === section.id
           // In-progress items: vary opacity by position
@@ -129,10 +130,11 @@ function NavTab({
               key={section.id}
               type="button"
               onClick={() => onNavigate(section.id)}
+              aria-current={isActiveSub ? "location" : undefined}
               className={cn(
-                "block min-h-11 w-full cursor-pointer rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-[#F5F0EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                "block min-h-11 w-full cursor-pointer rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-[#F5F0EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0",
                 isActiveSub
-                  ? "font-semibold text-[#FF3B30]"
+                  ? "bg-primary/10 font-semibold text-primary"
                   : cn(subColor, inProgressOpacity)
               )}
             >
@@ -150,8 +152,6 @@ export function AnchorNav({
   activeKey,
   activeSectionId,
   onNavigate,
-  promptStatus,
-  onSwitchToPrompt,
 }: AnchorNavProps) {
   const getStatus = (item: DocumentNavItem): NavStatus => {
     return documentStatuses[item.sourceType] || "pending"
@@ -159,32 +159,6 @@ export function AnchorNav({
 
   return (
     <nav className="flex w-full shrink-0 gap-2 overflow-x-auto border-b border-border-subtle bg-[#FAFAFA] px-4 py-3 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-b-0 lg:px-6 lg:py-5">
-      {/* Prompt/Idea Brief tab */}
-      <button
-        type="button"
-        onClick={onSwitchToPrompt}
-        className={cn(
-          "flex min-h-11 w-auto shrink-0 cursor-pointer items-center gap-2 rounded-md p-2 transition-colors lg:mb-2 lg:w-full",
-          promptStatus === "done" ? "bg-[#F5F5F5]" : "bg-white",
-          "hover:bg-[#F0F0F0]"
-        )}
-      >
-        <div className={cn(
-          "h-4 w-1 shrink-0 rounded-sm",
-          promptStatus === "done" ? "bg-[#22C55E]" : "bg-[#CCCCCC]"
-        )} />
-        <span className={cn(
-          "flex-1 text-left text-base font-bold",
-          promptStatus === "done" ? "text-[#0A0A0A]" : "text-[#777777]"
-        )}>
-          Idea Brief
-        </span>
-        {promptStatus === "done" && (
-          <div className="h-1.5 w-1.5 rounded-full bg-[#22C55E] opacity-45" />
-        )}
-      </button>
-      <div className="hidden h-px bg-[#E5E5E5] mb-2 lg:block" />
-
       {/* Document tabs */}
       {SCROLLABLE_NAV_ITEMS.map((item) => (
         <NavTab

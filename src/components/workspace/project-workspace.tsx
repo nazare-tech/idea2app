@@ -2,16 +2,20 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { ContentEditor } from "@/components/layout/content-editor"
 import { AnchorNav } from "@/components/layout/anchor-nav"
 import { ScrollableContent } from "@/components/layout/scrollable-content"
 import { ProjectHeader } from "@/components/layout/project-header"
 import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stream"
-import { DOCUMENT_TYPES, isDocumentType, type DocumentType } from "@/lib/document-definitions"
+import { DOCUMENT_TYPES, type DocumentType } from "@/lib/document-definitions"
 import { SCROLLABLE_NAV_ITEMS, getNavKeyForSection } from "@/lib/document-sections"
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
 import type { GenerateDocumentFn } from "@/stores/generate-all-store"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
+import {
+  DEFAULT_WORKSPACE_DOCUMENT,
+  isWorkspaceDocumentType,
+  resolveWorkspaceDocumentTab,
+} from "@/lib/workspace-tab-policy"
 
 
 interface Project {
@@ -104,10 +108,7 @@ export function ProjectWorkspace({
     project.name !== "Untitled" || !!project.description
   )
   const [nameJustSet, setNameJustSet] = useState(false)
-  const defaultActiveDocument: DocumentType =
-    hasStructuredIntake && project.description ? "competitive" : "prompt"
-  const shouldStartPromptOnly = isNewProject && !hasStructuredIntake && !project.description
-  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(shouldStartPromptOnly)
+  const defaultActiveDocument: DocumentType = DEFAULT_WORKSPACE_DOCUMENT
   const projectNameInputRef = useRef<HTMLInputElement>(null)
   const nameJustSetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
@@ -125,52 +126,14 @@ export function ProjectWorkspace({
   }, [isEditingProjectName])
 
   useEffect(() => {
-    setIsPromptOnlyMode(shouldStartPromptOnly)
-  }, [shouldStartPromptOnly])
-
-  useEffect(() => {
-    if (project.description) {
-      setIsPromptOnlyMode(false)
-    }
-  }, [project.description])
-
-  useEffect(() => {
     return () => {
       if (nameJustSetTimerRef.current) clearTimeout(nameJustSetTimerRef.current)
     }
   }, [])
 
-  const getPersistedActiveDocument = useCallback((): DocumentType | null => {
-    const tab = searchParams.get("tab")
-    if (isDocumentType(tab)) {
-      return tab
-    }
-
-    if (typeof window === "undefined") return null
-
-    try {
-      const stored = localStorage.getItem(activeDocumentStorageKey)
-      if (isDocumentType(stored)) {
-        return stored
-      }
-    } catch {
-      return null
-    }
-
-    return null
-  }, [activeDocumentStorageKey, searchParams])
-
   const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
-    if (shouldStartPromptOnly) return "prompt"
-
     // Only use searchParams for initial render to avoid hydration mismatch.
-    // localStorage is restored in the useEffect below after hydration.
-    const tab = searchParams.get("tab")
-    if (isDocumentType(tab)) {
-      return tab
-    }
-
-    return defaultActiveDocument
+    return resolveWorkspaceDocumentTab(searchParams.get("tab"))
   })
   const [generatingDocuments, setGeneratingDocuments] = useState<Record<DocumentType, boolean>>({
     ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, false])),
@@ -270,10 +233,6 @@ export function ProjectWorkspace({
     }
   }, [getStorageKey])
 
-  const canSelectDocument = useCallback((documentType: DocumentType) => {
-    return !(isPromptOnlyMode && documentType !== "prompt")
-  }, [isPromptOnlyMode])
-
   const hydrateGeneratingStateFromStorage = useCallback((): Record<DocumentType, boolean> => {
     if (typeof window === "undefined") {
       return {
@@ -301,31 +260,11 @@ export function ProjectWorkspace({
   }, [loadGeneratingState])
 
   useEffect(() => {
-    // Use isPromptOnlyMode (client state) instead of isNewProject (server prop tied to ?new=1 URL
-    // param). The ?new=1 param is never stripped from the URL, so isNewProject stays true after
-    // the first render even once the user has a project description. isPromptOnlyMode correctly
-    // reflects whether the user should be locked to the prompt tab.
-    if (isPromptOnlyMode) {
-      setActiveDocument("prompt")
-      return
-    }
-
-    // Only restore from the URL tab param — ignore localStorage so that
-    // removing ?tab= from the URL always resets to "prompt".
-    const tab = searchParams.get("tab")
-    const persistedDocument = isDocumentType(tab) ? tab : null
-
-    if (!persistedDocument || !canSelectDocument(persistedDocument)) {
-      setActiveDocument(defaultActiveDocument)
-      return
-    }
-
-    setActiveDocument(persistedDocument)
-  }, [defaultActiveDocument, isPromptOnlyMode, searchParams, canSelectDocument])
+    setActiveDocument(resolveWorkspaceDocumentTab(searchParams.get("tab")))
+  }, [searchParams])
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    if (isPromptOnlyMode) return
 
     try {
       localStorage.setItem(activeDocumentStorageKey, activeDocument)
@@ -342,13 +281,13 @@ export function ProjectWorkspace({
     // Overriding the URL here would create an infinite redirect loop.
     if (
       urlTab !== activeDocument &&
-      !isDocumentType(urlTab) &&
+      !isWorkspaceDocumentType(urlTab) &&
       activeDocument !== defaultActiveDocument
     ) {
       nextParams.set("tab", activeDocument)
       window.history.replaceState(null, "", `${pathname}?${nextParams.toString()}${window.location.hash}`)
     }
-  }, [activeDocument, activeDocumentStorageKey, defaultActiveDocument, isPromptOnlyMode, pathname, router, searchParams])
+  }, [activeDocument, activeDocumentStorageKey, defaultActiveDocument, pathname, searchParams])
 
   const checkIfContentIncreased = useCallback((docType: DocumentType, remoteCount?: number): boolean => {
     const key = getStorageKey(docType)
@@ -366,15 +305,11 @@ export function ProjectWorkspace({
 
   // Restore and sync generation flags from localStorage
   useEffect(() => {
-    if (isPromptOnlyMode) return
-
     setGeneratingDocuments(hydrateGeneratingStateFromStorage())
-  }, [project.id, isPromptOnlyMode, hydrateGeneratingStateFromStorage])
+  }, [project.id, hydrateGeneratingStateFromStorage])
 
   // Poll for new content when documents are generating, and refresh only when versions arrive.
   useEffect(() => {
-    if (isPromptOnlyMode) return
-
     const activeDocumentTypes = (Object.entries(generatingDocuments) as [DocumentType, boolean][])
       .filter(([, isGenerating]) => isGenerating)
       .map(([type]) => type)
@@ -474,7 +409,6 @@ export function ProjectWorkspace({
     loadGeneratingState,
     saveGeneratingState,
     router,
-    isPromptOnlyMode,
   ])
 
   // IntersectionObserver: sync scroll position → active nav item
@@ -728,7 +662,7 @@ export function ProjectWorkspace({
   }, [])
 
   const handleDocumentSelect = (type: DocumentType) => {
-    if (isPromptOnlyMode && type !== "prompt") {
+    if (!isWorkspaceDocumentType(type)) {
       return
     }
 
@@ -743,10 +677,7 @@ export function ProjectWorkspace({
       window.history.pushState(null, "", `${pathname}?${nextParams.toString()}`)
     }
 
-    // If switching away from prompt, default to "overview" as the active nav key
-    if (type !== "prompt") {
-      setActiveNavKey(type === "competitive" ? "overview" : type)
-    }
+    setActiveNavKey(type === "competitive" ? "overview" : type)
   }
 
   const handleScrollNavigate = useCallback((targetId: string) => {
@@ -1233,62 +1164,20 @@ export function ProjectWorkspace({
           credits={credits}
         />
 
-        {activeDocument === "prompt" ? (
-          /* Prompt/Chat view — full width, existing ContentEditor */
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Prompt exit bar — only visible when project has content */}
-            {project.description && (
-              <div className="flex items-center gap-2 border-b border-border/40 px-6 py-2 bg-secondary/30">
-                <button
-                  type="button"
-                  onClick={() => handleDocumentSelect("competitive")}
-                  className="cursor-pointer text-xs font-medium text-text-secondary hover:text-foreground transition-colors"
-                >
-                  ← View Documents
-                </button>
-              </div>
-            )}
-            <ContentEditor
-              documentType="prompt"
-              projectId={project.id}
-              documentId={null}
-              projectName={projectName}
-              projectDescription={project.description || ""}
-              content={getDocumentContent("prompt")}
-              documentMetadata={null}
-              onGenerateContent={handleGenerateContent}
-              onUpdateDescription={handleUpdateDescription}
-              onProjectNameGenerated={handleProjectNameGenerated}
-              isGenerating={generatingDocuments["prompt"]}
-              streamStages={streamStages}
-              streamCurrentStep={streamCurrentStep}
-              streamContent={streamContent}
-              credits={credits}
-              hasStructuredIntake={hasStructuredIntake}
-              prerequisiteValidation={checkPrerequisites("prompt")}
-              currentVersion={0}
-              totalVersions={0}
-            />
-          </div>
-        ) : (
-          /* Scrollable document view — 2-column layout */
-          <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-            <AnchorNav
-              documentStatuses={navDocumentStatuses}
-              activeKey={activeNavKey}
-              activeSectionId={activeSectionId}
-              onNavigate={handleScrollNavigate}
-              promptStatus={getDocumentStatus("prompt")}
-              onSwitchToPrompt={() => handleDocumentSelect("prompt")}
-            />
-            <ScrollableContent
-              ref={scrollContainerRef}
-              projectId={project.id}
-              credits={credits}
-              documents={scrollableDocuments}
-            />
-          </div>
-        )}
+        <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
+          <AnchorNav
+            documentStatuses={navDocumentStatuses}
+            activeKey={activeNavKey}
+            activeSectionId={activeSectionId}
+            onNavigate={handleScrollNavigate}
+          />
+          <ScrollableContent
+            ref={scrollContainerRef}
+            projectId={project.id}
+            credits={credits}
+            documents={scrollableDocuments}
+          />
+        </div>
       </div>
     </>
   )

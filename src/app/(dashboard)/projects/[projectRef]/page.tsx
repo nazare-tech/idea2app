@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation"
 import { ProjectWorkspace } from "@/components/workspace/project-workspace"
 import { APP_BRAND_NAME } from "@/lib/app-brand"
 import { buildProjectRef, parseProjectRef } from "@/lib/project-routing"
+import { shouldRedirectBlockedWorkspaceTab } from "@/lib/workspace-tab-policy"
 
 interface ProjectPageProps {
   params: Promise<{ projectRef: string }>
@@ -92,9 +93,17 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   }
 
   const canonicalProjectRef = buildProjectRef(project.id, project.name)
-  if (projectRef !== canonicalProjectRef) {
+  const requestedTab = Array.isArray(resolvedSearchParams.tab)
+    ? resolvedSearchParams.tab[0]
+    : resolvedSearchParams.tab
+  const shouldRedirectPromptTab = shouldRedirectBlockedWorkspaceTab(requestedTab)
+
+  if (projectRef !== canonicalProjectRef || shouldRedirectPromptTab) {
     const query = new URLSearchParams()
     for (const [key, value] of Object.entries(resolvedSearchParams)) {
+      if (key === "tab" && shouldRedirectPromptTab) {
+        continue
+      }
       if (Array.isArray(value)) {
         value.forEach((item) => query.append(key, item))
       } else if (typeof value === "string") {
@@ -103,7 +112,8 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     }
 
     const queryString = query.toString()
-    redirect(`/projects/${canonicalProjectRef}${queryString ? `?${queryString}` : ""}`)
+    const fragment = shouldRedirectPromptTab ? "#overview" : ""
+    redirect(`/projects/${canonicalProjectRef}${queryString ? `?${queryString}` : ""}${fragment}`)
   }
 
   const [

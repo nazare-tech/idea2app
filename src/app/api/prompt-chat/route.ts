@@ -31,6 +31,17 @@ type PromptChatStreamEvent =
   | { type: "done"; userMessage: unknown; assistantMessage: unknown; stage: string; summary: string | null; projectName: string | null }
   | { type: "error"; error: string }
 
+function isPromptChatDisabled() {
+  return true
+}
+
+function deprecatedPromptChatResponse() {
+  return NextResponse.json(
+    { error: "Prompt Chat has been deprecated. Use the project Overview instead." },
+    { status: 410 },
+  )
+}
+
 function dedupePromptChatMessages(messages: PromptChatMessage[] = []) {
   const deduped: PromptChatMessage[] = []
   const lastSeen = new Map<string, number>()
@@ -76,6 +87,13 @@ export async function GET(request: Request) {
   let projectId: string | null = null
 
   try {
+    if (isPromptChatDisabled()) {
+      statusCode = 410
+      errorType = "deprecated"
+      errorMessage = "Prompt Chat has been deprecated"
+      return deprecatedPromptChatResponse()
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -191,6 +209,13 @@ export async function POST(request: Request) {
   let projectId: string | undefined
 
   try {
+    if (isPromptChatDisabled()) {
+      statusCode = 410
+      errorType = "deprecated"
+      errorMessage = "Prompt Chat has been deprecated"
+      return deprecatedPromptChatResponse()
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
