@@ -311,11 +311,11 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
         <div className="flex flex-1 items-start justify-center">
           {step === "idea" ? (
             <section className="w-full">
-              <div className="rounded-lg border border-border-subtle bg-card p-6 sm:p-8 lg:p-10">
+              <div className="rounded-lg border border-border-subtle bg-card p-5 sm:p-8 lg:p-10">
                 <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
                   Step 1 of {WIZARD_TOTAL_STEPS}
                 </p>
-                <h2 className="mt-2 font-[family:var(--font-display)] text-[2.5rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
+                <h2 className="mt-2 font-[family:var(--font-display)] text-[2.25rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
                   Idea Brief
                 </h2>
                 <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
@@ -368,12 +368,12 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
 
               <WizardError error={error} />
 
-              <div className="mt-5 flex justify-end">
+              <div className="mt-5 flex justify-stretch sm:justify-end">
                 <Button
                   type="button"
                   onClick={generateQuestions}
                   disabled={!canContinue || isGeneratingQuestions || isLoadingPending}
-                  className="h-10 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90"
+                  className="h-11 w-full rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10 sm:w-auto"
                   data-testid="intake-continue"
                 >
                   {isGeneratingQuestions ? (
@@ -389,12 +389,12 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
             </section>
           ) : (
             <section className="w-full">
-              <div className="rounded-lg border border-border-subtle bg-card p-6 sm:p-8 lg:p-10">
+              <div className="rounded-lg border border-border-subtle bg-card p-5 sm:p-8 lg:p-10">
                 <div className="mb-6">
                   <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
                     Step 2 of {WIZARD_TOTAL_STEPS}
                   </p>
-                  <h2 className="mt-2 font-[family:var(--font-display)] text-[2.4rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
+                  <h2 className="mt-2 font-[family:var(--font-display)] text-[2.2rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
                     Tell us a bit more
                   </h2>
                   <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
@@ -419,7 +419,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                     variant="outline"
                     onClick={() => setStep("idea")}
                     disabled={isCreatingProject}
-                    className="h-10 rounded-md border-text-primary bg-transparent px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-text-primary hover:bg-background"
+                    className="h-11 rounded-md border-text-primary bg-transparent px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-text-primary hover:bg-background sm:h-10"
                     data-testid="intake-back"
                   >
                     Back
@@ -428,7 +428,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                     type="button"
                     onClick={createProject}
                     disabled={!allQuestionsAnswered || isCreatingProject}
-                    className="h-10 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90"
+                    className="h-11 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10"
                     data-testid="intake-create-project"
                   >
                     {isCreatingProject ? (
@@ -493,7 +493,7 @@ function QuestionCard({
                       onAnswerChange((draft) => toggleOption(question, draft, option.id))
                     }
                     className={cn(
-                      "inline-flex max-w-full items-center rounded-md border px-3 py-1.5 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                      "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0 sm:py-1.5",
                       selected
                         ? "border-text-primary bg-text-primary text-white"
                         : "border-border-subtle bg-white text-text-primary hover:border-text-primary"
@@ -510,7 +510,7 @@ function QuestionCard({
                     onAnswerChange((draft) => toggleOther(question, draft))
                   }
                   className={cn(
-                    "inline-flex max-w-full items-center rounded-md border px-3 py-1.5 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0 sm:py-1.5",
                     answer.otherSelected
                       ? "border-text-primary bg-text-primary text-white"
                       : "border-border-subtle bg-white text-text-primary hover:border-text-primary"

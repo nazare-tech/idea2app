@@ -252,7 +252,7 @@ export default function SettingsPage() {
         description="Keep profile, security, and billing settings in one place."
       />
       <main className="flex min-h-0 flex-1 flex-col">
-        <div className="grid min-h-[calc(100vh-15rem)] flex-1 items-stretch gap-6 lg:grid-cols-[280px_1fr]">
+        <div className="grid min-h-[calc(100vh-15rem)] flex-1 items-start gap-5 lg:grid-cols-[280px_1fr] lg:items-stretch lg:gap-6">
           <StackedTabNav
             items={preferenceNavItems}
             activeKey={activeTab}
@@ -296,7 +296,7 @@ export default function SettingsPage() {
 
                     <div className="ui-stack-2">
                       <Label htmlFor="email">Email</Label>
-                      <div className="ui-row-gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <Input
                           id="email"
                           type="email"
@@ -331,7 +331,7 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-stretch sm:justify-end">
                       <Button onClick={handleSave} disabled={saving}>
                         {saving ? (
                           <>
@@ -347,7 +347,7 @@ export default function SettingsPage() {
 
                   <div className="border-t border-border-subtle px-6 py-5">
                     <div className="space-y-4">
-                      <div className="ui-row-gap-3">
+                      <div className="flex items-start gap-3 sm:items-center">
                         <div className={uiStylePresets.settingsIconBadge}>
                           <Lock className="h-5 w-5" />
                         </div>
@@ -385,7 +385,7 @@ export default function SettingsPage() {
                         />
                       </div>
 
-                      <div className="flex justify-end">
+                      <div className="flex justify-stretch sm:justify-end">
                         <Button onClick={handlePasswordChange} disabled={passwordSaving}>
                           {passwordSaving ? (
                             <>

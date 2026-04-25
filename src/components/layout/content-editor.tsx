@@ -344,21 +344,21 @@ export function ContentEditor({
       `}</style>
       <div className="flex h-full flex-col bg-background">
         {/* Header */}
-        <div className="ui-row-between px-10 py-5 border-b border-border">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 border-b border-border px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-10 lg:py-5">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <config.icon className="h-[18px] w-[18px] text-primary" />
-            <div>
+            <div className="min-w-0">
               <h1 className="text-xl ui-font-semibold text-foreground ui-tracking-tight">
                 {config.title}
               </h1>
-              <p className="text-[11px] text-muted-foreground ui-font-mono">
+              <p className="text-[11px] text-muted-foreground ui-font-mono break-words">
                 {config.subtitle}
               </p>
             </div>
           </div>
 
           {documentType !== "prompt" ? (
-            <div className="ui-row-gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {content && !isMockupsDocument && (
                 isCompetitiveDocument ? (
                   <button
@@ -442,7 +442,7 @@ export function ContentEditor({
               disableInitialAutoStart={hasStructuredIntake}
             />
           ) : (
-            <div className="h-full overflow-y-auto p-10 relative">
+            <div className="h-full overflow-y-auto p-3 sm:p-6 lg:p-10 relative">
               {documentType === "launch" && (
                 <div className="mx-auto mb-6 max-w-4xl rounded-lg border border-border bg-card p-4">
                   <p className="mb-3 text-sm font-semibold">Marketing Brief (required)</p>
@@ -483,8 +483,8 @@ export function ContentEditor({
               <div className="flex justify-center items-start relative" ref={containerRef}>
                 {/* Document Container with Resize Handles */}
                 <div
-                  className="relative"
-                  style={isFullWidthDocument ? { width: "100%" } : { width: `${documentWidth}px` }}
+                  className="relative w-full"
+                  style={isFullWidthDocument ? { width: "100%" } : { width: `min(100%, ${documentWidth}px)` }}
                 >
                   <div className={cn(
                     "border border-border relative",
@@ -498,7 +498,7 @@ export function ContentEditor({
                       <>
                         {/* Left Resize Handle */}
                         <div
-                          className="absolute left-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
+                          className="absolute left-0 top-0 bottom-0 z-20 hidden w-3 cursor-col-resize bg-transparent transition-colors hover:bg-primary/10 lg:block"
                           onMouseDown={(e) => handleResizeStart('left', e)}
                         >
                           <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">
@@ -508,7 +508,7 @@ export function ContentEditor({
 
                         {/* Right Resize Handle */}
                         <div
-                          className="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group bg-transparent hover:bg-primary/10 transition-colors"
+                          className="absolute right-0 top-0 bottom-0 z-20 hidden w-3 cursor-col-resize bg-transparent transition-colors hover:bg-primary/10 lg:block"
                           onMouseDown={(e) => handleResizeStart('right', e)}
                         >
                           <div className="sticky top-1/2 -translate-y-1/2 flex items-center justify-center h-16">

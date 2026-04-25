@@ -103,7 +103,7 @@ function TargetIcon({ x, y, color }: { x: number; y: number; color: string }) {
 
 function MilestoneCard({ label, description }: { label: string; description: string }) {
   return (
-    <div className="w-[280px] border border-border-subtle bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
+    <div className="w-full border border-border-subtle bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)] lg:w-[280px]">
       <div className="flex items-start gap-3">
         <span className="mt-1 block h-5 w-[3px] bg-text-primary" aria-hidden />
         <p className="text-[15px] font-semibold tracking-[-0.01em] text-text-primary">{label}</p>
@@ -334,7 +334,11 @@ export function BuildMap() {
               <div
                 key={`m-${n.key}`}
                 className="build-map__mobile-card relative"
-                style={{ ["--bm-delay" as string]: `${(nodeProgress[i] ?? NODE_PROGRESS_FALLBACK[i]) * DURATION_S}s` }}
+                style={{
+                  opacity: 1,
+                  transform: "none",
+                  ["--bm-delay" as string]: `${(nodeProgress[i] ?? NODE_PROGRESS_FALLBACK[i]) * DURATION_S}s`,
+                }}
               >
                 <span className="absolute -left-[26px] top-4 h-3 w-3 rounded-full border-2 border-text-primary bg-white" aria-hidden />
                 <MilestoneCard label={n.label} description={n.description} />

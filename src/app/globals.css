@@ -365,8 +365,8 @@ body {
 
 /* Document nav active state */
 .doc-nav-active {
-  background: var(--background);
-  border-left: 3px solid var(--primary);
+  background: var(--muted);
+  border: 1px solid var(--border-strong);
 }
 
 /* Status badge styles */
@@ -765,7 +765,8 @@ body {
   transform: translateY(12px);
 }
 .build-map .build-map__mobile-card {
-  opacity: 0;
+  opacity: 1;
+  transform: none;
 }
 
 /* Active (animating) state */
@@ -785,8 +786,7 @@ body {
   animation-delay: var(--bm-delay);
 }
 .build-map.is-active .build-map__mobile-card {
-  animation: buildMapMobileReveal 0.55s var(--motion-ease-out-expo) forwards;
-  animation-delay: var(--bm-delay);
+  animation: none;
 }
 
 @keyframes buildMapDraw {

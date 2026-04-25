@@ -170,12 +170,12 @@ export function AuthFormContent({
 
   return (
     <div className="w-full">
-      <CardHeader className="ui-stack-2 ui-px-8 pt-8">
+      <CardHeader className="ui-stack-2 px-5 pt-6 sm:px-8 sm:pt-8">
         <CardTitle className="text-2xl tracking-[-0.02em]">{copy.title}</CardTitle>
         <p className="ui-text-sm-muted">{copy.subtitle}</p>
       </CardHeader>
 
-      <div className="ui-px-8">
+      <div className="px-5 sm:px-8">
         <button
           type="button"
           onClick={handleGoogleAuth}
@@ -194,7 +194,7 @@ export function AuthFormContent({
       </div>
 
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-5 ui-px-8 pt-3">
+        <CardContent className="space-y-5 px-5 pt-3 sm:px-8">
           {error && <p className={uiStylePresets.authErrorPill}>{error}</p>}
 
           {mode === "signup" && (
@@ -257,7 +257,7 @@ export function AuthFormContent({
         </CardContent>
       </form>
 
-      <CardFooter className="ui-px-8 pb-8 pt-2">
+      <CardFooter className="px-5 pb-6 pt-2 sm:px-8 sm:pb-8">
         <p className="w-full text-center ui-text-sm-muted">
           {copy.alternateLine}{" "}
           <button

@@ -27,7 +27,7 @@ function AuthScreen() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <section className="flex min-h-screen w-full flex-col">
-        <main className="flex min-h-screen w-full overflow-hidden lg:flex-row-reverse">
+        <main className="flex min-h-screen w-full overflow-y-auto lg:flex-row-reverse lg:overflow-hidden">
           <aside className="hidden h-screen w-full max-w-[560px] bg-sidebar-bg px-14 py-14 text-sidebar-foreground lg:flex">
             <div className="flex h-full flex-col justify-between">
               <div>
@@ -45,7 +45,7 @@ function AuthScreen() {
 
           <div className="flex w-full flex-1">
             <div className="w-full lg:h-full lg:flex lg:flex-col">
-              <header className="h-[104px] w-full ui-px-6 py-5">
+              <header className="h-[88px] w-full ui-px-6 py-5 sm:h-[104px]">
                 <BrandWordmark
                   className="h-full"
                   logoClassName={uiStylePresets.authIconCircle}
@@ -53,7 +53,7 @@ function AuthScreen() {
                 />
               </header>
 
-              <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
+              <div className="flex-1 flex flex-col items-center justify-center gap-5 px-4 pb-8 sm:px-6">
                 {externalError && (
                   <p className={uiStylePresets.authErrorPill}>{externalError}</p>
                 )}

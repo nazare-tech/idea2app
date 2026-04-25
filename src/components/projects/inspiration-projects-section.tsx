@@ -41,7 +41,7 @@ const inspirationProjects = [
 
 export function InspirationProjectsSection() {
   return (
-    <section className="rounded-2xl border border-border-subtle bg-white p-7">
+    <section className="rounded-none border border-border-subtle bg-white p-5 sm:p-7">
       <div className="mb-4 flex flex-col gap-3">
         <h2 className="text-[24px] leading-tight font-bold tracking-[-0.5px] text-text-primary">
           Get inspired by pre-made projects
@@ -67,7 +67,7 @@ export function InspirationProjectsSection() {
         {inspirationProjects.map((project) => (
           <article
             key={project.title}
-            className={`min-h-[210px] rounded-2xl border border-border-subtle p-5 ${project.cardClass} flex flex-col justify-between`}
+            className={`min-h-[210px] rounded-none border border-border-subtle p-5 ${project.cardClass} flex flex-col justify-between`}
           >
             <div className="ui-stack-2">
               <p className={`text-[12px] ui-font-medium ${project.categoryClass}`}>{project.category}</p>
@@ -80,7 +80,7 @@ export function InspirationProjectsSection() {
             </div>
             <Link
               href={project.href}
-              className={`mt-6 inline-flex h-9 items-center gap-2 rounded-lg border px-[18px] py-2 text-sm ui-font-medium ${project.buttonClass}`}
+              className={`mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg border px-[18px] py-2 text-sm ui-font-medium ${project.buttonClass}`}
             >
               {project.action}
               <ArrowRight className="ui-icon-16" />

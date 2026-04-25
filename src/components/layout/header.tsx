@@ -45,12 +45,12 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
     : user?.email?.split("@")[0] || "User"
 
   return (
-    <header className="h-16 border-b border-border-subtle bg-background px-4 ui-row-between sm:px-8 lg:px-14">
-      <div className="flex items-center gap-4">
+    <header className="min-h-16 gap-3 border-b border-border-subtle bg-background px-4 py-3 ui-row-between sm:px-8 lg:px-14">
+      <div className="flex min-w-0 items-center gap-4">
         {children || brand || <h1 className="ui-section-title">Dashboard</h1>}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
         {rightContent}
 
         <DropdownMenu>
@@ -65,7 +65,7 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <span className={uiStylePresets.headerProfileLabel}>
+              <span className={`${uiStylePresets.headerProfileLabel} hidden sm:inline`}>
                 {profileLabel}
               </span>
               <ChevronDown className="ui-icon-16 text-text-secondary" />

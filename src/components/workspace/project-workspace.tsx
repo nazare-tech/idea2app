@@ -1272,7 +1272,7 @@ export function ProjectWorkspace({
           </div>
         ) : (
           /* Scrollable document view — 2-column layout */
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
             <AnchorNav
               documentStatuses={navDocumentStatuses}
               activeKey={activeNavKey}

@@ -79,13 +79,13 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
             ? "Your idea will be waiting in the project wizard after sign-in."
             : "You can also start blank and write the idea after signing in."}
         </p>
-        <div className="flex shrink-0 gap-2">
+        <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:flex sm:w-auto">
           <Button
             type="button"
             variant="outline"
             onClick={() => startFlow("signin")}
             disabled={loadingMode !== null}
-            className="h-11"
+            className="h-11 w-full sm:w-auto"
             data-testid="landing-idea-signin"
           >
             {loadingMode === "signin" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -95,7 +95,7 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
             type="button"
             onClick={() => startFlow("signup")}
             disabled={loadingMode !== null}
-            className="h-11"
+            className="h-11 w-full sm:w-auto"
             data-testid="landing-idea-signup"
           >
             {loadingMode === "signup" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

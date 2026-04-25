@@ -82,11 +82,11 @@ export function ProjectHeader({
     : user.email?.split("@")[0] || "User"
 
   return (
-    <header className="grid h-16 grid-cols-[1fr_auto] items-center gap-4 border-b border-border-subtle bg-background px-4 sm:px-6 lg:grid-cols-[1fr_auto_1fr]">
+    <header className="grid min-h-16 grid-cols-[1fr_auto] items-center gap-3 border-b border-border-subtle bg-background px-4 py-3 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:py-0">
       {/* Left: Brand wordmark */}
-      <Link href="/projects" className="flex items-center gap-3">
+      <Link href="/projects" className="flex min-w-0 items-center gap-3">
         <HeaderLogo size={APP_HEADER_LOGO_SIZE} linked={false} />
-        <span className="text-sm font-medium text-text-secondary">
+        <span className="hidden text-sm font-medium text-text-secondary sm:inline">
           {APP_BRAND_NAME}
         </span>
       </Link>
@@ -144,7 +144,7 @@ export function ProjectHeader({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="justify-self-end flex items-center gap-2.5 rounded-md border border-border-subtle bg-card px-3 py-1.5"
+            className="justify-self-end flex min-h-10 items-center gap-2 rounded-md border border-border-subtle bg-card px-2.5 py-1.5 sm:gap-2.5 sm:px-3"
           >
             <Avatar className="h-7 w-7 rounded-full">
               <AvatarImage src={user.avatar_url} alt={user.full_name || "User"} />
@@ -152,7 +152,7 @@ export function ProjectHeader({
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="text-[13px] font-medium text-foreground">
+            <span className="hidden text-[13px] font-medium text-foreground sm:inline">
               {profileLabel}
             </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />

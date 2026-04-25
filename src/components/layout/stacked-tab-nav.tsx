@@ -24,10 +24,10 @@ interface StackedTabNavProps {
 
 function getItemClasses(isActive: boolean, disabled: boolean, isLast: boolean) {
   return cn(
-    "w-full flex items-center gap-3 px-6 py-3.5 text-left transition-colors",
+    "flex min-h-11 w-auto min-w-[160px] shrink-0 items-center gap-3 px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset sm:px-6 lg:w-full lg:min-w-0",
     disabled && "cursor-not-allowed opacity-50 pointer-events-none",
     isActive
-      ? "bg-background border-l-[3px] border-l-primary"
+      ? "border border-primary/30 bg-primary/10"
       : "border-b border-border hover:bg-muted/50",
     isLast && !isActive && "border-b-0"
   )
@@ -77,8 +77,8 @@ export function StackedTabNav({
   navClassName,
 }: StackedTabNavProps) {
   return (
-    <div className={cn("flex h-full w-[280px] flex-col bg-card border-r border-border", className)}>
-      <nav className={cn("flex-1 overflow-y-auto", navClassName)}>
+    <div className={cn("flex h-auto w-full flex-col overflow-hidden rounded-lg border border-border bg-card lg:h-full lg:w-[280px] lg:rounded-none lg:border-y-0 lg:border-l-0 lg:border-r", className)}>
+      <nav className={cn("flex overflow-x-auto lg:flex-1 lg:flex-col lg:overflow-y-auto", navClassName)}>
         {items.map((item, index) => {
           const isActive = activeKey === item.key
           const isLast = index === items.length - 1
@@ -104,6 +104,7 @@ export function StackedTabNav({
               type="button"
               onClick={item.onSelect}
               disabled={disabled}
+              aria-current={isActive ? "page" : undefined}
               className={itemClasses}
             >
               <StackedTabNavItemContent item={item} isActive={isActive} />

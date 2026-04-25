@@ -5,13 +5,12 @@ import { Button } from "@/components/ui/button"
 import { InspirationProjectsSection } from "@/components/projects/inspiration-projects-section"
 import { LandingIdeaCapture } from "@/components/landing/landing-idea-capture"
 import { WaitlistForm } from "@/components/landing/waitlist-form"
-import { uiStylePresets } from "@/lib/ui-style-presets"
 import { PRICING_CARD_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
 import { formatPrice } from "@/lib/utils"
 import { createServiceClient } from "@/lib/supabase/service"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { isWaitlistMode, WAITLIST_LIMIT } from "@/lib/waitlist"
-import { ArrowRight, CloudUpload, GitBranch, ListChecks, Rocket, ScanSearch, FileText } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { BuildMap } from "@/components/landing/build-map"
@@ -22,37 +21,27 @@ const navLinks = [
   { label: "Pricing", href: "#pricing" },
 ]
 
-const featureCards = [
+const productOutputs = [
   {
-    icon: ScanSearch,
-    title: "Research, Fast",
-    description: "Get competitor context and market signals quickly so you can make sharper product decisions.",
+    eyebrow: "Research",
+    title: "Know the market before you commit a sprint.",
+    description:
+      "Maker Compass maps competitors, pricing, positioning, gaps, and first wedges so your idea starts with context instead of guesswork.",
+    artifacts: ["Competitive scan", "Audience segments", "Differentiation wedges"],
   },
   {
-    icon: FileText,
-    title: "MVP Plan + PRD",
-    description: "Turn rough ideas into actionable docs with priorities, acceptance criteria, and clear scope.",
+    eyebrow: "Product",
+    title: "Turn the idea into a buildable plan.",
+    description:
+      "Generate the PRD, MVP scope, acceptance criteria, mockup directions, and technical blueprint your coding agent needs to start cleanly.",
+    artifacts: ["PRD", "MVP plan", "Mockups", "Technical spec"],
   },
-  {
-    icon: Rocket,
-    title: "Actionable Mockups",
-    description: "Generate real UI directions you can compare, discuss, and iterate before writing production code.",
-  },
-  {
-    icon: GitBranch,
-    title: "Technical Blueprint",
-    description: "Map architecture, data flow, and implementation tradeoffs before committing engineering time.",
-  },
-  {
-    icon: ListChecks,
-    title: "Execution Checklist",
-    description: "Break work into clear milestones so your team knows exactly what to build next.",
-  },
-  {
-    icon: CloudUpload,
-    title: "Ship When Ready",
-    description: "Move from planning to launch in one workspace instead of jumping between disconnected tools.",
-  },
+]
+
+const workflowSignals = [
+  "One intake becomes every core artifact.",
+  "Docs stay tied to the same project context.",
+  "Output is written for builders, not slide decks.",
 ]
 
 const steps = [
@@ -126,7 +115,7 @@ const plans = [
   },
 ]
 
-const container = "mx-auto w-full max-w-[1320px] px-6 sm:px-8 lg:px-14"
+const container = "mx-auto w-full max-w-[1320px] px-4 sm:px-8 lg:px-14"
 
 function SectionCard({ children }: { children: ReactNode }) {
   return <section className={`${container} py-8 md:py-10`}>{children}</section>
@@ -168,7 +157,7 @@ export default async function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-text-primary">
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
-        <div className={`${container} ui-row-between h-16`}>
+        <div className={`${container} flex min-h-16 flex-wrap items-center justify-between gap-3 py-3 md:flex-nowrap md:py-0`}>
           <BrandWordmark href="/" logoSize={36} logoClassName="rounded-sm" labelClassName="text-lg font-semibold tracking-[0.01em]" />
 
           <div className="hidden items-center gap-8 md:flex">
@@ -179,21 +168,21 @@ export default async function LandingPage() {
             ))}
           </div>
 
-          <div className="hidden ui-row-gap-3 md:flex">
+          <div className="flex items-center gap-2 md:gap-3">
             {/* Sign In is always visible — existing users still need to log in */}
             <Link href="/?modal=auth&mode=signin" scroll={false}>
-              <Button variant="outline" className="h-10 px-6 rounded-md border-border-subtle bg-white text-text-primary">
+              <Button variant="outline" className="h-10 px-4 rounded-md border-border-subtle bg-white text-text-primary sm:h-11 sm:px-6">
                 Sign In
               </Button>
             </Link>
 
             {waitlistMode ? (
               <a href="#waitlist">
-                <Button className="h-10 px-6 rounded-md bg-primary text-primary-foreground">Join Waitlist</Button>
+                <Button className="h-10 px-4 rounded-md bg-primary text-primary-foreground sm:h-11 sm:px-6">Join Waitlist</Button>
               </a>
             ) : (
               <Link href="/?modal=auth&mode=signup" scroll={false}>
-                <Button className="h-10 px-6 rounded-md bg-primary text-primary-foreground">Get Started</Button>
+                <Button className="h-10 px-4 rounded-md bg-primary text-primary-foreground sm:h-11 sm:px-6">Get Started</Button>
               </Link>
             )}
           </div>
@@ -201,7 +190,7 @@ export default async function LandingPage() {
       </header>
 
       <SectionCard>
-        <div className="flex items-center justify-center pt-10 pb-8 md:pt-14">
+        <div className="flex items-center justify-center pt-8 pb-6 md:pt-14 md:pb-8">
           <div className="inline-flex items-center rounded-full border border-border-subtle px-4 py-2 font-mono text-[0.6875rem] font-medium tracking-[0.18em] text-text-secondary">
             {waitlistMode
               ? `${WAITLIST_LIMIT} early-access spots filled. Join the waitlist.`
@@ -209,11 +198,11 @@ export default async function LandingPage() {
           </div>
         </div>
 
-        <h1 className="font-display max-w-[980px] mx-auto text-center text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.95] tracking-[-0.06em] font-semibold">
+        <h1 className="font-display max-w-[980px] mx-auto text-center text-[2.75rem] leading-[0.95] tracking-[-0.06em] font-semibold sm:text-[3.5rem] lg:text-[4.5rem]">
           Build your startup idea this weekend, not &ldquo;someday.&rdquo;
         </h1>
 
-        <p className="mx-auto mt-6 max-w-[780px] text-center text-[20px] leading-relaxed text-text-secondary">
+        <p className="mx-auto mt-6 max-w-[780px] text-center text-base leading-relaxed text-text-secondary sm:text-[20px]">
           Turn one idea into research, MVP plan, and actionable mockups in minutes. No fluff. No &ldquo;where do I start?&rdquo; spiral.
         </p>
 
@@ -233,19 +222,10 @@ export default async function LandingPage() {
           )}
         </div>
 
-        <div className="mx-auto mt-12 grid w-full max-w-[780px] gap-4 sm:grid-cols-3">
-          <div className="flex h-[112px] flex-col items-center justify-center border border-text-primary bg-text-primary text-white p-4">
-            <p className="text-[36px] font-semibold leading-none tracking-[-0.06em]">3x</p>
-            <p className="mt-1 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-[#F0F0F0]">Design Directions</p>
-          </div>
-          <div className={uiStylePresets.landingStatCard}>
-            <p className="text-[36px] font-semibold leading-none tracking-[-0.06em]">MVP</p>
-            <p className={uiStylePresets.landingFeaturePill}>Ready Plan</p>
-          </div>
-          <div className={uiStylePresets.landingStatCard}>
-            <p className="text-[36px] font-semibold leading-none tracking-[-0.06em]">Fast</p>
-            <p className={uiStylePresets.landingFeaturePill}>First Drafts</p>
-          </div>
+        <div className="mx-auto mt-12 max-w-[860px] border-y border-border-subtle py-5">
+          <p className="text-center text-sm leading-relaxed text-text-secondary">
+            One focused intake becomes market research, product direction, mockups, technical choices, and the next build step.
+          </p>
         </div>
       </SectionCard>
 
@@ -256,29 +236,41 @@ export default async function LandingPage() {
       <SectionCard>
         <section id="features" className="py-3">
           <p className="ui-kicker-label">Features</p>
-          <h2 className="mt-4 text-[clamp(2rem,4vw,3.35rem)] leading-[0.98] tracking-[-0.06em] font-semibold">
+          <h2 className="mt-4 text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
             From idea to momentum, without the usual excuses
           </h2>
 
-          <div className="mt-8 rounded-none border border-border-subtle bg-[#F5F0EB] p-6 md:p-8">
-            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">Signature Feature</p>
-            <h3 className="mt-3 text-[clamp(1.4rem,2.4vw,2rem)] leading-tight tracking-[-0.03em] font-semibold">
-              One idea. Three design directions. Instant clarity.
-            </h3>
-            <p className="mt-3 max-w-[860px] text-sm leading-relaxed text-text-secondary">
-              Generate multiple mockup directions for the same core screen, compare them side-by-side, and pick the direction you want to build first.
-            </p>
+          <div className="mt-8 grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
+            {productOutputs.map((item) => (
+              <article key={item.eyebrow} className="rounded-none border border-border-subtle bg-white p-6 md:p-8">
+                <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+                  {item.eyebrow}
+                </p>
+                  <h3 className="mt-4 max-w-[620px] text-[1.45rem] font-semibold leading-tight tracking-[-0.04em] sm:text-[1.85rem] lg:text-[2.25rem]">
+                  {item.title}
+                </h3>
+                <p className="mt-4 max-w-[680px] text-[15px] leading-relaxed text-text-secondary">
+                  {item.description}
+                </p>
+                <div className="mt-7 flex flex-wrap gap-2">
+                  {item.artifacts.map((artifact) => (
+                    <span
+                      key={artifact}
+                      className="border border-border-subtle bg-[#F5F0EB] px-3 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-text-secondary"
+                    >
+                      {artifact}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
           </div>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {featureCards.map((item) => (
-              <article key={item.title} className="rounded-none border border-border-subtle bg-white p-6 md:p-7">
-                <div className="flex h-10 w-10 items-center justify-center bg-text-primary text-white">
-                  <item.icon className="h-[18px] w-[18px]" />
-                </div>
-                <h3 className="mt-5 text-2xl font-semibold tracking-[-0.03em]">{item.title}</h3>
-                <p className="mt-4 text-[14px] leading-relaxed text-text-secondary">{item.description}</p>
-              </article>
+          <div className="mt-5 grid gap-0 border border-border-subtle bg-text-primary text-white md:grid-cols-3">
+            {workflowSignals.map((signal) => (
+              <div key={signal} className="border-b border-white/15 p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
+                <p className="text-[15px] font-medium leading-relaxed">{signal}</p>
+              </div>
             ))}
           </div>
         </section>
@@ -291,14 +283,14 @@ export default async function LandingPage() {
       <SectionCard>
         <section id="how-it-works" className="py-3">
           <p className="ui-kicker-label">How It Works</p>
-          <h2 className="mt-4 max-w-[760px] text-[clamp(2rem,4vw,3.35rem)] leading-[0.98] tracking-[-0.06em] font-semibold">
+          <h2 className="mt-4 max-w-[760px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
             Your first version, broken into clear steps
           </h2>
 
           <div className="mt-8 space-y-4">
             {steps.map((step) => (
-              <div key={step.number} className="grid grid-cols-[auto,1fr] gap-5 border border-border-subtle p-5 md:p-6">
-                <p className="text-[36px] leading-none font-semibold tracking-[-0.06em] text-primary">{step.number}</p>
+              <div key={step.number} className="grid grid-cols-[auto,1fr] gap-4 border border-border-subtle p-4 sm:gap-5 md:p-6">
+                <p className="text-[30px] leading-none font-semibold tracking-[-0.06em] text-primary sm:text-[36px]">{step.number}</p>
                 <p className="whitespace-pre-line text-[16px] leading-7 text-text-primary">{step.body}</p>
               </div>
             ))}
@@ -309,7 +301,7 @@ export default async function LandingPage() {
       <SectionCard>
         <section id="pricing" className="py-3">
           <p className="ui-kicker-label">Pricing</p>
-          <h2 className="mt-4 max-w-[840px] text-[clamp(2rem,4vw,3.35rem)] leading-[0.98] tracking-[-0.06em] font-semibold">
+          <h2 className="mt-4 max-w-[840px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
             Plans For Builders At Every Stage
           </h2>
           <p className="mt-4 max-w-[760px] text-sm text-text-secondary">
@@ -362,7 +354,7 @@ export default async function LandingPage() {
       {/* Bottom CTA */}
       <section className="border-t border-border-subtle py-16 md:py-20">
         <div className={`${container} text-center`}>
-          <h2 className="mx-auto max-w-[860px] text-[clamp(2rem,4.6vw,4rem)] leading-[0.96] tracking-[-0.06em] font-semibold">
+          <h2 className="mx-auto max-w-[860px] text-[2rem] leading-[0.96] tracking-[-0.06em] font-semibold sm:text-[3rem] lg:text-[4rem]">
             {waitlistMode ? "Secure your spot before it fills up." : "Stop waiting. Start building."}
           </h2>
           <p className="mx-auto mt-6 max-w-[760px] text-xl text-text-secondary">
@@ -386,13 +378,8 @@ export default async function LandingPage() {
       </section>
 
       <footer className="border-t border-border-subtle bg-[#F5F0EB]">
-        <div className={`${container} ui-row-between h-[88px] flex-wrap gap-5 text-sm`}>
+        <div className={`${container} flex min-h-[88px] items-center text-sm`}>
           <span className="font-mono text-[0.6875rem] tracking-[0.18em] text-text-muted">© 2026 Maker Compass. All rights reserved.</span>
-          <div className="flex items-center gap-5 font-mono text-[0.6875rem] tracking-[0.18em] text-text-muted">
-            <a href="#" className={uiStylePresets.subtleLinkHover}>Terms</a>
-            <a href="#" className={uiStylePresets.subtleLinkHover}>Privacy</a>
-            <a href="#" className={uiStylePresets.subtleLinkHover}>Contact</a>
-          </div>
         </div>
       </footer>
 

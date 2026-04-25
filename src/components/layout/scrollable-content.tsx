@@ -30,7 +30,7 @@ interface ScrollableContentProps {
 
 function DocumentSkeleton({ label }: { label: string }) {
   return (
-    <div className="flex flex-col gap-4 p-8">
+    <div className="flex flex-col gap-4 p-5 sm:p-8">
       <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
       <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
       <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100" />
@@ -42,7 +42,7 @@ function DocumentSkeleton({ label }: { label: string }) {
 
 function EmptyState({ label }: { label: string }) {
   return (
-    <div className="flex items-center justify-center p-12 text-sm text-muted-foreground">
+    <div className="flex items-center justify-center p-6 text-center text-sm text-muted-foreground sm:p-12">
       {label} has not been generated yet.
     </div>
   )
@@ -168,11 +168,11 @@ function StitchConceptCard({
       </div>
 
       {/* Two-column body */}
-      <div className="flex min-h-[600px]">
+      <div className="flex min-h-[420px] flex-col lg:min-h-[600px] lg:flex-row">
         {/* Left: iframe */}
         <div className="flex-1 bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
           {loading ? (
-            <div className="flex h-full min-h-[600px] items-center justify-center bg-white">
+            <div className="flex h-full min-h-[420px] items-center justify-center bg-white lg:min-h-[600px]">
               <div className="flex flex-col items-center gap-3 text-zinc-400">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-500" />
                 <span className="text-xs">Loading design...</span>
@@ -182,7 +182,7 @@ function StitchConceptCard({
             <iframe
               srcDoc={html ?? ""}
               className="w-full border-0"
-              style={{ height: "600px" }}
+              style={{ height: "min(600px, 70vh)" }}
               title={`Mockup Option ${label}`}
               sandbox="allow-scripts allow-same-origin"
             />
@@ -190,7 +190,7 @@ function StitchConceptCard({
         </div>
 
         {/* Right: description + export */}
-        <div className="flex w-72 shrink-0 flex-col justify-between border-l border-border p-5">
+        <div className="flex w-full shrink-0 flex-col justify-between border-t border-border p-5 lg:w-72 lg:border-l lg:border-t-0">
           <div className="space-y-3">
             <div>
               <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -280,7 +280,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
     return (
       <div
         ref={ref}
-        className="flex-1 space-y-4 overflow-y-auto bg-background px-4 py-4 sm:px-6 lg:px-8"
+        className="flex-1 space-y-4 overflow-y-auto bg-background px-3 py-3 sm:px-6 sm:py-4 lg:px-8"
       >
         {generateAllStatus !== "idle" && (
           <GenerateAllBlock projectId={projectId} credits={credits} />

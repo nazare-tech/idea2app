@@ -96,12 +96,12 @@ function NavTab({
     : "border-[#E5E5E5]"
 
   return (
-    <div className={cn("rounded-md p-2 transition-colors", containerBg)}>
+    <div className={cn("min-w-[168px] shrink-0 rounded-md p-2 transition-colors lg:min-w-0 lg:shrink", containerBg)}>
       {/* Tab title row */}
       <button
         type="button"
         onClick={() => onNavigate(item.key)}
-        className="flex w-full cursor-pointer items-center gap-2"
+        className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <div className={cn("h-4 w-1 shrink-0 rounded-sm", barColor)} />
         <span className={cn("flex-1 text-left text-base font-bold", titleColor)}>
@@ -116,7 +116,7 @@ function NavTab({
       </button>
 
       {/* Sub-tabs */}
-      <div className={cn("mt-1 ml-[11px] border-l pl-2", connectorColor)}>
+      <div className={cn("mt-1 ml-[11px] hidden border-l pl-2 lg:block", connectorColor)}>
         {item.sections.map((section, idx) => {
           const isActiveSub = activeSectionId === section.id
           // In-progress items: vary opacity by position
@@ -130,7 +130,7 @@ function NavTab({
               type="button"
               onClick={() => onNavigate(section.id)}
               className={cn(
-                "block w-full cursor-pointer text-left text-xs py-[1px]",
+                "block min-h-11 w-full cursor-pointer rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-[#F5F0EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                 isActiveSub
                   ? "font-semibold text-[#FF3B30]"
                   : cn(subColor, inProgressOpacity)
@@ -158,13 +158,13 @@ export function AnchorNav({
   }
 
   return (
-    <nav className="sticky top-0 flex h-[calc(100vh-64px)] w-[300px] shrink-0 flex-col gap-2.5 overflow-y-auto bg-[#FAFAFA] px-6 py-5">
+    <nav className="flex w-full shrink-0 gap-2 overflow-x-auto border-b border-border-subtle bg-[#FAFAFA] px-4 py-3 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-b-0 lg:px-6 lg:py-5">
       {/* Prompt/Idea Brief tab */}
       <button
         type="button"
         onClick={onSwitchToPrompt}
         className={cn(
-          "flex w-full cursor-pointer items-center gap-2 rounded-md p-2 mb-2 transition-colors",
+          "flex min-h-11 w-auto shrink-0 cursor-pointer items-center gap-2 rounded-md p-2 transition-colors lg:mb-2 lg:w-full",
           promptStatus === "done" ? "bg-[#F5F5F5]" : "bg-white",
           "hover:bg-[#F0F0F0]"
         )}
@@ -183,7 +183,7 @@ export function AnchorNav({
           <div className="h-1.5 w-1.5 rounded-full bg-[#22C55E] opacity-45" />
         )}
       </button>
-      <div className="h-px bg-[#E5E5E5] mb-2" />
+      <div className="hidden h-px bg-[#E5E5E5] mb-2 lg:block" />
 
       {/* Document tabs */}
       {SCROLLABLE_NAV_ITEMS.map((item) => (
