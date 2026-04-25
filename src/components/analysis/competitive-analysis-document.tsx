@@ -38,7 +38,9 @@ function PencilCard({
     <section
       className={cn(
         "border rounded-none",
-        dark ? "border-[#0A0A0A] bg-[#0A0A0A]" : "border-[#E0E0E0] bg-white",
+        dark
+          ? "border-[#D8CEC5] bg-[#F5F0EB]"
+          : "border-[#E0E0E0] bg-white",
         className
       )}
     >
@@ -52,7 +54,7 @@ function PencilCard({
           className={cn(
             displayFontClass,
             "text-[22px] font-bold tracking-[-0.03em]",
-            dark ? "text-white" : "text-[#0A0A0A]"
+            dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
           )}
         >
           {title}
@@ -79,7 +81,7 @@ function ParagraphStack({
           key={`${paragraph}-${index}`}
           className={cn(
             "text-[13px] leading-6",
-            dark ? "text-white/78" : "text-[#666666]"
+            dark ? "text-[#4A4040]" : "text-[#666666]"
           )}
         >
           {paragraph}
@@ -103,7 +105,7 @@ function NumberedList({
           <span
             className={cn(
               "w-7 shrink-0 pt-0.5 font-mono text-[11px] font-medium",
-              dark ? "text-primary" : "text-[#999999]"
+              dark ? "text-[#8A8480]" : "text-[#999999]"
             )}
           >
             {String(index + 1).padStart(2, "0")}
@@ -111,7 +113,7 @@ function NumberedList({
           <p
             className={cn(
               "text-[12px] leading-5",
-              dark ? "text-white/82" : "text-[#0A0A0A]"
+              dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
             )}
           >
             {item}
@@ -185,11 +187,11 @@ function DataTable({
     <div className="overflow-x-auto border border-[#E0E0E0]">
       <table className="min-w-full border-collapse">
         <thead>
-          <tr className="bg-[#0A0A0A]">
+          <tr className="bg-[#F5F0EB]">
             {headers.map((header) => (
               <th
                 key={header}
-                className="border border-[#0A0A0A] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-white"
+                className="border border-[#D8CEC5] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]"
               >
                 {header}
               </th>
@@ -246,10 +248,10 @@ function CompetitorField({
 
   return (
     <div className="flex items-start gap-3">
-      <p className="w-24 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9E9E9E]">
+      <p className="w-24 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8A8480]">
         {label}
       </p>
-      <p className="flex-1 text-[11px] leading-[1.45] font-medium text-[#E6E6E6]">
+      <p className="flex-1 text-[11px] leading-[1.45] font-medium text-[#4A4040]">
         {value}
       </p>
     </div>
@@ -300,12 +302,12 @@ function FastComparisonTable({
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[1010px] border border-[#E0E0E0]">
-        <div className="grid grid-cols-[180px_220px_150px_220px_minmax(240px,1fr)] gap-3 bg-[#0A0A0A] px-5 py-4">
+        <div className="grid grid-cols-[180px_220px_150px_220px_minmax(240px,1fr)] gap-3 border-b border-[#D8CEC5] bg-[#F5F0EB] px-5 py-4">
           {["Competitor", "Positioning", "Pricing", "Audience", "Key Edge"].map(
             (label) => (
               <p
                 key={label}
-                className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-white"
+                className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]"
               >
                 {label}
               </p>
@@ -396,7 +398,7 @@ function CompetitorProfiles({
                   competitors.length % 2 === 1 &&
                     index === competitors.length - 1 &&
                     "xl:col-span-2",
-                  "border-[#0A0A0A] bg-[#0A0A0A]"
+                  "border-[#D8CEC5] bg-[#F7F2ED]"
                 )}
               >
                 <div className="space-y-3">
@@ -411,32 +413,32 @@ function CompetitorProfiles({
                         <h3
                           className={cn(
                             displayFontClass,
-                            "text-[18px] font-semibold tracking-[-0.03em] text-white"
+                            "text-[18px] font-semibold tracking-[-0.03em] text-[#1C1917]"
                           )}
                         >
                           {competitor.heading}
                         </h3>
-                        <ArrowUpRight className="h-3.5 w-3.5 text-white" />
+                        <ArrowUpRight className="h-3.5 w-3.5 text-[#4A4040]" />
                       </a>
                     ) : (
                       <div className="flex items-center gap-1.5">
                         <h3
                           className={cn(
                             displayFontClass,
-                            "text-[18px] font-semibold tracking-[-0.03em] text-white"
+                            "text-[18px] font-semibold tracking-[-0.03em] text-[#1C1917]"
                           )}
                         >
                           {competitor.heading}
                         </h3>
-                        <ArrowUpRight className="h-3.5 w-3.5 text-white" />
+                        <ArrowUpRight className="h-3.5 w-3.5 text-[#4A4040]" />
                       </div>
                     )}
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8A8480]">
                       {getCompetitorTag(competitor)}
                     </p>
                   </div>
                   {getCompetitorPitch(competitor) ? (
-                    <p className="text-[11px] leading-[1.35] text-[#FF7A73]">
+                    <p className="text-[11px] leading-[1.45] text-[#7C2D24]">
                       {getCompetitorPitch(competitor)}
                     </p>
                   ) : null}
@@ -465,11 +467,11 @@ function CompetitorProfiles({
                   />
                 </div>
 
-                <div className="mt-5 grid gap-2 border-t border-white/10 pt-3 md:grid-cols-2">
-                  <p className="font-mono text-[10px] font-medium text-[#BDBDBD]">
+                <div className="mt-5 grid gap-2 border-t border-[#D8CEC5] pt-3 md:grid-cols-2">
+                  <p className="font-mono text-[10px] font-medium text-[#4A4040]">
                     Pricing: {competitor.fields["Pricing Model"] ?? "Unknown"}
                   </p>
-                  <p className="font-mono text-[10px] font-medium text-[#BDBDBD]">
+                  <p className="font-mono text-[10px] font-medium text-[#4A4040]">
                     Audience: {competitor.fields["Target Audience"] ?? "Unknown"}
                   </p>
                 </div>
@@ -579,9 +581,9 @@ function PositioningMap({
                   tone === "accent"
                     ? "border-primary bg-primary text-primary-foreground"
                     : tone === "dark"
-                      ? "border-[#0A0A0A] bg-[#0A0A0A] text-white"
+                      ? "border-[#4A4040] bg-[#4A4040] text-[#FAFAFA]"
                       : tone === "muted"
-                        ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
+                        ? "border-[#D8CEC5] bg-[#E8DDD5] text-[#1C1917]"
                         : "border-[#E0E0E0] bg-white text-[#0A0A0A]"
                 )}
                 style={{
