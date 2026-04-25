@@ -77,13 +77,12 @@ function useElapsedTime(startedAt: Date | null, isRunning: boolean) {
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
-    if (!isRunning || !startedAt) {
-      if (startedAt && !isRunning) {
-        setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000))
-      }
-      return
-    }
+    if (!startedAt) return
     const update = () => setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000))
+    if (!isRunning) {
+      const timeout = setTimeout(update, 0)
+      return () => clearTimeout(timeout)
+    }
     update()
     const interval = setInterval(update, 1000)
     return () => clearInterval(interval)

@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { buildQueue, LOCAL_STORAGE_KEY, type QueueItem } from "./generate-all-helpers"
+import { buildQueue, LOCAL_STORAGE_KEY } from "./generate-all-helpers"
 import { GENERATE_ALL_QUEUE_ORDER } from "./document-definitions"
 import { GENERATE_ALL_ACTION_MAP, getTokenCost } from "./token-economics"
 
@@ -17,8 +17,8 @@ const DEFAULT_MODELS: Record<string, string> = {
 }
 
 // Status functions for common scenarios
-const allPending = (_type: string) => "pending" as const
-const allDone = (_type: string) => "done" as const
+const allPending = () => "pending" as const
+const allDone = () => "done" as const
 
 // =============================================================================
 // LOCAL_STORAGE_KEY
@@ -122,10 +122,10 @@ test("buildQueue: pending doc costs match getTokenCost(action, model)", () => {
   }
 })
 
-test("buildQueue: competitive cost with grok (0.8x) on base 10 → 8", () => {
+test("buildQueue: competitive cost with gemini pro rounds to 20", () => {
   const queue = buildQueue(DEFAULT_MODELS, allPending)
   const competitive = queue.find((item) => item.docType === "competitive")!
-  assert.equal(competitive.creditCost, 8)
+  assert.equal(competitive.creditCost, 20)
 })
 
 test("buildQueue: mockups cost with stitch (1.0x) on base 30 → 30", () => {
@@ -134,13 +134,13 @@ test("buildQueue: mockups cost with stitch (1.0x) on base 30 → 30", () => {
   assert.equal(mockups.creditCost, 30)
 })
 
-test("buildQueue: launch cost with grok (0.8x) on base 5 → 4", () => {
+test("buildQueue: launch cost with gpt-5.4-mini rounds to 5", () => {
   const queue = buildQueue(DEFAULT_MODELS, allPending)
   const launch = queue.find((item) => item.docType === "launch")!
-  assert.equal(launch.creditCost, 4)
+  assert.equal(launch.creditCost, 5)
 })
 
-test("buildQueue: switching competitive to gpt-5 (1.5x) → cost 15 instead of 8", () => {
+test("buildQueue: switching competitive to gpt-5 (1.5x) changes cost from 20 to 25", () => {
   const premiumModels = { ...DEFAULT_MODELS, competitive: "openai/gpt-5" }
   const queueDefault = buildQueue(DEFAULT_MODELS, allPending)
   const queuePremium = buildQueue(premiumModels, allPending)
@@ -148,8 +148,8 @@ test("buildQueue: switching competitive to gpt-5 (1.5x) → cost 15 instead of 8
   const defaultCompetitive = queueDefault.find((item) => item.docType === "competitive")!
   const premiumCompetitive = queuePremium.find((item) => item.docType === "competitive")!
 
-  assert.equal(defaultCompetitive.creditCost, 8)
-  assert.equal(premiumCompetitive.creditCost, 15)
+  assert.equal(defaultCompetitive.creditCost, 20)
+  assert.equal(premiumCompetitive.creditCost, 25)
 })
 
 test("buildQueue: model selection only affects the specific doc type", () => {
@@ -299,7 +299,7 @@ test("loop: all items end up 'done' on successful completion", async () => {
 })
 
 test("loop: credits accumulate for every generated doc", async () => {
-  // competitive:8, prd:8, mvp:8, mockups:30, launch:4 → 58
+  // competitive:20, prd:15, mvp:15, mockups:30, launch:5 -> 85
   const result = await simulateLoop(
     pendingQueue(),
     DEFAULT_MODELS,
@@ -307,7 +307,7 @@ test("loop: credits accumulate for every generated doc", async () => {
     allPending,
     { current: false },
   )
-  assert.equal(result.creditsUsed, 58)
+  assert.equal(result.creditsUsed, 85)
 })
 
 test("loop: empty queue (no pending items) completes immediately without calling generateDoc", async () => {
@@ -360,8 +360,8 @@ test("loop: skipped docs still have 0 credit cost", async () => {
   // mockups should be skipped and not charged
   const mockups = result.queue.find((item) => item.docType === "mockups")!
   assert.equal(mockups.status, "skipped")
-  // credits should exclude mockups (30) → only competitive:8+prd:8+mvp:8+launch:4=28
-  assert.equal(result.creditsUsed, 28)
+  // credits should exclude mockups (30) -> only competitive:20+prd:15+mvp:15+launch:5=55
+  assert.equal(result.creditsUsed, 55)
 })
 
 // =============================================================================
@@ -445,7 +445,7 @@ test("loop: generateDocument returning false is treated as an error (not crash)"
 })
 
 test("loop: credits only count docs that succeeded before the error", async () => {
-  // competitive (8) succeeds, prd (8) errors → only 8 credits used
+  // competitive (20) succeeds, prd errors -> only competitive was charged
   const result = await simulateLoop(
     pendingQueue(),
     DEFAULT_MODELS,
@@ -456,7 +456,7 @@ test("loop: credits only count docs that succeeded before the error", async () =
     allPending,
     { current: false },
   )
-  assert.equal(result.creditsUsed, 8) // only competitive was charged
+  assert.equal(result.creditsUsed, 20) // only competitive was charged
 })
 
 // =============================================================================

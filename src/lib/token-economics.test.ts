@@ -12,8 +12,8 @@ import {
 // BASE_ACTION_TOKENS
 // =============================================================================
 
-test("BASE_ACTION_TOKENS: competitive-analysis base is 10", () => {
-  assert.equal(BASE_ACTION_TOKENS["competitive-analysis"], 10)
+test("BASE_ACTION_TOKENS: competitive-analysis base is 15", () => {
+  assert.equal(BASE_ACTION_TOKENS["competitive-analysis"], 15)
 })
 
 test("BASE_ACTION_TOKENS: prd base is 10", () => {
@@ -157,8 +157,8 @@ test("getModelTokenMultiplier: is case-insensitive", () => {
 // getTokenCost
 // =============================================================================
 
-test("getTokenCost: competitive-analysis with no model = base × 1.0 = 10", () => {
-  assert.equal(getTokenCost("competitive-analysis"), 10)
+test("getTokenCost: competitive-analysis with no model = base × 1.0 = 15", () => {
+  assert.equal(getTokenCost("competitive-analysis"), 15)
 })
 
 test("getTokenCost: prd with no model = 10", () => {
@@ -181,9 +181,9 @@ test("getTokenCost: mockup with stitch model = 30 (no multiplier, uses default 1
   assert.equal(getTokenCost("mockup", "stitch"), 30)
 })
 
-test("getTokenCost: uses ceiling rounding (never rounds down)", () => {
-  // competitive-analysis=10, claude-sonnet=1.15x → 10 × 1.15 = 11.5 → ceil = 12
-  assert.equal(getTokenCost("competitive-analysis", "claude-sonnet-4-6"), 12)
+test("getTokenCost: rounds generations up to the nearest 5", () => {
+  // competitive-analysis=15, claude-sonnet=1.15x -> 17.25 -> 20
+  assert.equal(getTokenCost("competitive-analysis", "claude-sonnet-4-6"), 20)
 })
 
 test("getTokenCost: minimum is 1 (never returns 0)", () => {
@@ -191,40 +191,41 @@ test("getTokenCost: minimum is 1 (never returns 0)", () => {
   assert.equal(getTokenCost("chat", "some-model:free"), 1)
 })
 
-test("getTokenCost: grok-4-1-fast (0.8x) on competitive-analysis (10) → ceil(8.0) = 8", () => {
-  assert.equal(getTokenCost("competitive-analysis", "x-ai/grok-4-1-fast"), 8)
+test("getTokenCost: grok-4-1-fast (0.8x) on competitive-analysis (15) rounds to 15", () => {
+  assert.equal(getTokenCost("competitive-analysis", "x-ai/grok-4-1-fast"), 15)
 })
 
-test("getTokenCost: grok-4-1-fast (0.8x) on launch-plan (5) → ceil(4.0) = 4", () => {
-  assert.equal(getTokenCost("launch-plan", "x-ai/grok-4-1-fast"), 4)
+test("getTokenCost: grok-4-1-fast (0.8x) on launch-plan (5) rounds to 5", () => {
+  assert.equal(getTokenCost("launch-plan", "x-ai/grok-4-1-fast"), 5)
 })
 
-test("getTokenCost: gpt-5-mini (0.85x) on competitive-analysis (10) → ceil(8.5) = 9", () => {
-  assert.equal(getTokenCost("competitive-analysis", "openai/gpt-5-mini"), 9)
+test("getTokenCost: gpt-5-mini (0.85x) on competitive-analysis (15) rounds to 15", () => {
+  assert.equal(getTokenCost("competitive-analysis", "openai/gpt-5-mini"), 15)
 })
 
-test("getTokenCost: gpt-5 (1.5x) on competitive-analysis (10) → 15", () => {
-  assert.equal(getTokenCost("competitive-analysis", "openai/gpt-5"), 15)
+test("getTokenCost: gpt-5 (1.5x) on competitive-analysis (15) rounds to 25", () => {
+  assert.equal(getTokenCost("competitive-analysis", "openai/gpt-5"), 25)
 })
 
-test("getTokenCost: gpt-5 (1.5x) on mockup (30) → 45", () => {
-  assert.equal(getTokenCost("mockup", "openai/gpt-5"), 45)
+test("getTokenCost: mockup stays fixed-cost even with a premium model", () => {
+  assert.equal(getTokenCost("mockup", "openai/gpt-5"), 30)
 })
 
-test("getTokenCost: claude-opus (1.35x) on prd (10) → ceil(13.5) = 14", () => {
-  assert.equal(getTokenCost("prd", "anthropic/claude-opus-4"), 14)
+test("getTokenCost: claude-opus (1.35x) on prd (10) rounds to 15", () => {
+  assert.equal(getTokenCost("prd", "anthropic/claude-opus-4"), 15)
 })
 
-test("getTokenCost: deep-seek (0.8x) on mvp-plan (10) → 8", () => {
-  assert.equal(getTokenCost("mvp-plan", "deepseek/deepseek-v3"), 8)
+test("getTokenCost: deep-seek (0.8x) on mvp-plan (10) rounds to 10", () => {
+  assert.equal(getTokenCost("mvp-plan", "deepseek/deepseek-v3"), 10)
 })
 
 // =============================================================================
 // estimateGenerateAllCost
 // =============================================================================
 
-// Default models: grok-4-1-fast (0.8x) for text docs, stitch (1.0x) for mockups
-// competitive: ceil(10×0.8)=8, prd: 8, mvp: 8, mockups: 30, launch: ceil(5×0.8)=4 → total=58
+// Default models: grok-4-1-fast (0.8x) for text docs, stitch (1.0x) for mockups.
+// Generation costs round up to the nearest 5.
+// competitive: 15, prd: 10, mvp: 10, mockups: 30, launch: 5 -> total=70
 const DEFAULT_MODELS = {
   competitive: "x-ai/grok-4-1-fast",
   prd: "x-ai/grok-4-1-fast",
@@ -233,8 +234,8 @@ const DEFAULT_MODELS = {
   launch: "x-ai/grok-4-1-fast",
 }
 
-test("estimateGenerateAllCost: all 5 docs with default grok models = 58 credits", () => {
-  assert.equal(estimateGenerateAllCost(DEFAULT_MODELS), 58)
+test("estimateGenerateAllCost: all 5 docs with default grok models = 70 credits", () => {
+  assert.equal(estimateGenerateAllCost(DEFAULT_MODELS), 70)
 })
 
 test("estimateGenerateAllCost: skipping all docs = 0", () => {
@@ -248,43 +249,42 @@ test("estimateGenerateAllCost: skipping mockups (30 credits) reduces total by 30
   assert.equal(full - withoutMockups, 30)
 })
 
-test("estimateGenerateAllCost: skipping competitive reduces total by 8 (grok 0.8x on base 10)", () => {
+test("estimateGenerateAllCost: skipping competitive reduces total by 15", () => {
   const full = estimateGenerateAllCost(DEFAULT_MODELS)
   const withoutCompetitive = estimateGenerateAllCost(DEFAULT_MODELS, new Set(["competitive"]))
-  assert.equal(full - withoutCompetitive, 8)
+  assert.equal(full - withoutCompetitive, 15)
 })
 
-test("estimateGenerateAllCost: skipping launch reduces total by 4 (grok 0.8x on base 5)", () => {
+test("estimateGenerateAllCost: skipping launch reduces total by 5", () => {
   const full = estimateGenerateAllCost(DEFAULT_MODELS)
   const withoutLaunch = estimateGenerateAllCost(DEFAULT_MODELS, new Set(["launch"]))
-  assert.equal(full - withoutLaunch, 4)
+  assert.equal(full - withoutLaunch, 5)
 })
 
 test("estimateGenerateAllCost: switching competitive to gpt-5 (1.5x) increases cost", () => {
   const premiumModels = { ...DEFAULT_MODELS, competitive: "openai/gpt-5" }
   const baseCost = estimateGenerateAllCost(DEFAULT_MODELS)
   const premiumCost = estimateGenerateAllCost(premiumModels)
-  // competitive: gpt-5 → 15 vs grok → 8, difference = 7
-  assert.equal(premiumCost - baseCost, 7)
+  // competitive: gpt-5 -> 25 vs grok -> 15, difference = 10
+  assert.equal(premiumCost - baseCost, 10)
 })
 
-test("estimateGenerateAllCost: switching mockups to gpt-5 (1.5x) raises mockup cost to 45", () => {
+test("estimateGenerateAllCost: switching mockups to gpt-5 keeps fixed mockup cost", () => {
   const premiumModels = { ...DEFAULT_MODELS, mockups: "openai/gpt-5" }
   const premiumCost = estimateGenerateAllCost(premiumModels)
-  // mockup: gpt-5 → 45 vs stitch → 30, difference = 15
   const baseCost = estimateGenerateAllCost(DEFAULT_MODELS)
-  assert.equal(premiumCost - baseCost, 15)
+  assert.equal(premiumCost - baseCost, 0)
 })
 
-test("estimateGenerateAllCost: skipping competitive and prd saves 16 credits (8+8)", () => {
+test("estimateGenerateAllCost: skipping competitive and prd saves 25 credits", () => {
   const skip = new Set(["competitive", "prd"])
   const full = estimateGenerateAllCost(DEFAULT_MODELS)
   const partial = estimateGenerateAllCost(DEFAULT_MODELS, skip)
-  assert.equal(full - partial, 16)
+  assert.equal(full - partial, 25)
 })
 
 test("estimateGenerateAllCost: empty model selections uses default multiplier 1.0", () => {
-  // competitive-analysis=10×1.0=10, prd=10, mvp=10, mockup=30, launch=5 → total=65
+  // competitive-analysis=15, prd=10, mvp=10, mockup=30, launch=5 -> total=70
   const cost = estimateGenerateAllCost({})
-  assert.equal(cost, 65)
+  assert.equal(cost, 70)
 })

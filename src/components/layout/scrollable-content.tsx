@@ -136,7 +136,7 @@ function StitchConceptCard({
     setDownloading(true)
     try {
       // Reuse already-fetched HTML if available, otherwise fetch via proxy
-      const content = html ?? await fetch(`/api/stitch/html?url=${encodeURIComponent(htmlUrl)}`).then((r) => r.text())
+      const content: string = html ?? (await fetch(`/api/stitch/html?url=${encodeURIComponent(htmlUrl)}`).then((r) => r.text()))
       const blob = new Blob([content], { type: "text/html" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")

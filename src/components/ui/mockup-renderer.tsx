@@ -724,7 +724,7 @@ function StitchMockupViewer({ data, projectName }: { data: StitchContent; projec
     } finally {
       setDownloading(false)
     }
-  }, [data.options, htmlCache])
+  }, [data.options, htmlCache, projectName])
 
   if (!selectedOption) return null
 
@@ -990,7 +990,7 @@ function MockupViewer({ pages, projectName }: { pages: MockupPage[]; projectName
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  }, [pages])
+  }, [pages, projectName])
 
   if (!selectedPage) return null
 
