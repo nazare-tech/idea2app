@@ -166,7 +166,7 @@ export default async function LandingPage() {
   const waitlistMode = isWaitlistMode(userCount)
 
   return (
-    <div className="min-h-screen bg-white text-text-primary">
+    <div className="min-h-screen bg-background text-text-primary">
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
         <div className={`${container} ui-row-between h-16`}>
           <BrandWordmark href="/" logoSize={36} logoClassName="rounded-sm" labelClassName="text-lg font-semibold tracking-[0.01em]" />
@@ -182,18 +182,18 @@ export default async function LandingPage() {
           <div className="hidden ui-row-gap-3 md:flex">
             {/* Sign In is always visible — existing users still need to log in */}
             <Link href="/?modal=auth&mode=signin" scroll={false}>
-              <Button variant="outline" className="h-10 px-6 border-border-subtle bg-white text-text-primary">
+              <Button variant="outline" className="h-10 px-6 rounded-md border-border-subtle bg-white text-text-primary">
                 Sign In
               </Button>
             </Link>
 
             {waitlistMode ? (
               <a href="#waitlist">
-                <Button className="h-10 px-6 bg-primary text-primary-foreground">Join Waitlist</Button>
+                <Button className="h-10 px-6 rounded-md bg-primary text-primary-foreground">Join Waitlist</Button>
               </a>
             ) : (
               <Link href="/?modal=auth&mode=signup" scroll={false}>
-                <Button className="h-10 px-6 bg-primary text-primary-foreground">Get Started</Button>
+                <Button className="h-10 px-6 rounded-md bg-primary text-primary-foreground">Get Started</Button>
               </Link>
             )}
           </div>
@@ -202,15 +202,15 @@ export default async function LandingPage() {
 
       <SectionCard>
         <div className="flex items-center justify-center pt-10 pb-8 md:pt-14">
-          <div className="inline-flex items-center rounded-full border border-border-subtle px-4 py-2 text-xs font-medium tracking-[0.16em] text-text-secondary">
+          <div className="inline-flex items-center rounded-full border border-border-subtle px-4 py-2 font-mono text-[0.6875rem] font-medium tracking-[0.18em] text-text-secondary">
             {waitlistMode
-              ? `${WAITLIST_LIMIT} early-access spots filled — join the waitlist`
+              ? `${WAITLIST_LIMIT} early-access spots filled. Join the waitlist.`
               : "Lean-in Workflow For Builders"}
           </div>
         </div>
 
-        <h1 className="max-w-[980px] mx-auto text-center text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.95] tracking-[-0.06em] font-semibold">
-          Build your startup idea this weekend — not &ldquo;someday.&rdquo;
+        <h1 className="font-display max-w-[980px] mx-auto text-center text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.95] tracking-[-0.06em] font-semibold">
+          Build your startup idea this weekend, not &ldquo;someday.&rdquo;
         </h1>
 
         <p className="mx-auto mt-6 max-w-[780px] text-center text-[20px] leading-relaxed text-text-secondary">
@@ -225,7 +225,7 @@ export default async function LandingPage() {
             <>
               <LandingIdeaCapture isAuthenticated={isAuthenticated} />
               <Link href="#features">
-                <Button variant="outline" className="h-14 px-7 border-border-subtle text-base font-semibold bg-white text-text-primary">
+                <Button variant="outline" className="h-14 px-7 rounded-none border-border-subtle text-base font-semibold bg-white text-text-primary">
                   See How It Works
                 </Button>
               </Link>
@@ -236,7 +236,7 @@ export default async function LandingPage() {
         <div className="mx-auto mt-12 grid w-full max-w-[780px] gap-4 sm:grid-cols-3">
           <div className="flex h-[112px] flex-col items-center justify-center border border-text-primary bg-text-primary text-white p-4">
             <p className="text-[36px] font-semibold leading-none tracking-[-0.06em]">3x</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[#F0F0F0]">Design Directions</p>
+            <p className="mt-1 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-[#F0F0F0]">Design Directions</p>
           </div>
           <div className={uiStylePresets.landingStatCard}>
             <p className="text-[36px] font-semibold leading-none tracking-[-0.06em]">MVP</p>
@@ -257,10 +257,10 @@ export default async function LandingPage() {
         <section id="features" className="py-3">
           <p className="ui-kicker-label">Features</p>
           <h2 className="mt-4 text-[clamp(2rem,4vw,3.35rem)] leading-[0.98] tracking-[-0.06em] font-semibold">
-            From idea to momentum — without the usual excuses
+            From idea to momentum, without the usual excuses
           </h2>
 
-          <div className="mt-8 border border-border-subtle bg-[#F8FAFC] p-6 md:p-8">
+          <div className="mt-8 rounded-none border border-border-subtle bg-[#F5F0EB] p-6 md:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">Signature Feature</p>
             <h3 className="mt-3 text-[clamp(1.4rem,2.4vw,2rem)] leading-tight tracking-[-0.03em] font-semibold">
               One idea. Three design directions. Instant clarity.
@@ -272,7 +272,7 @@ export default async function LandingPage() {
 
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {featureCards.map((item) => (
-              <article key={item.title} className="border border-border-subtle bg-white p-6 md:p-7">
+              <article key={item.title} className="rounded-none border border-border-subtle bg-white p-6 md:p-7">
                 <div className="flex h-10 w-10 items-center justify-center bg-text-primary text-white">
                   <item.icon className="h-[18px] w-[18px]" />
                 </div>
@@ -322,7 +322,7 @@ export default async function LandingPage() {
               return (
                 <article
                   key={plan.name}
-                  className={`flex min-h-full flex-col border p-7 ${
+                  className={`flex min-h-full flex-col rounded-none border p-7 ${
                     isDark
                       ? "border-text-primary bg-text-primary text-white"
                       : "border-border-subtle bg-white text-text-primary"
@@ -331,7 +331,7 @@ export default async function LandingPage() {
                   <div className="flex items-start justify-between gap-4">
                     <h3 className="text-[26px] font-semibold tracking-[-0.02em]">{plan.name}</h3>
                     {isDark && (
-                      <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.12em] text-white">
+                      <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-white">
                         Best Value
                       </span>
                     )}
@@ -341,7 +341,7 @@ export default async function LandingPage() {
                     {plan.price}
                   </p>
 
-                  <div className="mt-8 mb-6 space-y-3 border-b border-[rgba(0,0,0,0.08)] pb-6 dark:border-white/20">
+                  <div className="mt-8 mb-6 space-y-3 border-b border-border-subtle pb-6 dark:border-white/20">
                     {plan.points.map((point) => (
                       <p key={point} className={`text-sm ${isDark ? "text-text-muted" : "text-text-secondary"}`}>
                         {point}
@@ -375,7 +375,7 @@ export default async function LandingPage() {
               <WaitlistForm />
             ) : (
               <Link href="/?modal=auth&mode=signup" scroll={false} className="inline-block">
-                <Button className="h-14 px-8 text-base font-semibold bg-primary text-white">
+                <Button className="h-14 px-8 rounded-none text-base font-semibold bg-primary text-white">
                   Get Started
                   <ArrowRight className="ml-2 ui-icon-16" />
                 </Button>
@@ -385,10 +385,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-[#E2E8F0] bg-white">
+      <footer className="border-t border-border-subtle bg-[#F5F0EB]">
         <div className={`${container} ui-row-between h-[88px] flex-wrap gap-5 text-sm`}>
-          <span className="font-mono text-[11px] tracking-[0.05em] text-text-muted">(c) 2026 Idea2App. All rights reserved.</span>
-          <div className="flex items-center gap-5 font-mono text-[11px] tracking-[0.05em] text-text-muted">
+          <span className="font-mono text-[0.6875rem] tracking-[0.18em] text-text-muted">© 2026 Idea2App. All rights reserved.</span>
+          <div className="flex items-center gap-5 font-mono text-[0.6875rem] tracking-[0.18em] text-text-muted">
             <a href="#" className={uiStylePresets.subtleLinkHover}>Terms</a>
             <a href="#" className={uiStylePresets.subtleLinkHover}>Privacy</a>
             <a href="#" className={uiStylePresets.subtleLinkHover}>Contact</a>
