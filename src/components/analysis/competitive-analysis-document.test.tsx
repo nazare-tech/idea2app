@@ -1,7 +1,11 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { renderToStaticMarkup } from "react-dom/server"
-import { CompetitiveAnalysisDocument } from "./competitive-analysis-document"
+import {
+  CompetitiveAnalysisDocument,
+  CompetitiveDetailSection,
+  CompetitiveOverviewSection,
+} from "./competitive-analysis-document"
 import {
   COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
   COMPETITIVE_ANALYSIS_V2_SECTION_ORDER,
@@ -62,6 +66,44 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
   assert.match(html, /Distribution engine/)
   assert.doesNotMatch(html, /predates Competitive Research v2/)
   assert.doesNotMatch(html, /Markdown/)
+})
+
+test("competitive overview renders only executive summary and founder verdict", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveOverviewSection
+      content={buildV2Fixture()}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+
+  assert.match(html, /Overview/)
+  assert.match(html, /Market Snapshot &amp; Entry Thesis/)
+  assert.match(html, /Founder Verdict/)
+  assert.match(html, /Win with a narrow wedge\./)
+  assert.doesNotMatch(html, /Competitor Profiles &amp; Fast Comparison/)
+  assert.doesNotMatch(html, /Competitor One/)
+  assert.doesNotMatch(html, /Strategic Recommendations/)
+  assert.doesNotMatch(html, /Validate pricing willingness/)
+  assert.doesNotMatch(html, /The top of the market is crowded/)
+})
+
+test("competitive detail owns market research and strategy modules", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={buildV2Fixture()}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+
+  assert.match(html, /Market Research/)
+  assert.match(html, /Competitor Profiles &amp; Fast Comparison/)
+  assert.match(html, /Competitor One/)
+  assert.match(html, /Audience Segments/)
+  assert.match(html, /GTM \/ Distribution Signals/)
+  assert.match(html, /Strategic Recommendations/)
+  assert.match(html, /Validate pricing willingness/)
 })
 
 test("legacy competitive document falls back to markdown renderer", () => {

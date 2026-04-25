@@ -33,7 +33,6 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
     sections: [
       { id: "overview-executive-summary", label: "Executive Summary" },
       { id: "overview-founder-verdict", label: "Founder Verdict" },
-      { id: "overview-strategic-recommendations", label: "Strategic Recommendations" },
     ],
   },
   {
@@ -42,13 +41,18 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
     sourceType: "competitive",
     sections: [
       { id: "market-research-direct-competitors", label: "Direct Competitors" },
+      { id: "market-research-landscape-overview", label: "Landscape Overview" },
       { id: "market-research-feature-matrix", label: "Feature and Workflow Matrix" },
-      { id: "market-research-pricing", label: "Pricing and Packaging" },
-      { id: "market-research-moat", label: "Moat / Defensibility" },
       { id: "market-research-positioning", label: "Positioning Map" },
-      { id: "market-research-differentiation", label: "Differentiation Wedges" },
+      { id: "market-research-pricing", label: "Pricing and Packaging" },
+      { id: "market-research-audience", label: "Audience Segments" },
+      { id: "market-research-gtm", label: "GTM / Distribution Signals" },
       { id: "market-research-gap-analysis", label: "Gap Analysis" },
+      { id: "market-research-differentiation", label: "Differentiation Wedges" },
+      { id: "market-research-moat", label: "Moat / Defensibility" },
       { id: "market-research-risks", label: "Risks / Countermoves" },
+      { id: "market-research-mvp-wedge", label: "MVP Wedge" },
+      { id: "market-research-strategic-recommendations", label: "Strategic Recommendations" },
     ],
   },
   {

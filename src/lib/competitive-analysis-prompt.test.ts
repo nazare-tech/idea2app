@@ -15,3 +15,14 @@ test("competitive analysis prompt requires direct competitor website links and k
     /Direct Competitors.*### \[Competitor Name\]\(https:\/\/competitor-site\.example\).*Key Edge/s
   )
 })
+
+test("competitive analysis prompt defines workspace section ownership", () => {
+  assert.match(
+    COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+    /Executive Summary`: overview/
+  )
+  assert.match(
+    COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+    /Strategic Recommendations`: market-research/
+  )
+})

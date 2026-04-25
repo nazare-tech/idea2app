@@ -9,11 +9,12 @@ import {
 import {
   COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
   COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION,
+  COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
 } from "@/lib/competitive-analysis-v2"
 import { linkifyBareUrls } from "@/lib/markdown-links"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import { generateStitchMockup } from "@/lib/stitch-pipeline"
-import type { Database } from "@/types/database"
+import type { Database, Json } from "@/types/database"
 import {
   findLatestActiveDocument,
   getActiveDocumentIdentityForDocumentType,
@@ -47,7 +48,7 @@ function buildAnalysisMetadata(
   type: string,
   result: { source: string; model: string },
 ): AnalysisMetadata {
-  const metadata: Record<string, string> = {
+  const metadata: { [key: string]: Json | undefined } = {
     source: result.source,
     model: result.model,
     generated_at: new Date().toISOString(),
@@ -56,6 +57,9 @@ function buildAnalysisMetadata(
   if (type === "competitive-analysis") {
     metadata.document_version = COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION
     metadata.prompt_version = COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION
+    metadata.workspace_section_map = {
+      ...COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
+    }
   }
 
   return metadata

@@ -1,0 +1,180 @@
+- generic [active] [ref=e1]:
+  - main [ref=e4]:
+    - complementary [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - heading "Ship your next product faster." [level=1] [ref=e8]
+          - paragraph [ref=e9]: Create your Maker Compass account to manage prompts, builds, and releases from one workspace.
+        - paragraph [ref=e10]: Trusted by 3,000+ teams
+    - generic [ref=e12]:
+      - link "Maker Compass logo Maker Compass" [ref=e14] [cursor=pointer]:
+        - /url: /
+        - img "Maker Compass logo" [ref=e16]
+        - generic [ref=e17]: Maker Compass
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - heading "Welcome back" [level=3] [ref=e22]
+          - paragraph [ref=e23]: Sign in to continue to Maker Compass.
+        - generic [ref=e24]:
+          - button "Google Continue with Google" [ref=e25]:
+            - img "Google" [ref=e26]
+            - text: Continue with Google
+          - generic [ref=e29]: OR
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - text: Email
+            - textbox "Email" [ref=e34]:
+              - /placeholder: you@example.com
+          - generic [ref=e35]:
+            - generic [ref=e36]:
+              - text: Password
+              - textbox "Password" [ref=e37]:
+                - /placeholder: Enter your password
+            - button "Show password" [ref=e38]:
+              - img [ref=e39]
+          - button "Sign in" [ref=e42] [cursor=pointer]
+        - paragraph [ref=e44]:
+          - text: Don't have an account?
+          - button "Create account" [ref=e45]
+  - generic [ref=e46]:
+    - generic "Impeccable" [ref=e47]: /
+    - generic [ref=e48]:
+      - button "Pick element" [ref=e49] [cursor=pointer]:
+        - img [ref=e50]
+        - generic [ref=e52]: Pick
+      - button "Detect anti-patterns" [ref=e53] [cursor=pointer]:
+        - img [ref=e54]
+        - generic: Detect
+      - button "Toggle DESIGN.md panel" [ref=e57] [cursor=pointer]:
+        - generic: DESIGN.md
+      - button "Exit live mode" [ref=e64] [cursor=pointer]:
+        - img [ref=e65]
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - generic: DESIGN.md
+          - generic:
+            - button "Visual"
+            - button "Raw"
+          - button "Close panel": ✕
+        - generic:
+          - generic: No design system data available.
+  - button "Open Next.js Dev Tools" [ref=e73] [cursor=pointer]:
+    - img [ref=e74]
+  - alert [ref=e77]
+  - button "/agentation v2.2.1 Output Detail Standard React Components Marker Colour Purple Blue Cyan Green Yellow Orange Red Clear on copy/send Block page interactions Manage MCP & Webhooks Manage MCP & Webhooks MCP Connection Disconnected MCP connection allows agents to receive and act on annotations. Learn more Webhooks Auto-Send The webhook URL will receive live annotation changes and annotation data." [ref=e78] [cursor=pointer]:
+    - img [ref=e80]
+    - generic:
+      - generic:
+        - button:
+          - img
+      - generic:
+        - button [disabled]:
+          - img
+      - generic:
+        - button [disabled]:
+          - img
+      - generic:
+        - button [disabled]:
+          - img
+      - generic:
+        - button [disabled]:
+          - img
+      - generic:
+        - button:
+          - img
+      - generic:
+        - button:
+          - img
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic: /agentation
+            - generic: v2.2.1
+            - button "Switch to light mode":
+              - generic:
+                - generic:
+                  - img
+          - generic:
+            - generic:
+              - generic:
+                - text: Output Detail
+                - generic:
+                  - generic:
+                    - img
+              - button "Standard":
+                - generic: Standard
+            - generic:
+              - generic:
+                - text: React Components
+                - generic:
+                  - generic:
+                    - img
+              - generic:
+                - checkbox [checked]
+          - generic:
+            - generic: Marker Colour
+            - generic:
+              - button "Purple":
+                - generic "Purple"
+              - button "Blue":
+                - generic "Blue"
+              - button "Cyan":
+                - generic "Cyan"
+              - button "Green":
+                - generic "Green"
+              - button "Yellow":
+                - generic "Yellow"
+              - button "Orange":
+                - generic "Orange"
+              - button "Red":
+                - generic "Red"
+          - generic:
+            - generic:
+              - checkbox "Clear on copy/send"
+              - generic:
+                - text: Clear on copy/send
+                - generic:
+                  - generic:
+                    - img
+            - generic:
+              - checkbox "Block page interactions" [checked]
+              - generic:
+                - img
+              - generic: Block page interactions
+          - generic:
+            - button "Manage MCP & Webhooks":
+              - generic: Manage MCP & Webhooks
+              - generic:
+                - img
+        - generic:
+          - button "Manage MCP & Webhooks":
+            - img
+            - generic: Manage MCP & Webhooks
+          - generic:
+            - generic:
+              - generic:
+                - text: MCP Connection
+                - generic:
+                  - generic:
+                    - img
+              - generic "Disconnected"
+            - paragraph:
+              - text: MCP connection allows agents to receive and act on annotations.
+              - link "Learn more":
+                - /url: https://agentation.dev/mcp
+          - generic:
+            - generic:
+              - generic:
+                - text: Webhooks
+                - generic:
+                  - generic:
+                    - img
+              - generic:
+                - generic: Auto-Send
+                - generic:
+                  - checkbox [checked] [disabled]
+            - paragraph: The webhook URL will receive live annotation changes and annotation data.
+            - textbox "Webhook URL"

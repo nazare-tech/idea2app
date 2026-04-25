@@ -10,6 +10,7 @@ import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import {
   COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
   COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION,
+  COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
 } from "@/lib/competitive-analysis-v2"
 import { refundCreditsServerSide } from "@/lib/credits"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
@@ -18,6 +19,7 @@ import {
   findLatestActiveDocument,
   getActiveDocumentIdentityForAnalysisType,
 } from "@/lib/active-document-policy"
+import type { Json } from "@/types/database"
 
 // Fixed default models per analysis type — user model selection removed
 const ANALYSIS_DEFAULT_MODELS: Record<string, string> = {
@@ -40,7 +42,7 @@ function buildAnalysisMetadata(
   type: string,
   result: { source: string; model: string }
 ) {
-  const metadata: Record<string, string> = {
+  const metadata: { [key: string]: Json | undefined } = {
     source: result.source,
     model: result.model,
     generated_at: new Date().toISOString(),
@@ -49,6 +51,9 @@ function buildAnalysisMetadata(
   if (type === "competitive-analysis") {
     metadata.document_version = COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION
     metadata.prompt_version = COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION
+    metadata.workspace_section_map = {
+      ...COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
+    }
   }
 
   return metadata

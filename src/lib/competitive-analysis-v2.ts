@@ -21,6 +21,30 @@ export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Strategic Recommendations",
 ] as const
 
+export type CompetitiveAnalysisWorkspaceSection = "overview" | "market-research"
+
+export const COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP = {
+  "Executive Summary": "overview",
+  "Founder Verdict": "overview",
+  "Direct Competitors": "market-research",
+  "Feature and Workflow Matrix": "market-research",
+  "Pricing and Packaging": "market-research",
+  "Audience Segments": "market-research",
+  "Competitive Landscape Overview": "market-research",
+  "Positioning Map": "market-research",
+  "GTM / Distribution Signals": "market-research",
+  "Gap Analysis": "market-research",
+  "Differentiation Wedges": "market-research",
+  "Moat and Defensibility": "market-research",
+  "SWOT Analysis": "market-research",
+  "Risks and Countermoves": "market-research",
+  "MVP Wedge Recommendation": "market-research",
+  "Strategic Recommendations": "market-research",
+} as const satisfies Record<
+  CompetitiveAnalysisV2SectionName,
+  CompetitiveAnalysisWorkspaceSection
+>
+
 export const COMPETITOR_PROFILE_FIELD_ORDER = [
   "Overview",
   "Core Product/Service",

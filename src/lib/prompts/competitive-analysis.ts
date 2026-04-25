@@ -2,6 +2,7 @@ import { buildSecurePrompt } from "./sanitize"
 import {
   COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION,
   COMPETITIVE_ANALYSIS_V2_SECTION_ORDER,
+  COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
 } from "@/lib/competitive-analysis-v2"
 
 export const COMPETITIVE_ANALYSIS_SYSTEM_PROMPT = `ROLE
@@ -27,6 +28,14 @@ IMPORTANT GUIDELINES:
 DOCUMENT VERSION
 - This document must conform to Competitive Research v2
 - Prompt version: ${COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION}
+
+WORKSPACE SECTION OWNERSHIP
+- The generated sections are rendered into these workspace sections:
+${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.map(
+  (heading) => `  - \`${heading}\`: ${COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP[heading]}`
+).join("\n")}
+- Overview must stay limited to Executive Summary and Founder Verdict.
+- Market Research owns every other Competitive Research v2 section, including audience, GTM, MVP wedge, and strategic recommendations.
 
 OUTPUT FORMAT (STRICT)
 Output Markdown only.

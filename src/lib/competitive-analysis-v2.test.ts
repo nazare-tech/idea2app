@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import {
   COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
   COMPETITIVE_ANALYSIS_V2_SECTION_ORDER,
+  COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
   getCompetitiveAnalysisStructuredData,
   getCompetitiveAnalysisViewModel,
   parseCompetitiveAnalysisV2,
@@ -71,6 +72,22 @@ test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   assert.equal(structured.directCompetitors[0]?.fields["Key Edge"], "Distribution + integrations")
   assert.equal(structured.positioningMap.points[0]?.x, 4)
   assert.equal(structured.swotAnalysis.matrix?.externalNegative, "Incumbent copy risk")
+})
+
+test("workspace section map keeps overview limited to summary and verdict", () => {
+  const overviewSections = COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.filter(
+    (heading) => COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP[heading] === "overview"
+  )
+
+  assert.deepEqual(overviewSections, ["Executive Summary", "Founder Verdict"])
+  assert.equal(
+    COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP["Strategic Recommendations"],
+    "market-research"
+  )
+  assert.equal(
+    COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP["GTM / Distribution Signals"],
+    "market-research"
+  )
 })
 
 test("legacy metadata defaults competitive research to markdown view", () => {

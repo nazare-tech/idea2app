@@ -142,6 +142,36 @@ function MarketSignalStrip({ items }: { items: string[] }) {
   )
 }
 
+function ExecutiveSummaryCard({
+  paragraphs,
+}: {
+  paragraphs: string[]
+}) {
+  return (
+    <PencilCard
+      title="Market Snapshot & Entry Thesis"
+      kicker="Executive Summary"
+    >
+      <ParagraphStack paragraphs={paragraphs} />
+    </PencilCard>
+  )
+}
+
+function FounderVerdictCard({
+  verdict,
+}: {
+  verdict: CompetitiveAnalysisStructuredData["founderVerdict"]
+}) {
+  return (
+    <PencilCard title="Founder Verdict" kicker="Founder Verdict" dark>
+      <ParagraphStack paragraphs={verdict.paragraphs} dark={true} />
+      <div className="pt-5">
+        <NumberedList items={verdict.bullets} dark={true} />
+      </div>
+    </PencilCard>
+  )
+}
+
 function DataTable({
   headers,
   rows,
@@ -195,23 +225,12 @@ function SnapshotHero({
 }) {
   return (
     <div className="space-y-6">
-      <PencilCard
-        title="Market Snapshot & Entry Thesis"
-        kicker="Category Snapshot"
-      >
+      <PencilCard title="Market Snapshot & Entry Thesis" kicker="Category Snapshot">
         <ParagraphStack paragraphs={structured.executiveSummary} />
         <MarketSignalStrip items={structured.competitiveLandscapeOverview} />
       </PencilCard>
 
-      <PencilCard title="Founder Verdict" kicker="Founder Verdict" dark>
-        <ParagraphStack
-          paragraphs={structured.founderVerdict.paragraphs}
-          dark={true}
-        />
-        <div className="pt-5">
-          <NumberedList items={structured.founderVerdict.bullets} dark={true} />
-        </div>
-      </PencilCard>
+      <FounderVerdictCard verdict={structured.founderVerdict} />
     </div>
   )
 }
@@ -845,24 +864,17 @@ export function CompetitiveOverviewSection({
             Overview
           </h1>
           <p className="mt-2 max-w-3xl text-[13px] leading-6 text-[#666666]">
-            Executive summary, founder verdict, and strategic direction.
+            Executive summary and founder verdict.
           </p>
         </div>
       </header>
 
       <div id="overview-executive-summary">
-        <SnapshotHero structured={structured} />
+        <ExecutiveSummaryCard paragraphs={structured.executiveSummary} />
       </div>
 
       <div id="overview-founder-verdict">
-        <CompetitorProfiles competitors={structured.directCompetitors} />
-      </div>
-
-      <div id="overview-strategic-recommendations">
-        <SmallListCard
-          title="Strategic Recommendations"
-          items={structured.strategicRecommendations}
-        />
+        <FounderVerdictCard verdict={structured.founderVerdict} />
       </div>
     </>
   )
@@ -909,6 +921,13 @@ export function CompetitiveDetailSection({
         <CompetitorProfiles competitors={structured.directCompetitors} />
       </div>
 
+      <div id="market-research-landscape-overview">
+        <SmallListCard
+          title="Competitive Landscape Overview"
+          items={structured.competitiveLandscapeOverview}
+        />
+      </div>
+
       <div id="market-research-feature-matrix">
         <CompactTableCard
           title="Feature and Workflow Matrix"
@@ -931,6 +950,21 @@ export function CompetitiveDetailSection({
           paragraphs={structured.pricingAndPackaging.paragraphs}
           headers={structured.pricingAndPackaging.table?.headers ?? []}
           rows={structured.pricingAndPackaging.table?.rows ?? []}
+        />
+      </div>
+
+      <div id="market-research-audience">
+        <SmallListCard
+          title="Audience Segments"
+          items={structured.audienceSegments}
+        />
+      </div>
+
+      <div id="market-research-gtm">
+        <SmallListCard
+          title="GTM / Distribution Signals"
+          items={structured.gtmSignals}
+          dark={true}
         />
       </div>
 
@@ -963,6 +997,20 @@ export function CompetitiveDetailSection({
         <SmallListCard
           title="Risks And Countermoves"
           items={structured.risksAndCountermoves}
+        />
+      </div>
+
+      <div id="market-research-mvp-wedge">
+        <MVPCard
+          paragraphs={structured.mvpWedgeRecommendation.paragraphs}
+          bullets={structured.mvpWedgeRecommendation.bullets}
+        />
+      </div>
+
+      <div id="market-research-strategic-recommendations">
+        <SmallListCard
+          title="Strategic Recommendations"
+          items={structured.strategicRecommendations}
         />
       </div>
     </>
