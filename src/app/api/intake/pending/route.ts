@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 const MAX_IDEA_LENGTH = 10000
 const TOKEN_BYTES = 24
@@ -23,6 +24,21 @@ function createOpaqueToken() {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit({
+    key: `intake-pending:${getClientIp(request)}`,
+    limit: 12,
+    windowMs: 60_000,
+  })
+  if (rateLimit.limited) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait and try again." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+      },
+    )
+  }
+
   let body: { idea?: unknown; source?: unknown }
 
   try {

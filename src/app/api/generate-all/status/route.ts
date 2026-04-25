@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
+import { refundGenerationQueueItemCredits } from "@/lib/generation-queue-billing"
 import {
   computeQueueStatus,
   getGenerationQueueItems,
   queueItemRowToJson,
   recoverStaleGenerationQueueItems,
   syncGenerationQueueJson,
+  updateGenerationQueueItemIfStatus,
   type GenerationQueueItemRow,
 } from "@/lib/generation-queue-service"
 import { createClient } from "@/lib/supabase/server"
@@ -57,6 +59,17 @@ export async function GET(request: Request) {
         error_info: null,
       })
     }
+
+    if (data.status === "cancelled") {
+      const finalizedItems = await finalizeStaleCancelledItems(supabase, queueSupabase, items)
+      if (finalizedItems.length > 0) {
+        items = items.map((item) => finalizedItems.find((updated) => updated.id === item.id) ?? item)
+        await syncGenerationQueueJson(queueSupabase, data, items, {
+          status: "cancelled",
+          completed_at: data.completed_at ?? new Date().toISOString(),
+        })
+      }
+    }
     const queue = items.map(queueItemRowToJson)
     const currentIndex = queue.findIndex(
       (item) => item.status === "pending" || item.status === "generating",
@@ -86,4 +99,46 @@ function buildErrorInfo(items: GenerationQueueItemRow[]) {
   return failed
     ? { message: failed.error ?? "Generation did not complete", docType: failed.doc_type }
     : null
+}
+
+async function finalizeStaleCancelledItems(
+  billingSupabase: Awaited<ReturnType<typeof createClient>>,
+  queueSupabase: ReturnType<typeof createServiceClient>,
+  items: GenerationQueueItemRow[],
+) {
+  const staleBefore = Date.now() - 150_000
+  const staleGenerating = items.filter((item) => {
+    if (item.status !== "generating") return false
+    const referenceTime = item.updated_at ?? item.started_at
+    if (!referenceTime) return false
+    return new Date(referenceTime).getTime() < staleBefore
+  })
+
+  if (staleGenerating.length === 0) return []
+
+  return Promise.all(
+    staleGenerating.map(async (item) => {
+      let creditStatus = item.credit_status
+      if (item.credit_status === "charged" && item.credit_cost > 0) {
+        const refund = await refundGenerationQueueItemCredits(
+          billingSupabase,
+          item,
+          `${item.label} cancelled after stale generation: credits refunded (Generate All)`,
+        )
+        if (refund.error) {
+          console.error("[GenerateAll] Stale cancellation refund failed:", refund.error)
+        }
+        creditStatus = refund.refunded ? "refunded" : "refund_failed"
+      }
+
+      return updateGenerationQueueItemIfStatus(queueSupabase, item, "generating", {
+        status: "cancelled",
+        stage_message: null,
+        completed_at: new Date().toISOString(),
+        credit_status: creditStatus,
+      })
+    }),
+  ).then((updatedItems) =>
+    updatedItems.filter((item): item is GenerationQueueItemRow => Boolean(item)),
+  )
 }

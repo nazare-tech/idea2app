@@ -4,6 +4,8 @@ import OpenAI from "openai"
 import { createClient } from "@/lib/supabase/server"
 import { chatCompletion } from "@/lib/openrouter"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
+import { refundCreditsServerSide } from "@/lib/credits"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 const openrouter = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -47,6 +49,24 @@ export async function POST(request: Request) {
     }
 
     userId = user.id
+    const rateLimit = checkRateLimit({
+      key: `chat:${user.id}:${getClientIp(request)}`,
+      limit: 40,
+      windowMs: 60_000,
+    })
+    if (rateLimit.limited) {
+      statusCode = 429
+      errorType = "rate_limited"
+      errorMessage = "Too many chat requests"
+      return NextResponse.json(
+        { error: "Too many requests. Please wait and try again." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      )
+    }
+
     const body = await request.json()
     projectId = body.projectId
     const message = body.message
@@ -112,6 +132,12 @@ export async function POST(request: Request) {
       statusCode = 500
       errorType = "server_error"
       errorMessage = userMsgError.message
+      await refundCreditsServerSide({
+        userId: user.id,
+        amount: creditsConsumed,
+        action: "chat",
+        description: "Chat user message save failed: credits refunded",
+      })
       return NextResponse.json({ error: userMsgError.message }, { status: 500 })
     }
 
@@ -194,6 +220,15 @@ export async function POST(request: Request) {
             statusCode = 500
             errorType = getErrorType(500, streamError)
             errorMessage = getErrorMessage(streamError)
+            if (creditsConsumed > 0 && userId) {
+              const refund = await refundCreditsServerSide({
+                userId,
+                amount: creditsConsumed,
+                action: "chat",
+                description: "Chat stream failed: credits refunded",
+              })
+              if (refund.error) console.error("[Chat] Credit refund failed:", refund.error)
+            }
             sendEvent({
               type: "error",
               error: errorMessage || "Failed to generate chat response",
@@ -239,6 +274,12 @@ export async function POST(request: Request) {
       statusCode = 500
       errorType = "server_error"
       errorMessage = assistantMsgError.message
+      await refundCreditsServerSide({
+        userId: user.id,
+        amount: creditsConsumed,
+        action: "chat",
+        description: "Chat assistant message save failed: credits refunded",
+      })
       return NextResponse.json(
         { error: assistantMsgError.message },
         { status: 500 }
@@ -264,6 +305,15 @@ export async function POST(request: Request) {
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
+    if (creditsConsumed > 0 && userId) {
+      const refund = await refundCreditsServerSide({
+        userId,
+        amount: creditsConsumed,
+        action: "chat",
+        description: "Chat failed: credits refunded",
+      })
+      if (refund.error) console.error("[Chat] Credit refund failed:", refund.error)
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

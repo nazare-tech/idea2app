@@ -30,6 +30,8 @@ const openrouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY || "",
 })
 
+const PROJECT_CREATION_LOCK_MS = 30_000
+
 type CreateFromIntakeBody = {
   idea?: unknown
   questions?: unknown
@@ -162,6 +164,43 @@ function validateAnswers(questions: IntakeQuestion[], value: unknown): {
   return { answers, error: null }
 }
 
+async function acquireProjectCreationLock(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+) {
+  const now = new Date()
+  await supabase
+    .from("project_creation_locks")
+    .delete()
+    .eq("user_id", userId)
+    .lt("locked_until", now.toISOString())
+
+  const { error } = await supabase.from("project_creation_locks").insert({
+    user_id: userId,
+    locked_until: new Date(now.getTime() + PROJECT_CREATION_LOCK_MS).toISOString(),
+  })
+
+  if (!error) return { acquired: true, error: null }
+  if (error.code === "23505") return { acquired: false, error: null }
+  return { acquired: false, error: error.message ?? "Failed to acquire project creation lock" }
+}
+
+async function releaseProjectCreationLock(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+) {
+  const { error } = await supabase
+    .from("project_creation_locks")
+    .delete()
+    .eq("user_id", userId)
+
+  if (error) {
+    console.error("[create-from-intake] project creation lock release failed:", error)
+  }
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient()
   const queueSupabase = createServiceClient()
@@ -264,6 +303,33 @@ export async function POST(request: Request) {
     }
   )
 
+  const lock = await acquireProjectCreationLock(queueSupabase, user.id)
+  if (lock.error) {
+    return NextResponse.json({ error: "Failed to verify project allowance" }, { status: 500 })
+  }
+  if (!lock.acquired) {
+    return NextResponse.json(
+      { error: "A project is already being created. Please wait a moment and try again." },
+      { status: 409 },
+    )
+  }
+
+  const lockedAllowance = await canCreateProject(queueSupabase as unknown as ProjectAllowanceClient, user.id)
+  if (!lockedAllowance.canCreate) {
+    await releaseProjectCreationLock(queueSupabase, user.id)
+    const status = lockedAllowance.reason === "limit_reached" ? 403 : 500
+    return NextResponse.json(
+      {
+        error: lockedAllowance.message,
+        code: lockedAllowance.reason,
+        allowance: lockedAllowance.allowance,
+        used: lockedAllowance.used,
+        remaining: lockedAllowance.remaining,
+      },
+      { status },
+    )
+  }
+
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .insert({
@@ -278,6 +344,7 @@ export async function POST(request: Request) {
 
   if (projectError || !project) {
     console.error("[create-from-intake] project insert failed:", projectError)
+    await releaseProjectCreationLock(queueSupabase, user.id)
     return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
   }
 
@@ -296,6 +363,7 @@ export async function POST(request: Request) {
   if (intakeError) {
     console.error("[create-from-intake] intake insert failed:", intakeError)
     await supabase.from("projects").delete().eq("id", project.id).eq("user_id", user.id)
+    await releaseProjectCreationLock(queueSupabase, user.id)
     return NextResponse.json({ error: "Failed to save project intake" }, { status: 500 })
   }
 
@@ -327,6 +395,7 @@ export async function POST(request: Request) {
   if (queueError || !queueRow) {
     console.error("[create-from-intake] onboarding queue insert failed:", queueError)
     await supabase.from("projects").delete().eq("id", project.id).eq("user_id", user.id)
+    await releaseProjectCreationLock(queueSupabase, user.id)
     return NextResponse.json({ error: "Failed to start project generation" }, { status: 500 })
   }
 
@@ -335,6 +404,7 @@ export async function POST(request: Request) {
   } catch (itemError) {
     console.error("[create-from-intake] onboarding queue item insert failed:", itemError)
     await supabase.from("projects").delete().eq("id", project.id).eq("user_id", user.id)
+    await releaseProjectCreationLock(queueSupabase, user.id)
     return NextResponse.json({ error: "Failed to start project generation" }, { status: 500 })
   }
 
@@ -353,6 +423,8 @@ export async function POST(request: Request) {
       console.error("[create-from-intake] pending claim failed:", claimError)
     }
   }
+
+  await releaseProjectCreationLock(queueSupabase, user.id)
 
   return NextResponse.json({
     project,

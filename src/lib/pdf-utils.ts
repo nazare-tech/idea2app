@@ -1,41 +1,39 @@
-export async function downloadMarkdownAsPDF(
-  content: string,
-  filename: string,
-  projectName: string,
-  analysisType: string
-) {
+export async function downloadMarkdownAsPDF({
+  projectId,
+  documentType,
+  documentId,
+}: {
+  projectId: string
+  documentType: string
+  documentId?: string
+}) {
   try {
-    // Call the server-side PDF generation API
     const response = await fetch("/api/generate-pdf", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        content,
-        filename,
-        projectName,
-        analysisType,
+        projectId,
+        documentType,
+        documentId,
       }),
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || "Failed to generate PDF")
+      const error = await response.json().catch(() => null)
+      throw new Error(error?.error || "Failed to generate PDF")
     }
 
-    // Get the PDF blob from the response
     const blob = await response.blob()
-
-    // Create a download link and trigger download
+    const disposition = response.headers.get("content-disposition")
+    const filename = disposition?.match(/filename="([^"]+)"/)?.[1] ?? "document.pdf"
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
     link.download = filename
     document.body.appendChild(link)
     link.click()
-
-    // Cleanup
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
   } catch (error) {

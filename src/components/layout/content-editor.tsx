@@ -41,6 +41,7 @@ interface MarketingBrief {
 interface ContentEditorProps {
   documentType: DocumentType
   projectId: string
+  documentId?: string | null
   projectName: string
   projectDescription: string
   content: string | null
@@ -69,6 +70,7 @@ const FULL_WIDTH_DOCUMENT = Number.MAX_SAFE_INTEGER
 export function ContentEditor({
   documentType,
   projectId,
+  documentId,
   projectName,
   projectDescription,
   content,
@@ -245,10 +247,14 @@ export function ContentEditor({
 
   const handleDownloadPDF = async () => {
     if (!content) return
+    if (documentType !== "prompt" && !documentId) return
     setDownloadingPdf(true)
     try {
-      const filename = `${config.title.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`
-      await downloadMarkdownAsPDF(content, filename, "Project Document", config.title)
+      await downloadMarkdownAsPDF({
+        projectId,
+        documentId: documentId ?? undefined,
+        documentType,
+      })
     } catch (error) {
       console.error("Error downloading PDF:", error)
     } finally {
@@ -538,7 +544,7 @@ export function ContentEditor({
                       )
                     ) : content ? (
                       documentType === "mockups" ? (
-                        <MockupRenderer content={content} projectName={projectName} />
+                        <MockupRenderer content={content} projectName={projectName} projectId={projectId} />
                       ) : documentType === "competitive" ? (
                         <CompetitiveAnalysisDocument
                           content={content}

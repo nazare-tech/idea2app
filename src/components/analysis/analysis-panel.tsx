@@ -201,13 +201,15 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
 
   const handleDownloadPDF = async (
     analysisId: string,
-    content: string,
     analysisType: string
   ) => {
     setDownloadingPdf(analysisId)
     try {
-      const filename = `${project.name}-${analysisType}-${new Date().toISOString().split("T")[0]}.pdf`
-      await downloadMarkdownAsPDF(content, filename, project.name, analysisType)
+      await downloadMarkdownAsPDF({
+        projectId,
+        documentId: analysisId,
+        documentType: analysisType,
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to download PDF")
     } finally {
@@ -298,7 +300,6 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                         onClick={() =>
                           handleDownloadPDF(
                             analysis.id,
-                            analysis.content || "",
                             analysis.type || "analysis"
                           )
                         }
@@ -422,7 +423,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                         variant="outline"
                         size="sm"
                         onClick={() =>
-                          handleDownloadPDF(prd.id, prd.content || "", "prd")
+                          handleDownloadPDF(prd.id, "prd")
                         }
                         disabled={downloadingPdf === prd.id}
                       >
@@ -542,7 +543,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                         variant="outline"
                         size="sm"
                         onClick={() =>
-                          handleDownloadPDF(spec.id, spec.content || "", "tech-spec")
+                          handleDownloadPDF(spec.id, "tech-spec")
                         }
                         disabled={downloadingPdf === spec.id}
                       >

@@ -114,31 +114,33 @@ function StitchConceptCard({
   title,
   htmlUrl,
   description,
+  projectId,
 }: {
   label: string
   title: string
   htmlUrl: string
   description?: string
+  projectId: string
 }) {
   const [html, setHtml] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
-    const proxyUrl = `/api/stitch/html?url=${encodeURIComponent(htmlUrl)}`
+    const proxyUrl = `/api/stitch/html?url=${encodeURIComponent(htmlUrl)}&projectId=${encodeURIComponent(projectId)}`
     setLoading(true)
     fetch(proxyUrl)
       .then((res) => res.text())
       .then((fetchedHtml) => setHtml(fetchedHtml))
       .catch((err) => console.error("[StitchConcept] Failed to load HTML:", err))
       .finally(() => setLoading(false))
-  }, [htmlUrl])
+  }, [htmlUrl, projectId])
 
   const handleDownload = async () => {
     setDownloading(true)
     try {
       // Reuse already-fetched HTML if available, otherwise fetch via proxy
-      const content: string = html ?? (await fetch(`/api/stitch/html?url=${encodeURIComponent(htmlUrl)}`).then((r) => r.text()))
+      const content: string = html ?? (await fetch(`/api/stitch/html?url=${encodeURIComponent(htmlUrl)}&projectId=${encodeURIComponent(projectId)}`).then((r) => r.text()))
       const blob = new Blob([content], { type: "text/html" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -221,7 +223,7 @@ function StitchConceptCard({
 /**
  * Renders mockups section with individual concept cards, each with an anchor ID.
  */
-function MockupsSection({ content }: { content: string }) {
+function MockupsSection({ content, projectId }: { content: string; projectId: string }) {
   const stitchData = useMemo(() => {
     try {
       const parsed = JSON.parse(content)
@@ -244,6 +246,7 @@ function MockupsSection({ content }: { content: string }) {
               title={option.title}
               htmlUrl={option.htmlUrl}
               description={option.description}
+              projectId={projectId}
             />
           </div>
         ))}
@@ -251,7 +254,7 @@ function MockupsSection({ content }: { content: string }) {
     )
   }
 
-  return <MockupRenderer content={content} />
+  return <MockupRenderer content={content} projectId={projectId} />
 }
 
 export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentProps>(
@@ -354,7 +357,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           ) : mockupsData?.isGenerating ? (
             <DocumentSkeleton label="Mockups" />
           ) : mockupsData?.content ? (
-            <MockupsSection content={mockupsData.content} />
+            <MockupsSection content={mockupsData.content} projectId={projectId} />
           ) : (
             <EmptyState label="Mockups" />
           )}

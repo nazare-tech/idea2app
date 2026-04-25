@@ -9,7 +9,10 @@ import {
   extractFirstScreenId,
   extractVariantScreenIds,
 } from "@/lib/stitch/client"
-import { STITCH_PROMPT_ENGINEER_SYSTEM_PROMPT } from "@/lib/prompts/mockups"
+import {
+  STITCH_PROMPT_ENGINEER_SYSTEM_PROMPT,
+  buildStitchDesignPromptUserPrompt,
+} from "@/lib/prompts/mockups"
 
 const OPTION_LABELS = ["A", "B", "C"]
 
@@ -35,7 +38,7 @@ async function generateStitchDesignPrompt(
     model: "google/gemini-3.1-pro-preview",
     messages: [
       { role: "system", content: STITCH_PROMPT_ENGINEER_SYSTEM_PROMPT },
-      { role: "user", content: mvpPlan },
+      { role: "user", content: buildStitchDesignPromptUserPrompt(mvpPlan, projectName) },
     ],
     max_tokens: 1024,
   })
@@ -44,7 +47,7 @@ async function generateStitchDesignPrompt(
 
   if (!content) {
     console.warn("[Stitch] OpenRouter returned empty content — using fallback prompt")
-    return `Design the main screen for "${projectName}". ${mvpPlan.slice(0, 500)}`
+    return buildStitchDesignPromptUserPrompt(mvpPlan.slice(0, 500), projectName)
   }
 
   console.log("[Stitch] OpenRouter prompt:\n", content)

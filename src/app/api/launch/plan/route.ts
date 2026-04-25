@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
+import { refundCreditsServerSide } from "@/lib/credits"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   const timer = new MetricsTimer()
@@ -11,6 +13,7 @@ export async function POST(request: Request) {
   let userId: string | undefined
   let projectId: string | undefined
   const creditsConsumed = 5
+  let creditsCharged = false
 
   try {
     const supabase = await createClient()
@@ -25,6 +28,23 @@ export async function POST(request: Request) {
     }
 
     userId = user.id
+    const rateLimit = checkRateLimit({
+      key: `launch-plan:${user.id}:${getClientIp(request)}`,
+      limit: 12,
+      windowMs: 60_000,
+    })
+    if (rateLimit.limited) {
+      statusCode = 429
+      errorType = "rate_limited"
+      errorMessage = "Too many launch plan requests"
+      return NextResponse.json(
+        { error: "Too many requests. Please wait and try again." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      )
+    }
 
     const body = await request.json()
     const { projectId: incomingProjectId, idea, name, marketingBrief } = body
@@ -86,6 +106,7 @@ export async function POST(request: Request) {
         { status: 402 }
       )
     }
+    creditsCharged = true
 
     const channels = brief.channels.split(",").map((c: string) => c.trim()).filter(Boolean)
     const immediateChannels = channels.slice(0, 3)
@@ -153,6 +174,15 @@ We are launching ${name} for ${brief.targetAudience}. Current stage: ${brief.sta
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
+    if (creditsCharged && userId) {
+      const refund = await refundCreditsServerSide({
+        userId,
+        amount: creditsConsumed,
+        action: "launch-plan",
+        description: "Launch plan generation failed: credits refunded",
+      })
+      if (refund.error) console.error("[LaunchPlan] Credit refund failed:", refund.error)
+    }
     return NextResponse.json({ error: "Failed to generate launch plan." }, { status: 500 })
   } finally {
     if (userId) {
@@ -164,7 +194,7 @@ We are launching ${name} for ${brief.targetAudience}. Current stage: ${brief.sta
         projectId: projectId || null,
         statusCode,
         responseTimeMs: timer.getElapsedMs(),
-        creditsConsumed: statusCode === 200 ? creditsConsumed : 0,
+        creditsConsumed: creditsCharged ? creditsConsumed : 0,
         errorType,
         errorMessage,
       })

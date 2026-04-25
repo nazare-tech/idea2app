@@ -71,6 +71,30 @@ export async function POST(request: Request) {
     livemode: event.livemode,
   })
 
+  const { error: claimError } = await supabase.from("stripe_webhook_events").insert({
+    event_id: event.id,
+    event_type: event.type,
+    livemode: event.livemode,
+    status: "processing",
+  })
+
+  if (claimError) {
+    if (claimError.code === "23505") {
+      logWebhook("info", "Duplicate Stripe event ignored", {
+        event_id: event.id,
+        event_type: event.type,
+      })
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+
+    logWebhook("error", "Failed to claim Stripe event", {
+      event_id: event.id,
+      event_type: event.type,
+      error: claimError.message,
+    })
+    return NextResponse.json({ error: "Webhook claim failed" }, { status: 500 })
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -209,8 +233,25 @@ export async function POST(request: Request) {
         break
     }
 
+    await supabase
+      .from("stripe_webhook_events")
+      .update({
+        status: "processed",
+        processed_at: new Date().toISOString(),
+        error: null,
+      })
+      .eq("event_id", event.id)
+
     return NextResponse.json({ received: true })
   } catch (error) {
+    await supabase
+      .from("stripe_webhook_events")
+      .update({
+        status: "failed",
+        error: error instanceof Error ? error.message : String(error),
+      })
+      .eq("event_id", event.id)
+
     logWebhook("error", "Webhook processing error", {
       event_id: event.id,
       event_type: event.type,

@@ -17,6 +17,7 @@ interface MockupRendererProps {
   content: string
   className?: string
   projectName?: string
+  projectId?: string
 }
 
 // ---- JSON-render mockup types and parsing ----
@@ -674,7 +675,15 @@ function parseStitchContent(content: string): StitchContent | null {
   }
 }
 
-function StitchMockupViewer({ data, projectName }: { data: StitchContent; projectName?: string }) {
+function StitchMockupViewer({
+  data,
+  projectName,
+  projectId,
+}: {
+  data: StitchContent
+  projectName?: string
+  projectId?: string
+}) {
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const [downloading, setDownloading] = React.useState(false)
   const [viewport, setViewport] = React.useState<Viewport>("desktop")
@@ -693,7 +702,7 @@ function StitchMockupViewer({ data, projectName }: { data: StitchContent; projec
     if (htmlCache[selectedOption.label]) return // already cached
 
     setLoadingHtml(true)
-    const proxyUrl = `/api/stitch/html?url=${encodeURIComponent(selectedOption.htmlUrl)}`
+    const proxyUrl = `/api/stitch/html?url=${encodeURIComponent(selectedOption.htmlUrl)}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ""}`
     fetch(proxyUrl)
       .then((res) => res.text())
       .then((html) => {
@@ -701,7 +710,7 @@ function StitchMockupViewer({ data, projectName }: { data: StitchContent; projec
       })
       .catch((err) => console.error("[StitchViewer] Failed to load HTML:", err))
       .finally(() => setLoadingHtml(false))
-  }, [selectedOption?.label, selectedOption?.htmlUrl, htmlCache])
+  }, [selectedOption?.label, selectedOption?.htmlUrl, htmlCache, projectId])
 
   const handleDownload = React.useCallback(async (index: number) => {
     const option = data.options[index]
@@ -710,7 +719,7 @@ function StitchMockupViewer({ data, projectName }: { data: StitchContent; projec
     try {
       // Use cached HTML if available, otherwise fetch via proxy
       const html = htmlCache[option.label]
-        ?? await fetch(`/api/stitch/html?url=${encodeURIComponent(option.htmlUrl)}`).then((r) => r.text())
+        ?? await fetch(`/api/stitch/html?url=${encodeURIComponent(option.htmlUrl)}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ""}`).then((r) => r.text())
       const blob = new Blob([html], { type: "text/html" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -724,7 +733,7 @@ function StitchMockupViewer({ data, projectName }: { data: StitchContent; projec
     } finally {
       setDownloading(false)
     }
-  }, [data.options, htmlCache, projectName])
+  }, [data.options, htmlCache, projectName, projectId])
 
   if (!selectedOption) return null
 
@@ -1260,7 +1269,7 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
  * Renders mockup content — either as interactive json-render components (new)
  * or as ASCII art wireframes (legacy). Auto-detects the format.
  */
-export function MockupRenderer({ content, className = "", projectName }: MockupRendererProps) {
+export function MockupRenderer({ content, className = "", projectName, projectId }: MockupRendererProps) {
   // All hooks must be called unconditionally before any early return (Rules of Hooks)
   const stitchData = React.useMemo(() => parseStitchContent(content), [content])
 
@@ -1281,7 +1290,7 @@ export function MockupRenderer({ content, className = "", projectName }: MockupR
   if (stitchData) {
     return (
       <div className={className}>
-        <StitchMockupViewer data={stitchData} projectName={projectName} />
+        <StitchMockupViewer data={stitchData} projectName={projectName} projectId={projectId} />
       </div>
     )
   }

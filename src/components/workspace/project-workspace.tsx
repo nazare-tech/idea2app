@@ -1251,6 +1251,7 @@ export function ProjectWorkspace({
             <ContentEditor
               documentType="prompt"
               projectId={project.id}
+              documentId={null}
               projectName={projectName}
               projectDescription={project.description || ""}
               content={getDocumentContent("prompt")}

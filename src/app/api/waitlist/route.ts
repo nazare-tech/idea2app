@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { isWaitlistMode, validateWaitlistEmail, WAITLIST_LIMIT } from "@/lib/waitlist"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 /**
  * GET /api/waitlist
@@ -34,6 +35,21 @@ export async function GET() {
  * Adds the email to the waitlist table.
  */
 export async function POST(req: NextRequest) {
+  const rateLimit = checkRateLimit({
+    key: `waitlist:${getClientIp(req)}`,
+    limit: 8,
+    windowMs: 60_000,
+  })
+  if (rateLimit.limited) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait and try again." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+      },
+    )
+  }
+
   let body: unknown
   try {
     body = await req.json()

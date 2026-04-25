@@ -9,6 +9,7 @@ Last updated: 2026-04-25
 ## Review Log
 
 - 2026-04-25: Created from the security review follow-up decisions. Live HTML previews stay enabled for MVP, while preview isolation/replacement moves here.
+- 2026-04-25: MVP fixes implemented for server-only refunds, PDF export auth, simple in-memory rate limiting, Stripe webhook idempotency, baseline headers, Stitch proxy ownership checks, prompt-chat model hardening, and refund-on-failure paths. Distributed rate limiting, dependency upgrades, live preview replacement/isolation, and single-RPC project creation remain here.
 
 ## Running List
 
@@ -87,3 +88,19 @@ Review questions:
 - Which preview format best supports the user workflow?
 - Can generated preview artifacts be treated as untrusted files end to end?
 - Is there still a need for downloadable HTML once image previews exist?
+
+### 5. Move intake project creation into one database transaction
+
+Status: deferred beyond MVP hardening
+Source finding: `docs/SECURITY_REVIEW_2026-04-25.md`, finding 6
+
+Current MVP decision:
+- Use a short-lived service-role `project_creation_locks` row plus a second allowance check immediately before project insertion.
+
+Future work:
+- Replace the app-level lock with a single Supabase RPC or transaction that checks allowance and inserts `projects`, `project_intakes`, `generation_queues`, and `generation_queue_items` under one database boundary.
+- Use an advisory lock or serializable transaction inside that RPC.
+
+Review questions:
+- Are users hitting project creation conflicts or lock timeouts?
+- Can project/intake/queue creation move fully into SQL without making the route hard to maintain?

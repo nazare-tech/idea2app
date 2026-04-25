@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server"
 import { PROMPT_CHAT_SYSTEM, IDEA_SUMMARY_PROMPT, POST_SUMMARY_SYSTEM } from "@/lib/prompt-chat-config"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { calculatePromptChatCredits } from "@/lib/utils"
+import { refundCreditsServerSide } from "@/lib/credits"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 const openrouter = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -199,10 +201,28 @@ export async function POST(request: Request) {
     }
 
     userId = user.id
+
+    const rateLimit = checkRateLimit({
+      key: `prompt-chat:${user.id}:${getClientIp(request)}`,
+      limit: 30,
+      windowMs: 60_000,
+    })
+    if (rateLimit.limited) {
+      statusCode = 429
+      errorType = "rate_limited"
+      errorMessage = "Too many prompt chat requests"
+      return NextResponse.json(
+        { error: "Too many requests. Please wait and try again." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      )
+    }
+
     const body = await request.json()
     projectId = body.projectId
     const message = body.message
-    const model = body.model
     const isInitial = body.isInitial
     const streamEnabled = parseBoolean(body.stream)
 
@@ -268,6 +288,12 @@ export async function POST(request: Request) {
       statusCode = 500
       errorType = "server_error"
       errorMessage = userMsgError.message
+      await refundCreditsServerSide({
+        userId: user.id,
+        amount: creditsConsumed,
+        action: "prompt_chat",
+        description: "Prompt chat user message save failed: credits refunded",
+      })
       return NextResponse.json({ error: userMsgError.message }, { status: 500 })
     }
 
@@ -345,7 +371,7 @@ export async function POST(request: Request) {
       })
     }
 
-    const selectedModel = model || CHAT_MODEL
+    const selectedModel = CHAT_MODEL
 
     if (streamEnabled) {
       const completionStream = await openrouter.chat.completions.create({
@@ -455,6 +481,15 @@ export async function POST(request: Request) {
             statusCode = 500
             errorType = getErrorType(500, streamError)
             errorMessage = getErrorMessage(streamError)
+            if (creditsConsumed > 0 && userId) {
+              const refund = await refundCreditsServerSide({
+                userId,
+                amount: creditsConsumed,
+                action: "prompt_chat",
+                description: "Prompt chat stream failed: credits refunded",
+              })
+              if (refund.error) console.error("[PromptChat] Credit refund failed:", refund.error)
+            }
             sendEvent({
               type: "error",
               error: errorMessage || "Failed to generate chat response",
@@ -507,6 +542,12 @@ export async function POST(request: Request) {
       statusCode = 500
       errorType = "server_error"
       errorMessage = assistantMsgError.message
+      await refundCreditsServerSide({
+        userId: user.id,
+        amount: creditsConsumed,
+        action: "prompt_chat",
+        description: "Prompt chat assistant message save failed: credits refunded",
+      })
       return NextResponse.json({ error: assistantMsgError.message }, { status: 500 })
     }
 
@@ -573,6 +614,15 @@ export async function POST(request: Request) {
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
+    if (creditsConsumed > 0 && userId) {
+      const refund = await refundCreditsServerSide({
+        userId,
+        amount: creditsConsumed,
+        action: "prompt_chat",
+        description: "Prompt chat failed: credits refunded",
+      })
+      if (refund.error) console.error("[PromptChat] Credit refund failed:", refund.error)
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

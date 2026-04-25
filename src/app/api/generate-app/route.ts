@@ -5,6 +5,8 @@ import Anthropic from "@anthropic-ai/sdk"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { buildAppGenerationPrompt } from "@/lib/prompts"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
+import { refundCreditsServerSide } from "@/lib/credits"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 const APP_TYPE_CREDITS: Record<string, number> = {
   static: CREDIT_COSTS["app-static"],
@@ -38,6 +40,23 @@ export async function POST(request: Request) {
     }
 
     userId = user.id
+    const rateLimit = checkRateLimit({
+      key: `generate-app:${user.id}:${getClientIp(request)}`,
+      limit: 6,
+      windowMs: 60_000,
+    })
+    if (rateLimit.limited) {
+      statusCode = 429
+      errorType = "rate_limited"
+      errorMessage = "Too many app generation requests"
+      return NextResponse.json(
+        { error: "Too many requests. Please wait and try again." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      )
+    }
 
     const body = await request.json()
     projectId = body.projectId
@@ -154,6 +173,12 @@ export async function POST(request: Request) {
       statusCode = 500
       errorType = "server_error"
       errorMessage = deployError.message
+      await refundCreditsServerSide({
+        userId: user.id,
+        amount: creditsConsumed,
+        action: `app-${appType}`,
+        description: `${appType} app deployment record failed: credits refunded`,
+      })
       return NextResponse.json({ error: deployError.message }, { status: 500 })
     }
 
@@ -219,8 +244,15 @@ export async function POST(request: Request) {
       statusCode = 500
       errorType = "ai_model_error"
       errorMessage = genError instanceof Error ? genError.message : "Generation failed"
+      const refund = await refundCreditsServerSide({
+        userId: user.id,
+        amount: creditsConsumed,
+        action: `app-${appType}`,
+        description: `${appType} app generation failed: credits refunded`,
+      })
+      if (refund.error) console.error("[GenerateApp] Credit refund failed:", refund.error)
       return NextResponse.json(
-        { error: "Failed to generate app. Credits have been deducted." },
+        { error: "Failed to generate app. Credits were refunded." },
         { status: 500 }
       )
     }
@@ -229,6 +261,15 @@ export async function POST(request: Request) {
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
+    if (creditsConsumed > 0 && userId) {
+      const refund = await refundCreditsServerSide({
+        userId,
+        amount: creditsConsumed,
+        action: "app-generation",
+        description: "App generation failed: credits refunded",
+      })
+      if (refund.error) console.error("[GenerateApp] Credit refund failed:", refund.error)
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

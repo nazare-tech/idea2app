@@ -17,7 +17,6 @@ import {
 } from "@/components/chat/chat-primitives"
 import { GenerateAllBlock } from "@/components/workspace/generate-all-block"
 import { useGenerateAll } from "@/stores/generate-all-store"
-import { DEFAULT_MODELS } from "@/lib/prompt-chat-config"
 
 interface Message {
   id: string
@@ -34,7 +33,6 @@ interface PromptChatInterfaceProps {
   projectId: string
   projectName: string
   initialIdea: string
-  selectedModel?: string
   onIdeaSummary?: (summary: string) => void
   onProjectNameGenerated?: (name: string) => void
   credits?: number
@@ -59,7 +57,6 @@ const PAGE_SIZE = 40
 export function PromptChatInterface({
   projectId,
   initialIdea,
-  selectedModel = DEFAULT_MODELS.prompt,
   onIdeaSummary,
   onProjectNameGenerated,
   credits = 0,
@@ -252,7 +249,6 @@ export function PromptChatInterface({
         body: JSON.stringify({
           projectId,
           message: ideaToUse,
-          model: selectedModel,
           isInitial: true,
           stream: true,
         }),
@@ -305,7 +301,7 @@ export function PromptChatInterface({
       requestInFlight.current = false
       setLoading(false)
     }
-  }, [conversationStage, dedupeMessages, initialIdea, parseStreamResponse, projectId, selectedModel])
+  }, [conversationStage, dedupeMessages, initialIdea, parseStreamResponse, projectId])
 
   useEffect(() => {
     const loadInitialMessages = async () => {
@@ -391,7 +387,6 @@ export function PromptChatInterface({
         body: JSON.stringify({
           projectId,
           message: userMessage,
-          model: selectedModel,
           isInitial: false,
           stream: true,
         }),

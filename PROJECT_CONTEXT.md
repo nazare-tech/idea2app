@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-04-25 (Secured Generation Queue Billing Boundaries)
+**Last Updated**: 2026-04-25 (MVP Security Hardening Follow-ups)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -75,7 +75,7 @@
 | **react-syntax-highlighter** | 16.1.0 | Code syntax highlighting |
 | **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
 | **jspdf** | 4.0.0 | Client-side PDF generation |
-| **html2canvas** | 1.4.1 | HTML-to-canvas rendering (used for PDF) |
+| **html2canvas** | 1.4.1 | Legacy client-side HTML-to-canvas rendering utility |
 | **Sora** | (Google Font) | Primary sans-serif typeface |
 | **Space Grotesk** | (Google Font) | Display typeface for Competitive Research and Pencil-inspired editorial headings |
 | **IBM Plex Mono** | (Google Font) | Monospace typeface for labels/code |
@@ -187,7 +187,7 @@
 
 6. **Analysis Flow** (individual tab generation):
    - Client requests analysis (competitive, PRD, MVP plan, or tech spec) from the workspace `ContentEditor`
-   - Server checks credits, deducts if available; refunds via `refund_credits` RPC on generation failure
+   - Server checks credits, deducts if available; refunds through the service-role `refund_credits` RPC on generation failure
    - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`). When a `project_intakes` row exists, generation context is formatted through `formatProjectIntakeForAi()` and combined with the human-readable project summary; otherwise `projects.description` is used as the fallback:
      - **Competitive Analysis**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail. External API calls use `withRetry` (3 retries, exponential backoff on 429/5xx). All OpenRouter synthesis calls have a 120s `AbortSignal` timeout.
      - **PRD**: OpenRouter LLM call with detailed system prompt, receives a bounded competitive-analysis context excerpt so onboarding retries stay under the 120s route timeout
@@ -233,8 +233,16 @@
 
 6. **Stitch Proxy Flow**:
    - Server receives a Stitch HTML download URL via `/api/stitch/html`
-   - Route validates the URL host against the allowed Google Stitch CDN domains
-   - Server fetches the HTML and returns it without frame-blocking headers so the app can render it safely
+   - Route requires auth, validates the URL host against the allowed Google Stitch CDN domains, and verifies the URL belongs to a saved mockup for a project owned by the current user
+   - Server fetches the HTML with timeout/content-size checks and returns it without frame-blocking headers so the MVP live preview can keep rendering through `srcDoc`
+
+7. **Security Hardening Flow**:
+   - `next.config.ts` sets baseline security headers: CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and Permissions-Policy.
+   - `src/lib/rate-limit.ts` provides simple in-memory per-user/IP rate limiting for public and expensive endpoints. Distributed rate limiting remains a post-MVP item.
+   - `src/lib/credits.ts` centralizes server-only refunds through the Supabase service role. The hardened `refund_credits` RPC is service-role-only.
+   - `/api/generate-pdf` requires auth and fetches owned server-side document content by `projectId`, `documentType`, and optional `documentId`; it no longer accepts arbitrary raw markdown from clients.
+   - Stripe webhooks are claimed in `stripe_webhook_events` before processing so duplicate Stripe retries do not double-grant credits.
+   - Intake project creation uses a short-lived service-role `project_creation_locks` row plus a second allowance check immediately before insert. A single transactional RPC remains tracked for post-MVP hardening.
 
 ### Workspace Layout (Three-Column)
 
@@ -268,7 +276,7 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 - **Idea intake contracts** — typed question, answer, summary, context, and project-name helpers live in `src/lib/intake-*.ts`, `src/lib/project-name-generation.ts`, and `src/lib/prompts/intake-wizard.ts`. `src/lib/intake-examples.ts` owns the configurable example ideas shown in Step 1.
 - **Shared auth building blocks** — `AuthFormContent` is the single source of form logic (email/password/Google, validation, success state). It is used by both the `/auth` page and the `AuthModal` overlay. `AuthField` and `AuthPasswordField` are reusable field primitives. `AuthMode` type is exported from `auth-form-content.tsx`.
 - **Auth Modal** — `src/components/auth/auth-modal.tsx` is a `"use client"` Radix UI Dialog. It reads `?modal=auth&mode=signin|signup` from the URL, opens over the landing page with a dark blurred overlay (`bg-black/65 backdrop-blur-[4px]`), and closes by clearing URL params. Sign In / Sign Up links on the landing page use `?modal=auth&mode=...` instead of navigating to `/auth`.
-- **Project allowance guard** — `src/lib/project-allowance.ts` resolves monthly project allowance from active `subscriptions` joined to `plans`, explicit plan fields/features when present, plan-name fallbacks, and the active subscription or calendar-month window. The guard runs during final intake project creation before any project row is inserted. The private Supabase-only `Internal Dev` plan name resolves to unmetered project allowance for internal developer accounts; it is not a Stripe/customer-facing plan. Public pricing and checkout use explicit `plans.is_public` and `plans.checkout_enabled` flags instead of display-name filtering.
+- **Project allowance guard** — `src/lib/project-allowance.ts` resolves monthly project allowance from active `subscriptions` joined to `plans`, explicit plan fields/features when present, plan-name fallbacks, and the active subscription or calendar-month window. The guard runs during final intake project creation before any project row is inserted, then runs again under a short-lived `project_creation_locks` row immediately before insert to reduce concurrent project creation races. The private Supabase-only `Internal Dev` plan name resolves to unmetered project allowance for internal developer accounts; it is not a Stripe/customer-facing plan. Public pricing and checkout use explicit `plans.is_public` and `plans.checkout_enabled` flags instead of display-name filtering.
 - **Shared chat primitives** — the general chat and prompt chat surfaces now share composer, avatar, copy button, markdown body, load-more button, and thinking-state primitives plus reusable hooks for copy feedback, textarea autosize, and NDJSON stream consumption.
 - **Shared stacked tab navigation** — project document navigation and preferences navigation now use the same stacked tab-nav component so visual changes to the left-side tab pattern can be made in one place.
 - **Shared authenticated page shell** — dashboard-level pages such as Projects, Billing, and Preferences use `src/components/layout/app-page-shell.tsx` for consistent page width, responsive padding, heading hierarchy, and action placement.
@@ -280,7 +288,7 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 2. **Server Components by Default**: Pages default to server components; interactive components explicitly marked `"use client"`
 3. **Middleware-based Auth**: Global authentication protection at the middleware level
 4. **Credit System with Database Functions**: PostgreSQL stored procedures for atomic credit operations
-5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter) with retry logic on external calls; PRD/MVP/Tech Spec use direct OpenRouter calls with detailed prompts. PRD and MVP bound upstream generated context before sending it downstream to keep onboarding generation reliable. All LLM synthesis calls have 120s abort timeouts. Credits are refunded via `refund_credits` RPC on generation failure.
+5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter) with retry logic on external calls; PRD/MVP/Tech Spec use direct OpenRouter calls with detailed prompts. PRD and MVP bound upstream generated context before sending it downstream to keep onboarding generation reliable. All LLM synthesis calls have 120s abort timeouts. Credits are refunded through the service-role `refund_credits` RPC on generation failure.
 6. **Server-Side Generate All**: "Generate All" orchestration runs on the server (`/api/generate-all/execute`, `maxDuration=300`) instead of in the browser. Normalized `generation_queue_items` rows track per-document status, dependencies, retries, credit state, and output IDs; `generation_queues.queue` remains a synchronized compatibility snapshot. Queue mutations use trusted server routes/service role after user/project authorization. The Zustand store fires the execute request fire-and-forget and polls DB every 3s. This makes generation durable across tab close, refresh, and network interruptions.
 7. **TypeScript-First**: Strict typing throughout, auto-generated database types
 8. **Component Composition**: Radix UI primitives + CVA for variants
@@ -426,7 +434,7 @@ src/
 │   ├── perplexity.ts             # Perplexity API client (competitor search, with retry)
 │   ├── tavily.ts                 # Tavily API client (URL content extraction, with retry)
 │   ├── with-retry.ts             # Shared retry utility for external API calls (3 retries, exponential backoff on 429/5xx)
-│   ├── pdf-utils.ts              # PDF export: renders Markdown → HTML → canvas → jsPDF
+│   ├── pdf-utils.ts              # PDF export client helper for owned server-rendered documents
 │   ├── prompt-chat-config.ts     # DEFAULT_MODELS (per-tab fixed models) + DEFAULT_MODEL fallback
 │   └── utils.ts                  # Utility functions & CREDIT_COSTS
 │
@@ -456,7 +464,7 @@ src/
 | `lib/` | Business logic & external APIs | Integrating new services like waitlist logic, Stitch, or AI pipelines |
 | `lib/prompts/` | **All AI system prompts** — one file per document type | Editing any AI prompt or adding new document generation features |
 | `lib/supabase/` | Database & auth logic | Database operations |
-| `lib/pdf-utils.ts` | PDF export logic | Changing PDF styling or export behaviour |
+| `lib/pdf-utils.ts` | PDF export client helper | Changing PDF request shape or download handling |
 | `types/` | TypeScript definitions | Adding new type definitions |
 
 ---
@@ -845,7 +853,7 @@ npm install
    - `consume_credits(user_id, amount, action, description)` — atomically deduct credits
    - `add_credits(user_id, amount, action, description)` — add credits (subscription refill, purchases)
    - `get_credit_balance(user_id)` — read current balance
-   - `refund_credits(user_id, amount, action, description)` — add credits back on generation failure (see `migrations/005_create_refund_credits.sql`)
+   - `refund_credits(user_id, amount, action, description, metadata)` — service-role-only refund helper hardened in `supabase/migrations/20260425004000_security_hardening_followups.sql`
 
 5. Configure authentication:
    - Enable email/password auth
@@ -1191,7 +1199,7 @@ docker run -p 3000:3000 idea2app
 ### Credit Management
 
 - **Consumption**: Atomic operation via `consume_credits()` stored procedure
-- **Refund**: Via `refund_credits()` — called on generation failure in both streaming and non-streaming analysis paths, and per-step in Generate All execute route. Logs to `credits_history` with `_refund` suffix action.
+- **Refund**: Via service-role-only `refund_credits()` through `src/lib/credits.ts` — called on generation failure in analysis, chat, prompt chat, app generation, mockup generation, launch plan generation, and Generate All queue paths. Logs to `credits_history` with `_refund` suffix action.
 - **Addition**: Via `add_credits()` (subscription refill, purchases)
 - **Balance Check**: Real-time via `get_credit_balance()`
 - **History**: All transactions logged in `credits_history`
@@ -1308,7 +1316,7 @@ export const CREDIT_COSTS = {
 
 **Generate All Issues**
 - If generation appears stuck: check `generation_queues` row in Supabase — `status`, `current_index`, and `queue` show the live server state
-- If credits were lost without a document being generated: the `refund_credits` RPC must exist in Supabase (run `migrations/005_create_refund_credits.sql`)
+- If credits were lost without a document being generated: the hardened `refund_credits` RPC must exist in Supabase (run `supabase/migrations/20260425004000_security_hardening_followups.sql`)
 - After running the migration, regenerate database types: `npx supabase gen types typescript --project-id <id> > src/types/database.ts` to remove the `(supabase.rpc as any)` casts
 - Cancellation: the execute route checks DB `status === "cancelled"` before each step — cancel takes effect at the next step boundary (up to ~2min for a slow step like mockups)
 
@@ -1316,7 +1324,7 @@ export const CREDIT_COSTS = {
 - If `src/types/database.ts` contains a BOM or npm install prompt at the top (UTF-16 encoding artifact from `supabase gen types` with npx), restore it from git: `git checkout <clean-commit> -- src/types/database.ts`
 
 **PDF Export Issues**
-- PDF export uses `html2canvas` which renders off-screen; ensure the page is not navigated away during generation
+- PDF export posts `projectId`, `documentType`, and optional `documentId` to `/api/generate-pdf`; the server fetches owned content and renders through Puppeteer with JavaScript disabled.
 - `marked` parses Markdown to HTML client-side; ensure the content is valid Markdown
 
 ---
@@ -1379,7 +1387,7 @@ export const CREDIT_COSTS = {
 | [src/lib/onboarding-generation.ts](src/lib/onboarding-generation.ts) | Onboarding queue metadata, loading row mapping, run-id helpers, and canonical `#overview` redirect construction. |
 | [src/lib/document-generation-service.ts](src/lib/document-generation-service.ts) | Shared server-side document generation service used by Generate All/onboarding; returns generated output table/id references. |
 | [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=300). Dependency-aware item execution with credit deduction/refund, retries, partial status, and DB state tracking. |
-| [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export: Markdown → HTML → canvas → jsPDF |
+| [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export client helper for `/api/generate-pdf` owned-document export |
 | [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | **NEW** — System prompts, question strategies, and AI models for Prompt chat |
 | [src/lib/stitch/client.ts](src/lib/stitch/client.ts) | Stitch SDK wrapper and raw response parsing helpers |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
@@ -1388,7 +1396,7 @@ export const CREDIT_COSTS = {
 | [src/lib/stripe.ts](src/lib/stripe.ts) | Stripe singleton client — lazy-initialized with Proxy export |
 | [src/app/api/stripe/checkout/route.ts](src/app/api/stripe/checkout/route.ts) | POST — creates Stripe checkout session for subscription upgrade |
 | [src/app/api/stripe/portal/route.ts](src/app/api/stripe/portal/route.ts) | POST — creates Stripe billing portal session for subscription management |
-| [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) | POST — handles Stripe webhook events (checkout, subscription updates, invoice payments) |
+| [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) | POST — handles Stripe webhook events with `stripe_webhook_events` idempotency |
 | [src/app/(dashboard)/billing/page.tsx](src/app/(dashboard)/billing/page.tsx) | Billing page — plan cards, subscription status, credit balance, upgrade flow |
 | [src/lib/openrouter.ts](src/lib/openrouter.ts) | OpenRouter AI integration (fallback) |
 | [src/lib/utils.ts](src/lib/utils.ts) | Utility functions & CREDIT_COSTS |
@@ -1396,7 +1404,7 @@ export const CREDIT_COSTS = {
 | [src/types/database.ts](src/types/database.ts) | Database type definitions |
 | [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
 | [supabase/migrations/20260425001000_create_mockups_table.sql](supabase/migrations/20260425001000_create_mockups_table.sql) | Supabase migration for mockups table |
-| [migrations/005_create_refund_credits.sql](migrations/005_create_refund_credits.sql) | PostgreSQL `refund_credits` RPC — adds credits back + logs to credits_history on generation failure. **Run this in Supabase SQL editor before regenerating database types.** |
+| [supabase/migrations/20260425004000_security_hardening_followups.sql](supabase/migrations/20260425004000_security_hardening_followups.sql) | Security follow-up migration: service-role-only `refund_credits`, Stripe event idempotency table, and project creation locks. |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Setup guide for Prompt tab AI chat feature |
 
 ---

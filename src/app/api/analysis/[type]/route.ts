@@ -11,6 +11,8 @@ import {
   COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
   COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION,
 } from "@/lib/competitive-analysis-v2"
+import { refundCreditsServerSide } from "@/lib/credits"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // Fixed default models per analysis type — user model selection removed
 const ANALYSIS_DEFAULT_MODELS: Record<string, string> = {
@@ -81,6 +83,23 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     userId = user.id
+    const rateLimit = checkRateLimit({
+      key: `analysis:${type}:${user.id}:${getClientIp(request)}`,
+      limit: type === "competitive-analysis" ? 6 : 12,
+      windowMs: 60_000,
+    })
+    if (rateLimit.limited) {
+      statusCode = 429
+      errorType = "rate_limited"
+      errorMessage = "Too many analysis requests"
+      return NextResponse.json(
+        { error: "Too many requests. Please wait and try again." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      )
+    }
 
     const body = await request.json()
     projectId = body.projectId
@@ -229,17 +248,16 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
             // Refund credits on generation failure
             if (creditsConsumed > 0) {
-              try {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                await (supabase.rpc as any)("refund_credits", {
-                  p_user_id: userId!,
-                  p_amount: creditsConsumed,
-                  p_action: analysisType!,
-                  p_description: `${analysisType} generation failed for "${name}": credits refunded`,
-                })
+              const refund = await refundCreditsServerSide({
+                userId: userId!,
+                amount: creditsConsumed,
+                action: analysisType!,
+                description: `${analysisType} generation failed for "${name}": credits refunded`,
+              })
+              if (!refund.error) {
                 send({ type: "refund", credits: creditsConsumed })
-              } catch (refundErr) {
-                console.error("[Analysis] Credit refund failed:", refundErr)
+              } else {
+                console.error("[Analysis] Credit refund failed:", refund.error)
               }
             }
 
@@ -341,18 +359,16 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
     // Refund credits on generation failure
     if (creditsConsumed > 0 && userId) {
-      try {
-        const supabase = await createClient()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.rpc as any)("refund_credits", {
-          p_user_id: userId,
-          p_amount: creditsConsumed,
-          p_action: analysisType || "unknown",
-          p_description: `${analysisType} generation failed: credits refunded`,
-        })
+      const refund = await refundCreditsServerSide({
+        userId,
+        amount: creditsConsumed,
+        action: analysisType || "unknown",
+        description: `${analysisType} generation failed: credits refunded`,
+      })
+      if (!refund.error) {
         console.log(`[Analysis] Refunded ${creditsConsumed} credits to user ${userId}`)
-      } catch (refundErr) {
-        console.error("[Analysis] Credit refund failed:", refundErr)
+      } else {
+        console.error("[Analysis] Credit refund failed:", refund.error)
       }
     }
 

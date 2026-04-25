@@ -1,8 +1,29 @@
 # Security Review - 2026-04-25
 
 Repo: Maker Compass / Idea2App
-Review type: read-only local code review with focused static scans and `npm audit --omit=dev`
-Result: application code was not changed
+Review type: local code review with focused static scans and `npm audit --omit=dev`
+Result: review findings documented first; MVP security fixes implemented on 2026-04-25
+
+## Implementation Status - 2026-04-25
+
+Implemented:
+- Hardened `refund_credits` in `supabase/migrations/20260425004000_security_hardening_followups.sql` with service-role-only execution, fixed `search_path`, positive bounded amounts, and the same `credits` ledger used by credit consumption.
+- Moved server refund calls to `refundCreditsServerSide()` so refunds use the Supabase service role instead of browser-callable user clients.
+- Changed `/api/generate-pdf` to require auth and `projectId` + `documentType` + optional `documentId`; the server fetches owned content, caps document size, disables JavaScript in Puppeteer, blocks network requests, sanitizes rendered HTML, and closes Chromium in `finally`.
+- Added simple in-memory server-side rate limiting for PDF export, Stitch HTML proxy, public intake/waitlist writes, chat, prompt chat, analysis generation, mockup generation, launch plan generation, and app generation.
+- Added baseline app security headers in `next.config.ts`.
+- Added Stripe webhook event idempotency with `stripe_webhook_events`.
+- Added a short-lived `project_creation_locks` guard and a second server-side allowance check before intake project insertion to reduce project allowance races.
+- Kept live HTML previews enabled, but `/api/stitch/html` now requires auth and verifies the requested URL belongs to a saved mockup for a project owned by the current user.
+- Wrapped Stitch prompt-engineering input in explicit untrusted `<user_input>` blocks.
+- Removed prompt-chat client model submission and made the server use its configured model.
+- Added refund-on-failure handling for app generation, mockup generation, launch plan generation, chat, prompt chat, and stale cancelled Generate All items.
+
+Still deferred:
+- Replacing or fully isolating live HTML previews.
+- Distributed/serverless-safe rate limiting.
+- Dependency upgrade pass for audited package advisories.
+- Atomic single-RPC project creation/intake/queue insertion beyond the current short-lived lock guard.
 
 ## Executive Summary
 
@@ -286,12 +307,12 @@ Recommended fix:
 
 ## Immediate Fix Order
 
-1. Lock down `refund_credits` grants and semantics in Supabase.
-2. Change PDF export to auth + document id/type + ownership-verified server fetch.
-3. Add a simple server-side rate limiter to public and expensive endpoints.
-4. Add Stripe webhook idempotency.
-5. Make project allowance creation atomic.
-6. Add baseline security headers.
-7. Fix refund gaps and model allowlisting.
-8. Keep live HTML previews unchanged for MVP; track isolation/replacement in the V2 running list.
-9. Defer dependency upgrades to a later pass and re-run audit then.
+1. Completed - Lock down `refund_credits` grants and semantics in Supabase.
+2. Completed - Change PDF export to auth + document id/type + ownership-verified server fetch.
+3. Completed - Add a simple server-side rate limiter to public and expensive endpoints.
+4. Completed - Add Stripe webhook idempotency.
+5. Partially completed - Add short-lived project creation locking and a second server-side allowance check. A single DB RPC/transaction remains a V2 hardening item.
+6. Completed - Add baseline security headers.
+7. Completed - Fix refund gaps and model allowlisting.
+8. Deferred - Keep live HTML previews unchanged for MVP; track isolation/replacement in the V2 running list.
+9. Deferred - Dependency upgrades remain a later pass.

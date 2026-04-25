@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { CREDIT_COSTS } from "@/lib/utils"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { generateStitchMockup } from "@/lib/stitch-pipeline"
+import { refundCreditsServerSide } from "@/lib/credits"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 const encoder = new TextEncoder()
 
@@ -37,6 +39,23 @@ export async function POST(request: Request) {
     }
 
     userId = user.id
+    const rateLimit = checkRateLimit({
+      key: `mockups:${user.id}:${getClientIp(request)}`,
+      limit: 8,
+      windowMs: 60_000,
+    })
+    if (rateLimit.limited) {
+      statusCode = 429
+      errorType = "rate_limited"
+      errorMessage = "Too many mockup generation requests"
+      return NextResponse.json(
+        { error: "Too many requests. Please wait and try again." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      )
+    }
 
     const body = await request.json()
     projectId = body.projectId
@@ -131,6 +150,15 @@ export async function POST(request: Request) {
             })
           } catch (err) {
             const msg = err instanceof Error ? err.message : "Mockup generation failed"
+            if (creditsConsumed > 0 && userId) {
+              const refund = await refundCreditsServerSide({
+                userId,
+                amount: creditsConsumed,
+                action: "mockup",
+                description: `Mockup generation failed for "${projectName}": credits refunded`,
+              })
+              if (refund.error) console.error("[Mockup] Credit refund failed:", refund.error)
+            }
             send({ type: "error", message: msg })
             statusCode = 500
             errorType = "generation_error"
@@ -189,6 +217,15 @@ export async function POST(request: Request) {
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
+    if (creditsConsumed > 0 && userId) {
+      const refund = await refundCreditsServerSide({
+        userId,
+        amount: creditsConsumed,
+        action: "mockup",
+        description: "Mockup generation failed: credits refunded",
+      })
+      if (refund.error) console.error("[Mockup] Credit refund failed:", refund.error)
+    }
     return NextResponse.json(
       { error: "Failed to generate mockup. Please try again." },
       { status: 500 }
