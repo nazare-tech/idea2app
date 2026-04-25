@@ -138,14 +138,14 @@ function MermaidDiagram({ code }: { code: string }) {
       line: "var(--sidebar-muted)",
       accent: "var(--primary)",
       muted: "var(--sidebar-active)",
-      font: "ui-monospace, 'IBM Plex Mono', monospace",
+      font: "ui-monospace, 'Fira Mono', monospace",
     } : {
       bg: "var(--card)",
       fg: "var(--text-primary)",
       line: "var(--text-muted)",
       accent: "var(--primary)",
       muted: "var(--muted)",
-      font: "ui-monospace, 'IBM Plex Mono', monospace",
+      font: "ui-monospace, 'Fira Mono', monospace",
     }
 
     renderMermaid(code, theme)
@@ -257,7 +257,7 @@ function MermaidDiagram({ code }: { code: string }) {
           dangerouslySetInnerHTML={{ __html: svg }}
           style={{
             fontSize: '14px',
-            fontFamily: 'ui-monospace, "IBM Plex Mono", monospace',
+            fontFamily: 'ui-monospace, 'Fira Mono', monospace',
           }}
         />
 
@@ -308,7 +308,7 @@ function MermaidDiagram({ code }: { code: string }) {
                 dangerouslySetInnerHTML={{ __html: svg }}
                 style={{
                   fontSize: '20px',
-                  fontFamily: 'ui-monospace, "IBM Plex Mono", monospace',
+                  fontFamily: 'ui-monospace, 'Fira Mono', monospace',
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
                   transformOrigin: 'center center',
                   transition: isPanning ? 'none' : 'transform 0.1s ease-out',

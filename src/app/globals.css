@@ -76,7 +76,7 @@
   --surface-ink-strong: rgba(12,12,20,0.9);
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-  --font-display: var(--font-space-grotesk);
+  --font-display: var(--font-hanken-grotesk);
 
   /* Motion tokens */
   --motion-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -137,9 +137,9 @@
   --color-surface-soft: var(--surface-soft);
   --color-surface-mid: var(--surface-mid);
   --color-surface-strong: var(--surface-strong);
-  --font-sans: var(--font-sora);
-  --font-mono: var(--font-ibm-plex-mono);
-  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-hanken-grotesk);
+  --font-mono: var(--font-fira-mono);
+  --font-display: var(--font-hanken-grotesk);
   --ease-out-expo: var(--motion-ease-out-expo);
 }
 
@@ -150,7 +150,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sora), system-ui, sans-serif;
+  font-family: var(--font-hanken-grotesk), system-ui, sans-serif;
 }
 
 /* Custom scrollbar */
@@ -371,7 +371,7 @@ body {
 
 /* ERD-specific styling improvements - Light Mode */
 .mermaid-diagram .er {
-  font-family: ui-monospace, 'IBM Plex Mono', monospace !important;
+  font-family: ui-monospace, 'Fira Mono', monospace !important;
 }
 
 .mermaid-diagram .er .entityBox {
@@ -404,7 +404,7 @@ body {
 }
 
 .mermaid-diagram text {
-  font-family: ui-monospace, 'IBM Plex Mono', monospace !important;
+  font-family: ui-monospace, 'Fira Mono', monospace !important;
   fill: var(--text-primary) !important;
 }
 

@@ -282,7 +282,7 @@ export function PencilFrameView({ frame }: { frame: PenNode }) {
         <div
           style={{
             marginBottom: "16px",
-            fontFamily: "IBM Plex Mono, monospace",
+            fontFamily: "Fira Mono, monospace",
             fontSize: "12px",
             letterSpacing: "0.08em",
             textTransform: "uppercase",

@@ -4,7 +4,8 @@
       "Bash(npm run build:*)",
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
-      "Bash(node .claude/skills/impeccable/scripts/load-context.mjs)"
+      "Bash(node .claude/skills/impeccable/scripts/load-context.mjs)",
+      "Bash(node .agents/skills/impeccable/scripts/load-context.mjs)"
     ]
   }
 }

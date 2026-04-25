@@ -12,7 +12,7 @@ export default async function PencilPreviewIndexPage() {
       <Script src="https://mcp.figma.com/mcp/html-to-design/capture.js" strategy="afterInteractive" />
       <main style={{ minHeight: "100vh", background: "#f3f4f6", padding: "48px" }}>
         <div style={{ margin: "0 auto", maxWidth: "960px" }}>
-          <h1 style={{ margin: 0, fontSize: "28px", fontFamily: "Space Grotesk, sans-serif" }}>Pencil Frame Preview</h1>
+          <h1 style={{ margin: 0, fontSize: "28px", fontFamily: "Hanken Grotesk, sans-serif" }}>Pencil Frame Preview</h1>
           <p style={{ margin: "8px 0 24px", color: "#4b5563", lineHeight: 1.6 }}>
             Open any top-level frame from <code>design/idea2App-design v2.pen</code> as a standalone route for Figma capture.
           </p>
@@ -40,7 +40,7 @@ export default async function PencilPreviewIndexPage() {
               >
                 <div
                   style={{
-                    fontFamily: "IBM Plex Mono, monospace",
+                    fontFamily: "Fira Mono, monospace",
                     fontSize: "11px",
                     letterSpacing: "0.08em",
                     textTransform: "uppercase",

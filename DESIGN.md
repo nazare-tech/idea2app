@@ -21,31 +21,31 @@ colors:
   destructive: "#C0392B"
 typography:
   display:
-    fontFamily: "Space Grotesk, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
     fontSize: "clamp(2.5rem, 6vw, 4.5rem)"
-    fontWeight: 600
+    fontWeight: 800
     lineHeight: 0.95
-    letterSpacing: "-0.06em"
+    letterSpacing: "-0.05em"
   headline:
-    fontFamily: "Sora, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
     fontSize: "clamp(2rem, 4vw, 3.35rem)"
-    fontWeight: 600
+    fontWeight: 800
     lineHeight: 0.98
-    letterSpacing: "-0.06em"
+    letterSpacing: "-0.05em"
   title:
-    fontFamily: "Sora, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
     fontSize: "1.5rem"
-    fontWeight: 600
+    fontWeight: 700
     lineHeight: 1.2
     letterSpacing: "-0.02em"
   body:
-    fontFamily: "Sora, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.6
     letterSpacing: "normal"
   label:
-    fontFamily: "IBM Plex Mono, ui-monospace, monospace"
+    fontFamily: "Fira Mono, ui-monospace, monospace"
     fontSize: "0.6875rem"
     fontWeight: 500
     lineHeight: 1.2
@@ -164,25 +164,24 @@ A tinted-neutral surface carrying one strong accent. Warm secondary accents (cor
 
 ## 3. Typography
 
-**Display Font:** Space Grotesk (with system-ui, sans-serif fallback)
-**Body Font:** Sora (with system-ui, sans-serif fallback)
-**Label / Mono Font:** IBM Plex Mono (with ui-monospace fallback)
+**Display + Body Font:** Hanken Grotesk (with system-ui, sans-serif fallback)
+**Label / Mono Font:** Fira Mono (with ui-monospace fallback)
 
-**Character:** A geometric-leaning trio. Space Grotesk carries hero typography with a sharp-but-not-cold display weight; Sora handles body and product copy with humanist warmth; IBM Plex Mono carries kicker labels and metadata with technical authority. The pairing skews toward the tech-minimal lane.
+**Character:** A single committed sans paired with a functional mono. Hanken Grotesk carries the entire type system, from hero display at weight 800 down to body at weight 400; the range is wide enough to build strong hierarchy within one family. Fira Mono handles kicker labels and metadata with quiet technical authority. The pairing skews toward the tech-minimal lane without the over-familiar associations of Inter or IBM Plex.
 
 ### Hierarchy
 
-- **Display** (Space Grotesk, weight 600, `clamp(2.5rem, 6vw, 4.5rem)`, line-height 0.95, letter-spacing -0.06em): Hero headlines on the landing. One per page.
-- **Headline** (Sora, weight 600, `clamp(2rem, 4vw, 3.35rem)`, line-height 0.98, letter-spacing -0.06em): Section headings on landing surfaces; primary page titles in the product. The tightening tracking is intentional; flat tracking reads as undesigned.
-- **Title** (Sora, weight 600, 1.5rem, line-height 1.2, letter-spacing -0.02em): Card titles, modal headings, in-page sub-sections.
-- **Body** (Sora, weight 400, 1rem, line-height 1.6, letter-spacing normal): Default reading text. Cap line length at 65–75ch in long-form artifacts (PRDs, reports). 1.6 line-height is intentionally generous; this is a tool people read in for minutes, not seconds.
-- **Label** (IBM Plex Mono, weight 500, 0.6875rem, line-height 1.2, letter-spacing 0.18em, UPPERCASE): Kicker labels above sections ("FEATURES", "HOW IT WORKS"), navigation rail captions, status pills. The wide tracking and mono font are the system's "metadata voice."
+- **Display** (Hanken Grotesk, weight 800, `clamp(2.5rem, 6vw, 4.5rem)`, line-height 0.95, letter-spacing -0.05em): Hero headlines on the landing. One per page.
+- **Headline** (Hanken Grotesk, weight 800, `clamp(2rem, 4vw, 3.35rem)`, line-height 0.98, letter-spacing -0.05em): Section headings on landing surfaces; primary page titles in the product. The tightening tracking is intentional; flat tracking reads as undesigned.
+- **Title** (Hanken Grotesk, weight 700, 1.5rem, line-height 1.2, letter-spacing -0.02em): Card titles, modal headings, in-page sub-sections.
+- **Body** (Hanken Grotesk, weight 400, 1rem, line-height 1.6, letter-spacing normal): Default reading text. Cap line length at 65–75ch in long-form artifacts (PRDs, reports). 1.6 line-height is intentionally generous; this is a tool people read in for minutes, not seconds.
+- **Label** (Fira Mono, weight 500, 0.6875rem, line-height 1.2, letter-spacing 0.18em, UPPERCASE): Kicker labels above sections ("FEATURES", "HOW IT WORKS"), navigation rail captions, status pills. The wide tracking and mono font are the system's "metadata voice."
 
 ### Named Rules
 
-**The Tight Tracking Rule.** Display and Headline tracking is `-0.06em`, not flat zero. Hero typography with default tracking reads as a wireframe. The tightening makes large type feel intentional.
+**The Tight Tracking Rule.** Display and Headline tracking is `-0.05em`, not flat zero. Hero typography with default tracking reads as a wireframe. The tightening makes large type feel intentional.
 
-**The Mono-Label Rule.** Metadata, status, and kicker labels are IBM Plex Mono UPPERCASE with `letter-spacing: 0.18em`. Not Sora small caps, not Sora at smaller weight. The mono shift is the system's way of saying "this is metadata, not voice."
+**The Mono-Label Rule.** Metadata, status, and kicker labels are Fira Mono UPPERCASE with `letter-spacing: 0.18em`. Not Hanken Grotesk small caps, not Hanken at smaller weight. The mono shift is the system's way of saying "this is metadata, not voice."
 
 ## 4. Elevation
 
@@ -237,20 +236,20 @@ Cards never nest. If the design seems to call for a card-in-card, the inner card
 
 The kicker label is the system's micro-component for "this is metadata."
 
-- **Style:** `Card White` background, `Border Subtle` border, `rounded-full`, `IBM Plex Mono` text at 11px, weight 500, letter-spacing 0.18em, UPPERCASE.
+- **Style:** `Card White` background, `Border Subtle` border, `rounded-full`, `Fira Mono` text at 11px, weight 500, letter-spacing 0.18em, UPPERCASE.
 - **Padding:** 6px 12px.
 - **Color:** `Text Secondary` for default; `Text Muted` for tertiary / footer chrome.
 - **Where:** kicker labels above sections, "THE BUILD MAP" badge on graphics, "FEATURES" / "HOW IT WORKS" / "PRICING" anchors.
 
 ### Navigation
 
-Sticky landing header with `bg-white/95 backdrop-blur-sm`. Items are Sora 14px weight 500. Active state has no underline, only a color shift to `Workshop Black`. Default `Text Primary` with `Text Secondary` hover. The transitions are 200ms.
+Sticky landing header with `bg-white/95 backdrop-blur-sm`. Items are Hanken Grotesk 14px weight 500. Active state has no underline, only a color shift to `Workshop Black`. Default `Text Primary` with `Text Secondary` hover. The transitions are 200ms.
 
 In-product navigation is a vertical rail with `Workshop Black` background, `Card White` text on active, mono-label captions. Tab order and `:focus-visible` rings respect the keyboard-first audience.
 
 ### Build Map (signature component)
 
-A scroll-triggered orchestrated graphic anchored below the landing hero. A dashed Workshop-Black baseline path with an `Action Red` solid progress line drawing across over 3s using `cubic-bezier(0.16, 1, 0.3, 1)` ease-out-expo. Milestone cards lift in (`translateY(12px) → 0` + opacity) as the line reaches each node, stroke-dashoffset connectors trace from each node out to its card. Honors `prefers-reduced-motion` by collapsing to its final static state. This component is the brand's clearest motion statement; copy its idioms (ease-out-expo, no bounce, ambient soft shadow on floating cards, IBM Plex Mono kicker pill) for any future signature graphic.
+A scroll-triggered orchestrated graphic anchored below the landing hero. A dashed Workshop-Black baseline path with an `Action Red` solid progress line drawing across over 3s using `cubic-bezier(0.16, 1, 0.3, 1)` ease-out-expo. Milestone cards lift in (`translateY(12px) → 0` + opacity) as the line reaches each node, stroke-dashoffset connectors trace from each node out to its card. Honors `prefers-reduced-motion` by collapsing to its final static state. This component is the brand's clearest motion statement; copy its idioms (ease-out-expo, no bounce, ambient soft shadow on floating cards, Fira Mono kicker pill) for any future signature graphic.
 
 ## 6. Do's and Don'ts
 
@@ -259,7 +258,7 @@ A scroll-triggered orchestrated graphic anchored below the landing hero. A dashe
 - **Do** use `Action Red` (`#DC2626`) only at moments of action, progress, or emphasis. The One Voice Rule is non-negotiable.
 - **Do** tint every neutral toward Workshop Black. Never `#000`, never `#FFF`.
 - **Do** respect the corner-system split: sharp on landing, gently rounded (`rounded-md`, `rounded-lg`, `rounded-xl`) inside the product.
-- **Do** use IBM Plex Mono UPPERCASE with `letter-spacing: 0.18em` for kicker labels, status pills, and metadata.
+- **Do** use Fira Mono UPPERCASE with `letter-spacing: 0.18em` for kicker labels, status pills, and metadata.
 - **Do** ease out with `cubic-bezier(0.16, 1, 0.3, 1)` (ease-out-expo) on entrance animation. Match this curve across new motion.
 - **Do** honor `prefers-reduced-motion` by showing the final static state. Every entrance animation needs a non-animated fallback.
 - **Do** cap body line length at 65–75ch in long-form output (PRDs, reports, tech specs).
@@ -276,6 +275,6 @@ A scroll-triggered orchestrated graphic anchored below the landing hero. A dashe
 - **Don't** use `bounce` or `elastic` easing curves. Ease-out-expo / quart / quint only. No exceptions on entrance animation.
 - **Don't** animate layout properties (`width`, `height`, `top`, `left`). Use `transform` and `opacity` only.
 - **Don't** nest cards. If your design calls for a card-in-card, one of them is wrong.
-- **Don't** introduce a fourth font family. The Space Grotesk / Sora / IBM Plex Mono trio carries the whole system; new fonts dilute the voice. (Note for future redesign: all three are on the impeccable skill's reflex-reject list. If a major rebrand is on the table, this is a lever.)
+- **Don't** introduce a third font family. The Hanken Grotesk / Fira Mono pair carries the whole system; new fonts dilute the voice.
 - **Don't** use em dashes in copy. Use commas, colons, semicolons, periods, or parentheses. This applies to UI strings, marketing copy, and in-product help text.
 - **Don't** add accent inflation. Warm Coral / Warm Sand / Warm Ember are auxiliary product-internal accents; they do not appear in marketing or in the brand mark.

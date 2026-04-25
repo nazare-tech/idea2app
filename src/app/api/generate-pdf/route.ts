@@ -261,7 +261,7 @@ async function renderMarkdownToHTML(markdown: string): Promise<string> {
     line: "#4A4040",
     accent: "#DC2626",
     muted: "#F5F0EB",
-    font: "ui-monospace, 'IBM Plex Mono', monospace",
+    font: "ui-monospace, 'Fira Mono', monospace",
     textColor: "#1C1917",
     primaryTextColor: "#1C1917",
     secondaryTextColor: "#1C1917",
