@@ -45,13 +45,13 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
     : user?.email?.split("@")[0] || "User"
 
   return (
-    <header className="h-16 border-b border-border-subtle bg-background px-6 ui-row-between">
-        <div className="flex items-center gap-4">
+    <header className="h-16 border-b border-border-subtle bg-background px-4 ui-row-between sm:px-8 lg:px-14">
+      <div className="flex items-center gap-4">
         {children || brand || <h1 className="ui-section-title">Dashboard</h1>}
       </div>
 
-        <div className="flex items-center gap-4">
-          {rightContent}
+      <div className="flex items-center gap-4">
+        {rightContent}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

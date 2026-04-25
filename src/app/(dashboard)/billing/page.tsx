@@ -11,6 +11,7 @@ import { BASE_ACTION_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from 
 import { Check, Coins, Zap, CreditCard, Crown } from "lucide-react"
 import { useBillingPortal } from "@/hooks/use-billing-portal"
 import { CreditBalance } from "@/components/ui/credit-balance"
+import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 
 interface Plan {
   id: string
@@ -144,16 +145,15 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-black tracking-tight">Billing</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your subscription and token balance
-        </p>
-      </div>
+    <AppPageShell contentClassName="max-w-[1180px]">
+      <AppPageHeader
+        eyebrow="Account"
+        title="Billing"
+        description="Manage your subscription and token balance."
+      />
 
       {/* Current Plan & Credits */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         <Card className="transition-colors duration-200 hover:border-text-primary/20">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -217,9 +217,9 @@ Token Balance
       </div>
 
       {/* Plans */}
-      <div>
-        <h2 className="text-xl font-bold tracking-tight mb-4">Available Plans</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold tracking-[-0.03em]">Available Plans</h2>
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan) => {
             const Icon = getPlanIcon(plan.name)
             const isCurrentPlan = subscription?.plan_id === plan.id
@@ -308,7 +308,7 @@ Token Balance
             )
           })}
         </div>
-      </div>
+      </section>
 
       {/* Token Costs */}
       <Card>
@@ -350,6 +350,6 @@ Token Balance
           </div>
         </CardContent>
       </Card>
-    </div>
+    </AppPageShell>
   )
 }

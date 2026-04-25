@@ -16,6 +16,7 @@ import { SettingsMessage } from "@/components/settings/settings-message"
 import { SettingsSectionCard } from "@/components/settings/settings-section-card"
 import { useBillingPortal } from "@/hooks/use-billing-portal"
 import { StackedTabNav, type StackedTabNavItem } from "@/components/layout/stacked-tab-nav"
+import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 
 type MessageState = { type: "success" | "error"; text: string }
 type SettingsTab = "profile" | "settings" | "subscriptions"
@@ -244,9 +245,14 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-white text-text-primary">
-      <main className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1440px] flex-col px-4 py-6 sm:px-8 lg:px-[56px] lg:py-8">
-        <div className="grid min-h-[calc(100vh-4rem-3rem)] flex-1 items-stretch gap-6 lg:grid-cols-[280px_1fr]">
+    <AppPageShell contentClassName="min-h-[calc(100vh-4rem)]">
+      <AppPageHeader
+        eyebrow="Account"
+        title="Preferences"
+        description="Keep profile, security, and billing settings in one place."
+      />
+      <main className="flex min-h-0 flex-1 flex-col">
+        <div className="grid min-h-[calc(100vh-15rem)] flex-1 items-stretch gap-6 lg:grid-cols-[280px_1fr]">
           <StackedTabNav
             items={preferenceNavItems}
             activeKey={activeTab}
@@ -512,6 +518,6 @@ export default function SettingsPage() {
           </section>
         </div>
       </main>
-    </div>
+    </AppPageShell>
   )
 }

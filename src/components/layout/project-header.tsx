@@ -82,7 +82,7 @@ export function ProjectHeader({
     : user.email?.split("@")[0] || "User"
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border/40 bg-white px-6">
+    <header className="grid h-16 grid-cols-[1fr_auto] items-center gap-4 border-b border-border-subtle bg-background px-4 sm:px-6 lg:grid-cols-[1fr_auto_1fr]">
       {/* Left: Brand wordmark */}
       <Link href="/projects" className="flex items-center gap-3">
         <HeaderLogo size={APP_HEADER_LOGO_SIZE} linked={false} />
@@ -92,7 +92,7 @@ export function ProjectHeader({
       </Link>
 
       {/* Center: Breadcrumb */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+      <div className="hidden min-w-0 items-center justify-center gap-3 lg:flex">
         <Link
           href="/projects"
           className="text-sm font-medium text-text-secondary transition-colors hover:text-foreground"
@@ -110,7 +110,7 @@ export function ProjectHeader({
               if (e.key === "Enter") { e.preventDefault(); void finishEdit() }
               if (e.key === "Escape") { setDraft(projectName); setIsEditing(false) }
             }}
-            className="h-8 w-[min(22rem,40vw)] rounded-xl border border-border-strong bg-background px-2.5 text-sm font-semibold text-foreground outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
+            className="h-8 w-[min(22rem,40vw)] rounded-xl border border-border-strong bg-card px-2.5 text-sm font-semibold text-foreground outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
             disabled={isSavingName}
           />
         ) : isNameSet ? (
@@ -144,7 +144,7 @@ export function ProjectHeader({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2.5 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5"
+            className="justify-self-end flex items-center gap-2.5 rounded-md border border-border-subtle bg-card px-3 py-1.5"
           >
             <Avatar className="h-7 w-7 rounded-full">
               <AvatarImage src={user.avatar_url} alt={user.full_name || "User"} />

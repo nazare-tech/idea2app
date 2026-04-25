@@ -58,10 +58,10 @@ function DocumentWrapper({
   return (
     <div
       id={navKey}
-      className="bg-white border border-[#E5E5E5]"
+      className="rounded-lg border border-border-subtle bg-card"
       data-section={navKey}
     >
-      <div className="px-10 py-8">
+      <div className="px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
         {children}
       </div>
     </div>
@@ -277,7 +277,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
     return (
       <div
         ref={ref}
-        className="flex-1 overflow-y-auto bg-[#FAFAFA] px-6 py-5 space-y-3"
+        className="flex-1 space-y-4 overflow-y-auto bg-background px-4 py-4 sm:px-6 lg:px-8"
       >
         {generateAllStatus !== "idle" && (
           <GenerateAllBlock projectId={projectId} credits={credits} />

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { DashboardProjectCard } from "@/components/projects/dashboard-project-card"
+import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 import { getProjectUrl } from "@/lib/project-routing"
 
 type ActiveProject = {
@@ -34,35 +35,31 @@ export default async function ProjectsPage() {
   }))
 
   return (
-    <div className="flex flex-col h-full bg-background px-6 py-6 md:px-12 md:py-6 lg:px-[56px] lg:py-6">
+    <AppPageShell>
       <section className="text-text-primary">
-        <header className="mb-7 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="font-bold text-[24px] leading-tight tracking-[-0.5px] text-text-primary">
-              Projects
-            </h1>
-            <p className="mt-2 text-sm text-text-secondary">
-              Manage and organize your AI-powered applications.
-            </p>
-          </div>
-
-          <Link href="/projects/new" className="shrink-0" prefetch={false}>
-            <Button className="bg-primary px-5 text-white">New Project</Button>
-          </Link>
-        </header>
+        <AppPageHeader
+          eyebrow="Workspace"
+          title="Projects"
+          description="Manage the ideas, plans, and generated artifacts you are actively shaping."
+          actions={
+            <Link href="/projects/new" className="shrink-0" prefetch={false}>
+              <Button className="bg-primary px-5 text-primary-foreground">New Project</Button>
+            </Link>
+          }
+        />
 
         {activeProjects.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border-subtle bg-background p-8 text-center">
-            <p className="text-base text-text-primary">No projects yet.</p>
-            <p className="mt-1 text-sm text-text-secondary">
+          <div className="mt-8 rounded-lg border border-dashed border-border-strong bg-card p-8 text-center sm:p-10">
+            <p className="text-base font-semibold text-text-primary">No projects yet.</p>
+            <p className="mx-auto mt-2 max-w-[42ch] text-sm leading-relaxed text-text-secondary">
               Create your first idea to get started.
             </p>
             <Link href="/projects/new" className="mt-4 inline-block">
-              <Button className="bg-primary px-5 text-white">New Project</Button>
+              <Button className="bg-primary px-5 text-primary-foreground">New Project</Button>
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,max-content))] gap-6">
+          <div className="mt-8 grid gap-5 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
             {activeProjects.map((project) => (
               <DashboardProjectCard
                 key={project.id}
@@ -77,7 +74,6 @@ export default async function ProjectsPage() {
           </div>
         )}
       </section>
-
-    </div>
+    </AppPageShell>
   )
 }

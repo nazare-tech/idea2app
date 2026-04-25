@@ -306,19 +306,19 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
   }
 
   return (
-    <div data-testid="idea-intake-wizard" className="min-h-full bg-[#FAFAFA] px-4 py-5 text-text-primary sm:px-6">
-      <div className="mx-auto flex min-h-[calc(100vh-104px)] w-full max-w-[600px] flex-col">
+    <div data-testid="idea-intake-wizard" className="min-h-full bg-background px-4 py-6 text-text-primary sm:px-8 lg:px-14">
+      <div className="mx-auto flex min-h-[calc(100vh-112px)] w-full max-w-[760px] flex-col">
         <div className="flex flex-1 items-start justify-center">
           {step === "idea" ? (
             <section className="w-full">
-              <div className="rounded-lg border border-border-subtle bg-white p-8 sm:px-10">
+              <div className="rounded-lg border border-border-subtle bg-card p-6 sm:p-8 lg:p-10">
                 <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
                   Step 1 of {WIZARD_TOTAL_STEPS}
                 </p>
-                <h2 className="mt-1 font-[family:var(--font-display)] text-5xl font-bold tracking-[-0.04em] text-[#0A0A0A]">
+                <h2 className="mt-2 font-[family:var(--font-display)] text-[2.5rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
                   Idea Brief
                 </h2>
-                <p className="mt-1 text-sm leading-relaxed text-[#666666]">
+                <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
                   Describe your business idea in a few sentences
                 </p>
 
@@ -332,7 +332,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                     value={idea}
                     onChange={(event) => updateIdea(event.target.value)}
                     placeholder="Example: A product intelligence tool that turns support tickets, sales calls, and customer chats into roadmap priorities..."
-                    className="min-h-[170px] border-border-strong bg-white text-[15px] leading-relaxed"
+                    className="min-h-[190px] border-border-strong bg-white text-[15px] leading-relaxed"
                     disabled={isLoadingPending}
                   />
                 </div>
@@ -348,7 +348,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                   <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
                     Or start from an example
                   </p>
-                  <div className="mt-3 grid gap-3">
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     {INTAKE_EXAMPLE_IDEAS.map((example) => (
                       <button
                         key={example.id}
@@ -389,15 +389,15 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
             </section>
           ) : (
             <section className="w-full">
-              <div className="rounded-lg border border-border-subtle bg-white p-8 sm:px-10">
+              <div className="rounded-lg border border-border-subtle bg-card p-6 sm:p-8 lg:p-10">
                 <div className="mb-6">
                   <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
                     Step 2 of {WIZARD_TOTAL_STEPS}
                   </p>
-                  <h2 className="mt-1 font-[family:var(--font-display)] text-5xl font-bold tracking-[-0.04em] text-[#0A0A0A]">
+                  <h2 className="mt-2 font-[family:var(--font-display)] text-[2.4rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
                     Tell us a bit more
                   </h2>
-                  <p className="mt-1 text-sm leading-relaxed text-[#666666]">
+                  <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
                     These questions will help build a better plan for your business
                   </p>
                 </div>

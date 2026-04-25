@@ -23,11 +23,15 @@ export function DashboardShell({
   const shouldShowHeader = pathname
     ? pathname === "/projects/new" || !pathname.startsWith("/projects/")
     : true
-  const brandLabel = pathname?.startsWith("/preferences") ? "Preferences" : "Projects"
+  const brandLabel = pathname?.startsWith("/preferences")
+    ? "Preferences"
+    : pathname?.startsWith("/billing")
+      ? "Billing"
+      : "Projects"
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex h-full flex-1 flex-col overflow-hidden">
         {shouldShowHeader && (
           <Header
             user={user}
@@ -40,7 +44,7 @@ export function DashboardShell({
             />
           </Header>
         )}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-background">
           {children}
         </main>
       </div>

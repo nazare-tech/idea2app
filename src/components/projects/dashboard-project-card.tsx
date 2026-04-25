@@ -78,11 +78,11 @@ export function DashboardProjectCard({
     <div className="group relative">
       <Link
         href={href}
-        className="block w-[320px] max-w-full rounded-lg border border-border-subtle bg-white p-5 transition-colors hover:bg-muted/30"
+        className="block h-full min-h-[168px] rounded-lg border border-border-subtle bg-card p-5 transition-[background-color,border-color,transform] duration-200 ease-out-expo hover:-translate-y-0.5 hover:border-text-primary/20 hover:bg-muted/30"
       >
-        <div className="space-y-4">
+        <div className="flex h-full flex-col justify-between gap-6">
           <div className="space-y-2">
-            <h2 className="line-clamp-1 text-[18px] font-bold leading-tight tracking-[-0.4px] text-text-primary">
+            <h2 className="line-clamp-1 pr-10 text-[18px] font-bold leading-tight tracking-[-0.4px] text-text-primary">
               {name}
             </h2>
             <p className="text-[12px] text-text-secondary">
