@@ -15,6 +15,10 @@ import { createGenerationRunId } from "@/lib/queue-run-id"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
+import {
+  findLatestActiveDocument,
+  getActiveDocumentIdentityForDocumentType,
+} from "@/lib/active-document-policy"
 
 export async function POST(request: Request) {
   try {
@@ -110,6 +114,23 @@ export async function POST(request: Request) {
     }
 
     const runId = createGenerationRunId("manual")
+    const queueWithExistingSkipped = await Promise.all(
+      manualQueue.map(async (item) => {
+        const identity = getActiveDocumentIdentityForDocumentType(item.docType)
+        if (!identity) return item
+        const existing = await findLatestActiveDocument(queueSupabase, projectId, identity)
+        if (!existing) return item
+        return {
+          ...item,
+          status: "skipped" as const,
+          creditCost: 0,
+          creditStatus: "not_charged",
+          outputTable: existing.outputTable,
+          outputId: existing.outputId,
+          completedAt: new Date().toISOString(),
+        }
+      }),
+    )
 
     // Upsert: replace any existing queue for this project+user
     const { data, error } = await queueSupabase
@@ -119,7 +140,7 @@ export async function POST(request: Request) {
           project_id: projectId,
           user_id: user.id,
           status: "running",
-          queue: manualQueue as unknown as Json,
+          queue: queueWithExistingSkipped as unknown as Json,
           current_index: 0,
           model_selections: {
             mode: "manual",
@@ -141,7 +162,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      await replaceGenerationQueueItems(queueSupabase, data, manualQueue)
+      await replaceGenerationQueueItems(queueSupabase, data, queueWithExistingSkipped)
     } catch (itemError) {
       console.error("[generate-all/start] queue item insert failed:", itemError)
       await queueSupabase

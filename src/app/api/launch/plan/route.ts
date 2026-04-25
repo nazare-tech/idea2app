@@ -4,6 +4,11 @@ import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import { refundCreditsServerSide } from "@/lib/credits"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import {
+  createSkippedActiveDocumentPayload,
+  findLatestActiveDocument,
+  getActiveDocumentIdentity,
+} from "@/lib/active-document-policy"
 
 export async function POST(request: Request) {
   const timer = new MetricsTimer()
@@ -83,6 +88,14 @@ export async function POST(request: Request) {
       statusCode = 404
       errorType = "not_found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
+    }
+
+    const documentIdentity = getActiveDocumentIdentity("launch")
+    if (documentIdentity) {
+      const existingDocument = await findLatestActiveDocument(supabase, projectId, documentIdentity)
+      if (existingDocument) {
+        return NextResponse.json(createSkippedActiveDocumentPayload(existingDocument))
+      }
     }
 
     const ideaForGeneration = await getProjectIntakeContextForAi(

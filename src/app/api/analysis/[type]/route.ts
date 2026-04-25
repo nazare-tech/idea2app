@@ -13,6 +13,11 @@ import {
 } from "@/lib/competitive-analysis-v2"
 import { refundCreditsServerSide } from "@/lib/credits"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import {
+  createSkippedActiveDocumentPayload,
+  findLatestActiveDocument,
+  getActiveDocumentIdentityForAnalysisType,
+} from "@/lib/active-document-policy"
 
 // Fixed default models per analysis type — user model selection removed
 const ANALYSIS_DEFAULT_MODELS: Record<string, string> = {
@@ -141,6 +146,17 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       errorType = "not_found"
       errorMessage = "Project not found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
+    }
+
+    const documentIdentity = getActiveDocumentIdentityForAnalysisType(type)
+    if (documentIdentity) {
+      const existingDocument = await findLatestActiveDocument(supabase, projectId, documentIdentity)
+      if (existingDocument) {
+        return NextResponse.json({
+          ...createSkippedActiveDocumentPayload(existingDocument),
+          type,
+        })
+      }
     }
 
     const ideaForGeneration = await getProjectIntakeContextForAi(

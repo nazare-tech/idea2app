@@ -5,6 +5,11 @@ import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/
 import { generateStitchMockup } from "@/lib/stitch-pipeline"
 import { refundCreditsServerSide } from "@/lib/credits"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import {
+  createSkippedActiveDocumentPayload,
+  findLatestActiveDocument,
+  getActiveDocumentIdentity,
+} from "@/lib/active-document-policy"
 
 const encoder = new TextEncoder()
 
@@ -84,6 +89,14 @@ export async function POST(request: Request) {
       errorType = "not_found"
       errorMessage = "Project not found"
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
+    }
+
+    const documentIdentity = getActiveDocumentIdentity("mockups")
+    if (documentIdentity) {
+      const existingDocument = await findLatestActiveDocument(supabase, projectId, documentIdentity)
+      if (existingDocument) {
+        return NextResponse.json(createSkippedActiveDocumentPayload(existingDocument))
+      }
     }
 
     // Check and deduct credits

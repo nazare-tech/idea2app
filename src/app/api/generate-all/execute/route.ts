@@ -31,6 +31,10 @@ import { GENERATE_ALL_ACTION_MAP, getTokenCost } from "@/lib/token-economics"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Database } from "@/types/database"
+import {
+  findLatestActiveDocument,
+  getActiveDocumentIdentityForDocumentType,
+} from "@/lib/active-document-policy"
 
 export const maxDuration = 300
 
@@ -223,6 +227,22 @@ async function executeQueueItem({
   const shouldChargeCredits = !isBundledItem && creditCost > 0 && claimed.credit_status !== "charged"
   let charged = claimed.credit_status === "charged"
 
+  const identity = getActiveDocumentIdentityForDocumentType(claimed.doc_type)
+  if (identity) {
+    const existing = await findLatestActiveDocument(documentSupabase, claimed.project_id, identity)
+    if (existing) {
+      return finishGeneratingItem(queueSupabase, claimed, {
+        status: "skipped",
+        stage_message: null,
+        error: null,
+        output_table: existing.outputTable,
+        output_id: existing.outputId,
+        completed_at: new Date().toISOString(),
+        credit_status: "not_charged",
+      })
+    }
+  }
+
   if (shouldChargeCredits) {
     const { data: consumed, error: consumeError } = await billingSupabase.rpc("consume_credits", {
       p_user_id: claimed.user_id,
@@ -280,13 +300,19 @@ async function executeQueueItem({
       }
 
       return finishGeneratingItem(queueSupabase, claimed, {
-        status: "done",
+        status: output.skippedExisting ? "skipped" : "done",
         stage_message: null,
         error: null,
         output_table: output?.outputTable ?? null,
         output_id: output?.outputId ?? null,
         completed_at: new Date().toISOString(),
-        credit_status: isBundledItem ? "not_charged" : charged ? "charged" : claimed.credit_status,
+        credit_status: output.skippedExisting
+          ? "not_charged"
+          : isBundledItem
+            ? "not_charged"
+            : charged
+              ? "charged"
+              : claimed.credit_status,
       })
     } catch (error) {
       if (attempt < maxAttempts) {

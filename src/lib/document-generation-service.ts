@@ -14,6 +14,10 @@ import { linkifyBareUrls } from "@/lib/markdown-links"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import { generateStitchMockup } from "@/lib/stitch-pipeline"
 import type { Database } from "@/types/database"
+import {
+  findLatestActiveDocument,
+  getActiveDocumentIdentityForDocumentType,
+} from "@/lib/active-document-policy"
 
 type ServerSupabaseClient = SupabaseClient<Database>
 
@@ -36,6 +40,7 @@ export interface GenerateProjectDocumentInput {
 export interface GeneratedProjectDocument {
   outputTable: string
   outputId: string
+  skippedExisting?: boolean
 }
 
 function buildAnalysisMetadata(
@@ -63,6 +68,18 @@ export async function generateProjectDocument({
   projectId,
   project,
 }: GenerateProjectDocumentInput): Promise<GeneratedProjectDocument | null> {
+  const identity = getActiveDocumentIdentityForDocumentType(docType)
+  if (identity) {
+    const existing = await findLatestActiveDocument(supabase, projectId, identity)
+    if (existing) {
+      return {
+        outputTable: existing.outputTable,
+        outputId: existing.outputId,
+        skippedExisting: true,
+      }
+    }
+  }
+
   const idea = await getProjectIntakeContextForAi(
     supabase,
     projectId,
