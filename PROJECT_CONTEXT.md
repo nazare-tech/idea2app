@@ -1,21 +1,21 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-04-25 (Idea Intake Wizard + Pending Auth Handoff + PR Workflow)
-**Project**: Idea2App - AI-Powered Business Analysis Platform
+**Last Updated**: 2026-04-25 (Secured Generation Queue Billing Boundaries)
+**Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
 
 ## 1. Project Overview
 
-**Idea2App** is a comprehensive AI-powered SaaS platform that transforms business ideas into reality. It provides an end-to-end solution for entrepreneurs, guiding them from initial concept through to deployment.
+**Maker Compass** is a comprehensive AI-powered SaaS platform that transforms business ideas into reality. It provides an end-to-end solution for entrepreneurs, guiding them from initial concept through to deployment.
 
 ### Core Functionality
 
-- **Idea Intake Wizard**: Canonical new-project flow at `/projects/new`. Users enter an idea, answer 4-5 AI-generated structured questions, then the app creates the project. The wizard stores readable summaries in `projects.description` and structured intake JSON in `project_intakes`.
-- **Prompt Tab AI Chat**: Interactive AI conversation in the Prompt tab for follow-up refinement after project creation. The old initial Prompt Chat Q&A is no longer the primary new-project intake for wizard-created projects. Features:
+- **Idea Intake Wizard**: Canonical new-project flow at `/projects/new`. Users enter an idea, answer 4-5 AI-generated structured questions, then the app creates the project and starts the bundled onboarding document-generation queue. The wizard stores readable summaries in `projects.description`, structured intake JSON in `project_intakes`, and shows the Maker Compass loading state until Overview + Market Research are ready.
+- **Prompt Tab AI Chat**: Interactive AI conversation in the Prompt tab for optional follow-up refinement after project creation. The old initial Prompt Chat Q&A is no longer the primary new-project intake for wizard-created projects, and structured-intake projects do not auto-start Prompt Chat. Features:
   - Context-aware question generation based on idea type (tool, marketplace, service, etc.)
   - Automatic idea summarization after sufficient context gathering
-  - **AI-generated project name**: after the idea summary is produced, a second server-side AI call extracts a short 3–6 word title-case name and saves it to `projects.name`. The name streams back to the frontend via the `done` event's `projectName` field. Until the name is set, the workspace header shows "Untitled" in muted text with a `✦ AI naming` badge (editing disabled). On receipt the name fades in and the pencil icon reappears.
+  - **AI-generated project name for legacy Prompt flows**: after the idea summary is produced, a second server-side AI call extracts a short 3–6 word title-case name and saves it to `projects.name`. Wizard-created projects generate the name during `/api/projects/create-from-intake` before the workspace opens.
   - Configurable system prompts for customization
   - Persistent conversation history
 - **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
@@ -40,7 +40,7 @@
   - Single Page Applications (React SPAs)
   - Progressive Web Apps (PWA)
 - **Deployment**: Direct deployment capabilities for generated applications
-- **Credit-based Pricing**: Usage-based model with multiple subscription tiers
+- **Project-based Pricing Migration**: Project creation is guarded by monthly project allowance. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
 
 ### User Workflow
 
@@ -48,9 +48,10 @@
 2. `/projects/new` opens the Idea Intake Wizard instead of inserting a blank project
 3. Step 1 captures the raw idea or an example idea
 4. Step 2 calls `/api/intake/questions` to generate structured answer-chip questions
-5. Final submit calls `/api/projects/create-from-intake`, enforces monthly project allowance, generates a short project name, creates `projects`, and writes the canonical `project_intakes` row
-6. User lands in the workspace Prompt tab for refinement and downstream document generation without repeating the old initial Prompt Chat Q&A
-7. User generates analyses, PRD, MVP plan, mockups, tech specs, app code, and launch materials
+5. Final submit calls `/api/projects/create-from-intake`, enforces monthly project allowance, generates a short project name, creates `projects`, writes the canonical `project_intakes` row, and creates an onboarding `generation_queues` run
+6. The wizard shows the full-page Maker Compass loading state, starts `/api/generate-all/execute` server-side, and polls `/api/projects/[id]/onboarding-status`
+7. User lands at the workspace `#overview` section once the v2 `competitive-analysis` document exists, which powers Overview and Market Research
+8. PRD, MVP plan, Marketing, mockups, tech specs, app code, and launch materials continue through the document pipeline
 
 ---
 
@@ -162,7 +163,8 @@
    - Auth modal and `/callback` preserve safe `next=/projects/new?intake=<token>` redirects
    - `/projects/new` renders `IdeaIntakeWizard`; it loads pending intake by token via `GET /api/intake/pending` or falls back to `sessionStorage`
    - `POST /api/intake/questions` generates 4-5 typed questions with `single`, `multiple`, and `text` answer modes. If model output is unavailable or invalid, the service falls back to curated questions
-   - `POST /api/projects/create-from-intake` validates answers, checks `canCreateProject()`, builds `idea-intake-v1` JSON, stores the readable summary in `projects.description`, stores the structured payload in `project_intakes`, claims the pending token, and redirects to the canonical workspace URL
+   - `POST /api/projects/create-from-intake` validates answers, checks `canCreateProject()`, builds `idea-intake-v1` JSON, stores the readable summary in `projects.description`, stores the structured payload in `project_intakes`, generates `projects.name`, creates a service-owned onboarding `generation_queues` run with `creditCost: 0`, claims the pending token, and returns `generationRunId`, `statusUrl`, and a canonical `#overview` redirect URL
+   - `IdeaIntakeWizard` shows `IntakeSubmissionLoadingPanel`, fires `/api/generate-all/execute` for the new project, polls `/api/projects/[id]/onboarding-status`, and redirects only after the v2 competitive analysis row is saved
 
 3. **Chat Flow**:
    - Client component sends message to `/api/chat`
@@ -171,36 +173,51 @@
    - Server saves message to database
    - Response streamed back to client
 
-4. **Prompt Tab AI Name Generation** (sub-flow within Prompt Chat):
+4. **Project Name Generation**:
+   - Wizard-created projects generate a short name during `/api/projects/create-from-intake` using `generateProjectName()`
+   - The project is inserted with that generated name, or with a fallback title derived from the idea if the AI call is unavailable
+   - The workspace header is editable immediately for wizard-created projects because `project.description` is already populated
+
+5. **Prompt Tab AI Name Generation** (legacy/follow-up sub-flow within Prompt Chat):
    - When `stage === "summary"` and `project.name === "Untitled"`, the `/api/prompt-chat` route makes a second AI call after saving the description
    - A short name (3–6 words, title case) is saved to `projects.name` in Supabase
    - The `done` stream event includes a `projectName` field
    - `PromptChatInterface` fires `onProjectNameGenerated(name)` on receipt → `ProjectWorkspace` updates header state (`isNameSet = true`, fade-in animation)
    - If name generation fails, it is silent — the `done` event emits without `projectName` and a 3 s fallback timer unblocks editing
 
-5. **Analysis Flow** (individual tab generation):
+6. **Analysis Flow** (individual tab generation):
    - Client requests analysis (competitive, PRD, MVP plan, or tech spec) from the workspace `ContentEditor`
    - Server checks credits, deducts if available; refunds via `refund_credits` RPC on generation failure
    - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`). When a `project_intakes` row exists, generation context is formatted through `formatProjectIntakeForAi()` and combined with the human-readable project summary; otherwise `projects.description` is used as the fallback:
      - **Competitive Analysis**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail. External API calls use `withRetry` (3 retries, exponential backoff on 429/5xx). All OpenRouter synthesis calls have a 120s `AbortSignal` timeout.
-     - **PRD**: OpenRouter LLM call with detailed system prompt, receives `competitiveAnalysis` as context
-     - **MVP Plan**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
+     - **PRD**: OpenRouter LLM call with detailed system prompt, receives a bounded competitive-analysis context excerpt so onboarding retries stay under the 120s route timeout
+     - **MVP Plan**: OpenRouter LLM call with detailed system prompt, receives a bounded PRD context excerpt so downstream generation is less likely to strand the queue
      - **Tech Spec**: OpenRouter LLM call with detailed system prompt, receives `prd` as context
    - Result saved to the appropriate table (`analyses`, `prds`, `mvp_plans`, or `tech_specs`)
    - Page reloads to surface the new version
 
-6. **Generate All Flow** (server-side, durable):
+7. **Generate All / Onboarding Generation Flow** (server-side, durable):
    - Client calls `startGenerateAll()` in `generate-all-store.ts`
    - Store persists queue to DB via `POST /api/generate-all/start`
    - Store fires `POST /api/generate-all/execute` as fire-and-forget (server runs up to 300s even if user closes tab)
    - Store polls `GET /api/generate-all/status` every 3s to reflect server-side progress
    - When server marks a step "done", store calls `onStepComplete()` → `router.refresh()` to reload the document
-   - Server-side execute route runs each step sequentially: competitive → prd → mvp → mockups → launch
-   - Per-step: checks cancellation, deducts credits, runs pipeline, saves result, updates DB queue row
-   - On step failure: refunds that step's credits, marks item + queue as error, stops
+   - The old idle public "Generate All" button is deprecated. The workspace only shows the Generate All status/retry panel while a queue is active, partial, cancelled, or errored.
+   - `generation_queue_items` is the source of truth for per-document status, dependencies, attempts, credit state, and generated output references. The legacy `generation_queues.queue` JSON is synchronized for existing UI.
+   - Queue rows and queue item rows are user-readable but server-mutable only. Browser clients cannot directly write billing/workflow authority fields such as `source`, `credit_status`, dependencies, attempts, or output refs.
+   - Manual Generate All starts rebuild the queue server-side from allowed document types. The server derives source, credit status, credit cost, dependencies, attempts, model ids, run ids, and idempotency keys; client-supplied authority fields are ignored.
+   - Bundled onboarding generation is trusted only when the parent queue has server-created onboarding metadata (`mode`, `source`, `version`, and `runId`) and item run metadata matches that queue.
+   - Server-side execute route runs dependency-aware batches through the shared `generateProjectDocument()` service with max concurrency 2. Competitive and Marketing can run independently; PRD waits on Competitive; MVP waits on PRD; Mockups wait on MVP.
+   - Per-step: checks cancellation, optionally deducts credits for legacy/manual runs, runs the pipeline, requires a saved output id before marking the item done, updates the normalized item row, and records `output_table`/`output_id`
+   - On step failure: legacy/manual runs refund credits; onboarding runs skip refunds because bundled project creation does not charge per-document credits. Onboarding items retry up to their configured `maxAttempts`.
+   - Stale `generating` rows older than the 150s executor lease are reset to `pending` with one retry attempt available from execute/status polling, so interrupted server runs do not strand a queue.
+   - Queue status remains `running` while any item is pending or generating. Terminal `partial`/`error` states are only exposed once no active work remains.
+   - Cancellation immediately cancels pending work. Already-generating work is acknowledged by the executor so refunds and saved outputs have a single owner.
+   - Queue-level status can be `running`, `completed`, `partial`, `cancelled`, or `error`; `partial` means at least one document completed and at least one dependent/remaining document failed or became blocked.
+   - Onboarding status is exposed by `/api/projects/[id]/onboarding-status`, which maps the backend queue to loading rows: Overview, Market research, PRD, MVP plan, and Marketing. Overview and Market research are ready when a v2 `competitive-analysis` row exists.
    - Generation is durable — survives browser tab close, page refresh, and network interruptions
 
-7. **App Generation Flow**:
+8. **App Generation Flow**:
    - Client requests app generation
    - Server validates credits (5 credits required)
    - Server calls Anthropic Claude with project context
@@ -251,7 +268,7 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 - **Idea intake contracts** — typed question, answer, summary, context, and project-name helpers live in `src/lib/intake-*.ts`, `src/lib/project-name-generation.ts`, and `src/lib/prompts/intake-wizard.ts`. `src/lib/intake-examples.ts` owns the configurable example ideas shown in Step 1.
 - **Shared auth building blocks** — `AuthFormContent` is the single source of form logic (email/password/Google, validation, success state). It is used by both the `/auth` page and the `AuthModal` overlay. `AuthField` and `AuthPasswordField` are reusable field primitives. `AuthMode` type is exported from `auth-form-content.tsx`.
 - **Auth Modal** — `src/components/auth/auth-modal.tsx` is a `"use client"` Radix UI Dialog. It reads `?modal=auth&mode=signin|signup` from the URL, opens over the landing page with a dark blurred overlay (`bg-black/65 backdrop-blur-[4px]`), and closes by clearing URL params. Sign In / Sign Up links on the landing page use `?modal=auth&mode=...` instead of navigating to `/auth`.
-- **Project allowance guard** — `src/lib/project-allowance.ts` resolves monthly project allowance from active `subscriptions` joined to `plans`, explicit plan fields/features when present, plan-name fallbacks, and the active subscription or calendar-month window. The guard runs during final intake project creation before any project row is inserted.
+- **Project allowance guard** — `src/lib/project-allowance.ts` resolves monthly project allowance from active `subscriptions` joined to `plans`, explicit plan fields/features when present, plan-name fallbacks, and the active subscription or calendar-month window. The guard runs during final intake project creation before any project row is inserted. The private Supabase-only `Internal Dev` plan name resolves to unmetered project allowance for internal developer accounts; it is not a Stripe/customer-facing plan. Public pricing and checkout use explicit `plans.is_public` and `plans.checkout_enabled` flags instead of display-name filtering.
 - **Shared chat primitives** — the general chat and prompt chat surfaces now share composer, avatar, copy button, markdown body, load-more button, and thinking-state primitives plus reusable hooks for copy feedback, textarea autosize, and NDJSON stream consumption.
 - **Shared stacked tab navigation** — project document navigation and preferences navigation now use the same stacked tab-nav component so visual changes to the left-side tab pattern can be made in one place.
 - **Shared account utilities** — credit formatting, billing portal navigation, brand wordmark rendering, and auth sign-out are centralized in shared utilities/hooks/components and reused across dashboard header/sidebar, billing, settings, and auth views.
@@ -262,26 +279,25 @@ The project workspace (`/projects/[id]`) uses a three-column layout inspired by 
 2. **Server Components by Default**: Pages default to server components; interactive components explicitly marked `"use client"`
 3. **Middleware-based Auth**: Global authentication protection at the middleware level
 4. **Credit System with Database Functions**: PostgreSQL stored procedures for atomic credit operations
-5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter) with retry logic on external calls; PRD/MVP/Tech Spec use direct OpenRouter calls with detailed prompts. All LLM synthesis calls have 120s abort timeouts. Credits are refunded via `refund_credits` RPC on generation failure.
-6. **Server-Side Generate All**: "Generate All" orchestration runs on the server (`/api/generate-all/execute`, `maxDuration=300`) instead of in the browser. The Zustand store fires the execute request fire-and-forget and polls DB every 3s. This makes generation durable across tab close, refresh, and network interruptions.
-6. **TypeScript-First**: Strict typing throughout, auto-generated database types
-7. **Component Composition**: Radix UI primitives + CVA for variants
-8. **Optimistic UI Updates**: Immediate feedback with graceful error handling
-9. **Shared UI Registries + Hooks**: Repeated view metadata and repeated client behaviors (documents, credits, billing portal, auth sign-out, chat interactions) are centralized into typed registries and reusable hooks/components before page-level assembly
-10. **Path Aliases**: Clean imports using `@/*` aliases
-11. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
-12. **Progressive Loading Over Blocking Loads**: Prefer lazy loading, streaming, pagination, and incremental rendering where possible so users see useful content quickly instead of waiting on large up-front payloads
+5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter) with retry logic on external calls; PRD/MVP/Tech Spec use direct OpenRouter calls with detailed prompts. PRD and MVP bound upstream generated context before sending it downstream to keep onboarding generation reliable. All LLM synthesis calls have 120s abort timeouts. Credits are refunded via `refund_credits` RPC on generation failure.
+6. **Server-Side Generate All**: "Generate All" orchestration runs on the server (`/api/generate-all/execute`, `maxDuration=300`) instead of in the browser. Normalized `generation_queue_items` rows track per-document status, dependencies, retries, credit state, and output IDs; `generation_queues.queue` remains a synchronized compatibility snapshot. Queue mutations use trusted server routes/service role after user/project authorization. The Zustand store fires the execute request fire-and-forget and polls DB every 3s. This makes generation durable across tab close, refresh, and network interruptions.
+7. **TypeScript-First**: Strict typing throughout, auto-generated database types
+8. **Component Composition**: Radix UI primitives + CVA for variants
+9. **Optimistic UI Updates**: Immediate feedback with graceful error handling
+10. **Shared UI Registries + Hooks**: Repeated view metadata and repeated client behaviors (documents, credits, billing portal, auth sign-out, chat interactions) are centralized into typed registries and reusable hooks/components before page-level assembly
+11. **Path Aliases**: Clean imports using `@/*` aliases
+12. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
 13. **Fixed Default Models Per Tab**: AI model selection was removed from the UI. Each pipeline uses a fixed default defined in `src/lib/prompt-chat-config.ts` → `DEFAULT_MODELS`. Change models there — one place for all tabs.
 14. **Generate-Once Documents**: The Generate button is hidden after a document is successfully generated. Failed generations (no content saved) naturally re-expose the button for retry.
 15. **PDF-Only Export**: Documents export as PDF only (markdown download removed). The header shows a single "Download PDF" button.
-16. **AI-Generated Project Name**: New projects start as "Untitled" with a locked header (`✦ AI naming` badge, pencil hidden). After Prompt tab Q&A completes, the server generates a short name server-side and streams it back via the `done` event's `projectName` field. `isNameSet` state (in `ProjectWorkspace`) gates editing — initialized as `project.name !== "Untitled" || !!project.description` so existing projects are never locked.
+16. **AI-Generated Project Name**: Wizard-created projects generate a short name during final intake submission before the workspace opens. Legacy Prompt-tab project starts can still stream a generated name through the Prompt Chat `done` event. `isNameSet` state (in `ProjectWorkspace`) gates editing — initialized as `project.name !== "Untitled" || !!project.description` so existing and wizard-created projects are never locked.
 17. **URL-Driven Auth Modal**: Landing page auth uses `?modal=auth&mode=signin|signup` URL params to drive a Radix Dialog modal, keeping users in context. The `/auth` page is unchanged and still used for email confirmation redirects. Both surfaces share `AuthFormContent`. No new dependencies — `@radix-ui/react-dialog` was already installed.
 18. **WCAG AA Contrast Compliance**: `--muted-foreground` and `--text-muted` are `#6B7280` (4.61:1 on white). Form labels use `text-text-secondary` (#666666, 5.74:1). The `✦ AI naming` badge uses `bg-violet-100 text-violet-800` (8.4:1). Never use `#999999` for text on white backgrounds — it fails at 2.85:1.
 
 ### Intake Data Model
 
 - **`pending_intakes`** — short-lived auth handoff table with opaque `token`, `idea_text`, `source`, `expires_at`, `claimed_at`, `claimed_by`, and timestamps. Pending records expire after 24 hours and are claimed after successful project creation.
-- **`project_intakes`** — one canonical structured intake per project, keyed by `project_id`, with `schema_version`, `original_idea`, `questions_json`, `answers_json`, `raw_payload_json`, `generated_summary`, `source`, and timestamps. RLS restricts rows to the owning user.
+- **`project_intakes`** — one canonical structured intake per project, keyed by `project_id`, with `schema_version`, `original_idea`, `questions_json`, `answers_json`, `raw_payload_json`, `generated_summary`, `source`, and timestamps. RLS restricts rows to the owning user. Legacy projects with a readable `projects.description` and no existing intake are backfilled non-destructively with `source = 'prompt-chat'`; existing `prompt_chat_messages` rows are preserved.
 
 ### Mermaid Diagram Expansion Feature
 
@@ -356,6 +372,7 @@ src/
 │   │   │   ├── status/route.ts        # GET read queue row for polling
 │   │   │   ├── update/route.ts        # PATCH update queue fields
 │   │   │   └── cancel/route.ts        # POST mark queue as cancelled
+│   │   ├── projects/[id]/onboarding-status/route.ts # GET onboarding loading rows + redirect readiness
 │   │   ├── projects/[id]/route.ts     # PATCH/GET project details
 │   │   └── stripe/
 │   │       ├── checkout/route.ts      # Create checkout session
@@ -811,6 +828,7 @@ npm install
    - `analyses` - Competitive and gap analyses
    - `prds` - Product requirement documents
    - `mvp_plans` - MVP development plans
+   - `mockups` - Stitch-generated mockup documents
    - `tech_specs` - Technical specifications
    - `deployments` - Generated app deployments
    - `waitlist` - Public early-access waitlist email captures
@@ -819,6 +837,7 @@ npm install
    - `plans` - Subscription plans
    - `subscriptions` - User subscriptions
    - `generation_queues` - Generate All pipeline state (status, queue JSON, model_selections, current_index, started_at, completed_at, error_info)
+   - `generation_queue_items` - Normalized per-document queue items with status, dependencies, retries, credit state, and output references
 
 3. Enable Row Level Security (RLS) on all tables
 4. Create PostgreSQL stored functions:
@@ -950,6 +969,10 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `project_id`, `content`, `version`, `created_at`, `updated_at`
   - RLS: Users can only access MVP plans from their projects
 
+- **mockups**: Stitch-generated mockup documents
+  - Fields: `id`, `project_id`, `content`, `model_used`, `metadata`, `created_at`, `updated_at`
+  - RLS: Users can only access mockups from their projects
+
 - **tech_specs**: Technical specifications
   - Fields: `id`, `project_id`, `content`, `created_at`
   - RLS: Users can only access tech specs from their projects
@@ -963,9 +986,14 @@ docker run -p 3000:3000 idea2app
   - RLS: Users can only view their own credit history
 
 - **generation_queues**: Generate All pipeline state (one row per project per user)
-  - Fields: `id`, `project_id`, `user_id`, `status` (running/completed/cancelled/error), `queue` (JSON array of QueueItem), `model_selections` (JSON), `current_index`, `started_at`, `completed_at`, `error_info` (JSON)
+  - Fields: `id`, `project_id`, `user_id`, `status` (queued/running/partial/completed/cancelled/error), `queue` (legacy JSON snapshot of QueueItem), `model_selections` (JSON), `current_index`, `started_at`, `completed_at`, `error_info` (JSON)
   - RLS: Users can only access their own queue rows
-  - Upserted on conflict `(project_id, user_id)` — only one active queue per project
+  - Upserted on conflict `(project_id, user_id)` — only one queue per project; active queued/running queues cannot be replaced by another start request
+
+- **generation_queue_items**: Normalized Generate All/onboarding queue items
+  - Fields: `id`, `queue_id`, `project_id`, `user_id`, `run_id`, `doc_type`, `label`, `status` (pending/generating/done/skipped/cancelled/error/blocked), `credit_cost`, `credit_status`, `depends_on`, `attempt`, `max_attempts`, `stage_message`, `error`, `output_table`, `output_id`, `model_id`, `source`, `idempotency_key`, timestamps
+  - RLS: Users can only access their own queue item rows
+  - Source of truth for execution, polling, cancellation, retries, partial success, and generated document references
 
 - **subscriptions**: User subscriptions
   - Fields: `id`, `user_id`, `plan_id`, `stripe_subscription_id`, `status`, `current_period_end`
@@ -1052,29 +1080,35 @@ docker run -p 3000:3000 idea2app
 ### Generate All
 
 - **POST /api/generate-all/start**: Initialize a generation queue in DB
-  - Body: `{ projectId, queue, modelSelections }`
-  - Upserts a `generation_queues` row with `status: "running"`
+  - Body: `{ projectId, queue }`
+  - Validates the queue, rejects a second start while an existing queue is `queued`/`running`, upserts a `generation_queues` row with `status: "running"`, and replaces the normalized `generation_queue_items` rows
 
 - **POST /api/generate-all/execute**: Server-side pipeline orchestrator
   - Body: `{ projectId }`
-  - Reads queue from DB, runs each pending step sequentially
-  - Steps: competitive → prd → mvp → mockups → launch
-  - Per-step: deducts credits, runs pipeline, saves to correct table, updates DB
-  - Checks for cancellation before each step
-  - Refunds credits on step failure
+  - Reads `generation_queue_items`, claims pending runnable items atomically, and executes dependency-aware batches with max concurrency 2
+  - Dependencies: competitive → prd → mvp → mockups; launch has no dependency and may run independently
+  - Per-step: deducts credits for legacy/manual runs, skips credit charging for bundled onboarding runs, runs pipeline, saves to the correct table, and records `output_table`/`output_id`
+  - Checks for cancellation before each batch
+  - Refunds credits on legacy/manual step failure and marks dependent pending items `blocked`
   - Route `maxDuration`: 300s — durable even if browser tab closes
 
 - **GET /api/generate-all/status**: Poll for queue progress
   - Query: `?projectId=xxx`
-  - Returns `{ queue: generation_queues_row }`
-  - Called every 3s by the Zustand store while generation is running
+  - Returns `{ queue: generation_queues_row }` with the queue/current index/status derived from normalized item rows so polling sees in-progress item changes
+  - Called every 3s by the Zustand store while generation is running; idle manual Generate All controls are no longer rendered, but the status/retry panel appears for active or terminal queue states
 
-- **PATCH /api/generate-all/update**: Update queue fields
-  - Body: `{ projectId, queue?, current_index?, status?, error_info?, completed_at? }`
+- **GET /api/projects/[id]/onboarding-status**: Poll new-project loading progress
+  - Query: `?runId=xxx`
+  - Returns onboarding loading rows, errors, `readyToRedirect`, and the canonical `#overview` redirect URL
+  - Redirect readiness is based on an actual saved v2 `competitive-analysis` row, not only queue item state
+
+- **PATCH /api/generate-all/update**: Legacy compatibility sync endpoint
+  - Body: `{ projectId, queue?, status?, completed_at? }`
+  - Does not trust client-provided `done`/`skipped` blindly; it verifies the generated document exists before syncing normalized item rows
 
 - **POST /api/generate-all/cancel**: Cancel a running queue
   - Body: `{ projectId }`
-  - Marks pending/generating items as cancelled in DB
+  - Marks pending/generating normalized items as cancelled in DB and syncs the compatibility queue JSON
 
 - **GET /api/stitch/html**: Proxy Stitch-hosted HTML through the server
   - Query: `?url=<encoded-url>`
@@ -1118,6 +1152,7 @@ docker run -p 3000:3000 idea2app
   - Body: `{ priceId, planId }`
   - Returns: `{ url }` (Stripe-hosted checkout page URL)
   - Creates or reuses Stripe customer (linked via `profiles.stripe_customer_id`)
+  - Validates the requested plan server-side against an active `plans` row whose `stripe_price_id` exactly matches `priceId`
   - Sets `mode: "subscription"` for recurring billing
   - Passes `supabase_user_id` and `plan_id` in session metadata
 
@@ -1129,7 +1164,7 @@ docker run -p 3000:3000 idea2app
   - Verifies webhook signature using `STRIPE_WEBHOOK_SECRET`
   - Uses Supabase service role client (no user context) for database operations
   - Handled events:
-    - `checkout.session.completed` — creates subscription record, adds credits via `add_credits()` RPC
+    - `checkout.session.completed` — creates subscription record and adds credits via `add_credits()` RPC only for active Stripe-backed plans
     - `customer.subscription.updated` — syncs status, cancel_at_period_end, period_end
     - `customer.subscription.deleted` — marks subscription as canceled
     - `invoice.paid` (billing_reason = `subscription_cycle`) — monthly credit renewal via `add_credits()` RPC
@@ -1338,7 +1373,10 @@ export const CREDIT_COSTS = {
 | [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction (wrapped with withRetry) |
 | [src/stores/generate-all-store.ts](src/stores/generate-all-store.ts) | Zustand store for Generate All UI state. Fires execute route fire-and-forget; polls status every 3s. |
 | [src/components/workspace/generate-all-hydrator.tsx](src/components/workspace/generate-all-hydrator.tsx) | Thin bridge: keeps store callbacks fresh each render; runs one-time DB hydration per project |
-| [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=300). Sequential per-step execution with credit deduction/refund and DB state tracking. |
+| [src/lib/generation-queue-service.ts](src/lib/generation-queue-service.ts) | Normalized queue item helpers for dependency checks, status computation, item claims, and legacy queue JSON sync. |
+| [src/lib/onboarding-generation.ts](src/lib/onboarding-generation.ts) | Onboarding queue metadata, loading row mapping, run-id helpers, and canonical `#overview` redirect construction. |
+| [src/lib/document-generation-service.ts](src/lib/document-generation-service.ts) | Shared server-side document generation service used by Generate All/onboarding; returns generated output table/id references. |
+| [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=300). Dependency-aware item execution with credit deduction/refund, retries, partial status, and DB state tracking. |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export: Markdown → HTML → canvas → jsPDF |
 | [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | **NEW** — System prompts, question strategies, and AI models for Prompt chat |
 | [src/lib/stitch/client.ts](src/lib/stitch/client.ts) | Stitch SDK wrapper and raw response parsing helpers |
@@ -1355,8 +1393,7 @@ export const CREDIT_COSTS = {
 | [src/middleware.ts](src/middleware.ts) | Auth middleware |
 | [src/types/database.ts](src/types/database.ts) | Database type definitions |
 | [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
-| [migrations/create_mockups_table.sql](migrations/create_mockups_table.sql) | **NEW** — Database migration for mockups table |
-| [supabase/migrations/20260325000000_create_waitlist.sql](supabase/migrations/20260325000000_create_waitlist.sql) | Waitlist table migration with public insert policy |
+| [supabase/migrations/20260425001000_create_mockups_table.sql](supabase/migrations/20260425001000_create_mockups_table.sql) | Supabase migration for mockups table |
 | [migrations/005_create_refund_credits.sql](migrations/005_create_refund_credits.sql) | PostgreSQL `refund_credits` RPC — adds credits back + logs to credits_history on generation failure. **Run this in Supabase SQL editor before regenerating database types.** |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Setup guide for Prompt tab AI chat feature |
 
@@ -1364,4 +1401,4 @@ export const CREDIT_COSTS = {
 
 **End of PROJECT_CONTEXT.md**
 
-*This document serves as the comprehensive reference for understanding and working with the Idea2App codebase. Keep it updated as the project evolves.*
+*This document serves as the comprehensive reference for understanding and working with the Maker Compass codebase. Keep it updated as the project evolves.*

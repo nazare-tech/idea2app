@@ -4,10 +4,16 @@ import OpenAI from "openai"
 import type { IntakeAnswer, IntakeQuestion, ProjectIntakeSource } from "@/lib/intake-types"
 import { formatProjectIntakeForAi } from "@/lib/intake-context"
 import { buildProjectIntakePayload, buildProjectSummary } from "@/lib/intake-summary"
+import {
+  buildOnboardingGenerationQueue,
+  buildOnboardingQueueMetadata,
+  buildOnboardingRedirectUrl,
+} from "@/lib/onboarding-generation"
+import { createGenerationQueueItems } from "@/lib/generation-queue-service"
 import { generateProjectName } from "@/lib/project-name-generation"
 import { canCreateProject, type ProjectAllowanceClient } from "@/lib/project-allowance"
-import { getProjectUrl } from "@/lib/project-routing"
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
 
 const MAX_IDEA_LENGTH = 10000
@@ -158,6 +164,7 @@ function validateAnswers(questions: IntakeQuestion[], value: unknown): {
 
 export async function POST(request: Request) {
   const supabase = await createClient()
+  const queueSupabase = createServiceClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -292,6 +299,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to save project intake" }, { status: 500 })
   }
 
+  const onboardingQueue = buildOnboardingGenerationQueue()
+  const generationRunId = onboardingQueue[0].runId
+  const redirectUrl = buildOnboardingRedirectUrl(project)
+  const statusUrl = `/api/projects/${project.id}/onboarding-status?runId=${encodeURIComponent(generationRunId)}`
+  const { data: queueRow, error: queueError } = await queueSupabase
+    .from("generation_queues")
+    .insert({
+      project_id: project.id,
+      user_id: user.id,
+      status: "running",
+      queue: onboardingQueue as unknown as Json,
+      current_index: 0,
+      model_selections: {
+        ...buildOnboardingQueueMetadata(generationRunId),
+        redirectUrl,
+        minimumReadyDocTypes: ["competitive"],
+        createdAt: new Date().toISOString(),
+      } as unknown as Json,
+      started_at: new Date().toISOString(),
+      completed_at: null,
+      error_info: null,
+    })
+    .select("*")
+    .single()
+
+  if (queueError || !queueRow) {
+    console.error("[create-from-intake] onboarding queue insert failed:", queueError)
+    await supabase.from("projects").delete().eq("id", project.id).eq("user_id", user.id)
+    return NextResponse.json({ error: "Failed to start project generation" }, { status: 500 })
+  }
+
+  try {
+    await createGenerationQueueItems(queueSupabase, queueRow, onboardingQueue)
+  } catch (itemError) {
+    console.error("[create-from-intake] onboarding queue item insert failed:", itemError)
+    await supabase.from("projects").delete().eq("id", project.id).eq("user_id", user.id)
+    return NextResponse.json({ error: "Failed to start project generation" }, { status: 500 })
+  }
+
   if (pendingToken) {
     const { error: claimError } = await supabase
       .from("pending_intakes")
@@ -310,8 +356,11 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     project,
-    projectUrl: `${getProjectUrl(project)}?new=1&tab=prompt`,
+    projectUrl: redirectUrl,
+    redirectUrl,
     projectName: nameResult.name,
     usedFallbackName: nameResult.usedFallback,
+    generationRunId,
+    statusUrl,
   })
 }

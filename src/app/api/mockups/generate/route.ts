@@ -101,8 +101,7 @@ export async function POST(request: Request) {
 
             send({ type: "stage", message: "Saving mockups...", step: 6, totalSteps: 6 })
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (supabase as any).from("mockups").insert({
+            await supabase.from("mockups").insert({
               project_id: projectId!,
               content,
               model_used: "stitch",
@@ -166,8 +165,7 @@ export async function POST(request: Request) {
     // Non-streaming path
     const content = await generateStitchMockup(mvpPlan, projectName)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("mockups").insert({
+    await supabase.from("mockups").insert({
       project_id: projectId,
       content,
       model_used: "stitch",

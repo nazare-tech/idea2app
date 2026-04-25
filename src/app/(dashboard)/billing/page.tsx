@@ -54,6 +54,7 @@ export default function BillingPage() {
         .from("plans")
         .select("*")
         .eq("is_active", true)
+        .eq("is_public", true)
         .order("price_monthly", { ascending: true })
 
       if (plansData) {
@@ -219,7 +220,7 @@ Token Balance
       <div>
         <h2 className="text-xl font-bold tracking-tight mb-4">Available Plans</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {plans.filter((p) => p.name !== "Internal Dev").map((plan) => {
+          {plans.map((plan) => {
             const Icon = getPlanIcon(plan.name)
             const isCurrentPlan = subscription?.plan_id === plan.id
             const isFree = plan.price_monthly === 0

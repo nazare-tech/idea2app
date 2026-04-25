@@ -47,6 +47,8 @@ next-env.d.ts
 .playwright-mcp/
 .dmux/
 .claude/worktrees/
+output/
+supabase/.temp/
 
 # local design exports
 /design/idea2App-design.json

@@ -8,8 +8,10 @@ import {
   CompetitiveOverviewSection,
   CompetitiveDetailSection,
 } from "@/components/analysis/competitive-analysis-document"
+import { GenerateAllBlock } from "@/components/workspace/generate-all-block"
 import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
 import type { StreamStage } from "@/lib/parse-document-stream"
+import { useGenerateAll } from "@/stores/generate-all-store"
 
 interface DocumentData {
   content: string | null
@@ -22,7 +24,7 @@ interface DocumentData {
 
 interface ScrollableContentProps {
   projectId: string
-  projectName: string
+  credits: number
   documents: Record<string, DocumentData>
 }
 
@@ -82,7 +84,7 @@ function MarkdownDocumentSection({
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const navItem = SCROLLABLE_NAV_ITEMS.find((item) => item.key === navKey)
-  const sections = navItem?.sections ?? []
+  const sections = useMemo(() => navItem?.sections ?? [], [navItem?.sections])
 
   // After render, stamp anchor IDs onto H2 headings by their ordinal position.
   // This is intentionally post-render DOM work so it doesn't block the initial paint.
@@ -253,12 +255,13 @@ function MockupsSection({ content }: { content: string }) {
 }
 
 export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentProps>(
-  function ScrollableContent({ projectId, projectName, documents }, ref) {
+  function ScrollableContent({ projectId, credits, documents }, ref) {
     const competitiveData = documents["competitive"]
     const prdData = documents["prd"]
     const mvpData = documents["mvp"]
     const mockupsData = documents["mockups"]
     const launchData = documents["launch"]
+    const generateAllStatus = useGenerateAll(projectId, (state) => state.status)
 
     // Defer rendering of all sections below the first one to the next animation
     // frame. This allows the browser to paint the initial layout (first section +
@@ -276,6 +279,10 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         ref={ref}
         className="flex-1 overflow-y-auto bg-[#FAFAFA] px-6 py-5 space-y-3"
       >
+        {generateAllStatus !== "idle" && (
+          <GenerateAllBlock projectId={projectId} credits={credits} />
+        )}
+
         {/* Overview — rendered immediately (first visible section) */}
         <DocumentWrapper navKey="overview">
           {competitiveData?.isGenerating ? (

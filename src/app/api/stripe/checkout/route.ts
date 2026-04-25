@@ -15,11 +15,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { priceId, planId } = await request.json()
+    const body = await request.json().catch(() => null)
+    const priceId = typeof body?.priceId === "string" ? body.priceId.trim() : ""
+    const planId = typeof body?.planId === "string" ? body.planId.trim() : ""
 
     if (!priceId || !planId) {
       return NextResponse.json(
         { error: "priceId and planId are required" },
+        { status: 400 }
+      )
+    }
+
+    const { data: plan, error: planError } = await supabase
+      .from("plans")
+      .select("id, stripe_price_id, is_active, checkout_enabled")
+      .eq("id", planId)
+      .eq("stripe_price_id", priceId)
+      .eq("is_active", true)
+      .eq("checkout_enabled", true)
+      .maybeSingle()
+
+    if (planError) {
+      console.error("Stripe checkout plan lookup error:", planError.message)
+      return NextResponse.json(
+        { error: "Failed to verify selected plan" },
+        { status: 500 }
+      )
+    }
+
+    if (!plan?.stripe_price_id) {
+      return NextResponse.json(
+        { error: "Selected plan is not available for checkout" },
         { status: 400 }
       )
     }
@@ -54,7 +80,7 @@ export async function POST(request: Request) {
       payment_method_types: ["card"],
       line_items: [
         {
-          price: priceId,
+          price: plan.stripe_price_id,
           quantity: 1,
         },
       ],
@@ -63,7 +89,7 @@ export async function POST(request: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
       metadata: {
         supabase_user_id: user.id,
-        plan_id: planId,
+        plan_id: plan.id,
       },
     })
 

@@ -15,6 +15,7 @@ import { ChevronDown, Pencil } from "lucide-react"
 import { HeaderLogo, APP_HEADER_LOGO_SIZE } from "@/components/layout/header-logo"
 import { useAuthSignOut } from "@/hooks/use-auth-signout"
 import { CreditBalance } from "@/components/ui/credit-balance"
+import { APP_BRAND_NAME } from "@/lib/app-brand"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
 interface ProjectHeaderProps {
@@ -86,7 +87,7 @@ export function ProjectHeader({
       <Link href="/projects" className="flex items-center gap-3">
         <HeaderLogo size={APP_HEADER_LOGO_SIZE} linked={false} />
         <span className="text-sm font-medium text-text-secondary">
-          Idea2App
+          {APP_BRAND_NAME}
         </span>
       </Link>
 

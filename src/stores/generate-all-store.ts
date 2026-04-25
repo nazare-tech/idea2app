@@ -18,7 +18,15 @@ import {
 
 // Re-export types so consumers keep working
 export type { QueueItem, QueueItemStatus }
-export type GenerateAllStatus = "idle" | "loading" | "running" | "completed" | "cancelled" | "error" | "interrupted"
+export type GenerateAllStatus =
+  | "idle"
+  | "loading"
+  | "running"
+  | "partial"
+  | "completed"
+  | "cancelled"
+  | "error"
+  | "interrupted"
 
 // ---------------------------------------------------------------------------
 // Callback types
@@ -120,6 +128,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
   // Polling state
   const pollTimerRef = { current: null as ReturnType<typeof setTimeout> | null }
   const prevQueueRef = { current: null as QueueItem[] | null }
+  const executeRetryCountRef = { current: 0 }
 
   function stopPolling() {
     if (pollTimerRef.current !== null) {
@@ -131,6 +140,16 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
   function schedulePoll(set: (fn: (s: GenerateAllStore) => Partial<GenerateAllStore>) => void, get: () => GenerateAllStore) {
     stopPolling()
     pollTimerRef.current = setTimeout(() => doPoll(set, get), 3000)
+  }
+
+  function kickOffExecute() {
+    return fetch("/api/generate-all/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId }),
+    }).catch((err) => {
+      console.error("[GenerateAll] Execute request failed:", err)
+    })
   }
 
   async function doPoll(
@@ -173,12 +192,16 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
       // Continue polling only while running
       if (newStatus === "running") {
+        const hasPendingWork = incomingQueue.some((item) => item.status === "pending")
+        const hasGeneratingWork = incomingQueue.some((item) => item.status === "generating")
+        if ((dbRow.needs_execute || hasPendingWork) && !hasGeneratingWork && executeRetryCountRef.current < 3) {
+          executeRetryCountRef.current += 1
+          void kickOffExecute()
+        }
         schedulePoll(set, get)
       } else {
         stopPolling()
-        if (newStatus === "completed") {
-          localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
-        }
+        localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
       }
     } catch {
       // Network hiccup — retry
@@ -255,6 +278,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
         // Restore terminal states
         if (
           dbRow.status === "completed" ||
+          dbRow.status === "partial" ||
           dbRow.status === "cancelled" ||
           dbRow.status === "error"
         ) {
@@ -278,7 +302,9 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
               if (currentStatus === "done") {
                 return { ...item, status: "done" as const }
               }
-              return { ...item, status: "pending" as const }
+              return item.status === "generating"
+                ? item
+                : { ...item, status: "pending" as const }
             }
             return item
           })
@@ -313,6 +339,9 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
               status: "running",
             }))
             localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
+            if (!hydratedQueue.some((item) => item.status === "generating")) {
+              void kickOffExecute()
+            }
             schedulePoll(set, get)
           }
         }
@@ -344,10 +373,12 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       }))
 
       localStorage.setItem(LOCAL_STORAGE_KEY(projectId), "true")
+      executeRetryCountRef.current = 0
 
-      // Persist queue to DB
+      // Persist queue to DB before kicking off server-side execution. If this
+      // fails, do not run /execute against a stale or unrelated existing queue.
       try {
-        await fetch("/api/generate-all/start", {
+        const startResponse = await fetch("/api/generate-all/start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -355,19 +386,24 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
             queue: freshQueue,
           }),
         })
+
+        const startData = await startResponse.json().catch(() => null)
+        if (!startResponse.ok) {
+          throw new Error(startData?.error || "Failed to start generation")
+        }
       } catch (err) {
         console.error("[GenerateAll] Failed to persist queue start:", err)
+        localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
+        set(() => ({
+          status: "error",
+          error: err instanceof Error ? err.message : "Failed to start generation",
+        }))
+        return
       }
 
       // Fire-and-forget: kick off server-side execution
       // The server runs for up to 300s even if the user closes the tab.
-      fetch("/api/generate-all/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId }),
-      }).catch((err) => {
-        console.error("[GenerateAll] Execute request failed:", err)
-      })
+      void kickOffExecute()
 
       // Start polling to reflect server-side progress in the UI
       prevQueueRef.current = freshQueue

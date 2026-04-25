@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
+
 interface MockupParams {
   params: Promise<{ id: string }>
 }
@@ -25,16 +27,23 @@ export async function PATCH(request: Request, { params }: MockupParams) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 })
     }
 
+    const projectId = await getUserProjectId(supabase, user.id, id)
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "Mockup not found or access denied" },
+        { status: 404 }
+      )
+    }
+
     // Verify ownership and update
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: mockup, error } = await (supabase as any)
+    const { data: mockup, error } = await supabase
       .from("mockups")
       .update({
         content,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .eq("project_id", await getUserProjectId(supabase, user.id, id))
+      .eq("project_id", projectId)
       .select()
       .single()
 
@@ -53,8 +62,11 @@ export async function PATCH(request: Request, { params }: MockupParams) {
 }
 
 // Helper function to verify project ownership
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getUserProjectId(supabase: any, userId: string, mockupId: string): Promise<string | null> {
+async function getUserProjectId(
+  supabase: SupabaseServerClient,
+  userId: string,
+  mockupId: string,
+): Promise<string | null> {
   const { data: mockup } = await supabase
     .from("mockups")
     .select("project_id")

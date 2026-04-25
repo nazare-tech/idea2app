@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import { getGenerateAllStore, type OnStepCompleteFn } from "@/stores/generate-all-store"
 import type { DocumentType } from "@/lib/document-definitions"
 
@@ -27,26 +27,19 @@ export function GenerateAllHydrator({
   onStepComplete,
   getDocumentStatus,
 }: GenerateAllHydratorProps) {
-  // Keep fresh refs so the effect closure doesn't go stale
-  const onStepCompleteRef = useRef(onStepComplete)
-  onStepCompleteRef.current = onStepComplete
-  const getStatusRef = useRef(getDocumentStatus)
-  getStatusRef.current = getDocumentStatus
-
   // Every render: push fresh callbacks to the store and sync the idle queue.
   useEffect(() => {
     getGenerateAllStore(projectId)
       .getState()
       ._updateCallbacks(
-        () => onStepCompleteRef.current(),
-        (type) => getStatusRef.current(type),
+        onStepComplete,
+        getDocumentStatus,
       )
   })
 
   // One-time hydration per project: restore state from the previous session.
   useEffect(() => {
     getGenerateAllStore(projectId).getState().hydrate()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
   return null

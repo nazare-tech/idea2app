@@ -47,7 +47,7 @@ export function AuthModal() {
           className="fixed left-1/2 top-1/2 z-50 w-full max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-card shadow-2xl focus:outline-none"
         >
           <Dialog.Title className="sr-only">
-            {mode === "signin" ? "Sign in to Idea2App" : "Create your Idea2App account"}
+            {mode === "signin" ? "Sign in to Maker Compass" : "Create your Maker Compass account"}
           </Dialog.Title>
 
           <Dialog.Close asChild>

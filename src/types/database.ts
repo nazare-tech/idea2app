@@ -214,6 +214,102 @@ export type Database = {
           },
         ]
       }
+      generation_queue_items: {
+        Row: {
+          attempt: number
+          completed_at: string | null
+          created_at: string
+          credit_cost: number
+          credit_status: string
+          depends_on: string[]
+          doc_type: string
+          error: string | null
+          id: string
+          idempotency_key: string
+          label: string
+          max_attempts: number
+          model_id: string | null
+          output_id: string | null
+          output_table: string | null
+          project_id: string
+          queue_id: string
+          run_id: string | null
+          source: string | null
+          stage_message: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt?: number
+          completed_at?: string | null
+          created_at?: string
+          credit_cost?: number
+          credit_status?: string
+          depends_on?: string[]
+          doc_type: string
+          error?: string | null
+          id?: string
+          idempotency_key: string
+          label: string
+          max_attempts?: number
+          model_id?: string | null
+          output_id?: string | null
+          output_table?: string | null
+          project_id: string
+          queue_id: string
+          run_id?: string | null
+          source?: string | null
+          stage_message?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempt?: number
+          completed_at?: string | null
+          created_at?: string
+          credit_cost?: number
+          credit_status?: string
+          depends_on?: string[]
+          doc_type?: string
+          error?: string | null
+          id?: string
+          idempotency_key?: string
+          label?: string
+          max_attempts?: number
+          model_id?: string | null
+          output_id?: string | null
+          output_table?: string | null
+          project_id?: string
+          queue_id?: string
+          run_id?: string | null
+          source?: string | null
+          stage_message?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_queue_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_queue_items_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "generation_queues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -242,6 +338,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mockups: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          model_used: string | null
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          model_used?: string | null
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          model_used?: string | null
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mockups_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -286,34 +420,40 @@ export type Database = {
       }
       plans: {
         Row: {
+          checkout_enabled: boolean
           created_at: string | null
           credits_monthly: number
           description: string | null
           features: Json | null
           id: string
           is_active: boolean | null
+          is_public: boolean
           name: string
           price_monthly: number
           stripe_price_id: string | null
         }
         Insert: {
+          checkout_enabled?: boolean
           created_at?: string | null
           credits_monthly: number
           description?: string | null
           features?: Json | null
           id?: string
           is_active?: boolean | null
+          is_public?: boolean
           name: string
           price_monthly: number
           stripe_price_id?: string | null
         }
         Update: {
+          checkout_enabled?: boolean
           created_at?: string | null
           credits_monthly?: number
           description?: string | null
           features?: Json | null
           id?: string
           is_active?: boolean | null
+          is_public?: boolean
           name?: string
           price_monthly?: number
           stripe_price_id?: string | null
@@ -713,6 +853,16 @@ export type Database = {
         Returns: boolean
       }
       get_credit_balance: { Args: { p_user_id: string }; Returns: number }
+      refund_credits: {
+        Args: {
+          p_action: string
+          p_amount: number
+          p_description?: string
+          p_metadata?: Json
+          p_user_id: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
