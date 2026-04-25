@@ -1,7 +1,7 @@
 # Design Spec: AI Project Name + Auth Modal
 
-**Date:** 2026-04-10  
-**Status:** Approved  
+**Date:** 2026-04-10
+**Status:** Approved
 
 ---
 
