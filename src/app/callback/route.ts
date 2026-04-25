@@ -16,32 +16,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/auth?error=${encodeURIComponent(error.message)}`)
     }
 
-    // Check if this is a dev account and set up unlimited credits
     const { data: { user } } = await supabase.auth.getUser()
-
-    if (user?.email === "nazarework@gmail.com") {
-      // Assign Internal Dev plan with unlimited credits
-      const { data: devPlan } = await supabase
-        .from("plans")
-        .select("id")
-        .eq("name", "Internal Dev")
-        .single()
-
-      if (devPlan) {
-        // Create or update subscription
-        await supabase.from("subscriptions").upsert({
-          user_id: user.id,
-          plan_id: devPlan.id,
-          status: "active",
-        }, { onConflict: "user_id" })
-
-        // Set unlimited credits
-        await supabase.from("credits").upsert({
-          user_id: user.id,
-          balance: 999999,
-        }, { onConflict: "user_id" })
-      }
-    }
 
     // Safety net: ensure every user has a credits row.
     // The DB trigger handles new users; this covers users who signed up

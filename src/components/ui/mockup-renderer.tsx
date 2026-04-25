@@ -748,11 +748,11 @@ function StitchMockupViewer({ data, projectName }: { data: StitchContent; projec
                 className={[
                   "inline-flex min-w-[132px] flex-col items-start rounded-lg border px-4 py-3 text-left transition-colors",
                   index === selectedIndex
-                    ? "border-primary bg-primary/5 text-foreground shadow-sm"
+                    ? "border-primary bg-primary/5 text-foreground"
                     : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
                 ].join(" ")}
               >
-                <span className="text-xs font-semibold uppercase tracking-[0.16em]">Option {option.label}</span>
+                <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em]">Option {option.label}</span>
                 <span className="mt-1 text-sm font-medium leading-tight">{option.title}</span>
               </button>
             ))}
@@ -806,7 +806,7 @@ function StitchMockupViewer({ data, projectName }: { data: StitchContent; projec
 
         <div className="overflow-hidden rounded-b-xl border-x border-b border-border bg-muted/10">
           <div className="flex justify-center bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
-            <div className="w-full bg-white transition-all duration-300 ease-out" style={{ maxWidth: vp.width }}>
+            <div className="w-full bg-white" style={{ maxWidth: vp.width }}>
               {loadingHtml && !currentHtml ? (
                 <div className="flex items-center justify-center bg-white" style={{ height: "800px" }}>
                   <div className="flex flex-col items-center gap-3 text-zinc-400">
@@ -1016,11 +1016,11 @@ function MockupViewer({ pages, projectName }: { pages: MockupPage[]; projectName
                   className={[
                     "inline-flex min-w-[132px] flex-col items-start rounded-lg border px-4 py-3 text-left transition-colors",
                     isActive
-                      ? "border-primary bg-primary/5 text-foreground shadow-sm"
+                      ? "border-primary bg-primary/5 text-foreground"
                       : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
                   ].join(" ")}
                 >
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em]">Option {optionLabel}</span>
+                  <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em]">Option {optionLabel}</span>
                   <span className="mt-1 text-sm font-medium leading-tight">Variation {optionLabel}</span>
                 </button>
               )
@@ -1053,7 +1053,7 @@ function MockupViewer({ pages, projectName }: { pages: MockupPage[]; projectName
       {(selectedPage.description || selectedPage.pros.length > 0 || selectedPage.cons.length > 0) && (
         <div className="grid gap-3 md:grid-cols-2">
           {selectedPage.pros.length > 0 && (
-            <div className="rounded-lg border border-green-200 bg-white p-4 text-xs shadow-sm">
+            <div className="rounded-lg border border-green-200 bg-white p-4 text-xs">
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-green-700">Pros</p>
               <ul className="list-disc list-inside space-y-1 text-foreground">
                 {selectedPage.pros.map((item) => <li key={item}>{item}</li>)}
@@ -1061,7 +1061,7 @@ function MockupViewer({ pages, projectName }: { pages: MockupPage[]; projectName
             </div>
           )}
           {selectedPage.cons.length > 0 && (
-            <div className="rounded-lg border border-red-200 bg-white p-4 text-xs shadow-sm">
+            <div className="rounded-lg border border-red-200 bg-white p-4 text-xs">
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-red-700">Cons</p>
               <ul className="list-disc list-inside space-y-1 text-foreground">
                 {selectedPage.cons.map((item) => <li key={item}>{item}</li>)}
@@ -1120,7 +1120,7 @@ function SinglePageViewer({ page, selectedIndex }: { page: MockupPage; selectedI
 
       <div className="overflow-hidden rounded-b-xl border-x border-b border-border bg-muted/10">
         <div className="flex justify-center bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
-          <div className="w-full bg-white transition-all duration-300 ease-out" style={{ maxWidth: vp.width, minHeight: "500px" }}>
+          <div className="w-full bg-white" style={{ maxWidth: vp.width, minHeight: "500px" }}>
             <div className="p-4">
               <JsonRenderPage page={page} />
             </div>

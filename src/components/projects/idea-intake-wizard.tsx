@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
+import {
+  IntakeSubmissionLoadingPanel,
+  type IntakeLoadingRow,
+} from "@/components/projects/intake-submission-loading-panel"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
@@ -14,8 +18,17 @@ import { cn } from "@/lib/utils"
 
 const SESSION_IDEA_KEY = "idea2app:intake:draft"
 const MIN_IDEA_LENGTH = 10
+const WIZARD_TOTAL_STEPS = 2
 
 type WizardStep = "idea" | "questions"
+
+type OnboardingStatusPayload = {
+  readyToRedirect?: boolean
+  redirectUrl?: string
+  effectiveStatus?: string
+  rows?: IntakeLoadingRow[]
+  needsExecute?: boolean
+}
 
 type AnswerDraft = {
   selectedOptionIds: string[]
@@ -53,6 +66,10 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
   const [isLoadingPending, setIsLoadingPending] = useState(Boolean(pendingToken))
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false)
   const [isCreatingProject, setIsCreatingProject] = useState(false)
+  const [creationStatusUrl, setCreationStatusUrl] = useState<string | null>(null)
+  const [creationRedirectUrl, setCreationRedirectUrl] = useState<string | null>(null)
+  const [creationProjectId, setCreationProjectId] = useState<string | null>(null)
+  const [creationRows, setCreationRows] = useState<IntakeLoadingRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const normalizedIdea = useMemo(() => normalizeIdea(idea), [idea])
@@ -106,6 +123,75 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
     }
     window.sessionStorage.setItem(SESSION_IDEA_KEY, idea)
   }, [idea])
+
+  useEffect(() => {
+    if (!isCreatingProject || !creationStatusUrl) return
+
+    let cancelled = false
+    let timeout: ReturnType<typeof setTimeout> | null = null
+    let idlePollCount = 0
+    let executeRetryCount = 0
+
+    async function pollOnboardingStatus() {
+      try {
+        const response = await fetch(creationStatusUrl!, { cache: "no-store" })
+        const data = (await response.json().catch(() => null)) as OnboardingStatusPayload | null
+
+        if (cancelled) return
+
+        if (response.ok && data) {
+          if (Array.isArray(data.rows)) {
+            setCreationRows(data.rows)
+
+            const hasPendingWork = data.rows.some((row) => row.status === "pending")
+            const hasGeneratingWork = data.rows.some((row) => row.status === "generating")
+            if ((data.needsExecute || hasPendingWork) && !hasGeneratingWork) {
+              idlePollCount += 1
+              if (creationProjectId && idlePollCount >= 2 && executeRetryCount < 3) {
+                executeRetryCount += 1
+                fetch("/api/generate-all/execute", {
+                  method: "POST",
+                  keepalive: true,
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ projectId: creationProjectId }),
+                }).catch((executeError) => {
+                  console.error("[intake] Failed to retry onboarding generation:", executeError)
+                })
+              }
+            } else {
+              idlePollCount = 0
+            }
+          }
+
+          if (data.readyToRedirect) {
+            window.sessionStorage.removeItem(SESSION_IDEA_KEY)
+            router.push(data.redirectUrl || creationRedirectUrl || "/projects")
+            router.refresh()
+            return
+          }
+
+          if (data.effectiveStatus === "error") {
+            setError("We couldn't generate the initial project documents. Please try again.")
+            setIsCreatingProject(false)
+            return
+          }
+        }
+      } catch {
+        // Keep polling through transient network errors while the server runs.
+      }
+
+      if (!cancelled) {
+        timeout = setTimeout(pollOnboardingStatus, 2000)
+      }
+    }
+
+    pollOnboardingStatus()
+
+    return () => {
+      cancelled = true
+      if (timeout) clearTimeout(timeout)
+    }
+  }, [creationProjectId, creationRedirectUrl, creationStatusUrl, isCreatingProject, router])
 
   const updateIdea = (value: string) => {
     setIdea(value)
@@ -162,6 +248,10 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
     if (!questionSet || !allQuestionsAnswered || isCreatingProject) return
     setError(null)
     setIsCreatingProject(true)
+    setCreationRows(null)
+    setCreationStatusUrl(null)
+    setCreationRedirectUrl(null)
+    setCreationProjectId(null)
 
     try {
       const response = await fetch("/api/projects/create-from-intake", {
@@ -181,14 +271,38 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
         throw new Error(data?.error || "Failed to create project")
       }
 
+      if (typeof data?.statusUrl === "string" && typeof data?.project?.id === "string") {
+        const redirectUrl = typeof data.redirectUrl === "string" ? data.redirectUrl : data.projectUrl
+        setCreationStatusUrl(data.statusUrl)
+        setCreationRedirectUrl(redirectUrl)
+        setCreationProjectId(data.project.id)
+
+        fetch("/api/generate-all/execute", {
+          method: "POST",
+          keepalive: true,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId: data.project.id }),
+        }).catch((executeError) => {
+          console.error("[intake] Failed to start onboarding generation:", executeError)
+        })
+        return
+      }
+
       window.sessionStorage.removeItem(SESSION_IDEA_KEY)
       router.push(data.projectUrl)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create project")
-    } finally {
+      setCreationRows(null)
+      setCreationStatusUrl(null)
+      setCreationRedirectUrl(null)
+      setCreationProjectId(null)
       setIsCreatingProject(false)
     }
+  }
+
+  if (isCreatingProject) {
+    return <IntakeSubmissionLoadingPanel rows={creationRows ?? undefined} />
   }
 
   return (
@@ -197,9 +311,9 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
         <div className="flex flex-1 items-start justify-center">
           {step === "idea" ? (
             <section className="w-full">
-              <div className="border border-[#E5E5E5] bg-white p-8 sm:px-10">
-                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#777777]">
-                  Step 1 of 4
+              <div className="rounded-lg border border-border-subtle bg-white p-8 sm:px-10">
+                <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+                  Step 1 of {WIZARD_TOTAL_STEPS}
                 </p>
                 <h2 className="mt-1 font-[family:var(--font-display)] text-5xl font-bold tracking-[-0.04em] text-[#0A0A0A]">
                   Idea Brief
@@ -218,7 +332,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                     value={idea}
                     onChange={(event) => updateIdea(event.target.value)}
                     placeholder="Example: A product intelligence tool that turns support tickets, sales calls, and customer chats into roadmap priorities..."
-                    className="min-h-[170px] rounded-none border-[#D8DEE8] bg-white text-[15px] leading-relaxed"
+                    className="min-h-[170px] border-border-strong bg-white text-[15px] leading-relaxed"
                     disabled={isLoadingPending}
                   />
                 </div>
@@ -231,7 +345,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                 )}
 
                 <div className="mt-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
+                  <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
                     Or start from an example
                   </p>
                   <div className="mt-3 grid gap-3">
@@ -240,7 +354,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                         key={example.id}
                         type="button"
                         onClick={() => updateIdea(example.description)}
-                        className="border border-[#D8DEE8] bg-white p-4 text-left transition-colors hover:border-[#0A0A0A] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="rounded-lg border border-border-subtle bg-white p-4 text-left transition-colors hover:border-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <span className="block text-sm font-semibold">{example.title}</span>
                         <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-text-secondary">
@@ -259,7 +373,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                   type="button"
                   onClick={generateQuestions}
                   disabled={!canContinue || isGeneratingQuestions || isLoadingPending}
-                  className="h-10 rounded-none bg-[#0A0A0A] px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-[#0A0A0A]/90"
+                  className="h-10 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90"
                   data-testid="intake-continue"
                 >
                   {isGeneratingQuestions ? (
@@ -275,10 +389,10 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
             </section>
           ) : (
             <section className="w-full">
-              <div className="border border-[#E5E5E5] bg-white p-8 sm:px-10">
+              <div className="rounded-lg border border-border-subtle bg-white p-8 sm:px-10">
                 <div className="mb-6">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#777777]">
-                    Step 2 of 4
+                  <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+                    Step 2 of {WIZARD_TOTAL_STEPS}
                   </p>
                   <h2 className="mt-1 font-[family:var(--font-display)] text-5xl font-bold tracking-[-0.04em] text-[#0A0A0A]">
                     Tell us a bit more
@@ -305,7 +419,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                     variant="outline"
                     onClick={() => setStep("idea")}
                     disabled={isCreatingProject}
-                    className="h-10 rounded-none border-[#0A0A0A] bg-transparent px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                    className="h-10 rounded-md border-text-primary bg-transparent px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-text-primary hover:bg-background"
                     data-testid="intake-back"
                   >
                     Back
@@ -314,7 +428,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
                     type="button"
                     onClick={createProject}
                     disabled={!allQuestionsAnswered || isCreatingProject}
-                    className="h-10 rounded-none bg-[#0A0A0A] px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-[#0A0A0A]/90"
+                    className="h-10 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90"
                     data-testid="intake-create-project"
                   >
                     {isCreatingProject ? (
@@ -348,7 +462,7 @@ function QuestionCard({
   onAnswerChange: (updater: (draft: AnswerDraft) => AnswerDraft) => void
 }) {
   return (
-    <article className="border border-[#E6E8EC] bg-white p-[18px]">
+    <article className="rounded-lg border border-border-subtle bg-white p-[18px]">
       <div className="min-w-0">
         <h3 className="font-[family:var(--font-display)] text-xl font-bold leading-snug tracking-[-0.015em] text-[#0D1320]">
           {question.question}
@@ -364,7 +478,7 @@ function QuestionCard({
               onAnswerChange((draft) => ({ ...draft, text: event.target.value }))
             }
             placeholder="Write a short answer..."
-            className="mt-4 min-h-[104px] rounded-none border-[#D8DEE8] bg-white"
+            className="mt-4 min-h-[104px] border-border-strong bg-white"
           />
         ) : (
           <>
@@ -379,10 +493,10 @@ function QuestionCard({
                       onAnswerChange((draft) => toggleOption(question, draft, option.id))
                     }
                     className={cn(
-                      "inline-flex max-w-full items-center rounded-[2px] border px-3 py-1.5 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                      "inline-flex max-w-full items-center rounded-md border px-3 py-1.5 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                       selected
-                        ? "border-[#0D1320] bg-[#0D1320] text-white"
-                        : "border-[#D8DEE8] bg-white text-[#0F172A] hover:border-[#0D1320]"
+                        ? "border-text-primary bg-text-primary text-white"
+                        : "border-border-subtle bg-white text-text-primary hover:border-text-primary"
                     )}
                   >
                     {option.label}
@@ -396,10 +510,10 @@ function QuestionCard({
                     onAnswerChange((draft) => toggleOther(question, draft))
                   }
                   className={cn(
-                    "inline-flex max-w-full items-center rounded-[2px] border px-3 py-1.5 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    "inline-flex max-w-full items-center rounded-md border px-3 py-1.5 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     answer.otherSelected
-                      ? "border-[#0D1320] bg-[#0D1320] text-white"
-                      : "border-[#D8DEE8] bg-white text-[#0F172A] hover:border-[#0D1320]"
+                      ? "border-text-primary bg-text-primary text-white"
+                      : "border-border-subtle bg-white text-text-primary hover:border-text-primary"
                   )}
                 >
                   Other
@@ -413,7 +527,7 @@ function QuestionCard({
                   onAnswerChange((draft) => ({ ...draft, otherText: event.target.value }))
                 }
                 placeholder="Type another answer..."
-                className="mt-3 rounded-none border-[#D8DEE8] bg-white"
+                className="mt-3 border-border-strong bg-white"
               />
             )}
           </>

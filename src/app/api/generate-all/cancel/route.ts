@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server"
+import { refundGenerationQueueItemCredits } from "@/lib/generation-queue-billing"
+import {
+  getGenerationQueueItems,
+  syncGenerationQueueJson,
+  updateGenerationQueueItem,
+  type GenerationQueueItemRow,
+} from "@/lib/generation-queue-service"
 import { createClient } from "@/lib/supabase/server"
-
-interface QueueItem {
-  docType: string
-  status: string
-  creditCost: number
-  stageMessage?: string
-}
+import { createServiceClient } from "@/lib/supabase/service"
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
+    const queueSupabase = createServiceClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -27,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch current queue to update item statuses
-    const { data: existing } = await supabase
+    const { data: existing } = await queueSupabase
       .from("generation_queues")
       .select("*")
       .eq("project_id", projectId)
@@ -38,20 +40,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No active queue found" }, { status: 404 })
     }
 
-    // Mark pending/generating items as cancelled
-    const rawQueue = existing.queue as unknown as QueueItem[]
-    const updatedQueue = rawQueue.map((item: QueueItem) =>
-      item.status === "pending" || item.status === "generating"
-        ? { ...item, status: "cancelled" }
-        : item,
+    const existingItems = await getGenerationQueueItems(queueSupabase, existing)
+    const completedAt = new Date().toISOString()
+    const updatedItems = await Promise.all(
+      existingItems
+        .filter((item) => item.status === "pending" || item.status === "generating")
+        .map((item) => cancelQueueItem(supabase, queueSupabase, item, completedAt)),
     )
 
-    const { data, error } = await supabase
+    const { data, error } = await queueSupabase
       .from("generation_queues")
       .update({
         status: "cancelled",
-        queue: JSON.parse(JSON.stringify(updatedQueue)),
-        completed_at: new Date().toISOString(),
+        completed_at: completedAt,
       })
       .eq("project_id", projectId)
       .eq("user_id", user.id)
@@ -62,8 +63,55 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ queue: data })
+    await syncGenerationQueueJson(
+      queueSupabase,
+      data,
+      existingItems.map((item) => updatedItems.find((updated) => updated.id === item.id) ?? item),
+      { status: "cancelled", completed_at: completedAt },
+    )
+
+    const { data: refreshed } = await queueSupabase
+      .from("generation_queues")
+      .select("*")
+      .eq("project_id", projectId)
+      .eq("user_id", user.id)
+      .single()
+
+    return NextResponse.json({ queue: refreshed ?? data })
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
+}
+
+async function cancelQueueItem(
+  billingSupabase: Awaited<ReturnType<typeof createClient>>,
+  queueSupabase: ReturnType<typeof createServiceClient>,
+  item: GenerationQueueItemRow,
+  completedAt: string,
+) {
+  if (item.status === "generating") {
+    return updateGenerationQueueItem(queueSupabase, item, {
+      stage_message: "Cancelling after current step...",
+    })
+  }
+
+  const update: Parameters<typeof updateGenerationQueueItem>[2] = {
+    status: "cancelled",
+    stage_message: null,
+    completed_at: completedAt,
+  }
+
+  if (item.credit_status === "charged" && item.credit_cost > 0) {
+    const refund = await refundGenerationQueueItemCredits(
+      billingSupabase,
+      item,
+      `${item.label} cancelled: credits refunded (Generate All)`,
+    )
+    if (refund.error) {
+      console.error("[GenerateAll] Credit refund on cancellation failed:", refund.error)
+    }
+    update.credit_status = refund.refunded ? "refunded" : "refund_failed"
+  }
+
+  return updateGenerationQueueItem(queueSupabase, item, update)
 }

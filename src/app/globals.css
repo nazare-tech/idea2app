@@ -77,6 +77,12 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
   --font-display: var(--font-space-grotesk);
+
+  /* Motion tokens */
+  --motion-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 200ms;
+  --motion-duration-slow: 300ms;
 }
 
 @theme inline {
@@ -134,6 +140,7 @@
   --font-sans: var(--font-sora);
   --font-mono: var(--font-ibm-plex-mono);
   --font-display: var(--font-space-grotesk);
+  --ease-out-expo: var(--motion-ease-out-expo);
 }
 
 * {
@@ -203,7 +210,7 @@ body {
   }
 
   .ui-kicker-label {
-    @apply text-sm font-semibold uppercase tracking-[0.14em] text-primary;
+    @apply font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-secondary;
   }
 
   .ui-section-title {
@@ -267,14 +274,6 @@ body {
   }
 }
 
-/* Gradient text utility */
-.gradient-text {
-  background: linear-gradient(135deg, var(--primary) 0%, #991b1b 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 /* Staggered entrance animation */
 @keyframes fade-up {
   from {
@@ -288,7 +287,7 @@ body {
 }
 
 .animate-fade-up {
-  animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-up 0.4s var(--motion-ease-out-expo) forwards;
 }
 
 /* Smooth bounce for loading dots */
@@ -302,7 +301,7 @@ body {
 }
 
 .animate-bounce {
-  animation: bounce 1.4s infinite ease-in-out;
+  animation: bounce 1.4s var(--motion-ease-out-expo) infinite;
 }
 
 /* Composer bar glow effect */
@@ -320,7 +319,7 @@ body {
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--motion-duration-slow) var(--motion-ease-out-expo);
   pointer-events: none;
 }
 
@@ -337,7 +336,7 @@ body {
 .shimmer {
   background: linear-gradient(90deg, transparent 25%, rgba(0, 0, 0, 0.03) 50%, transparent 75%);
   background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+  animation: shimmer 2s linear infinite;
 }
 
 /* Landing page glass nav */
@@ -736,4 +735,110 @@ body {
 @keyframes projectNameFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* ---------- Landing: Build Map ------------------------------------------- */
+/* All entrance motion uses ease-out-expo (`cubic-bezier(0.16, 1, 0.3, 1)`) for
+   the confident, decisive feel called out in the brand register. No bounce. */
+
+/* Initial (pre-scroll) state: hide animated pieces. Elements reveal only
+   after the parent gains `.is-active` (set by IntersectionObserver). */
+.build-map .build-map__progress {
+  stroke-dasharray: var(--bm-path-length);
+  stroke-dashoffset: var(--bm-path-length);
+}
+/* Connectors draw via stroke-dashoffset, like the main path. The dasharray
+   equals their viewBox length (CARD_GAP_VB = 38 in build-map.tsx) so a full
+   offset hides them and 0 reveals them. */
+.build-map .build-map__connector {
+  stroke-dasharray: 38;
+  stroke-dashoffset: 38;
+}
+.build-map .build-map__node {
+  opacity: 0;
+}
+/* The outer card div carries layout (absolute + positioning translate); the
+   inner wrapper carries the entrance motion (lift + fade) so the two
+   transforms don't fight each other. */
+.build-map .build-map__card-inner {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.build-map .build-map__mobile-card {
+  opacity: 0;
+}
+
+/* Active (animating) state */
+.build-map.is-active .build-map__progress {
+  animation: buildMapDraw var(--bm-duration) var(--motion-ease-out-expo) forwards;
+}
+.build-map.is-active .build-map__node {
+  animation: buildMapPop 0.4s var(--motion-ease-out-expo) forwards;
+  animation-delay: var(--bm-delay);
+}
+.build-map.is-active .build-map__connector {
+  animation: buildMapConnectorDraw 0.4s var(--motion-ease-out-expo) forwards;
+  animation-delay: var(--bm-delay);
+}
+.build-map.is-active .build-map__card-inner {
+  animation: buildMapCardReveal 0.55s var(--motion-ease-out-expo) forwards;
+  animation-delay: var(--bm-delay);
+}
+.build-map.is-active .build-map__mobile-card {
+  animation: buildMapMobileReveal 0.55s var(--motion-ease-out-expo) forwards;
+  animation-delay: var(--bm-delay);
+}
+
+@keyframes buildMapDraw {
+  from { stroke-dashoffset: var(--bm-path-length); }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes buildMapConnectorDraw {
+  from { stroke-dashoffset: 38; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes buildMapPop {
+  from { opacity: 0; transform: scale(0.5); transform-box: fill-box; transform-origin: center; }
+  to { opacity: 1; transform: scale(1); transform-box: fill-box; transform-origin: center; }
+}
+@keyframes buildMapCardReveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes buildMapMobileReveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reduced-motion: show the final state immediately, no animation. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .animate-fade-up {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .animate-bounce,
+  .shimmer {
+    animation: none !important;
+  }
+
+  .build-map .build-map__progress { stroke-dashoffset: 0 !important; animation: none !important; }
+  .build-map .build-map__connector { stroke-dashoffset: 0 !important; animation: none !important; }
+  .build-map .build-map__node,
+  .build-map .build-map__card-inner,
+  .build-map .build-map__mobile-card {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
 }

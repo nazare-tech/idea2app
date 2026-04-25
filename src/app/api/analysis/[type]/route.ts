@@ -235,7 +235,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
                   p_user_id: userId!,
                   p_amount: creditsConsumed,
                   p_action: analysisType!,
-                  p_description: `${analysisType} generation failed for "${name}" — credits refunded`,
+                  p_description: `${analysisType} generation failed for "${name}": credits refunded`,
                 })
                 send({ type: "refund", credits: creditsConsumed })
               } catch (refundErr) {
@@ -348,7 +348,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
           p_user_id: userId,
           p_amount: creditsConsumed,
           p_action: analysisType || "unknown",
-          p_description: `${analysisType} generation failed — credits refunded`,
+          p_description: `${analysisType} generation failed: credits refunded`,
         })
         console.log(`[Analysis] Refunded ${creditsConsumed} credits to user ${userId}`)
       } catch (refundErr) {

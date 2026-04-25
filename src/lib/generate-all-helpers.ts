@@ -1,7 +1,7 @@
 /**
  * Pure helper functions for the Generate All feature.
- * Extracted from generate-all-context.tsx so they can be imported
- * and tested in Node.js without pulling in React hooks/JSX.
+ * Kept outside the Zustand store so queue construction can be tested in Node.js
+ * without pulling in React hooks/JSX.
  */
 
 import {
@@ -22,6 +22,7 @@ export type QueueItemStatus =
   | "skipped"
   | "cancelled"
   | "error"
+  | "blocked"
 
 export interface QueueItem {
   docType: DocumentType

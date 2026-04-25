@@ -35,7 +35,7 @@ function AuthScreen() {
                   Ship your next product faster.
                 </h1>
                 <p className="mt-6 max-w-sm text-sm leading-relaxed text-gray-400">
-                  Create your Idea2App account to manage prompts, builds, and releases from
+                  Create your Maker Compass account to manage prompts, builds, and releases from
                   one workspace.
                 </p>
               </div>

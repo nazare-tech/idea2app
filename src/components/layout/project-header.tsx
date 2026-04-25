@@ -15,6 +15,7 @@ import { ChevronDown, Pencil } from "lucide-react"
 import { HeaderLogo, APP_HEADER_LOGO_SIZE } from "@/components/layout/header-logo"
 import { useAuthSignOut } from "@/hooks/use-auth-signout"
 import { CreditBalance } from "@/components/ui/credit-balance"
+import { APP_BRAND_NAME } from "@/lib/app-brand"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
 interface ProjectHeaderProps {
@@ -86,7 +87,7 @@ export function ProjectHeader({
       <Link href="/projects" className="flex items-center gap-3">
         <HeaderLogo size={APP_HEADER_LOGO_SIZE} linked={false} />
         <span className="text-sm font-medium text-text-secondary">
-          Idea2App
+          {APP_BRAND_NAME}
         </span>
       </Link>
 
@@ -109,7 +110,7 @@ export function ProjectHeader({
               if (e.key === "Enter") { e.preventDefault(); void finishEdit() }
               if (e.key === "Escape") { setDraft(projectName); setIsEditing(false) }
             }}
-            className="h-8 w-[min(22rem,40vw)] rounded-md border border-border/70 bg-background px-2.5 text-sm font-semibold text-foreground outline-none focus:border-primary/60"
+            className="h-8 w-[min(22rem,40vw)] rounded-xl border border-border-strong bg-background px-2.5 text-sm font-semibold text-foreground outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
             disabled={isSavingName}
           />
         ) : isNameSet ? (

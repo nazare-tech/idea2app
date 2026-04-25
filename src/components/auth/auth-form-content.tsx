@@ -27,7 +27,7 @@ const modeLabels: Record<
 > = {
   signin: {
     title: "Welcome back",
-    subtitle: "Sign in to continue to Idea2App.",
+    subtitle: "Sign in to continue to Maker Compass.",
     submit: "Sign in",
     loading: "Signing in...",
     alternateLine: "Don't have an account?",
@@ -35,7 +35,7 @@ const modeLabels: Record<
   },
   signup: {
     title: "Create account",
-    subtitle: "Join Idea2App and start building.",
+    subtitle: "Join Maker Compass and start building.",
     submit: "Create account",
     loading: "Creating account...",
     alternateLine: "Already have an account?",

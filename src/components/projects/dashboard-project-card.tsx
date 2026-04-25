@@ -78,7 +78,7 @@ export function DashboardProjectCard({
     <div className="group relative">
       <Link
         href={href}
-        className="block w-[320px] max-w-full border border-border-subtle bg-white p-5 transition hover:bg-muted/30"
+        className="block w-[320px] max-w-full rounded-lg border border-border-subtle bg-white p-5 transition-colors hover:bg-muted/30"
       >
         <div className="space-y-4">
           <div className="space-y-2">

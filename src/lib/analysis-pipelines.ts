@@ -11,6 +11,8 @@ const openrouter = new OpenAI({
 
 const DEFAULT_MODEL =
   process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4-6"
+const MAX_DOWNSTREAM_CONTEXT_CHARS = 6_000
+const DOWNSTREAM_DOCUMENT_MAX_TOKENS = 4_096
 
 // ─── Type Definitions ────────────────────────────────────────────────
 
@@ -50,6 +52,17 @@ export interface TechSpecInput {
 export interface StreamCallbacks {
   onStage?: (message: string, step: number, totalSteps: number) => void
   onToken?: (content: string) => void
+}
+
+function trimDownstreamContext(content: string, label: string) {
+  const normalized = content.trim()
+  if (normalized.length <= MAX_DOWNSTREAM_CONTEXT_CHARS) return normalized
+
+  return [
+    normalized.slice(0, MAX_DOWNSTREAM_CONTEXT_CHARS),
+    "",
+    `[${label} truncated to first ${MAX_DOWNSTREAM_CONTEXT_CHARS} characters for downstream generation.]`,
+  ].join("\n")
 }
 
 // ─── Streaming Helper ────────────────────────────────────────────────
@@ -183,7 +196,7 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
   const model = input.model || DEFAULT_MODEL
 
   const competitiveContext = input.competitiveAnalysis
-    ? `\n\nCompetitive and Gap analysis: ${input.competitiveAnalysis}`
+    ? `\n\nCompetitive and Gap analysis: ${trimDownstreamContext(input.competitiveAnalysis, "Competitive analysis")}`
     : ""
 
   callbacks?.onStage?.("Writing product requirements...", 1, 2)
@@ -196,7 +209,7 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
         content: buildPRDUserPrompt(input.idea, input.name, competitiveContext),
       },
     ],
-    max_tokens: 8192,
+    max_tokens: DOWNSTREAM_DOCUMENT_MAX_TOKENS,
     temperature: 0.3,
     stream: callbacks?.onToken ? true : false,
   }, { signal: AbortSignal.timeout(120_000) })
@@ -217,7 +230,7 @@ export async function runMVPPlan(
 ): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
 
-  const prdContext = input.prd ? `\nPRD: ${input.prd}` : ""
+  const prdContext = input.prd ? `\nPRD: ${trimDownstreamContext(input.prd, "PRD")}` : ""
 
   callbacks?.onStage?.("Writing MVP roadmap...", 1, 2)
   const completion = await openrouter.chat.completions.create({
@@ -226,7 +239,7 @@ export async function runMVPPlan(
       { role: "system", content: MVP_PLAN_SYSTEM_PROMPT },
       { role: "user", content: buildMVPPlanUserPrompt(input.idea, input.name, prdContext) },
     ],
-    max_tokens: 8192,
+    max_tokens: DOWNSTREAM_DOCUMENT_MAX_TOKENS,
     temperature: 0.3,
     stream: callbacks?.onToken ? true : false,
   }, { signal: AbortSignal.timeout(120_000) })

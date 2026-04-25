@@ -104,7 +104,10 @@ export function ProjectWorkspace({
     project.name !== "Untitled" || !!project.description
   )
   const [nameJustSet, setNameJustSet] = useState(false)
-  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(isNewProject)
+  const defaultActiveDocument: DocumentType =
+    hasStructuredIntake && project.description ? "competitive" : "prompt"
+  const shouldStartPromptOnly = isNewProject && !hasStructuredIntake && !project.description
+  const [isPromptOnlyMode, setIsPromptOnlyMode] = useState(shouldStartPromptOnly)
   const projectNameInputRef = useRef<HTMLInputElement>(null)
   const nameJustSetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
@@ -122,8 +125,8 @@ export function ProjectWorkspace({
   }, [isEditingProjectName])
 
   useEffect(() => {
-    setIsPromptOnlyMode(isNewProject)
-  }, [isNewProject])
+    setIsPromptOnlyMode(shouldStartPromptOnly)
+  }, [shouldStartPromptOnly])
 
   useEffect(() => {
     if (project.description) {
@@ -158,7 +161,7 @@ export function ProjectWorkspace({
   }, [activeDocumentStorageKey, searchParams])
 
   const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
-    if (isNewProject || isPromptOnlyMode) return "prompt"
+    if (shouldStartPromptOnly) return "prompt"
 
     // Only use searchParams for initial render to avoid hydration mismatch.
     // localStorage is restored in the useEffect below after hydration.
@@ -167,7 +170,7 @@ export function ProjectWorkspace({
       return tab
     }
 
-    return "prompt"
+    return defaultActiveDocument
   })
   const [generatingDocuments, setGeneratingDocuments] = useState<Record<DocumentType, boolean>>({
     ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, false])),
@@ -313,12 +316,12 @@ export function ProjectWorkspace({
     const persistedDocument = isDocumentType(tab) ? tab : null
 
     if (!persistedDocument || !canSelectDocument(persistedDocument)) {
-      setActiveDocument("prompt")
+      setActiveDocument(defaultActiveDocument)
       return
     }
 
     setActiveDocument(persistedDocument)
-  }, [isPromptOnlyMode, searchParams, canSelectDocument])
+  }, [defaultActiveDocument, isPromptOnlyMode, searchParams, canSelectDocument])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -337,11 +340,15 @@ export function ProjectWorkspace({
     // If the URL already has a valid doc type that differs from activeDocument it means the URL
     // changed first (Link click, browser back/fwd) — effect 282 will sync activeDocument to it.
     // Overriding the URL here would create an infinite redirect loop.
-    if (urlTab !== activeDocument && !isDocumentType(urlTab)) {
+    if (
+      urlTab !== activeDocument &&
+      !isDocumentType(urlTab) &&
+      activeDocument !== defaultActiveDocument
+    ) {
       nextParams.set("tab", activeDocument)
-      window.history.replaceState(null, "", `${pathname}?${nextParams.toString()}`)
+      window.history.replaceState(null, "", `${pathname}?${nextParams.toString()}${window.location.hash}`)
     }
-  }, [activeDocument, activeDocumentStorageKey, isPromptOnlyMode, pathname, router, searchParams])
+  }, [activeDocument, activeDocumentStorageKey, defaultActiveDocument, isPromptOnlyMode, pathname, router, searchParams])
 
   const checkIfContentIncreased = useCallback((docType: DocumentType, remoteCount?: number): boolean => {
     const key = getStorageKey(docType)
@@ -494,10 +501,13 @@ export function ProjectWorkspace({
               const parentKey = getNavKeyForSection(subId)
               if (parentKey) {
                 setActiveNavKey(parentKey)
-                window.history.replaceState(null, "", `#${subId}`)
+                const currentHash = decodeURIComponent(window.location.hash.replace(/^#/, ""))
+                if (currentHash !== parentKey) {
+                  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${subId}`)
+                }
               }
             } else if (sectionId) {
-              window.history.replaceState(null, "", `#${sectionId}`)
+              window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${sectionId}`)
             }
           }
         }
@@ -762,7 +772,7 @@ export function ProjectWorkspace({
     }
 
     // Update URL hash for deep-linking
-    window.history.replaceState(null, "", `#${targetId}`)
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${targetId}`)
 
     // Re-enable observer after scroll animation completes
     setTimeout(() => {
@@ -1273,7 +1283,7 @@ export function ProjectWorkspace({
             <ScrollableContent
               ref={scrollContainerRef}
               projectId={project.id}
-              projectName={projectName}
+              credits={credits}
               documents={scrollableDocuments}
             />
           </div>

@@ -42,7 +42,7 @@ export const uiStylePresets = {
   subtleLinkHover:
     "hover:text-text-primary",
   authFormMeta:
-    "text-xs uppercase tracking-[0.12em] text-text-muted",
+    "text-xs uppercase tracking-[0.18em] text-text-muted",
   authCardContainer:
     "mx-auto w-full max-w-[520px] border-border-subtle bg-card",
   authLinkUnderline:
@@ -56,9 +56,9 @@ export const uiStylePresets = {
   headerLogoutItem:
     "h-11 w-full rounded-md px-4 text-sm ui-font-medium text-destructive hover:bg-muted",
   landingFeaturePill:
-    "mt-1 text-xs uppercase tracking-[0.2em] text-text-secondary",
+    "mt-1 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-text-secondary",
   landingStatCard:
-    "flex h-[112px] flex-col items-center justify-center border border-border-subtle bg-white p-4",
+    "flex h-[112px] flex-col items-center justify-center rounded-none border border-border-subtle bg-white p-4",
   mutedTextSimple:
     "text-text-secondary",
 } as const

@@ -22,7 +22,7 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: "Idea2App - Transform Your Business Ideas into Reality",
+  title: "Maker Compass - Transform Your Business Ideas into Reality",
   description: "AI-powered platform to analyze business ideas, generate PRDs, technical specs, and deploy working applications.",
   keywords: ["business ideas", "competitive analysis", "PRD", "technical specs", "app generation", "AI"],
 }

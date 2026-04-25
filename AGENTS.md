@@ -17,6 +17,7 @@
 
 ## How I Want You To Work
 
+- For substantial feature, refactor, bug-fix, architecture, product, or implementation requests, use `/holistic-implementation`: run Plan Holistic first, critique and update the plan after my answers, implement in phases with red-green TDD, verify behavior, then do code review, security review, markdown remediation notes, and final fixes before calling the work complete.
 - Think step by step before writing code
 - Build one feature at a time and confirm it works before moving on, don't jump ahead
 - After making changes, give me suggestions on what to do next (what to run, where to look, etc.)
@@ -52,6 +53,10 @@ Set up Vercel CLI and configure the project for deployment.
 #### `/stripe-integration` - Stripe Payments
 Implement Stripe payment processing including checkout, subscriptions, and webhooks.
 - Example: "Add Stripe checkout" or "Implement subscription billing"
+
+#### `/holistic-implementation` - Plan, Implement, Review, Secure
+Use the Plan Holistic workflow before substantial implementation work, then implement the approved plan in phases with red-green TDD, verification, architecture/bug review, security review, markdown review notes, and remediation.
+- Example: "Use holistic implementation for this feature" or "Plan and build this end to end"
 
 #### `/frontend-design` - UI Design
 Create distinctive, production-grade frontend interfaces with high design quality.

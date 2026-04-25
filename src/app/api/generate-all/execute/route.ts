@@ -1,60 +1,43 @@
 /**
  * /api/generate-all/execute
  *
- * Server-side orchestrator for the "Generate All" pipeline.
- *
- * This route replaces the client-side runLoop() in generate-all-store.ts.
- * It runs on the server for the full 300s window, so generation is durable
- * even if the user closes the browser tab.
- *
- * Flow:
- *   1. Read queue + model_selections from generation_queues DB row
- *   2. For each pending item (in order):
- *      a. Check if queue was cancelled
- *      b. Deduct credits
- *      c. Mark item as "generating" in DB
- *      d. Run the appropriate pipeline function
- *      e. Save result to the correct table (analyses/prds/mvp_plans/mockups)
- *      f. Mark item as "done" in DB
- *   3. On any failure: refund that step's credits + mark error + stop
- *   4. On completion: mark overall status "completed"
- *
- * The frontend polls /api/generate-all/status every 3s to read progress.
+ * Server-side orchestrator for manual Generate All and onboarding generation.
+ * The normalized `generation_queue_items` rows are the source of truth; the
+ * legacy `generation_queues.queue` JSON is kept in sync for existing UI.
  */
 
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import {
-  runCompetitiveAnalysis,
-  runPRD,
-  runMVPPlan,
-  runTechSpec,
-} from "@/lib/analysis-pipelines"
-import { generateStitchMockup } from "@/lib/stitch-pipeline"
-import { getTokenCost } from "@/lib/token-economics"
-import { linkifyBareUrls } from "@/lib/markdown-links"
-import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
-import { GENERATE_ALL_ACTION_MAP } from "@/lib/token-economics"
-import { GENERATE_ALL_DEFAULT_MODELS } from "@/lib/document-definitions"
 import type { SupabaseClient } from "@supabase/supabase-js"
+
+import { GENERATE_ALL_DEFAULT_MODELS } from "@/lib/document-definitions"
+import { generateProjectDocument } from "@/lib/document-generation-service"
+import { refundGenerationQueueItemCredits } from "@/lib/generation-queue-billing"
+import {
+  claimGenerationQueueItem,
+  computeQueueStatus,
+  getBlockedItems,
+  getGenerationQueueItems,
+  getRunMetadata,
+  getRunnableItems,
+  recoverStaleGenerationQueueItems,
+  syncGenerationQueueJson,
+  updateGenerationQueueItem,
+  updateGenerationQueueItemIfStatus,
+  type GenerationQueueItemRow,
+  type GenerationQueueRow,
+} from "@/lib/generation-queue-service"
+import { isOnboardingGenerationQueue } from "@/lib/onboarding-generation"
+import { GENERATE_ALL_ACTION_MAP, getTokenCost } from "@/lib/token-economics"
+import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import type { Database } from "@/types/database"
 
 export const maxDuration = 300
 
 type SB = SupabaseClient<Database>
 
-// ─── Queue helpers ───────────────────────────────────────────────────────────
+const MAX_CONCURRENCY = 2
 
-interface QueueItem {
-  docType: string
-  label: string
-  status: string
-  creditCost: number
-  stageMessage?: string
-  error?: string
-}
-
-/** Read the full generation_queues row for a project */
 async function fetchQueueRow(supabase: SB, projectId: string, userId: string) {
   const { data } = await supabase
     .from("generation_queues")
@@ -65,190 +48,9 @@ async function fetchQueueRow(supabase: SB, projectId: string, userId: string) {
   return data
 }
 
-/** Write the mutated queue array + optional top-level fields back to DB */
-async function persistQueue(
-  supabase: SB,
-  projectId: string,
-  userId: string,
-  queue: QueueItem[],
-  extra: Record<string, unknown> = {},
-) {
-  await supabase
-    .from("generation_queues")
-    .update({ queue: queue as unknown as Database["public"]["Tables"]["generation_queues"]["Update"]["queue"], ...extra })
-    .eq("project_id", projectId)
-    .eq("user_id", userId)
-}
-
-// ─── Per-step execution ──────────────────────────────────────────────────────
-
-async function runStep(
-  docType: string,
-  modelId: string | undefined,
-  supabase: SB,
-  projectId: string,
-  project: { description: string; name: string },
-): Promise<void> {
-  const idea = await getProjectIntakeContextForAi(supabase, projectId, project.description)
-  const name = project.name
-
-  if (docType === "competitive") {
-    const result = await runCompetitiveAnalysis({ idea, name, model: modelId })
-    const content = linkifyBareUrls(result.content)
-    await supabase.from("analyses").insert({
-      project_id: projectId,
-      type: "competitive-analysis",
-      content,
-      metadata: {
-        source: result.source,
-        model: result.model,
-        generated_at: new Date().toISOString(),
-      },
-    })
-  } else if (docType === "prd") {
-    // Fetch latest competitive analysis as context
-    const { data: analysisRow } = await supabase
-      .from("analyses")
-      .select("content")
-      .eq("project_id", projectId)
-      .eq("type", "competitive-analysis")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const result = await runPRD({
-      idea,
-      name,
-      competitiveAnalysis: analysisRow?.content,
-      model: modelId,
-    })
-    const content = linkifyBareUrls(result.content)
-    await supabase.from("prds").insert({ project_id: projectId, content })
-  } else if (docType === "mvp") {
-    const { data: prdRow } = await supabase
-      .from("prds")
-      .select("content")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const result = await runMVPPlan({ idea, name, prd: prdRow?.content, model: modelId })
-    const content = linkifyBareUrls(result.content)
-    await supabase.from("mvp_plans").insert({ project_id: projectId, content })
-  } else if (docType === "mockups") {
-    const { data: mvpRow } = await supabase
-      .from("mvp_plans")
-      .select("content")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const content = await generateStitchMockup(
-      mvpRow?.content ?? `MVP plan for ${name}: ${idea}`,
-      name,
-    )
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("mockups").insert({
-      project_id: projectId,
-      content,
-      model_used: "stitch",
-      metadata: { source: "stitch", generated_at: new Date().toISOString() },
-    })
-  } else if (docType === "launch") {
-    // Lightweight template-based generation (no LLM call)
-    const channels = ["Product Hunt", "X", "Show HN", "Founder communities", "Email/waitlist"]
-    const content = buildLaunchPlanContent(name, idea, {
-      targetAudience: "Early adopters and tech-savvy users",
-      stage: "Pre-launch",
-      budget: "Bootstrap / Lean",
-      channels: channels.join(", "),
-      launchWindow: "Next 30 days",
-    })
-    await supabase.from("analyses").insert({
-      project_id: projectId,
-      type: "launch-plan",
-      content,
-      metadata: { source: "inhouse", generated_at: new Date().toISOString() },
-    })
-  } else if (docType === "techspec") {
-    const { data: prdRow } = await supabase
-      .from("prds")
-      .select("content")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const result = await runTechSpec({ idea, name, prd: prdRow?.content, model: modelId })
-    const content = linkifyBareUrls(result.content)
-    await supabase.from("tech_specs").insert({ project_id: projectId, content })
-  }
-}
-
-function buildLaunchPlanContent(
-  name: string,
-  idea: string,
-  brief: {
-    targetAudience: string
-    stage: string
-    budget: string
-    channels: string
-    launchWindow: string
-  },
-): string {
-  const channels = brief.channels.split(",").map((c) => c.trim()).filter(Boolean)
-  const immediateChannels = channels.slice(0, 3)
-  const scheduledChannels = channels.slice(3)
-
-  return `# Marketing Plan — ${name}
-
-## Brief Inputs
-- **Target audience:** ${brief.targetAudience}
-- **Stage:** ${brief.stage}
-- **Budget:** ${brief.budget}
-- **Launch window:** ${brief.launchWindow}
-- **Channels:** ${channels.join(", ")}
-
-## Positioning
-- **Product:** ${name}
-- **Who it is for:** ${brief.targetAudience}
-- **Core value prop:** ${idea.slice(0, 240)}${idea.length > 240 ? "..." : ""}
-
-## Channel Priority
-### Immediate (${brief.launchWindow})
-${immediateChannels.length > 0 ? immediateChannels.map((c, i) => `${i + 1}. ${c}`).join("\n") : "1. Product Hunt\n2. X\n3. Founder communities"}
-
-### Scheduled (next cycle)
-${scheduledChannels.length > 0 ? scheduledChannels.map((c, i) => `${i + 1}. ${c}`).join("\n") : "1. Show HN\n2. Niche communities\n3. Email/waitlist"}
-
-### Budget Allocation (starting point)
-- **Content & creative:** 40%
-- **Distribution/boosts:** 40%
-- **Experiments:** 20%
-
-> Adjust for stage: **${brief.stage}** and budget ceiling **${brief.budget}**.
-
-## Copy Pack (MVP)
-### One-liner
-${name} helps ${brief.targetAudience} move from idea to launch faster with clearer execution and distribution planning.
-
-### Short description
-${name} turns raw concepts into build-ready plans and practical marketing execution so teams can ship and validate faster.
-
-### Founder comment template
-We are launching ${name} for ${brief.targetAudience}. Current stage: ${brief.stage}. Looking for feedback on messaging clarity, channel fit, and activation friction.
-
-## 14-Day Execution Checklist
-- [ ] Finalize positioning + one-liner
-- [ ] Prepare launch assets (logo, screenshots, demo)
-- [ ] Ship first 3 channel posts
-- [ ] Track signups, activation, and channel-level conversion
-- [ ] Publish one iteration based on feedback within 48h
-`
-}
-
-// ─── Route handler ───────────────────────────────────────────────────────────
-
 export async function POST(request: Request) {
   const supabase = await createClient()
+  const queueSupabase = createServiceClient()
 
   const {
     data: { user },
@@ -270,7 +72,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "projectId is required" }, { status: 400 })
   }
 
-  // Verify project ownership
   const { data: project } = await supabase
     .from("projects")
     .select("id, name, description")
@@ -282,138 +83,341 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 })
   }
 
-  // Read queue state from DB
-  const queueRow = await fetchQueueRow(supabase, projectId, user.id)
+  const queueRow = await fetchQueueRow(queueSupabase, projectId, user.id)
   if (!queueRow) {
-    return NextResponse.json({ error: "No queue found — call /start first" }, { status: 404 })
+    return NextResponse.json({ error: "No queue found: call /start first" }, { status: 404 })
   }
 
-  const queue: QueueItem[] = (queueRow.queue as unknown as QueueItem[]) ?? []
-
-  // Determine pending items in order
-  const pendingItems = queue
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => item.status === "pending")
-
-  if (pendingItems.length === 0) {
-    return NextResponse.json({ message: "Nothing to generate" })
+  if (queueRow.status === "cancelled") {
+    return NextResponse.json({ success: true, status: "cancelled" })
   }
 
-  // Update overall status to "running" in case it was interrupted
-  await supabase
+  const isOnboardingQueue = isOnboardingGenerationQueue(queueRow)
+
+  await queueSupabase
     .from("generation_queues")
     .update({ status: "running" })
-    .eq("project_id", projectId)
+    .eq("id", queueRow.id)
     .eq("user_id", user.id)
 
-  // ─── Sequential execution loop ──────────────────────────────────────────
-  for (const { item, index } of pendingItems) {
-    // Check for cancellation before each step
-    const freshRow = await fetchQueueRow(supabase, projectId, user.id)
-    if (!freshRow || freshRow.status === "cancelled") {
-      console.log(`[GenerateAll] Cancelled before step "${item.docType}"`)
+  let activeQueueRow: GenerationQueueRow = { ...queueRow, status: "running" }
+
+  while (true) {
+    const freshQueueRow = await fetchQueueRow(queueSupabase, projectId, user.id)
+    if (!freshQueueRow || freshQueueRow.status === "cancelled") {
+      const items = await getGenerationQueueItems(queueSupabase, activeQueueRow)
+      const cancelledItems = await Promise.all(
+        items
+          .filter((item) => item.status === "pending")
+          .map((item) =>
+            updateGenerationQueueItem(queueSupabase, item, {
+              status: "cancelled",
+              stage_message: null,
+              completed_at: new Date().toISOString(),
+            }),
+          ),
+      )
+      const nextItems = mergeUpdatedItems(items, cancelledItems)
+      await syncGenerationQueueJson(queueSupabase, activeQueueRow, nextItems, {
+        status: "cancelled",
+        completed_at: new Date().toISOString(),
+      })
+      return NextResponse.json({ success: true, status: "cancelled" })
+    }
+
+    activeQueueRow = freshQueueRow
+    let items = await getGenerationQueueItems(queueSupabase, activeQueueRow)
+
+    const recoveredItems = await recoverStaleGenerationQueueItems(queueSupabase, items)
+    if (recoveredItems.length > 0) {
+      items = mergeUpdatedItems(items, recoveredItems)
+      await syncGenerationQueueJson(queueSupabase, activeQueueRow, items)
+    }
+
+    const blockedItems = getBlockedItems(items)
+    if (blockedItems.length > 0) {
+      const updatedBlocked = await Promise.all(
+        blockedItems.map((item) =>
+          updateGenerationQueueItem(queueSupabase, item, {
+            status: "blocked",
+            stage_message: null,
+            error: "Blocked by a failed or missing dependency",
+            completed_at: new Date().toISOString(),
+          }),
+        ),
+      )
+      items = mergeUpdatedItems(items, updatedBlocked)
+      await syncGenerationQueueJson(queueSupabase, activeQueueRow, items)
+    }
+
+    const runnableItems = getRunnableItems(items, MAX_CONCURRENCY)
+    if (runnableItems.length === 0) {
       break
     }
 
-    const action = GENERATE_ALL_ACTION_MAP[item.docType]
-    const model = GENERATE_ALL_DEFAULT_MODELS[item.docType]
-    const creditCost = action ? getTokenCost(action, model) : item.creditCost
+    const updatedItems = await Promise.all(
+      runnableItems.map((item) =>
+        executeQueueItem({
+          billingSupabase: supabase,
+          documentSupabase: supabase,
+          queueSupabase,
+          item,
+          queueRow: activeQueueRow,
+          project,
+          isOnboardingQueue,
+        }),
+      ),
+    )
 
-    // Deduct credits for this step
-    const { data: consumed } = await supabase.rpc("consume_credits", {
-      p_user_id: user.id,
-      p_amount: creditCost,
-      p_action: action ?? item.docType,
-      p_description: `${item.label} for "${project.name}" (Generate All)`,
-    })
-
-    if (!consumed) {
-      // Insufficient credits — mark this item and stop
-      const updatedQueue = [...(freshRow.queue as unknown as QueueItem[])]
-      updatedQueue[index] = {
-        ...updatedQueue[index],
-        status: "error",
-        stageMessage: undefined,
-        error: "Insufficient credits",
-      }
-      await persistQueue(supabase, projectId, user.id, updatedQueue, {
-        status: "error",
-        current_index: index,
-        error_info: { message: "Insufficient credits", docType: item.docType },
-      })
-      return NextResponse.json({ error: "Insufficient credits" }, { status: 402 })
-    }
-
-    // Mark item as "generating"
-    {
-      const currentRow = await fetchQueueRow(supabase, projectId, user.id)
-      const mutableQueue = [...(currentRow!.queue as unknown as QueueItem[])]
-      mutableQueue[index] = { ...mutableQueue[index], status: "generating", stageMessage: "Generating..." }
-      await persistQueue(supabase, projectId, user.id, mutableQueue, { current_index: index })
-    }
-
-    try {
-      console.log(`[GenerateAll] Running step "${item.docType}" with model "${model}"`)
-      await runStep(item.docType, model, supabase, projectId, project)
-      console.log(`[GenerateAll] Step "${item.docType}" completed`)
-
-      // Mark item as "done"
-      const afterRow = await fetchQueueRow(supabase, projectId, user.id)
-      const doneQueue = [...(afterRow!.queue as unknown as QueueItem[])]
-      doneQueue[index] = { ...doneQueue[index], status: "done", stageMessage: undefined }
-      await persistQueue(supabase, projectId, user.id, doneQueue, { current_index: index + 1 })
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Generation failed"
-      console.error(`[GenerateAll] Step "${item.docType}" failed:`, errorMsg)
-
-      // Refund credits for this step
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.rpc as any)("refund_credits", {
-          p_user_id: user.id,
-          p_amount: creditCost,
-          p_action: action ?? item.docType,
-          p_description: `${item.label} failed — credits refunded (Generate All)`,
-        })
-      } catch (refundErr) {
-        console.error("[GenerateAll] Credit refund failed:", refundErr)
-      }
-
-      // Mark item + overall as "error"
-      const errRow = await fetchQueueRow(supabase, projectId, user.id)
-      const errQueue = [...(errRow!.queue as unknown as QueueItem[])]
-      errQueue[index] = {
-        ...errQueue[index],
-        status: "error",
-        stageMessage: undefined,
-        error: errorMsg,
-      }
-      await persistQueue(supabase, projectId, user.id, errQueue, {
-        status: "error",
-        current_index: index,
-        error_info: { message: errorMsg, docType: item.docType },
-      })
-
-      return NextResponse.json({ error: errorMsg }, { status: 500 })
-    }
+    items = mergeUpdatedItems(
+      await getGenerationQueueItems(queueSupabase, activeQueueRow),
+      updatedItems.filter((item): item is GenerationQueueItemRow => Boolean(item)),
+    )
+    await syncGenerationQueueJson(queueSupabase, activeQueueRow, items)
   }
 
-  // All pending steps completed — check if there are still errors or everything is done
-  const finalRow = await fetchQueueRow(supabase, projectId, user.id)
-  if (finalRow && finalRow.status !== "cancelled" && finalRow.status !== "error") {
-    const finalQueue = (finalRow.queue as unknown as QueueItem[])
-    const allDone = finalQueue.every((q) => q.status === "done" || q.status === "skipped")
-    await persistQueue(supabase, projectId, user.id, finalQueue, {
-      status: allDone ? "completed" : finalRow.status,
-      completed_at: new Date().toISOString(),
-    })
-  }
+  const finalItems = await getGenerationQueueItems(queueSupabase, activeQueueRow)
+  const finalStatus = computeQueueStatus(finalItems)
+  await syncGenerationQueueJson(queueSupabase, activeQueueRow, finalItems, {
+    status: finalStatus,
+    completed_at: finalStatus === "running" ? null : new Date().toISOString(),
+    error_info: buildErrorInfo(finalItems),
+  })
 
-  // Update project last-modified timestamp
   await supabase
     .from("projects")
     .update({ status: "active", updated_at: new Date().toISOString() })
     .eq("id", projectId)
+    .eq("user_id", user.id)
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, status: finalStatus })
+}
+
+async function executeQueueItem({
+  billingSupabase,
+  documentSupabase,
+  queueSupabase,
+  item,
+  queueRow,
+  project,
+  isOnboardingQueue,
+}: {
+  billingSupabase: SB
+  documentSupabase: SB
+  queueSupabase: SB
+  item: GenerationQueueItemRow
+  queueRow: GenerationQueueRow
+  project: { description: string; name: string }
+  isOnboardingQueue: boolean
+}) {
+  const claimed = await claimGenerationQueueItem(queueSupabase, item)
+  if (!claimed) return null
+
+  const isBundledItem =
+    isOnboardingQueue &&
+    claimed.run_id === getQueueRunId(queueRow) &&
+    claimed.source === "onboarding"
+  const action = GENERATE_ALL_ACTION_MAP[claimed.doc_type]
+  const model = claimed.model_id ?? GENERATE_ALL_DEFAULT_MODELS[claimed.doc_type]
+  const creditCost = isBundledItem ? 0 : action ? getTokenCost(action, model) : claimed.credit_cost
+  const shouldChargeCredits = !isBundledItem && creditCost > 0 && claimed.credit_status !== "charged"
+  let charged = claimed.credit_status === "charged"
+
+  if (shouldChargeCredits) {
+    const { data: consumed, error: consumeError } = await billingSupabase.rpc("consume_credits", {
+      p_user_id: claimed.user_id,
+      p_amount: creditCost,
+      p_action: action ?? claimed.doc_type,
+      p_description: `${claimed.label} for "${project.name}" (Generate All)`,
+    })
+
+    if (consumeError || !consumed) {
+      return finishGeneratingItem(queueSupabase, claimed, {
+        status: "error",
+        stage_message: null,
+        error: consumeError ? "Credit check failed" : "Insufficient credits",
+        completed_at: new Date().toISOString(),
+      })
+    }
+
+    charged = true
+    await updateGenerationQueueItem(queueSupabase, claimed, {
+      credit_cost: creditCost,
+      credit_status: "charged",
+    })
+  }
+
+  const maxAttempts = isBundledItem ? Math.max(1, claimed.max_attempts) : 1
+  let attempt = claimed.attempt
+
+  while (attempt < maxAttempts) {
+    attempt += 1
+    await updateGenerationQueueItem(queueSupabase, claimed, {
+      attempt,
+      stage_message: attempt > 1 ? `Retrying (${attempt}/${maxAttempts})...` : "Generating...",
+    })
+
+    try {
+      if (await isQueueCancelled(queueSupabase, claimed)) {
+        return cancelClaimedItemAfterAcknowledgement({
+          billingSupabase,
+          queueSupabase,
+          item: claimed,
+          charged,
+        })
+      }
+
+      const output = await generateProjectDocument({
+        docType: claimed.doc_type,
+        modelId: model,
+        supabase: documentSupabase,
+        projectId: claimed.project_id,
+        project,
+      })
+
+      if (!output?.outputTable || !output.outputId) {
+        throw new Error(`Generation did not return a saved output for ${claimed.doc_type}`)
+      }
+
+      return finishGeneratingItem(queueSupabase, claimed, {
+        status: "done",
+        stage_message: null,
+        error: null,
+        output_table: output?.outputTable ?? null,
+        output_id: output?.outputId ?? null,
+        completed_at: new Date().toISOString(),
+        credit_status: isBundledItem ? "not_charged" : charged ? "charged" : claimed.credit_status,
+      })
+    } catch (error) {
+      if (attempt < maxAttempts) {
+        await delay(1000 * attempt)
+        continue
+      }
+
+      const errorMessage = error instanceof Error ? error.message : "Generation failed"
+      const wasCancelled = await isQueueCancelled(queueSupabase, claimed)
+      let creditStatus = claimed.credit_status
+      if (charged) {
+        const refund = await refundGenerationQueueItemCredits(
+          billingSupabase,
+          { ...claimed, credit_cost: creditCost },
+          wasCancelled
+            ? `${claimed.label} cancelled: credits refunded (Generate All)`
+            : `${claimed.label} failed: credits refunded (Generate All)`,
+        )
+        if (refund.error) {
+          console.error("[GenerateAll] Credit refund failed:", refund.error)
+        }
+        creditStatus = refund.refunded ? "refunded" : "refund_failed"
+      }
+
+      return finishGeneratingItem(queueSupabase, claimed, {
+        status: wasCancelled ? "cancelled" : "error",
+        stage_message: null,
+        error: wasCancelled ? null : errorMessage,
+        completed_at: new Date().toISOString(),
+        credit_status: creditStatus,
+      })
+    }
+  }
+
+  return finishGeneratingItem(queueSupabase, claimed, {
+    status: "error",
+    stage_message: null,
+    error: "Generation failed",
+    completed_at: new Date().toISOString(),
+  })
+}
+
+async function finishGeneratingItem(
+  supabase: SB,
+  item: GenerationQueueItemRow,
+  update: Database["public"]["Tables"]["generation_queue_items"]["Update"],
+) {
+  const updated = await updateGenerationQueueItemIfStatus(
+    supabase,
+    item,
+    "generating",
+    update,
+  )
+
+  if (updated) return updated
+
+  const { data, error } = await supabase
+    .from("generation_queue_items")
+    .select("*")
+    .eq("id", item.id)
+    .eq("user_id", item.user_id)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+function mergeUpdatedItems(
+  items: GenerationQueueItemRow[],
+  updatedItems: GenerationQueueItemRow[],
+) {
+  const updatedById = new Map(updatedItems.map((item) => [item.id, item]))
+  return items.map((item) => updatedById.get(item.id) ?? item)
+}
+
+function buildErrorInfo(items: GenerationQueueItemRow[]) {
+  const failed = items.find((item) => item.status === "error" || item.status === "blocked")
+  return failed
+    ? { message: failed.error ?? "Generation did not complete", docType: failed.doc_type }
+    : null
+}
+
+function getQueueRunId(queueRow: GenerationQueueRow) {
+  return getRunMetadata(queueRow.model_selections).runId
+}
+
+async function isQueueCancelled(supabase: SB, item: GenerationQueueItemRow) {
+  const { data } = await supabase
+    .from("generation_queues")
+    .select("status")
+    .eq("id", item.queue_id)
+    .eq("user_id", item.user_id)
+    .single()
+
+  return data?.status === "cancelled"
+}
+
+async function cancelClaimedItemAfterAcknowledgement({
+  billingSupabase,
+  queueSupabase,
+  item,
+  charged,
+}: {
+  billingSupabase: SB
+  queueSupabase: SB
+  item: GenerationQueueItemRow
+  charged: boolean
+}) {
+  let creditStatus = item.credit_status
+
+  if (charged) {
+    const refund = await refundGenerationQueueItemCredits(
+      billingSupabase,
+      item,
+      `${item.label} cancelled: credits refunded (Generate All)`,
+    )
+    if (refund.error) {
+      console.error("[GenerateAll] Credit refund failed:", refund.error)
+    }
+    creditStatus = refund.refunded ? "refunded" : "refund_failed"
+  }
+
+  return finishGeneratingItem(queueSupabase, item, {
+    status: "cancelled",
+    stage_message: null,
+    error: null,
+    completed_at: new Date().toISOString(),
+    credit_status: creditStatus,
+  })
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }

@@ -33,12 +33,12 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
   const handleSignOut = useAuthSignOut()
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-[var(--color-surface-ghost)] bg-[rgba(8,8,14,0.8)] backdrop-blur-xl">
+    <div className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar-bg">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2.5 px-6 border-b border-[var(--color-surface-ghost)]">
         <BrandWordmark
           href="/projects"
-          logoClassName="rounded-lg shadow-[0_0_12px_var(--color-accent-primary-mid)]"
+          logoClassName="rounded-lg"
           labelClassName="ui-section-title tracking-normal"
         />
       </div>
@@ -53,10 +53,10 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
               key={item.name}
               href={item.href}
               className={cn(
-                "ui-row-gap-3 rounded-xl px-3.5 py-2.5 text-sm ui-font-medium transition-all duration-200",
+                "ui-row-gap-3 rounded-lg px-3.5 py-2.5 text-sm ui-font-medium transition-colors duration-200",
                 isActive
-                  ? "bg-gradient-to-r from-text-accent/10 to-[rgba(124,58,237,0.08)] text-text-accent shadow-[inset_0_0_0_1px_var(--color-accent-primary)]"
-                  : "text-muted-foreground hover:bg-[var(--color-surface-ghost)] hover:text-foreground"
+                  ? "bg-sidebar-active text-sidebar-foreground"
+                  : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
               )}
             >
               <item.icon className="h-[18px] w-[18px]" />
@@ -68,8 +68,8 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
 
       {/* Credits Display */}
       <div className="p-4 border-t border-[var(--color-surface-ghost)]">
-        <div className="rounded-xl bg-gradient-to-br from-text-accent/6 to-[rgba(124,58,237,0.04)] border border-surface-mid p-4">
-          <div className="ui-row-gap-2 text-xs uppercase tracking-widest text-muted-foreground mb-2">
+        <div className="rounded-lg border border-sidebar-border bg-sidebar-active p-4">
+          <div className="ui-row-gap-2 mb-2 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-sidebar-muted">
             <Coins className="h-3.5 w-3.5 text-text-accent" />
             <span>Credits</span>
           </div>
@@ -77,7 +77,7 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
             <CreditBalance
               credits={credits}
               className="text-2xl font-black ui-tracking-tight"
-              unlimitedClassName="gradient-text"
+              unlimitedClassName="text-primary"
             />
           </p>
           {!hasUnlimitedCredits(credits) && credits < 20 && (

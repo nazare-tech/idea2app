@@ -69,8 +69,6 @@ export function PromptChatInterface({
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   // If the project already has a description the conversation was previously summarized.
-  // Initialize to "summarized" so the GenerateAllBlock renders immediately on re-mount
-  // (e.g. after navigating away and back) instead of waiting for a chat message.
   const [conversationStage, setConversationStage] = useState<"initial" | "refining" | "summarized">(
     () => (initialIdea ? "summarized" : "initial"),
   )
@@ -511,7 +509,7 @@ export function PromptChatInterface({
                 className={cn(
                   "relative max-w-[85%]",
                   message.role === "user"
-                    ? "rounded-2xl border border-border/60 bg-muted px-4 py-3 text-foreground shadow-sm"
+                    ? "rounded-2xl border border-border/60 bg-muted px-4 py-3 text-foreground"
                     : "px-1 py-1 text-foreground"
                 )}
               >
@@ -546,8 +544,8 @@ export function PromptChatInterface({
             />
           )}
 
-          {/* Generate All block — shown after summary exists, or while active */}
-          {(conversationStage === "summarized" || generateAllStatus !== "idle") && (
+          {/* Background document generation status. Idle manual Generate All is deprecated. */}
+          {generateAllStatus !== "idle" && (
             <div className="mb-6 mt-2">
               <GenerateAllBlock projectId={projectId} credits={credits} />
             </div>

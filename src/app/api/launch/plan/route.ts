@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     const immediateChannels = channels.slice(0, 3)
     const scheduledChannels = channels.slice(3)
 
-    const content = `# Marketing Plan — ${name}
+    const content = `# Marketing Plan: ${name}
 
 ## Brief Inputs
 - **Target audience:** ${brief.targetAudience}
