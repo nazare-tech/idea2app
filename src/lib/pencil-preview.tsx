@@ -151,7 +151,7 @@ function getLucideIcon(name: string | null | undefined) {
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join("")
-  const icon = (LucideIcons as Record<string, typeof LucideIcons.Square>)[pascalName]
+  const icon = (LucideIcons as unknown as Record<string, typeof LucideIcons.Square>)[pascalName]
   return icon ?? LucideIcons.Square
 }
 

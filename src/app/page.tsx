@@ -382,7 +382,7 @@ export default async function LandingPage() {
 
       <footer className="border-t border-[#E2E8F0] bg-white">
         <div className={`${container} ui-row-between h-[88px] flex-wrap gap-5 text-sm`}>
-          <span className="font-mono text-[11px] tracking-[0.05em] text-text-muted">(c) 2026 Idea2App. All rights reserved.</span>
+          <span className="font-mono text-[11px] tracking-[0.05em] text-text-muted">(c) 2026 Maker Compass. All rights reserved.</span>
           <div className="flex items-center gap-5 font-mono text-[11px] tracking-[0.05em] text-text-muted">
             <a href="#" className={uiStylePresets.subtleLinkHover}>Terms</a>
             <a href="#" className={uiStylePresets.subtleLinkHover}>Privacy</a>

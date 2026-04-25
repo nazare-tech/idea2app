@@ -52,7 +52,7 @@ function StepIndicator({
       </div>
     )
   }
-  if (status === "error") {
+  if (status === "error" || status === "blocked") {
     return (
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50">
         <X className="h-3.5 w-3.5 text-red-500" />
@@ -77,16 +77,23 @@ function useElapsedTime(startedAt: Date | null, isRunning: boolean) {
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
-    if (!isRunning || !startedAt) {
-      if (startedAt && !isRunning) {
-        setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000))
-      }
-      return
+    if (!startedAt) {
+      const timeout = setTimeout(() => setElapsed(0), 0)
+      return () => clearTimeout(timeout)
     }
+
     const update = () => setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000))
-    update()
+    const timeout = setTimeout(update, isRunning ? 1000 : 0)
+
+    if (!isRunning) {
+      return () => clearTimeout(timeout)
+    }
+
     const interval = setInterval(update, 1000)
-    return () => clearInterval(interval)
+    return () => {
+      clearTimeout(timeout)
+      clearInterval(interval)
+    }
   }, [startedAt, isRunning])
 
   const minutes = Math.floor(elapsed / 60)
@@ -118,6 +125,7 @@ export function GenerateAllBlock({
 
   const isRunning     = status === "running"
   const isCompleted   = status === "completed"
+  const isPartial     = status === "partial"
   const isCancelled   = status === "cancelled"
   const isInterrupted = status === "interrupted"
   const isError       = status === "error"
@@ -204,7 +212,7 @@ export function GenerateAllBlock({
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#ECFDF5]">
                 <Check className="h-4 w-4 text-[#22C55E]" />
               </div>
-            ) : isError ? (
+            ) : isError || isPartial ? (
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-500" />
               </div>
@@ -224,8 +232,10 @@ export function GenerateAllBlock({
                   ? "Generating Documents"
                   : isCompleted
                     ? "All Documents Generated"
-                    : isError
-                      ? "Generation Error"
+                    : isPartial
+                      ? "Partially Generated"
+                      : isError
+                        ? "Generation Error"
                       : isCancelled
                         ? "Generation Cancelled"
                         : isInterrupted
@@ -237,8 +247,10 @@ export function GenerateAllBlock({
                   ? `${completedCount} / ${totalActionable} documents`
                   : isCompleted
                     ? "All documents have been generated successfully"
-                    : isError
-                      ? error || "An error occurred during generation"
+                    : isPartial
+                      ? error || "Some documents need to be retried"
+                      : isError
+                        ? error || "An error occurred during generation"
                       : isCancelled
                         ? `${completedCount} / ${totalActionable} completed before cancellation`
                         : isInterrupted
@@ -299,7 +311,7 @@ export function GenerateAllBlock({
                     "block text-[13px] font-semibold font-heading leading-tight",
                     isDone
                       ? "text-muted-foreground"
-                      : item.status === "error"
+                      : item.status === "error" || item.status === "blocked"
                         ? "text-red-600"
                         : "text-foreground",
                   )}
@@ -312,9 +324,9 @@ export function GenerateAllBlock({
                   <span className="block text-[11px] text-[#3B82F6] mt-0.5 font-mono">
                     {item.stageMessage || "Generating…"}
                   </span>
-                ) : item.status === "error" ? (
+                ) : item.status === "error" || item.status === "blocked" ? (
                   <span className="block text-[11px] text-red-500 mt-0.5">
-                    {item.error || "Failed"}
+                    {item.error || (item.status === "blocked" ? "Blocked" : "Failed")}
                   </span>
                 ) : item.status === "cancelled" ? (
                   <span className="block text-[11px] text-muted-foreground mt-0.5">Cancelled</span>
@@ -389,7 +401,7 @@ export function GenerateAllBlock({
           </div>
         )}
 
-        {(isError || isCancelled) && (
+        {(isError || isPartial || isCancelled) && (
           <div className="flex items-end justify-between gap-3">
             <span className="text-[12px] text-muted-foreground font-mono">
               {completedCount} / {totalActionable} completed · {creditsUsed} credits used
@@ -401,7 +413,7 @@ export function GenerateAllBlock({
               className="bg-red-600 hover:bg-red-700 text-white text-[13px] font-semibold h-9 px-5 rounded-lg gap-2"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              {isError ? "Retry" : "Resume"}
+              {isError || isPartial ? "Retry" : "Resume"}
             </Button>
           </div>
         )}

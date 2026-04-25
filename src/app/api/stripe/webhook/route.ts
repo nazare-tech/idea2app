@@ -84,6 +84,9 @@ export async function POST(request: Request) {
             .from("plans")
             .select("*")
             .eq("id", planId)
+            .eq("is_active", true)
+            .eq("checkout_enabled", true)
+            .not("stripe_price_id", "is", null)
             .single()
 
           if (plan) {

@@ -85,7 +85,6 @@ export default function SettingsPage() {
   const [profileMessage, setProfileMessage] = useState<MessageState | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<MessageState | null>(null)
   const [subscriptionMessage, setSubscriptionMessage] = useState<MessageState | null>(null)
-  const [isDev, setIsDev] = useState(false)
   const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null)
   const [subscriptionPlanName, setSubscriptionPlanName] = useState("")
   const { loading: subscriptionLoading, openBillingPortal } = useBillingPortal()
@@ -97,6 +96,7 @@ export default function SettingsPage() {
     tabParam === "settings" || tabParam === "subscriptions" || tabParam === "profile"
       ? tabParam
       : "profile"
+  const isInternalDevPlan = subscriptionPlanName.toLowerCase() === "internal dev"
 
   const getTabHref = (tab: SettingsTab) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -122,7 +122,6 @@ export default function SettingsPage() {
       if (!user) return
 
       setEmail(user.email || "")
-      setIsDev(user.email === "nazarework@gmail.com")
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -257,7 +256,7 @@ export default function SettingsPage() {
           <section className="space-y-5">
             {activeTab === "profile" && (
               <Card className={`${uiStylePresets.settingsSurface} overflow-hidden`}>
-                {isDev && (
+                {isInternalDevPlan && (
                   <div className="bg-[#FFF9E7] px-6 py-5">
                     <div className="ui-row-gap-3">
                       <div className={uiStylePresets.settingsIconBadge}>
@@ -265,13 +264,13 @@ export default function SettingsPage() {
                       </div>
                       <div>
                         <CardTitle className="text-[16px]">Developer Account</CardTitle>
-                        <CardDescription>Unlimited credits enabled for testing and development.</CardDescription>
+                        <CardDescription>Internal project allowance enabled for testing and development.</CardDescription>
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div className={isDev ? "border-t border-border-subtle" : undefined}>
+                <div className={isInternalDevPlan ? "border-t border-border-subtle" : undefined}>
                   <div className="space-y-4 px-6 py-5">
                     <div className="ui-row-gap-3">
                       <div className={uiStylePresets.settingsIconBadge}>

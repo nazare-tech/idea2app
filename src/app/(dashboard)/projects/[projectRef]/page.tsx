@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import { ProjectWorkspace } from "@/components/workspace/project-workspace"
+import { APP_BRAND_NAME } from "@/lib/app-brand"
 import { buildProjectRef, parseProjectRef } from "@/lib/project-routing"
 
 interface ProjectPageProps {
@@ -44,12 +45,12 @@ export async function generateMetadata({ params }: { params: Promise<{ projectRe
 
   if (!result) {
     return {
-      title: "Project | Idea2App",
+      title: `Project | ${APP_BRAND_NAME}`,
     }
   }
 
   return {
-    title: `${result.project.name} | Idea2App`,
+    title: `${result.project.name} | ${APP_BRAND_NAME}`,
   }
 }
 
@@ -118,8 +119,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     supabase.from("analyses").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
     supabase.from("prds").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
     supabase.from("mvp_plans").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    supabase.from("mockups" as any).select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
+    supabase.from("mockups").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
     supabase.from("tech_specs").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
     supabase.from("deployments").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
     supabase.from("credits").select("balance").eq("user_id", user!.id).single(),
@@ -133,8 +133,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       analyses={(analyses as any) || []}
       prds={prds || []}
       mvpPlans={mvpPlans || []}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockups={(mockups as any) || []}
+      mockups={mockups || []}
       techSpecs={techSpecs || []}
       deployments={deployments || []}
       credits={credits?.balance || 0}

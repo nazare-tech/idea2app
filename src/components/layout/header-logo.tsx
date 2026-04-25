@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { APP_BRAND_LOGO_ALT } from "@/lib/app-brand"
 import { cn } from "@/lib/utils"
 
 export const APP_HEADER_LOGO_SIZE = 32
@@ -27,7 +28,7 @@ export function HeaderLogo({
   const content = (
     <Image
       src="/idea2app-logo.jpg"
-      alt="Idea2App logo"
+      alt={APP_BRAND_LOGO_ALT}
       width={size}
       height={size}
       className="object-cover scale-[1.7]"
