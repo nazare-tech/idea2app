@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getSafeAuthRedirect } from '@/lib/safe-redirect'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -45,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     // Redirect to auth if accessing protected route without auth
     const url = request.nextUrl.clone()
     url.pathname = '/auth'
-    url.searchParams.set('redirect', request.nextUrl.pathname)
+    url.searchParams.set('redirect', `${request.nextUrl.pathname}${request.nextUrl.search}`)
     return NextResponse.redirect(url)
   }
 
@@ -57,7 +58,11 @@ export async function updateSession(request: NextRequest) {
 
   if (isAuthPath && user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    const redirectPath = getSafeAuthRedirect(request.nextUrl.searchParams)
+    const redirectUrl = new URL(redirectPath, request.nextUrl.origin)
+    url.pathname = redirectUrl.pathname
+    url.search = redirectUrl.search
+    url.hash = redirectUrl.hash
     return NextResponse.redirect(url)
   }
 

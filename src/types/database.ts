@@ -320,6 +320,50 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_intakes: {
+        Row: {
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          idea_text: string
+          source: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          idea_text: string
+          source?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          idea_text?: string
+          source?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_intakes_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompt_chat_messages: {
         Row: {
           content: string
@@ -446,6 +490,66 @@ export type Database = {
           created_at?: string
         }
         Relationships: []
+      }
+      project_intakes: {
+        Row: {
+          answers_json: Json
+          created_at: string
+          generated_summary: string
+          id: string
+          original_idea: string
+          project_id: string
+          questions_json: Json
+          raw_payload_json: Json
+          schema_version: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers_json?: Json
+          created_at?: string
+          generated_summary: string
+          id?: string
+          original_idea: string
+          project_id: string
+          questions_json?: Json
+          raw_payload_json?: Json
+          schema_version?: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers_json?: Json
+          created_at?: string
+          generated_summary?: string
+          id?: string
+          original_idea?: string
+          project_id?: string
+          questions_json?: Json
+          raw_payload_json?: Json
+          schema_version?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_intakes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_intakes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {

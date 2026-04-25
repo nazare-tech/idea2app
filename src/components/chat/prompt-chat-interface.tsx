@@ -38,6 +38,7 @@ interface PromptChatInterfaceProps {
   onIdeaSummary?: (summary: string) => void
   onProjectNameGenerated?: (name: string) => void
   credits?: number
+  disableInitialAutoStart?: boolean
 }
 
 type StreamEvent =
@@ -62,6 +63,7 @@ export function PromptChatInterface({
   onIdeaSummary,
   onProjectNameGenerated,
   credits = 0,
+  disableInitialAutoStart = false,
 }: PromptChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
@@ -318,7 +320,7 @@ export function PromptChatInterface({
         setEarliestCursor(result.pageMessages[0]?.created_at || null)
         setConversationStage(result.stage)
 
-        if (result.pageMessages.length === 0 && initialIdea && isFirstLoad) {
+        if (result.pageMessages.length === 0 && initialIdea && isFirstLoad && !disableInitialAutoStart) {
           setIsFirstLoad(false)
           await startConversation()
         }
@@ -332,7 +334,7 @@ export function PromptChatInterface({
     if (projectId) {
       loadInitialMessages()
     }
-  }, [projectId, initialIdea, isFirstLoad, loadMessages, startConversation])
+  }, [projectId, initialIdea, isFirstLoad, loadMessages, startConversation, disableInitialAutoStart])
 
   const loadOlderMessages = async () => {
     if (!hasMoreMessages || !earliestCursor || isLoadingOlder || loading) return
