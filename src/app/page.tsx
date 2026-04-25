@@ -14,6 +14,7 @@ import { isWaitlistMode, WAITLIST_LIMIT } from "@/lib/waitlist"
 import { ArrowRight, CloudUpload, GitBranch, ListChecks, Rocket, ScanSearch, FileText } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
+import { BuildMap } from "@/components/landing/build-map"
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -246,6 +247,10 @@ export default async function LandingPage() {
             <p className={uiStylePresets.landingFeaturePill}>First Drafts</p>
           </div>
         </div>
+      </SectionCard>
+
+      <SectionCard>
+        <BuildMap />
       </SectionCard>
 
       <SectionCard>

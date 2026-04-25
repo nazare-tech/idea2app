@@ -737,3 +737,89 @@ body {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* ---------- Landing: Build Map ------------------------------------------- */
+/* All entrance motion uses ease-out-expo (`cubic-bezier(0.16, 1, 0.3, 1)`) for
+   the confident, decisive feel called out in the brand register. No bounce. */
+
+/* Initial (pre-scroll) state: hide animated pieces. Elements reveal only
+   after the parent gains `.is-active` (set by IntersectionObserver). */
+.build-map .build-map__progress {
+  stroke-dasharray: var(--bm-path-length);
+  stroke-dashoffset: var(--bm-path-length);
+}
+/* Connectors draw via stroke-dashoffset, like the main path. The dasharray
+   equals their viewBox length (CARD_GAP_VB = 38 in build-map.tsx) so a full
+   offset hides them and 0 reveals them. */
+.build-map .build-map__connector {
+  stroke-dasharray: 38;
+  stroke-dashoffset: 38;
+}
+.build-map .build-map__node {
+  opacity: 0;
+}
+/* The outer card div carries layout (absolute + positioning translate); the
+   inner wrapper carries the entrance motion (lift + fade) so the two
+   transforms don't fight each other. */
+.build-map .build-map__card-inner {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.build-map .build-map__mobile-card {
+  opacity: 0;
+}
+
+/* Active (animating) state */
+.build-map.is-active .build-map__progress {
+  animation: buildMapDraw var(--bm-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.build-map.is-active .build-map__node {
+  animation: buildMapPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--bm-delay);
+}
+.build-map.is-active .build-map__connector {
+  animation: buildMapConnectorDraw 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--bm-delay);
+}
+.build-map.is-active .build-map__card-inner {
+  animation: buildMapCardReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--bm-delay);
+}
+.build-map.is-active .build-map__mobile-card {
+  animation: buildMapMobileReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--bm-delay);
+}
+
+@keyframes buildMapDraw {
+  from { stroke-dashoffset: var(--bm-path-length); }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes buildMapConnectorDraw {
+  from { stroke-dashoffset: 38; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes buildMapPop {
+  from { opacity: 0; transform: scale(0.5); transform-box: fill-box; transform-origin: center; }
+  to { opacity: 1; transform: scale(1); transform-box: fill-box; transform-origin: center; }
+}
+@keyframes buildMapCardReveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes buildMapMobileReveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reduced-motion: show the final state immediately, no animation. */
+@media (prefers-reduced-motion: reduce) {
+  .build-map .build-map__progress { stroke-dashoffset: 0 !important; animation: none !important; }
+  .build-map .build-map__connector { stroke-dashoffset: 0 !important; animation: none !important; }
+  .build-map .build-map__node,
+  .build-map .build-map__card-inner,
+  .build-map .build-map__mobile-card {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}

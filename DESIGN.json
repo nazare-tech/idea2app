@@ -1,0 +1,385 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-25T00:00:00Z",
+  "title": "Design System: Idea2App",
+  "extensions": {
+    "colorMeta": {
+      "action-red": {
+        "role": "primary",
+        "displayName": "Action Red",
+        "canonical": "oklch(57.7% 0.245 27.3)",
+        "tonalRamp": [
+          "oklch(15% 0.06 27)",
+          "oklch(25% 0.10 27)",
+          "oklch(35% 0.16 27)",
+          "oklch(45% 0.20 27)",
+          "oklch(55% 0.235 27)",
+          "oklch(65% 0.21 27)",
+          "oklch(78% 0.13 27)",
+          "oklch(92% 0.04 27)"
+        ]
+      },
+      "workshop-black": {
+        "role": "neutral",
+        "displayName": "Workshop Black",
+        "canonical": "oklch(17% 0.005 50)",
+        "tonalRamp": [
+          "oklch(10% 0.005 50)",
+          "oklch(17% 0.005 50)",
+          "oklch(28% 0.005 50)",
+          "oklch(40% 0.005 50)",
+          "oklch(54% 0.005 50)",
+          "oklch(67% 0.005 50)",
+          "oklch(82% 0.005 50)",
+          "oklch(95% 0.005 50)"
+        ]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Cloud",
+        "canonical": "oklch(98% 0 0)",
+        "tonalRamp": [
+          "oklch(15% 0.005 50)",
+          "oklch(28% 0.005 50)",
+          "oklch(45% 0.005 50)",
+          "oklch(67% 0.005 50)",
+          "oklch(82% 0.005 50)",
+          "oklch(92% 0.005 50)",
+          "oklch(96% 0.005 50)",
+          "oklch(98% 0.005 50)"
+        ]
+      },
+      "warm-paper": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "oklch(95% 0.013 70)",
+        "tonalRamp": [
+          "oklch(20% 0.012 70)",
+          "oklch(35% 0.012 70)",
+          "oklch(55% 0.012 70)",
+          "oklch(72% 0.014 70)",
+          "oklch(85% 0.014 70)",
+          "oklch(92% 0.013 70)",
+          "oklch(95% 0.013 70)",
+          "oklch(98% 0.008 70)"
+        ]
+      },
+      "border-subtle": {
+        "role": "neutral",
+        "displayName": "Border Subtle",
+        "canonical": "oklch(91% 0.012 65)",
+        "tonalRamp": [
+          "oklch(25% 0.012 65)",
+          "oklch(45% 0.012 65)",
+          "oklch(65% 0.014 65)",
+          "oklch(78% 0.014 65)",
+          "oklch(86% 0.013 65)",
+          "oklch(91% 0.012 65)",
+          "oklch(94% 0.010 65)",
+          "oklch(97% 0.008 65)"
+        ]
+      },
+      "warm-coral": {
+        "role": "tertiary",
+        "displayName": "Warm Coral",
+        "canonical": "oklch(76% 0.13 55)",
+        "tonalRamp": [
+          "oklch(28% 0.08 55)",
+          "oklch(40% 0.11 55)",
+          "oklch(52% 0.14 55)",
+          "oklch(64% 0.14 55)",
+          "oklch(76% 0.13 55)",
+          "oklch(85% 0.10 55)",
+          "oklch(91% 0.07 55)",
+          "oklch(96% 0.03 55)"
+        ]
+      },
+      "warm-sand": {
+        "role": "tertiary",
+        "displayName": "Warm Sand",
+        "canonical": "oklch(83% 0.12 85)",
+        "tonalRamp": [
+          "oklch(30% 0.07 85)",
+          "oklch(45% 0.10 85)",
+          "oklch(60% 0.13 85)",
+          "oklch(72% 0.14 85)",
+          "oklch(83% 0.12 85)",
+          "oklch(90% 0.09 85)",
+          "oklch(94% 0.06 85)",
+          "oklch(97% 0.03 85)"
+        ]
+      },
+      "warm-ember": {
+        "role": "tertiary",
+        "displayName": "Warm Ember",
+        "canonical": "oklch(64% 0.18 35)",
+        "tonalRamp": [
+          "oklch(22% 0.09 35)",
+          "oklch(34% 0.13 35)",
+          "oklch(48% 0.17 35)",
+          "oklch(58% 0.18 35)",
+          "oklch(64% 0.18 35)",
+          "oklch(75% 0.14 35)",
+          "oklch(86% 0.09 35)",
+          "oklch(95% 0.04 35)"
+        ]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Confirmation Green",
+        "canonical": "oklch(72% 0.19 145)",
+        "tonalRamp": [
+          "oklch(25% 0.10 145)",
+          "oklch(38% 0.14 145)",
+          "oklch(52% 0.18 145)",
+          "oklch(63% 0.19 145)",
+          "oklch(72% 0.19 145)",
+          "oklch(83% 0.13 145)",
+          "oklch(91% 0.07 145)",
+          "oklch(96% 0.03 145)"
+        ]
+      },
+      "info": {
+        "role": "tertiary",
+        "displayName": "Signal Blue",
+        "canonical": "oklch(64% 0.20 250)",
+        "tonalRamp": [
+          "oklch(22% 0.10 250)",
+          "oklch(34% 0.15 250)",
+          "oklch(48% 0.19 250)",
+          "oklch(58% 0.20 250)",
+          "oklch(64% 0.20 250)",
+          "oklch(75% 0.15 250)",
+          "oklch(86% 0.09 250)",
+          "oklch(95% 0.04 250)"
+        ]
+      },
+      "destructive": {
+        "role": "tertiary",
+        "displayName": "Abandon Red",
+        "canonical": "oklch(54% 0.18 25)",
+        "tonalRamp": [
+          "oklch(20% 0.08 25)",
+          "oklch(32% 0.12 25)",
+          "oklch(45% 0.16 25)",
+          "oklch(54% 0.18 25)",
+          "oklch(64% 0.18 25)",
+          "oklch(76% 0.13 25)",
+          "oklch(87% 0.07 25)",
+          "oklch(95% 0.03 25)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headlines on the landing. One per page."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings on landing surfaces; primary page titles in product."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, modal headings, in-page sub-sections."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default reading text. 65–75ch line length in long-form output."
+      },
+      "label": {
+        "displayName": "Mono Label",
+        "purpose": "Kicker labels, metadata, status pills. UPPERCASE, IBM Plex Mono, 0.18em letter-spacing."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient-soft",
+        "value": "0 4px 20px rgba(15, 23, 42, 0.06)",
+        "purpose": "The only sanctioned shadow. Used under floating cards inside graphic compositions and on raised hover states. Warm-tinted because the rgba base is Workshop Black, not pure black."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The system's default entrance curve. Used for the Build Map path-draw, card lift-ins, and any orchestrated reveal."
+      },
+      {
+        "name": "ease-out-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Slightly softer alternative to ease-out-expo. Use when the entrance should feel less decisive."
+      },
+      {
+        "name": "ease-out-quint",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Snappier alternative. Use for state-change feedback (button press, focus shift)."
+      },
+      {
+        "name": "duration-feedback",
+        "value": "100ms",
+        "purpose": "Instant feedback (button press, toggle)."
+      },
+      {
+        "name": "duration-state",
+        "value": "200ms",
+        "purpose": "Default state-change duration (hover, focus, color shift). Used across inputs and buttons."
+      },
+      {
+        "name": "duration-entrance",
+        "value": "550ms",
+        "purpose": "Card / element entrance (Build Map cards, etc.)."
+      },
+      {
+        "name": "duration-orchestration",
+        "value": "3s",
+        "purpose": "Total length of a one-shot orchestrated entrance like the Build Map. Reserve for hero-moment graphics."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1536px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default commitment button. Action Red, used wherever the user is asked to commit.",
+      "html": "<button class=\"ds-btn-primary\">Get Started</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 10px 20px; background: #DC2626; color: #FFFFFF; border: none; border-radius: 6px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: -0.005em; cursor: pointer; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1), transform 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-primary:hover { background: #B91C1C; } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #DC2626; outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary commitment. Used alongside Primary in dual-CTA layouts.",
+      "html": "<button class=\"ds-btn-outline\">See How It Works</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 10px 20px; background: #FFFFFF; color: #1C1917; border: 1px solid #EAE0D8; border-radius: 6px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: -0.005em; cursor: pointer; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-outline:hover { background: rgba(245, 240, 235, 0.5); } .ds-btn-outline:focus-visible { outline: 2px solid #DC2626; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Tertiary text-action. Used in navigation and within-content actions.",
+      "html": "<button class=\"ds-btn-ghost\">Skip</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 8px 14px; background: transparent; color: #8A8480; border: none; border-radius: 6px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1), color 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-ghost:hover { background: rgba(245, 240, 235, 0.5); color: #1C1917; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Default text field. Quiet at rest, red-tinted glow on focus.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Enter your idea\" />",
+      "css": ".ds-input { display: block; width: 100%; height: 44px; padding: 10px 16px; background: #FFFFFF; color: #1C1917; border: 1px solid #E8DDD5; border-radius: 12px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-input::placeholder { color: #4A4040; } .ds-input:focus-visible { outline: none; border-color: rgba(220, 38, 38, 0.3); background: rgba(220, 38, 38, 0.02); box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15); } .ds-input:disabled { opacity: 0.4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Product Card",
+      "kind": "card",
+      "refersTo": "card-product",
+      "description": "Default product surface card. Rounded corners, hairline border, used inside the dashboard.",
+      "html": "<article class=\"ds-card\"><h3 class=\"ds-card__title\">Project Alpha</h3><p class=\"ds-card__body\">Last edited 2 hours ago.</p></article>",
+      "css": ".ds-card { background: #FFFFFF; border: 1px solid #EAE0D8; border-radius: 8px; padding: 24px; font-family: 'Sora', system-ui, sans-serif; } .ds-card__title { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.02em; color: #1C1917; } .ds-card__body { margin: 8px 0 0; font-size: 14px; color: #4A4040; }"
+    },
+    {
+      "name": "Landing Card",
+      "kind": "card",
+      "refersTo": "card-landing",
+      "description": "Sharp-cornered card for landing-page composition. Declarative voice.",
+      "html": "<article class=\"ds-card-landing\"><span class=\"ds-card-landing__kicker\">Feature</span><h3 class=\"ds-card-landing__title\">Research, Fast</h3><p class=\"ds-card-landing__body\">Get competitor context in minutes, not weeks.</p></article>",
+      "css": ".ds-card-landing { background: #FFFFFF; border: 1px solid #EAE0D8; border-radius: 0; padding: 28px; font-family: 'Sora', system-ui, sans-serif; } .ds-card-landing__kicker { display: inline-block; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #8A8480; margin-bottom: 18px; } .ds-card-landing__title { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.03em; color: #1C1917; } .ds-card-landing__body { margin: 16px 0 0; font-size: 14px; line-height: 1.6; color: #4A4040; }"
+    },
+    {
+      "name": "Pill Label",
+      "kind": "chip",
+      "refersTo": "pill-label",
+      "description": "Mono kicker / metadata pill. Wherever the system says 'this is metadata.'",
+      "html": "<span class=\"ds-pill\">The Build Map</span>",
+      "css": ".ds-pill { display: inline-flex; align-items: center; padding: 6px 12px; background: #FFFFFF; border: 1px solid #EAE0D8; border-radius: 9999px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #4A4040; }"
+    },
+    {
+      "name": "Sticky Nav",
+      "kind": "nav",
+      "refersTo": "nav-landing",
+      "description": "Landing-page sticky header. White-translucent backdrop with a faint blur for legibility.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-nav__brand\" href=\"/\">Idea2App</a><nav class=\"ds-nav__links\"><a href=\"#features\">Features</a><a href=\"#pricing\">Pricing</a></nav><button class=\"ds-nav__cta\">Sign In</button></header>",
+      "css": ".ds-nav { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 32px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); border-bottom: 1px solid #EAE0D8; font-family: 'Sora', system-ui, sans-serif; } .ds-nav__brand { font-size: 18px; font-weight: 600; letter-spacing: 0.01em; color: #1C1917; text-decoration: none; } .ds-nav__links { display: flex; gap: 32px; } .ds-nav__links a { font-size: 14px; font-weight: 500; color: #1C1917; text-decoration: none; transition: color 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-nav__links a:hover { color: #4A4040; } .ds-nav__cta { height: 40px; padding: 0 24px; background: #FFFFFF; color: #1C1917; border: 1px solid #EAE0D8; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Builder's Workshop",
+    "overview": "A working space, not a showroom. Tools laid out where the hand reaches for them, paper marked up in red, a single confident accent against tinted white. The system reads as utilitarian and unhurried at the same time. It speaks like a peer who has shipped things, not a vendor selling things.\n\nThe atmosphere is quieter than the Linear / Vercel lane and closer to Stripe's measured calm. Tinted-white surfaces carry the weight. The red accent appears at moments of action, progress, and emphasis, never as decoration. Typography does the heavy lifting: scale contrast, weight contrast, careful tracking.\n\nThe system explicitly rejects the generic AI-tool aesthetic, the stock SaaS template, the crypto / web3 look, and editorial-magazine drift. If a screenshot could be confidently labeled as any of those, it has failed.",
+    "keyCharacteristics": [
+      "Tinted-white surfaces, never #FFF flat. Background #FAFAFA; warm-paper #F5F0EB for muted secondaries.",
+      "One decisive accent (Action Red #DC2626), used on ≤10% of any given screen.",
+      "Sharp corners on landing-page composition; gently rounded corners (8px) inside the product workspace.",
+      "Strong scale contrast in typography. Flat hierarchies are the tell of an undesigned page.",
+      "Flat by default. Shadows appear only as ambient elevation under floating elements; never as decoration."
+    ],
+    "rules": [
+      {
+        "name": "The One Voice Rule",
+        "body": "Action Red appears on at most 10% of any given screen. Its rarity is the point. If you find yourself tinting two unrelated elements red in the same composition, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tinted Neutral Rule",
+        "body": "Pure #000 and pure #FFF are forbidden. Every neutral carries a warm tilt (Workshop Black, Cloud, Warm Paper, Card White). The warmth is barely visible at full lightness and structurally important at scale.",
+        "section": "colors"
+      },
+      {
+        "name": "The Auxiliary Accent Rule",
+        "body": "Warm Coral, Warm Sand, Warm Ember exist for product-internal communication (status, dependency, advisory). They do not appear on the landing, in marketing copy, or in the brand mark.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tight Tracking Rule",
+        "body": "Display and Headline tracking is -0.06em, not flat zero. Hero typography with default tracking reads as a wireframe. The tightening makes large type feel intentional.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mono-Label Rule",
+        "body": "Metadata, status, and kicker labels are IBM Plex Mono UPPERCASE with letter-spacing 0.18em. Not Sora small caps, not Sora at smaller weight. The mono shift is the system's way of saying 'this is metadata, not voice.'",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces are flat at rest. Shadows appear only under elements that are not part of the document flow (overlays, floating cards inside SVG compositions). Never on a card that's just sitting in a list.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No Glassmorphism Rule",
+        "body": "backdrop-filter: blur() is forbidden as a decorative treatment. The only approved use is a faint header backdrop on the sticky landing nav, which is a legibility tool, not a style.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use Action Red (#DC2626) only at moments of action, progress, or emphasis. The One Voice Rule is non-negotiable.",
+      "Do tint every neutral toward Workshop Black. Never #000, never #FFF.",
+      "Do respect the corner-system split: sharp on landing, gently rounded inside the product.",
+      "Do use IBM Plex Mono UPPERCASE with letter-spacing 0.18em for kicker labels, status pills, and metadata.",
+      "Do ease out with cubic-bezier(0.16, 1, 0.3, 1) (ease-out-expo) on entrance animation. Match this curve across new motion.",
+      "Do honor prefers-reduced-motion by showing the final static state. Every entrance animation needs a non-animated fallback.",
+      "Do cap body line length at 65–75ch in long-form output (PRDs, reports, tech specs).",
+      "Do use the Build Map's idioms (ease-out-expo, ambient soft shadow, mono kicker label) when introducing new signature graphics."
+    ],
+    "donts": [
+      "Don't use border-left or border-right greater than 1px as a colored accent stripe.",
+      "Don't use gradient text (background-clip: text over a gradient). Solid colors only. Emphasis through weight or size.",
+      "Don't ship a 'Powered by AI' badge, sparkle emojis, or a purple-blue gradient hero. Generic AI-tool aesthetic stays out.",
+      "Don't ship a 3-column rounded-card grid of icon + heading + paragraph. The stock SaaS template look stays out.",
+      "Don't default to dark mode. The product is a workshop, lit. Dark is reserved for the sidebar.",
+      "Don't drift into editorial-magazine territory: no Cormorant, Playfair Display, or italic drop caps on a builder tool.",
+      "Don't use bounce or elastic easing curves. Ease-out-expo / quart / quint only.",
+      "Don't animate layout properties (width, height, top, left). Use transform and opacity only.",
+      "Don't nest cards. If your design calls for a card-in-card, one of them is wrong.",
+      "Don't introduce a fourth font family. The Space Grotesk / Sora / IBM Plex Mono trio carries the whole system.",
+      "Don't use em dashes in copy. Use commas, colons, semicolons, periods, or parentheses.",
+      "Don't add accent inflation. Warm Coral / Warm Sand / Warm Ember are auxiliary; they don't appear in marketing or in the brand mark."
+    ]
+  }
+}
