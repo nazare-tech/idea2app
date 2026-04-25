@@ -290,20 +290,6 @@ body {
   animation: fade-up 0.4s var(--motion-ease-out-expo) forwards;
 }
 
-/* Smooth bounce for loading dots */
-@keyframes bounce {
-  0%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-6px);
-  }
-}
-
-.animate-bounce {
-  animation: bounce 1.4s var(--motion-ease-out-expo) infinite;
-}
-
 /* Composer bar glow effect */
 .composer-glow {
   position: relative;
@@ -337,21 +323,6 @@ body {
   background: linear-gradient(90deg, transparent 25%, rgba(0, 0, 0, 0.03) 50%, transparent 75%);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
-}
-
-/* Landing page glass nav */
-.glass-panel {
-  background: rgba(250, 250, 250, 0.72);
-  backdrop-filter: saturate(180%) blur(12px);
-  -webkit-backdrop-filter: saturate(180%) blur(12px);
-}
-
-/* Landing page subtle grid pattern */
-.grid-bg {
-  background-image:
-    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-  background-size: 72px 72px;
 }
 
 /* Sidebar dark theme scrollbar */
@@ -404,90 +375,90 @@ body {
 }
 
 .mermaid-diagram .er .entityBox {
-  fill: #FFFFFF !important;
-  stroke: #6B7280 !important;
+  fill: var(--card) !important;
+  stroke: var(--text-muted) !important;
   stroke-width: 1.5px !important;
 }
 
 .mermaid-diagram .er .entityLabel {
-  fill: #111827 !important;
+  fill: var(--text-primary) !important;
   font-weight: var(--font-weight-semibold) !important;
   font-size: 14px !important;
 }
 
 .mermaid-diagram .er .attributeBoxEven,
 .mermaid-diagram .er .attributeBoxOdd {
-  fill: #F9FAFB !important;
-  stroke: #E5E5E5 !important;
+  fill: var(--muted) !important;
+  stroke: var(--border-subtle) !important;
 }
 
 .mermaid-diagram .er .relationshipLabel {
-  fill: #DC2626 !important;
+  fill: var(--primary) !important;
   font-size: 12px !important;
   font-weight: 500 !important;
 }
 
 .mermaid-diagram .er .relationshipLabelBox {
-  fill: #FFFFFF !important;
+  fill: var(--card) !important;
   opacity: 0.9 !important;
 }
 
 .mermaid-diagram text {
   font-family: ui-monospace, 'IBM Plex Mono', monospace !important;
-  fill: #111827 !important;
+  fill: var(--text-primary) !important;
 }
 
 .mermaid-diagram .er .attributeText {
-  fill: #374151 !important;
+  fill: var(--text-secondary) !important;
   font-size: 12px !important;
 }
 
 /* Ensure all text elements are visible */
 .mermaid-diagram tspan {
-  fill: #111827 !important;
+  fill: var(--text-primary) !important;
 }
 
 /* ERD-specific styling improvements - Dark Mode */
 @media (prefers-color-scheme: dark) {
   .mermaid-wrapper {
-    background: #1a1a1a !important;
-    border-color: #333333 !important;
+    background: var(--sidebar-bg) !important;
+    border-color: var(--sidebar-border) !important;
   }
 
   .mermaid-diagram .er .entityBox {
-    fill: #2a2a2a !important;
-    stroke: #6B7280 !important;
+    fill: var(--sidebar-active) !important;
+    stroke: var(--sidebar-muted) !important;
   }
 
   .mermaid-diagram .er .entityLabel {
-    fill: #e5e5e5 !important;
+    fill: var(--sidebar-foreground) !important;
   }
 
   .mermaid-diagram .er .attributeBoxEven,
   .mermaid-diagram .er .attributeBoxOdd {
-    fill: #1f1f1f !important;
-    stroke: #404040 !important;
+    fill: var(--sidebar-bg) !important;
+    stroke: var(--sidebar-border) !important;
   }
 
   .mermaid-diagram .er .relationshipLabel {
-    fill: #EF4444 !important;
+    fill: var(--primary) !important;
   }
 
   .mermaid-diagram .er .relationshipLabelBox {
-    fill: #2a2a2a !important;
+    fill: var(--sidebar-active) !important;
   }
 
   .mermaid-diagram text {
-    fill: #e5e5e5 !important;
+    fill: var(--sidebar-foreground) !important;
   }
 
   .mermaid-diagram .er .attributeText {
-    fill: #d1d5db !important;
+    fill: var(--sidebar-foreground) !important;
   }
 
   /* Ensure all text elements are visible in dark mode */
   .mermaid-diagram tspan {
-    fill: #e5e5e5 !important;
+    fill: var(--sidebar-foreground) !important;
   }
 }
 
@@ -827,7 +798,6 @@ body {
     animation: none !important;
   }
 
-  .animate-bounce,
   .shimmer {
     animation: none !important;
   }

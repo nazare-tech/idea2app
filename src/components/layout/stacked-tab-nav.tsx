@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import type { ElementType, ReactNode } from "react"
+import { CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface StackedTabNavItem {
@@ -65,7 +66,9 @@ function StackedTabNavItemContent({
           </p>
         )}
       </div>
-      {item.trailing}
+      {item.trailing ?? (isActive ? (
+        <CheckCircle2 aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+      ) : null)}
     </>
   )
 }
@@ -91,6 +94,7 @@ export function StackedTabNav({
                 key={item.key}
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
+                aria-label={item.description ? `${item.label}: ${item.description}` : item.label}
                 className={itemClasses}
               >
                 <StackedTabNavItemContent item={item} isActive={isActive} />
@@ -105,6 +109,7 @@ export function StackedTabNav({
               onClick={item.onSelect}
               disabled={disabled}
               aria-current={isActive ? "page" : undefined}
+              aria-label={item.description ? `${item.label}: ${item.description}` : item.label}
               className={itemClasses}
             >
               <StackedTabNavItemContent item={item} isActive={isActive} />

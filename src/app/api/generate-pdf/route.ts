@@ -256,37 +256,37 @@ async function renderMarkdownToHTML(markdown: string): Promise<string> {
   const mermaidRegex = /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g
   const mermaidMatches = [...html.matchAll(mermaidRegex)]
   const mermaidTheme = {
-    bg: "#FFFFFF",
-    fg: "#000000",
-    line: "#1F2937",
+    bg: "#FAFAFA",
+    fg: "#1C1917",
+    line: "#4A4040",
     accent: "#DC2626",
-    muted: "#F5F5F5",
+    muted: "#F5F0EB",
     font: "ui-monospace, 'IBM Plex Mono', monospace",
-    textColor: "#000000",
-    primaryTextColor: "#000000",
-    secondaryTextColor: "#000000",
-    tertiaryTextColor: "#000000",
-    nodeTextColor: "#000000",
-    labelTextColor: "#000000",
-    edgeLabelText: "#000000",
-    clusterTextColor: "#000000",
-    darkTextColor: "#000000",
-    mainContrastColor: "#000000",
-    primaryColor: "#1E3A8A",
-    primaryBorderColor: "#1E40AF",
-    secondaryColor: "#374151",
-    secondaryBorderColor: "#1F2937",
-    tertiaryColor: "#0F766E",
-    tertiaryBorderColor: "#115E59",
-    mainBkg: "#1E3A8A",
-    secondBkg: "#374151",
-    tertiaryBkg: "#0F766E",
-    clusterBkg: "#1F2937",
-    clusterBorder: "#374151",
-    lineColor: "#1F2937",
-    arrowheadColor: "#1F2937",
-    nodeBorder: "#1F2937",
-    defaultLinkColor: "#1F2937",
+    textColor: "#1C1917",
+    primaryTextColor: "#1C1917",
+    secondaryTextColor: "#1C1917",
+    tertiaryTextColor: "#1C1917",
+    nodeTextColor: "#1C1917",
+    labelTextColor: "#1C1917",
+    edgeLabelText: "#1C1917",
+    clusterTextColor: "#1C1917",
+    darkTextColor: "#1C1917",
+    mainContrastColor: "#1C1917",
+    primaryColor: "#F5F0EB",
+    primaryBorderColor: "#E8DDD5",
+    secondaryColor: "#EAE0D8",
+    secondaryBorderColor: "#4A4040",
+    tertiaryColor: "#ECFDF5",
+    tertiaryBorderColor: "#22C55E",
+    mainBkg: "#F5F0EB",
+    secondBkg: "#EAE0D8",
+    tertiaryBkg: "#ECFDF5",
+    clusterBkg: "#F5F0EB",
+    clusterBorder: "#E8DDD5",
+    lineColor: "#4A4040",
+    arrowheadColor: "#4A4040",
+    nodeBorder: "#4A4040",
+    defaultLinkColor: "#4A4040",
   }
 
   for (const match of mermaidMatches) {
@@ -357,10 +357,14 @@ function generateHTMLTemplate(
     :root {
       --font-weight-bold: 700;
       --font-weight-semibold: 600;
-      --accent-color: #00d4ff;
-      --text-primary: #1a1a1a;
-      --text-secondary: #666;
-      --text-muted: #999;
+      --accent-color: #DC2626;
+      --text-primary: #1C1917;
+      --text-secondary: #4A4040;
+      --text-muted: #8A8480;
+      --background: #FAFAFA;
+      --surface: #FFFFFF;
+      --muted: #F5F0EB;
+      --border: #E8DDD5;
     }
 
     @page { margin: 20mm; size: A4; }
@@ -370,29 +374,29 @@ function generateHTMLTemplate(
       font-size: 14px;
       line-height: 1.6;
       color: var(--text-primary);
-      background: #ffffff;
+      background: var(--background);
     }
     .header { margin-bottom: 30px; border-bottom: 2px solid var(--accent-color); padding-bottom: 20px; }
     .header h1 { margin: 0 0 10px 0; font-size: 26px; color: var(--text-primary); }
-    .header .analysis-type { margin: 0; font-size: 15px; color: #666; text-transform: capitalize; }
-    .header .date { margin: 10px 0 0 0; font-size: 11px; color: #999; }
-    .content h1 { font-size: 24px; margin: 30px 0 15px 0; color: #1a1a1a; font-weight: var(--font-weight-bold); page-break-after: avoid; }
+    .header .analysis-type { margin: 0; font-size: 15px; color: var(--text-secondary); text-transform: capitalize; }
+    .header .date { margin: 10px 0 0 0; font-size: 11px; color: var(--text-muted); }
+    .content h1 { font-size: 24px; margin: 30px 0 15px 0; color: var(--text-primary); font-weight: var(--font-weight-bold); page-break-after: avoid; }
     .content h2 { font-size: 20px; margin: 25px 0 12px 0; color: var(--text-primary); font-weight: var(--font-weight-semibold); page-break-after: avoid; }
     .content h3 { font-size: 18px; margin: 20px 0 10px 0; color: var(--text-primary); font-weight: var(--font-weight-semibold); page-break-after: avoid; }
     .content h4 { font-size: 16px; margin: 15px 0 8px 0; color: var(--text-primary); font-weight: var(--font-weight-semibold); page-break-after: avoid; }
-    .content p { margin: 12px 0; color: #333; }
-    .content ul, .content ol { margin: 12px 0; padding-left: 25px; color: #333; }
+    .content p { margin: 12px 0; color: var(--text-secondary); }
+    .content ul, .content ol { margin: 12px 0; padding-left: 25px; color: var(--text-secondary); }
     .content li { margin: 6px 0; }
-    .content strong { color: #000; font-weight: var(--font-weight-semibold); }
-    .content code { background: #f5f5f5; padding: 3px 8px; border-radius: 4px; font-family: 'Courier New', Consolas, monospace; font-size: 12px; color: var(--text-primary); border: 1px solid #e0e0e0; }
-    .content pre { background: #f8f9fa; padding: 16px 20px; border-radius: 6px; overflow-x: auto; margin: 20px 0; border: 1px solid #e0e0e0; page-break-inside: avoid; }
-    .content pre code { background: none; padding: 0; border: none; color: #1a1a1a; display: block; white-space: pre-wrap; word-wrap: break-word; }
-    .content blockquote { border-left: 4px solid var(--accent-color); padding-left: 15px; margin: 15px 0; color: #555; font-style: italic; }
+    .content strong { color: var(--text-primary); font-weight: var(--font-weight-semibold); }
+    .content code { background: var(--muted); padding: 3px 8px; border-radius: 4px; font-family: 'Courier New', Consolas, monospace; font-size: 12px; color: var(--text-primary); border: 1px solid var(--border); }
+    .content pre { background: var(--muted); padding: 16px 20px; border-radius: 6px; overflow-x: auto; margin: 20px 0; border: 1px solid var(--border); page-break-inside: avoid; }
+    .content pre code { background: none; padding: 0; border: none; color: var(--text-primary); display: block; white-space: pre-wrap; word-wrap: break-word; }
+    .content blockquote { border: 1px solid var(--border); background: var(--muted); border-radius: 6px; padding: 12px 15px; margin: 15px 0; color: var(--text-secondary); font-style: italic; }
     .content table { border-collapse: collapse; width: 100%; margin: 15px 0; page-break-inside: avoid; }
-    .content th, .content td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-    .content th { background: #f5f5f5; font-weight: var(--font-weight-semibold); }
+    .content th, .content td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+    .content th { background: var(--muted); font-weight: var(--font-weight-semibold); }
     .content a { color: var(--accent-color); text-decoration: none; }
-    .mermaid-diagram-wrapper { margin: 15px 0; padding: 15px; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; page-break-inside: avoid; display: flex; justify-content: center; align-items: center; }
+    .mermaid-diagram-wrapper { margin: 15px 0; padding: 15px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; page-break-inside: avoid; display: flex; justify-content: center; align-items: center; }
     .mermaid-diagram-wrapper svg { max-width: 100%; height: auto; }
   </style>
 </head>

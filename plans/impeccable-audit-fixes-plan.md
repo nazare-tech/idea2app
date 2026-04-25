@@ -91,7 +91,16 @@ Create a small browser verification script that reproduces the current mobile ov
 - Risk: Dirty worktree contains overlapping user changes. Mitigation: inspect touched files before edits and do not revert unrelated modifications.
 
 ## Open Decisions
-- Preferred active-nav visual language after removing side stripes.
+- Preferred active-nav visual language after removing side stripes. Decision: use background tint, full border, stronger text, and trailing status/icon.
+
+## Implementation Status
+- [x] Baseline red state captured from the prior audit and browser checks.
+- [x] Landing responsiveness and anti-pattern cleanup implemented.
+- [x] Auth/password accessibility fixes implemented.
+- [x] Navigation active-state and target-size fixes implemented.
+- [x] Shared motion, markdown, Mermaid, and PDF presentation cleanup implemented.
+- [x] Lint, build, static banned-pattern scan, and browser verification completed.
+- [x] Review and security notes written in `plans/impeccable-audit-fixes-review.md`.
 
 ## Critique
 

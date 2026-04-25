@@ -133,18 +133,18 @@ function MermaidDiagram({ code }: { code: string }) {
   // Render diagram with theme-appropriate colors
   useEffect(() => {
     const theme = isDark ? {
-      bg: "#1a1a1a",
-      fg: "#e5e5e5",
-      line: "#6B7280",
-      accent: "#EF4444",
-      muted: "#2a2a2a",
+      bg: "var(--sidebar-bg)",
+      fg: "var(--sidebar-foreground)",
+      line: "var(--sidebar-muted)",
+      accent: "var(--primary)",
+      muted: "var(--sidebar-active)",
       font: "ui-monospace, 'IBM Plex Mono', monospace",
     } : {
-      bg: "#FFFFFF",
-      fg: "#111827",
-      line: "#6B7280",
-      accent: "#DC2626",
-      muted: "#F5F5F5",
+      bg: "var(--card)",
+      fg: "var(--text-primary)",
+      line: "var(--text-muted)",
+      accent: "var(--primary)",
+      muted: "var(--muted)",
       font: "ui-monospace, 'IBM Plex Mono', monospace",
     }
 
@@ -242,8 +242,8 @@ function MermaidDiagram({ code }: { code: string }) {
 
   if (error) {
     return (
-      <div className="mermaid-wrapper my-4 ui-p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
-        <pre className="text-sm text-gray-700 dark:text-gray-300 ui-font-mono whitespace-pre-wrap">{code}</pre>
+      <div className="mermaid-wrapper my-4 ui-p-4 rounded-lg border border-border-subtle bg-muted/60 overflow-x-auto">
+        <pre className="text-sm text-text-secondary ui-font-mono whitespace-pre-wrap">{code}</pre>
       </div>
     )
   }
@@ -251,7 +251,7 @@ function MermaidDiagram({ code }: { code: string }) {
   return (
     <>
       {/* Compact view - fits within document width */}
-      <div className="mermaid-wrapper my-4 ui-p-4 bg-[#F9FAFB] dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-700 relative group">
+      <div className="mermaid-wrapper my-4 ui-p-4 rounded-lg border border-border-subtle bg-muted/60 relative group">
         <div
           className="mermaid-diagram w-full overflow-hidden"
           dangerouslySetInnerHTML={{ __html: svg }}
@@ -264,11 +264,11 @@ function MermaidDiagram({ code }: { code: string }) {
         {/* Expand button - bottom right */}
         <button
           onClick={() => setIsExpanded(true)}
-          className="absolute bottom-2 right-2 rounded-md border border-gray-300 bg-white p-2 opacity-0 transition-[background-color,border-color,opacity] duration-200 group-hover:opacity-100 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700"
+          className="absolute bottom-2 right-2 rounded-md border border-border-subtle bg-card p-2 opacity-0 transition-[background-color,border-color,opacity] duration-200 group-hover:opacity-100 hover:bg-muted focus-visible:opacity-100"
           title="Expand diagram"
           aria-label="Expand diagram"
         >
-          <Maximize2 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+          <Maximize2 className="w-4 h-4 text-text-secondary" />
         </button>
       </div>
 
@@ -279,17 +279,17 @@ function MermaidDiagram({ code }: { code: string }) {
           onClick={() => setIsExpanded(false)}
         >
           <div
-            className="relative w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] bg-white dark:bg-[#1a1a1a] rounded-lg shadow-2xl overflow-hidden"
+            className="relative w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] rounded-lg border border-border-subtle bg-card shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button
               onClick={() => setIsExpanded(false)}
-              className="absolute top-4 right-4 p-2 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors z-10"
+              className="absolute top-4 right-4 p-2 rounded-md bg-muted border border-border-subtle hover:bg-secondary transition-colors z-10"
               title="Close (Esc)"
               aria-label="Close expanded view"
             >
-              <Minimize2 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <Minimize2 className="w-5 h-5 text-text-secondary" />
             </button>
 
             {/* Expanded diagram with pan and zoom */}
@@ -317,47 +317,47 @@ function MermaidDiagram({ code }: { code: string }) {
             </div>
 
             {/* Zoom controls - bottom center */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 ui-row-gap-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg ui-px-3 ui-py-2 z-10">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 ui-row-gap-2 bg-card border border-border-subtle rounded-lg shadow-lg ui-px-3 ui-py-2 z-10">
               <button
                 onClick={handleZoomOut}
                 disabled={zoom <= 50}
-                className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="Zoom out"
                 aria-label="Zoom out"
               >
-                <span className="text-lg ui-font-semibold text-gray-700 dark:text-gray-300">−</span>
+                <span className="text-lg ui-font-semibold text-text-secondary">−</span>
               </button>
 
-              <span className="min-w-[3.5rem] text-center text-sm ui-font-medium text-gray-700 dark:text-gray-300">
+              <span className="min-w-[3.5rem] text-center text-sm ui-font-medium text-text-secondary">
                 {zoom}%
               </span>
 
               <button
                 onClick={handleZoomIn}
                 disabled={zoom >= 200}
-                className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="Zoom in"
                 aria-label="Zoom in"
               >
-                <span className="text-lg ui-font-semibold text-gray-700 dark:text-gray-300">+</span>
+                <span className="text-lg ui-font-semibold text-text-secondary">+</span>
               </button>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+              <div className="w-px h-6 bg-border-subtle mx-1" />
 
               {/* Reset button */}
               <button
                 onClick={handleReset}
-                className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded hover:bg-muted transition-colors"
                 title="Reset view"
                 aria-label="Reset zoom and pan"
               >
-                <RotateCcw className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                <RotateCcw className="w-4 h-4 text-text-secondary" />
               </button>
             </div>
 
             {/* Pan instruction hint */}
-            <div className="absolute top-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/90 dark:bg-gray-800/90 px-2 py-1 rounded">
+            <div className="absolute top-4 left-4 text-xs text-text-muted bg-card/90 px-2 py-1 rounded">
               Middle-click or trackpad scroll to pan • Reset button to center
             </div>
           </div>
@@ -370,30 +370,29 @@ function MermaidDiagram({ code }: { code: string }) {
 export function MarkdownRenderer({
   content,
   className = "",
-  projectId,
   disableGfm = false,
 }: MarkdownRendererProps) {
   const proseClasses = `
     prose max-w-none text-[14px]
-    [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-6 [&_h1]:text-gray-900 [&_h1]:border-b [&_h1]:border-gray-200 [&_h1]:pb-2
-    [&_h2]:text-xl [&_h2]:ui-font-semibold [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-gray-900
-    [&_h3]:text-lg [&_h3]:ui-font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-gray-900
-    [&_h4]:text-base [&_h4]:ui-font-semibold [&_h4]:mb-2 [&_h4]:mt-3 [&_h4]:text-gray-900
-    [&_p]:text-[14px] [&_p]:text-gray-700 [&_p]:mb-3 [&_p]:leading-relaxed
+    [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-6 [&_h1]:text-text-primary [&_h1]:border-b [&_h1]:border-border-subtle [&_h1]:pb-2
+    [&_h2]:text-xl [&_h2]:ui-font-semibold [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-text-primary
+    [&_h3]:text-lg [&_h3]:ui-font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-text-primary
+    [&_h4]:text-base [&_h4]:ui-font-semibold [&_h4]:mb-2 [&_h4]:mt-3 [&_h4]:text-text-primary
+    [&_p]:text-[14px] [&_p]:text-text-secondary [&_p]:mb-3 [&_p]:leading-relaxed
     [&_ul]:my-3 [&_ul]:space-y-1 [&_ul]:pl-6
     [&_ol]:my-3 [&_ol]:space-y-1 [&_ol]:pl-6
-    [&_li]:text-[14px] [&_li]:text-gray-700 [&_li]:leading-relaxed
-    [&_strong]:text-gray-900 [&_strong]:ui-font-semibold
-    [&_em]:text-gray-700 [&_em]:italic
+    [&_li]:text-[14px] [&_li]:text-text-secondary [&_li]:leading-relaxed
+    [&_strong]:text-text-primary [&_strong]:ui-font-semibold
+    [&_em]:text-text-secondary [&_em]:italic
     [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary/80 [&_a]:transition-colors
     [&_code]:text-primary [&_code]:bg-[rgba(220,38,38,0.06)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[14px] [&_code]:ui-font-mono
-    [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded-lg [&_pre]:ui-p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:ui-font-mono
-    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-gray-900 [&_pre_code]:ui-font-mono [&_pre_code]:whitespace-pre [&_pre_code]:text-[14px] [&_pre_code]:leading-relaxed
-    [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[14px] [&_blockquote]:text-gray-500 [&_blockquote]:my-3
+    [&_pre]:bg-muted/60 [&_pre]:border [&_pre]:border-border-subtle [&_pre]:rounded-lg [&_pre]:ui-p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:ui-font-mono
+    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-text-primary [&_pre_code]:ui-font-mono [&_pre_code]:whitespace-pre [&_pre_code]:text-[14px] [&_pre_code]:leading-relaxed
+    [&_blockquote]:border [&_blockquote]:border-border-subtle [&_blockquote]:bg-muted/40 [&_blockquote]:rounded-md [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-[14px] [&_blockquote]:text-text-secondary [&_blockquote]:my-3
     [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse
-    [&_th]:border [&_th]:border-gray-200 [&_th]:bg-[#EFF6FF] [&_th]:ui-px-4 [&_th]:ui-py-2 [&_th]:text-left [&_th]:ui-font-semibold [&_th]:text-gray-800
-    [&_td]:border [&_td]:border-gray-200 [&_td]:ui-px-4 [&_td]:ui-py-2 [&_td]:text-[14px] [&_td]:text-gray-700
-    [&_hr]:border-gray-200 [&_hr]:my-4
+    [&_th]:border [&_th]:border-border-subtle [&_th]:bg-muted [&_th]:ui-px-4 [&_th]:ui-py-2 [&_th]:text-left [&_th]:ui-font-semibold [&_th]:text-text-primary
+    [&_td]:border [&_td]:border-border-subtle [&_td]:ui-px-4 [&_td]:ui-py-2 [&_td]:text-[14px] [&_td]:text-text-secondary
+    [&_hr]:border-border-subtle [&_hr]:my-4
   `.trim()
 
   // Custom code component for syntax highlighting and mermaid diagrams
