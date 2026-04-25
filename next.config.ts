@@ -1,9 +1,18 @@
 import type { NextConfig } from "next";
+import fs from "fs";
+import path from "path";
+
+// Walk up from cwd until we find node_modules (handles git worktrees).
+function findRoot(dir: string): string {
+  if (fs.existsSync(path.join(dir, "node_modules"))) return dir;
+  const parent = path.dirname(dir);
+  return parent === dir ? dir : findRoot(parent);
+}
 
 const nextConfig: NextConfig = {
-  // Pin Turbopack to this repo so parent lockfiles do not affect module resolution.
+  // Pin Turbopack to the directory that owns node_modules so worktrees work.
   turbopack: {
-    root: process.cwd(),
+    root: findRoot(process.cwd()),
   },
   async headers() {
     const csp = [
