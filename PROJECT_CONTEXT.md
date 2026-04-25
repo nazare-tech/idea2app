@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-04-23 (Idea Intake Wizard + Pending Auth Handoff)
+**Last Updated**: 2026-04-25 (Idea Intake Wizard + Pending Auth Handoff + PR Workflow)
 **Project**: Idea2App - AI-Powered Business Analysis Platform
 
 ---
@@ -841,6 +841,13 @@ npm run dev
 # Server runs at http://localhost:3000
 # Hot module reload enabled
 ```
+
+### Git and PR Workflow
+
+- When asked to create a PR, keep using the current branch. Do not create a new branch unless explicitly requested.
+- Before creating or updating a PR, compare the current branch with its remote tracking branch.
+- If the current branch is behind its remote tracking branch, stop and ask what to do before rebasing, merging, force-pushing, or creating the PR.
+- If the current branch has no remote tracking branch, push the current branch and create the PR from that branch.
 
 ### Build & Production
 
