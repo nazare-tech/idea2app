@@ -20,6 +20,7 @@ export type OnboardingLoadingRowKey =
   | "market-research"
   | "prd"
   | "mvp"
+  | "mockups"
   | "launch"
 
 export interface OnboardingQueueItem {
@@ -83,6 +84,12 @@ const ONBOARDING_QUEUE_DEFINITIONS: Array<{
     stageMessage: "Planning launchable scope",
   },
   {
+    docType: "mockups",
+    label: "Mockups",
+    dependsOn: ["mvp"],
+    stageMessage: "Generating visual directions",
+  },
+  {
     docType: "launch",
     label: "Marketing",
     dependsOn: [],
@@ -119,6 +126,12 @@ const LOADING_ROW_DEFINITIONS: Array<{
     label: "MVP plan",
     phrase: "Planning launchable scope",
     docType: "mvp",
+  },
+  {
+    key: "mockups",
+    label: "Mockups",
+    phrase: "Generating visual directions",
+    docType: "mockups",
   },
   {
     key: "launch",

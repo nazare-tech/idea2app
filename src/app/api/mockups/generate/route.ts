@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { CREDIT_COSTS } from "@/lib/utils"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
-import { generateStitchMockup } from "@/lib/stitch-pipeline"
-import { refundCreditsServerSide } from "@/lib/credits"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
 import {
   createSkippedActiveDocumentPayload,
   findLatestActiveDocument,
@@ -25,10 +23,10 @@ export async function POST(request: Request) {
   let statusCode = 200
   let errorType: string | undefined
   let errorMessage: string | undefined
-  let creditsConsumed = 0
   let userId: string | undefined
   let projectId: string | undefined
   let isStreaming = false
+  let modelUsed: string | undefined
 
   try {
     const supabase = await createClient()
@@ -63,8 +61,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    projectId = body.projectId
-    const { mvpPlan, projectName, stream: streamRequested } = body
+    projectId = typeof body.projectId === "string" ? body.projectId.trim() : undefined
+    const mvpPlan = typeof body.mvpPlan === "string" ? body.mvpPlan : undefined
+    const projectName = typeof body.projectName === "string" ? body.projectName.trim() : undefined
+    const streamRequested = body.stream
 
     if (!projectId || !mvpPlan || !projectName) {
       statusCode = 400
@@ -73,6 +73,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "projectId, mvpPlan, and projectName are required" },
         { status: 400 }
+      )
+    }
+    if (mvpPlan.length > 50_000 || projectName.length > 160) {
+      statusCode = 400
+      errorType = "validation_error"
+      errorMessage = "Mockup generation input is too large"
+      return NextResponse.json(
+        { error: "Mockup generation input is too large" },
+        { status: 400 },
       )
     }
 
@@ -99,27 +108,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check and deduct credits
-    const creditCost = CREDIT_COSTS['mockup']
-    const { data: consumed } = await supabase.rpc("consume_credits", {
-      p_user_id: user.id,
-      p_amount: creditCost,
-      p_action: 'mockup',
-      p_description: `Mockup generation for "${projectName}"`,
-    })
-
-    if (!consumed) {
-      statusCode = 402
-      errorType = "insufficient_credits"
-      errorMessage = "Insufficient credits"
-      return NextResponse.json(
-        { error: "Insufficient credits. Please upgrade your plan." },
-        { status: 402 }
-      )
-    }
-
-    creditsConsumed = creditCost
-
     // ─── Streaming path ─────────────────────────────────────────────────
     if (streamRequested === true) {
       isStreaming = true
@@ -129,23 +117,33 @@ export async function POST(request: Request) {
           const send = createStreamSender(controller)
 
           try {
-            const content = await generateStitchMockup(mvpPlan, projectName, send)
-
-            send({ type: "stage", message: "Saving mockups...", step: 6, totalSteps: 6 })
-
-            await supabase.from("mockups").insert({
-              project_id: projectId!,
-              content,
-              model_used: "stitch",
-              metadata: { source: "stitch", generated_at: new Date().toISOString() },
+            const result = await generateOpenRouterImageMockup({
+              mvpPlan,
+              projectName,
+              projectId: projectId!,
+              send,
             })
+            modelUsed = result.model
+
+            send({ type: "stage", message: "Saving mockups...", step: 5, totalSteps: 5 })
+
+            const { error: insertError } = await supabase.from("mockups").insert({
+              project_id: projectId!,
+              content: result.content,
+              model_used: result.model,
+              metadata: result.metadata,
+            })
+
+            if (insertError) {
+              throw new Error(`Failed to save generated mockups: ${insertError.message}`)
+            }
 
             await supabase
               .from("projects")
               .update({ status: "active", updated_at: new Date().toISOString() })
               .eq("id", projectId!)
 
-            send({ type: "done", model: "stitch" })
+            send({ type: "done", model: result.model })
 
             trackAPIMetrics({
               endpoint: `/api/mockups/generate`,
@@ -155,23 +153,14 @@ export async function POST(request: Request) {
               projectId: projectId ?? null,
               statusCode: 200,
               responseTimeMs: timer.getElapsedMs(),
-              creditsConsumed,
-              modelUsed: "stitch",
-              aiSource: "stitch",
+              creditsConsumed: 0,
+              modelUsed: result.model,
+              aiSource: "openrouter-image",
               errorType: undefined,
               errorMessage: undefined,
             })
           } catch (err) {
             const msg = err instanceof Error ? err.message : "Mockup generation failed"
-            if (creditsConsumed > 0 && userId) {
-              const refund = await refundCreditsServerSide({
-                userId,
-                amount: creditsConsumed,
-                action: "mockup",
-                description: `Mockup generation failed for "${projectName}": credits refunded`,
-              })
-              if (refund.error) console.error("[Mockup] Credit refund failed:", refund.error)
-            }
             send({ type: "error", message: msg })
             statusCode = 500
             errorType = "generation_error"
@@ -185,9 +174,9 @@ export async function POST(request: Request) {
               projectId: projectId ?? null,
               statusCode: 500,
               responseTimeMs: timer.getElapsedMs(),
-              creditsConsumed,
-              modelUsed: undefined,
-              aiSource: "stitch",
+              creditsConsumed: 0,
+              modelUsed,
+              aiSource: "openrouter-image",
               errorType: "generation_error",
               errorMessage: msg,
             })
@@ -204,41 +193,41 @@ export async function POST(request: Request) {
     // ─── End streaming path ─────────────────────────────────────────────
 
     // Non-streaming path
-    const content = await generateStitchMockup(mvpPlan, projectName)
-
-    await supabase.from("mockups").insert({
-      project_id: projectId,
-      content,
-      model_used: "stitch",
-      metadata: { source: "stitch", generated_at: new Date().toISOString() },
+    const result = await generateOpenRouterImageMockup({
+      mvpPlan,
+      projectName,
+      projectId,
     })
+    modelUsed = result.model
+
+    const { error: insertError } = await supabase.from("mockups").insert({
+      project_id: projectId,
+      content: result.content,
+      model_used: result.model,
+      metadata: result.metadata,
+    })
+
+    if (insertError) {
+      throw new Error(`Failed to save generated mockups: ${insertError.message}`)
+    }
 
     await supabase
       .from("projects")
       .update({ status: "active", updated_at: new Date().toISOString() })
       .eq("id", projectId)
 
-    console.log(`[Mockup] project=${projectId} model=stitch`)
+    console.log(`[Mockup] project=${projectId} model=${result.model} source=openrouter-image`)
 
     return NextResponse.json({
-      content,
-      model: "stitch",
-      source: "stitch",
+      content: result.content,
+      model: result.model,
+      source: result.source,
     })
   } catch (error) {
     console.error("Mockup generation error:", error)
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
-    if (creditsConsumed > 0 && userId) {
-      const refund = await refundCreditsServerSide({
-        userId,
-        amount: creditsConsumed,
-        action: "mockup",
-        description: "Mockup generation failed: credits refunded",
-      })
-      if (refund.error) console.error("[Mockup] Credit refund failed:", refund.error)
-    }
     return NextResponse.json(
       { error: "Failed to generate mockup. Please try again." },
       { status: 500 }
@@ -253,9 +242,9 @@ export async function POST(request: Request) {
         projectId: projectId || null,
         statusCode,
         responseTimeMs: timer.getElapsedMs(),
-        creditsConsumed,
-        modelUsed: "stitch",
-        aiSource: "stitch",
+        creditsConsumed: 0,
+        modelUsed,
+        aiSource: "openrouter-image",
         errorType,
         errorMessage,
       })

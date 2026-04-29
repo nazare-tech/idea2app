@@ -59,7 +59,6 @@ export function PromptChatInterface({
   initialIdea,
   onIdeaSummary,
   onProjectNameGenerated,
-  credits = 0,
   disableInitialAutoStart = false,
 }: PromptChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -542,7 +541,7 @@ export function PromptChatInterface({
           {/* Background document generation status. Idle manual Generate All is deprecated. */}
           {generateAllStatus !== "idle" && (
             <div className="mb-6 mt-2">
-              <GenerateAllBlock projectId={projectId} credits={credits} />
+              <GenerateAllBlock projectId={projectId} />
             </div>
           )}
 

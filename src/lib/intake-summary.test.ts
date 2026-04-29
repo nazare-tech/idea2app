@@ -22,9 +22,12 @@ const questions: IntakeQuestion[] = [
   {
     id: "core-workflow",
     question: "Which workflow should the product handle first?",
-    selectionMode: "text",
-    options: [],
-    allowOther: false,
+    selectionMode: "single",
+    options: [
+      { id: "forecasting", label: "Forecasting" },
+      { id: "ordering", label: "Ordering" },
+    ],
+    allowOther: true,
   },
   {
     id: "business-model",
@@ -34,7 +37,7 @@ const questions: IntakeQuestion[] = [
       { id: "subscription", label: "Subscription" },
       { id: "usage-based", label: "Usage based" },
     ],
-    allowOther: true,
+    allowOther: false,
   },
 ]
 
@@ -63,11 +66,10 @@ test("summarizeIntakeAnswers: resolves selected option ids to labels", () => {
     {
       questionId: "business-model",
       selectedOptionIds: ["subscription", "usage-based"],
-      otherText: "setup fee",
     },
   ])
 
-  assert.equal(items[2].answer, "Subscription, Usage based, setup fee")
+  assert.equal(items[2].answer, "Subscription, Usage based")
 })
 
 test("buildProjectSummary: creates a human-readable dashboard description", () => {
@@ -82,7 +84,8 @@ test("buildProjectSummary: creates a human-readable dashboard description", () =
       },
       {
         questionId: "core-workflow",
-        text: "Forecast ingredient needs from past sales and upcoming holidays.",
+        selectedOptionIds: ["forecasting"],
+        otherText: "holiday-aware ingredient planning",
       },
     ],
     createdAt: "2026-04-23T12:00:00.000Z",
@@ -93,7 +96,7 @@ test("buildProjectSummary: creates a human-readable dashboard description", () =
   assert.match(summary, /Business idea summary:/)
   assert.match(summary, /AI inventory planning for bakeries/)
   assert.match(summary, /Ideal first user: Small businesses, independent bakery owners/i)
-  assert.match(summary, /Which workflow should the product handle first: Forecast ingredient needs/i)
+  assert.match(summary, /Which workflow should the product handle first: Forecasting, holiday-aware ingredient planning/i)
 })
 
 test("formatProjectIntakeForAi: creates plain-language context for downstream AI", () => {

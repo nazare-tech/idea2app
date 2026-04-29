@@ -32,7 +32,7 @@ export const BASE_ACTION_TOKENS: Record<TokenBillableAction, number> = {
   prd: 10,
   "mvp-plan": 10,
   "tech-spec": 10,
-  mockup: 30,
+  mockup: 0,
   "launch-plan": 5,
   "app-static": 50,
   "app-dynamic": 100,

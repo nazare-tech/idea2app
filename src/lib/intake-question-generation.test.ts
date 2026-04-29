@@ -2,10 +2,8 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import {
   IntakeQuestionParseError,
-  buildFallbackIntakeQuestions,
   generateIntakeQuestions,
   parseIntakeQuestionSet,
-  parseIntakeQuestionSetOrFallback,
 } from "./intake-question-generation"
 
 const validModelOutput = JSON.stringify({
@@ -25,9 +23,13 @@ const validModelOutput = JSON.stringify({
     {
       id: "core-workflow",
       question: "Which workflow matters most?",
-      selectionMode: "text",
-      options: [],
-      allowOther: false,
+      selectionMode: "single",
+      options: [
+        { id: "triage", label: "Triage" },
+        { id: "planning", label: "Planning" },
+        { id: "reporting", label: "Reporting" },
+      ],
+      allowOther: true,
     },
     {
       id: "pain-frequency",
@@ -49,20 +51,21 @@ const validModelOutput = JSON.stringify({
         { id: "usage-based", label: "Usage based" },
         { id: "services", label: "Services" },
       ],
-      allowOther: true,
+      allowOther: false,
     },
   ],
 })
 
-test("parseIntakeQuestionSet: parses valid model JSON into typed questions", () => {
+test("parseIntakeQuestionSet: parses valid chip-only model JSON into typed questions", () => {
   const questionSet = parseIntakeQuestionSet(validModelOutput)
 
   assert.equal(questionSet.schemaVersion, "idea-intake-questions-v1")
   assert.equal(questionSet.source, "ai")
   assert.equal(questionSet.questions.length, 4)
   assert.equal(questionSet.questions[0].selectionMode, "single")
-  assert.equal(questionSet.questions[1].selectionMode, "text")
-  assert.deepEqual(questionSet.questions[1].options, [])
+  assert.equal(questionSet.questions[1].selectionMode, "single")
+  assert.equal(questionSet.questions[3].selectionMode, "multiple")
+  assert.equal(questionSet.questions[3].allowOther, false)
 })
 
 test("parseIntakeQuestionSet: accepts JSON wrapped in a markdown fence", () => {
@@ -79,7 +82,7 @@ test("parseIntakeQuestionSet: rejects malformed model output", () => {
   )
 })
 
-test("parseIntakeQuestionSetOrFallback: falls back when required fields are missing", () => {
+test("parseIntakeQuestionSet: rejects required fields that are missing", () => {
   const missingSelectionMode = JSON.stringify({
     questions: [
       {
@@ -91,8 +94,11 @@ test("parseIntakeQuestionSetOrFallback: falls back when required fields are miss
       {
         id: "workflow",
         question: "What workflow?",
-        selectionMode: "text",
-        options: [],
+        selectionMode: "single",
+        options: [
+          { id: "triage", label: "Triage" },
+          { id: "planning", label: "Planning" },
+        ],
         allowOther: false,
       },
       {
@@ -112,27 +118,122 @@ test("parseIntakeQuestionSetOrFallback: falls back when required fields are miss
     ],
   })
 
-  const questionSet = parseIntakeQuestionSetOrFallback(
-    missingSelectionMode,
-    "AI tool for restaurant inventory forecasting"
+  assert.throws(
+    () => parseIntakeQuestionSet(missingSelectionMode),
+    IntakeQuestionParseError
   )
-
-  assert.equal(questionSet.source, "fallback")
-  assert.equal(questionSet.questions.length, 5)
 })
 
-test("parseIntakeQuestionSetOrFallback: falls back for invalid selection modes", () => {
+test("parseIntakeQuestionSet: rejects invalid selection modes", () => {
   const invalidSelectionMode = validModelOutput.replace('"single"', '"dropdown"')
-  const questionSet = parseIntakeQuestionSetOrFallback(
-    invalidSelectionMode,
-    "Consulting service for startup finance teams"
+  assert.throws(
+    () => parseIntakeQuestionSet(invalidSelectionMode),
+    IntakeQuestionParseError
   )
-
-  assert.equal(questionSet.source, "fallback")
-  assert.equal(questionSet.questions[0].id, "target-client")
 })
 
-test("parseIntakeQuestionSetOrFallback: falls back when a chip question has too many options", () => {
+test("parseIntakeQuestionSet: rejects standalone text questions", () => {
+  const textQuestion = JSON.stringify({
+    questions: [
+      {
+        id: "target-audience",
+        question: "Who is the ideal first user?",
+        selectionMode: "single",
+        options: [
+          { id: "founders", label: "Founders" },
+          { id: "operators", label: "Operators" },
+        ],
+        allowOther: true,
+      },
+      {
+        id: "workflow",
+        question: "What workflow matters most?",
+        selectionMode: "text",
+        options: [],
+        allowOther: false,
+      },
+      {
+        id: "pain",
+        question: "How often does the pain happen?",
+        selectionMode: "single",
+        options: [
+          { id: "daily", label: "Daily" },
+          { id: "weekly", label: "Weekly" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "model",
+        question: "How should it make money?",
+        selectionMode: "single",
+        options: [
+          { id: "subscription", label: "Subscription" },
+          { id: "services", label: "Services" },
+        ],
+        allowOther: true,
+      },
+    ],
+  })
+
+  assert.throws(
+    () => parseIntakeQuestionSet(textQuestion),
+    /standalone text input/
+  )
+})
+
+test("parseIntakeQuestionSet: rejects Other on multiple-choice questions", () => {
+  const multipleWithOther = JSON.stringify({
+    questions: [
+      {
+        id: "target-audience",
+        question: "Who is the ideal first user?",
+        selectionMode: "single",
+        options: [
+          { id: "founders", label: "Founders" },
+          { id: "operators", label: "Operators" },
+        ],
+        allowOther: true,
+      },
+      {
+        id: "workflow",
+        question: "What workflow matters most?",
+        selectionMode: "single",
+        options: [
+          { id: "triage", label: "Triage" },
+          { id: "planning", label: "Planning" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "model",
+        question: "How should it make money?",
+        selectionMode: "multiple",
+        options: [
+          { id: "subscription", label: "Subscription" },
+          { id: "usage-based", label: "Usage based" },
+        ],
+        allowOther: true,
+      },
+      {
+        id: "priority",
+        question: "What should the first version prove?",
+        selectionMode: "single",
+        options: [
+          { id: "demand", label: "Demand" },
+          { id: "revenue", label: "Revenue" },
+        ],
+        allowOther: false,
+      },
+    ],
+  })
+
+  assert.throws(
+    () => parseIntakeQuestionSet(multipleWithOther),
+    /multiple-choice questions cannot allow Other/
+  )
+})
+
+test("parseIntakeQuestionSet: rejects when a chip question has too many options", () => {
   const tooManyOptions = JSON.stringify({
     questions: [
       {
@@ -153,8 +254,11 @@ test("parseIntakeQuestionSetOrFallback: falls back when a chip question has too 
       {
         id: "workflow",
         question: "What workflow matters most?",
-        selectionMode: "text",
-        options: [],
+        selectionMode: "single",
+        options: [
+          { id: "triage", label: "Triage" },
+          { id: "planning", label: "Planning" },
+        ],
         allowOther: false,
       },
       {
@@ -182,21 +286,10 @@ test("parseIntakeQuestionSetOrFallback: falls back when a chip question has too 
     ],
   })
 
-  const questionSet = parseIntakeQuestionSetOrFallback(
-    tooManyOptions,
-    "Marketplace for booking local event vendors"
+  assert.throws(
+    () => parseIntakeQuestionSet(tooManyOptions),
+    IntakeQuestionParseError
   )
-
-  assert.equal(questionSet.source, "fallback")
-  assert.equal(questionSet.questions[0].id, "marketplace-sides")
-})
-
-test("buildFallbackIntakeQuestions: returns renderable curated questions", () => {
-  const questionSet = buildFallbackIntakeQuestions("AI software for support ticket triage")
-
-  assert.equal(questionSet.source, "fallback")
-  assert.equal(questionSet.questions.length, 5)
-  assert.ok(questionSet.questions.every((question) => question.id.length > 0))
 })
 
 test("generateIntakeQuestions: uses the injected generator and parses the model output", async () => {
@@ -212,14 +305,21 @@ test("generateIntakeQuestions: uses the injected generator and parses the model 
   assert.equal(result.questionSet.source, "ai")
 })
 
-test("generateIntakeQuestions: falls back when the injected generator fails", async () => {
-  const result = await generateIntakeQuestions("Marketplace for local classes", {
-    generateText: async () => {
-      throw new Error("model unavailable")
-    },
-  })
+test("generateIntakeQuestions: throws a retryable error when no generator is provided", async () => {
+  await assert.rejects(
+    () => generateIntakeQuestions("Marketplace for local classes"),
+    /retry/i
+  )
+})
 
-  assert.equal(result.usedFallback, true)
-  assert.equal(result.questionSet.source, "fallback")
-  assert.match(result.error ?? "", /model unavailable/)
+test("generateIntakeQuestions: throws a retryable error when the injected generator fails", async () => {
+  await assert.rejects(
+    () =>
+      generateIntakeQuestions("Marketplace for local classes", {
+        generateText: async () => {
+          throw new Error("model unavailable")
+        },
+      }),
+    /retry/i
+  )
 })

@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-04-25 (Prompt Tab Deprecation + Active Document Guards)
+**Last Updated**: 2026-04-29 (Onboarding OpenRouter Mockups)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -18,17 +18,19 @@
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans
 - **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD
-- **Mockup Generation**: ASCII art mockups showing information architecture based on MVP plans
+- **Mockup Generation**: Three static UI mockup image alternatives generated through OpenRouter image-output models from MVP plans. The default is OpenRouter's OpenAI image-output model `openai/gpt-5.4-image-2` and remains configurable with `OPENROUTER_MOCKUP_IMAGE_MODEL`. Images are stored in private Supabase Storage and rendered through an authenticated image proxy.
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **Landing Page + Waitlist Gate**: The marketing landing page now switches between standard signup CTAs and a public waitlist flow once the early-access user cap is reached. Features:
   - Dynamic CTA mode based on current `profiles` count
   - Public `waitlist` table for email capture
   - Shared `WaitlistForm` component on the landing page
   - Fail-open API behavior so CTA rendering does not block on Supabase errors
-- **Stitch HTML Proxy + SDK Integration**: Mockup and design workflows now include Stitch integration helpers. Features:
+- **OpenRouter Image Mockups + Legacy Stitch Compatibility**: Mockup generation now defaults to OpenRouter image models and keeps Stitch rendering/proxy support for existing saved mockups. Features:
+  - `src/lib/openrouter-image-mockup-pipeline.ts` generates three OpenRouter image alternatives and uploads image bytes to Supabase Storage
+  - `src/app/api/mockups/image/route.ts` proxies stored mockup images after project ownership checks
   - `@google/stitch-sdk` client wrapper in `src/lib/stitch/client.ts`
-  - Server-side HTML proxy route for safe rendering of Stitch-hosted HTML
-  - Support for extracting project IDs and generated screen IDs from Stitch responses
+  - Server-side HTML proxy route for safe rendering of legacy Stitch-hosted HTML
+  - Support for extracting project IDs and generated screen IDs from legacy Stitch responses
 - **App Generation**: Automated code generation for multiple app types:
   - Static websites (HTML/CSS/JS)
   - Dynamic websites (Next.js)
@@ -85,7 +87,7 @@
 | **@supabase/ssr** | 0.8.0 | Server-side rendering utilities |
 | **Anthropic Claude** | 0.71.2 | AI SDK for app generation |
 | **@google/stitch-sdk** | 0.0.3 | Stitch client SDK used for mockup/design generation helpers |
-| **OpenRouter** | 6.16.0 | API wrapper for AI analysis |
+| **OpenRouter** | 6.16.0 | API wrapper for AI analysis and OpenRouter-hosted image mockup generation |
 | **Stripe** | 20.2.0 | Payment processing and subscriptions |
 | **Perplexity** | - | AI-powered competitor search (sonar-pro model, OpenAI-compatible API) |
 | **Tavily** | - | Web content extraction from competitor URLs |
@@ -158,7 +160,7 @@
    - For auth handoff, `POST /api/intake/pending` stores the idea in `pending_intakes` for 24 hours and returns an opaque token; raw idea text never goes in the URL
    - Auth modal and `/callback` preserve safe `next=/projects/new?intake=<token>` redirects
    - `/projects/new` renders `IdeaIntakeWizard`; it loads pending intake by token via `GET /api/intake/pending` or falls back to `sessionStorage`
-   - `POST /api/intake/questions` generates 4-5 typed questions with `single`, `multiple`, and `text` answer modes. If model output is unavailable or invalid, the service falls back to curated questions
+   - `POST /api/intake/questions` generates 4-5 AI-authored answer-chip questions with `single` and `multiple` answer modes. Standalone text questions are rejected; optional free text is only revealed through `Other` on single-select questions where useful. If AI question generation is unavailable or invalid, the route returns a retryable error instead of falling back to curated questions
    - `POST /api/projects/create-from-intake` validates answers, checks `canCreateProject()`, builds `idea-intake-v1` JSON, stores the readable summary in `projects.description`, stores the structured payload in `project_intakes`, generates `projects.name`, creates a service-owned onboarding `generation_queues` run with `creditCost: 0`, claims the pending token, and returns `generationRunId`, `statusUrl`, and a canonical `#overview` redirect URL
    - `IdeaIntakeWizard` shows `IntakeSubmissionLoadingPanel`, fires `/api/generate-all/execute` for the new project, polls `/api/projects/[id]/onboarding-status`, and redirects only after the v2 competitive analysis row is saved
 
@@ -205,13 +207,13 @@
    - Bundled onboarding generation is trusted only when the parent queue has server-created onboarding metadata (`mode`, `source`, `version`, and `runId`) and item run metadata matches that queue.
    - Server-side execute route runs dependency-aware batches through the shared `generateProjectDocument()` service with max concurrency 2. Competitive and Marketing can run independently; PRD waits on Competitive; MVP waits on PRD; Mockups wait on MVP.
    - Queue start and execution verify current DB state through `active-document-policy.ts`. Already-existing documents are marked `skipped`, linked to their existing `output_table`/`output_id`, and not charged; stale or retried queue items cannot casually create a second active planning document.
-   - Per-step: checks cancellation, optionally deducts credits for legacy/manual runs, runs the pipeline, requires a saved output id before marking the item done, updates the normalized item row, and records `output_table`/`output_id`
+   - Per-step: checks cancellation, optionally deducts credits for legacy/manual runs, runs the pipeline, requires a saved output id before marking the item done, updates the normalized item row, and records `output_table`/`output_id`. Mockup generation is project-bundled and has `creditCost: 0`.
    - On step failure: legacy/manual runs refund credits; onboarding runs skip refunds because bundled project creation does not charge per-document credits. Onboarding items retry up to their configured `maxAttempts`.
    - Stale `generating` rows older than the 150s executor lease are reset to `pending` with one retry attempt available from execute/status polling, so interrupted server runs do not strand a queue.
    - Queue status remains `running` while any item is pending or generating. Terminal `partial`/`error` states are only exposed once no active work remains.
    - Cancellation immediately cancels pending work. Already-generating work is acknowledged by the executor so refunds and saved outputs have a single owner.
    - Queue-level status can be `running`, `completed`, `partial`, `cancelled`, or `error`; `partial` means at least one document completed and at least one dependent/remaining document failed or became blocked.
-   - Onboarding status is exposed by `/api/projects/[id]/onboarding-status`, which maps the backend queue to loading rows: Overview, Market research, PRD, MVP plan, and Marketing. Overview and Market research are ready when a v2 `competitive-analysis` row exists.
+   - Onboarding status is exposed by `/api/projects/[id]/onboarding-status`, which maps the backend queue to loading rows: Overview, Market research, PRD, MVP plan, Mockups, and Marketing. Overview and Market research are ready when a v2 `competitive-analysis` row exists.
    - Generation is durable — survives browser tab close, page refresh, and network interruptions
 
 8. **App Generation Flow**:
@@ -368,7 +370,8 @@ src/
 │   │   ├── mvp-plans/[id]/route.ts    # PATCH update MVP plan content
 │   │   ├── tech-specs/[id]/route.ts   # PATCH update tech spec content
 │   │   ├── waitlist/route.ts          # GET/POST waitlist status + signup
-│   │   ├── stitch/html/route.ts       # Proxy Stitch-hosted HTML for safe rendering
+│   │   ├── mockups/image/route.ts     # Authenticated proxy for stored OpenRouter mockup images
+│   │   ├── stitch/html/route.ts       # Proxy legacy Stitch-hosted HTML for safe rendering
 │   │   ├── generate-pdf/route.ts      # PDF generation support route
 │   │   ├── launch/plan/route.ts       # Launch-plan generation route
 │   │   ├── generate-app/route.ts      # POST generate app code
@@ -425,8 +428,10 @@ src/
 │   ├── stripe.ts                 # Stripe singleton
 │   ├── openrouter.ts             # OpenRouter AI API (chat, gap-analysis fallback)
 │   ├── analysis-pipelines.ts     # In-house analysis orchestration (competitive, PRD, MVP, tech spec)
-│   ├── stitch/client.ts          # Stitch SDK wrapper + response parsers
-│   ├── stitch-pipeline.ts        # Shared Stitch mockup generation logic (used by mockup route + generate-all execute)
+│   ├── openrouter-image-mockup-format.ts # Client-safe OpenRouter image mockup JSON parser
+│   ├── openrouter-image-mockup-pipeline.ts # OpenRouter image mockup generation + Supabase Storage upload
+│   ├── stitch/client.ts          # Legacy Stitch SDK wrapper + response parsers
+│   ├── stitch-pipeline.ts        # Legacy Stitch mockup generation logic retained for compatibility
 │   ├── waitlist.ts               # Waitlist business rules and validation
 │   ├── perplexity.ts             # Perplexity API client (competitor search, with retry)
 │   ├── tavily.ts                 # Tavily API client (URL content extraction, with retry)
@@ -805,8 +810,10 @@ PERPLEXITY_API_KEY=pplx-xxx...
 # Tavily (URL content extraction in competitive analysis)
 TAVILY_API_KEY=tvly-xxx...
 
-# Stitch / Google design generation
-STITCH_API_KEY=stitch_xxx...
+# OpenRouter image mockups and legacy Stitch design tooling
+OPENROUTER_MOCKUP_IMAGE_MODEL=openai/gpt-5.4-image-2
+SUPABASE_MOCKUP_STORAGE_BUCKET=mockups
+STITCH_API_KEY=stitch_xxx... # legacy saved Stitch mockup compatibility / tooling
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -834,7 +841,7 @@ npm install
    - `analyses` - Competitive and gap analyses
    - `prds` - Product requirement documents
    - `mvp_plans` - MVP development plans
-   - `mockups` - Stitch-generated mockup documents
+   - `mockups` - OpenRouter image mockup documents and legacy Stitch mockup documents
    - `tech_specs` - Technical specifications
    - `deployments` - Generated app deployments
    - `waitlist` - Public early-access waitlist email captures
@@ -975,7 +982,7 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `project_id`, `content`, `version`, `created_at`, `updated_at`
   - RLS: Users can only access MVP plans from their projects
 
-- **mockups**: Stitch-generated mockup documents
+- **mockups**: OpenRouter image mockup documents and legacy Stitch mockup documents
   - Fields: `id`, `project_id`, `content`, `model_used`, `metadata`, `created_at`, `updated_at`
   - RLS: Users can only access mockups from their projects
 
@@ -1075,13 +1082,17 @@ docker run -p 3000:3000 idea2app
     - PRD/MVP/Tech Spec: Direct OpenRouter calls with detailed system prompts
   - Competitive-analysis inserts metadata with `document_version` and `prompt_version` for renderer compatibility
 
-- **POST /api/mockups/generate**: Generate Stitch UI mockups
+- **POST /api/mockups/generate**: Generate OpenRouter image UI mockups
   - Body: `{ projectId, mvpPlan, projectName, stream? }`
-  - Returns: `{ content, model, source }` — content is JSON with `{ type: "stitch", options: [{label, title, htmlUrl, imageUrl}] }`; duplicate requests return `200 OK` with `{ skipped: true, existingDocument }`
-  - Cost: 30 credits
-  - Uses Google Stitch SDK (3 design variants)
+  - Returns: `{ content, model, source }` — content is JSON with `{ type: "openrouter-image", options: [{label, title, imageUrl, storagePath, description}] }`; duplicate requests return `200 OK` with `{ skipped: true, existingDocument }`
+  - Cost: project-bundled, no credits consumed
+  - Uses OpenRouter image generation for 3 static design alternatives
   - Route `maxDuration`: 300s
-  - Generation logic extracted to `src/lib/stitch-pipeline.ts` (shared with Generate All execute route)
+  - Generation logic lives in `src/lib/openrouter-image-mockup-pipeline.ts` and is shared with server-side document generation
+
+- **GET /api/mockups/image**: Proxy stored OpenRouter mockup images through the server
+  - Query: `projectId`, `path`, optional `mockupId`
+  - Requires auth, verifies the storage path belongs to a saved mockup for a project owned by the current user, then streams the private Supabase Storage image
 
 ### Generate All
 
@@ -1189,14 +1200,14 @@ docker run -p 3000:3000 idea2app
 | Competitive Analysis | 5 credits |
 | PRD Generation | 10 credits |
 | MVP Plan Generation | 10 credits |
-| Mockup Generation | 15 credits |
+| Mockup Generation | Included in project generation |
 | Tech Spec Generation | 10 credits |
 | App Generation (Deploy) | 5 credits |
 
 ### Credit Management
 
 - **Consumption**: Atomic operation via `consume_credits()` stored procedure
-- **Refund**: Via service-role-only `refund_credits()` through `src/lib/credits.ts` — called on generation failure in analysis, chat, prompt chat, app generation, mockup generation, launch plan generation, and Generate All queue paths. Logs to `credits_history` with `_refund` suffix action.
+- **Refund**: Via service-role-only `refund_credits()` through `src/lib/credits.ts` — called on generation failure in credit-billed analysis, chat, prompt chat, app generation, launch plan generation, and billable Generate All queue paths. Mockup generation is project-bundled and does not consume/refund credits.
 - **Addition**: Via `add_credits()` (subscription refill, purchases)
 - **Balance Check**: Real-time via `get_credit_balance()`
 - **History**: All transactions logged in `credits_history`
@@ -1315,7 +1326,7 @@ export const CREDIT_COSTS = {
 - If generation appears stuck: check `generation_queues` row in Supabase — `status`, `current_index`, and `queue` show the live server state
 - If credits were lost without a document being generated: the hardened `refund_credits` RPC must exist in Supabase (run `supabase/migrations/20260425004000_security_hardening_followups.sql`)
 - After running the migration, regenerate database types: `npx supabase gen types typescript --project-id <id> > src/types/database.ts` to remove the `(supabase.rpc as any)` casts
-- Cancellation: the execute route checks DB `status === "cancelled"` before each step — cancel takes effect at the next step boundary (up to ~2min for a slow step like mockups)
+- Cancellation: the execute route checks DB `status === "cancelled"` before each step — cancel takes effect at the next step boundary (up to ~4min for a slow step like OpenRouter image mockups)
 
 **database.ts Corruption**
 - If `src/types/database.ts` contains a BOM or npm install prompt at the top (UTF-16 encoding artifact from `supabase gen types` with npx), restore it from git: `git checkout <clean-commit> -- src/types/database.ts`
@@ -1340,7 +1351,8 @@ export const CREDIT_COSTS = {
 | [src/app/api/prompt-chat/route.ts](src/app/api/prompt-chat/route.ts) | Deprecated Prompt Chat endpoint; returns `410 Gone` |
 | [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation using in-house pipelines |
 | [src/app/api/waitlist/route.ts](src/app/api/waitlist/route.ts) | Waitlist status endpoint and public waitlist signup handler |
-| [src/app/api/stitch/html/route.ts](src/app/api/stitch/html/route.ts) | Server-side proxy for Stitch HTML downloads |
+| [src/app/api/mockups/image/route.ts](src/app/api/mockups/image/route.ts) | Authenticated proxy for private Supabase Storage mockup images |
+| [src/app/api/stitch/html/route.ts](src/app/api/stitch/html/route.ts) | Server-side proxy for legacy Stitch HTML downloads |
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Three-column workspace orchestrator |
 | [src/components/layout/project-sidebar.tsx](src/components/layout/project-sidebar.tsx) | App-level dark sidebar (project list, search, sign-out) |
 | [src/components/layout/app-page-shell.tsx](src/components/layout/app-page-shell.tsx) | Shared authenticated page shell and header for consistent dashboard page spacing and hierarchy |
@@ -1369,13 +1381,15 @@ export const CREDIT_COSTS = {
 | [src/app/api/analyses/[id]/route.ts](src/app/api/analyses/[id]/route.ts) | **NEW** — PATCH endpoint to update analysis content |
 | [src/app/api/prds/[id]/route.ts](src/app/api/prds/[id]/route.ts) | **NEW** — PATCH endpoint to update PRD content |
 | [src/app/api/mvp-plans/[id]/route.ts](src/app/api/mvp-plans/[id]/route.ts) | PATCH endpoint to update MVP plan content |
-| [src/app/api/mockups/generate/route.ts](src/app/api/mockups/generate/route.ts) | POST endpoint to generate Stitch UI mockups. Imports `generateStitchMockup` from `stitch-pipeline.ts`. |
+| [src/app/api/mockups/generate/route.ts](src/app/api/mockups/generate/route.ts) | POST endpoint to generate OpenRouter image UI mockups without credit consumption. |
 | [src/app/api/mockups/[id]/route.ts](src/app/api/mockups/[id]/route.ts) | **NEW** — PATCH endpoint to update mockup content |
 | [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | PATCH endpoint to update tech spec content |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
 | [src/lib/competitive-analysis-v2.ts](src/lib/competitive-analysis-v2.ts) | **NEW** — Competitive Research v2 section contract, legacy/v2 view model helpers, and parser utilities |
 | [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (competitive, PRD, MVP, tech spec). All OpenRouter calls have 120s AbortSignal timeout. |
-| [src/lib/stitch-pipeline.ts](src/lib/stitch-pipeline.ts) | Shared Stitch mockup generation (extracted from mockup route — also used by generate-all execute route) |
+| [src/lib/openrouter-image-mockup-pipeline.ts](src/lib/openrouter-image-mockup-pipeline.ts) | OpenRouter-only image mockup generation and Supabase Storage upload. |
+| [src/lib/openrouter-image-mockup-format.ts](src/lib/openrouter-image-mockup-format.ts) | Client-safe parser/helpers for OpenRouter image mockup JSON. |
+| [src/lib/stitch-pipeline.ts](src/lib/stitch-pipeline.ts) | Legacy Stitch mockup generation retained for compatibility. |
 | [src/lib/with-retry.ts](src/lib/with-retry.ts) | Shared retry utility — 3 retries, exponential backoff [1s/2s/4s], retries on 429/5xx/network errors |
 | [src/lib/perplexity.ts](src/lib/perplexity.ts) | Perplexity API client for competitor search (wrapped with withRetry) |
 | [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction (wrapped with withRetry) |

@@ -11,7 +11,7 @@ The JSON must match this shape:
     {
       "id": "short-kebab-case-id",
       "question": "Concise question text?",
-      "selectionMode": "single" | "multiple" | "text",
+      "selectionMode": "single" | "multiple",
       "options": [{ "id": "short-kebab-case-id", "label": "Chip label" }],
       "allowOther": true | false,
       "helperText": "Optional short helper text"
@@ -22,9 +22,11 @@ The JSON must match this shape:
 Rules:
 - Generate exactly 4 or 5 questions.
 - Cover target audience, problem intensity, key workflow/use case, business model, and launch priority when relevant.
-- Use "single" when one chip should be selected, "multiple" when several chips can be selected, and "text" for open-ended answers.
-- For "single" and "multiple", include 3-6 concise chip options.
-- For "text", use an empty options array and allowOther false.
+- Use "single" when one chip should be selected and "multiple" when several chips can be selected.
+- Never use standalone text input questions.
+- Include 3-6 concise chip options for every question.
+- Set allowOther true only when a custom answer is genuinely useful.
+- Set allowOther false for every "multiple" question.
 - Chip labels must be short enough for UI chips, ideally 1-4 words.
 - Ask practical questions that make the downstream PRD, MVP plan, competitive research, and app generation more specific.`
 

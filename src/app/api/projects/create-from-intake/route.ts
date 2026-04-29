@@ -228,6 +228,18 @@ export async function POST(request: Request) {
   if (questions.length < 4 || questions.length > 5) {
     return NextResponse.json({ error: "Question set must include 4-5 questions" }, { status: 400 })
   }
+  if (questions.some((question) => question.selectionMode === "text")) {
+    return NextResponse.json(
+      { error: "Intake questions must use single or multiple choice answers" },
+      { status: 400 }
+    )
+  }
+  if (questions.some((question) => question.selectionMode === "multiple" && question.allowOther)) {
+    return NextResponse.json(
+      { error: "Multiple-choice questions cannot include an Other answer" },
+      { status: 400 }
+    )
+  }
 
   const answerResult = validateAnswers(questions, body.answers)
   if (answerResult.error) {

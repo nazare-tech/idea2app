@@ -122,10 +122,10 @@ test("buildQueue: competitive production default cost is 20", () => {
   assert.equal(competitive.creditCost, 20)
 })
 
-test("buildQueue: mockups cost is fixed at 30", () => {
+test("buildQueue: mockups cost is project-bundled", () => {
   const queue = buildQueue(DEFAULT_MODELS, allPending)
   const mockups = queue.find((item) => item.docType === "mockups")!
-  assert.equal(mockups.creditCost, 30)
+  assert.equal(mockups.creditCost, 0)
 })
 
 test("buildQueue: launch production default cost is 5", () => {
@@ -291,8 +291,8 @@ test("loop: all items end up 'done' on successful completion", async () => {
   assert.ok(result.queue.every((item) => item.status === "done"))
 })
 
-test("loop: credits accumulate for every generated doc", async () => {
-  // competitive:20, prd:15, mvp:15, mockups:30, launch:5 → 85
+test("loop: credits accumulate only for billable generated docs", async () => {
+  // competitive:20, prd:15, mvp:15, mockups:0, launch:5 → 55
   const result = await simulateLoop(
     pendingQueue(),
     DEFAULT_MODELS,
@@ -300,7 +300,7 @@ test("loop: credits accumulate for every generated doc", async () => {
     allPending,
     { current: false },
   )
-  assert.equal(result.creditsUsed, 85)
+  assert.equal(result.creditsUsed, 55)
 })
 
 test("loop: empty queue (no pending items) completes immediately without calling generateDoc", async () => {
@@ -353,7 +353,7 @@ test("loop: skipped docs still have 0 credit cost", async () => {
   // mockups should be skipped and not charged
   const mockups = result.queue.find((item) => item.docType === "mockups")!
   assert.equal(mockups.status, "skipped")
-  // credits should exclude mockups (30) → only competitive:20+prd:15+mvp:15+launch:5=55
+  // credits exclude project-bundled mockups → only competitive:20+prd:15+mvp:15+launch:5=55
   assert.equal(result.creditsUsed, 55)
 })
 

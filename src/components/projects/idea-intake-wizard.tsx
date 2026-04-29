@@ -503,7 +503,7 @@ function QuestionCard({
                   </button>
                 )
               })}
-              {question.allowOther && (
+              {question.allowOther && question.selectionMode === "single" && (
                 <button
                   type="button"
                   onClick={() =>
@@ -579,6 +579,7 @@ function toggleOther(question: IntakeQuestion, draft: AnswerDraft): AnswerDraft 
 
 function shouldShowOtherInput(question: IntakeQuestion, answer: AnswerDraft) {
   if (!question.allowOther) return false
+  if (question.selectionMode !== "single") return false
   return answer.otherSelected
 }
 

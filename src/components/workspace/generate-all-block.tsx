@@ -107,16 +107,12 @@ function useElapsedTime(startedAt: Date | null, isRunning: boolean) {
 
 export function GenerateAllBlock({
   projectId,
-  credits,
 }: {
   projectId: string
-  credits: number
 }) {
   const {
     status,
     queue,
-    totalCredits,
-    creditsUsed,
     startedAt,
     error,
     startGenerateAll,
@@ -137,7 +133,6 @@ export function GenerateAllBlock({
   const completedCount  = queue.filter((item) => item.status === "done").length
   const totalActionable = queue.filter((item) => item.status !== "skipped").length
   const allSkipped      = queue.length > 0 && queue.every((item) => item.status === "skipped")
-  const hasInsufficientCredits = totalCredits > credits
 
   const progressPercent = totalActionable > 0
     ? Math.round((completedCount / totalActionable) * 100)
@@ -231,7 +226,7 @@ export function GenerateAllBlock({
                 {isRunning
                   ? "Generating Documents"
                   : isCompleted
-                    ? "All Documents Generated"
+                    ? "Documents Generated"
                     : isPartial
                       ? "Partially Generated"
                       : isError
@@ -240,7 +235,7 @@ export function GenerateAllBlock({
                         ? "Generation Cancelled"
                         : isInterrupted
                           ? "Generation Interrupted"
-                          : "Generate All Documents"}
+                          : "Document Generation"}
               </h3>
               <p className="text-[12px] text-muted-foreground mt-0.5">
                 {isRunning
@@ -255,7 +250,7 @@ export function GenerateAllBlock({
                         ? `${completedCount} / ${totalActionable} completed before cancellation`
                         : isInterrupted
                           ? `${completedCount} / ${totalActionable} completed: page was refreshed mid-generation`
-                          : "Create your complete business plan in one click"}
+                          : "Background generation status"}
               </p>
             </div>
           </div>
@@ -319,7 +314,7 @@ export function GenerateAllBlock({
                   {item.label}
                 </span>
 
-                {/* Subtext: streaming message, status, or credit cost */}
+                {/* Subtext: streaming message or status */}
                 {isGenerating ? (
                   <span className="block text-[11px] text-[#3B82F6] mt-0.5 font-mono">
                     {item.stageMessage || "Generating…"}
@@ -333,9 +328,7 @@ export function GenerateAllBlock({
                 ) : isDone ? (
                   <span className="block text-[11px] text-[#22C55E] mt-0.5">Done</span>
                 ) : (
-                  <span className="block text-[11px] text-muted-foreground mt-0.5">
-                    {item.creditCost} credits
-                  </span>
+                  <span className="block text-[11px] text-muted-foreground mt-0.5">Queued</span>
                 )}
               </div>
 
@@ -353,32 +346,8 @@ export function GenerateAllBlock({
       {/* Footer */}
       <div className="border-t border-border bg-secondary/40 px-5 py-4">
         {isIdle && (
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <span className="block text-[11px] text-muted-foreground">Estimated total</span>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="text-[18px] font-bold text-foreground leading-none">
-                  {totalCredits}
-                </span>
-                <span className="text-[12px] text-muted-foreground">credits</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {hasInsufficientCredits && (
-                <span className="text-[11px] text-red-500">
-                  Need {totalCredits}, have {credits}
-                </span>
-              )}
-              <Button
-                size="sm"
-                onClick={startGenerateAll}
-                disabled={hasInsufficientCredits || totalActionable === 0}
-                className="bg-red-600 hover:bg-red-700 text-white text-[13px] font-semibold h-9 px-5 rounded-lg gap-2"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Generate All
-              </Button>
-            </div>
+          <div className="text-[12px] text-muted-foreground">
+            No background generation is currently running.
           </div>
         )}
 
@@ -387,16 +356,14 @@ export function GenerateAllBlock({
             <span className="text-[12px] text-muted-foreground font-mono">
               Elapsed: {elapsedTime}
             </span>
-            <span className="text-[12px] text-muted-foreground font-mono">
-              {creditsUsed} credits used
-            </span>
+            <span className="text-[12px] text-muted-foreground font-mono">Running</span>
           </div>
         )}
 
         {isCompleted && (
           <div className="flex items-center justify-between">
             <span className="text-[12px] text-muted-foreground font-mono">
-              Completed in {elapsedTime} · {creditsUsed} credits used
+              Completed in {elapsedTime}
             </span>
           </div>
         )}
@@ -404,12 +371,11 @@ export function GenerateAllBlock({
         {(isError || isPartial || isCancelled) && (
           <div className="flex items-end justify-between gap-3">
             <span className="text-[12px] text-muted-foreground font-mono">
-              {completedCount} / {totalActionable} completed · {creditsUsed} credits used
+              {completedCount} / {totalActionable} completed
             </span>
             <Button
               size="sm"
               onClick={startGenerateAll}
-              disabled={hasInsufficientCredits}
               className="bg-red-600 hover:bg-red-700 text-white text-[13px] font-semibold h-9 px-5 rounded-lg gap-2"
             >
               <Sparkles className="h-3.5 w-3.5" />
@@ -426,7 +392,6 @@ export function GenerateAllBlock({
             <Button
               size="sm"
               onClick={startGenerateAll}
-              disabled={hasInsufficientCredits}
               className="bg-red-600 hover:bg-red-700 text-white text-[13px] font-semibold h-9 px-5 rounded-lg gap-2"
             >
               <Sparkles className="h-3.5 w-3.5" />

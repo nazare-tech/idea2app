@@ -57,7 +57,7 @@ export type FeatureType =
 /**
  * AI source providers
  */
-export type AISource = "openrouter" | "anthropic" | "n8n" | "inhouse" | "stitch"
+export type AISource = "openrouter" | "openrouter-image" | "anthropic" | "n8n" | "inhouse" | "stitch"
 
 /**
  * Common error types for categorization

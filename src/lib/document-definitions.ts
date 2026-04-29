@@ -82,7 +82,7 @@ export const DOCUMENT_DEFINITIONS: DocumentDefinition[] = [
     subtitle: "Interactive UI mockups showing information architecture",
     description: "",
     icon: LayoutGrid,
-    creditCost: 30,
+    creditCost: 0,
     showInNav: true,
   },
   {
@@ -147,6 +147,6 @@ export const GENERATE_ALL_DEFAULT_MODELS: Record<string, string> = {
   competitive: "google/gemini-3.1-pro-preview",
   prd:         "anthropic/claude-sonnet-4-6",
   mvp:         "anthropic/claude-sonnet-4-6",
-  mockups:     "anthropic/claude-sonnet-4-6",
+  mockups:     "openai/gpt-5.4-image-2",
   launch:      "openai/gpt-5.4-mini",
 }

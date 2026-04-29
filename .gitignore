@@ -44,6 +44,7 @@ next-env.d.ts
 
 # npm cache
 .npm-cache
+.playwright-cli/
 .playwright-mcp/
 .dmux/
 .claude/worktrees/

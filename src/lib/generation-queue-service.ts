@@ -32,9 +32,10 @@ export type GenerationQueueItemRow = Database["public"]["Tables"]["generation_qu
 export type GenerationQueueItemInsert = Database["public"]["Tables"]["generation_queue_items"]["Insert"]
 export type GenerationQueueItemUpdate = Database["public"]["Tables"]["generation_queue_items"]["Update"]
 type ServerSupabaseClient = SupabaseClient<Database>
-// OpenRouter calls abort at 120s, so a 150s lease lets real requests finish
-// while recovering promptly from browser disconnects or killed route handlers.
-const STALE_GENERATING_MS = 150 * 1000
+// OpenRouter image mockups can run for several minutes, so the stale lease
+// must outlast the longest supported request timeout while still recovering
+// from browser disconnects or killed route handlers.
+const STALE_GENERATING_MS = 270 * 1000
 export const MANUAL_GENERATION_SOURCE = "manual"
 
 export interface QueueJsonItem {

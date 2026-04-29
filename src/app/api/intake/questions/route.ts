@@ -42,28 +42,41 @@ export async function POST(request: Request) {
     )
   }
 
-  const result = await generateIntakeQuestions(idea, {
-    generateText: async ({ systemPrompt, userPrompt, maxTokens }) => {
-      if (!process.env.OPENROUTER_API_KEY) {
-        throw new Error("OpenRouter API key not configured")
-      }
+  try {
+    const result = await generateIntakeQuestions(idea, {
+      generateText: async ({ systemPrompt, userPrompt, maxTokens }) => {
+        if (!process.env.OPENROUTER_API_KEY) {
+          throw new Error("OpenRouter API key not configured")
+        }
 
-      const response = await openrouter.chat.completions.create({
-        model: INTAKE_MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_tokens: maxTokens,
-      })
+        const response = await openrouter.chat.completions.create({
+          model: INTAKE_MODEL,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          max_tokens: maxTokens,
+        })
 
-      return response.choices[0]?.message?.content ?? ""
-    },
-  })
+        return response.choices[0]?.message?.content ?? ""
+      },
+    })
 
-  return NextResponse.json({
-    questionSet: result.questionSet,
-    usedFallback: result.usedFallback,
-    error: result.usedFallback ? result.error : undefined,
-  })
+    return NextResponse.json({
+      questionSet: result.questionSet,
+      usedFallback: false,
+    })
+  } catch (error) {
+    const message = error instanceof Error
+      ? error.message
+      : "We couldn't generate follow-up questions right now. Please retry in a moment."
+
+    return NextResponse.json(
+      {
+        error: message,
+        retryable: true,
+      },
+      { status: 503 }
+    )
+  }
 }

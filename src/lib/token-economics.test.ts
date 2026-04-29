@@ -25,8 +25,8 @@ test("BASE_ACTION_TOKENS: mvp-plan base is 10", () => {
   assert.equal(BASE_ACTION_TOKENS["mvp-plan"], 10)
 })
 
-test("BASE_ACTION_TOKENS: mockup base is 30", () => {
-  assert.equal(BASE_ACTION_TOKENS["mockup"], 30)
+test("BASE_ACTION_TOKENS: mockup base is 0", () => {
+  assert.equal(BASE_ACTION_TOKENS["mockup"], 0)
 })
 
 test("BASE_ACTION_TOKENS: launch-plan base is 5", () => {
@@ -174,16 +174,16 @@ test("getTokenCost: mvp-plan with no model = 10", () => {
   assert.equal(getTokenCost("mvp-plan"), 10)
 })
 
-test("getTokenCost: mockup with no model = 30", () => {
-  assert.equal(getTokenCost("mockup"), 30)
+test("getTokenCost: mockup with no model = 0", () => {
+  assert.equal(getTokenCost("mockup"), 0)
 })
 
 test("getTokenCost: launch-plan with no model = 5", () => {
   assert.equal(getTokenCost("launch-plan"), 5)
 })
 
-test("getTokenCost: mockup with legacy stitch model id remains fixed at 30", () => {
-  assert.equal(getTokenCost("mockup", "stitch"), 30)
+test("getTokenCost: mockup with legacy stitch model id remains free", () => {
+  assert.equal(getTokenCost("mockup", "stitch"), 0)
 })
 
 test("getTokenCost: rounds generation costs up to the nearest 5", () => {
@@ -212,8 +212,8 @@ test("getTokenCost: gpt-5 (1.5x) on competitive-analysis (15) → ceil-to-5(22.5
   assert.equal(getTokenCost("competitive-analysis", "openai/gpt-5"), 25)
 })
 
-test("getTokenCost: mockup is fixed at 30 even with gpt-5", () => {
-  assert.equal(getTokenCost("mockup", "openai/gpt-5"), 30)
+test("getTokenCost: mockup is fixed at 0 even with gpt-5", () => {
+  assert.equal(getTokenCost("mockup", "openai/gpt-5"), 0)
 })
 
 test("getTokenCost: claude-opus (1.35x) on prd (10) → ceil-to-5(13.5) = 15", () => {
@@ -230,11 +230,11 @@ test("getTokenCost: deep-seek (0.8x) on mvp-plan (10) → ceil-to-5(8) = 10", ()
 
 // Production default Generate All models:
 // competitive: gemini-3.1-pro → 20, prd: claude-sonnet → 15,
-// mvp: claude-sonnet → 15, mockups: fixed → 30, launch: gpt-5.4-mini → 5
+// mvp: claude-sonnet → 15, mockups: project-bundled → 0, launch: gpt-5.4-mini → 5
 const DEFAULT_MODELS = GENERATE_ALL_DEFAULT_MODELS
 
-test("estimateGenerateAllCost: all 5 docs with production defaults = 85 credits", () => {
-  assert.equal(estimateGenerateAllCost(DEFAULT_MODELS), 85)
+test("estimateGenerateAllCost: all 5 docs with production defaults = 55 credits", () => {
+  assert.equal(estimateGenerateAllCost(DEFAULT_MODELS), 55)
 })
 
 test("estimateGenerateAllCost: skipping all docs = 0", () => {
@@ -242,10 +242,10 @@ test("estimateGenerateAllCost: skipping all docs = 0", () => {
   assert.equal(estimateGenerateAllCost(DEFAULT_MODELS, skipAll), 0)
 })
 
-test("estimateGenerateAllCost: skipping mockups (30 credits) reduces total by 30", () => {
+test("estimateGenerateAllCost: skipping mockups does not change total", () => {
   const full = estimateGenerateAllCost(DEFAULT_MODELS)
   const withoutMockups = estimateGenerateAllCost(DEFAULT_MODELS, new Set(["mockups"]))
-  assert.equal(full - withoutMockups, 30)
+  assert.equal(full - withoutMockups, 0)
 })
 
 test("estimateGenerateAllCost: skipping competitive reduces total by 20", () => {
@@ -283,7 +283,7 @@ test("estimateGenerateAllCost: skipping competitive and prd saves 35 credits (20
 })
 
 test("estimateGenerateAllCost: empty model selections uses default multiplier 1.0", () => {
-  // competitive-analysis=15×1.0=15, prd=10, mvp=10, mockup=30, launch=5 → total=70
+  // competitive-analysis=15×1.0=15, prd=10, mvp=10, mockup=0, launch=5 → total=40
   const cost = estimateGenerateAllCost({})
-  assert.equal(cost, 70)
+  assert.equal(cost, 40)
 })

@@ -6,6 +6,7 @@ import { mockupRegistry } from "@/lib/json-render/registry"
 import type { Spec } from "@json-render/core"
 import { Monitor, Smartphone, Tablet, Layers, Download, ChevronDown, FileDown } from "lucide-react"
 import { extractMockupOptions } from "@/lib/mockup-format-contract"
+import { parseOpenRouterImageMockupContent, type OpenRouterImageMockupContent } from "@/lib/openrouter-image-mockup-format"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -675,6 +676,105 @@ function parseStitchContent(content: string): StitchContent | null {
   }
 }
 
+function parseOpenRouterImageContent(content: string): OpenRouterImageMockupContent | null {
+  return parseOpenRouterImageMockupContent(content)
+}
+
+function OpenRouterImageMockupViewer({
+  data,
+  projectName,
+}: {
+  data: OpenRouterImageMockupContent
+  projectName?: string
+}) {
+  const [downloadingLabel, setDownloadingLabel] = React.useState<string | null>(null)
+
+  const handleDownload = React.useCallback(async (index: number) => {
+    const option = data.options[index]
+    if (!option) return
+
+    setDownloadingLabel(option.label)
+    try {
+      const response = await fetch(option.imageUrl)
+      if (!response.ok) throw new Error("Failed to download mockup image")
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      const extension = blob.type === "image/jpeg" ? "jpg" : blob.type.split("/")[1] || "png"
+      const prefix = projectName ? `${projectName.toLowerCase().replace(/\s+/g, "-")}-` : ""
+      a.href = url
+      a.download = `${prefix}mockup-option-${option.label.toLowerCase()}.${extension}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } finally {
+      setDownloadingLabel(null)
+    }
+  }, [data.options, projectName])
+
+  return (
+    <div className="space-y-8 w-full">
+      {data.options.map((option, index) => {
+        const isDownloading = downloadingLabel === option.label
+
+        return (
+          <div
+            key={option.label}
+            id={`mockups-concept-${index + 1}`}
+            className="overflow-hidden rounded-xl border border-border bg-white"
+          >
+            <div className="flex items-center gap-3 border-b border-border px-5 py-3">
+              <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                Option {option.label}
+              </span>
+              <span className="text-sm font-medium text-foreground">{option.title}</span>
+            </div>
+
+            <div className="flex min-h-[420px] flex-col lg:min-h-[600px] lg:flex-row">
+              <div className="flex flex-1 items-center justify-center bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px] p-3 sm:p-5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={option.imageUrl}
+                  alt={`${option.title} mockup option ${option.label}`}
+                  className="h-auto w-full rounded-lg border border-border bg-white object-contain shadow-sm"
+                  style={{ maxHeight: "min(600px, 70vh)" }}
+                />
+              </div>
+
+              <div className="flex w-full shrink-0 flex-col justify-between border-t border-border p-5 lg:w-72 lg:border-l lg:border-t-0">
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                      Option {option.label}
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-foreground">{option.title}</p>
+                  </div>
+                  {option.description && (
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {option.description}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-xs font-medium transition-colors hover:bg-muted/50 disabled:opacity-50"
+                  disabled={downloadingLabel !== null}
+                  onClick={() => handleDownload(index)}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>{isDownloading ? "Downloading..." : "Export Image"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function StitchMockupViewer({
   data,
   projectName,
@@ -1272,18 +1372,19 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
 export function MockupRenderer({ content, className = "", projectName, projectId }: MockupRendererProps) {
   // All hooks must be called unconditionally before any early return (Rules of Hooks)
   const stitchData = React.useMemo(() => parseStitchContent(content), [content])
+  const openRouterImageData = React.useMemo(() => parseOpenRouterImageContent(content), [content])
 
   const patchSpec = React.useMemo(() => {
-    if (stitchData) return null // skip when stitch format detected
+    if (stitchData || openRouterImageData) return null // skip when typed mockup format detected
     if (isJsonPatchContent(content)) {
       return applyJsonPatches(content)
     }
     return null
-  }, [content, stitchData])
+  }, [content, stitchData, openRouterImageData])
 
   const isJsonRender = React.useMemo(
-    () => !stitchData && !patchSpec && isJsonRenderContent(content),
-    [content, stitchData, patchSpec]
+    () => !stitchData && !openRouterImageData && !patchSpec && isJsonRenderContent(content),
+    [content, stitchData, openRouterImageData, patchSpec]
   )
 
   // ── Stitch format: { type: "stitch", options: [...] } ──────────────────
@@ -1291,6 +1392,15 @@ export function MockupRenderer({ content, className = "", projectName, projectId
     return (
       <div className={className}>
         <StitchMockupViewer data={stitchData} projectName={projectName} projectId={projectId} />
+      </div>
+    )
+  }
+
+  // ── OpenRouter image format: { type: "openrouter-image", options: [...] } ─
+  if (openRouterImageData) {
+    return (
+      <div className={className}>
+        <OpenRouterImageMockupViewer data={openRouterImageData} projectName={projectName} />
       </div>
     )
   }

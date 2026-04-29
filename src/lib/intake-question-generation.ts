@@ -21,6 +21,8 @@ const MAX_OPTION_LABEL_LENGTH = 48
 const MAX_HELPER_TEXT_LENGTH = 140
 
 const SELECTION_MODE_SET = new Set<string>(INTAKE_SELECTION_MODES)
+const RETRYABLE_GENERATION_ERROR =
+  "We couldn't generate follow-up questions right now. Please retry in a moment."
 
 export class IntakeQuestionParseError extends Error {
   constructor(public readonly issues: string[]) {
@@ -44,11 +46,7 @@ export async function generateIntakeQuestions(
   options: GenerateIntakeQuestionsOptions = {}
 ): Promise<IntakeQuestionGenerationResult> {
   if (!options.generateText) {
-    return {
-      questionSet: buildFallbackIntakeQuestions(idea),
-      usedFallback: true,
-      error: "No model generator was provided",
-    }
+    throw new Error(RETRYABLE_GENERATION_ERROR)
   }
 
   try {
@@ -62,12 +60,8 @@ export async function generateIntakeQuestions(
       usedFallback: false,
       rawModelOutput,
     }
-  } catch (error) {
-    return {
-      questionSet: buildFallbackIntakeQuestions(idea),
-      usedFallback: true,
-      error: error instanceof Error ? error.message : "Unknown intake question generation error",
-    }
+  } catch {
+    throw new Error(RETRYABLE_GENERATION_ERROR)
   }
 }
 
@@ -106,232 +100,6 @@ export function parseIntakeQuestionSet(rawModelOutput: string): IntakeQuestionSe
     source: "ai",
     questions,
   }
-}
-
-export function parseIntakeQuestionSetOrFallback(
-  rawModelOutput: string,
-  idea: string
-): IntakeQuestionSet {
-  try {
-    return parseIntakeQuestionSet(rawModelOutput)
-  } catch {
-    return buildFallbackIntakeQuestions(idea)
-  }
-}
-
-export function buildFallbackIntakeQuestions(idea: string): IntakeQuestionSet {
-  const ideaType = classifyIdea(idea)
-
-  const commonLastQuestion: IntakeQuestion = {
-    id: "launch-priority",
-    question: "What should the first version prove?",
-    selectionMode: "single",
-    options: [
-      option("validate-demand", "Validate demand"),
-      option("win-first-users", "Win first users"),
-      option("prove-workflow", "Prove workflow"),
-      option("test-revenue", "Test revenue"),
-    ],
-    allowOther: true,
-    helperText: "Pick the outcome that matters most for the MVP.",
-  }
-
-  if (ideaType === "marketplace") {
-    return setFromQuestions([
-      {
-        id: "marketplace-sides",
-        question: "Who are the two sides of the marketplace?",
-        selectionMode: "text",
-        options: [],
-        allowOther: false,
-        helperText: "Name the buyer/user side and the supplier/provider side.",
-      },
-      {
-        id: "transaction-type",
-        question: "What transactions should happen first?",
-        selectionMode: "single",
-        options: [
-          option("services", "Services"),
-          option("products", "Products"),
-          option("bookings", "Bookings"),
-          option("rentals", "Rentals"),
-          option("leads", "Leads"),
-        ],
-        allowOther: true,
-      },
-      {
-        id: "marketplace-niche",
-        question: "What niche gives the marketplace a focused wedge?",
-        selectionMode: "text",
-        options: [],
-        allowOther: false,
-      },
-      {
-        id: "revenue-model",
-        question: "How should the marketplace make money?",
-        selectionMode: "multiple",
-        options: [
-          option("commission", "Commission"),
-          option("subscriptions", "Subscriptions"),
-          option("listing-fees", "Listing fees"),
-          option("featured-placement", "Featured placement"),
-          option("payments-margin", "Payments margin"),
-        ],
-        allowOther: true,
-      },
-      commonLastQuestion,
-    ])
-  }
-
-  if (ideaType === "service") {
-    return setFromQuestions([
-      {
-        id: "target-client",
-        question: "Who is the ideal first client?",
-        selectionMode: "single",
-        options: [
-          option("consumers", "Consumers"),
-          option("small-businesses", "Small businesses"),
-          option("startups", "Startups"),
-          option("enterprise-teams", "Enterprise teams"),
-          option("creators", "Creators"),
-        ],
-        allowOther: true,
-      },
-      {
-        id: "delivery-model",
-        question: "How will the service be delivered?",
-        selectionMode: "single",
-        options: [
-          option("self-serve", "Self-serve"),
-          option("done-for-you", "Done for you"),
-          option("hybrid", "Hybrid"),
-          option("consulting", "Consulting"),
-        ],
-        allowOther: true,
-      },
-      {
-        id: "pain-intensity",
-        question: "How urgent is the customer pain?",
-        selectionMode: "single",
-        options: [
-          option("nice-to-have", "Nice to have"),
-          option("weekly-pain", "Weekly pain"),
-          option("daily-pain", "Daily pain"),
-          option("critical-blocker", "Critical blocker"),
-        ],
-        allowOther: false,
-      },
-      {
-        id: "pricing-model",
-        question: "What pricing model fits best?",
-        selectionMode: "single",
-        options: [
-          option("fixed-package", "Fixed package"),
-          option("monthly-retainer", "Monthly retainer"),
-          option("per-project", "Per project"),
-          option("performance-based", "Performance based"),
-        ],
-        allowOther: true,
-      },
-      commonLastQuestion,
-    ])
-  }
-
-  if (ideaType === "vague") {
-    return setFromQuestions([
-      {
-        id: "problem",
-        question: "What problem are you most trying to solve?",
-        selectionMode: "text",
-        options: [],
-        allowOther: false,
-      },
-      {
-        id: "target-audience",
-        question: "Who feels this problem most strongly?",
-        selectionMode: "single",
-        options: [
-          option("consumers", "Consumers"),
-          option("small-businesses", "Small businesses"),
-          option("creators", "Creators"),
-          option("operators", "Operators"),
-          option("developers", "Developers"),
-        ],
-        allowOther: true,
-      },
-      {
-        id: "solution-type",
-        question: "What kind of solution are you imagining?",
-        selectionMode: "single",
-        options: [
-          option("software-tool", "Software tool"),
-          option("marketplace", "Marketplace"),
-          option("service", "Service"),
-          option("content-community", "Content/community"),
-        ],
-        allowOther: true,
-      },
-      {
-        id: "success-outcome",
-        question: "What should customers be able to achieve?",
-        selectionMode: "text",
-        options: [],
-        allowOther: false,
-      },
-      commonLastQuestion,
-    ])
-  }
-
-  return setFromQuestions([
-    {
-      id: "target-audience",
-      question: "Who is the ideal first user or buyer?",
-      selectionMode: "single",
-      options: [
-        option("consumers", "Consumers"),
-        option("small-businesses", "Small businesses"),
-        option("startups", "Startups"),
-        option("enterprise-teams", "Enterprise teams"),
-        option("creators", "Creators"),
-      ],
-      allowOther: true,
-    },
-    {
-      id: "core-workflow",
-      question: "Which workflow should the product handle first?",
-      selectionMode: "text",
-      options: [],
-      allowOther: false,
-      helperText: "Describe the main job the product should help users complete.",
-    },
-    {
-      id: "pain-frequency",
-      question: "How often does this problem happen?",
-      selectionMode: "single",
-      options: [
-        option("daily", "Daily"),
-        option("weekly", "Weekly"),
-        option("monthly", "Monthly"),
-        option("occasionally", "Occasionally"),
-      ],
-      allowOther: false,
-    },
-    {
-      id: "business-model",
-      question: "Which business model is most likely?",
-      selectionMode: "single",
-      options: [
-        option("subscription", "Subscription"),
-        option("freemium", "Freemium"),
-        option("usage-based", "Usage based"),
-        option("one-time-purchase", "One-time purchase"),
-        option("services", "Services"),
-      ],
-      allowOther: true,
-    },
-    commonLastQuestion,
-  ])
 }
 
 function parseJsonObject(rawModelOutput: string, issues: string[]): Record<string, unknown> | null {
@@ -404,6 +172,18 @@ function parseQuestion(questionValue: unknown, questionIndex: number): IntakeQue
   if (selectionMode === "text" && allowOther) {
     throw new IntakeQuestionParseError([
       `question ${questionIndex + 1} text questions cannot allow Other`,
+    ])
+  }
+
+  if (selectionMode === "text") {
+    throw new IntakeQuestionParseError([
+      `question ${questionIndex + 1} cannot use standalone text input`,
+    ])
+  }
+
+  if (selectionMode === "multiple" && allowOther) {
+    throw new IntakeQuestionParseError([
+      `question ${questionIndex + 1} multiple-choice questions cannot allow Other`,
     ])
   }
 
@@ -564,35 +344,4 @@ function findDuplicateIds(ids: string[]): string[] {
   }
 
   return [...duplicates]
-}
-
-function setFromQuestions(questions: IntakeQuestion[]): IntakeQuestionSet {
-  return {
-    schemaVersion: INTAKE_QUESTION_SCHEMA_VERSION,
-    source: "fallback",
-    questions,
-  }
-}
-
-function option(id: string, label: string): IntakeQuestionOption {
-  return { id, label }
-}
-
-function classifyIdea(idea: string): "marketplace" | "service" | "software" | "vague" {
-  const normalized = idea.toLowerCase()
-  const wordCount = normalized.split(/\s+/).filter(Boolean).length
-
-  if (wordCount < 5) {
-    return "vague"
-  }
-
-  if (/\b(marketplace|buyers?|sellers?|vendors?|providers?|booking platform)\b/.test(normalized)) {
-    return "marketplace"
-  }
-
-  if (/\b(service|agency|consulting|coach|coaching|done-for-you|managed)\b/.test(normalized)) {
-    return "service"
-  }
-
-  return "software"
 }

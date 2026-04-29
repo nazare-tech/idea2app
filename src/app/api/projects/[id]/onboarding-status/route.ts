@@ -75,6 +75,7 @@ export async function GET(
     competitiveResult,
     prdResult,
     mvpResult,
+    mockupResult,
     launchResult,
   ] = await Promise.all([
     supabase
@@ -100,6 +101,13 @@ export async function GET(
       .limit(1)
       .maybeSingle(),
     supabase
+      .from("mockups")
+      .select("id")
+      .eq("project_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
       .from("analyses")
       .select("id")
       .eq("project_id", id)
@@ -114,6 +122,7 @@ export async function GET(
     competitive: competitiveReady,
     prd: Boolean(prdResult.data?.id),
     mvp: Boolean(mvpResult.data?.id),
+    mockups: Boolean(mockupResult.data?.id),
     launch: Boolean(launchResult.data?.id),
   }
   const queueSupabase = createServiceClient()

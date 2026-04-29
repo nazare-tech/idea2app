@@ -12,8 +12,8 @@ import {
   COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
 } from "@/lib/competitive-analysis-v2"
 import { linkifyBareUrls } from "@/lib/markdown-links"
+import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
-import { generateStitchMockup } from "@/lib/stitch-pipeline"
 import type { Database, Json } from "@/types/database"
 import {
   findLatestActiveDocument,
@@ -156,17 +156,18 @@ export async function generateProjectDocument({
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
-    const content = await generateStitchMockup(
-      mvpRow?.content ?? `MVP plan for ${name}: ${idea}`,
-      name,
-    )
+    const result = await generateOpenRouterImageMockup({
+      mvpPlan: mvpRow?.content ?? `MVP plan for ${name}: ${idea}`,
+      projectName: name,
+      projectId,
+    })
     const { data, error } = await supabase
       .from("mockups")
       .insert({
         project_id: projectId,
-        content,
-        model_used: "stitch",
-        metadata: { source: "stitch", generated_at: new Date().toISOString() },
+        content: result.content,
+        model_used: result.model,
+        metadata: result.metadata,
       })
       .select("id")
       .single()

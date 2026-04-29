@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState, type ElementType } from "react"
 import {
   BarChart3,
-  ChevronDown,
   ClipboardList,
   FileText,
+  LayoutGrid,
   Megaphone,
   Rocket,
 } from "lucide-react"
@@ -14,7 +14,6 @@ import type {
   OnboardingGenerationStatus,
   OnboardingLoadingRowKey,
 } from "@/lib/onboarding-generation"
-import { APP_BRAND_NAME } from "@/lib/app-brand"
 import { cn } from "@/lib/utils"
 
 export interface IntakeLoadingRow {
@@ -26,8 +25,6 @@ export interface IntakeLoadingRow {
 
 interface IntakeSubmissionLoadingPanelProps {
   rows?: IntakeLoadingRow[]
-  userInitials?: string
-  userLabel?: string
 }
 
 const DEFAULT_ROWS: IntakeLoadingRow[] = [
@@ -56,6 +53,12 @@ const DEFAULT_ROWS: IntakeLoadingRow[] = [
     status: "pending",
   },
   {
+    key: "mockups",
+    label: "Mockups",
+    message: "Generating visual directions",
+    status: "pending",
+  },
+  {
     key: "launch",
     label: "Marketing",
     message: "Mapping launch channels",
@@ -68,13 +71,12 @@ const ROW_ICONS: Record<OnboardingLoadingRowKey, ElementType> = {
   "market-research": BarChart3,
   prd: ClipboardList,
   mvp: Rocket,
+  mockups: LayoutGrid,
   launch: Megaphone,
 }
 
 export function IntakeSubmissionLoadingPanel({
   rows = DEFAULT_ROWS,
-  userInitials = "ME",
-  userLabel = "Account",
 }: IntakeSubmissionLoadingPanelProps) {
   const startedAtRef = useRef(0)
   const [progress, setProgress] = useState<Record<string, number>>({})
@@ -117,28 +119,12 @@ export function IntakeSubmissionLoadingPanel({
 
   return (
     <div
-      className="min-h-screen bg-[#FAFAFA] text-[#1C1917]"
+      className="min-h-full bg-[#FAFAFA] text-[#1C1917]"
       data-testid="intake-submission-loading"
       aria-live="polite"
       aria-busy="true"
     >
-      <header className="flex h-16 items-center justify-between border border-[#E8DDD5] bg-white px-4 sm:px-6">
-        <div className="flex items-center gap-3">
-          <div className="flex size-6 items-center justify-center rounded bg-[#DC2626] font-[family:var(--font-display)] text-[13px] font-bold text-white">
-            M
-          </div>
-          <p className="text-sm font-semibold text-[#4A4040]">{APP_BRAND_NAME}</p>
-        </div>
-        <div className="hidden items-center gap-2 rounded-full border border-[#E8DDD5] bg-[#FAFAFA] py-2 pr-3 pl-2 sm:flex">
-          <div className="flex size-7 items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-white">
-            {userInitials}
-          </div>
-          <p className="text-[13px] font-semibold text-[#1C1917]">{userLabel}</p>
-          <ChevronDown className="size-4 text-[#4A4040]" aria-hidden="true" />
-        </div>
-      </header>
-
-      <main className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-8">
+      <main className="flex min-h-full items-center justify-center px-4 py-8">
         <section className="w-full max-w-[800px] bg-white px-6 py-8 sm:px-10" aria-label="Project generation progress">
           <div>
             <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-[#8A8480]">

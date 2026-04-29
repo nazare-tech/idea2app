@@ -48,3 +48,11 @@
 - [ ] **Review RLS policies for subscriptions table**: Ensure users can only read their own subscription records and that service-role inserts/updates from the webhook are not blocked
 - [ ] **Test credit renewal on invoice.paid**: The webhook handles `invoice.paid` with `billing_reason: "subscription_cycle"` to add monthly credits. This can't be easily tested locally - use Stripe's test clock feature or wait for a real renewal cycle
 - [ ] **Add error logging/monitoring**: Consider adding structured logging or an error tracking service (e.g., Sentry) for webhook failures in production
+
+---
+
+## Project-Based Pricing Cleanup
+
+- [ ] **Remove user-facing credit-based generation UX**: Audit workspace generation, billing copy, TODO/docs, and API responses so users no longer see credit costs for bundled project document generation.
+- [ ] **Clean up remaining manual Generate All entry points**: Confirm the normal workspace flow has no idle public "Generate All" button while preserving backend queue/status routes needed for onboarding and durable generation.
+- [ ] **Review legacy credit tables and RPCs**: Decide which credit tables/RPCs remain for historical accounting or internal tooling and which should be deprecated after the project-based pricing migration is complete.

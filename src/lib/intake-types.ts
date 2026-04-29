@@ -6,7 +6,7 @@ export const INTAKE_SELECTION_MODES = ["single", "multiple", "text"] as const
 export type IntakeQuestionSchemaVersion = typeof INTAKE_QUESTION_SCHEMA_VERSION
 export type ProjectIntakeSchemaVersion = typeof PROJECT_INTAKE_SCHEMA_VERSION
 export type IntakeSelectionMode = (typeof INTAKE_SELECTION_MODES)[number]
-export type IntakeQuestionSource = "ai" | "fallback"
+export type IntakeQuestionSource = "ai"
 export type ProjectIntakeSource = "wizard" | "landing" | "dashboard" | "prompt-chat" | "manual"
 
 export interface IntakeQuestionOption {

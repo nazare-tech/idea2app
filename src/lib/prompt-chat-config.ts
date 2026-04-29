@@ -11,7 +11,7 @@ export const DEFAULT_MODELS: Record<string, string> = {
   competitive: "google/gemini-3.1-pro-preview",  // Competitive Research
   prd:         "anthropic/claude-sonnet-4-6",    // PRD
   mvp:         "anthropic/claude-sonnet-4-6",    // MVP Plan
-  mockups:     "anthropic/claude-sonnet-4-6",    // Mockups
+  mockups:     "openai/gpt-5.4-image-2",         // Mockups
   launch:      "openai/gpt-5.4-mini",            // Marketing Plan
 }
 
