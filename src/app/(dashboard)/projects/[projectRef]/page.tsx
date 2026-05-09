@@ -4,7 +4,11 @@ import { notFound, redirect } from "next/navigation"
 import { ProjectWorkspace } from "@/components/workspace/project-workspace"
 import { APP_BRAND_NAME } from "@/lib/app-brand"
 import { buildProjectRef, parseProjectRef } from "@/lib/project-routing"
-import { shouldRedirectBlockedWorkspaceTab } from "@/lib/workspace-tab-policy"
+import {
+  DEFAULT_WORKSPACE_DOCUMENT,
+  isWorkspaceDocumentType,
+  shouldRedirectBlockedWorkspaceTab,
+} from "@/lib/workspace-tab-policy"
 
 interface ProjectPageProps {
   params: Promise<{ projectRef: string }>
@@ -116,44 +120,23 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     redirect(`/projects/${canonicalProjectRef}${queryString ? `?${queryString}` : ""}${fragment}`)
   }
 
-  const [
-    { data: analyses },
-    { data: prds },
-    { data: mvpPlans },
-    { data: mockups },
-    { data: techSpecs },
-    { data: deployments },
-    { data: credits },
-    { data: projectIntake },
-  ] = await Promise.all([
-    supabase.from("analyses").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
-    supabase.from("prds").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
-    supabase.from("mvp_plans").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
-    supabase.from("mockups").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
-    supabase.from("tech_specs").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
-    supabase.from("deployments").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
-    supabase.from("credits").select("balance").eq("user_id", user!.id).single(),
-    supabase.from("project_intakes").select("id").eq("project_id", projectId).eq("user_id", user!.id).maybeSingle(),
-  ])
+  const initialDocument = isWorkspaceDocumentType(requestedTab)
+    ? requestedTab
+    : DEFAULT_WORKSPACE_DOCUMENT
 
   return (
     <ProjectWorkspace
       project={project}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      analyses={(analyses as any) || []}
-      prds={prds || []}
-      mvpPlans={mvpPlans || []}
-      mockups={mockups || []}
-      techSpecs={techSpecs || []}
-      deployments={deployments || []}
-      credits={credits?.balance || 0}
+      initialDocument={initialDocument}
+      initialDocuments={{}}
+      initialCredits={0}
       user={{
         email: user?.email,
         full_name: profileData?.full_name ?? undefined,
         avatar_url: profileData?.avatar_url ?? undefined,
       }}
       isNewProject={isNewProject}
-      hasStructuredIntake={Boolean(projectIntake)}
+      hasStructuredIntake={false}
     />
   )
 }

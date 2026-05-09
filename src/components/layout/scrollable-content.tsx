@@ -16,6 +16,7 @@ interface DocumentData {
   content: string | null
   metadata?: Record<string, unknown> | null
   isGenerating: boolean
+  isLoading?: boolean
   streamStages?: StreamStage[]
   streamCurrentStep?: number
   streamContent?: string
@@ -282,7 +283,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
       >
         {/* Overview — rendered immediately (first visible section) */}
         <DocumentWrapper navKey="overview" contentClassName="space-y-6">
-          {competitiveData?.isGenerating ? (
+          {competitiveData?.isGenerating || competitiveData?.isLoading ? (
             <DocumentSkeleton label="Overview" />
           ) : competitiveData?.content ? (
             <CompetitiveOverviewSection
@@ -300,7 +301,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="market-research" contentClassName="space-y-6">
           {!renderDeferred ? (
             <DocumentSkeleton label="Market Research" />
-          ) : competitiveData?.isGenerating ? (
+          ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
             <DocumentSkeleton label="Market Research" />
           ) : competitiveData?.content ? (
             <CompetitiveDetailSection
@@ -316,7 +317,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="prd">
           {!renderDeferred ? (
             <DocumentSkeleton label="PRD" />
-          ) : prdData?.isGenerating ? (
+          ) : prdData?.isGenerating || prdData?.isLoading ? (
             <DocumentSkeleton label="PRD" />
           ) : prdData?.content ? (
             <MarkdownDocumentSection
@@ -332,7 +333,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="mvp">
           {!renderDeferred ? (
             <DocumentSkeleton label="MVP Plan" />
-          ) : mvpData?.isGenerating ? (
+          ) : mvpData?.isGenerating || mvpData?.isLoading ? (
             <DocumentSkeleton label="MVP Plan" />
           ) : mvpData?.content ? (
             <MarkdownDocumentSection
@@ -348,7 +349,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="mockups">
           {!renderDeferred ? (
             <DocumentSkeleton label="Mockups" />
-          ) : mockupsData?.isGenerating ? (
+          ) : mockupsData?.isGenerating || mockupsData?.isLoading ? (
             <DocumentSkeleton label="Mockups" />
           ) : mockupsData?.content ? (
             <MockupsSection content={mockupsData.content} projectId={projectId} />
@@ -360,7 +361,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="launch">
           {!renderDeferred ? (
             <DocumentSkeleton label="Marketing" />
-          ) : launchData?.isGenerating ? (
+          ) : launchData?.isGenerating || launchData?.isLoading ? (
             <DocumentSkeleton label="Marketing" />
           ) : launchData?.content ? (
             <MarkdownDocumentSection

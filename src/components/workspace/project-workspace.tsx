@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AnchorNav } from "@/components/layout/anchor-nav"
 import { ScrollableContent } from "@/components/layout/scrollable-content"
@@ -70,29 +70,41 @@ interface Deployment {
 
 interface ProjectWorkspaceProps {
   project: Project
-  analyses: Analysis[]
-  prds: PRD[]
-  mvpPlans: MvpPlan[]
-  mockups: Mockup[]
-  techSpecs: TechSpec[]
-  deployments: Deployment[]
-  credits: number
+  initialDocument?: DocumentType
+  initialDocuments?: Partial<Record<DocumentType, unknown[]>>
+  initialCredits?: number
   user: unknown
   isNewProject?: boolean
   hasStructuredIntake?: boolean
+}
+
+interface WorkspaceDocumentCollections {
+  competitive: Analysis[]
+  prd: PRD[]
+  mvp: MvpPlan[]
+  mockups: Mockup[]
+  techspec: TechSpec[]
+  deploy: Deployment[]
+  launch: Analysis[]
+}
+
+const EMPTY_DOCUMENT_COLLECTIONS: WorkspaceDocumentCollections = {
+  competitive: [],
+  prd: [],
+  mvp: [],
+  mockups: [],
+  techspec: [],
+  deploy: [],
+  launch: [],
 }
 
 type WorkspaceGenerationCounts = Partial<Record<DocumentType, number>>
 
 export function ProjectWorkspace({
   project,
-  analyses,
-  prds,
-  mvpPlans,
-  mockups,
-  techSpecs,
-  deployments,
-  credits,
+  initialDocument = DEFAULT_WORKSPACE_DOCUMENT,
+  initialDocuments,
+  initialCredits = 0,
   user,
   isNewProject = false,
   hasStructuredIntake = false,
@@ -108,7 +120,7 @@ export function ProjectWorkspace({
     project.name !== "Untitled" || !!project.description
   )
   const [nameJustSet, setNameJustSet] = useState(false)
-  const defaultActiveDocument: DocumentType = DEFAULT_WORKSPACE_DOCUMENT
+  const defaultActiveDocument: DocumentType = initialDocument
   const projectNameInputRef = useRef<HTMLInputElement>(null)
   const nameJustSetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
@@ -144,6 +156,28 @@ export function ProjectWorkspace({
   // Local content overrides for immediate UI updates after inline edits
   // Key format: `${documentType}-${recordId}` -> updated content
   const [localContentOverrides, setLocalContentOverrides] = useState<Record<string, string>>({})
+  const [credits, setCredits] = useState(initialCredits)
+  const [documentCollections, setDocumentCollections] = useState<WorkspaceDocumentCollections>({
+    ...EMPTY_DOCUMENT_COLLECTIONS,
+    competitive: (initialDocuments?.competitive as Analysis[] | undefined) ?? [],
+    prd: (initialDocuments?.prd as PRD[] | undefined) ?? [],
+    mvp: (initialDocuments?.mvp as MvpPlan[] | undefined) ?? [],
+    mockups: (initialDocuments?.mockups as Mockup[] | undefined) ?? [],
+    techspec: (initialDocuments?.techspec as TechSpec[] | undefined) ?? [],
+    deploy: (initialDocuments?.deploy as Deployment[] | undefined) ?? [],
+    launch: (initialDocuments?.launch as Analysis[] | undefined) ?? [],
+  })
+  const [loadedDocuments, setLoadedDocuments] = useState<Record<DocumentType, boolean>>({
+    prompt: true,
+    competitive: Boolean(initialDocuments?.competitive),
+    prd: Boolean(initialDocuments?.prd),
+    mvp: Boolean(initialDocuments?.mvp),
+    mockups: Boolean(initialDocuments?.mockups),
+    techspec: Boolean(initialDocuments?.techspec),
+    deploy: Boolean(initialDocuments?.deploy),
+    launch: Boolean(initialDocuments?.launch),
+  })
+  const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false)
 
   // Streaming state for live NDJSON document generation
   const [streamStages, setStreamStages] = useState<StreamStage[]>([])
@@ -152,7 +186,7 @@ export function ProjectWorkspace({
 
   // Scroll-nav sync state
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [activeNavKey, setActiveNavKey] = useState<string | null>("overview")
+  const [activeNavKey, setActiveNavKey] = useState<string | null>(initialDocument === "competitive" ? "overview" : initialDocument)
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
   const isScrollingProgrammatically = useRef(false)
 
@@ -161,6 +195,56 @@ export function ProjectWorkspace({
     setStreamCurrentStep(0)
     setStreamContent("")
   }, [])
+
+  const analyses = useMemo(
+    () => [...documentCollections.competitive, ...documentCollections.launch],
+    [documentCollections.competitive, documentCollections.launch]
+  )
+  const prds = documentCollections.prd
+  const mvpPlans = documentCollections.mvp
+  const mockups = documentCollections.mockups
+  const techSpecs = documentCollections.techspec
+  const deployments = documentCollections.deploy
+
+  const loadWorkspaceDocuments = useCallback(async (
+    docTypes: DocumentType[],
+    options?: { force?: boolean }
+  ) => {
+    const uniqueDocs = Array.from(new Set(docTypes)).filter((type) => type !== "prompt")
+    const needed = uniqueDocs.filter((type) => options?.force || !loadedDocuments[type])
+    if (needed.length === 0) return
+
+    setIsWorkspaceLoading(true)
+    try {
+      const response = await fetch(`/api/projects/${project.id}/workspace?docs=${needed.join(",")}&tab=${activeDocument}`, {
+        credentials: "same-origin",
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to load workspace documents")
+      }
+
+      const payload = await response.json()
+      const workspaceData = payload?.data
+      if (!workspaceData) return
+
+      setCredits(typeof workspaceData.credits === "number" ? workspaceData.credits : initialCredits)
+      setDocumentCollections((prev) => ({
+        ...prev,
+        ...(workspaceData.documents ?? {}),
+      }))
+      setLoadedDocuments((prev) => {
+        const next = { ...prev }
+        uniqueDocs.forEach((type) => {
+          next[type] = true
+        })
+        return next
+      })
+    } finally {
+      setIsWorkspaceLoading(false)
+    }
+  }, [activeDocument, initialCredits, loadedDocuments, project.id])
 
   const getGenerationSnapshot = useCallback(async (): Promise<WorkspaceGenerationCounts | null> => {
     try {
@@ -262,6 +346,10 @@ export function ProjectWorkspace({
   useEffect(() => {
     setActiveDocument(resolveWorkspaceDocumentTab(searchParams.get("tab")))
   }, [searchParams])
+
+  useEffect(() => {
+    void loadWorkspaceDocuments([activeDocument])
+  }, [activeDocument, loadWorkspaceDocuments])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -382,7 +470,7 @@ export function ProjectWorkspace({
         })
 
         if (didChange) {
-          router.refresh()
+          void loadWorkspaceDocuments(["competitive", "prd", "mvp", "mockups", "techspec", "deploy", "launch"], { force: true })
         }
       }
 
@@ -918,19 +1006,19 @@ export function ProjectWorkspace({
       // Clear generation state once request finishes
       setGeneratingDocuments(prev => ({ ...prev, [generatingType]: false }))
       saveGeneratingState(generatingType, false)
-      // clearStreamState() is called after router.refresh() in the success path below
+      // clearStreamState() is called after workspace data reload in the success path below
     }
 
     if (!didGenerate) return
 
     if (wasStreaming) {
       // DB save already committed before server sent 'done'; no delay needed
-      router.refresh()
+      await loadWorkspaceDocuments([generatingType], { force: true })
       clearStreamState()
     } else {
       // Wait a moment for database transaction to complete
       await new Promise(resolve => setTimeout(resolve, 500))
-      router.refresh()
+      await loadWorkspaceDocuments([generatingType], { force: true })
     }
   }
 
@@ -1064,7 +1152,7 @@ export function ProjectWorkspace({
         }
 
         // Success — refresh data
-        router.refresh()
+        await loadWorkspaceDocuments([docType], { force: true })
         return true
       } catch (error) {
         // Re-throw abort errors so the caller can distinguish cancellation from failure
@@ -1079,7 +1167,7 @@ export function ProjectWorkspace({
         saveGeneratingState(docType, false)
       }
     },
-    [project, projectName, router, saveGeneratingState, analyses, prds, mvpPlans],
+    [analyses, loadWorkspaceDocuments, mvpPlans, prds, project, projectName, saveGeneratingState],
   )
 
   const handleUpdateDescription = async (description: string) => {
@@ -1094,7 +1182,7 @@ export function ProjectWorkspace({
         throw new Error("Failed to update description")
       }
 
-      router.refresh()
+      void loadWorkspaceDocuments([activeDocument], { force: true })
       // Fallback: unblock name editing if AI name generation failed silently
       if (!isNameSet) setTimeout(() => setIsNameSet(true), 3000)
     } catch (error) {
@@ -1107,31 +1195,37 @@ export function ProjectWorkspace({
     content: string | null
     metadata?: Record<string, unknown> | null
     isGenerating: boolean
+    isLoading?: boolean
   }> = {
     competitive: {
       content: getDocumentContent("competitive"),
       metadata: getDocumentMetadata("competitive"),
       isGenerating: generatingDocuments["competitive"],
+      isLoading: !loadedDocuments.competitive,
     },
     prd: {
       content: getDocumentContent("prd"),
       metadata: null,
       isGenerating: generatingDocuments["prd"],
+      isLoading: !loadedDocuments.prd,
     },
     mvp: {
       content: getDocumentContent("mvp"),
       metadata: null,
       isGenerating: generatingDocuments["mvp"],
+      isLoading: !loadedDocuments.mvp,
     },
     mockups: {
       content: getDocumentContent("mockups"),
       metadata: null,
       isGenerating: generatingDocuments["mockups"],
+      isLoading: !loadedDocuments.mockups,
     },
     launch: {
       content: getDocumentContent("launch"),
       metadata: null,
       isGenerating: generatingDocuments["launch"],
+      isLoading: !loadedDocuments.launch,
     },
   }
 
@@ -1165,6 +1259,11 @@ export function ProjectWorkspace({
         />
 
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
+          {isWorkspaceLoading ? (
+            <div className="pointer-events-none absolute inset-x-0 top-16 z-10 h-0.5 overflow-hidden bg-transparent">
+              <div className="h-full w-1/3 animate-[workspaceLoad_1s_ease-in-out_infinite] bg-primary/70" />
+            </div>
+          ) : null}
           <AnchorNav
             documentStatuses={navDocumentStatuses}
             activeKey={activeNavKey}

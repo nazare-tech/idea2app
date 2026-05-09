@@ -334,7 +334,7 @@ export async function POST(request: Request) {
     const hasSummary = history?.some(m => {
       const metadata = m.metadata as { stage?: string } | null
       return m.role === "assistant" && metadata?.stage === "summary"
-    })
+    }) ?? false
     // Determine conversation stage and system prompt
     const stage = determinePromptChatStage({
       isInitial: parseBoolean(isInitial),

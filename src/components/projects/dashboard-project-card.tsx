@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
@@ -27,6 +27,7 @@ export function DashboardProjectCard({
   const router = useRouter()
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isOpening, setIsOpening] = useState(false)
   const lastEditedLabel = useMemo(() => {
     if (!updatedAt) {
       return "Last edited: recently"
@@ -38,6 +39,17 @@ export function DashboardProjectCard({
       return "Last edited: recently"
     }
   }, [updatedAt])
+
+  useEffect(() => {
+    if (!isOpening) return
+
+    router.prefetch(href)
+    void fetch(`/api/projects/${id}/workspace?docs=competitive`, {
+      credentials: "same-origin",
+    }).catch(() => {
+      // Warm best-effort only
+    })
+  }, [href, id, isOpening, router])
 
   const handleDeletePrompt = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
@@ -78,6 +90,9 @@ export function DashboardProjectCard({
     <div className="group relative">
       <Link
         href={href}
+        onMouseEnter={() => setIsOpening(true)}
+        onFocus={() => setIsOpening(true)}
+        onClick={() => setIsOpening(true)}
         className="block h-full min-h-[168px] rounded-lg border border-border-subtle bg-card p-5 transition-[background-color,border-color,transform] duration-200 ease-out-expo hover:-translate-y-0.5 hover:border-text-primary/20 hover:bg-muted/30"
       >
         <div className="flex h-full flex-col justify-between gap-6">
