@@ -7,6 +7,7 @@ import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/
 import { calculatePromptChatCredits } from "@/lib/utils"
 import { refundCreditsServerSide } from "@/lib/credits"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { determinePromptChatStage } from "@/lib/prompt-chat-stage"
 
 const openrouter = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -334,41 +335,17 @@ export async function POST(request: Request) {
       const metadata = m.metadata as { stage?: string } | null
       return m.role === "assistant" && metadata?.stage === "summary"
     })
-    const messageCount = history?.length || 0
-
     // Determine conversation stage and system prompt
-    let stage: "questions" | "gathering" | "summary" | "post_summary" = "gathering"
+    const stage = determinePromptChatStage({
+      isInitial: parseBoolean(isInitial),
+      hasSummary,
+      history: history || [],
+      message,
+    })
+
     let systemPrompt = PROMPT_CHAT_SYSTEM
-
-    if (isInitial) {
-      // First AI response - ask questions
-      stage = "questions"
-      systemPrompt = PROMPT_CHAT_SYSTEM
-    } else if (!hasSummary && messageCount >= 2) {
-      // After user answers questions (initial idea + AI questions + user answer = 3 messages, so >= 2)
-      // Generate summary immediately
-      stage = "summary"
-      systemPrompt = PROMPT_CHAT_SYSTEM
-    } else if (hasSummary) {
-      // Post-summary conversation - check if message is idea-related
-      stage = "post_summary"
+    if (stage === "post_summary") {
       systemPrompt = POST_SUMMARY_SYSTEM
-
-      // If the message seems to be refining the idea, trigger re-summarization
-      const ideaRelatedKeywords = [
-        "change", "update", "modify", "different", "instead", "actually", "rather",
-        "target", "audience", "feature", "problem", "solution", "model", "price",
-        "market", "customer", "user", "business", "revenue", "competitor"
-      ]
-      const messageWords = message.toLowerCase().split(/\s+/)
-      const hasIdeaKeywords = ideaRelatedKeywords.some(keyword =>
-        messageWords.some((word: string) => word.includes(keyword))
-      )
-
-      if (hasIdeaKeywords || message.length > 50) {
-        // Likely refining the idea - trigger re-summarization
-        stage = "summary"
-      }
     }
 
     // Build messages for AI
