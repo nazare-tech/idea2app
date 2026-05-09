@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-04-25T00:00:00Z",
-  "title": "Design System: Idea2App",
+  "title": "Design System: MakerCompass",
   "extensions": {
     "colorMeta": {
       "action-red": {
@@ -306,7 +306,7 @@
       "kind": "nav",
       "refersTo": "nav-landing",
       "description": "Landing-page sticky header. White-translucent backdrop with a faint blur for legibility.",
-      "html": "<header class=\"ds-nav\"><a class=\"ds-nav__brand\" href=\"/\">Idea2App</a><nav class=\"ds-nav__links\"><a href=\"#features\">Features</a><a href=\"#pricing\">Pricing</a></nav><button class=\"ds-nav__cta\">Sign In</button></header>",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-nav__brand\" href=\"/\">MakerCompass</a><nav class=\"ds-nav__links\"><a href=\"#features\">Features</a><a href=\"#pricing\">Pricing</a></nav><button class=\"ds-nav__cta\">Sign In</button></header>",
       "css": ".ds-nav { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 32px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); border-bottom: 1px solid #EAE0D8; font-family: 'Sora', system-ui, sans-serif; } .ds-nav__brand { font-size: 18px; font-weight: 600; letter-spacing: 0.01em; color: #1C1917; text-decoration: none; } .ds-nav__links { display: flex; gap: 32px; } .ds-nav__links a { font-size: 14px; font-weight: 500; color: #1C1917; text-decoration: none; transition: color 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-nav__links a:hover { color: #4A4040; } .ds-nav__cta { height: 40px; padding: 0 24px; background: #FFFFFF; color: #1C1917; border: 1px solid #EAE0D8; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }"
     }
   ],

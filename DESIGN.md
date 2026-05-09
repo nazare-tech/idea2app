@@ -1,5 +1,5 @@
 ---
-name: Idea2App
+name: MakerCompass
 description: A workspace that turns a one-line idea into the structured outputs builders ship with.
 colors:
   action-red: "#DC2626"
@@ -105,7 +105,7 @@ components:
     padding: "6px 12px"
 ---
 
-# Design System: Idea2App
+# Design System: MakerCompass
 
 ## 1. Overview
 

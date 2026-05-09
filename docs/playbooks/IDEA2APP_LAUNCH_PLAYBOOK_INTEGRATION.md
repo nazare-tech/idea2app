@@ -1,4 +1,4 @@
-# Idea2App × Startup Launch Playbook: Integration Plan
+# MakerCompass × Startup Launch Playbook: Integration Plan
 
 ## Imported Assets
 
@@ -11,7 +11,7 @@
 - Platform intel files:
   - `docs/playbooks/startup-launch-playbook-souls/references/platforms/*.md`
 
-## What this gives Idea2App
+## What this gives MakerCompass
 
 A ready-made launch-ops knowledge base for:
 - 56 launch/distribution platforms
@@ -20,11 +20,11 @@ A ready-made launch-ops knowledge base for:
 - copy/asset requirements
 - per-platform strategy and rejection pitfalls
 
-This can become Idea2App’s **Launch Copilot** feature.
+This can become MakerCompass’s **Launch Copilot** feature.
 
 ---
 
-## High-impact ways to improve Idea2App
+## High-impact ways to improve MakerCompass
 
 ## 1) Add a “Launch Planner” step in project flow
 
@@ -51,7 +51,7 @@ From one product brief, generate:
 
 Store in project-specific files so users can copy/paste quickly.
 
-## 3) Add “Launch Tracker” inside Idea2App
+## 3) Add “Launch Tracker” inside MakerCompass
 
 Create a tracker per product with statuses:
 - Not Started
@@ -122,7 +122,7 @@ This will increase launch outcomes without changing the product itself.
 
 ---
 
-## Product positioning upgrade for Idea2App
+## Product positioning upgrade for MakerCompass
 
 Current value: “idea to app.”
 

@@ -8,7 +8,7 @@ product
 
 Founders, indie builders, and product-minded operators who have an idea and want to take it from one-line concept to shipped MVP without burning weeks on prep work. Most are technical or technical-adjacent: they can read a PRD, recognize a feature matrix, hand a spec off to a coding agent, and tell signal from filler.
 
-They reach for Idea2App at two moments:
+They reach for MakerCompass at two moments:
 
 1. They have a fresh idea and want to validate / structure it before committing engineering time.
 2. They want to compress weeks of "figuring out what to build and why" into a single working session, then hand off to Cursor / Claude Code / Lovable / v0 to actually build it.

@@ -1,6 +1,6 @@
 # Security Review - 2026-04-25
 
-Repo: Maker Compass / Idea2App
+Repo: Maker Compass / MakerCompass
 Review type: local code review with focused static scans and `npm audit --omit=dev`
 Result: review findings documented first; MVP security fixes implemented on 2026-04-25
 

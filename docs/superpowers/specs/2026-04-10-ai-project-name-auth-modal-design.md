@@ -7,7 +7,7 @@
 
 ## Context
 
-Two UX improvements to the Idea2App platform:
+Two UX improvements to the MakerCompass platform:
 
 1. **AI Project Name**: Projects currently start as "Untitled" and require manual renaming. After the Prompt tab Q&A completes and the AI generates a summary, there is no automatic naming — a missed opportunity to reduce friction for new users.
 

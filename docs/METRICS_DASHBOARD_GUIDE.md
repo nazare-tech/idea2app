@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to view usage metrics for your Idea2App application using Supabase SQL Editor. All metrics are automatically tracked and aggregated daily, weekly, and monthly via pg_cron jobs.
+This guide explains how to view usage metrics for your MakerCompass application using Supabase SQL Editor. All metrics are automatically tracked and aggregated daily, weekly, and monthly via pg_cron jobs.
 
 ## Quick Access
 
