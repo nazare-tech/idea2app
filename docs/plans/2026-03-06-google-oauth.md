@@ -18,7 +18,7 @@ These cannot be automated. Complete both before running any tasks below.
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com) → select or create a project
 2. APIs & Services → Credentials → **+ Create Credentials** → OAuth 2.0 Client ID
-3. Application type: **Web application**, give it a name (e.g. "Idea2App")
+3. Application type: **Web application**, give it a name (e.g. "MakerCompass")
 4. **Authorized JavaScript origins** — add both:
    - `http://localhost:3000`
    - `https://yourdomain.com` (your production domain)

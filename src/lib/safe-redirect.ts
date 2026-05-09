@@ -24,7 +24,7 @@ type SafeRedirectParseResult = {
   path: string
 }
 
-const SAFE_REDIRECT_BASE_URL = "https://idea2app.local"
+const SAFE_REDIRECT_BASE_URL = "https://makercompass.local"
 const CONTROL_CHAR_PATTERN = /[\u0000-\u001F\u007F]/
 
 export function sanitizeInternalRedirect(

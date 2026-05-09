@@ -1,6 +1,6 @@
 # MVP Plan Feature Implementation
 
-This document summarizes the implementation of the MVP Plan feature in the Idea2App platform.
+This document summarizes the implementation of the MVP Plan feature in the MakerCompass platform.
 
 ## Overview
 
@@ -259,7 +259,7 @@ If N8N webhook fails:
 
 ## Summary
 
-The MVP Plan feature is now fully integrated into your Idea2App platform! It follows the same patterns as PRD and Tech Spec generation, with:
+The MVP Plan feature is now fully integrated into your MakerCompass platform! It follows the same patterns as PRD and Tech Spec generation, with:
 
 - **10 credit cost** per generation
 - **PRD-based context** for intelligent MVP planning

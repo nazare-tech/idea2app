@@ -23,7 +23,7 @@ const markup = renderToStaticMarkup(
 
 const html = `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><script src="https://cdn.tailwindcss.com"></script></head><body>${markup}</body></html>`
 const htmlPath = '/tmp/mockup-visual-check.html'
-const pngPath = '/Users/bast/.openclaw/workspace/idea2app/tmp/mockups-ui-validation.png'
+const pngPath = '/Users/bast/.openclaw/workspace/makercompass/tmp/mockups-ui-validation.png'
 fs.mkdirSync(path.dirname(pngPath), { recursive: true })
 fs.writeFileSync(htmlPath, html)
 async function main() {

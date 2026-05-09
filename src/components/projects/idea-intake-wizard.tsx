@@ -16,7 +16,7 @@ import { INTAKE_EXAMPLE_IDEAS } from "@/lib/intake-examples"
 import type { IntakeAnswer, IntakeQuestion, IntakeQuestionSet } from "@/lib/intake-types"
 import { cn } from "@/lib/utils"
 
-const SESSION_IDEA_KEY = "idea2app:intake:draft"
+const SESSION_IDEA_KEY = "makercompass:intake:draft"
 const MIN_IDEA_LENGTH = 10
 const WIZARD_TOTAL_STEPS = 2
 

@@ -1,6 +1,6 @@
 # Tokenomics Guide
 
-This document explains how credits are earned, spent, and calculated across the idea2app platform.
+This document explains how credits are earned, spent, and calculated across the makercompass platform.
 
 ---
 

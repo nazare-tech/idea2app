@@ -8,7 +8,7 @@
 
 ## Overview
 
-Add fully functional Google OAuth sign-in and sign-up to Idea2App. The UI buttons already exist on both `/login` and `/signup` pages; the gaps are:
+Add fully functional Google OAuth sign-in and sign-up to MakerCompass. The UI buttons already exist on both `/login` and `/signup` pages; the gaps are:
 
 1. Google Cloud Console app not yet created
 2. Supabase Google provider not yet enabled

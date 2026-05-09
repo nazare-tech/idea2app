@@ -137,14 +137,14 @@ console.log('')
 const basePayload = {
   type: webhookType,
   idea: 'A SaaS platform that helps entrepreneurs validate and develop business ideas using AI-powered analysis, PRDs, and deployment automation',
-  name: 'Idea2App Test Project',
+  name: 'MakerCompass Test Project',
   projectId: 'test-project-123',
   timestamp: new Date().toISOString(),
 }
 
 // Add competitive analysis for PRD webhook
 if (webhookConfig.needsCompetitiveAnalysis) {
-  basePayload.competitiveAnalysis = `# Competitive Analysis for Idea2App
+  basePayload.competitiveAnalysis = `# Competitive Analysis for MakerCompass
 
 ## Market Overview
 The business idea validation and development space is growing rapidly with several key players.
@@ -166,7 +166,7 @@ The business idea validation and development space is growing rapidly with sever
 2. **AI Integration**: Existing tools have limited or no AI capabilities
 3. **Automation**: Most solutions are manual or semi-automated
 
-## Opportunities for Idea2App
+## Opportunities for MakerCompass
 - Full workflow automation from idea to deployment
 - Advanced AI analysis capabilities
 - Integrated development and deployment pipeline
@@ -177,15 +177,15 @@ This analysis shows strong market opportunity for a comprehensive AI-powered pla
 
 // Add PRD for tech-spec webhook
 if (webhookConfig.needsPrd) {
-  basePayload.prd = `# Product Requirements Document: Idea2App
+  basePayload.prd = `# Product Requirements Document: MakerCompass
 
 ## 1. Executive Summary
 
-**Product Name**: Idea2App
+**Product Name**: MakerCompass
 **Version**: 1.0
 **Target Launch**: Q2 2024
 
-Idea2App is an AI-powered SaaS platform that transforms business ideas into validated, deployable applications. The platform combines competitive analysis, gap analysis, PRD generation, technical specifications, and automated deployment into a single streamlined workflow.
+MakerCompass is an AI-powered SaaS platform that transforms business ideas into validated, deployable applications. The platform combines competitive analysis, gap analysis, PRD generation, technical specifications, and automated deployment into a single streamlined workflow.
 
 ## 2. Product Vision
 

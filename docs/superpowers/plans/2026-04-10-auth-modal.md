@@ -64,7 +64,7 @@ const modeLabels: Record<
 > = {
   signin: {
     title: "Welcome back",
-    subtitle: "Sign in to continue to Idea2App.",
+    subtitle: "Sign in to continue to MakerCompass.",
     submit: "Sign in",
     loading: "Signing in...",
     alternateLine: "Don't have an account?",
@@ -72,7 +72,7 @@ const modeLabels: Record<
   },
   signup: {
     title: "Create account",
-    subtitle: "Join Idea2App and start building.",
+    subtitle: "Join MakerCompass and start building.",
     submit: "Create account",
     loading: "Creating account...",
     alternateLine: "Already have an account?",
@@ -338,7 +338,7 @@ function AuthScreen() {
                   Ship your next product faster.
                 </h1>
                 <p className="mt-6 max-w-sm text-sm leading-relaxed text-gray-400">
-                  Create your Idea2App account to manage prompts, builds, and releases from
+                  Create your MakerCompass account to manage prompts, builds, and releases from
                   one workspace.
                 </p>
               </div>

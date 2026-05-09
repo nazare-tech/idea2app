@@ -1,4 +1,4 @@
-# QA & UX Master Test Plan: Idea2App
+# QA & UX Master Test Plan: MakerCompass
 **Version:** 1.1  
 **Author:** Senior QA/UX Engineer (ex-Apple)  
 **Date:** 2026-02-15
@@ -6,7 +6,7 @@
 ---
 
 ##  The Philosophy: "It Just Works"
-As we approach testing **Idea2App**, we are not merely looking for bugs; we are looking for friction. Every interaction should feel fluid, every animation motivated, and every feedback loop instant. Our users are entrepreneurs dreaming of their future—the tool they use should feel as premium and capable as the successful businesses they aim to build.
+As we approach testing **MakerCompass**, we are not merely looking for bugs; we are looking for friction. Every interaction should feel fluid, every animation motivated, and every feedback loop instant. Our users are entrepreneurs dreaming of their future—the tool they use should feel as premium and capable as the successful businesses they aim to build.
 
 We test for **Functionality** (Does it work?), **Reliability** (Does it always work?), and **Delight** (Is it a joy to use?).
 

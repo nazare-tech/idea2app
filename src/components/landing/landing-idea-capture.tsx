@@ -7,7 +7,7 @@ import { ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 
-const SESSION_IDEA_KEY = "idea2app:intake:draft"
+const SESSION_IDEA_KEY = "makercompass:intake:draft"
 
 interface LandingIdeaCaptureProps {
   isAuthenticated?: boolean

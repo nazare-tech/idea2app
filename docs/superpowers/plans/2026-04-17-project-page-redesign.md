@@ -278,7 +278,7 @@ export function ProjectHeader({
       <Link href="/projects" className="flex items-center gap-3">
         <HeaderLogo size={APP_HEADER_LOGO_SIZE} />
         <span className="text-sm font-medium text-text-secondary">
-          Idea2App
+          MakerCompass
         </span>
       </Link>
 
