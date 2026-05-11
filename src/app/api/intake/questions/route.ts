@@ -67,6 +67,7 @@ export async function POST(request: Request) {
       usedFallback: false,
     })
   } catch (error) {
+    console.error("[IntakeQuestions] Route error:", error)
     const message = error instanceof Error
       ? error.message
       : "We couldn't generate follow-up questions right now. Please retry in a moment."

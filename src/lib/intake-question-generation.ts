@@ -60,7 +60,8 @@ export async function generateIntakeQuestions(
       usedFallback: false,
       rawModelOutput,
     }
-  } catch {
+  } catch (err) {
+    console.error("[IntakeQuestions] AI generation or parse failed:", err)
     throw new Error(RETRYABLE_GENERATION_ERROR)
   }
 }
