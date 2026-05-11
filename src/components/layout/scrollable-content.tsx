@@ -27,14 +27,22 @@ interface ScrollableContentProps {
   documents: Record<string, DocumentData>
 }
 
-function DocumentSkeleton({ label }: { label: string }) {
+function DocumentSkeleton({
+  label,
+  mode = "loading",
+}: {
+  label: string
+  mode?: "loading" | "generating"
+}) {
+  const action = mode === "generating" ? "Generating" : "Loading"
+
   return (
     <div className="flex flex-col gap-4 p-5 sm:p-8">
       <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
       <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
       <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100" />
       <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
-      <p className="text-xs text-muted-foreground">Generating {label}...</p>
+      <p className="text-xs text-muted-foreground">{action} {label}...</p>
     </div>
   )
 }
@@ -45,6 +53,10 @@ function EmptyState({ label }: { label: string }) {
       {label} has not been generated yet.
     </div>
   )
+}
+
+function getSkeletonMode(document?: DocumentData): "loading" | "generating" {
+  return document?.isGenerating ? "generating" : "loading"
 }
 
 function DocumentWrapper({
@@ -284,7 +296,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         {/* Overview — rendered immediately (first visible section) */}
         <DocumentWrapper navKey="overview" contentClassName="space-y-6">
           {competitiveData?.isGenerating || competitiveData?.isLoading ? (
-            <DocumentSkeleton label="Overview" />
+            <DocumentSkeleton label="Overview" mode={getSkeletonMode(competitiveData)} />
           ) : competitiveData?.content ? (
             <CompetitiveOverviewSection
               content={competitiveData.content}
@@ -302,7 +314,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           {!renderDeferred ? (
             <DocumentSkeleton label="Market Research" />
           ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
-            <DocumentSkeleton label="Market Research" />
+            <DocumentSkeleton label="Market Research" mode={getSkeletonMode(competitiveData)} />
           ) : competitiveData?.content ? (
             <CompetitiveDetailSection
               content={competitiveData.content}
@@ -318,7 +330,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           {!renderDeferred ? (
             <DocumentSkeleton label="PRD" />
           ) : prdData?.isGenerating || prdData?.isLoading ? (
-            <DocumentSkeleton label="PRD" />
+            <DocumentSkeleton label="PRD" mode={getSkeletonMode(prdData)} />
           ) : prdData?.content ? (
             <MarkdownDocumentSection
               content={prdData.content}
@@ -334,7 +346,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           {!renderDeferred ? (
             <DocumentSkeleton label="MVP Plan" />
           ) : mvpData?.isGenerating || mvpData?.isLoading ? (
-            <DocumentSkeleton label="MVP Plan" />
+            <DocumentSkeleton label="MVP Plan" mode={getSkeletonMode(mvpData)} />
           ) : mvpData?.content ? (
             <MarkdownDocumentSection
               content={mvpData.content}
@@ -350,7 +362,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           {!renderDeferred ? (
             <DocumentSkeleton label="Mockups" />
           ) : mockupsData?.isGenerating || mockupsData?.isLoading ? (
-            <DocumentSkeleton label="Mockups" />
+            <DocumentSkeleton label="Mockups" mode={getSkeletonMode(mockupsData)} />
           ) : mockupsData?.content ? (
             <MockupsSection content={mockupsData.content} projectId={projectId} />
           ) : (
@@ -362,7 +374,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           {!renderDeferred ? (
             <DocumentSkeleton label="Marketing" />
           ) : launchData?.isGenerating || launchData?.isLoading ? (
-            <DocumentSkeleton label="Marketing" />
+            <DocumentSkeleton label="Marketing" mode={getSkeletonMode(launchData)} />
           ) : launchData?.content ? (
             <MarkdownDocumentSection
               content={launchData.content}

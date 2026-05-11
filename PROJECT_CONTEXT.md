@@ -107,7 +107,7 @@
 - **Build Tool**: Next.js built-in (Turbopack in dev, Next.js production build for release)
 - **Dev Server**: Next.js dev server with HMR
 - **Package Manager**: npm
-- **Runtime**: Node.js (Latest LTS)
+- **Runtime**: Node.js LTS. Local development is pinned to Node.js 22.21.1 through `.nvmrc`; package engines allow supported even-numbered LTS lines 22 and 24.
 
 ---
 

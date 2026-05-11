@@ -2,6 +2,37 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSafeAuthRedirect } from '@/lib/safe-redirect'
 
+const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-.+-auth-token(?:\.\d+)?$/
+const RECOVERABLE_AUTH_COOKIE_ERRORS = new Set([
+  'invalid_refresh_token',
+  'refresh_token_not_found',
+  'session_not_found',
+])
+
+function isRecoverableAuthCookieError(error: unknown) {
+  if (!error || typeof error !== 'object') return false
+
+  const authError = error as { code?: string; message?: string }
+  if (authError.code && RECOVERABLE_AUTH_COOKIE_ERRORS.has(authError.code)) {
+    return true
+  }
+
+  const message = authError.message?.toLowerCase() ?? ''
+  return message.includes('invalid refresh token') || message.includes('refresh token not found')
+}
+
+function clearSupabaseAuthCookies(request: NextRequest, response: NextResponse) {
+  request.cookies
+    .getAll()
+    .filter((cookie) => SUPABASE_AUTH_COOKIE_PATTERN.test(cookie.name))
+    .forEach((cookie) => {
+      response.cookies.set(cookie.name, '', {
+        path: '/',
+        maxAge: 0,
+      })
+    })
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -34,7 +65,13 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser()
+
+  const shouldClearAuthCookies = isRecoverableAuthCookieError(authError)
+  if (shouldClearAuthCookies) {
+    clearSupabaseAuthCookies(request, supabaseResponse)
+  }
 
   // Protected routes
   const protectedPaths = ['/dashboard', '/projects', '/billing', '/preferences']
@@ -47,7 +84,11 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth'
     url.searchParams.set('redirect', `${request.nextUrl.pathname}${request.nextUrl.search}`)
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    if (shouldClearAuthCookies) {
+      clearSupabaseAuthCookies(request, redirectResponse)
+    }
+    return redirectResponse
   }
 
   // Redirect authenticated users away from auth pages

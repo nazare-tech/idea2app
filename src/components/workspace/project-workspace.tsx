@@ -100,6 +100,18 @@ const EMPTY_DOCUMENT_COLLECTIONS: WorkspaceDocumentCollections = {
 
 type WorkspaceGenerationCounts = Partial<Record<DocumentType, number>>
 
+const VISIBLE_WORKSPACE_DOCUMENT_TYPES: DocumentType[] = Array.from(
+  new Set(SCROLLABLE_NAV_ITEMS.map((item) => item.sourceType))
+)
+
+function getSourceTypeForScrollTarget(targetId: string): DocumentType | null {
+  const navItem = SCROLLABLE_NAV_ITEMS.find(
+    (item) => item.key === targetId || item.sections.some((section) => section.id === targetId)
+  )
+
+  return navItem?.sourceType ?? null
+}
+
 export function ProjectWorkspace({
   project,
   initialDocument = DEFAULT_WORKSPACE_DOCUMENT,
@@ -178,6 +190,8 @@ export function ProjectWorkspace({
     launch: Boolean(initialDocuments?.launch),
   })
   const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false)
+  const loadedDocumentsRef = useRef(loadedDocuments)
+  const loadingDocumentsRef = useRef(new Set<DocumentType>())
 
   // Streaming state for live NDJSON document generation
   const [streamStages, setStreamStages] = useState<StreamStage[]>([])
@@ -206,14 +220,22 @@ export function ProjectWorkspace({
   const techSpecs = documentCollections.techspec
   const deployments = documentCollections.deploy
 
+  useEffect(() => {
+    loadedDocumentsRef.current = loadedDocuments
+  }, [loadedDocuments])
+
   const loadWorkspaceDocuments = useCallback(async (
     docTypes: DocumentType[],
     options?: { force?: boolean }
   ) => {
     const uniqueDocs = Array.from(new Set(docTypes)).filter((type) => type !== "prompt")
-    const needed = uniqueDocs.filter((type) => options?.force || !loadedDocuments[type])
+    const needed = uniqueDocs.filter((type) => {
+      if (loadingDocumentsRef.current.has(type)) return false
+      return options?.force || !loadedDocumentsRef.current[type]
+    })
     if (needed.length === 0) return
 
+    needed.forEach((type) => loadingDocumentsRef.current.add(type))
     setIsWorkspaceLoading(true)
     try {
       const response = await fetch(`/api/projects/${project.id}/workspace?docs=${needed.join(",")}&tab=${activeDocument}`, {
@@ -230,21 +252,31 @@ export function ProjectWorkspace({
       if (!workspaceData) return
 
       setCredits(typeof workspaceData.credits === "number" ? workspaceData.credits : initialCredits)
-      setDocumentCollections((prev) => ({
-        ...prev,
-        ...(workspaceData.documents ?? {}),
-      }))
+      setDocumentCollections((prev) => {
+        const next = { ...prev }
+        const incomingDocuments = workspaceData.documents as Partial<WorkspaceDocumentCollections> | undefined
+
+        for (const type of needed) {
+          const documents = incomingDocuments?.[type]
+          if (documents) {
+            next[type] = documents as WorkspaceDocumentCollections[typeof type]
+          }
+        }
+
+        return next
+      })
       setLoadedDocuments((prev) => {
         const next = { ...prev }
-        uniqueDocs.forEach((type) => {
+        needed.forEach((type) => {
           next[type] = true
         })
         return next
       })
     } finally {
+      needed.forEach((type) => loadingDocumentsRef.current.delete(type))
       setIsWorkspaceLoading(false)
     }
-  }, [activeDocument, initialCredits, loadedDocuments, project.id])
+  }, [activeDocument, initialCredits, project.id])
 
   const getGenerationSnapshot = useCallback(async (): Promise<WorkspaceGenerationCounts | null> => {
     try {
@@ -348,7 +380,23 @@ export function ProjectWorkspace({
   }, [searchParams])
 
   useEffect(() => {
-    void loadWorkspaceDocuments([activeDocument])
+    void loadWorkspaceDocuments([...VISIBLE_WORKSPACE_DOCUMENT_TYPES, activeDocument])
+  }, [activeDocument, loadWorkspaceDocuments])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const hashTarget = decodeURIComponent(window.location.hash.replace(/^#/, ""))
+    if (!hashTarget) return
+
+    const sourceType = getSourceTypeForScrollTarget(hashTarget)
+    if (!sourceType) return
+
+    if (sourceType !== activeDocument) {
+      setActiveDocument(sourceType)
+    }
+
+    void loadWorkspaceDocuments([sourceType])
   }, [activeDocument, loadWorkspaceDocuments])
 
   useEffect(() => {
@@ -776,6 +824,12 @@ export function ProjectWorkspace({
       || container.querySelector(`[data-section="${targetId}"]`)
     if (!target) return
 
+    const sourceType = getSourceTypeForScrollTarget(targetId)
+    if (sourceType) {
+      setActiveDocument(sourceType)
+      void loadWorkspaceDocuments([sourceType])
+    }
+
     isScrollingProgrammatically.current = true
     target.scrollIntoView({ behavior: "smooth", block: "start" })
 
@@ -797,7 +851,7 @@ export function ProjectWorkspace({
     setTimeout(() => {
       isScrollingProgrammatically.current = false
     }, 800)
-  }, [])
+  }, [loadWorkspaceDocuments])
 
   // Reset to latest version (index 0) when switching documents
   useEffect(() => {

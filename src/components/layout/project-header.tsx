@@ -1,7 +1,7 @@
 // src/components/layout/project-header.tsx
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, type MouseEvent } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -67,6 +67,15 @@ export function ProjectHeader({
     }
   }
 
+  const navigateToProjects = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+      return
+    }
+
+    event.preventDefault()
+    window.location.assign("/projects")
+  }
+
   const initials = user.full_name
     ?.split(" ")
     .map((n) => n[0])
@@ -84,7 +93,7 @@ export function ProjectHeader({
   return (
     <header className="grid min-h-16 grid-cols-[1fr_auto] items-center gap-3 border-b border-border-subtle bg-background px-4 py-3 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:py-0">
       {/* Left: Brand wordmark */}
-      <Link href="/projects" className="flex min-w-0 items-center gap-3">
+      <Link href="/projects" onClick={navigateToProjects} className="flex min-w-0 items-center gap-3">
         <HeaderLogo size={APP_HEADER_LOGO_SIZE} linked={false} />
         <span className="hidden text-sm font-medium text-text-secondary sm:inline">
           {APP_BRAND_NAME}
@@ -95,6 +104,7 @@ export function ProjectHeader({
       <div className="hidden min-w-0 items-center justify-center gap-3 lg:flex">
         <Link
           href="/projects"
+          onClick={navigateToProjects}
           className="text-sm font-medium text-text-secondary transition-colors hover:text-foreground"
         >
           Projects

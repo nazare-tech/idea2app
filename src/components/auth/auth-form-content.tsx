@@ -14,6 +14,21 @@ import { sanitizeInternalRedirect } from "@/lib/safe-redirect"
 
 export type AuthMode = "signin" | "signup"
 
+const AUTH_REQUEST_TIMEOUT_MS = 15_000
+
+function withAuthTimeout<T>(request: Promise<T>, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      reject(new Error(`${label} took too long. Please try again.`))
+    }, AUTH_REQUEST_TIMEOUT_MS)
+
+    request
+      .then(resolve)
+      .catch(reject)
+      .finally(() => window.clearTimeout(timeout))
+  })
+}
+
 const modeLabels: Record<
   AuthMode,
   {
@@ -101,25 +116,31 @@ export function AuthFormContent({
       const supabase = createClient()
 
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { error } = await withAuthTimeout(
+          supabase.auth.signInWithPassword({ email, password }),
+          "Sign in"
+        )
         if (error) { setError(error.message); return }
         onSuccess()
         return
       }
 
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName },
-          emailRedirectTo: buildCallbackUrl(),
-        },
-      })
+      const { error } = await withAuthTimeout(
+        supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: fullName },
+            emailRedirectTo: buildCallbackUrl(),
+          },
+        }),
+        "Create account"
+      )
 
       if (error) { setError(error.message); return }
       setSuccess(true)
-    } catch {
-      setError("An unexpected error occurred")
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "An unexpected error occurred")
     } finally {
       setLoading(false)
     }
@@ -132,15 +153,18 @@ export function AuthFormContent({
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: buildCallbackUrl(),
-        },
-      })
+      const { error } = await withAuthTimeout(
+        supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: buildCallbackUrl(),
+          },
+        }),
+        "Google sign in"
+      )
       if (error) setError(error.message)
-    } catch {
-      setError("An unexpected error occurred")
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "An unexpected error occurred")
     } finally {
       setLoading(false)
     }
