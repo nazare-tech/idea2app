@@ -7,6 +7,8 @@
 - `src/components/workspace/project-workspace.tsx`
 - `src/components/layout/anchor-nav.tsx`
 - `src/components/layout/scrollable-content.tsx`
+- `src/components/layout/header.tsx`
+- `src/components/layout/project-header.tsx`
 - `src/stores/generate-all-store.ts`
 
 ## Verification
@@ -19,6 +21,7 @@
 - Dev server responded on `http://localhost:3000` with HTTP 200.
 - Headless Chromium navigation timed out in this sandbox, so exact authenticated dashboard visual verification remains manual.
 - 2026-05-10 follow-up: fixed a maximum update depth error by preventing the Generate All hydrator callback from writing an unchanged idle queue back into the store on every render. Re-ran focused status tests, TypeScript, lint, and the full test suite successfully.
+- 2026-05-10 follow-up: fixed a Radix dropdown trigger hydration warning by giving the app and project header profile menu triggers stable ids and matching `aria-labelledby` values. Re-ran TypeScript, lint, and the full test suite successfully.
 
 ## Code Review Findings
 
@@ -38,3 +41,4 @@
 - [x] Document backend follow-up for durable PRD/MVP partial-token streaming.
 - [x] Document backend follow-up for real mockup option progress.
 - [x] Guard Generate All callback hydration against identical queue updates so dashboard subscriptions do not enter a render loop.
+- [x] Stabilize header dropdown trigger ids so server and client hydration attributes match.

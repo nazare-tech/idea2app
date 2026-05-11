@@ -57,6 +57,7 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
+              id="app-user-menu-trigger"
               className={uiStylePresets.headerProfileTrigger}
             >
               <Avatar className="h-7 w-7 rounded-full">
@@ -72,6 +73,7 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
+            aria-labelledby="app-user-menu-trigger"
             className="w-[260px] border border-border-subtle bg-white p-2 text-text-primary"
             align="end"
           >

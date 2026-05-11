@@ -154,6 +154,7 @@ export function ProjectHeader({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
+            id="project-user-menu-trigger"
             className="justify-self-end flex min-h-10 items-center gap-2 rounded-md border border-border-subtle bg-card px-2.5 py-1.5 sm:gap-2.5 sm:px-3"
           >
             <Avatar className="h-7 w-7 rounded-full">
@@ -169,6 +170,7 @@ export function ProjectHeader({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
+          aria-labelledby="project-user-menu-trigger"
           className="w-[260px] border border-border-subtle bg-white p-2 text-text-primary"
           align="end"
         >
