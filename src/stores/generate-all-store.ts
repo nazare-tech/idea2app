@@ -235,6 +235,10 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
         ),
       )
       const newTotal = estimateGenerateAllCost(GENERATE_ALL_DEFAULT_MODELS, skipTypes)
+      const current = get()
+      if (current.totalCredits === newTotal && areQueueItemsEqual(current.queue, newQueue)) {
+        return
+      }
       set(() => ({ queue: newQueue, totalCredits: newTotal }))
     },
 
@@ -442,4 +446,19 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       }
     },
   }))
+}
+
+function areQueueItemsEqual(left: QueueItem[], right: QueueItem[]) {
+  if (left.length !== right.length) return false
+
+  return left.every((item, index) => {
+    const other = right[index]
+    return Boolean(other) &&
+      item.docType === other.docType &&
+      item.label === other.label &&
+      item.status === other.status &&
+      item.creditCost === other.creditCost &&
+      item.stageMessage === other.stageMessage &&
+      item.error === other.error
+  })
 }

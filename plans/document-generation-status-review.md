@@ -7,6 +7,7 @@
 - `src/components/workspace/project-workspace.tsx`
 - `src/components/layout/anchor-nav.tsx`
 - `src/components/layout/scrollable-content.tsx`
+- `src/stores/generate-all-store.ts`
 
 ## Verification
 
@@ -17,6 +18,7 @@
 - `npm.cmd run build`: first failed because sandbox network blocked Google Fonts; rerun with approved network access passed.
 - Dev server responded on `http://localhost:3000` with HTTP 200.
 - Headless Chromium navigation timed out in this sandbox, so exact authenticated dashboard visual verification remains manual.
+- 2026-05-10 follow-up: fixed a maximum update depth error by preventing the Generate All hydrator callback from writing an unchanged idle queue back into the store on every render. Re-ran focused status tests, TypeScript, lint, and the full test suite successfully.
 
 ## Code Review Findings
 
@@ -35,3 +37,4 @@
 - [x] Ensure content existence overrides stale queue state.
 - [x] Document backend follow-up for durable PRD/MVP partial-token streaming.
 - [x] Document backend follow-up for real mockup option progress.
+- [x] Guard Generate All callback hydration against identical queue updates so dashboard subscriptions do not enter a render loop.
