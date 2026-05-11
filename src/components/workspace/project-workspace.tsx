@@ -109,6 +109,38 @@ const VISIBLE_WORKSPACE_DOCUMENT_TYPES: DocumentType[] = Array.from(
   new Set(SCROLLABLE_NAV_ITEMS.map((item) => item.sourceType))
 )
 
+function applyWorkspaceDocuments(
+  next: WorkspaceDocumentCollections,
+  type: DocumentType,
+  documents: WorkspaceDocumentCollections[keyof WorkspaceDocumentCollections] | undefined
+) {
+  if (!documents) return
+
+  switch (type) {
+    case "competitive":
+      next.competitive = documents as Analysis[]
+      break
+    case "prd":
+      next.prd = documents as PRD[]
+      break
+    case "mvp":
+      next.mvp = documents as MvpPlan[]
+      break
+    case "mockups":
+      next.mockups = documents as Mockup[]
+      break
+    case "techspec":
+      next.techspec = documents as TechSpec[]
+      break
+    case "deploy":
+      next.deploy = documents as Deployment[]
+      break
+    case "launch":
+      next.launch = documents as Analysis[]
+      break
+  }
+}
+
 function getSourceTypeForScrollTarget(targetId: string): DocumentType | null {
   const navItem = SCROLLABLE_NAV_ITEMS.find(
     (item) => item.key === targetId || item.sections.some((section) => section.id === targetId)
@@ -265,10 +297,7 @@ export function ProjectWorkspace({
         const incomingDocuments = workspaceData.documents as Partial<WorkspaceDocumentCollections> | undefined
 
         for (const type of needed) {
-          const documents = incomingDocuments?.[type]
-          if (documents) {
-            next[type] = documents as WorkspaceDocumentCollections[typeof type]
-          }
+          applyWorkspaceDocuments(next, type, incomingDocuments?.[type as keyof WorkspaceDocumentCollections])
         }
 
         return next
