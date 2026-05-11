@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-04-29 (Onboarding OpenRouter Mockups)
+**Last Updated**: 2026-05-10 (Dashboard Document Generation Status)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -39,6 +39,7 @@
 - **Deployment**: Direct deployment capabilities for generated applications
 - **Project-based Pricing Migration**: Project creation is guarded by monthly project allowance. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
 - **Generate-Missing-Only Documents**: Planning documents are active singletons by default. Direct generation routes and Generate All/onboarding execution check for an existing active document before credits or external AI calls; duplicate attempts return/record a skipped existing output instead of inserting another row. Future document versioning must be a separate explicit product action.
+- **Dashboard Generation Status**: The project dashboard derives document loading states from the durable Generate All/onboarding queue, not only local browser flags. The left document rail shows compact queued/generating/ready/needs-retry states, while the right document modules show queued, loading, current-session PRD/MVP streaming previews, or retry placeholders until canonical saved content is available.
 
 ### User Workflow
 
@@ -200,6 +201,7 @@
    - Store fires `POST /api/generate-all/execute` as fire-and-forget (server runs up to 300s even if user closes tab)
    - Store polls `GET /api/generate-all/status` every 3s to reflect server-side progress
    - When server marks a step "done", store calls `onStepComplete()` → `router.refresh()` to reload the document
+   - The workspace consumes hydrated queue items to keep left-panel and right-panel document states stable across refresh, browser back/forward, and returning to a project. Content existence wins over stale queue state; PRD/MVP current-session stream previews can render in the right panel when available, while background queues fall back to durable generating status until saved content exists.
    - The old idle public "Generate All" button is deprecated. The workspace only shows the Generate All status/retry panel while a queue is active, partial, cancelled, or errored.
    - `generation_queue_items` is the source of truth for per-document status, dependencies, attempts, credit state, and generated output references. The legacy `generation_queues.queue` JSON is synchronized for existing UI.
    - Queue rows and queue item rows are user-readable but server-mutable only. Browser clients cannot directly write billing/workflow authority fields such as `source`, `credit_status`, dependencies, attempts, or output refs.

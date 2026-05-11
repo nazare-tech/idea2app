@@ -1,15 +1,18 @@
 // src/components/layout/anchor-nav.tsx
 "use client"
 
-import { CheckCircle2, Circle } from "lucide-react"
+import { AlertCircle, CheckCircle2, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
+import type { DocumentGenerationDisplayState } from "@/lib/document-generation-display-status"
 
-type NavStatus = "done" | "in_progress" | "pending"
+type NavStatus = "done" | "in_progress" | "pending" | "needs_retry"
 
 interface AnchorNavProps {
   /** Status per sourceType (e.g., { competitive: "done", prd: "pending" }) */
   documentStatuses: Record<string, NavStatus>
+  /** Rich status per visible nav key (overview, market-research, prd, etc.) */
+  documentDisplayStates?: Record<string, DocumentGenerationDisplayState>
   /** Currently visible section key (set by IntersectionObserver) */
   activeKey: string | null
   /** Currently visible sub-section ID */
@@ -45,9 +48,11 @@ function SpinnerIcon({ className }: { className?: string }) {
 function StatusIcon({
   status,
   isActive,
+  displayState,
 }: {
   status: NavStatus
   isActive?: boolean
+  displayState?: DocumentGenerationDisplayState
 }) {
   if (status === "done") {
     return (
@@ -59,7 +64,33 @@ function StatusIcon({
   }
 
   if (status === "in_progress") {
-    return <SpinnerIcon className="h-4 w-4 shrink-0 text-primary" />
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-primary/10 px-2 py-1 font-mono text-[10px] font-medium text-primary">
+        <SpinnerIcon className="h-3.5 w-3.5" />
+        <span>Generating</span>
+      </span>
+    )
+  }
+
+  if (status === "needs_retry") {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-red-50 px-2 py-1 font-mono text-[10px] font-medium text-red-600">
+        <AlertCircle aria-hidden="true" className="h-3.5 w-3.5" />
+        <span>Needs retry</span>
+      </span>
+    )
+  }
+
+  if (displayState?.displayStatus === "queued") {
+    return (
+      <span className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[10px] font-medium",
+        isActive ? "bg-primary/10 text-primary" : "bg-[#F1F1F1] text-[#777777]",
+      )}>
+        <Circle aria-hidden="true" className="h-3 w-3" />
+        <span>Queued</span>
+      </span>
+    )
   }
 
   return (
@@ -75,25 +106,32 @@ function NavTab({
   status,
   isActive,
   activeSectionId,
+  displayState,
   onNavigate,
 }: {
   item: DocumentNavItem
   status: NavStatus
   isActive: boolean
   activeSectionId: string | null
+  displayState?: DocumentGenerationDisplayState
   onNavigate: (id: string) => void
 }) {
   const isInProgress = status === "in_progress"
   const isPending = status === "pending"
+  const hasIssue = status === "needs_retry"
 
   const containerStyle = isActive
     ? "border-primary/35 bg-primary/10"
     : isInProgress
       ? "border-primary/25 bg-primary/5"
+      : hasIssue
+        ? "border-red-200 bg-red-50/60"
       : "border-[#E5E5E5] bg-white hover:border-[#D6D0CA] hover:bg-[#F5F0EB]"
 
   const titleColor = isActive || isInProgress
     ? "text-[#0A0A0A]"
+    : hasIssue
+      ? "text-red-700"
     : isPending
       ? "text-[#777777]"
       : "text-[#0A0A0A]"
@@ -113,7 +151,7 @@ function NavTab({
         <span className={cn("flex-1 text-base", isActive ? "font-extrabold" : "font-bold", titleColor)}>
           {item.label}
         </span>
-        <StatusIcon status={status} isActive={isActive} />
+        <StatusIcon status={status} isActive={isActive} displayState={displayState} />
       </button>
 
       {/* Sub-tabs */}
@@ -149,6 +187,7 @@ function NavTab({
 
 export function AnchorNav({
   documentStatuses,
+  documentDisplayStates = {},
   activeKey,
   activeSectionId,
   onNavigate,
@@ -167,6 +206,7 @@ export function AnchorNav({
           status={getStatus(item)}
           isActive={activeKey === item.key}
           activeSectionId={activeSectionId}
+          displayState={documentDisplayStates[item.key]}
           onNavigate={onNavigate}
         />
       ))}

@@ -9,8 +9,12 @@ import { parseDocumentStream, type StreamStage } from "@/lib/parse-document-stre
 import { DOCUMENT_TYPES, type DocumentType } from "@/lib/document-definitions"
 import { SCROLLABLE_NAV_ITEMS, getNavKeyForSection } from "@/lib/document-sections"
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
-import type { GenerateDocumentFn } from "@/stores/generate-all-store"
+import { useGenerateAll, type GenerateDocumentFn } from "@/stores/generate-all-store"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
+import {
+  buildDocumentGenerationDisplayStates,
+  type DocumentGenerationDisplayState,
+} from "@/lib/document-generation-display-status"
 import {
   DEFAULT_WORKSPACE_DOCUMENT,
   isWorkspaceDocumentType,
@@ -99,6 +103,7 @@ const EMPTY_DOCUMENT_COLLECTIONS: WorkspaceDocumentCollections = {
 }
 
 type WorkspaceGenerationCounts = Partial<Record<DocumentType, number>>
+type LegacyDocumentStatus = "done" | "in_progress" | "pending"
 
 const VISIBLE_WORKSPACE_DOCUMENT_TYPES: DocumentType[] = Array.from(
   new Set(SCROLLABLE_NAV_ITEMS.map((item) => item.sourceType))
@@ -197,6 +202,8 @@ export function ProjectWorkspace({
   const [streamStages, setStreamStages] = useState<StreamStage[]>([])
   const [streamCurrentStep, setStreamCurrentStep] = useState(0)
   const [streamContent, setStreamContent] = useState("")
+  const [documentStreamPreviews, setDocumentStreamPreviews] = useState<Partial<Record<DocumentType, string>>>({})
+  const generateAllQueue = useGenerateAll(project.id, (s) => s.queue)
 
   // Scroll-nav sync state
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -208,6 +215,7 @@ export function ProjectWorkspace({
     setStreamStages([])
     setStreamCurrentStep(0)
     setStreamContent("")
+    setDocumentStreamPreviews({})
   }, [])
 
   const analyses = useMemo(
@@ -605,7 +613,7 @@ export function ProjectWorkspace({
   }, [activeDocument])
 
 
-  const getDocumentStatus = (type: DocumentType): "done" | "in_progress" | "pending" => {
+  const getLegacyDocumentStatus = (type: DocumentType): LegacyDocumentStatus => {
     // Check if document is currently generating
     if (generatingDocuments[type]) {
       return "in_progress"
@@ -631,6 +639,34 @@ export function ProjectWorkspace({
       default:
         return "pending"
     }
+  }
+
+  const displayStates = buildDocumentGenerationDisplayStates({
+    documentTypes: ["competitive", "prd", "mvp", "mockups", "launch"],
+    labels: {
+      competitive: "Competitive Research",
+      prd: "PRD",
+      mvp: "MVP Plan",
+      mockups: "Mockups",
+      launch: "Marketing",
+    },
+    hasContent: {
+      competitive: analyses.some(a => a.type === "competitive-analysis"),
+      prd: prds.length > 0,
+      mvp: mvpPlans.length > 0,
+      mockups: mockups.length > 0,
+      launch: analyses.some(a => a.type === "launch-plan"),
+    },
+    queueItems: generateAllQueue,
+    locallyGenerating: generatingDocuments,
+    streamPreviews: documentStreamPreviews,
+  })
+
+  const getDocumentStatus = (type: DocumentType): LegacyDocumentStatus => {
+    const displayState = displayStates[type]
+    if (displayState?.navStatus === "done") return "done"
+    if (displayState?.navStatus === "in_progress") return "in_progress"
+    return getLegacyDocumentStatus(type)
   }
 
   const getVersionsForDocument = (type: DocumentType) => {
@@ -929,6 +965,9 @@ export function ProjectWorkspace({
 
     // Set generating state for the active document
     setGeneratingDocuments(prev => ({ ...prev, [generatingType]: true }))
+    if (generatingType === "prd" || generatingType === "mvp") {
+      setDocumentStreamPreviews(prev => ({ ...prev, [generatingType]: "" }))
+    }
     saveGeneratingState(generatingType, true)
 
     try {
@@ -1038,7 +1077,15 @@ export function ProjectWorkspace({
             })
             setStreamCurrentStep(stage.step)
           },
-          onToken: (content) => setStreamContent(prev => prev + content),
+          onToken: (content) => {
+            setStreamContent(prev => prev + content)
+            if (generatingType === "prd" || generatingType === "mvp") {
+              setDocumentStreamPreviews(prev => ({
+                ...prev,
+                [generatingType]: `${prev[generatingType] ?? ""}${content}`,
+              }))
+            }
+          },
           onDone: () => { didGenerate = true },
           onError: (message) => {
             streamError = message
@@ -1081,6 +1128,9 @@ export function ProjectWorkspace({
   const generateDocument: GenerateDocumentFn = useCallback(
     async (docType, model, options) => {
       setGeneratingDocuments(prev => ({ ...prev, [docType]: true }))
+      if (docType === "prd" || docType === "mvp") {
+        setDocumentStreamPreviews(prev => ({ ...prev, [docType]: "" }))
+      }
       saveGeneratingState(docType, true)
 
       try {
@@ -1198,7 +1248,14 @@ export function ProjectWorkspace({
           let streamError: string | undefined
           await parseDocumentStream(response, {
             onStage: () => {},
-            onToken: () => {},
+            onToken: (content) => {
+              if (docType === "prd" || docType === "mvp") {
+                setDocumentStreamPreviews(prev => ({
+                  ...prev,
+                  [docType]: `${prev[docType] ?? ""}${content}`,
+                }))
+              }
+            },
             onDone: () => {},
             onError: (message) => { streamError = message },
           })
@@ -1250,44 +1307,55 @@ export function ProjectWorkspace({
     metadata?: Record<string, unknown> | null
     isGenerating: boolean
     isLoading?: boolean
+    displayState?: DocumentGenerationDisplayState
   }> = {
     competitive: {
       content: getDocumentContent("competitive"),
       metadata: getDocumentMetadata("competitive"),
-      isGenerating: generatingDocuments["competitive"],
+      isGenerating: generatingDocuments["competitive"] || displayStates.competitive?.displayStatus === "generating" || displayStates.competitive?.displayStatus === "streaming",
       isLoading: !loadedDocuments.competitive,
+      displayState: displayStates.competitive,
     },
     prd: {
       content: getDocumentContent("prd"),
       metadata: null,
-      isGenerating: generatingDocuments["prd"],
+      isGenerating: generatingDocuments["prd"] || displayStates.prd?.displayStatus === "generating" || displayStates.prd?.displayStatus === "streaming",
       isLoading: !loadedDocuments.prd,
+      displayState: displayStates.prd,
     },
     mvp: {
       content: getDocumentContent("mvp"),
       metadata: null,
-      isGenerating: generatingDocuments["mvp"],
+      isGenerating: generatingDocuments["mvp"] || displayStates.mvp?.displayStatus === "generating" || displayStates.mvp?.displayStatus === "streaming",
       isLoading: !loadedDocuments.mvp,
+      displayState: displayStates.mvp,
     },
     mockups: {
       content: getDocumentContent("mockups"),
       metadata: null,
-      isGenerating: generatingDocuments["mockups"],
+      isGenerating: generatingDocuments["mockups"] || displayStates.mockups?.displayStatus === "generating" || displayStates.mockups?.displayStatus === "streaming",
       isLoading: !loadedDocuments.mockups,
+      displayState: displayStates.mockups,
     },
     launch: {
       content: getDocumentContent("launch"),
       metadata: null,
-      isGenerating: generatingDocuments["launch"],
+      isGenerating: generatingDocuments["launch"] || displayStates.launch?.displayStatus === "generating" || displayStates.launch?.displayStatus === "streaming",
       isLoading: !loadedDocuments.launch,
+      displayState: displayStates.launch,
     },
   }
 
   // Build status map for AnchorNav (keyed by sourceType)
-  const navDocumentStatuses: Record<string, "done" | "in_progress" | "pending"> = {}
+  const navDocumentStatuses: Record<string, LegacyDocumentStatus | "needs_retry"> = {}
+  const navDocumentDisplayStates: Record<string, DocumentGenerationDisplayState> = {}
   for (const item of SCROLLABLE_NAV_ITEMS) {
     if (!navDocumentStatuses[item.sourceType]) {
-      navDocumentStatuses[item.sourceType] = getDocumentStatus(item.sourceType as DocumentType)
+      const sourceType = item.sourceType as DocumentType
+      navDocumentStatuses[item.sourceType] = displayStates[sourceType]?.navStatus ?? getDocumentStatus(sourceType)
+    }
+    if (displayStates[item.sourceType]) {
+      navDocumentDisplayStates[item.key] = displayStates[item.sourceType]
     }
   }
 
@@ -1320,6 +1388,7 @@ export function ProjectWorkspace({
           ) : null}
           <AnchorNav
             documentStatuses={navDocumentStatuses}
+            documentDisplayStates={navDocumentDisplayStates}
             activeKey={activeNavKey}
             activeSectionId={activeSectionId}
             onNavigate={handleScrollNavigate}

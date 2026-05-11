@@ -2,6 +2,7 @@
 "use client"
 
 import React, { forwardRef, useRef, useMemo, useState, useEffect } from "react"
+import { AlertCircle, CheckCircle2, Circle, Loader2 } from "lucide-react"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import {
@@ -10,6 +11,10 @@ import {
 } from "@/components/analysis/competitive-analysis-document"
 import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
 import type { StreamStage } from "@/lib/parse-document-stream"
+import type {
+  DocumentGenerationDisplayState,
+  MockupOptionStatus,
+} from "@/lib/document-generation-display-status"
 import { cn } from "@/lib/utils"
 
 interface DocumentData {
@@ -20,6 +25,7 @@ interface DocumentData {
   streamStages?: StreamStage[]
   streamCurrentStep?: number
   streamContent?: string
+  displayState?: DocumentGenerationDisplayState
 }
 
 interface ScrollableContentProps {
@@ -57,6 +63,104 @@ function EmptyState({ label }: { label: string }) {
 
 function getSkeletonMode(document?: DocumentData): "loading" | "generating" {
   return document?.isGenerating ? "generating" : "loading"
+}
+
+function SmallStatusIcon({ status }: { status: MockupOptionStatus["status"] }) {
+  if (status === "ready") return <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
+  if (status === "generating") return <Loader2 className="h-4 w-4 animate-spin text-primary" />
+  if (status === "needs_retry") return <AlertCircle className="h-4 w-4 text-red-500" />
+  return <Circle className="h-4 w-4 text-muted-foreground/60" />
+}
+
+function GenerationStatusModule({
+  label,
+  state,
+  projectId,
+}: {
+  label: string
+  state?: DocumentGenerationDisplayState
+  projectId: string
+}) {
+  if (!state || state.displayStatus === "idle") {
+    return <EmptyState label={label} />
+  }
+
+  if (state.displayStatus === "streaming" && state.streamPreview) {
+    return (
+      <div className="space-y-5 p-5 sm:p-8">
+        <div className="flex items-start gap-3">
+          <Loader2 className="mt-1 h-5 w-5 shrink-0 animate-spin text-primary" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">{state.message}</p>
+            {state.detail && (
+              <p className="mt-1 text-xs text-muted-foreground">{state.detail}</p>
+            )}
+          </div>
+        </div>
+        <div className="border-t border-border-subtle pt-5">
+          <MarkdownRenderer content={state.streamPreview} projectId={projectId} />
+        </div>
+      </div>
+    )
+  }
+
+  const isGenerating = state.displayStatus === "generating"
+  const needsRetry = state.displayStatus === "needs_retry"
+
+  return (
+    <div className="flex flex-col gap-5 p-5 sm:p-8">
+      <div className="flex items-start gap-3">
+        <div className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+          isGenerating && "bg-primary/10 text-primary",
+          state.displayStatus === "queued" && "bg-muted text-muted-foreground",
+          needsRetry && "bg-red-50 text-red-600",
+        )}>
+          {isGenerating ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : needsRetry ? (
+            <AlertCircle className="h-5 w-5" />
+          ) : (
+            <Circle className="h-5 w-5" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">
+            {state.message || label}
+          </p>
+          {state.detail && (
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              {state.detail}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {isGenerating && (
+        <div className="space-y-3">
+          <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
+          <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
+          <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
+        </div>
+      )}
+
+      {state.mockupOptionStatuses && state.mockupOptionStatuses.length > 0 && (
+        <div className="divide-y divide-border-subtle rounded-md border border-border-subtle">
+          {state.mockupOptionStatuses.map((option) => (
+            <div key={option.label} className="flex items-center gap-3 px-4 py-3">
+              <SmallStatusIcon status={option.status} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">{option.label}</p>
+                {option.message && (
+                  <p className="text-xs text-muted-foreground">{option.message}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function DocumentWrapper({
@@ -295,14 +399,20 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
       >
         {/* Overview — rendered immediately (first visible section) */}
         <DocumentWrapper navKey="overview" contentClassName="space-y-6">
-          {competitiveData?.isGenerating || competitiveData?.isLoading ? (
-            <DocumentSkeleton label="Overview" mode={getSkeletonMode(competitiveData)} />
-          ) : competitiveData?.content ? (
+          {competitiveData?.content ? (
             <CompetitiveOverviewSection
               content={competitiveData.content}
               metadata={competitiveData.metadata}
               projectId={projectId}
             />
+          ) : competitiveData?.displayState && competitiveData.displayState.displayStatus !== "idle" ? (
+            <GenerationStatusModule
+              label="Overview"
+              state={competitiveData.displayState}
+              projectId={projectId}
+            />
+          ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
+            <DocumentSkeleton label="Overview" mode={getSkeletonMode(competitiveData)} />
           ) : (
             <EmptyState label="Overview" />
           )}
@@ -313,14 +423,20 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="market-research" contentClassName="space-y-6">
           {!renderDeferred ? (
             <DocumentSkeleton label="Market Research" />
-          ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
-            <DocumentSkeleton label="Market Research" mode={getSkeletonMode(competitiveData)} />
           ) : competitiveData?.content ? (
             <CompetitiveDetailSection
               content={competitiveData.content}
               metadata={competitiveData.metadata}
               projectId={projectId}
             />
+          ) : competitiveData?.displayState && competitiveData.displayState.displayStatus !== "idle" ? (
+            <GenerationStatusModule
+              label="Market Research"
+              state={competitiveData.displayState}
+              projectId={projectId}
+            />
+          ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
+            <DocumentSkeleton label="Market Research" mode={getSkeletonMode(competitiveData)} />
           ) : (
             <EmptyState label="Market Research" />
           )}
@@ -329,14 +445,20 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="prd">
           {!renderDeferred ? (
             <DocumentSkeleton label="PRD" />
-          ) : prdData?.isGenerating || prdData?.isLoading ? (
-            <DocumentSkeleton label="PRD" mode={getSkeletonMode(prdData)} />
           ) : prdData?.content ? (
             <MarkdownDocumentSection
               content={prdData.content}
               projectId={projectId}
               navKey="prd"
             />
+          ) : prdData?.displayState && prdData.displayState.displayStatus !== "idle" ? (
+            <GenerationStatusModule
+              label="PRD"
+              state={prdData.displayState}
+              projectId={projectId}
+            />
+          ) : prdData?.isGenerating || prdData?.isLoading ? (
+            <DocumentSkeleton label="PRD" mode={getSkeletonMode(prdData)} />
           ) : (
             <EmptyState label="PRD" />
           )}
@@ -345,14 +467,20 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="mvp">
           {!renderDeferred ? (
             <DocumentSkeleton label="MVP Plan" />
-          ) : mvpData?.isGenerating || mvpData?.isLoading ? (
-            <DocumentSkeleton label="MVP Plan" mode={getSkeletonMode(mvpData)} />
           ) : mvpData?.content ? (
             <MarkdownDocumentSection
               content={mvpData.content}
               projectId={projectId}
               navKey="mvp"
             />
+          ) : mvpData?.displayState && mvpData.displayState.displayStatus !== "idle" ? (
+            <GenerationStatusModule
+              label="MVP Plan"
+              state={mvpData.displayState}
+              projectId={projectId}
+            />
+          ) : mvpData?.isGenerating || mvpData?.isLoading ? (
+            <DocumentSkeleton label="MVP Plan" mode={getSkeletonMode(mvpData)} />
           ) : (
             <EmptyState label="MVP Plan" />
           )}
@@ -361,10 +489,16 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="mockups">
           {!renderDeferred ? (
             <DocumentSkeleton label="Mockups" />
-          ) : mockupsData?.isGenerating || mockupsData?.isLoading ? (
-            <DocumentSkeleton label="Mockups" mode={getSkeletonMode(mockupsData)} />
           ) : mockupsData?.content ? (
             <MockupsSection content={mockupsData.content} projectId={projectId} />
+          ) : mockupsData?.displayState && mockupsData.displayState.displayStatus !== "idle" ? (
+            <GenerationStatusModule
+              label="Mockups"
+              state={mockupsData.displayState}
+              projectId={projectId}
+            />
+          ) : mockupsData?.isGenerating || mockupsData?.isLoading ? (
+            <DocumentSkeleton label="Mockups" mode={getSkeletonMode(mockupsData)} />
           ) : (
             <EmptyState label="Mockups" />
           )}
@@ -373,14 +507,20 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         <DocumentWrapper navKey="launch">
           {!renderDeferred ? (
             <DocumentSkeleton label="Marketing" />
-          ) : launchData?.isGenerating || launchData?.isLoading ? (
-            <DocumentSkeleton label="Marketing" mode={getSkeletonMode(launchData)} />
           ) : launchData?.content ? (
             <MarkdownDocumentSection
               content={launchData.content}
               projectId={projectId}
               navKey="launch"
             />
+          ) : launchData?.displayState && launchData.displayState.displayStatus !== "idle" ? (
+            <GenerationStatusModule
+              label="Marketing"
+              state={launchData.displayState}
+              projectId={projectId}
+            />
+          ) : launchData?.isGenerating || launchData?.isLoading ? (
+            <DocumentSkeleton label="Marketing" mode={getSkeletonMode(launchData)} />
           ) : (
             <EmptyState label="Marketing" />
           )}
