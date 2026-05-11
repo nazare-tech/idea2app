@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { Suspense } from "react"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LandingIdeaCapture } from "@/components/landing/landing-idea-capture"
 import { WaitlistForm } from "@/components/landing/waitlist-form"
@@ -152,6 +153,10 @@ export default async function LandingPage() {
     getUserCount(),
     getIsAuthenticated(),
   ])
+  if (isAuthenticated) {
+    redirect("/projects")
+  }
+
   const waitlistMode = isWaitlistMode(userCount)
 
   return (
