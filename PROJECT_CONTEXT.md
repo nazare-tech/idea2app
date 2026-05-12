@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-05-11 (Project context refresh)
+**Last Updated**: 2026-05-12 (PRD/MVP block rendering)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -16,8 +16,8 @@
 - **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
 - **Competitive Analysis**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a full-width Pencil-faithful designed page, not generic markdown. The UI is built from typed parsing of the stored markdown source and includes founder verdict, competitor profiles, workflow matrix, pricing, audience segments, positioning, GTM signals, gap analysis, differentiation wedges, moat/defensibility, SWOT, risks, MVP wedge recommendation, and strategic recommendations. Direct competitor entries now expect linked H3 headings plus concise fields for overview, core product, positioning, strengths, key edge, limitations, pricing model, and target audience so the app can render dense competitor cards and a fast-comparison table. Legacy or malformed documents fall back to markdown with upgrade guidance.
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
-- **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans
-- **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD
+- **PRD Generation**: Complete Product Requirements Documents with user personas, features, and release plans. Completed PRDs render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. Unlabeled persona/profile bullets are preserved as one target-user profile block so demographic, background, goals, and pain-point fields do not split into fake personas. The renderer cleans legacy horizontal rules/blockquotes, presents labeled bullets as compact prose rows, stacks requirements vertically by functional/non-functional/integration groups, and renders user stories as story cards with acceptance criteria. The PRD prompt now avoids blockquotes/horizontal rules and asks for stable tables/H4 story sections for cleaner block rendering.
+- **MVP Plan Generation**: Strategic development plan for Minimum Viable Product based on PRD. Completed MVP plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. Direct H2/H3 content is preserved as fallback section cards when a generated MVP plan lacks deeper nested headings.
 - **Mockup Generation**: Three UI mockup alternatives generated from MVP plans. The default path uses OpenRouter image-output model `openai/gpt-5.4-image-2`, configurable with `OPENROUTER_MOCKUP_IMAGE_MODEL`; images are stored in private Supabase Storage and rendered through an authenticated image proxy. The renderer also supports json-render specs/patches and legacy Stitch HTML for older saved mockups.
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **Landing Page + Waitlist Gate**: The marketing landing page now switches between standard signup CTAs and a public waitlist flow once the early-access user cap is reached. Features:
@@ -39,7 +39,7 @@
 - **Deployment**: Direct deployment capabilities for generated applications
 - **Project-based Pricing Migration**: Project creation is guarded by monthly project allowance. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
 - **Generate-Missing-Only Documents**: Planning documents are active singletons by default. Direct generation routes and Generate All/onboarding execution check for an existing active document before credits or external AI calls; duplicate attempts return/record a skipped existing output instead of inserting another row. Future document versioning must be a separate explicit product action.
-- **Dashboard Generation Status**: The project dashboard derives document loading states from the durable Generate All/onboarding queue, not only local browser flags. The left document rail shows compact queued/generating/ready/needs-retry states, while the right document modules show queued, loading, current-session PRD/MVP streaming previews, or retry placeholders until canonical saved content is available.
+- **Dashboard Generation Status**: The project dashboard derives document loading states from the durable Generate All/onboarding queue, not only local browser flags. The left document rail shows compact queued/generating/ready/needs-retry states, while the right document modules show queued, loading, retry placeholders, or canonical saved content. PRD/MVP no longer show partial streaming previews in the workspace; they show loading/generating states until the saved document is ready.
 - **Lazy Workspace Loading**: Project workspaces use slugged project refs at `/projects/[projectRef]` and lazy-load owned document collections through `/api/projects/[id]/workspace`. The workspace requests only the document types it needs, keeps section hash navigation in sync, and defers below-the-fold rendering to avoid freezing large generated documents.
 - **Prompt/Inline Edit Cleanup**: The Prompt tab remains deprecated and `/api/prompt-chat` returns `410 Gone`. The old inline "Edit with AI" client surface and `/api/document-edit` route are not present in the current app; document PATCH routes still exist for direct content updates.
 
@@ -1375,7 +1375,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/stitch/html/route.ts](src/app/api/stitch/html/route.ts) | Server-side proxy for legacy Stitch HTML downloads |
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Lazy-loading scroll workspace orchestrator |
 | [src/components/layout/anchor-nav.tsx](src/components/layout/anchor-nav.tsx) | Sticky/horizontal document rail for Overview, Market Research, PRD, MVP, Mockups, and Marketing with queued/generating/ready/needs-retry indicators |
-| [src/components/layout/scrollable-content.tsx](src/components/layout/scrollable-content.tsx) | Scrollable document body renderer with deferred sections, queue-aware placeholders, PRD/MVP streaming previews, and mockup/status modules |
+| [src/components/layout/scrollable-content.tsx](src/components/layout/scrollable-content.tsx) | Scrollable document body renderer with deferred sections, queue-aware placeholders, PRD/MVP completed-document block rendering, and mockup/status modules |
 | [src/components/layout/sidebar.tsx](src/components/layout/sidebar.tsx) | Legacy dashboard sidebar retained for existing layouts |
 | [src/components/layout/app-page-shell.tsx](src/components/layout/app-page-shell.tsx) | Shared authenticated page shell and header for consistent dashboard page spacing and hierarchy |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Legacy pipeline-step nav retained for older document surfaces |
@@ -1385,6 +1385,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/document-generation-display-status.ts](src/lib/document-generation-display-status.ts) | Pure helper that merges content existence, durable queue state, local generation flags, PRD/MVP stream previews, and optional mockup option statuses into nav/body display states |
 | [src/lib/active-document-policy.ts](src/lib/active-document-policy.ts) | Shared active-document identity and lookup helper used to prevent duplicate default document generation across direct APIs and Generate All/onboarding |
 | [src/components/analysis/competitive-analysis-document.tsx](src/components/analysis/competitive-analysis-document.tsx) | **NEW** — Competitive Research v2 hybrid modules/markdown renderer with legacy notice and upgrade CTA |
+| [src/components/analysis/planning-document-blocks.tsx](src/components/analysis/planning-document-blocks.tsx) | PRD and MVP block renderers that use the Pencil-style planning document parser/view-model layer with markdown fallback, PRD context/vision cards, compact labeled PRD prose rows, vertically stacked PRD requirement categories, user-story acceptance criteria cards, single-profile persona fallback labeling, and MVP overview placement |
 | [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with lazy syntax highlighting, responsive table column sizing, and beautiful-mermaid diagrams with expand/pan/zoom controls |
 | [src/components/ui/mockup-renderer.tsx](src/components/ui/mockup-renderer.tsx) | Mockup renderer for OpenRouter image mockups, json-render specs/patches, legacy Stitch HTML records, and legacy ASCII mockups |
 | [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | General chat UI component |
@@ -1411,6 +1412,9 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | PATCH endpoint to update tech spec content |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
 | [src/lib/competitive-analysis-v2.ts](src/lib/competitive-analysis-v2.ts) | **NEW** — Competitive Research v2 section contract, legacy/v2 view model helpers, and parser utilities |
+| [src/lib/planning-document-parser.ts](src/lib/planning-document-parser.ts) | Shared markdown section, list, paragraph, source cleanup, and table parser utilities for PRD/MVP block rendering |
+| [src/lib/prd-document.ts](src/lib/prd-document.ts) | PRD parser/view-model helpers used by the PRD block renderer, including persona/profile grouping fallback |
+| [src/lib/mvp-plan-document.ts](src/lib/mvp-plan-document.ts) | MVP plan parser/view-model helpers used by the MVP block renderer, including direct-content fallback sections |
 | [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (competitive, PRD, MVP, tech spec). All OpenRouter calls have 120s AbortSignal timeout. |
 | [src/lib/openrouter-image-mockup-pipeline.ts](src/lib/openrouter-image-mockup-pipeline.ts) | OpenRouter-only image mockup generation and Supabase Storage upload. |
 | [src/lib/openrouter-image-mockup-format.ts](src/lib/openrouter-image-mockup-format.ts) | Client-safe parser/helpers for OpenRouter image mockup JSON. |

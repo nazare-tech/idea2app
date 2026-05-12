@@ -6,12 +6,11 @@ export type DocumentDisplayStatus =
   | "ready"
   | "queued"
   | "generating"
-  | "streaming"
   | "needs_retry"
 
 export interface MockupOptionStatus {
   label: string
-  status: Exclude<DocumentDisplayStatus, "streaming">
+  status: DocumentDisplayStatus
   message?: string
 }
 
@@ -23,7 +22,6 @@ export interface DocumentGenerationDisplayState {
   message: string
   detail?: string
   queueStatus?: QueueItemStatus
-  streamPreview?: string
   stageMessage?: string
   error?: string
   mockupOptionStatuses?: MockupOptionStatus[]
@@ -35,7 +33,6 @@ export interface BuildDocumentGenerationDisplayStatesInput {
   hasContent: Partial<Record<DocumentType, boolean>>
   queueItems?: QueueItem[]
   locallyGenerating?: Partial<Record<DocumentType, boolean>>
-  streamPreviews?: Partial<Record<DocumentType, string>>
   mockupOptionStatuses?: MockupOptionStatus[]
 }
 
@@ -63,7 +60,6 @@ export function buildDocumentGenerationDisplayStates({
   hasContent,
   queueItems = [],
   locallyGenerating = {},
-  streamPreviews = {},
   mockupOptionStatuses,
 }: BuildDocumentGenerationDisplayStatesInput): Record<DocumentType, DocumentGenerationDisplayState> {
   const queueByType = new Map(queueItems.map((item) => [item.docType, item]))
@@ -73,8 +69,6 @@ export function buildDocumentGenerationDisplayStates({
       const label = labels[docType] ?? docType
       const queueItem = queueByType.get(docType)
       const queueStatus = queueItem?.status
-      const streamPreview = getStreamPreview(docType, streamPreviews[docType])
-
       if (hasContent[docType]) {
         return [docType, {
           docType,
@@ -96,20 +90,6 @@ export function buildDocumentGenerationDisplayStates({
           detail: queueItem?.error ?? "Generation did not complete.",
           queueStatus,
           error: queueItem?.error,
-        }]
-      }
-
-      if (streamPreview && (docType === "prd" || docType === "mvp")) {
-        return [docType, {
-          docType,
-          displayStatus: "streaming",
-          navStatus: "in_progress",
-          label,
-          message: queueItem?.stageMessage ?? DEFAULT_MESSAGES[docType],
-          detail: "Live preview updates while the document is being drafted.",
-          queueStatus,
-          streamPreview,
-          stageMessage: queueItem?.stageMessage,
         }]
       }
 
@@ -162,10 +142,4 @@ export function buildDocumentGenerationDisplayStates({
       }]
     }),
   ) as Record<DocumentType, DocumentGenerationDisplayState>
-}
-
-function getStreamPreview(docType: DocumentType, preview: string | undefined) {
-  if (docType !== "prd" && docType !== "mvp") return undefined
-  const trimmed = preview?.trim()
-  return trimmed ? preview : undefined
 }

@@ -209,5 +209,13 @@ No commentary before or after.
 No JSON wrapper.
 No explanatory text.
 
+The application renders completed MVP plans as structured visual blocks. To keep that view reliable:
+- Use the exact H1/H2/H3/H4 headings from **MANDATORY MVP PLAN STRUCTURE**.
+- Keep scope boundaries in the markdown table under \`### 1.5 MVP Scope Boundaries\`.
+- Keep feature summary in the markdown table under \`### 2.1 Feature Summary Table\`.
+- Keep each feature detail as a \`#### MVP-XXX: [Feature Name]\` heading under \`### 2.2 Feature Details\`.
+- Keep user-flow, timeline, success-metric, and assumptions content under their specified H3 headings.
+- Do not rename sections, skip sections, or move content into unrelated headings.
+
 Just the full MVP plan document starting with:
 # MVP Plan: [PRODUCT NAME]`

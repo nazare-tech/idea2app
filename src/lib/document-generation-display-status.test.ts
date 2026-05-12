@@ -76,30 +76,17 @@ test("buildDocumentGenerationDisplayStates: generating queue item maps to genera
   assert.equal(states.mockups.message, "Generating visual directions")
 })
 
-test("buildDocumentGenerationDisplayStates: PRD preview maps to streaming", () => {
+test("buildDocumentGenerationDisplayStates: PRD generating state does not expose stream preview", () => {
   const states = buildDocumentGenerationDisplayStates({
     documentTypes: docTypes,
     labels,
     hasContent: {},
     queueItems: [item("prd", "generating", { stageMessage: "Drafting product requirements" })],
-    streamPreviews: { prd: "# Product Requirements\n\nLive text" },
-  })
-
-  assert.equal(states.prd.displayStatus, "streaming")
-  assert.equal(states.prd.navStatus, "in_progress")
-  assert.equal(states.prd.streamPreview, "# Product Requirements\n\nLive text")
-})
-
-test("buildDocumentGenerationDisplayStates: empty PRD preview falls back to generating", () => {
-  const states = buildDocumentGenerationDisplayStates({
-    documentTypes: docTypes,
-    labels,
-    hasContent: {},
-    queueItems: [item("prd", "generating")],
-    streamPreviews: { prd: "   " },
   })
 
   assert.equal(states.prd.displayStatus, "generating")
+  assert.equal(states.prd.navStatus, "in_progress")
+  assert.equal("streamPreview" in states.prd, false)
 })
 
 test("buildDocumentGenerationDisplayStates: queue error maps to needs_retry", () => {
