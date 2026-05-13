@@ -20,6 +20,10 @@ import {
   isWorkspaceDocumentType,
   resolveWorkspaceDocumentTab,
 } from "@/lib/workspace-tab-policy"
+import {
+  chooseActiveScrollCandidate,
+  type ScrollSyncCandidate,
+} from "@/lib/workspace-scroll-sync"
 
 
 interface Project {
@@ -234,6 +238,7 @@ export function ProjectWorkspace({
 
   // Scroll-nav sync state
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const anchorNavRef = useRef<HTMLElement>(null)
   const [activeNavKey, setActiveNavKey] = useState<string | null>(initialDocument === "competitive" ? "overview" : initialDocument)
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
   const isScrollingProgrammatically = useRef(false)
@@ -572,61 +577,103 @@ export function ProjectWorkspace({
     router,
   ])
 
-  // IntersectionObserver: sync scroll position → active nav item
+  // Keep the rail scrolled to the active item while the document pane drives state.
   useEffect(() => {
-    if (activeDocument === "prompt") return // No observer in prompt mode
+    const nav = anchorNavRef.current
+    if (!nav || !activeNavKey) return
+
+    const activeTopTarget = nav.querySelector<HTMLElement>(`[data-nav-target="${CSS.escape(activeNavKey)}"]`)
+    const target = activeTopTarget
+
+    if (!target) return
+
+    const navRect = nav.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+
+    nav.scrollTo({
+      top: Math.max(0, nav.scrollTop + targetRect.top - navRect.top),
+      left: Math.max(0, nav.scrollLeft + targetRect.left - navRect.left),
+      behavior: isScrollingProgrammatically.current ? "auto" : "smooth",
+    })
+  }, [activeNavKey, activeSectionId])
+
+  useEffect(() => {
+    if (activeDocument === "prompt") return // No scroll sync in prompt mode
 
     const container = scrollContainerRef.current
     if (!container) return
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (isScrollingProgrammatically.current) return
+    let frameId: number | null = null
 
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const sectionId = entry.target.getAttribute("data-section")
-            if (sectionId) {
-              // It's a document-level section
-              setActiveNavKey(sectionId)
-            }
-            const subId = entry.target.id
-            if (subId && subId !== sectionId) {
-              setActiveSectionId(subId)
-              const parentKey = getNavKeyForSection(subId)
-              if (parentKey) {
-                setActiveNavKey(parentKey)
-                const currentHash = decodeURIComponent(window.location.hash.replace(/^#/, ""))
-                if (currentHash !== parentKey) {
-                  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${subId}`)
-                }
-              }
-            } else if (sectionId) {
-              window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${sectionId}`)
-            }
-          }
+    const collectCandidates = (): ScrollSyncCandidate[] => {
+      const candidates: ScrollSyncCandidate[] = []
+
+      container.querySelectorAll<HTMLElement>("[data-section]").forEach((element) => {
+        const sectionId = element.getAttribute("data-section")
+        if (!sectionId) return
+        candidates.push({
+          id: sectionId,
+          navKey: sectionId,
+          top: element.getBoundingClientRect().top,
+        })
+      })
+
+      for (const item of SCROLLABLE_NAV_ITEMS) {
+        for (const section of item.sections) {
+          const element = container.querySelector<HTMLElement>(`#${CSS.escape(section.id)}`)
+          if (!element) continue
+          candidates.push({
+            id: section.id,
+            navKey: item.key,
+            top: element.getBoundingClientRect().top,
+          })
         }
-      },
-      {
-        root: container,
-        rootMargin: "-20% 0px -70% 0px",
-        threshold: 0,
       }
-    )
 
-    // Observe document-level sections
-    const sections = container.querySelectorAll("[data-section]")
-    sections.forEach((el) => observer.observe(el))
+      return candidates
+    }
 
-    // Observe sub-sections by ID
-    for (const item of SCROLLABLE_NAV_ITEMS) {
-      for (const section of item.sections) {
-        const el = container.querySelector(`#${CSS.escape(section.id)}`)
-        if (el) observer.observe(el)
+    const updateActiveScrollTarget = () => {
+      if (isScrollingProgrammatically.current) return
+
+      const containerRect = container.getBoundingClientRect()
+      const markerTop = containerRect.top + container.clientHeight * 0.22
+      const activeCandidate = chooseActiveScrollCandidate(collectCandidates(), markerTop)
+      if (!activeCandidate) return
+
+      const nextSectionId = activeCandidate.id === activeCandidate.navKey ? null : activeCandidate.id
+      setActiveNavKey((current) => current === activeCandidate.navKey ? current : activeCandidate.navKey)
+      setActiveSectionId((current) => current === nextSectionId ? current : nextSectionId)
+
+      const currentHash = decodeURIComponent(window.location.hash.replace(/^#/, ""))
+      if (currentHash !== activeCandidate.id) {
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}#${activeCandidate.id}`
+        )
       }
     }
 
-    return () => observer.disconnect()
+    const scheduleUpdate = () => {
+      if (frameId !== null) return
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null
+        updateActiveScrollTarget()
+      })
+    }
+
+    scheduleUpdate()
+    container.addEventListener("scroll", scheduleUpdate, { passive: true })
+    window.addEventListener("resize", scheduleUpdate)
+
+    return () => {
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId)
+      }
+      container.removeEventListener("scroll", scheduleUpdate)
+      window.removeEventListener("resize", scheduleUpdate)
+    }
   }, [activeDocument])
 
 
@@ -1369,6 +1416,7 @@ export function ProjectWorkspace({
             </div>
           ) : null}
           <AnchorNav
+            ref={anchorNavRef}
             documentStatuses={navDocumentStatuses}
             documentDisplayStates={navDocumentDisplayStates}
             activeKey={activeNavKey}

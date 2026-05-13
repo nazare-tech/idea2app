@@ -277,6 +277,33 @@ Acceptance Criteria: - Every saved decision log has a share link - The shared UR
   assert.match(html, /Integration/)
 })
 
+test("PrdDocumentBlocks renders duplicate user story ids without dropping stories", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      projectId="project-1"
+      content={`# PRD
+
+## IV. Features and Functionality
+
+### 4.2 User Stories / Use Cases
+#### US-002: Book a sitter
+Story: As a pet owner, I want to book a verified sitter so that my dog is safe.
+Acceptance Criteria:
+- The sitter profile shows verification status.
+
+#### US-002: Track care updates
+Story: As a pet owner, I want live care updates so that I know my dog is okay.
+Acceptance Criteria:
+- The booking timeline shows the latest update.
+`}
+    />,
+  )
+
+  assert.match(html, /Book a sitter/)
+  assert.match(html, /Track care updates/)
+  assert.equal((html.match(/US-002/g) ?? []).length, 2)
+})
+
 test("PrdDocumentBlocks stacks table-based PRD requirements vertically", () => {
   const html = renderToStaticMarkup(
     <PrdDocumentBlocks

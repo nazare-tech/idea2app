@@ -527,8 +527,8 @@ function UserStoriesContent({ narrative }: { narrative: PlanningNarrativeTable }
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      {stories.map((story) => (
-        <article key={story.id} className="border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-5">
+      {stories.map((story, index) => (
+        <article key={`${story.id}-${index}`} className="border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-5">
           <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[#8A8480]">
             {story.id}
           </p>

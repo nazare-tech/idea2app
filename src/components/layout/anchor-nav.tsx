@@ -1,6 +1,7 @@
 // src/components/layout/anchor-nav.tsx
 "use client"
 
+import { forwardRef } from "react"
 import { AlertCircle, CheckCircle2, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
@@ -143,6 +144,7 @@ function NavTab({
       {/* Tab title row */}
       <button
         type="button"
+        data-nav-target={item.key}
         onClick={() => onNavigate(item.key)}
         aria-current={isActive ? "location" : undefined}
         aria-label={`${item.label}, ${status.replace("_", " ")}`}
@@ -167,6 +169,7 @@ function NavTab({
             <button
               key={section.id}
               type="button"
+              data-nav-target={section.id}
               onClick={() => onNavigate(section.id)}
               aria-current={isActiveSub ? "location" : undefined}
               className={cn(
@@ -185,19 +188,22 @@ function NavTab({
   )
 }
 
-export function AnchorNav({
+export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function AnchorNav({
   documentStatuses,
   documentDisplayStates = {},
   activeKey,
   activeSectionId,
   onNavigate,
-}: AnchorNavProps) {
+}, ref) {
   const getStatus = (item: DocumentNavItem): NavStatus => {
     return documentStatuses[item.sourceType] || "pending"
   }
 
   return (
-    <nav className="flex w-full shrink-0 gap-2 overflow-x-auto border-b border-border-subtle bg-[#FAFAFA] px-4 py-3 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-b-0 lg:px-6 lg:py-5">
+    <nav
+      ref={ref}
+      className="workspace-anchor-nav flex w-full shrink-0 gap-2 overflow-x-auto border-b border-[#E2DDD6] bg-[#F8F6F3] px-4 py-3 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6 lg:py-5"
+    >
       {/* Document tabs */}
       {SCROLLABLE_NAV_ITEMS.map((item) => (
         <NavTab
@@ -212,4 +218,4 @@ export function AnchorNav({
       ))}
     </nav>
   )
-}
+})
