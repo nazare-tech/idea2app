@@ -33,10 +33,10 @@ export type GenerateAllStatus =
 // ---------------------------------------------------------------------------
 
 /**
- * Called whenever a step transitions to "done" so the workspace can call
- * router.refresh() to reload the new document into the tab.
+ * Called whenever one or more steps transition to a content-ready state so the
+ * workspace can reload those saved documents into client state.
  */
-export type OnStepCompleteFn = () => void
+export type OnStepCompleteFn = (completedDocTypes: DocumentType[]) => void
 
 /**
  * Signature for the individual-document generation function that lives in the
@@ -171,13 +171,20 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       const prevQueue = prevQueueRef.current ?? get().queue
       const incomingQueue: QueueItem[] = dbRow.queue ?? []
 
-      // Detect newly-completed steps and notify the workspace to refresh
-      const hasNewlyDone = incomingQueue.some((item, i) => {
-        const prev = prevQueue[i]
-        return item.status === "done" && prev?.status !== "done"
-      })
-      if (hasNewlyDone) {
-        onStepCompleteRef.current?.()
+      // Detect newly-completed steps and notify the workspace to refresh the
+      // exact document collections that should now have saved content.
+      const prevByDocType = new Map(prevQueue.map((item) => [item.docType, item]))
+      const newlyCompletedDocTypes = incomingQueue
+        .filter((item) => {
+          const prev = prevByDocType.get(item.docType)
+          const isContentReady = item.status === "done" || item.status === "skipped"
+          const wasContentReady = prev?.status === "done" || prev?.status === "skipped"
+          return isContentReady && !wasContentReady
+        })
+        .map((item) => item.docType)
+
+      if (newlyCompletedDocTypes.length > 0) {
+        onStepCompleteRef.current?.(newlyCompletedDocTypes)
       }
 
       prevQueueRef.current = incomingQueue

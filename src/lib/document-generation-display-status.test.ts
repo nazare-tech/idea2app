@@ -63,6 +63,19 @@ test("buildDocumentGenerationDisplayStates: missing content without queue state 
   assert.equal(states.prd.navStatus, "pending")
 })
 
+test("buildDocumentGenerationDisplayStates: completed queue waits for saved content before ready", () => {
+  const states = buildDocumentGenerationDisplayStates({
+    documentTypes: docTypes,
+    labels,
+    hasContent: { prd: false },
+    queueItems: [item("prd", "done")],
+  })
+
+  assert.equal(states.prd.displayStatus, "generating")
+  assert.equal(states.prd.navStatus, "in_progress")
+  assert.equal(states.prd.message, "Loading saved content")
+})
+
 test("buildDocumentGenerationDisplayStates: generating queue item maps to generating", () => {
   const states = buildDocumentGenerationDisplayStates({
     documentTypes: docTypes,

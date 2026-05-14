@@ -124,10 +124,11 @@ export function buildDocumentGenerationDisplayStates({
       if (queueStatus === "done" || queueStatus === "skipped") {
         return [docType, {
           docType,
-          displayStatus: "ready",
-          navStatus: "done",
+          displayStatus: "generating",
+          navStatus: "in_progress",
           label,
-          message: "Ready",
+          message: "Loading saved content",
+          detail: "The document is ready. Loading the saved version now.",
           queueStatus,
         }]
       }

@@ -1388,11 +1388,20 @@ export function ProjectWorkspace({
     }
   }
 
+  const handleGenerationStepComplete = useCallback((completedDocTypes: DocumentType[]) => {
+    const docTypes = completedDocTypes.length > 0
+      ? completedDocTypes
+      : VISIBLE_WORKSPACE_DOCUMENT_TYPES
+
+    void loadWorkspaceDocuments(docTypes, { force: true })
+    router.refresh()
+  }, [loadWorkspaceDocuments, router])
+
   return (
     <>
       <GenerateAllHydrator
         projectId={project.id}
-        onStepComplete={router.refresh}
+        onStepComplete={handleGenerationStepComplete}
         getDocumentStatus={getDocumentStatus}
       />
       <div className="flex flex-col h-screen">
