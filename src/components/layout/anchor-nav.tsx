@@ -2,9 +2,10 @@
 "use client"
 
 import { forwardRef } from "react"
-import { AlertCircle, CheckCircle2, Circle } from "lucide-react"
+import { CheckCircle2, Circle, Play, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
+import type { DocumentType } from "@/lib/document-definitions"
 import type { DocumentGenerationDisplayState } from "@/lib/document-generation-display-status"
 
 type NavStatus = "done" | "in_progress" | "pending" | "needs_retry"
@@ -20,6 +21,8 @@ interface AnchorNavProps {
   activeSectionId: string | null
   /** Callback when user clicks a tab or sub-tab */
   onNavigate: (sectionId: string) => void
+  /** Callback when user manually generates or retries a document module. */
+  onGenerateDocument?: (docType: DocumentType) => void
 }
 
 function SpinnerIcon({ className }: { className?: string }) {
@@ -74,12 +77,7 @@ function StatusIcon({
   }
 
   if (status === "needs_retry") {
-    return (
-      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-red-50 px-2 py-1 font-mono text-[10px] font-medium text-red-600">
-        <AlertCircle aria-hidden="true" className="h-3.5 w-3.5" />
-        <span>Needs retry</span>
-      </span>
-    )
+    return null
   }
 
   if (displayState?.displayStatus === "queued") {
@@ -109,6 +107,7 @@ function NavTab({
   activeSectionId,
   displayState,
   onNavigate,
+  onGenerateDocument,
 }: {
   item: DocumentNavItem
   status: NavStatus
@@ -116,10 +115,15 @@ function NavTab({
   activeSectionId: string | null
   displayState?: DocumentGenerationDisplayState
   onNavigate: (id: string) => void
+  onGenerateDocument?: (docType: DocumentType) => void
 }) {
   const isInProgress = status === "in_progress"
   const isPending = status === "pending"
   const hasIssue = status === "needs_retry"
+  const showGenerateAction = displayState?.displayStatus === "idle" && isPending
+  const showRetryAction = hasIssue
+  const actionLabel = showRetryAction ? "Retry" : showGenerateAction ? "Generate" : null
+  const ActionIcon = showRetryAction ? RotateCcw : Play
 
   const containerStyle = isActive
     ? "border-primary/35 bg-primary/10"
@@ -155,6 +159,23 @@ function NavTab({
         </span>
         <StatusIcon status={status} isActive={isActive} displayState={displayState} />
       </button>
+
+      {actionLabel && onGenerateDocument && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            onGenerateDocument(item.sourceType)
+          }}
+          className={cn(
+            "mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+            "border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+          )}
+        >
+          <ActionIcon aria-hidden="true" className="h-3.5 w-3.5" />
+          <span>{actionLabel}</span>
+        </button>
+      )}
 
       {/* Sub-tabs */}
       <div className="mt-1 ml-2 hidden border-l border-[#E5E5E5] pl-2 lg:block">
@@ -194,6 +215,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
   activeKey,
   activeSectionId,
   onNavigate,
+  onGenerateDocument,
 }, ref) {
   const getStatus = (item: DocumentNavItem): NavStatus => {
     return documentStatuses[item.sourceType] || "pending"
@@ -214,6 +236,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
           activeSectionId={activeSectionId}
           displayState={documentDisplayStates[item.key]}
           onNavigate={onNavigate}
+          onGenerateDocument={onGenerateDocument}
         />
       ))}
     </nav>

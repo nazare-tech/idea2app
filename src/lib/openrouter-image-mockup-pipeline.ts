@@ -18,7 +18,7 @@ export const MOCKUP_STORAGE_BUCKET =
 const MAX_MOCKUP_IMAGE_BYTES = 10 * 1024 * 1024
 const DEFAULT_IMAGE_TIMEOUT_MS = 285_000
 
-const OPTION_CONFIGS = [
+export const OPENROUTER_MOCKUP_OPTION_CONFIGS = [
   {
     label: "A",
     title: "Focused dashboard",
@@ -35,6 +35,8 @@ const OPTION_CONFIGS = [
     strategy: "A polished overview screen that emphasizes business value, hierarchy, and presentation quality.",
   },
 ] as const
+
+export type OpenRouterMockupOptionLabel = typeof OPENROUTER_MOCKUP_OPTION_CONFIGS[number]["label"]
 
 type ServerSupabaseClient = SupabaseClient<Database>
 
@@ -59,6 +61,21 @@ export interface GenerateOpenRouterImageMockupResult {
   model: string
   source: typeof OPENROUTER_IMAGE_MOCKUP_SOURCE
   metadata: Database["public"]["Tables"]["mockups"]["Insert"]["metadata"]
+}
+
+export interface GenerateOpenRouterImageMockupOptionInput {
+  mvpPlan: string
+  projectName: string
+  projectId: string
+  label: OpenRouterMockupOptionLabel
+  runId?: string
+}
+
+export interface GenerateOpenRouterImageMockupOptionResult {
+  option: OpenRouterImageMockupOption
+  model: string
+  source: typeof OPENROUTER_IMAGE_MOCKUP_SOURCE
+  runId: string
 }
 
 export function getOpenRouterMockupImageModel() {
@@ -127,7 +144,7 @@ export async function generateOpenRouterImageMockup({
   send?.({ type: "stage", message: "Generating 3 visual directions...", step: 2, totalSteps: 5 })
 
   const generatedOptions = await Promise.all(
-    OPTION_CONFIGS.map((config) =>
+    OPENROUTER_MOCKUP_OPTION_CONFIGS.map((config) =>
       generateAndStoreOption({
         config,
         model,
@@ -164,6 +181,48 @@ export async function generateOpenRouterImageMockup({
   }
 }
 
+export async function generateOpenRouterImageMockupOption({
+  mvpPlan,
+  projectName,
+  projectId,
+  label,
+  runId = crypto.randomUUID(),
+}: GenerateOpenRouterImageMockupOptionInput): Promise<GenerateOpenRouterImageMockupOptionResult> {
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY environment variable is not configured")
+  }
+
+  const config = OPENROUTER_MOCKUP_OPTION_CONFIGS.find((optionConfig) => optionConfig.label === label)
+  if (!config) {
+    throw new Error(`Unsupported mockup option label: ${label}`)
+  }
+
+  const model = getOpenRouterMockupImageModel()
+  const storageSupabase = createServiceClient() as ServerSupabaseClient
+  const openrouter = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+  })
+
+  const option = await generateAndStoreOption({
+    config,
+    model,
+    openrouter,
+    storageSupabase,
+    mvpPlan,
+    projectName,
+    projectId,
+    runId,
+  })
+
+  return {
+    option,
+    model,
+    source: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+    runId,
+  }
+}
+
 async function generateAndStoreOption({
   config,
   model,
@@ -174,7 +233,7 @@ async function generateAndStoreOption({
   projectId,
   runId,
 }: {
-  config: typeof OPTION_CONFIGS[number]
+  config: typeof OPENROUTER_MOCKUP_OPTION_CONFIGS[number]
   model: string
   openrouter: OpenAI
   storageSupabase: ServerSupabaseClient
@@ -241,7 +300,7 @@ async function generateAndStoreOption({
   }
 }
 
-function getOpenRouterMockupImageTimeoutMs() {
+export function getOpenRouterMockupImageTimeoutMs() {
   const configured = Number(process.env.OPENROUTER_MOCKUP_IMAGE_TIMEOUT_MS)
   return Number.isFinite(configured) && configured > 0
     ? configured

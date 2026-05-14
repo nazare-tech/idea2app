@@ -115,6 +115,20 @@ test("buildDocumentGenerationDisplayStates: queue error maps to needs_retry", ()
   assert.equal(states.launch.detail, "Launch failed")
 })
 
+test("buildDocumentGenerationDisplayStates: local generation overrides stale queue error", () => {
+  const states = buildDocumentGenerationDisplayStates({
+    documentTypes: docTypes,
+    labels,
+    hasContent: {},
+    queueItems: [item("mockups", "error", { error: "Mockups timed out" })],
+    locallyGenerating: { mockups: true },
+  })
+
+  assert.equal(states.mockups.displayStatus, "generating")
+  assert.equal(states.mockups.navStatus, "in_progress")
+  assert.equal(states.mockups.detail, "Mockups will appear here when the generated concepts are ready.")
+})
+
 test("buildDocumentGenerationDisplayStates: mockup option statuses are only attached when supplied", () => {
   const options: MockupOptionStatus[] = [
     { label: "Concept 1", status: "ready", message: "Ready" },

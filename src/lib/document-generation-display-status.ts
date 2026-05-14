@@ -80,19 +80,6 @@ export function buildDocumentGenerationDisplayStates({
         }]
       }
 
-      if (queueStatus === "error" || queueStatus === "blocked" || queueStatus === "cancelled") {
-        return [docType, {
-          docType,
-          displayStatus: "needs_retry",
-          navStatus: "needs_retry",
-          label,
-          message: "Needs retry",
-          detail: queueItem?.error ?? "Generation did not complete.",
-          queueStatus,
-          error: queueItem?.error,
-        }]
-      }
-
       if (queueStatus === "generating" || locallyGenerating[docType]) {
         return [docType, {
           docType,
@@ -106,6 +93,19 @@ export function buildDocumentGenerationDisplayStates({
           queueStatus,
           stageMessage: queueItem?.stageMessage,
           mockupOptionStatuses: docType === "mockups" ? mockupOptionStatuses : undefined,
+        }]
+      }
+
+      if (queueStatus === "error" || queueStatus === "blocked" || queueStatus === "cancelled") {
+        return [docType, {
+          docType,
+          displayStatus: "needs_retry",
+          navStatus: "needs_retry",
+          label,
+          message: "Needs retry",
+          detail: queueItem?.error ?? "Generation did not complete.",
+          queueStatus,
+          error: queueItem?.error,
         }]
       }
 

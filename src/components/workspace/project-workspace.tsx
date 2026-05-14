@@ -6,15 +6,21 @@ import { AnchorNav } from "@/components/layout/anchor-nav"
 import { ScrollableContent } from "@/components/layout/scrollable-content"
 import { ProjectHeader } from "@/components/layout/project-header"
 import { parseDocumentStream } from "@/lib/parse-document-stream"
-import { DOCUMENT_TYPES, type DocumentType } from "@/lib/document-definitions"
+import {
+  DOCUMENT_TYPES,
+  GENERATE_ALL_DEFAULT_MODELS,
+  type DocumentType,
+} from "@/lib/document-definitions"
 import { SCROLLABLE_NAV_ITEMS, getNavKeyForSection } from "@/lib/document-sections"
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
-import { useGenerateAll, type GenerateDocumentFn } from "@/stores/generate-all-store"
+import { useGenerateAll, type GenerateDocumentFn, type QueueItem } from "@/stores/generate-all-store"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
 import {
   buildDocumentGenerationDisplayStates,
+  type MockupOptionStatus,
   type DocumentGenerationDisplayState,
 } from "@/lib/document-generation-display-status"
+import type { OpenRouterImageMockupOption } from "@/lib/openrouter-image-mockup-format"
 import {
   DEFAULT_WORKSPACE_DOCUMENT,
   isWorkspaceDocumentType,
@@ -108,6 +114,14 @@ const EMPTY_DOCUMENT_COLLECTIONS: WorkspaceDocumentCollections = {
 
 type WorkspaceGenerationCounts = Partial<Record<DocumentType, number>>
 type LegacyDocumentStatus = "done" | "in_progress" | "pending"
+type MockupOptionGenerationResult =
+  | { skipped: true }
+  | {
+      skipped: false
+      option: OpenRouterImageMockupOption | null
+      model: string
+      error?: string
+    }
 
 const VISIBLE_WORKSPACE_DOCUMENT_TYPES: DocumentType[] = Array.from(
   new Set(SCROLLABLE_NAV_ITEMS.map((item) => item.sourceType))
@@ -177,6 +191,7 @@ export function ProjectWorkspace({
   const projectNameInputRef = useRef<HTMLInputElement>(null)
   const nameJustSetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
+  const mockupDraftRunStorageKey = `mockup_draft_run_${project.id}`
 
   useEffect(() => {
     setProjectName(project.name)
@@ -203,6 +218,10 @@ export function ProjectWorkspace({
   const [generatingDocuments, setGeneratingDocuments] = useState<Record<DocumentType, boolean>>({
     ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, false])),
   } as Record<DocumentType, boolean>)
+  const [mockupOptionStatuses, setMockupOptionStatuses] = useState<MockupOptionStatus[]>([])
+  const [mockupDraftRunId, setMockupDraftRunId] = useState<string | null>(null)
+  const [mockupDraftOptions, setMockupDraftOptions] = useState<OpenRouterImageMockupOption[]>([])
+  const [localGenerationErrors, setLocalGenerationErrors] = useState<Partial<Record<DocumentType, string>>>({})
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<Record<DocumentType, number>>({
     ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, 0])),
   } as Record<DocumentType, number>)
@@ -233,6 +252,15 @@ export function ProjectWorkspace({
   const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false)
   const loadedDocumentsRef = useRef(loadedDocuments)
   const loadingDocumentsRef = useRef(new Set<DocumentType>())
+
+  useEffect(() => {
+    if (typeof window === "undefined" || mockupDraftRunId) return
+
+    const storedRunId = localStorage.getItem(mockupDraftRunStorageKey)
+    if (storedRunId) {
+      setMockupDraftRunId(storedRunId)
+    }
+  }, [mockupDraftRunId, mockupDraftRunStorageKey])
 
   const generateAllQueue = useGenerateAll(project.id, (s) => s.queue)
 
@@ -367,8 +395,9 @@ export function ProjectWorkspace({
 
     try {
       const { timestamp } = JSON.parse(stored)
-      // Clear if older than 10 minutes (600000ms)
-      if (Date.now() - timestamp > 600000) {
+      // Mockups can run as three separate Hobby-safe image calls, so keep local
+      // generation state long enough for the full sequence.
+      if (Date.now() - timestamp > 1200000) {
         localStorage.removeItem(key)
         return false
       }
@@ -705,6 +734,18 @@ export function ProjectWorkspace({
     }
   }
 
+  const localFailureQueueItems = useMemo(() => (
+    Object.entries(localGenerationErrors)
+      .filter(([, error]) => Boolean(error))
+      .map(([docType, error]) => ({
+        docType: docType as DocumentType,
+        label: DOCUMENT_TYPES.includes(docType as DocumentType) ? docType : "Document",
+        status: "error" as const,
+        creditCost: 0,
+        error,
+      } satisfies QueueItem))
+  ), [localGenerationErrors])
+
   const displayStates = buildDocumentGenerationDisplayStates({
     documentTypes: ["competitive", "prd", "mvp", "mockups", "launch"],
     labels: {
@@ -721,8 +762,9 @@ export function ProjectWorkspace({
       mockups: mockups.length > 0,
       launch: analyses.some(a => a.type === "launch-plan"),
     },
-    queueItems: generateAllQueue,
+    queueItems: [...generateAllQueue, ...localFailureQueueItems],
     locallyGenerating: generatingDocuments,
+    mockupOptionStatuses,
   })
 
   const getDocumentStatus = (type: DocumentType): LegacyDocumentStatus => {
@@ -961,7 +1003,7 @@ export function ProjectWorkspace({
   }, [activeDocument])
 
   // Check prerequisites for document generation
-  const checkPrerequisites = (type: DocumentType): { canGenerate: boolean; reason?: string } => {
+  const checkPrerequisites = useCallback((type: DocumentType): { canGenerate: boolean; reason?: string } => {
     switch (type) {
       case "prompt":
         return { canGenerate: true }
@@ -1004,7 +1046,7 @@ export function ProjectWorkspace({
       default:
         return { canGenerate: true }
     }
-  }
+  }, [analyses, mvpPlans.length, prds.length, project.description, techSpecs.length])
 
   const documentStatuses = (["prompt", "competitive", "prd", "mvp", "mockups", "techspec", "deploy", "launch"] as DocumentType[]).map(
     type => ({ type, status: getDocumentStatus(type) })
@@ -1168,6 +1210,7 @@ export function ProjectWorkspace({
     async (docType, model, options) => {
       setGeneratingDocuments(prev => ({ ...prev, [docType]: true }))
       saveGeneratingState(docType, true)
+      setLocalGenerationErrors((prev) => ({ ...prev, [docType]: undefined }))
 
       try {
         const endpointMap: Record<string, string> = {
@@ -1223,6 +1266,308 @@ export function ProjectWorkspace({
           mvpContent = data?.content ?? mvpPlans[0]?.content
         }
 
+        if (docType === "mockups") {
+          if (!mvpContent) {
+            throw new Error("Generate MVP Plan first")
+          }
+
+          const optionLabels = ["A", "B", "C"] as const
+          const isMockupFixtureMode =
+            searchParams.get("mockupFixture") === "1" ||
+            (typeof window !== "undefined" &&
+              localStorage.getItem("makercompass_mockup_fixture_mode") === "true")
+          const clearMockupDraftRun = () => {
+            setMockupDraftRunId(null)
+            if (typeof window !== "undefined") {
+              localStorage.removeItem(mockupDraftRunStorageKey)
+            }
+          }
+
+          if (isMockupFixtureMode) {
+            setMockupOptionStatuses(optionLabels.map((label) => ({
+              label: `Option ${label}`,
+              status: "generating" as const,
+              message: "Generating fixture",
+            })))
+
+            const response = await fetch("/api/mockups/fixture", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                projectId: project.id,
+                projectName: project.name,
+              }),
+            })
+            const payload = await response.json().catch(() => null)
+            if (!response.ok) {
+              throw new Error(payload?.error || "Failed to generate fixture mockups")
+            }
+
+            setMockupOptionStatuses(optionLabels.map((label) => ({
+              label: `Option ${label}`,
+              status: "ready" as const,
+              message: "Ready",
+            })))
+            setMockupDraftOptions([])
+            clearMockupDraftRun()
+            setLocalGenerationErrors((prev) => ({ ...prev, [docType]: undefined }))
+            await loadWorkspaceDocuments([docType], { force: true })
+            return true
+          }
+
+          const runId = mockupDraftRunId ?? crypto.randomUUID()
+          if (!mockupDraftRunId) {
+            setMockupDraftRunId(runId)
+            if (typeof window !== "undefined") {
+              localStorage.setItem(mockupDraftRunStorageKey, runId)
+            }
+          }
+          const optionStatusLabels: Record<typeof optionLabels[number], string> = {
+            A: "Option A",
+            B: "Option B",
+            C: "Option C",
+          }
+          const getOptionStatusLabel = (label: typeof optionLabels[number]) => optionStatusLabels[label]
+          const updateMockupOptionStatus = (
+            label: typeof optionLabels[number],
+            status: MockupOptionStatus["status"],
+            message: string,
+          ) => {
+            setMockupOptionStatuses((prev) => {
+              const existing = new Map(prev.map((option) => [option.label, option]))
+              existing.set(getOptionStatusLabel(label), {
+                label: getOptionStatusLabel(label),
+                status,
+                message,
+              })
+              return optionLabels.map((optionLabel) =>
+                existing.get(getOptionStatusLabel(optionLabel)) ?? {
+                  label: getOptionStatusLabel(optionLabel),
+                  status: "queued" as const,
+                  message: "Queued",
+                }
+              )
+            })
+          }
+
+          const optionsByLabel = new Map(
+            mockupDraftOptions.map((option) => [option.label.toUpperCase(), option])
+          )
+          const syncDraftOptions = () => {
+            setMockupDraftOptions(
+              optionLabels
+                .map((optionLabel) => optionsByLabel.get(optionLabel))
+                .filter((option): option is OpenRouterImageMockupOption => Boolean(option))
+            )
+          }
+          const markStoredOptionsReady = (storedOptions: OpenRouterImageMockupOption[]) => {
+            for (const option of storedOptions) {
+              const label = option.label.toUpperCase() as typeof optionLabels[number]
+              if (!optionLabels.includes(label)) continue
+
+              optionsByLabel.set(label, option)
+              updateMockupOptionStatus(label, "ready", "Recovered")
+            }
+            syncDraftOptions()
+          }
+          const recoverStoredOptions = async () => {
+            const response = await fetch("/api/mockups/recover-options", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                projectId: project.id,
+                runId,
+              }),
+            })
+            const payload = await response.json().catch(() => null)
+            if (!response.ok) return
+
+            const storedOptions = Array.isArray(payload?.options)
+              ? payload.options.filter((option: unknown): option is OpenRouterImageMockupOption =>
+                Boolean(
+                  option &&
+                  typeof option === "object" &&
+                  typeof (option as OpenRouterImageMockupOption).label === "string" &&
+                  typeof (option as OpenRouterImageMockupOption).storagePath === "string",
+                )
+              )
+              : []
+            markStoredOptionsReady(storedOptions)
+          }
+
+          setMockupOptionStatuses(optionLabels.map((label) => ({
+            label: getOptionStatusLabel(label),
+            status: optionsByLabel.has(label) ? "ready" : "queued",
+            message: optionsByLabel.has(label) ? "Ready" : "Queued",
+          })))
+
+          const externalSignal = options?.signal
+          const requestWithTimeout = async (
+            url: string,
+            init: Omit<RequestInit, "signal">,
+            timeoutMs = 300000,
+          ) => {
+            const requestController = new AbortController()
+            const timeoutId = setTimeout(() => requestController.abort(), timeoutMs)
+            const handleExternalAbort = () => requestController.abort()
+
+            if (externalSignal) {
+              if (externalSignal.aborted) {
+                requestController.abort()
+              } else {
+                externalSignal.addEventListener("abort", handleExternalAbort, { once: true })
+              }
+            }
+
+            try {
+              return await fetch(url, {
+                ...init,
+                signal: requestController.signal,
+              })
+            } finally {
+              clearTimeout(timeoutId)
+              externalSignal?.removeEventListener("abort", handleExternalAbort)
+            }
+          }
+
+          await recoverStoredOptions()
+
+          const optionResults: MockupOptionGenerationResult[] = []
+          for (const label of optionLabels) {
+            const existingOption = optionsByLabel.get(label)
+            if (existingOption) {
+              optionResults.push({
+                skipped: false,
+                option: existingOption,
+                model,
+              })
+              continue
+            }
+
+            updateMockupOptionStatus(label, "generating", "Generating")
+
+            try {
+              const response = await requestWithTimeout("/api/mockups/generate-option", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  projectId: project.id,
+                  mvpPlan: mvpContent,
+                  projectName: project.name,
+                  label,
+                  runId,
+                }),
+              })
+
+              const payload = await response.json().catch(() => null)
+              if (!response.ok) {
+                optionResults.push({
+                  skipped: false,
+                  option: null,
+                  model,
+                  error: payload?.error || `Failed to generate mockup option ${label}`,
+                })
+                continue
+              }
+              if (payload?.skipped) {
+                optionResults.push({ skipped: true })
+                continue
+              }
+
+              const option = payload?.option as OpenRouterImageMockupOption | undefined
+              const resultModel = typeof payload?.model === "string" ? payload.model : model
+              if (!option) {
+                optionResults.push({
+                  skipped: false,
+                  option: null,
+                  model: resultModel,
+                  error: `Mockup option ${label} did not return image data`,
+                })
+                continue
+              }
+
+              updateMockupOptionStatus(label, "ready", "Ready")
+              optionsByLabel.set(label, option)
+              syncDraftOptions()
+              optionResults.push({
+                skipped: false,
+                option,
+                model: resultModel,
+              })
+            } catch (error) {
+              if (externalSignal?.aborted) throw error
+
+              optionResults.push({
+                skipped: false,
+                option: null,
+                model,
+                error: error instanceof Error
+                  ? error.message
+                  : `Failed to generate mockup option ${label}`,
+              })
+            }
+          }
+
+          const firstSkipped = optionResults.find((result) => result.skipped)
+          if (firstSkipped) {
+            setMockupDraftOptions([])
+            clearMockupDraftRun()
+            await loadWorkspaceDocuments([docType], { force: true })
+            return true
+          }
+
+          await recoverStoredOptions()
+
+          const failures = optionResults.filter((result) =>
+            !result.skipped && Boolean(result.error)
+          )
+          const readyOptions = optionLabels
+            .map((label) => optionsByLabel.get(label))
+            .filter((option): option is OpenRouterImageMockupOption => Boolean(option))
+
+          if (readyOptions.length !== optionLabels.length) {
+            optionResults.forEach((result, index) => {
+              if (!result.skipped && result.error) {
+                updateMockupOptionStatus(optionLabels[index], "needs_retry", "Needs retry")
+              }
+            })
+            optionLabels.forEach((label) => {
+              if (!optionsByLabel.has(label)) {
+                updateMockupOptionStatus(label, "needs_retry", "Needs retry")
+              }
+            })
+            const message = failures[0]?.skipped === false && failures[0].error
+              ? failures[0].error
+              : "One or more mockup options are not available yet"
+            throw new Error(message)
+          }
+
+          const fulfilledModel = optionResults.find((result) =>
+            !result.skipped && result.option && typeof result.model === "string"
+          )
+          const finalizedModel = fulfilledModel?.skipped === false ? fulfilledModel.model : model
+          const finalizeResponse = await requestWithTimeout("/api/mockups/finalize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              projectId: project.id,
+              runId,
+              model: finalizedModel,
+              options: readyOptions,
+            }),
+          }, 60000)
+          const finalizePayload = await finalizeResponse.json().catch(() => null)
+          if (!finalizeResponse.ok) {
+            throw new Error(finalizePayload?.error || "Failed to save generated mockups")
+          }
+
+          setMockupDraftOptions([])
+          clearMockupDraftRun()
+          setLocalGenerationErrors((prev) => ({ ...prev, [docType]: undefined }))
+          await loadWorkspaceDocuments([docType], { force: true })
+          return true
+        }
+
         // Use external signal (from Generate All) if provided, otherwise create our own
         const externalSignal = options?.signal
         const controller = new AbortController()
@@ -1254,10 +1599,6 @@ export function ProjectWorkspace({
               }),
               ...(docType === "mvp" && prdContent && {
                 prd: prdContent,
-              }),
-              ...(docType === "mockups" && mvpContent && {
-                mvpPlan: mvpContent,
-                projectName: project.name,
               }),
               ...(docType === "launch" && options?.marketingBrief && {
                 marketingBrief: options.marketingBrief,
@@ -1293,13 +1634,15 @@ export function ProjectWorkspace({
 
         // Success — refresh data
         await loadWorkspaceDocuments([docType], { force: true })
+        setLocalGenerationErrors((prev) => ({ ...prev, [docType]: undefined }))
         return true
       } catch (error) {
+        const message = error instanceof Error ? error.message : "Generation failed"
+        setLocalGenerationErrors((prev) => ({ ...prev, [docType]: message }))
         // Re-throw abort errors so the caller can distinguish cancellation from failure
         if (error instanceof DOMException && error.name === "AbortError") {
           throw error
         }
-        console.error(`Error generating ${docType}:`, error)
         if (error instanceof Error) throw error
         throw new Error("Unknown generation error")
       } finally {
@@ -1307,8 +1650,48 @@ export function ProjectWorkspace({
         saveGeneratingState(docType, false)
       }
     },
-    [analyses, loadWorkspaceDocuments, mvpPlans, prds, project, projectName, saveGeneratingState],
+    [
+      analyses,
+      loadWorkspaceDocuments,
+      mockupDraftOptions,
+      mockupDraftRunId,
+      mockupDraftRunStorageKey,
+      mvpPlans,
+      prds,
+      project,
+      projectName,
+      saveGeneratingState,
+      searchParams,
+    ],
   )
+
+  const handleGenerateDocument = useCallback(async (docType: DocumentType) => {
+    const prerequisites = checkPrerequisites(docType)
+    if (!prerequisites.canGenerate) {
+      alert(prerequisites.reason ?? "This module is not ready to generate yet.")
+      return
+    }
+
+    try {
+      if (docType !== "mockups") {
+        setMockupOptionStatuses([])
+      }
+      await generateDocument(docType, GENERATE_ALL_DEFAULT_MODELS[docType] ?? "")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Generation failed. Please try again."
+      console.warn(`[WorkspaceGeneration] ${docType} failed: ${message}`)
+      if (docType === "mockups") {
+        return
+      }
+      if (error instanceof Error && error.name === "AbortError") {
+        alert("Generation timed out after 5 minutes. Please try again.")
+      } else if (error instanceof Error) {
+        alert(error.message)
+      } else {
+        alert("Generation failed. Please try again.")
+      }
+    }
+  }, [checkPrerequisites, generateDocument])
 
   const handleUpdateDescription = async (description: string) => {
     try {
@@ -1431,11 +1814,13 @@ export function ProjectWorkspace({
             activeKey={activeNavKey}
             activeSectionId={activeSectionId}
             onNavigate={handleScrollNavigate}
+            onGenerateDocument={handleGenerateDocument}
           />
           <ScrollableContent
             ref={scrollContainerRef}
             projectId={project.id}
             documents={scrollableDocuments}
+            onGenerateDocument={handleGenerateDocument}
           />
         </div>
       </div>

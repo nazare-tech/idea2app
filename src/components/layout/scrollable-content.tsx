@@ -2,7 +2,7 @@
 "use client"
 
 import React, { forwardRef, useRef, useMemo, useState, useEffect } from "react"
-import { AlertCircle, CheckCircle2, Circle, Loader2 } from "lucide-react"
+import { AlertCircle, CheckCircle2, Circle, Loader2, RotateCcw } from "lucide-react"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import {
@@ -14,6 +14,7 @@ import {
   PrdDocumentBlocks,
 } from "@/components/analysis/planning-document-blocks"
 import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
+import type { DocumentType } from "@/lib/document-definitions"
 import type { StreamStage } from "@/lib/parse-document-stream"
 import type {
   DocumentGenerationDisplayState,
@@ -35,6 +36,7 @@ interface DocumentData {
 interface ScrollableContentProps {
   projectId: string
   documents: Record<string, DocumentData>
+  onGenerateDocument?: (docType: DocumentType) => void
 }
 
 function DocumentSkeleton({
@@ -79,9 +81,11 @@ function SmallStatusIcon({ status }: { status: MockupOptionStatus["status"] }) {
 function GenerationStatusModule({
   label,
   state,
+  onGenerateDocument,
 }: {
   label: string
   state?: DocumentGenerationDisplayState
+  onGenerateDocument?: (docType: DocumentType) => void
 }) {
   if (!state || state.displayStatus === "idle") {
     return <EmptyState label={label} />
@@ -90,6 +94,35 @@ function GenerationStatusModule({
   const isGenerating = state.displayStatus === "generating"
   const needsRetry = state.displayStatus === "needs_retry"
 
+  if (needsRetry) {
+    return (
+      <div className="flex min-h-[260px] flex-col items-center justify-center gap-5 px-5 py-10 text-center sm:px-8">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <AlertCircle className="h-7 w-7" />
+        </div>
+        <div className="max-w-md space-y-2">
+          <p className="text-lg font-semibold text-foreground">
+            We could not finish generating {label}.
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            The request took too long or hit a temporary service issue. Try again and we will use the latest saved project context.
+          </p>
+        </div>
+
+        {onGenerateDocument && (
+          <button
+            type="button"
+            onClick={() => onGenerateDocument(state.docType)}
+            className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-md border border-primary bg-primary px-8 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <RotateCcw aria-hidden="true" className="h-5 w-5" />
+            <span>Retry</span>
+          </button>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-5 p-5 sm:p-8">
       <div className="flex items-start gap-3">
@@ -97,12 +130,9 @@ function GenerationStatusModule({
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
           isGenerating && "bg-primary/10 text-primary",
           state.displayStatus === "queued" && "bg-muted text-muted-foreground",
-          needsRetry && "bg-red-50 text-red-600",
         )}>
           {isGenerating ? (
             <Loader2 className="h-5 w-5 animate-spin" />
-          ) : needsRetry ? (
-            <AlertCircle className="h-5 w-5" />
           ) : (
             <Circle className="h-5 w-5" />
           )}
@@ -358,7 +388,7 @@ function MockupsSection({ content, projectId }: { content: string; projectId: st
 }
 
 export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentProps>(
-  function ScrollableContent({ projectId, documents }, ref) {
+  function ScrollableContent({ projectId, documents, onGenerateDocument }, ref) {
     const competitiveData = documents["competitive"]
     const prdData = documents["prd"]
     const mvpData = documents["mvp"]
@@ -392,6 +422,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             <GenerationStatusModule
               label="Overview"
               state={competitiveData.displayState}
+              onGenerateDocument={onGenerateDocument}
             />
           ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
             <DocumentSkeleton label="Overview" mode={getSkeletonMode(competitiveData)} />
@@ -415,6 +446,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             <GenerationStatusModule
               label="Market Research"
               state={competitiveData.displayState}
+              onGenerateDocument={onGenerateDocument}
             />
           ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
             <DocumentSkeleton label="Market Research" mode={getSkeletonMode(competitiveData)} />
@@ -435,6 +467,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             <GenerationStatusModule
               label="PRD"
               state={prdData.displayState}
+              onGenerateDocument={onGenerateDocument}
             />
           ) : prdData?.isGenerating || prdData?.isLoading ? (
             <DocumentSkeleton label="PRD" mode={getSkeletonMode(prdData)} />
@@ -455,6 +488,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             <GenerationStatusModule
               label="MVP Plan"
               state={mvpData.displayState}
+              onGenerateDocument={onGenerateDocument}
             />
           ) : mvpData?.isGenerating || mvpData?.isLoading ? (
             <DocumentSkeleton label="MVP Plan" mode={getSkeletonMode(mvpData)} />
@@ -472,6 +506,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             <GenerationStatusModule
               label="Mockups"
               state={mockupsData.displayState}
+              onGenerateDocument={onGenerateDocument}
             />
           ) : mockupsData?.isGenerating || mockupsData?.isLoading ? (
             <DocumentSkeleton label="Mockups" mode={getSkeletonMode(mockupsData)} />
@@ -493,6 +528,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             <GenerationStatusModule
               label="Marketing"
               state={launchData.displayState}
+              onGenerateDocument={onGenerateDocument}
             />
           ) : launchData?.isGenerating || launchData?.isLoading ? (
             <DocumentSkeleton label="Marketing" mode={getSkeletonMode(launchData)} />

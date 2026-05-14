@@ -4,6 +4,7 @@ import assert from "node:assert/strict"
 import {
   buildMockupImageProxyUrl,
   extractImageDataUrlFromOpenRouterChoice,
+  getOpenRouterMockupImageTimeoutMs,
   parseImageDataUrl,
   parseOpenRouterImageMockupContent,
 } from "./openrouter-image-mockup-pipeline"
@@ -94,4 +95,19 @@ test("parseOpenRouterImageMockupContent: returns normalized options", () => {
   assert.equal(parsed?.type, "openrouter-image")
   assert.equal(parsed?.options[0]?.label, "A")
   assert.equal(parsed?.options[0]?.storagePath, "p/r/a.png")
+})
+
+test("getOpenRouterMockupImageTimeoutMs: defaults to single-option Hobby-safe timeout", () => {
+  const previous = process.env.OPENROUTER_MOCKUP_IMAGE_TIMEOUT_MS
+  delete process.env.OPENROUTER_MOCKUP_IMAGE_TIMEOUT_MS
+
+  try {
+    assert.equal(getOpenRouterMockupImageTimeoutMs(), 285_000)
+  } finally {
+    if (previous === undefined) {
+      delete process.env.OPENROUTER_MOCKUP_IMAGE_TIMEOUT_MS
+    } else {
+      process.env.OPENROUTER_MOCKUP_IMAGE_TIMEOUT_MS = previous
+    }
+  }
 })
