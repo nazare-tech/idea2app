@@ -611,7 +611,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   const { structured } = viewModel
 
   return (
-    <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Product Requirements"
         title="PRD"
@@ -746,7 +746,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
   const { structured } = viewModel
 
   return (
-    <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Minimum Viable Product"
         title="MVP Plan"
