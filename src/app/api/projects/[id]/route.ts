@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
+import { getProjectAllowanceStatus, type ProjectAllowanceClient } from "@/lib/project-allowance"
 
 export async function PATCH(
   request: Request,
@@ -115,6 +116,20 @@ export async function DELETE(
     }
 
     userId = user.id
+
+    const allowanceStatus = await getProjectAllowanceStatus(
+      supabase as unknown as ProjectAllowanceClient,
+      user.id
+    )
+    if (allowanceStatus.planName.toLowerCase() === "free") {
+      statusCode = 403
+      errorType = "forbidden"
+      errorMessage = "Project deletion is only available on paid plans"
+      return NextResponse.json(
+        { error: "Project deletion is only available on paid plans" },
+        { status: 403 }
+      )
+    }
 
     const { data: deletedProject, error } = await supabase
       .from("projects")

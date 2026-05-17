@@ -10,7 +10,8 @@
     "build": "next build && node ./scripts/guard-webpack-chunky.mjs",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/*.test.ts src/components/analysis/*.test.tsx",
+    "test": "node --import tsx --test src/**/*.test.ts src/**/*.test.tsx",
+    "typecheck": "tsc --noEmit",
     "guard:chunky": "node ./scripts/guard-webpack-chunky.mjs",
     "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs",
     "stitch:fixture": "node scripts/stitch-fetch-fixture.mjs"
@@ -57,7 +58,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "agentation": "^2.2.1",

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-config-7528cb5b98-da0c4_2f931e9575",
+  "featureId": "feat_config_7528cb5b98",
+  "title": "Test script only discovers two hard-coded globs, so new tests outside those folders are silently skipped",
+  "category": "test-gap",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "test-gap",
+  "evidence": [
+    {
+      "path": "package.json",
+      "startLine": 16,
+      "endLine": 16,
+      "symbol": "scripts.test",
+      "quote": "\"test\": \"node --import tsx --test src/lib/*.test.ts src/components/analysis/*.test.tsx\""
+    }
+  ],
+  "reasoning": "The test command enumerates only top-level tests in src/lib and src/components/analysis. Any tests added under other common project areas, nested folders, app routes, hooks, utilities, or other components will not run when contributors or CI invoke npm run test. This creates a concrete regression risk because passing tests can falsely indicate full project test coverage while excluding newly added test files.",
+  "reproduction": null,
+  "recommendation": "Use a broader recursive test pattern that matches all project test files, such as src/**/*.test.ts and src/**/*.test.tsx, with any necessary exclusions for generated or fixture files.",
+  "whyTestsDoNotAlreadyCoverThis": "The gap is in the test discovery command itself; tests outside the two hard-coded globs would not execute and therefore cannot reveal their own omission.",
+  "suggestedRegressionTest": "Add a trivial test file under another expected location, such as src/components/example.test.tsx or src/app/example.test.ts, and verify npm run test executes it before accepting the discovery pattern change.",
+  "minimumFixScope": "Change package.json scripts.test to a recursive project-wide test discovery pattern.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-config-7528cb5b98_da0c46cddb",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260517T053221-102af1",
+  "createdAt": "2026-05-17T05:34:25.573Z",
+  "updatedAt": "2026-05-17T05:34:25.573Z"
+}

@@ -14,6 +14,7 @@ interface DashboardProjectCardProps {
   href: string
   updatedAt: string | null
   showDelete?: boolean
+  canDelete?: boolean
 }
 
 export function DashboardProjectCard({
@@ -23,9 +24,11 @@ export function DashboardProjectCard({
   href,
   updatedAt,
   showDelete = false,
+  canDelete = false,
 }: DashboardProjectCardProps) {
   const router = useRouter()
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isOpening, setIsOpening] = useState(false)
   const lastEditedLabel = useMemo(() => {
@@ -56,6 +59,11 @@ export function DashboardProjectCard({
     event.stopPropagation()
 
     if (isDeleting) return
+
+    if (!canDelete) {
+      setShowUpgradePrompt(true)
+      return
+    }
 
     setShowDeleteConfirmation(true)
   }
@@ -162,6 +170,40 @@ export function DashboardProjectCard({
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUpgradePrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowUpgradePrompt(false)}
+        >
+          <div
+            className="w-full max-w-[560px] rounded-xl border border-border-strong bg-white p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-[28px] leading-[1.1] font-bold tracking-[-1px] text-text-primary">
+              Upgrade to delete projects
+            </h3>
+            <p className="mt-4 text-[14px] leading-[1.5] text-text-secondary">
+              Project deletion is only available on paid plans. Upgrade your plan to remove old projects and manage your workspace more flexibly.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowUpgradePrompt(false)}
+                className="h-11 rounded-md border border-border-strong bg-white px-5 text-[13px] ui-font-semibold text-text-primary"
+              >
+                Not now
+              </button>
+              <Link
+                href="/billing"
+                className="inline-flex h-11 items-center rounded-md bg-primary px-5 text-[13px] ui-font-semibold text-primary-foreground"
+              >
+                Upgrade plan
+              </Link>
             </div>
           </div>
         </div>
