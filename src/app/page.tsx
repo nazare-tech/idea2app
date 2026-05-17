@@ -14,6 +14,7 @@ import { ArrowRight } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { BuildMap } from "@/components/landing/build-map"
+import { HeroArtwork } from "@/components/landing/hero-artwork"
 import { TestimonialBand } from "@/components/landing/testimonial-band"
 
 const navLinks = [
@@ -194,45 +195,29 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      <SectionCard>
-        <div className="flex items-center justify-center pt-8 pb-6 md:pt-14 md:pb-8">
-          <div className="inline-flex items-center rounded-full border border-border-subtle px-4 py-2 font-mono text-[0.6875rem] font-medium tracking-[0.18em] text-text-secondary">
-            {waitlistMode
-              ? `${WAITLIST_LIMIT} early-access spots filled. Join the waitlist.`
-              : "Lean-in Workflow For Builders"}
-          </div>
-        </div>
-
-        <h1 className="font-display max-w-[980px] mx-auto text-center text-[2.75rem] leading-[0.95] tracking-[-0.06em] font-semibold sm:text-[3.5rem] lg:text-[4.5rem]">
-          Build your startup idea this weekend, not &ldquo;someday.&rdquo;
-        </h1>
-
-        <p className="mx-auto mt-6 max-w-[780px] text-center text-base leading-relaxed text-text-secondary sm:text-[20px]">
-          Turn one idea into research, a first-version plan, and actionable mockups in minutes. No fluff. No &ldquo;where do I start?&rdquo; spiral.
-        </p>
-
-        {/* Hero CTA — waitlist input or sign-up buttons */}
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:gap-4">
-          {waitlistMode ? (
-            <WaitlistForm showSecondary />
-          ) : (
-            <>
-              <LandingIdeaCapture isAuthenticated={isAuthenticated} />
-              <Link href="#features">
-                <Button variant="outline" className="h-14 px-7 rounded-none border-border-subtle text-base font-semibold bg-white text-text-primary">
-                  See How It Works
-                </Button>
-              </Link>
-            </>
+      <section className="relative isolate overflow-hidden">
+        <HeroArtwork />
+        <div className={`${container} relative z-10 flex min-h-[620px] flex-col items-center justify-center py-16 md:min-h-[680px] lg:min-h-[720px] lg:py-20`}>
+          {waitlistMode && (
+            <div className="mb-10 inline-flex items-center rounded-full border border-border-subtle bg-white px-4 py-2 font-mono text-[0.6875rem] font-medium tracking-[0.18em] text-text-secondary">
+              {WAITLIST_LIMIT} early-access spots filled. Join the waitlist.
+            </div>
           )}
-        </div>
 
-        <div className="mx-auto mt-12 max-w-[860px] border-y border-border-subtle py-5">
-          <p className="text-center text-sm leading-relaxed text-text-secondary">
-            One focused intake becomes market research, product direction, mockups, technical choices, and the next build step.
+          <h1 className="font-display mx-auto flex max-w-[980px] flex-col text-center text-[2.75rem] font-semibold leading-[0.95] tracking-[-0.06em] text-text-primary sm:text-[3.5rem] lg:text-[4.5rem]">
+            <span>Build your startup idea this</span>
+            <span>weekend, not &ldquo;someday.&rdquo;</span>
+          </h1>
+
+          <div className="mt-10 flex w-full justify-center lg:mt-12">
+            {waitlistMode ? <WaitlistForm showSecondary /> : <LandingIdeaCapture isAuthenticated={isAuthenticated} />}
+          </div>
+
+          <p className="mx-auto mt-8 max-w-[560px] text-center text-base leading-relaxed text-text-secondary sm:text-[20px]">
+            Turn one idea into research, MVP plan, and actionable mockups in minutes. No fluff. No &ldquo;where do I start?&rdquo; spiral.
           </p>
         </div>
-      </SectionCard>
+      </section>
 
       <SectionCard>
         <BuildMap />

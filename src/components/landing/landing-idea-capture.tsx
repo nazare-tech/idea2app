@@ -16,13 +16,13 @@ interface LandingIdeaCaptureProps {
 export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptureProps) {
   const router = useRouter()
   const [idea, setIdea] = useState("")
-  const [loadingMode, setLoadingMode] = useState<"signin" | "signup" | null>(null)
+  const [loadingMode, setLoadingMode] = useState<"signup" | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const trimmedIdea = idea.trim()
   const hasIdea = trimmedIdea.length > 0
 
-  const startFlow = async (mode: "signin" | "signup") => {
+  const startFlow = async (mode: "signup") => {
     setError(null)
     setLoadingMode(mode)
 
@@ -57,52 +57,37 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
   }
 
   return (
-    <div data-testid="landing-idea-capture" className="w-full max-w-[720px] border border-border-subtle bg-white p-4 sm:p-5">
-      <label htmlFor="landing-idea" className="text-sm font-semibold text-text-primary">
-        Start with your idea
+    <div
+      data-testid="landing-idea-capture"
+      className="w-full max-w-[720px] border border-border-strong bg-white px-4 py-5 shadow-[0_1px_2px_rgba(0,0,0,0.18)] sm:px-[21px] sm:pb-[21px] sm:pt-[23px]"
+    >
+      <label htmlFor="landing-idea" className="sr-only">
+        Describe what you want to build
       </label>
       <Textarea
         id="landing-idea"
         value={idea}
         onChange={(event) => setIdea(event.target.value)}
         placeholder="Describe what you want to build in a few sentences..."
-        className="mt-3 min-h-[118px] rounded-md bg-white text-[15px] leading-relaxed"
+        className="min-h-[118px] resize-none rounded-md border-border-strong bg-[#FFF8F7] px-4 py-3 text-[15px] leading-6 text-text-primary placeholder:text-text-secondary"
       />
       {error && (
         <p className="mt-3 rounded-md border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs leading-relaxed text-text-secondary">
-          {hasIdea
-            ? "Your idea will be waiting in the project wizard after sign-in."
-            : "You can also start blank and write the idea after signing in."}
-        </p>
-        <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:flex sm:w-auto">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => startFlow("signin")}
-            disabled={loadingMode !== null}
-            className="h-11 w-full sm:w-auto"
-            data-testid="landing-idea-signin"
-          >
-            {loadingMode === "signin" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Sign In
-          </Button>
-          <Button
-            type="button"
-            onClick={() => startFlow("signup")}
-            disabled={loadingMode !== null}
-            className="h-11 w-full sm:w-auto"
-            data-testid="landing-idea-signup"
-          >
-            {loadingMode === "signup" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Get Started
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
+      <div className="mt-[14px] flex justify-end">
+        <Button
+          type="button"
+          onClick={() => startFlow("signup")}
+          disabled={loadingMode !== null}
+          className="h-11 rounded-md px-5 text-sm"
+          data-testid="landing-idea-signup"
+        >
+          {loadingMode === "signup" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {loadingMode === "signup" ? "Validating" : "Validate idea"}
+          <ArrowRight className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   )
