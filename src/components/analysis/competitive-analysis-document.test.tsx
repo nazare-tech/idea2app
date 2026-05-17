@@ -12,6 +12,10 @@ import {
   type CompetitiveAnalysisV2SectionName,
 } from "@/lib/competitive-analysis-v2"
 
+function countMatches(html: string, pattern: RegExp) {
+  return html.match(pattern)?.length ?? 0
+}
+
 function buildV2Fixture() {
   const sections: Record<CompetitiveAnalysisV2SectionName, string> = {
     "Executive Summary":
@@ -19,7 +23,7 @@ function buildV2Fixture() {
     "Founder Verdict":
       "Win with a narrow wedge.\n\n- **Verdict**: Enter with a wedge\n- **Why now**: Buyers want automation\n- **Biggest risk**: Incumbent copy",
     "Direct Competitors":
-      "### [Competitor One](https://competitor-one.example)\n- **Overview**: Broad platform\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Generalist\n- **Strengths**: Strong distribution\n- **Key Edge**: Distribution engine\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market",
+      "### [Competitor One](https://competitor-one.example)\n- **Overview**: Broad platform\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Generalist\n- **Strengths**: Strong distribution\n- **Key Edge**: Distribution engine\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market\n\n### Competitor Two\n- **Overview**: Focused operator tool\n- **Core Product/Service**: Booking workflow automation\n- **Market Positioning**: Vertical specialist\n- **Strengths**: Fast setup\n- **Key Edge**: Mobile-first operations\n- **Limitations**: Narrow integration surface\n- **Pricing Model**: Usage-based\n- **Target Audience**: Solo service teams",
     "Feature and Workflow Matrix":
       "| Product | Setup | Collaboration |\n|---|---|---|\n| Competitor One | Medium | Strong |",
     "Pricing and Packaging":
@@ -58,7 +62,7 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
   )
 
   assert.match(html, /Competitive Research/)
-  assert.match(html, /Competitor Profiles &amp; Fast Comparison/)
+  assert.match(html, /Competitor Profiles &amp; Quick Comparison/)
   assert.match(html, /Founder Verdict/)
   assert.match(html, /Win with a narrow wedge\./)
   assert.match(html, /href="https:\/\/competitor-one\.example"/)
@@ -81,7 +85,7 @@ test("competitive overview renders only executive summary and founder verdict", 
   assert.match(html, /Market Snapshot &amp; Entry Thesis/)
   assert.match(html, /Founder Verdict/)
   assert.match(html, /Win with a narrow wedge\./)
-  assert.doesNotMatch(html, /Competitor Profiles &amp; Fast Comparison/)
+  assert.doesNotMatch(html, /Competitor Profiles &amp; Quick Comparison/)
   assert.doesNotMatch(html, /Competitor One/)
   assert.doesNotMatch(html, /Strategic Recommendations/)
   assert.doesNotMatch(html, /Validate pricing willingness/)
@@ -98,12 +102,42 @@ test("competitive detail owns market research and strategy modules", () => {
   )
 
   assert.match(html, /Market Research/)
-  assert.match(html, /Competitor Profiles &amp; Fast Comparison/)
+  assert.match(html, /Competitor Profiles &amp; Quick Comparison/)
   assert.match(html, /Competitor One/)
   assert.match(html, /Audience Segments/)
   assert.match(html, /GTM \/ Distribution Signals/)
   assert.match(html, /Strategic Recommendations/)
   assert.match(html, /Validate pricing willingness/)
+})
+
+test("competitive detail consolidates competitor profile cards into one quick comparison table", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={buildV2Fixture()}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+
+  assert.match(html, /Competitor Profiles &amp; Quick Comparison/)
+  assert.match(html, /Commercial Fit/)
+  assert.match(html, /Advantage \/ Risk/)
+  assert.match(html, /Broad platform/)
+  assert.match(html, /Workflow suite/)
+  assert.match(html, /Generalist/)
+  assert.match(html, /Strong distribution/)
+  assert.match(html, /Distribution engine/)
+  assert.match(html, /Heavy onboarding/)
+  assert.match(html, /Per seat/)
+  assert.match(html, /Mid-market/)
+  assert.match(html, /Focused operator tool/)
+  assert.match(html, /Booking workflow automation/)
+  assert.match(html, /Usage-based/)
+  assert.match(html, /Solo service teams/)
+  assert.equal(countMatches(html, /href="https:\/\/competitor-one\.example"/g), 1)
+  assert.doesNotMatch(html, /<article/)
+  assert.doesNotMatch(html, /Competitor Profiles &amp; Fast Comparison/)
+  assert.doesNotMatch(html, />PROFILE</)
 })
 
 test("legacy competitive document falls back to markdown renderer", () => {

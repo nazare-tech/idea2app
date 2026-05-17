@@ -80,7 +80,7 @@ function ParagraphStack({
         <p
           key={`${paragraph}-${index}`}
           className={cn(
-            "text-[13px] leading-6",
+            "ui-type-body",
             dark ? "text-[#4A4040]" : "text-[#666666]"
           )}
         >
@@ -112,7 +112,7 @@ function NumberedList({
           </span>
           <p
             className={cn(
-              "text-[12px] leading-5",
+              "ui-type-body-sm",
               dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
             )}
           >
@@ -137,7 +137,7 @@ function MarketSignalStrip({ items }: { items: string[] }) {
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
             Signal {String(index + 1).padStart(2, "0")}
           </p>
-          <p className="mt-2 text-[12px] leading-5 text-[#0A0A0A]">{item}</p>
+          <p className="mt-2 ui-type-body-sm text-[#0A0A0A]">{item}</p>
         </div>
       ))}
     </div>
@@ -207,7 +207,7 @@ function DataTable({
               {headers.map((header, cellIndex) => (
                 <td
                   key={`${header}-${cellIndex}`}
-                  className="border border-[#E0E0E0] px-4 py-3 text-[12px] leading-5 text-[#0A0A0A] align-top"
+                  className="border border-[#E0E0E0] px-4 py-3 ui-type-table text-[#0A0A0A] align-top"
                 >
                   {row[cellIndex] ?? ""}
                 </td>
@@ -237,51 +237,31 @@ function SnapshotHero({
   )
 }
 
-function CompetitorField({
+function CompetitorTableDetail({
   label,
   value,
+  emphasis = false,
 }: {
   label: string
   value?: string
+  emphasis?: boolean
 }) {
   if (!value) return null
 
   return (
-    <div className="flex items-start gap-3">
-      <p className="w-24 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8A8480]">
+    <div className="space-y-1">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8A8480]">
         {label}
       </p>
-      <p className="flex-1 text-[11px] leading-[1.45] font-medium text-[#4A4040]">
+      <p
+        className={cn(
+          "ui-type-table",
+          emphasis ? "font-medium text-[#1C1917]" : "text-[#4A4040]"
+        )}
+      >
         {value}
       </p>
     </div>
-  )
-}
-
-function getCompetitorTag(competitor: CompetitiveAnalysisCompetitorProfile) {
-  const haystack = [
-    competitor.fields["Target Audience"],
-    competitor.fields["Market Positioning"],
-    competitor.fields["Core Product/Service"],
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase()
-
-  if (haystack.includes("editor")) return "EDITOR"
-  if (haystack.includes("creator")) return "CREATOR"
-  if (haystack.includes("podcast")) return "PODCAST"
-  if (haystack.includes("meeting") || haystack.includes("knowledge")) return "TEAM"
-  if (haystack.includes("enterprise")) return "ENTERPRISE"
-  return "PROFILE"
-}
-
-function getCompetitorPitch(competitor: CompetitiveAnalysisCompetitorProfile) {
-  return (
-    competitor.fields["Market Positioning"] ??
-    competitor.fields["Overview"] ??
-    competitor.fields["Core Product/Service"] ??
-    ""
   )
 }
 
@@ -301,72 +281,105 @@ function FastComparisonTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[1010px] border border-[#E0E0E0]">
-        <div className="grid grid-cols-[180px_220px_150px_220px_minmax(240px,1fr)] gap-3 border-b border-[#D8CEC5] bg-[#F5F0EB] px-5 py-4">
-          {["Competitor", "Positioning", "Pricing", "Audience", "Key Edge"].map(
-            (label) => (
-              <p
-                key={label}
-                className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]"
-              >
-                {label}
-              </p>
-            )
-          )}
-        </div>
-
-        {competitors.map((competitor, index) => (
-          <div
-            key={`${competitor.heading}-comparison`}
-            className={cn(
-              "grid grid-cols-[180px_220px_150px_220px_minmax(240px,1fr)] gap-3 px-5 py-4",
-              index > 0 && "border-t border-[#E0E0E0]"
-            )}
-          >
-            <div>
-              {competitor.websiteUrl ? (
-                <a
-                  href={competitor.websiteUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 transition-opacity hover:opacity-80"
+      <table className="min-w-[960px] table-fixed border-collapse border border-[#E0E0E0]">
+        <colgroup>
+          <col className="w-[170px]" />
+          <col className="w-[310px]" />
+          <col className="w-[230px]" />
+          <col className="w-[250px]" />
+        </colgroup>
+        <thead>
+          <tr className="bg-[#F5F0EB]">
+            {["Competitor", "Profile", "Commercial Fit", "Advantage / Risk"].map(
+              (label) => (
+                <th
+                  key={label}
+                  className="border border-[#D8CEC5] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]"
                 >
-                  <span
+                  {label}
+                </th>
+              )
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          {competitors.map((competitor, index) => (
+            <tr
+              key={`${competitor.heading}-comparison`}
+              className={index % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"}
+            >
+              <td className="border border-[#E0E0E0] px-4 py-4 align-top">
+                {competitor.websiteUrl ? (
+                  <a
+                    href={competitor.websiteUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-start gap-1.5 transition-opacity hover:opacity-80"
+                  >
+                    <span
+                      className={cn(
+                        displayFontClass,
+                        "text-[14px] font-semibold leading-5 text-[#0A0A0A]"
+                      )}
+                    >
+                      {competitor.heading}
+                    </span>
+                    <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0A0A0A]" />
+                  </a>
+                ) : (
+                  <p
                     className={cn(
                       displayFontClass,
-                      "text-[13px] font-semibold text-[#0A0A0A]"
+                      "text-[14px] font-semibold leading-5 text-[#0A0A0A]"
                     )}
                   >
                     {competitor.heading}
-                  </span>
-                  <ArrowUpRight className="h-3.5 w-3.5 text-[#0A0A0A]" />
-                </a>
-              ) : (
-                <p
-                  className={cn(
-                    displayFontClass,
-                    "text-[13px] font-semibold text-[#0A0A0A]"
-                  )}
-                >
-                  {competitor.heading}
-                </p>
-              )}
-            </div>
-            <p className="text-[12px] leading-5 text-[#666666]">
-              {competitor.fields["Market Positioning"] ?? ""}
-            </p>
-            <p className="text-[12px] leading-5 text-[#666666]">
-              {competitor.fields["Pricing Model"] ?? ""}
-            </p>
-            <p className="text-[12px] leading-5 text-[#666666]">
-              {competitor.fields["Target Audience"] ?? ""}
-            </p>
-            <p className="text-[12px] leading-5 text-primary">
-              {getCompetitorKeyEdge(competitor)}
-            </p>
-          </div>
-        ))}
-      </div>
+                  </p>
+                )}
+              </td>
+              <td className="space-y-3 border border-[#E0E0E0] px-4 py-4 align-top">
+                <CompetitorTableDetail
+                  label="Overview"
+                  value={competitor.fields["Overview"]}
+                />
+                <CompetitorTableDetail
+                  label="Core"
+                  value={competitor.fields["Core Product/Service"]}
+                />
+                <CompetitorTableDetail
+                  label="Positioning"
+                  value={competitor.fields["Market Positioning"]}
+                />
+              </td>
+              <td className="space-y-3 border border-[#E0E0E0] px-4 py-4 align-top">
+                <CompetitorTableDetail
+                  label="Pricing"
+                  value={competitor.fields["Pricing Model"] ?? "Unknown"}
+                />
+                <CompetitorTableDetail
+                  label="Audience"
+                  value={competitor.fields["Target Audience"] ?? "Unknown"}
+                />
+              </td>
+              <td className="space-y-3 border border-[#E0E0E0] px-4 py-4 align-top">
+                <CompetitorTableDetail
+                  label="Key Edge"
+                  value={getCompetitorKeyEdge(competitor)}
+                  emphasis
+                />
+                <CompetitorTableDetail
+                  label="Strengths"
+                  value={competitor.fields["Strengths"]}
+                />
+                <CompetitorTableDetail
+                  label="Limitations"
+                  value={competitor.fields["Limitations"]}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -379,106 +392,14 @@ function CompetitorProfiles({
   return (
     <div className="space-y-6">
       <PencilCard
-        title="Competitor Profiles & Fast Comparison"
+        title="Competitor Profiles & Quick Comparison"
         kicker="Competitive Intelligence"
       >
-        <p className="mb-5 text-[13px] leading-6 text-[#666666]">
-          Track how the field competes on positioning, pricing model, audience
-          fit, and operational depth.
+        <p className="mb-5 ui-type-body text-[#666666]">
+          Compare each competitor once across product scope, buying fit,
+          strengths, edges, and limitations.
         </p>
         <FastComparisonTable competitors={competitors} />
-
-        <div className="mt-5 grid gap-4 xl:grid-cols-2">
-          {competitors.map((competitor, index) => {
-            return (
-              <article
-                key={competitor.heading}
-                className={cn(
-                  "border px-5 py-5",
-                  competitors.length % 2 === 1 &&
-                    index === competitors.length - 1 &&
-                    "xl:col-span-2",
-                  "border-[#D8CEC5] bg-[#F7F2ED]"
-                )}
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    {competitor.websiteUrl ? (
-                      <a
-                        href={competitor.websiteUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
-                      >
-                        <h3
-                          className={cn(
-                            displayFontClass,
-                            "text-[18px] font-semibold tracking-[-0.03em] text-[#1C1917]"
-                          )}
-                        >
-                          {competitor.heading}
-                        </h3>
-                        <ArrowUpRight className="h-3.5 w-3.5 text-[#4A4040]" />
-                      </a>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        <h3
-                          className={cn(
-                            displayFontClass,
-                            "text-[18px] font-semibold tracking-[-0.03em] text-[#1C1917]"
-                          )}
-                        >
-                          {competitor.heading}
-                        </h3>
-                        <ArrowUpRight className="h-3.5 w-3.5 text-[#4A4040]" />
-                      </div>
-                    )}
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8A8480]">
-                      {getCompetitorTag(competitor)}
-                    </p>
-                  </div>
-                  {getCompetitorPitch(competitor) ? (
-                    <p className="text-[11px] leading-[1.45] text-[#7C2D24]">
-                      {getCompetitorPitch(competitor)}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  <CompetitorField
-                    label="Overview"
-                    value={competitor.fields["Overview"]}
-                  />
-                  <CompetitorField
-                    label="Core"
-                    value={competitor.fields["Core Product/Service"]}
-                  />
-                  <CompetitorField
-                    label="Positioning"
-                    value={competitor.fields["Market Positioning"]}
-                  />
-                  <CompetitorField
-                    label="Strengths"
-                    value={competitor.fields["Strengths"]}
-                  />
-                  <CompetitorField
-                    label="Limitations"
-                    value={competitor.fields["Limitations"]}
-                  />
-                </div>
-
-                <div className="mt-5 grid gap-2 border-t border-[#D8CEC5] pt-3 md:grid-cols-2">
-                  <p className="font-mono text-[10px] font-medium text-[#4A4040]">
-                    Pricing: {competitor.fields["Pricing Model"] ?? "Unknown"}
-                  </p>
-                  <p className="font-mono text-[10px] font-medium text-[#4A4040]">
-                    Audience: {competitor.fields["Target Audience"] ?? "Unknown"}
-                  </p>
-                </div>
-              </article>
-            )
-          })}
-        </div>
       </PencilCard>
     </div>
   )
@@ -537,7 +458,7 @@ function PositioningMap({
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
                 X Axis
               </p>
-              <p className="mt-1 text-[12px] leading-5 text-[#0A0A0A]">
+              <p className="mt-1 ui-type-table text-[#0A0A0A]">
                 {positioningMap.xAxis ?? "Not specified"}
               </p>
             </div>
@@ -545,7 +466,7 @@ function PositioningMap({
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
                 Y Axis
               </p>
-              <p className="mt-1 text-[12px] leading-5 text-[#0A0A0A]">
+              <p className="mt-1 ui-type-table text-[#0A0A0A]">
                 {positioningMap.yAxis ?? "Not specified"}
               </p>
             </div>
@@ -609,7 +530,7 @@ function PositioningMap({
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
                   {point.competitor}
                 </p>
-                <p className="mt-1 text-[12px] leading-5 text-[#0A0A0A]">
+                <p className="mt-1 ui-type-table text-[#0A0A0A]">
                   {point.rationale}
                 </p>
               </div>
@@ -643,7 +564,7 @@ function SWOTQuadrant({
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#777777]">
         {label}
       </p>
-      <p className="mt-2 text-[12px] leading-5 text-[#0A0A0A]">{value}</p>
+      <p className="mt-2 ui-type-table text-[#0A0A0A]">{value}</p>
     </div>
   )
 }
@@ -750,7 +671,7 @@ function CompetitiveResearchPage({
             >
               Competitive Research
             </h1>
-            <p className="mt-2 max-w-3xl text-[13px] leading-6 text-[#666666]">
+            <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
               Compare positioning, pricing, workflow depth, distribution signals,
               and whitespace opportunities without falling back to raw markdown.
             </p>
@@ -865,7 +786,7 @@ export function CompetitiveOverviewSection({
           >
             Overview
           </h1>
-          <p className="mt-2 max-w-3xl text-[13px] leading-6 text-[#666666]">
+          <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
             Executive summary and founder verdict.
           </p>
         </div>
