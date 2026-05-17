@@ -2,7 +2,7 @@
 "use client"
 
 import { forwardRef } from "react"
-import { CheckCircle2, Circle, Play, RotateCcw } from "lucide-react"
+import { Play, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
 import type { DocumentType } from "@/lib/document-definitions"
@@ -49,55 +49,42 @@ function SpinnerIcon({ className }: { className?: string }) {
   )
 }
 
-function StatusIcon({
+function StatusMarker({
   status,
-  isActive,
+}: {
+  status: NavStatus
+}) {
+  const markerColor = status === "done"
+    ? "bg-[#22C55E]"
+    : status === "in_progress"
+      ? "bg-primary"
+      : status === "needs_retry"
+        ? "bg-destructive"
+      : "bg-[#C9C1B8]"
+
+  return <span aria-hidden="true" className={cn("h-4 w-1 shrink-0 rounded-sm", markerColor)} />
+}
+
+function StatusText({
+  status,
   displayState,
 }: {
   status: NavStatus
-  isActive?: boolean
   displayState?: DocumentGenerationDisplayState
 }) {
-  if (status === "done") {
-    return (
-      <CheckCircle2
-        aria-hidden="true"
-        className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-[#22C55E]")}
-      />
-    )
-  }
-
   if (status === "in_progress") {
     return (
-      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-primary/10 px-2 py-1 font-mono text-[10px] font-medium text-primary">
-        <SpinnerIcon className="h-3.5 w-3.5" />
+      <span className="inline-flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em]">
+        <SpinnerIcon className="h-3 w-3" />
         <span>Generating</span>
       </span>
     )
   }
 
-  if (status === "needs_retry") {
-    return null
-  }
-
-  if (displayState?.displayStatus === "queued") {
-    return (
-      <span className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[10px] font-medium",
-        isActive ? "bg-primary/10 text-primary" : "bg-[#F1F1F1] text-[#777777]",
-      )}>
-        <Circle aria-hidden="true" className="h-3 w-3" />
-        <span>Queued</span>
-      </span>
-    )
-  }
-
-  return (
-    <Circle
-      aria-hidden="true"
-      className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-[#999999]")}
-    />
-  )
+  if (status === "needs_retry") return <span>Needs retry</span>
+  if (displayState?.displayStatus === "queued") return <span>Queued</span>
+  if (status === "done") return <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#22C55E] opacity-60" />
+  return null
 }
 
 function NavTab({
@@ -126,41 +113,47 @@ function NavTab({
   const ActionIcon = showRetryAction ? RotateCcw : Play
 
   const containerStyle = isActive
-    ? "border-primary/35 bg-primary/10"
+    ? "bg-[#1C1917]"
     : isInProgress
-      ? "border-primary/25 bg-primary/5"
+      ? "bg-[#1C1917]"
       : hasIssue
-        ? "border-red-200 bg-red-50/60"
-      : "border-[#E5E5E5] bg-white hover:border-[#D6D0CA] hover:bg-[#F5F0EB]"
+        ? "bg-[#FFF4F1]"
+        : "bg-[#FFFFFE] hover:bg-[#F5F0EB]"
 
   const titleColor = isActive || isInProgress
-    ? "text-[#0A0A0A]"
+    ? "text-[#FAFAFA]"
     : hasIssue
-      ? "text-red-700"
+      ? "text-destructive"
     : isPending
-      ? "text-[#777777]"
-      : "text-[#0A0A0A]"
+      ? "text-[#8A8480]"
+      : "text-[#1C1917]"
 
-  const subColor = isPending ? "text-[#999999]" : "text-[#777777]"
+  const subColor = isActive || isInProgress
+    ? "text-[#FAFAFA]/70"
+    : isPending
+      ? "text-[#8A8480]"
+      : "text-[#5D5551]"
+  const connectorColor = isActive || isInProgress ? "border-[#FAFAFA]/20" : "border-[#E5DCD4]"
+  const activeSubColor = isActive || isInProgress ? "text-[#FAFAFA]" : "text-primary"
 
   return (
-    <div className={cn("min-w-[168px] shrink-0 rounded-md border p-2 transition-colors lg:min-w-0 lg:shrink", containerStyle)}>
+    <div className={cn("min-w-[168px] shrink-0 rounded-md p-2 transition-colors lg:min-w-0 lg:shrink", containerStyle)}>
       {/* Tab title row */}
-      <button
-        type="button"
-        data-nav-target={item.key}
-        onClick={() => onNavigate(item.key)}
-        aria-current={isActive ? "location" : undefined}
-        aria-label={`${item.label}, ${status.replace("_", " ")}`}
-        className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
-      >
-        <span className={cn("flex-1 text-base", isActive ? "font-extrabold" : "font-bold", titleColor)}>
-          {item.label}
-        </span>
-        <StatusIcon status={status} isActive={isActive} displayState={displayState} />
-      </button>
-
-      {actionLabel && onGenerateDocument && (
+      <div className="flex min-h-8 w-full items-center gap-2">
+        <StatusMarker status={status} />
+        <button
+          type="button"
+          data-nav-target={item.key}
+          onClick={() => onNavigate(item.key)}
+          aria-current={isActive ? "location" : undefined}
+          aria-label={`${item.label}, ${status.replace("_", " ")}`}
+          className="min-w-0 flex-1 cursor-pointer rounded-sm text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
+        >
+          <span className={cn("block truncate text-base font-bold", titleColor)}>
+            {item.label}
+          </span>
+        </button>
+        {actionLabel && onGenerateDocument ? (
         <button
           type="button"
           onClick={(event) => {
@@ -168,17 +161,29 @@ function NavTab({
             onGenerateDocument(item.sourceType)
           }}
           className={cn(
-            "mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-            "border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+            "inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+            hasIssue
+              ? "border-destructive bg-destructive text-primary-foreground hover:bg-destructive/90"
+              : isActive || isInProgress
+                ? "border-[#FAFAFA]/25 bg-[#FAFAFA]/10 text-[#FAFAFA] hover:bg-[#FAFAFA]/15"
+                : "border-[#D8CEC5] bg-[#FFFFFE] text-[#5D5551] hover:border-primary/50 hover:text-primary",
           )}
         >
-          <ActionIcon aria-hidden="true" className="h-3.5 w-3.5" />
+          <ActionIcon aria-hidden="true" className="h-3 w-3" />
           <span>{actionLabel}</span>
         </button>
-      )}
+        ) : (
+          <span className={cn(
+            "shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
+            isActive || isInProgress ? "text-[#FAFAFA]/75" : hasIssue ? "text-destructive" : "text-[#8A8480]",
+          )}>
+            <StatusText status={status} displayState={displayState} />
+          </span>
+        )}
+      </div>
 
       {/* Sub-tabs */}
-      <div className="mt-1 ml-2 hidden border-l border-[#E5E5E5] pl-2 lg:block">
+      <div className={cn("mt-1 ml-[11px] hidden border-l pl-2 lg:block", connectorColor)}>
         {item.sections.map((section, idx) => {
           const isActiveSub = activeSectionId === section.id
           // In-progress items: vary opacity by position
@@ -194,9 +199,9 @@ function NavTab({
               onClick={() => onNavigate(section.id)}
               aria-current={isActiveSub ? "location" : undefined}
               className={cn(
-                "block min-h-11 w-full cursor-pointer rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-[#F5F0EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0",
+                "block w-full cursor-pointer rounded-sm px-2 py-[2px] text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0",
                 isActiveSub
-                  ? "bg-primary/10 font-semibold text-primary"
+                  ? cn("font-semibold", activeSubColor)
                   : cn(subColor, inProgressOpacity)
               )}
             >
@@ -224,7 +229,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
   return (
     <nav
       ref={ref}
-      className="workspace-anchor-nav flex w-full shrink-0 gap-2 overflow-x-auto border-b border-[#E2DDD6] bg-[#F8F6F3] px-4 py-3 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6 lg:py-5"
+      className="workspace-anchor-nav flex w-full shrink-0 gap-2 overflow-x-auto border-b border-[#E2DDD6] bg-[#FAFAFA] px-4 py-3 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6 lg:py-5"
     >
       {/* Document tabs */}
       {SCROLLABLE_NAV_ITEMS.map((item) => (
