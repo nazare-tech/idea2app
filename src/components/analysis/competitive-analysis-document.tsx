@@ -21,6 +21,13 @@ interface CompetitiveAnalysisDocumentProps {
 
 const displayFontClass = "font-[family:var(--font-display)]"
 
+const fastComparisonColumns = [
+  { label: "Competitor", className: "min-w-[170px] max-w-[310px]" },
+  { label: "Profile", className: "min-w-[260px] max-w-[310px]" },
+  { label: "Commercial Fit", className: "min-w-[220px] max-w-[310px]" },
+  { label: "Advantage / Risk", className: "min-w-[260px] max-w-[310px]" },
+] as const
+
 function PencilCard({
   title,
   kicker,
@@ -41,7 +48,7 @@ function PencilCard({
         className
       )}
     >
-      <div className="space-y-2 px-6 py-5">
+      <div className="space-y-2 py-5">
         {kicker ? (
           <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
             {kicker}
@@ -57,7 +64,7 @@ function PencilCard({
           {title}
         </h2>
       </div>
-      <div className="px-6 pb-6">{children}</div>
+      <div className="pb-6">{children}</div>
     </section>
   )
 }
@@ -278,22 +285,19 @@ function FastComparisonTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-[960px] table-fixed border-collapse border border-[#E0E0E0]">
-        <colgroup>
-          <col className="w-[170px]" />
-          <col className="w-[310px]" />
-          <col className="w-[230px]" />
-          <col className="w-[250px]" />
-        </colgroup>
+      <table className="w-[clamp(960px,100%,1240px)] table-fixed border-collapse border border-[#E0E0E0]">
         <thead>
           <tr className="bg-[#F5F0EB]">
-            {["Competitor", "Profile", "Commercial Fit", "Advantage / Risk"].map(
-              (label) => (
+            {fastComparisonColumns.map(
+              (column) => (
                 <th
-                  key={label}
-                  className="border border-[#D8CEC5] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]"
+                  key={column.label}
+                  className={cn(
+                    "border border-[#D8CEC5] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]",
+                    column.className
+                  )}
                 >
-                  {label}
+                  {column.label}
                 </th>
               )
             )}
@@ -305,7 +309,7 @@ function FastComparisonTable({
               key={`${competitor.heading}-comparison`}
               className={index % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"}
             >
-              <td className="border border-[#E0E0E0] px-4 py-4 align-top">
+              <td className={cn("border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[0].className)}>
                 {competitor.websiteUrl ? (
                   <a
                     href={competitor.websiteUrl}
@@ -334,7 +338,7 @@ function FastComparisonTable({
                   </p>
                 )}
               </td>
-              <td className="space-y-3 border border-[#E0E0E0] px-4 py-4 align-top">
+              <td className={cn("space-y-3 border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[1].className)}>
                 <CompetitorTableDetail
                   label="Overview"
                   value={competitor.fields["Overview"]}
@@ -348,7 +352,7 @@ function FastComparisonTable({
                   value={competitor.fields["Market Positioning"]}
                 />
               </td>
-              <td className="space-y-3 border border-[#E0E0E0] px-4 py-4 align-top">
+              <td className={cn("space-y-3 border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[2].className)}>
                 <CompetitorTableDetail
                   label="Pricing"
                   value={competitor.fields["Pricing Model"] ?? "Unknown"}
@@ -358,7 +362,7 @@ function FastComparisonTable({
                   value={competitor.fields["Target Audience"] ?? "Unknown"}
                 />
               </td>
-              <td className="space-y-3 border border-[#E0E0E0] px-4 py-4 align-top">
+              <td className={cn("space-y-3 border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[3].className)}>
                 <CompetitorTableDetail
                   label="Key Edge"
                   value={getCompetitorKeyEdge(competitor)}
@@ -654,7 +658,7 @@ function CompetitiveResearchPage({
 }) {
   return (
     <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
-      <header className="border border-[#E0E0E0] bg-white px-6 py-5">
+      <header className="-mx-5 border-b border-[#E0E0E0] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Market Intelligence
         </p>
@@ -770,7 +774,7 @@ export function CompetitiveOverviewSection({
 
   return (
     <>
-      <header className="border border-[#E0E0E0] bg-white px-6 py-5">
+      <header className="-mx-5 border-b border-[#E0E0E0] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Market Intelligence
         </p>
@@ -821,7 +825,7 @@ export function CompetitiveDetailSection({
 
   return (
     <>
-      <header className="border border-[#E0E0E0] bg-white px-6 py-5">
+      <header className="-mx-5 border-b border-[#E0E0E0] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Deep Analysis
         </p>

@@ -40,7 +40,7 @@ function PencilCard({
         className,
       )}
     >
-      <div className="space-y-2 px-6 py-5">
+      <div className="space-y-2 py-5">
         {kicker ? (
           <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
             {kicker}
@@ -56,7 +56,7 @@ function PencilCard({
           {title}
         </h2>
       </div>
-      <div className="px-6 pb-6">{children}</div>
+      <div className="pb-6">{children}</div>
     </section>
   )
 }
@@ -71,7 +71,7 @@ function PageHeader({
   description: string
 }) {
   return (
-    <header className="border border-[#E0E0E0] bg-white px-6 py-5">
+    <header className="-mx-5 border-b border-[#E0E0E0] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
       <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
         {eyebrow}
       </p>
