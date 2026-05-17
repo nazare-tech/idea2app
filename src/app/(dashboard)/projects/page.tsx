@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { DashboardProjectCard } from "@/components/projects/dashboard-project-card"
 import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 import { getProjectUrl } from "@/lib/project-routing"
+import { getProjectAllowanceStatus, type ProjectAllowanceClient } from "@/lib/project-allowance"
 
 type ActiveProject = {
   id: string
@@ -20,11 +21,14 @@ export default async function ProjectsPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("user_id", user!.id)
-    .order("updated_at", { ascending: false })
+  const [{ data: projects }, allowanceStatus] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("*")
+      .eq("user_id", user!.id)
+      .order("updated_at", { ascending: false }),
+    getProjectAllowanceStatus(supabase as unknown as ProjectAllowanceClient, user!.id),
+  ])
 
   const activeProjects: ActiveProject[] = (projects ?? []).map((project) => ({
     id: project.id,
@@ -69,6 +73,7 @@ export default async function ProjectsPage() {
                 href={project.href}
                 updatedAt={project.updatedAt}
                 showDelete
+                canDelete={allowanceStatus.planName.toLowerCase() !== "free"}
               />
             ))}
           </div>

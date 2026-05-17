@@ -245,8 +245,8 @@ test("canCreateProject blocks users at the monthly limit", async () => {
   assert.match(result.message, /monthly project limit/i)
 })
 
-test("getProjectAllowanceStatus falls back to the free calendar-month limit without a subscription", async () => {
-  const { client } = createFakeClient({
+test("getProjectAllowanceStatus applies a free lifetime limit without a subscription", async () => {
+  const { client, queries } = createFakeClient({
     subscriptions: { data: [], error: null },
     projects: { data: null, error: null, count: 1 },
   })
@@ -257,7 +257,15 @@ test("getProjectAllowanceStatus falls back to the free calendar-month limit with
   assert.equal(result.planName, "Free")
   assert.equal(result.allowance, 1)
   assert.equal(result.used, 1)
-  assert.equal(result.window.source, "calendar_month")
+  assert.equal(result.window.source, "lifetime")
+  assert.match(result.message, /lifetime project limit/i)
+
+  const projectsQuery = queries.find((query) => query.table === "projects")
+  assert.ok(projectsQuery)
+  assert.deepEqual(
+    projectsQuery.filters.filter((filter) => filter.method === "gte" || filter.method === "lt"),
+    []
+  )
 })
 
 test("getProjectAllowanceStatus keeps unlimited plans unblocked", async () => {

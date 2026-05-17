@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "projectId": "prj_https-github-com-nazare-tech-ide_f232e98b80",
+  "name": "makercompass",
+  "rootPath": "/Users/bast/.openclaw/projects/makercompass",
+  "git": {
+    "remoteUrl": "https://github.com/nazare-tech/idea2app.git",
+    "defaultBranch": "main",
+    "currentBranch": "feat/agentmemory-openclaw-bugfixes",
+    "headSha": "d93b91b9d8a004db0f26ca5cb8862b58b5af25af"
+  },
+  "detected": {
+    "languages": [
+      "typescript",
+      "javascript"
+    ],
+    "frameworks": [
+      "next"
+    ],
+    "packageManagers": [
+      "npm"
+    ],
+    "commands": {
+      "typecheck": null,
+      "lint": "npm run lint",
+      "format": null,
+      "test": "npm run test"
+    }
+  },
+  "createdAt": "2026-05-17T05:29:12.919Z",
+  "updatedAt": "2026-05-17T05:29:12.919Z"
+}

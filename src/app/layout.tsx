@@ -16,9 +16,9 @@ const firaMono = Fira_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Maker Compass - Transform Your Business Ideas into Reality",
-  description: "AI-powered platform to analyze business ideas, generate PRDs, technical specs, and deploy working applications.",
-  keywords: ["business ideas", "competitive analysis", "PRD", "technical specs", "app generation", "AI"],
+  title: "Maker Compass - Turn Rough Ideas Into Build-Ready Plans",
+  description: "MakerCompass helps founder-builders research the market, pick the wedge, scope the MVP, and create a cleaner coding-agent handoff.",
+  keywords: ["build-ready plan", "MVP planning", "competitive research", "PRD", "coding agent handoff", "founder tools"],
 }
 
 export default function RootLayout({

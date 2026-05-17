@@ -29,9 +29,9 @@ export type ProjectAllowanceReason =
   | "invalid_user"
 
 export type MonthlyProjectWindow = {
-  start: string
-  end: string
-  source: "subscription_period" | "calendar_month"
+  start: string | null
+  end: string | null
+  source: "subscription_period" | "calendar_month" | "lifetime"
 }
 
 export type ProjectAllowanceStatus = {
@@ -75,7 +75,9 @@ export interface ProjectAllowanceQuery<TData> extends PromiseLike<ProjectAllowan
 }
 
 export type ProjectAllowanceClient = {
-  from(table: string): ProjectAllowanceQuery<unknown>
+  from(table: string): {
+    select(columns: string, options?: ProjectAllowanceSelectOptions): ProjectAllowanceQuery<unknown>
+  }
 }
 
 export type ProjectAllowanceOptions = {
@@ -144,7 +146,8 @@ export async function getProjectAllowanceStatus(
   const subscription = subscriptionLookup.subscription
   const plan = getJoinedPlan(subscription)
   const planResolution = resolveProjectAllowance(plan)
-  const window = getActiveMonthlyProjectWindow(subscription, now)
+  const isFreePlan = !subscription
+  const window = isFreePlan ? getLifetimeProjectWindow() : getActiveMonthlyProjectWindow(subscription, now)
   const countResult = await countProjectsInWindow(client, trimmedUserId, window)
 
   if (countResult.error) {
@@ -195,7 +198,9 @@ export async function getProjectAllowanceStatus(
     reason: canCreate ? "allowed" : "limit_reached",
     message: canCreate
       ? "Project creation is allowed for the current plan."
-      : `You have reached the monthly project limit for the ${planResolution.planName} plan.`,
+      : isFreePlan
+        ? "You have already used the lifetime project limit for the Free plan."
+        : `You have reached the monthly project limit for the ${planResolution.planName} plan.`,
     subscriptionStatus: getStringField(subscription, "status"),
     lookupError: subscriptionLookup.error,
   }
@@ -262,6 +267,14 @@ export function getActiveMonthlyProjectWindow(
   return getUtcCalendarMonthWindow(date)
 }
 
+export function getLifetimeProjectWindow(): MonthlyProjectWindow {
+  return {
+    start: null,
+    end: null,
+    source: "lifetime",
+  }
+}
+
 async function getActiveSubscription(
   client: ProjectAllowanceClient,
   userId: string,
@@ -301,12 +314,20 @@ async function countProjectsInWindow(
   window: MonthlyProjectWindow
 ): Promise<{ count: number; error: string | null }> {
   try {
-    const result = await client
+    let query = client
       .from("projects")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .gte("created_at", window.start)
-      .lt("created_at", window.end)
+
+    if (window.start) {
+      query = query.gte("created_at", window.start)
+    }
+
+    if (window.end) {
+      query = query.lt("created_at", window.end)
+    }
+
+    const result = await query
 
     if (result.error) {
       return { count: 0, error: getErrorMessage(result.error) }

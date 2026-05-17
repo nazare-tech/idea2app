@@ -13,25 +13,25 @@ const NODES: BuildMapNode[] = [
     key: "market",
     label: "1. Market Research",
     description:
-      "Map the competitive landscape: who's already solving this, what they charge, and where the open lanes are for your idea.",
+      "Map the competitive landscape, pricing, and open lanes so you stop guessing where the idea can actually win.",
   },
   {
-    key: "prd",
-    label: "2. PRD",
+    key: "wedge",
+    label: "2. MVP Wedge",
     description:
-      "Translate your idea into a real product spec. User personas, requirements, and acceptance criteria so engineering knows exactly what to build.",
+      "Narrow the concept to the first user, first pain, and first version worth building instead of scoping everything at once.",
   },
   {
-    key: "mockups",
-    label: "3. Mockups",
+    key: "handoff",
+    label: "3. Build Handoff",
     description:
-      "Get multiple design directions for the same core screens. Compare them side-by-side and pick the one to ship before writing UI code.",
+      "Turn the direction into a PRD, MVP plan, mockups, and technical detail your coding agent can work from immediately.",
   },
   {
-    key: "marketing",
-    label: "4. Marketing",
+    key: "launch",
+    label: "4. Next Build Move",
     description:
-      "Plan your go-to-market in one place: audience segments, channel signals, and a budget to land your first customers.",
+      "Leave with a clear next step: what to build now, what to defer, and what to validate once users touch the product.",
   },
 ]
 
@@ -67,16 +67,16 @@ export function BuildMap() {
       className={`build-map-split ${active ? "build-map-split--active" : ""}`}
     >
       <p className="build-map-split__eyebrow">Before and after split</p>
-      <h3 className="build-map-split__title">From loose idea to usable stack.</h3>
+      <h3 className="build-map-split__title">From rough idea to build-ready direction.</h3>
       <div className="build-map-split__layout">
         <div className="build-map-split__idea">
           <p className="build-map-split__chip">Input</p>
           <div className="build-map-split__note">
             <p className="text-[1.35rem] font-semibold leading-tight tracking-[-0.04em]">
-              &ldquo;I have an idea, but I do not know the first build move.&rdquo;
+              &ldquo;I have an idea, but I do not know what to build first.&rdquo;
             </p>
             <p className="mt-4 text-[13px] leading-relaxed text-text-secondary">
-              Unsorted market assumptions, product scope, screens, and launch questions.
+              Unsorted market assumptions, fuzzy scope, too many options, and no clean handoff to start building.
             </p>
           </div>
           <div className="build-map-split__arrow" />

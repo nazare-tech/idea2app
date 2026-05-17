@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-config-7528cb5b98-c3591_28ae3b07d0",
+  "featureId": "feat_config_7528cb5b98",
+  "title": "Project cannot install on supported Node 24 because @types/node is pinned to Node 20 types",
+  "category": "build-release",
+  "severity": "medium",
+  "confidence": "medium",
+  "triage": "risk",
+  "evidence": [
+    {
+      "path": "package.json",
+      "startLine": 7,
+      "endLine": 7,
+      "symbol": null,
+      "quote": "\"node\": \">=22 <23 || >=24 <25\""
+    },
+    {
+      "path": "package.json",
+      "startLine": 58,
+      "endLine": 58,
+      "symbol": null,
+      "quote": "\"@types/node\": \"^20\""
+    }
+  ],
+  "reasoning": "The package declares Node 24 as a supported runtime, but the TypeScript ambient Node API package is constrained to Node 20. That can make typechecking diverge from the advertised runtime surface: Node 22/24 globals and API signatures may be missing or typed differently, while APIs removed or changed after Node 20 may still appear valid. This is a release/config hazard because contributors and CI can get misleading type results for a runtime the package explicitly supports.",
+  "reproduction": null,
+  "recommendation": "Align @types/node with the supported runtime range, for example by using a Node 22-compatible type package if CI standardizes on Node 22, or by documenting and testing separate typecheck jobs for each supported major.",
+  "whyTestsDoNotAlreadyCoverThis": "No typecheck command or CI matrix is included in the reviewed evidence, and the test script only runs selected test files rather than validating runtime type declarations across supported Node majors.",
+  "suggestedRegressionTest": "Add a typecheck script and run it under the supported Node major used for builds, or add CI jobs for Node 22 and Node 24 if both are intentionally supported.",
+  "minimumFixScope": "Update package.json devDependency/runtime support policy and add or document the matching typecheck coverage.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-config-7528cb5b98_c35914b524",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260517T053221-102af1",
+  "createdAt": "2026-05-17T05:34:25.573Z",
+  "updatedAt": "2026-05-17T05:34:25.573Z"
+}

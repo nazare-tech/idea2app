@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260517T053221-102af1",
+  "command": "review",
+  "args": [
+    "review",
+    "--limit",
+    "10"
+  ],
+  "rootPath": "/Users/bast/.openclaw/projects/makercompass",
+  "headSha": "d93b91b9d8a004db0f26ca5cb8862b58b5af25af",
+  "startedAt": "2026-05-17T05:32:21.285Z",
+  "finishedAt": "2026-05-17T05:35:17.761Z",
+  "status": "completed",
+  "claimedFeatureIds": [
+    "feat_config_0c1c23856a",
+    "feat_config_7528cb5b98",
+    "feat_release_4862937c51",
+    "feat_release_51170e0f9c",
+    "feat_release_775032a0f4",
+    "feat_test-suite_84ae84a25a"
+  ],
+  "findingIds": [
+    "fnd_sig-feat-config-7528cb5b98-c3591_28ae3b07d0",
+    "fnd_sig-feat-config-7528cb5b98-da0c4_2f931e9575"
+  ],
+  "patchAttemptIds": [],
+  "errors": []
+}

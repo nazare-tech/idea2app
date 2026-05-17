@@ -24,43 +24,43 @@ const navLinks = [
 
 const productOutputs = [
   {
-    eyebrow: "Research",
-    title: "Know the market before you commit a sprint.",
+    eyebrow: "Direction",
+    title: "Turn a rough idea into a build-ready plan.",
     description:
-      "Maker Compass maps competitors, pricing, positioning, gaps, and first wedges so your idea starts with context instead of guesswork.",
-    artifacts: ["Competitive scan", "Audience segments", "Differentiation wedges"],
+      "MakerCompass helps you pick the wedge, sharpen the scope, and leave with a direction you can actually build instead of another pile of notes.",
+    artifacts: ["MVP wedge", "Core user", "Build sequence"],
   },
   {
-    eyebrow: "Product",
-    title: "Turn the idea into a buildable plan.",
+    eyebrow: "Handoff",
+    title: "Create the artifacts your coding agent can use immediately.",
     description:
-      "Generate the PRD, MVP scope, acceptance criteria, mockup directions, and technical blueprint your coding agent needs to start cleanly.",
-    artifacts: ["PRD", "MVP plan", "Mockups", "Technical spec"],
+      "Generate research, PRD, MVP scope, mockups, and technical detail that reduce back-and-forth once it is time to build.",
+    artifacts: ["Competitive research", "PRD", "Mockups", "Technical spec"],
   },
 ]
 
 const workflowSignals = [
-  "One intake becomes every core artifact.",
-  "Docs stay tied to the same project context.",
-  "Output is written for builders, not slide decks.",
+  "Less tool sprawl. One workflow from idea to handoff.",
+  "Built for founder-builders, not committee decks.",
+  "Outputs are meant to start the build, not just describe it.",
 ]
 
 const steps = [
   {
     number: "01",
-    body: "Describe what you want to build\nShare your idea, target users, and constraints in plain language.",
+    body: "Start with the rough idea\nDrop in the concept, target user, and constraints without cleaning it up first.",
   },
   {
     number: "02",
-    body: "Generate research + product direction\nGet focused analysis, key assumptions, and where your idea can stand out.",
+    body: "Find the wedge\nMap the market, pressure-test the idea, and decide what is actually worth building first.",
   },
   {
     number: "03",
-    body: "Create your MVP plan + mockups\nProduce actionable docs and compare design directions before implementation.",
+    body: "Turn it into a handoff package\nGenerate the PRD, MVP plan, mockups, and technical blueprint in the same project context.",
   },
   {
     number: "04",
-    body: "Build and iterate\nShip faster with a clear plan, then refine with feedback as you learn from users.",
+    body: "Build with less thrash\nHand the output to your coding agent and start shipping with clearer inputs and fewer rewrite loops.",
   },
 ]
 
@@ -199,16 +199,16 @@ export default async function LandingPage() {
           <div className="inline-flex items-center rounded-full border border-border-subtle px-4 py-2 font-mono text-[0.6875rem] font-medium tracking-[0.18em] text-text-secondary">
             {waitlistMode
               ? `${WAITLIST_LIMIT} early-access spots filled. Join the waitlist.`
-              : "Lean-in Workflow For Builders"}
+              : "Build-ready planning for founder-builders"}
           </div>
         </div>
 
         <h1 className="font-display max-w-[980px] mx-auto text-center text-[2.75rem] leading-[0.95] tracking-[-0.06em] font-semibold sm:text-[3.5rem] lg:text-[4.5rem]">
-          Build your startup idea this weekend, not &ldquo;someday.&rdquo;
+          Turn a rough idea into a build-ready plan.
         </h1>
 
         <p className="mx-auto mt-6 max-w-[780px] text-center text-base leading-relaxed text-text-secondary sm:text-[20px]">
-          Turn one idea into research, MVP plan, and actionable mockups in minutes. No fluff. No &ldquo;where do I start?&rdquo; spiral.
+          Research the market, pick the wedge, scope the MVP, and hand your coding agent clearer inputs. Less brainstorming. More buildable direction.
         </p>
 
         {/* Hero CTA — waitlist input or sign-up buttons */}
@@ -229,7 +229,7 @@ export default async function LandingPage() {
 
         <div className="mx-auto mt-12 max-w-[860px] border-y border-border-subtle py-5">
           <p className="text-center text-sm leading-relaxed text-text-secondary">
-            One focused intake becomes market research, product direction, mockups, technical choices, and the next build step.
+            One focused intake becomes market context, product direction, mockups, technical choices, and a cleaner build handoff.
           </p>
         </div>
       </SectionCard>
@@ -246,7 +246,7 @@ export default async function LandingPage() {
         <section id="features" className="py-3">
           <p className="ui-kicker-label">Features</p>
           <h2 className="mt-4 text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
-            From idea to momentum, without the usual excuses
+            Clear the messy front half before you start building
           </h2>
 
           <div className="mt-8 grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
@@ -289,7 +289,7 @@ export default async function LandingPage() {
         <section id="how-it-works" className="py-3">
           <p className="ui-kicker-label">How It Works</p>
           <h2 className="mt-4 max-w-[760px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
-            Your first version, broken into clear steps
+            Go from fuzzy concept to first build move in one flow
           </h2>
 
           <div className="mt-8 space-y-4">
@@ -365,7 +365,7 @@ export default async function LandingPage() {
           <p className="mx-auto mt-6 max-w-[760px] text-xl text-text-secondary">
             {waitlistMode
               ? "Join the waitlist and be first to know when the next batch of spots opens."
-              : "Get early access and turn your next idea into research, plans, and mockups you can actually execute."}
+              : "Get early access and turn your next idea into a build-ready plan, structured artifacts, and a cleaner coding-agent handoff."}
           </p>
           <div className="mt-8 flex justify-center">
             {waitlistMode ? (
