@@ -112,6 +112,8 @@ test("PrdDocumentBlocks renders organized module anchors", () => {
   assert.match(html, /Founder Fiona/)
   assert.match(html, /id="prd-prioritization"/)
   assert.match(html, /Technical Requirements/)
+  assert.doesNotMatch(html, /border rounded-none/)
+  assert.doesNotMatch(html, /border-\[#D8CEC5\] bg-\[#F5F0EB\]/)
 })
 
 test("PrdDocumentBlocks renders unlabeled persona fields as one target-user profile", () => {
@@ -163,6 +165,62 @@ As an architect, I want to preserve rationale.
   assert.doesNotMatch(html, /Persona 02/)
 })
 
+test("PrdDocumentBlocks stacks objectives, positioning, and personas full width", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      content={`# PRD: Full Width Personas
+
+## I. Introduction
+
+### 1.2 Problem Definition / User Needs
+Teams need cleaner planning documents.
+
+### 1.3 Purpose and Value Proposition
+Convert rough ideas into build-ready plans.
+
+## II. Objectives
+
+### 2.2 Goals / Measurable Outcomes
+- Increase plan completion.
+
+### 2.3 Product Positioning
+For founders, this is a planning workspace.
+
+## III. Stakeholders
+
+### 3.2 User Profiles / Personas
+#### Persona Alpha
+- Goal: validate quickly.
+
+#### Persona Beta
+- Goal: compare options.
+
+#### Persona Gamma
+- Goal: hand work to engineering.
+
+## IV. Features and Functionality
+
+### 4.1 Requirements
+- FR-001: Render PRD sections.
+
+### 4.2 User Stories / Use Cases
+As a founder, I want readable personas.
+
+### 4.3 Prioritization
+- P0: Planning clarity.
+`}
+      projectId="project-1"
+    />,
+  )
+
+  assert.match(html, /Measurable Objectives/)
+  assert.match(html, /Positioning/)
+  assert.match(html, /Persona 03/)
+  assert.match(html, /mt-4 space-y-4/)
+  assert.doesNotMatch(html, /mt-4 grid gap-4 xl:grid-cols-2/)
+  assert.doesNotMatch(html, /xl:col-span-2/)
+})
+
 test("MvpPlanDocumentBlocks renders organized module anchors", () => {
   const html = renderToStaticMarkup(
     <MvpPlanDocumentBlocks content={mvpFixture} projectId="project-1" />,
@@ -175,6 +233,8 @@ test("MvpPlanDocumentBlocks renders organized module anchors", () => {
   assert.match(html, /MVP-001: Block PRD rendering/)
   assert.match(html, /id="mvp-success-metrics"/)
   assert.match(html, /Product Vision Summary/)
+  assert.doesNotMatch(html, /border rounded-none/)
+  assert.doesNotMatch(html, /border-\[#D8CEC5\] bg-\[#F5F0EB\]/)
 })
 
 test("MvpPlanDocumentBlocks makes the final odd feature card full width", () => {

@@ -37,10 +37,7 @@ function PencilCard({
   return (
     <section
       className={cn(
-        "border rounded-none",
-        dark
-          ? "border-[#D8CEC5] bg-[#F5F0EB]"
-          : "border-[#E0E0E0] bg-white",
+        "rounded-none bg-transparent",
         className
       )}
     >

@@ -100,11 +100,11 @@ export function DashboardProjectCard({
             <h2 className="line-clamp-1 pr-10 text-[18px] font-bold leading-tight tracking-[-0.4px] text-text-primary">
               {name}
             </h2>
-            <p className="text-[12px] text-text-secondary">
+            <p className="ui-type-caption text-text-secondary">
               {lastEditedLabel}
             </p>
           </div>
-          <p className="ui-font-mono min-h-[36px] overflow-hidden line-clamp-2 text-[12px] leading-[1.5] text-text-secondary">
+          <p className="min-h-[42px] overflow-hidden line-clamp-2 text-sm leading-[1.5] text-text-secondary">
             {description || "No prompt captured yet."}
           </p>
         </div>
@@ -134,12 +134,12 @@ export function DashboardProjectCard({
             <h3 className="text-[28px] leading-[1.1] font-bold tracking-[-1px] text-text-primary">
               Delete project?
             </h3>
-            <p className="mt-4 text-[14px] leading-[1.5] text-text-secondary">
+            <p className="mt-4 ui-type-body text-text-secondary">
               You are about to permanently delete &quot;{name}&quot;. This action removes all
               environments, deployment history, and collaborator access. This cannot be
               undone.
             </p>
-            <p className="mt-4 text-[12px] leading-[1.5] ui-font-semibold text-destructive">
+            <p className="mt-4 ui-type-caption ui-font-semibold text-destructive">
               Warning: deleting this project is permanent.
             </p>
             <div className="mt-6 flex justify-end gap-3">

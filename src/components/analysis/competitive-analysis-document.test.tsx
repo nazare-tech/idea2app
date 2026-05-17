@@ -86,6 +86,8 @@ test("competitive overview renders only executive summary and founder verdict", 
   assert.match(html, /Founder Verdict/)
   assert.match(html, /Win with a narrow wedge\./)
   assert.doesNotMatch(html, /Competitor Profiles &amp; Quick Comparison/)
+  assert.doesNotMatch(html, /border rounded-none/)
+  assert.doesNotMatch(html, /border-\[#D8CEC5\] bg-\[#F5F0EB\]/)
   assert.doesNotMatch(html, /Competitor One/)
   assert.doesNotMatch(html, /Strategic Recommendations/)
   assert.doesNotMatch(html, /Validate pricing willingness/)
@@ -108,6 +110,8 @@ test("competitive detail owns market research and strategy modules", () => {
   assert.match(html, /GTM \/ Distribution Signals/)
   assert.match(html, /Strategic Recommendations/)
   assert.match(html, /Validate pricing willingness/)
+  assert.doesNotMatch(html, /border rounded-none/)
+  assert.doesNotMatch(html, /border-\[#D8CEC5\] bg-\[#F5F0EB\]/)
 })
 
 test("competitive detail consolidates competitor profile cards into one quick comparison table", () => {

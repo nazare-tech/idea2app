@@ -200,6 +200,22 @@ body {
     @apply text-sm text-muted-foreground;
   }
 
+  .ui-type-body {
+    @apply text-base leading-[1.6];
+  }
+
+  .ui-type-body-sm {
+    @apply text-[15px] leading-6;
+  }
+
+  .ui-type-table {
+    @apply text-sm leading-6;
+  }
+
+  .ui-type-caption {
+    @apply text-[13px] leading-5;
+  }
+
   .ui-font-semibold {
     @apply font-semibold;
   }

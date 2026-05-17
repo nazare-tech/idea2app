@@ -83,9 +83,8 @@
 | **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
 | **jspdf** | 4.0.0 | Client-side PDF generation |
 | **html2canvas** | 1.4.1 | Legacy client-side HTML-to-canvas rendering utility |
-| **Sora** | (Google Font) | Primary sans-serif typeface |
-| **Space Grotesk** | (Google Font) | Display typeface for Competitive Research and Pencil-inspired editorial headings |
-| **IBM Plex Mono** | (Google Font) | Monospace typeface for labels/code |
+| **Hanken Grotesk** | (Google Font) | Primary sans-serif and display typeface |
+| **Fira Mono** | (Google Font) | Monospace typeface for labels/code |
 
 ### Backend & Services
 
@@ -309,7 +308,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 9. **Optimistic UI Updates**: Immediate feedback with graceful error handling
 10. **Shared UI Registries + Hooks**: Repeated view metadata and repeated client behaviors (documents, credits, billing portal, auth sign-out, chat interactions) are centralized into typed registries and reusable hooks/components before page-level assembly
 11. **Path Aliases**: Clean imports using `@/*` aliases
-12. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Sora + IBM Plex Mono typography
+12. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Hanken Grotesk + Fira Mono typography
 13. **Fixed Default Models Per Tab**: AI model selection was removed from the UI. Direct document routes use fixed defaults in their route files, while Generate All defaults live in `src/lib/document-definitions.ts` (`GENERATE_ALL_DEFAULT_MODELS`). `src/lib/prompt-chat-config.ts` still exports `DEFAULT_MODELS` for compatibility with older imports.
 14. **Generate-Missing-Only Documents**: The Generate button is hidden after a document is successfully generated, and server routes also enforce one active planning document per project/document type by default. Direct duplicate API requests return `200 skipped` with existing output metadata and no credit charge. Failed generations (no content saved) naturally re-expose the button for retry. Future versioning must be introduced as a separate explicit action.
 15. **PDF-Only Export**: Documents export as PDF only (markdown download removed). The header shows a single "Download PDF" button.
@@ -1366,7 +1365,7 @@ export const BASE_ACTION_TOKENS = {
 
 | File | Purpose |
 |------|---------|
-| [src/app/layout.tsx](src/app/layout.tsx) | Root layout — loads Sora + IBM Plex Mono fonts |
+| [src/app/layout.tsx](src/app/layout.tsx) | Root layout — loads Hanken Grotesk + Fira Mono fonts |
 | [src/app/globals.css](src/app/globals.css) | Pencil design tokens (CSS custom properties), status badge styles, scrollbar styles, Mermaid diagram styles (light/dark mode with media query) |
 | [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout — verifies auth and renders `DashboardShell` with user profile and credits |
 | [src/components/layout/dashboard-shell.tsx](src/components/layout/dashboard-shell.tsx) | Authenticated dashboard shell for top-level dashboard, projects, billing, and preferences pages |

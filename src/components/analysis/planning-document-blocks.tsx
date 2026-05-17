@@ -36,8 +36,7 @@ function PencilCard({
   return (
     <section
       className={cn(
-        "border rounded-none",
-        dark ? "border-[#D8CEC5] bg-[#F5F0EB]" : "border-[#E0E0E0] bg-white",
+        "rounded-none bg-transparent",
         className,
       )}
     >
@@ -85,7 +84,7 @@ function PageHeader({
         >
           {title}
         </h1>
-        <p className="mt-2 max-w-3xl text-[13px] leading-6 text-[#666666]">
+        <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
           {description}
         </p>
       </div>
@@ -107,7 +106,7 @@ function ParagraphStack({
       {paragraphs.map((paragraph, index) => (
         <p
           key={`${paragraph}-${index}`}
-          className={cn("text-[13px] leading-6", dark ? "text-[#4A4040]" : "text-[#666666]")}
+          className={cn("ui-type-body", dark ? "text-[#4A4040]" : "text-[#666666]")}
         >
           {paragraph}
         </p>
@@ -171,7 +170,7 @@ function InlineLabeledText({
   const labeled = splitLabeledText(value)
 
   return (
-    <p className={cn("text-[13px] leading-6", dark ? "text-[#1C1917]" : "text-[#0A0A0A]", className)}>
+    <p className={cn("ui-type-body-sm", dark ? "text-[#1C1917]" : "text-[#0A0A0A]", className)}>
       {labeled ? (
         <>
           <span className="font-semibold">{labeled.label}: </span>
@@ -198,7 +197,7 @@ function StructuredItemList({ items, dark = false }: { items: string[]; dark?: b
           return (
             <div key={key} className="space-y-2">
               {group.label ? (
-                <p className={cn("text-[13px] font-semibold leading-6", dark ? "text-[#1C1917]" : "text-[#0A0A0A]")}>
+                <p className={cn("ui-type-body-sm font-semibold", dark ? "text-[#1C1917]" : "text-[#0A0A0A]")}>
                   {group.label}
                 </p>
               ) : null}
@@ -256,7 +255,7 @@ function DataTable({
               {headers.map((header, cellIndex) => (
                 <td
                   key={`${header}-${cellIndex}`}
-                  className="border border-[#E0E0E0] px-4 py-3 align-top text-[12px] leading-5 text-[#0A0A0A]"
+                  className="border border-[#E0E0E0] px-4 py-3 align-top ui-type-table text-[#0A0A0A]"
                 >
                   {row[cellIndex] ?? ""}
                 </td>
@@ -286,7 +285,7 @@ function NarrativeContent({
         <DataTable headers={narrative.table.headers} rows={narrative.table.rows} />
       ) : null}
       {!hasText && !narrative.table ? (
-        <p className="text-[13px] leading-6 text-[#999999]">No structured content available.</p>
+        <p className="ui-type-body-sm text-[#999999]">No structured content available.</p>
       ) : null}
     </div>
   )
@@ -410,13 +409,13 @@ function RequirementsContent({ narrative }: { narrative: PlanningNarrativeTable 
               return (
                 <article key={`${item.title ?? item.description}-${index}`} className="border-l-2 border-primary pl-3">
                   {item.title ? (
-                    <p className="text-[13px] font-semibold leading-5 text-[#0A0A0A]">{item.title}</p>
+                    <p className="ui-type-body-sm font-semibold text-[#0A0A0A]">{item.title}</p>
                   ) : null}
-                  <p className={cn("text-[13px] leading-6 text-[#4A4040]", item.title && "mt-1")}>
+                  <p className={cn("ui-type-body-sm text-[#4A4040]", item.title && "mt-1")}>
                     {item.description}
                   </p>
                   {item.meta?.map((meta, metaIndex) => (
-                    <p key={`${meta}-${metaIndex}`} className="mt-1 text-[12px] leading-5 text-[#6F6A66]">
+                    <p key={`${meta}-${metaIndex}`} className="mt-1 ui-type-caption text-[#6F6A66]">
                       {meta}
                     </p>
                   ))}
@@ -535,7 +534,7 @@ function UserStoriesContent({ narrative }: { narrative: PlanningNarrativeTable }
           <h3 className={cn(displayFontClass, "mt-2 text-[18px] font-semibold tracking-[-0.03em] text-[#0A0A0A]")}>
             {story.title}
           </h3>
-          <p className="mt-3 text-[13px] leading-6 text-[#0A0A0A]">{story.story}</p>
+          <p className="mt-3 ui-type-body-sm text-[#0A0A0A]">{story.story}</p>
           {story.criteria.length > 0 ? (
             <div className="mt-4 border-t border-[#E8DDD5] pt-4">
               <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[#8A8480]">
@@ -543,7 +542,7 @@ function UserStoriesContent({ narrative }: { narrative: PlanningNarrativeTable }
               </p>
               <ul className="mt-3 space-y-2">
                 {story.criteria.map((criterion, index) => (
-                  <li key={`${criterion}-${index}`} className="flex gap-2 text-[12px] leading-5 text-[#4A4040]">
+                  <li key={`${criterion}-${index}`} className="flex gap-2 ui-type-caption text-[#4A4040]">
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 bg-primary" />
                     <span>{criterion}</span>
                   </li>
@@ -645,7 +644,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
         </PencilCard>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="space-y-6">
         <PencilCard title="Measurable Objectives" kicker="Outcomes">
           <NarrativeContent narrative={structured.objectives} />
         </PencilCard>
@@ -666,16 +665,11 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
               </div>
             ) : null}
           </div>
-          <div className="mt-4 grid gap-4 xl:grid-cols-2">
+          <div className="mt-4 space-y-4">
             {structured.personas.map((persona, index) => (
               <article
                 key={`${persona.heading}-${index}`}
-                className={cn(
-                  "border border-[#D8CEC5] bg-[#F7F2ED] px-5 py-5",
-                  structured.personas.length % 2 === 1 &&
-                    index === structured.personas.length - 1 &&
-                    "xl:col-span-2",
-                )}
+                className="border border-[#D8CEC5] bg-[#F7F2ED] px-5 py-5"
               >
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A8480]">
                   {persona.heading === "Target User Profile"
