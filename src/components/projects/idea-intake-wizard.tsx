@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
@@ -41,6 +41,7 @@ type AnswerState = Record<string, AnswerDraft>
 
 interface IdeaIntakeWizardProps {
   pendingToken?: string | null
+  autoStartQuestions?: boolean
 }
 
 function emptyAnswer(): AnswerDraft {
@@ -56,8 +57,9 @@ function normalizeIdea(value: string) {
   return value.trim().replace(/\s+/g, " ")
 }
 
-export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
+export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: IdeaIntakeWizardProps) {
   const router = useRouter()
+  const autoStartAttemptedRef = useRef(false)
   const [step, setStep] = useState<WizardStep>("idea")
   const [idea, setIdea] = useState("")
   const [lastGeneratedIdea, setLastGeneratedIdea] = useState("")
@@ -204,7 +206,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
     }
   }
 
-  const generateQuestions = async () => {
+  const generateQuestions = useCallback(async () => {
     if (!canContinue || isGeneratingQuestions) return
     setError(null)
 
@@ -235,7 +237,40 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
     } finally {
       setIsGeneratingQuestions(false)
     }
-  }
+  }, [canContinue, isGeneratingQuestions, lastGeneratedIdea, normalizedIdea, questionSet])
+
+  useEffect(() => {
+    if (
+      !autoStartQuestions ||
+      autoStartAttemptedRef.current ||
+      isLoadingPending ||
+      isCreatingProject ||
+      isGeneratingQuestions
+    ) {
+      return
+    }
+
+    autoStartAttemptedRef.current = true
+
+    if (!canContinue) {
+      setError(
+        idea.trim()
+          ? "We restored your idea, but it needs a little more detail before we can generate questions."
+          : "We couldn't restore your landing page idea. Please paste it here to continue."
+      )
+      return
+    }
+
+    void generateQuestions()
+  }, [
+    autoStartQuestions,
+    canContinue,
+    generateQuestions,
+    idea,
+    isCreatingProject,
+    isGeneratingQuestions,
+    isLoadingPending,
+  ])
 
   const setAnswer = (questionId: string, updater: (draft: AnswerDraft) => AnswerDraft) => {
     setAnswers((prev) => ({
@@ -261,7 +296,7 @@ export function IdeaIntakeWizard({ pendingToken }: IdeaIntakeWizardProps) {
           idea: normalizedIdea,
           questions,
           answers: buildAnswers(questions, answers),
-          source: pendingToken ? "landing" : "dashboard",
+          source: pendingToken || autoStartQuestions ? "landing" : "dashboard",
           pendingToken,
         }),
       })

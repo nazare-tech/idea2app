@@ -125,7 +125,7 @@ export function AuthFormContent({
         return
       }
 
-      const { error } = await withAuthTimeout(
+      const { data, error } = await withAuthTimeout(
         supabase.auth.signUp({
           email,
           password,
@@ -138,6 +138,11 @@ export function AuthFormContent({
       )
 
       if (error) { setError(error.message); return }
+      if (data.session) {
+        onSuccess()
+        return
+      }
+
       setSuccess(true)
     } catch (error) {
       setError(error instanceof Error ? error.message : "An unexpected error occurred")

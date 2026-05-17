@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-05-17 (founder-friendly report headings)
+**Last Updated**: 2026-05-17 (main branch landing hero + free-plan project gates)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -24,6 +24,8 @@
   - Dynamic CTA mode based on current `profiles` count
   - Public `waitlist` table for email capture
   - Shared `WaitlistForm` component on the landing page
+  - Figma-matched desktop hero artwork from layered raster assets in `public/landing/hero/*`, rendered by `HeroArtwork`
+  - Authenticated visitors to `/` are redirected to `/projects`
   - Fail-open API behavior so CTA rendering does not block on Supabase errors
 - **OpenRouter Image Mockups + Legacy Stitch Compatibility**: Mockup generation now defaults to OpenRouter image models and keeps Stitch rendering/proxy support for existing saved mockups. Features:
   - `src/lib/openrouter-image-mockup-pipeline.ts` generates OpenRouter image alternatives and uploads image bytes to Supabase Storage, with a reusable single-option helper for Hobby-safe manual generation
@@ -41,7 +43,8 @@
   - Single Page Applications (React SPAs)
   - Progressive Web Apps (PWA)
 - **Deployment**: Direct deployment capabilities for generated applications
-- **Project-based Pricing Migration**: Project creation is guarded by monthly project allowance. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
+- **Project-based Pricing Migration**: Project creation is guarded by project allowance. Free users get a one-project lifetime allowance; paid plans use monthly/subscription-period windows, explicit plan allowance fields/features where available, and plan-name fallbacks. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
+- **Paid-only Project Deletion**: The Projects dashboard renders `DashboardProjectCard` cards with hover/focus workspace warming and delete controls. `DELETE /api/projects/[id]` is ownership-scoped, metrics-tracked, and blocked for Free plan users; the UI shows an upgrade prompt before paid-plan-only deletion.
 - **Generate-Missing-Only Documents**: Planning documents are active singletons by default. Direct generation routes and Generate All/onboarding execution check for an existing active document before credits or external AI calls; duplicate attempts return/record a skipped existing output instead of inserting another row. Future document versioning must be a separate explicit product action.
 - **Dashboard Generation Status**: The project dashboard derives document loading states from the durable Generate All/onboarding queue, not only local browser flags. The left document rail shows compact queued/generating/ready indicators plus dark `Generate` buttons for missing idle modules and dark `Retry` buttons for failed modules. The right document modules show queued/loading states, centered retry placeholders with a user-friendly error message and wider dark `Retry` action, or canonical saved content. Product Plan and First Version Plan no longer show partial streaming previews in the workspace; they show loading/generating states until the saved document is ready. Overview and Market Research share the same competitive-analysis generation state, so a retry from either section moves both rail items together.
 - **Lazy Workspace Loading**: Project workspaces use slugged project refs at `/projects/[projectRef]` and lazy-load owned document collections through `/api/projects/[id]/workspace`. The workspace requests only the document types it needs, keeps section hash navigation in sync, and defers below-the-fold rendering to avoid freezing large generated documents.
@@ -80,6 +83,7 @@
 | **beautiful-mermaid** | Latest | Beautiful, themeable Mermaid diagram rendering with expansion |
 | **react-syntax-highlighter** | 16.1.0 | Code syntax highlighting |
 | **@json-render/core**, **@json-render/react**, **@json-render/shadcn** | 0.11.0 | Structured mockup rendering from json-render specs and patches |
+| **date-fns** | 4.1.0 | Relative project timestamp formatting on dashboard cards |
 | **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
 | **jspdf** | 4.0.0 | Client-side PDF generation |
 | **html2canvas** | 1.4.1 | Legacy client-side HTML-to-canvas rendering utility |
@@ -97,6 +101,7 @@
 | **@google/stitch-sdk** | 0.0.3 | Stitch client SDK used for mockup/design generation helpers |
 | **OpenRouter** | 6.16.0 | API wrapper for AI analysis and OpenRouter-hosted image mockup generation |
 | **Stripe** | 20.2.0 | Payment processing and subscriptions |
+| **Puppeteer** | 24.37.1 | Server-side PDF rendering in `/api/generate-pdf` |
 | **Perplexity** | - | AI-powered competitor search (sonar-pro model, OpenAI-compatible API) |
 | **Tavily** | - | Web content extraction from competitor URLs |
 | **agentation / agentation-mcp** | 2.2.1 / 1.2.0 | Local development instrumentation wrapper rendered from the root layout |
@@ -109,7 +114,8 @@
 | **eslint-config-next** | 16.1.4 | Next.js ESLint configuration |
 | **tsx** | 4.20.6 | TypeScript test/runtime loader for Node's built-in test runner |
 | **shadcn** | 3.8.5 | Component scaffolding/tooling |
-| **@types/node** | ^20 | Node.js type definitions |
+| **Clawpatch** | config only | Local review metadata and reports stored in `.clawpatch/` |
+| **@types/node** | ^24 | Node.js type definitions |
 | **@types/react** | ^19 | React type definitions |
 | **@types/react-dom** | ^19 | React DOM type definitions |
 
@@ -169,8 +175,8 @@
 2. **Idea Intake Wizard Flow**:
    - Landing page idea capture stores same-tab draft text in `sessionStorage`
    - For auth handoff, `POST /api/intake/pending` stores the idea in `pending_intakes` for 24 hours and returns an opaque token; raw idea text never goes in the URL
-   - Auth modal and `/callback` preserve safe `next=/projects/new?intake=<token>` redirects
-   - `/projects/new` renders `IdeaIntakeWizard`; it loads pending intake by token via `GET /api/intake/pending` or falls back to `sessionStorage`
+   - Auth modal and `/callback` preserve safe `next=/projects/new?intake=<token>&autostart=1` redirects for landing-page validation
+   - `/projects/new` renders `IdeaIntakeWizard`; it loads pending intake by token via `GET /api/intake/pending` or falls back to `sessionStorage`, and `autostart=1` generates Step 2 questions once after a valid idea is restored
    - `POST /api/intake/questions` generates 4-5 AI-authored answer-chip questions with `single` and `multiple` answer modes. Standalone text questions are rejected; optional free text is only revealed through `Other` on single-select questions where useful. If AI question generation is unavailable or invalid, the route returns a retryable error instead of falling back to curated questions
    - `POST /api/projects/create-from-intake` validates answers, checks `canCreateProject()`, builds `idea-intake-v1` JSON, stores the readable summary in `projects.description`, stores the structured payload in `project_intakes`, generates `projects.name`, creates a service-owned onboarding `generation_queues` run with `creditCost: 0`, claims the pending token, and returns `generationRunId`, `statusUrl`, and a canonical `#overview` redirect URL
    - `IdeaIntakeWizard` shows `IntakeSubmissionLoadingPanel`, fires `/api/generate-all/execute` for the new project, polls `/api/projects/[id]/onboarding-status`, and redirects only after the v2 competitive analysis row is saved
@@ -289,7 +295,8 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 - **Idea intake contracts** — typed question, answer, summary, context, and project-name helpers live in `src/lib/intake-*.ts`, `src/lib/project-name-generation.ts`, and `src/lib/prompts/intake-wizard.ts`. `src/lib/intake-examples.ts` owns the configurable example ideas shown in Step 1.
 - **Shared auth building blocks** — `AuthFormContent` is the single source of form logic (email/password/Google, validation, success state). It is used by both the `/auth` page and the `AuthModal` overlay. `AuthField` and `AuthPasswordField` are reusable field primitives. `AuthMode` type is exported from `auth-form-content.tsx`.
 - **Auth Modal** — `src/components/auth/auth-modal.tsx` is a `"use client"` Radix UI Dialog. It reads `?modal=auth&mode=signin|signup` from the URL, opens over the landing page with a dark blurred overlay (`bg-black/65 backdrop-blur-[4px]`), and closes by clearing URL params. Sign In / Sign Up links on the landing page use `?modal=auth&mode=...` instead of navigating to `/auth`.
-- **Project allowance guard** — `src/lib/project-allowance.ts` resolves monthly project allowance from active `subscriptions` joined to `plans`, explicit plan fields/features when present, plan-name fallbacks, and the active subscription or calendar-month window. The guard runs during final intake project creation before any project row is inserted, then runs again under a short-lived `project_creation_locks` row immediately before insert to reduce concurrent project creation races. The private Supabase-only `Internal Dev` plan name resolves to unmetered project allowance for internal developer accounts; it is not a Stripe/customer-facing plan. Public pricing and checkout use explicit `plans.is_public` and `plans.checkout_enabled` flags instead of display-name filtering.
+- **Project allowance guard** — `src/lib/project-allowance.ts` resolves project allowance from active `subscriptions` joined to `plans`, explicit plan fields/features when present, plan-name fallbacks, and the active subscription or calendar-month window. Free users are treated as a one-project lifetime window, while paid users use the active subscription period or UTC calendar month. The guard runs during final intake project creation before any project row is inserted, then runs again under a short-lived `project_creation_locks` row immediately before insert to reduce concurrent project creation races. The private Supabase-only `Internal Dev` plan name resolves to unmetered project allowance for internal developer accounts; it is not a Stripe/customer-facing plan. Public pricing and checkout use explicit `plans.is_public` and `plans.checkout_enabled` flags instead of display-name filtering.
+- **Projects dashboard cards** — `/projects` loads owned projects and allowance status server-side, then renders `DashboardProjectCard` for last-edited labels, hover/focus prefetching of the workspace and competitive document payload, and paid-plan-only delete affordances. Free users see an upgrade prompt; paid users get a confirmation modal before calling `DELETE /api/projects/[id]`.
 - **Shared chat primitives** — the general chat and prompt chat surfaces now share composer, avatar, copy button, markdown body, load-more button, and thinking-state primitives plus reusable hooks for copy feedback, textarea autosize, and NDJSON stream consumption.
 - **Shared stacked tab navigation** — project document navigation and preferences navigation now use the same stacked tab-nav component so visual changes to the left-side tab pattern can be made in one place.
 - **Shared authenticated page shell** — dashboard-level pages such as Projects, Billing, and Preferences use `src/components/layout/app-page-shell.tsx` for consistent page width, responsive padding, heading hierarchy, and action placement.
@@ -402,13 +409,13 @@ src/
 │   │   ├── projects/[id]/status/route.ts # GET lightweight document count snapshot
 │   │   ├── projects/[id]/workspace/route.ts # GET lazy workspace document payload
 │   │   ├── projects/create-from-intake/route.ts # POST create project + onboarding queue
-│   │   ├── projects/[id]/route.ts     # PATCH/GET project details
+│   │   ├── projects/[id]/route.ts     # PATCH/GET project details; paid-plan DELETE
 │   │   └── stripe/
 │   │       ├── checkout/route.ts      # Create checkout session
 │   │       ├── portal/route.ts        # Customer portal
 │   │       └── webhook/route.ts       # Stripe webhooks
 │   ├── globals.css               # Global styles + Tailwind
-│   ├── page.tsx                  # Landing page with dynamic signup/waitlist CTA mode
+│   ├── page.tsx                  # Landing page with dynamic signup/waitlist CTA mode and hero artwork
 │   └── layout.tsx                # Root layout (fonts, metadata)
 │
 ├── components/                   # React components
@@ -934,7 +941,7 @@ npm test
 ```
 
 - Uses Node's built-in test runner via `tsx`
-- Current coverage includes library-level and selected component tests
+- Test discovery is recursive across `src/**/*.test.ts` and `src/**/*.test.tsx`
 
 ### Deployment
 
@@ -961,7 +968,7 @@ docker run -p 3000:3000 idea2app
   "build": "next build && node ./scripts/guard-webpack-chunky.mjs", // Production build + chunky bundle guard
   "start": "next start",                                  // Production server
   "lint": "eslint",                                       // Run linting
-  "test": "node --import tsx --test src/lib/*.test.ts src/components/analysis/*.test.tsx",
+  "test": "node --import tsx --test src/**/*.test.ts src/**/*.test.tsx",
   "guard:chunky": "node ./scripts/guard-webpack-chunky.mjs",
   "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs",
   "stitch:fixture": "node scripts/stitch-fetch-fixture.mjs"
@@ -1370,11 +1377,14 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout — verifies auth and renders `DashboardShell` with user profile and credits |
 | [src/components/layout/dashboard-shell.tsx](src/components/layout/dashboard-shell.tsx) | Authenticated dashboard shell for top-level dashboard, projects, billing, and preferences pages |
 | [src/components/AgentationWrapper.tsx](src/components/AgentationWrapper.tsx) | Local Agentation instrumentation wrapper mounted from the root layout |
+| [src/app/(dashboard)/projects/page.tsx](src/app/(dashboard)/projects/page.tsx) | Projects dashboard — loads owned projects plus allowance status and renders project cards with paid-plan delete gating |
+| [src/components/projects/dashboard-project-card.tsx](src/components/projects/dashboard-project-card.tsx) | Interactive project card with relative updated time, workspace prefetch/warmup, delete confirmation, and free-plan upgrade prompt |
 | [src/app/(dashboard)/projects/[projectRef]/page.tsx](src/app/(dashboard)/projects/[projectRef]/page.tsx) | Project page — parses slugged project refs, canonicalizes stale URLs, blocks deprecated prompt tabs, and passes the project shell to `ProjectWorkspace` |
-| [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details |
+| [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details and ownership-scoped paid-plan DELETE |
 | [src/app/api/projects/[id]/workspace/route.ts](src/app/api/projects/[id]/workspace/route.ts) | Lazy workspace payload endpoint for requested document collections, project metadata, credits, and structured-intake presence |
 | [src/app/api/projects/[id]/status/route.ts](src/app/api/projects/[id]/status/route.ts) | Lightweight document-count snapshot used by generation polling |
-| [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering |
+| [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering, authenticated-user redirect, and Figma-matched hero artwork |
+| [src/components/landing/hero-artwork.tsx](src/components/landing/hero-artwork.tsx) | Desktop-only layered raster hero artwork using assets from `public/landing/hero/` |
 | [src/components/landing/waitlist-form.tsx](src/components/landing/waitlist-form.tsx) | Public waitlist email capture form for the landing page |
 | [src/app/api/prompt-chat/route.ts](src/app/api/prompt-chat/route.ts) | Deprecated Prompt Chat endpoint; returns `410 Gone` |
 | [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation using in-house pipelines |
@@ -1408,6 +1418,8 @@ export const BASE_ACTION_TOKENS = {
 | [src/hooks/use-copy-feedback.ts](src/hooks/use-copy-feedback.ts) | Shared hook for clipboard copy feedback state |
 | [src/lib/credits.ts](src/lib/credits.ts) | Shared credit formatting and unlimited-credit helpers |
 | [src/lib/ndjson-stream.ts](src/lib/ndjson-stream.ts) | Shared NDJSON stream reader used by chat UIs |
+| [src/lib/project-allowance.ts](src/lib/project-allowance.ts) | Project allowance resolver for free lifetime limits, paid monthly/subscription windows, plan-field/features fallback, and unmetered internal plans |
+| [src/lib/project-allowance.test.ts](src/lib/project-allowance.test.ts) | Node test coverage for allowance windows, free lifetime limits, plan parsing, unlimited plans, and failure cases |
 | [src/lib/project-routing.ts](src/lib/project-routing.ts) | Slugged project URL helpers: `buildProjectRef`, `parseProjectRef`, and `getProjectUrl` |
 | [src/lib/workspace-tab-policy.ts](src/lib/workspace-tab-policy.ts) | Workspace tab resolution and deprecated prompt-tab redirect policy |
 | [src/lib/json-render/catalog.ts](src/lib/json-render/catalog.ts) | Allowed json-render component catalog and mockup system prompt context |

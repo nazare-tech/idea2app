@@ -6,6 +6,10 @@ import { ArrowRight, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  buildLandingAuthModalPath,
+  buildLandingIntakeNextPath,
+} from "@/lib/landing-intake-handoff"
 
 const SESSION_IDEA_KEY = "makercompass:intake:draft"
 
@@ -16,18 +20,18 @@ interface LandingIdeaCaptureProps {
 export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptureProps) {
   const router = useRouter()
   const [idea, setIdea] = useState("")
-  const [loadingMode, setLoadingMode] = useState<"signup" | null>(null)
+  const [loadingMode, setLoadingMode] = useState<"signin" | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const trimmedIdea = idea.trim()
   const hasIdea = trimmedIdea.length > 0
 
-  const startFlow = async (mode: "signup") => {
+  const startFlow = async () => {
     setError(null)
-    setLoadingMode(mode)
+    setLoadingMode("signin")
 
     try {
-      let nextPath = "/projects/new"
+      let nextPath = hasIdea ? buildLandingIntakeNextPath() : "/projects/new"
 
       if (hasIdea) {
         window.sessionStorage.setItem(SESSION_IDEA_KEY, idea)
@@ -39,7 +43,9 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
         const data = await response.json().catch(() => null)
 
         if (response.ok && data?.token) {
-          nextPath = `/projects/new?intake=${encodeURIComponent(data.token)}`
+          nextPath = buildLandingIntakeNextPath(data.token)
+        } else {
+          setError("We saved this idea in this browser tab. Sign in to continue; if it does not appear, paste it again.")
         }
       }
 
@@ -48,9 +54,19 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
         return
       }
 
-      router.push(`/?modal=auth&mode=${mode}&next=${encodeURIComponent(nextPath)}`, { scroll: false })
+      router.push(buildLandingAuthModalPath(nextPath), { scroll: false })
     } catch {
-      setError("We could not save the idea for auth handoff. Please try again.")
+      const nextPath = hasIdea ? buildLandingIntakeNextPath() : "/projects/new"
+      if (hasIdea) {
+        setError("We saved this idea in this browser tab. Sign in to continue; if it does not appear, paste it again.")
+      }
+
+      if (isAuthenticated) {
+        router.push(nextPath)
+        return
+      }
+
+      router.push(buildLandingAuthModalPath(nextPath), { scroll: false })
     } finally {
       setLoadingMode(null)
     }
@@ -79,13 +95,13 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
       <div className="mt-[14px] flex justify-end">
         <Button
           type="button"
-          onClick={() => startFlow("signup")}
+          onClick={startFlow}
           disabled={loadingMode !== null}
           className="h-11 rounded-md px-5 text-sm"
           data-testid="landing-idea-signup"
         >
-          {loadingMode === "signup" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {loadingMode === "signup" ? "Validating" : "Validate idea"}
+          {loadingMode === "signin" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {loadingMode === "signin" ? "Validating" : "Validate idea"}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
