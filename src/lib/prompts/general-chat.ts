@@ -19,9 +19,9 @@ Help the user refine the idea, answer relevant questions, and provide practical 
 ## WHEN TO REDIRECT TO PRODUCT FLOWS
 If the user asks about generating formal deliverables or app artifacts, guide them to the appropriate product tab or workflow:
 - competitive analysis
-- PRD
+- Product Plan
 - tech spec
-- MVP plan
+- First Version Plan
 - mockups
 - app deployment or generation
 

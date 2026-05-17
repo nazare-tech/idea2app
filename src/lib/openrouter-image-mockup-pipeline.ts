@@ -332,14 +332,14 @@ function buildImagePrompt({
 Design strategy:
 ${strategy}
 
-MVP plan context:
+First Version Plan context:
 ${mvpPlan.slice(0, 7000)}
 
 Output requirements:
 - Generate a single high-fidelity static app mockup image.
 - Use a desktop 16:9 composition unless the product clearly demands mobile-first.
-- Show the most important screen a founder would review before building the MVP.
-- Use realistic UI labels and concise product copy derived from the MVP plan.
+- Show the most important screen a founder would review before building the first version.
+- Use realistic UI labels and concise product copy derived from the First Version Plan.
 - Make it feel like a modern SaaS/product interface, not a marketing landing page.
 - Avoid unreadable filler text, fake browser chrome, watermarks, and code snippets.
 - Include enough visual detail to evaluate layout, hierarchy, and product direction.`

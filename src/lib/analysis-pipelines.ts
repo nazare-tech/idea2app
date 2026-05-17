@@ -190,7 +190,7 @@ export async function runCompetitiveAnalysis(
   return { content, source: "inhouse", model }
 }
 
-// ─── PRD Pipeline ────────────────────────────────────────────────────
+// ─── Product Plan Pipeline ───────────────────────────────────────────
 
 export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
@@ -199,7 +199,7 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
     ? `\n\nCompetitive and Gap analysis: ${trimDownstreamContext(input.competitiveAnalysis, "Competitive analysis")}`
     : ""
 
-  callbacks?.onStage?.("Writing product requirements...", 1, 2)
+  callbacks?.onStage?.("Writing product plan...", 1, 2)
   const completion = await openrouter.chat.completions.create({
     model,
     messages: [
@@ -216,13 +216,13 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
-  if (!content) throw new Error("No content returned from OpenRouter for PRD")
-  callbacks?.onStage?.("Finalizing PRD...", 2, 2)
+  if (!content) throw new Error("No content returned from OpenRouter for Product Plan")
+  callbacks?.onStage?.("Finalizing product plan...", 2, 2)
 
   return { content, source: "inhouse", model }
 }
 
-// ─── MVP Plan Pipeline ───────────────────────────────────────────────
+// ─── First Version Plan Pipeline ─────────────────────────────────────
 
 export async function runMVPPlan(
   input: MVPPlanInput,
@@ -230,9 +230,9 @@ export async function runMVPPlan(
 ): Promise<AnalysisResult> {
   const model = input.model || DEFAULT_MODEL
 
-  const prdContext = input.prd ? `\nPRD: ${trimDownstreamContext(input.prd, "PRD")}` : ""
+  const prdContext = input.prd ? `\nProduct Plan: ${trimDownstreamContext(input.prd, "Product Plan")}` : ""
 
-  callbacks?.onStage?.("Writing MVP roadmap...", 1, 2)
+  callbacks?.onStage?.("Writing first-version plan...", 1, 2)
   const completion = await openrouter.chat.completions.create({
     model,
     messages: [
@@ -246,8 +246,8 @@ export async function runMVPPlan(
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
-  if (!content) throw new Error("No content returned from OpenRouter for MVP Plan")
-  callbacks?.onStage?.("Finalizing MVP plan...", 2, 2)
+  if (!content) throw new Error("No content returned from OpenRouter for First Version Plan")
+  callbacks?.onStage?.("Finalizing first-version plan...", 2, 2)
 
   return { content, source: "inhouse", model }
 }

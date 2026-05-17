@@ -85,6 +85,42 @@ test("getPrdDocumentViewModel parses block-ready PRD content", () => {
   assert.equal(viewModel.structured.prioritization.table?.rows[0][0], "P0")
 })
 
+test("getPrdDocumentViewModel parses current Product Plan headings", () => {
+  const viewModel = getPrdDocumentViewModel(`# Product Plan: Maker Compass
+
+## I. Introduction
+
+### 1.2 Problem to Solve
+- Founders need clearer scope.
+
+### 1.3 Value Proposition
+Maker Compass turns ideas into build-ready plans.
+
+## III. Stakeholders
+
+### 3.2 Personas
+#### Solo Founder
+- Goal: ship faster.
+
+## IV. Features and Functionality
+
+### 4.1 What to Build
+- FR-001: Capture idea intake.
+
+### 4.2 Key User Flows
+As a founder, I want a plan.
+
+### 4.3 Build Order
+- P0: Idea intake.
+`)
+
+  assert.equal(viewModel.canRenderModules, true)
+  assert.match(viewModel.structured.userNeeds.items.join(" "), /clearer scope/)
+  assert.match(viewModel.structured.requirements.items.join(" "), /FR-001/)
+  assert.match(viewModel.structured.userStories.paragraphs.join(" "), /founder/)
+  assert.match(viewModel.structured.prioritization.items.join(" "), /Idea intake/)
+})
+
 test("getPrdDocumentViewModel keeps unlabeled persona fields in one profile block", () => {
   const viewModel = getPrdDocumentViewModel(`# PRD: ADR Helper
 

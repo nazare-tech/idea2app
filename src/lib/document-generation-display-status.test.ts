@@ -10,11 +10,11 @@ import type { QueueItem } from "./generate-all-helpers"
 
 const docTypes: DocumentType[] = ["competitive", "prd", "mvp", "mockups", "launch"]
 const labels: Partial<Record<DocumentType, string>> = {
-  competitive: "Competitive Research",
-  prd: "PRD",
-  mvp: "MVP Plan",
-  mockups: "Mockups",
-  launch: "Marketing",
+  competitive: "Market Research",
+  prd: "Product Plan",
+  mvp: "First Version Plan",
+  mockups: "Design Mockups",
+  launch: "Launch Plan",
 }
 
 function item(docType: DocumentType, status: QueueItem["status"], extra: Partial<QueueItem> = {}): QueueItem {
@@ -126,7 +126,7 @@ test("buildDocumentGenerationDisplayStates: local generation overrides stale que
 
   assert.equal(states.mockups.displayStatus, "generating")
   assert.equal(states.mockups.navStatus, "in_progress")
-  assert.equal(states.mockups.detail, "Mockups will appear here when the generated concepts are ready.")
+  assert.equal(states.mockups.detail, "Design mockups will appear here when the generated concepts are ready.")
 })
 
 test("buildDocumentGenerationDisplayStates: mockup option statuses are only attached when supplied", () => {

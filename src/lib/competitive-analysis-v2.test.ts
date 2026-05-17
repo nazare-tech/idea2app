@@ -16,35 +16,35 @@ function buildV2Fixture(
   const baseSections: Record<CompetitiveAnalysisV2SectionName, string> = {
     "Executive Summary":
       "This market is active and crowded, but the most valuable workflows are still fragmented for smaller teams.",
-    "Founder Verdict":
+    "Opportunity Verdict":
       "A focused entrant can win if it avoids the broad all-in-one category fight.\n\n- **Verdict**: Worth entering with a narrow wedge\n- **Why now**: Teams want automation tied to outcomes\n- **Biggest risk**: Fast incumbent copy",
     "Direct Competitors":
       "### [Competitor One](https://competitor-one.example) (conservative inference)\n- **Overview**: Strong incumbent\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Broad platform\n- **Strengths**: Distribution and integrations\n- **Key Edge**: Distribution + integrations\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market teams\n\n### Competitor Two\n- **Overview**: Specialist player\n- **Core Product/Service**: Single workflow tool\n- **Market Positioning**: Best-of-breed\n- **Strengths**: Fast setup\n- **Key Edge**: Fastest setup in category\n- **Limitations**: Narrow scope\n- **Pricing Model**: Usage-based\n- **Target Audience**: Operators",
-    "Feature and Workflow Matrix":
+    "Feature Comparison":
       "| Product | Setup | Collaboration | Automation |\n|---|---|---|---|\n| Competitor One | Medium | Strong | Medium |\n| Competitor Two | Fast | Weak | Strong |",
-    "Pricing and Packaging":
+    "Pricing Comparison":
       "| Product | Free Tier | Pricing Model | Packaging Motion |\n|---|---|---|---|\n| Competitor One | No | Seat-based | Sales-assisted |\n| Competitor Two | Yes | Usage-based | Self-serve |",
-    "Audience Segments":
+    "Best Customer Segments":
       "- SMB teams are under-served when they need collaboration without enterprise overhead.\n- Agencies value repeatable workflows more than brand depth.",
     "Competitive Landscape Overview":
       "- The category is saturated at the top end.\n- Buyers compare onboarding speed and automation depth more than raw feature count.",
     "Positioning Map":
       "- **X-axis**: Ease of setup\n- **Y-axis**: Team collaboration depth\n\n| Competitor | X Score | Y Score | Placement Rationale |\n|---|---:|---:|---|\n| Competitor One | 4 | 8 | Strong teamwork, slower setup |\n| Competitor Two | 8 | 3 | Fast setup, weaker collaboration |",
-    "GTM / Distribution Signals":
+    "How You'll Reach Customers":
       "- SEO captures high-intent traffic.\n- Integrations matter because workflow adjacency drives discovery.",
     "Gap Analysis":
       "- Buyers still lack a lightweight team-first tool.\n- Transparent pricing remains rare in this category.",
-    "Differentiation Wedges":
+    "Ways to Stand Out":
       "- Lead with transparent pricing.\n- Optimize for team workflows before feature breadth.",
-    "Moat and Defensibility":
+    "What Makes It Hard to Copy":
       "- Workflow lock-in can become meaningful if shared context and approvals are core.\n- Defensibility is weak without retained data or embedded integrations.",
     "SWOT Analysis":
       "| | Positive | Negative |\n|---|---|---|\n| **Internal** | Focused scope | Smaller brand |\n| **External** | Team whitespace | Incumbent copy risk |",
-    "Risks and Countermoves":
+    "Risks & Competitor Responses":
       "- Incumbents can add the wedge if demand becomes obvious.\n- Distribution will fail if the ROI story is vague.",
-    "MVP Wedge Recommendation":
+    "First Version Focus":
       "Launch a single workflow that proves weekly time savings.\n\n- **Target user**: SMB operator\n- **Core loop**: Shared execution workflow\n- **Upgrade trigger**: Collaboration and automation limits",
-    "Strategic Recommendations":
+    "Recommended Next Moves":
       "1. Validate willingness to pay with 10 buyer interviews.\n2. Ship one workflow before broadening the suite.\n3. Package the first paid tier around shared team value.",
   }
 
@@ -62,7 +62,7 @@ test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   assert.equal(parsed.isValid, true)
   assert.equal(parsed.headings.length, 16)
   assert.equal(parsed.competitorEntries.length, 2)
-  assert.match(parsed.sections["Pricing and Packaging"] ?? "", /Pricing Model/)
+  assert.match(parsed.sections["Pricing Comparison"] ?? "", /Pricing Model/)
   assert.equal(structured.directCompetitors[0]?.heading, "Competitor One")
   assert.equal(
     structured.directCompetitors[0]?.websiteUrl,
@@ -79,15 +79,35 @@ test("workspace section map keeps overview limited to summary and verdict", () =
     (heading) => COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP[heading] === "overview"
   )
 
-  assert.deepEqual(overviewSections, ["Executive Summary", "Founder Verdict"])
+  assert.deepEqual(overviewSections, ["Executive Summary", "Opportunity Verdict"])
   assert.equal(
-    COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP["Strategic Recommendations"],
+    COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP["Recommended Next Moves"],
     "market-research"
   )
   assert.equal(
-    COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP["GTM / Distribution Signals"],
+    COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP["How You'll Reach Customers"],
     "market-research"
   )
+})
+
+test("parseCompetitiveAnalysisV2 accepts legacy v2 heading aliases", () => {
+  const legacyHeadingContent = buildV2Fixture()
+    .replace("## Opportunity Verdict", "## Founder Verdict")
+    .replace("## Feature Comparison", "## Feature and Workflow Matrix")
+    .replace("## Pricing Comparison", "## Pricing and Packaging")
+    .replace("## Best Customer Segments", "## Audience Segments")
+    .replace("## How You'll Reach Customers", "## GTM / Distribution Signals")
+    .replace("## Ways to Stand Out", "## Differentiation Wedges")
+    .replace("## What Makes It Hard to Copy", "## Moat and Defensibility")
+    .replace("## Risks & Competitor Responses", "## Risks and Countermoves")
+    .replace("## First Version Focus", "## MVP Wedge Recommendation")
+    .replace("## Recommended Next Moves", "## Strategic Recommendations")
+  const parsed = parseCompetitiveAnalysisV2(legacyHeadingContent)
+  const structured = getCompetitiveAnalysisStructuredData(parsed)
+
+  assert.equal(parsed.isValid, true)
+  assert.match(parsed.sections["Opportunity Verdict"] ?? "", /Worth entering/)
+  assert.equal(structured.strategicRecommendations.length, 3)
 })
 
 test("legacy metadata defaults competitive research to markdown view", () => {
@@ -96,13 +116,13 @@ test("legacy metadata defaults competitive research to markdown view", () => {
   assert.equal(viewModel.documentVersion, "legacy")
   assert.equal(viewModel.defaultView, "markdown")
   assert.equal(viewModel.canRenderModules, false)
-  assert.match(viewModel.legacyNotice ?? "", /predates Competitive Research v2/i)
+  assert.match(viewModel.legacyNotice ?? "", /predates Market Research v2/i)
 })
 
 test("v2 metadata with malformed content falls back to markdown and warns", () => {
   const malformed = buildV2Fixture().replace(
-    "## GTM / Distribution Signals",
-    "## Go To Market"
+    "## How You'll Reach Customers",
+    "## Sales Plan"
   )
   const viewModel = getCompetitiveAnalysisViewModel(malformed, {
     document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
@@ -117,14 +137,14 @@ test("v2 metadata with malformed content falls back to markdown and warns", () =
 test("evidence-light fallback text still yields a valid v2 document", () => {
   const parsed = parseCompetitiveAnalysisV2(
     buildV2Fixture({
-      "Pricing and Packaging":
+      "Pricing Comparison":
         "Evidence was insufficient to verify detailed pricing for every competitor.\n\n| Product | Free Tier | Pricing Model | Packaging Motion |\n|---|---|---|---|\n| Competitor One | Unknown | Evidence was insufficient to verify | Evidence was insufficient to verify |",
-      "Moat and Defensibility":
+      "What Makes It Hard to Copy":
         "- Evidence was insufficient to verify strong proprietary defensibility.\n- Available competitor research suggests defensibility will depend on integration depth.",
     })
   )
 
   assert.equal(parsed.isValid, true)
-  assert.match(parsed.sections["Pricing and Packaging"] ?? "", /Evidence was insufficient/)
-  assert.match(parsed.sections["Moat and Defensibility"] ?? "", /Available competitor research suggests/)
+  assert.match(parsed.sections["Pricing Comparison"] ?? "", /Evidence was insufficient/)
+  assert.match(parsed.sections["What Makes It Hard to Copy"] ?? "", /Available competitor research suggests/)
 })

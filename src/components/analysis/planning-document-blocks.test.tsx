@@ -106,10 +106,10 @@ test("PrdDocumentBlocks renders organized module anchors", () => {
     <PrdDocumentBlocks content={prdFixture} projectId="project-1" />,
   )
 
-  assert.match(html, /Product Requirements/)
+  assert.match(html, /Product Plan/)
   assert.match(html, /-mx-5 border-b border-\[#E0E0E0\] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
   assert.match(html, /id="prd-user-needs"/)
-  assert.match(html, /User Needs \/ Problem/)
+  assert.match(html, /Problem to Solve/)
   assert.match(html, /Founder Fiona/)
   assert.match(html, /id="prd-prioritization"/)
   assert.match(html, /Technical Requirements/)
@@ -230,14 +230,14 @@ test("MvpPlanDocumentBlocks renders organized module anchors", () => {
     <MvpPlanDocumentBlocks content={mvpFixture} projectId="project-1" />,
   )
 
-  assert.match(html, /Minimum Viable Product/)
+  assert.match(html, /First Version Plan/)
   assert.match(html, /-mx-5 border-b border-\[#E0E0E0\] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
   assert.match(html, /id="mvp-wedge"/)
-  assert.match(html, /MVP Hypothesis/)
+  assert.match(html, /What We Need to Prove/)
   assert.match(html, /id="mvp-core-features"/)
   assert.match(html, /MVP-001: Block PRD rendering/)
   assert.match(html, /id="mvp-success-metrics"/)
-  assert.match(html, /Product Vision Summary/)
+  assert.match(html, /Product Vision/)
   assert.doesNotMatch(html, /border border-\[#E0E0E0\] bg-white px-6 py-5/)
   assert.doesNotMatch(html, /space-y-2 px-6 py-5/)
   assert.doesNotMatch(html, /px-6 pb-6/)

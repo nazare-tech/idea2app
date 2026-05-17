@@ -1427,7 +1427,7 @@ export function MockupRenderer({ content, className = "", projectName, projectId
           page={addFallbackProsConsIfMissing(
             {
               title: "Wireframe",
-              description: "Layout wireframe generated from the MVP plan",
+              description: "Layout wireframe generated from the First Version Plan",
               pros: [],
               cons: [],
               spec: patchSpec,

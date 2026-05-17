@@ -1,49 +1,74 @@
 export const COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION = "competitive-analysis-v2"
 export const COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION =
-  "competitive-analysis-v2-2026-03-20-fast-comparison"
+  "competitive-analysis-v2-2026-05-17-founder-friendly-headings"
 
 export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Executive Summary",
-  "Founder Verdict",
+  "Opportunity Verdict",
   "Direct Competitors",
-  "Feature and Workflow Matrix",
-  "Pricing and Packaging",
-  "Audience Segments",
+  "Feature Comparison",
+  "Pricing Comparison",
+  "Best Customer Segments",
   "Competitive Landscape Overview",
   "Positioning Map",
-  "GTM / Distribution Signals",
+  "How You'll Reach Customers",
   "Gap Analysis",
-  "Differentiation Wedges",
-  "Moat and Defensibility",
+  "Ways to Stand Out",
+  "What Makes It Hard to Copy",
   "SWOT Analysis",
-  "Risks and Countermoves",
-  "MVP Wedge Recommendation",
-  "Strategic Recommendations",
+  "Risks & Competitor Responses",
+  "First Version Focus",
+  "Recommended Next Moves",
 ] as const
 
 export type CompetitiveAnalysisWorkspaceSection = "overview" | "market-research"
 
 export const COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP = {
   "Executive Summary": "overview",
-  "Founder Verdict": "overview",
+  "Opportunity Verdict": "overview",
   "Direct Competitors": "market-research",
-  "Feature and Workflow Matrix": "market-research",
-  "Pricing and Packaging": "market-research",
-  "Audience Segments": "market-research",
+  "Feature Comparison": "market-research",
+  "Pricing Comparison": "market-research",
+  "Best Customer Segments": "market-research",
   "Competitive Landscape Overview": "market-research",
   "Positioning Map": "market-research",
-  "GTM / Distribution Signals": "market-research",
+  "How You'll Reach Customers": "market-research",
   "Gap Analysis": "market-research",
-  "Differentiation Wedges": "market-research",
-  "Moat and Defensibility": "market-research",
+  "Ways to Stand Out": "market-research",
+  "What Makes It Hard to Copy": "market-research",
   "SWOT Analysis": "market-research",
-  "Risks and Countermoves": "market-research",
-  "MVP Wedge Recommendation": "market-research",
-  "Strategic Recommendations": "market-research",
+  "Risks & Competitor Responses": "market-research",
+  "First Version Focus": "market-research",
+  "Recommended Next Moves": "market-research",
 } as const satisfies Record<
   CompetitiveAnalysisV2SectionName,
   CompetitiveAnalysisWorkspaceSection
 >
+
+const COMPETITIVE_ANALYSIS_V2_SECTION_ALIASES: Partial<
+  Record<CompetitiveAnalysisV2SectionName, readonly string[]>
+> = {
+  "Opportunity Verdict": ["Founder Verdict"],
+  "Feature Comparison": ["Feature and Workflow Matrix"],
+  "Pricing Comparison": ["Pricing and Packaging"],
+  "Best Customer Segments": ["Audience Segments"],
+  "How You'll Reach Customers": [
+    "GTM / Distribution Signals",
+    "Go To Market",
+    "Distribution Signals",
+  ],
+  "Ways to Stand Out": ["Differentiation Wedges"],
+  "What Makes It Hard to Copy": [
+    "Moat and Defensibility",
+    "Moat / Defensibility",
+  ],
+  "Risks & Competitor Responses": [
+    "Risks and Countermoves",
+    "Risks / Countermoves",
+  ],
+  "First Version Focus": ["MVP Wedge Recommendation", "MVP Wedge"],
+  "Recommended Next Moves": ["Strategic Recommendations"],
+}
 
 export const COMPETITOR_PROFILE_FIELD_ORDER = [
   "Overview",
@@ -288,6 +313,24 @@ function normalizeFieldLabel(label: string) {
     .trim()
 }
 
+const COMPETITIVE_ANALYSIS_SECTION_LOOKUP = new Map<
+  string,
+  CompetitiveAnalysisV2SectionName
+>(
+  COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.flatMap((heading) => [
+    [normalizeFieldLabel(heading), heading] as const,
+    ...((COMPETITIVE_ANALYSIS_V2_SECTION_ALIASES[heading] ?? []).map(
+      (alias) => [normalizeFieldLabel(alias), heading] as const,
+    )),
+  ]),
+)
+
+function resolveCompetitiveAnalysisSectionName(
+  heading: string,
+): CompetitiveAnalysisV2SectionName | null {
+  return COMPETITIVE_ANALYSIS_SECTION_LOOKUP.get(normalizeFieldLabel(heading)) ?? null
+}
+
 function sanitizeCompetitorHeading(heading: string) {
   return stripInlineMarkdown(heading)
     .replace(
@@ -434,44 +477,44 @@ export function getCompetitiveAnalysisStructuredData(
       getSection(sections, "Executive Summary")
     ),
     founderVerdict: {
-      paragraphs: parseParagraphBlocks(getSection(sections, "Founder Verdict")),
-      bullets: parseListItems(getSection(sections, "Founder Verdict")),
+      paragraphs: parseParagraphBlocks(getSection(sections, "Opportunity Verdict")),
+      bullets: parseListItems(getSection(sections, "Opportunity Verdict")),
     },
     directCompetitors: parseCompetitorProfiles(competitorEntries),
     featureMatrix: parseNarrativeTable(
-      getSection(sections, "Feature and Workflow Matrix")
+      getSection(sections, "Feature Comparison")
     ),
     pricingAndPackaging: parseNarrativeTable(
-      getSection(sections, "Pricing and Packaging")
+      getSection(sections, "Pricing Comparison")
     ),
-    audienceSegments: parseListItems(getSection(sections, "Audience Segments")),
+    audienceSegments: parseListItems(getSection(sections, "Best Customer Segments")),
     competitiveLandscapeOverview: parseListItems(
       getSection(sections, "Competitive Landscape Overview")
     ),
     positioningMap: parsePositioningMap(getSection(sections, "Positioning Map")),
-    gtmSignals: parseListItems(getSection(sections, "GTM / Distribution Signals")),
+    gtmSignals: parseListItems(getSection(sections, "How You'll Reach Customers")),
     gapAnalysis: parseListItems(getSection(sections, "Gap Analysis")),
     differentiationWedges: parseListItems(
-      getSection(sections, "Differentiation Wedges")
+      getSection(sections, "Ways to Stand Out")
     ),
     moatAndDefensibility: parseListItems(
-      getSection(sections, "Moat and Defensibility")
+      getSection(sections, "What Makes It Hard to Copy")
     ),
     swotAnalysis: {
       ...swotAnalysis,
       matrix: parseSwotMatrix(swotAnalysis.table),
     },
     risksAndCountermoves: parseListItems(
-      getSection(sections, "Risks and Countermoves")
+      getSection(sections, "Risks & Competitor Responses")
     ),
     mvpWedgeRecommendation: {
       paragraphs: parseParagraphBlocks(
-        getSection(sections, "MVP Wedge Recommendation")
+        getSection(sections, "First Version Focus")
       ),
-      bullets: parseListItems(getSection(sections, "MVP Wedge Recommendation")),
+      bullets: parseListItems(getSection(sections, "First Version Focus")),
     },
     strategicRecommendations: parseListItems(
-      getSection(sections, "Strategic Recommendations")
+      getSection(sections, "Recommended Next Moves")
     ),
   }
 }
@@ -514,21 +557,29 @@ export function parseCompetitiveAnalysisV2(
 ): CompetitiveAnalysisV2ParseResult {
   const h2Sections = extractSectionsByHeading(content, 2)
   const headings = h2Sections.map((section) => section.heading)
+  const canonicalHeadings = h2Sections.map((section) =>
+    resolveCompetitiveAnalysisSectionName(section.heading)
+  )
   const sections = Object.fromEntries(
-    h2Sections.map((section) => [section.heading, section.content])
+    h2Sections
+      .map((section, index) => {
+        const canonicalHeading = canonicalHeadings[index]
+        return canonicalHeading ? [canonicalHeading, section.content] : null
+      })
+      .filter((entry): entry is [CompetitiveAnalysisV2SectionName, string] => entry !== null)
   ) as Partial<Record<CompetitiveAnalysisV2SectionName, string>>
   const errors: string[] = []
 
   if (headings.length !== COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.length) {
-    errors.push("Competitive Research v2 requires all 16 H2 sections.")
+    errors.push("Market Research v2 requires all 16 H2 sections.")
   }
 
   const orderMatches = COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.every(
-    (heading, index) => headings[index] === heading
+    (heading, index) => canonicalHeadings[index] === heading
   )
 
   if (!orderMatches) {
-    errors.push("Competitive Research v2 headings are missing or out of order.")
+    errors.push("Market Research v2 headings are missing or out of order.")
   }
 
   for (const heading of COMPETITIVE_ANALYSIS_V2_SECTION_ORDER) {
@@ -565,7 +616,7 @@ export function getCompetitiveAnalysisViewModel(
       canRenderModules: false,
       defaultView: "markdown",
       legacyNotice:
-        "This version predates Competitive Research v2. Regenerate to upgrade modules.",
+        "This version predates Market Research v2. Regenerate to upgrade modules.",
       warning: null,
       parsed,
       structured,
@@ -579,7 +630,7 @@ export function getCompetitiveAnalysisViewModel(
       defaultView: "markdown",
       legacyNotice: null,
       warning:
-        "This Competitive Research v2 document no longer matches the required module schema. Review or fix it in Markdown to restore the designed modules view.",
+        "This Market Research v2 document no longer matches the required module schema. Review or fix it in Markdown to restore the designed modules view.",
       parsed,
       structured,
     }

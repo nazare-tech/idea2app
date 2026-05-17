@@ -28,7 +28,7 @@ Rules:
 - Set allowOther true only when a custom answer is genuinely useful.
 - Set allowOther false for every "multiple" question.
 - Chip labels must be short enough for UI chips, ideally 1-4 words.
-- Ask practical questions that make the downstream PRD, MVP plan, competitive research, and app generation more specific.`
+- Ask practical questions that make the downstream Product Plan, First Version Plan, market research, and app generation more specific.`
 
 const INTAKE_QUESTION_USER_PROMPT_TEMPLATE = `Create Step 2 intake questions for this Step 1 idea:
 

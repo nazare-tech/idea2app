@@ -125,7 +125,7 @@ export async function POST(request: Request) {
     const immediateChannels = channels.slice(0, 3)
     const scheduledChannels = channels.slice(3)
 
-    const content = `# Marketing Plan: ${name}
+    const content = `# Launch Plan: ${name}
 
 ## Brief Inputs
 - **Target audience:** ${brief.targetAudience}
@@ -139,7 +139,7 @@ export async function POST(request: Request) {
 - **Who it is for:** ${brief.targetAudience}
 - **Core value prop:** ${ideaForGeneration.slice(0, 240)}${ideaForGeneration.length > 240 ? "..." : ""}
 
-## Channel Priority
+## How You'll Reach Customers
 ### Immediate (${brief.launchWindow})
 ${immediateChannels.length > 0 ? immediateChannels.map((c, i) => `${i + 1}. ${c}`).join("\n") : "1. Product Hunt\n2. X\n3. Founder communities"}
 
@@ -153,7 +153,7 @@ ${scheduledChannels.length > 0 ? scheduledChannels.map((c, i) => `${i + 1}. ${c}
 
 > Adjust for stage: **${brief.stage}** and budget ceiling **${brief.budget}**.
 
-## Copy Pack (MVP)
+## Launch Copy
 ### One-liner
 ${name} helps ${brief.targetAudience} move from idea to launch faster with clearer execution and distribution planning.
 

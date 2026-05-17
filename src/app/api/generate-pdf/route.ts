@@ -190,7 +190,7 @@ async function loadOwnedDocument({
       .eq("id", documentId)
       .eq("project_id", projectId)
       .single()
-    return data ? toPdfDocument(data.content, project.name, "PRD") : null
+    return data ? toPdfDocument(data.content, project.name, "Product Plan") : null
   }
 
   if (documentType === "mvp" || documentType === "mvp-plan") {
@@ -200,7 +200,7 @@ async function loadOwnedDocument({
       .eq("id", documentId)
       .eq("project_id", projectId)
       .single()
-    return data ? toPdfDocument(data.content, project.name, "MVP Plan") : null
+    return data ? toPdfDocument(data.content, project.name, "First Version Plan") : null
   }
 
   if (documentType === "techspec" || documentType === "tech-spec") {
@@ -232,7 +232,7 @@ async function loadOwnedDocument({
       .eq("project_id", projectId)
       .eq("type", "launch-plan")
       .single()
-    return data ? toPdfDocument(data.content, project.name, "Marketing Plan") : null
+    return data ? toPdfDocument(data.content, project.name, "Launch Plan") : null
   }
 
   return null

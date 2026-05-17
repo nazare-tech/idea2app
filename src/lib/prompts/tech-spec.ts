@@ -1,6 +1,6 @@
 import { buildSecurePrompt } from "./sanitize"
 
-const TECH_SPEC_FROM_PRD_TEMPLATE = `PRD document: {{prdContent}}`
+const TECH_SPEC_FROM_PRD_TEMPLATE = `Product Plan document: {{prdContent}}`
 const TECH_SPEC_FROM_IDEA_TEMPLATE = `Product idea: {{idea}}\n\nProduct Name: {{name}}`
 
 export function buildTechSpecUserPrompt(
@@ -27,7 +27,7 @@ Produce ONE artifact only:
 - a Technical Specification document (tech-spec) in markdown format
 
 ## TRUSTED INPUT CONTEXT
-Extract from the provided PRD:
+Extract from the provided Product Plan:
 - feature requirements and user stories
 - success criteria and constraints
 - target users and workflows
@@ -61,7 +61,7 @@ P1 MUST form a viable technical MVP on its own.
 - performance requirements
 
 ## DO NOT INCLUDE
-- business justification (that belongs in the PRD)
+- business justification (that belongs in the Product Plan)
 - user-facing copy or content
 - marketing language
 - pricing decisions
@@ -108,7 +108,7 @@ Include diagrams where they add clarity.
 **Feature Branch**: \`[###-feature-name]\`
 **Created**: [DATE]
 **Status**: Draft
-**PRD Reference**: [PRD document name/link]
+**Product Plan Reference**: [Product Plan document name/link]
 
 ---
 
@@ -248,7 +248,7 @@ Include diagrams where they add clarity.
 ### 13.2 References
 
 ## FAILURE / MISSING-INFO BEHAVIOR
-- If the PRD leaves implementation details unresolved, surface them explicitly in the appropriate section and in Open Questions & Clarifications.
+- If the Product Plan leaves implementation details unresolved, surface them explicitly in the appropriate section and in Open Questions & Clarifications.
 - Do not fabricate certainty where the product definition is ambiguous.
 - When multiple architectures are possible, choose the most maintainable option that still satisfies the stated requirements.
 - Keep the spec internally consistent across architecture, APIs, data model, and testing.

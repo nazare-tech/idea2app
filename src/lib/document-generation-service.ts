@@ -157,7 +157,7 @@ export async function generateProjectDocument({
       .limit(1)
       .maybeSingle()
     const result = await generateOpenRouterImageMockup({
-      mvpPlan: mvpRow?.content ?? `MVP plan for ${name}: ${idea}`,
+      mvpPlan: mvpRow?.content ?? `First Version Plan for ${name}: ${idea}`,
       projectName: name,
       projectId,
     })
@@ -258,7 +258,7 @@ function buildLaunchPlanContent(
   const immediateChannels = channels.slice(0, 3)
   const scheduledChannels = channels.slice(3)
 
-  return `# Marketing Plan: ${name}
+  return `# Launch Plan: ${name}
 
 ## Brief Inputs
 - **Target audience:** ${brief.targetAudience}
@@ -272,7 +272,7 @@ function buildLaunchPlanContent(
 - **Who it is for:** ${brief.targetAudience}
 - **Core value prop:** ${idea.slice(0, 240)}${idea.length > 240 ? "..." : ""}
 
-## Channel Priority
+## How You'll Reach Customers
 ### Immediate (${brief.launchWindow})
 ${immediateChannels.length > 0 ? immediateChannels.map((c, i) => `${i + 1}. ${c}`).join("\n") : "1. Product Hunt\n2. X\n3. Founder communities"}
 
@@ -286,7 +286,7 @@ ${scheduledChannels.length > 0 ? scheduledChannels.map((c, i) => `${i + 1}. ${c}
 
 > Adjust for stage: **${brief.stage}** and budget ceiling **${brief.budget}**.
 
-## Copy Pack (MVP)
+## Launch Copy
 ### One-liner
 ${name} helps ${brief.targetAudience} move from idea to launch faster with clearer execution and distribution planning.
 

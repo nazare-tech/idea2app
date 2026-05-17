@@ -32,22 +32,22 @@ export interface PrdDocumentViewModel {
 
 const H3_ALIASES = {
   background: ["Background Information / Context", "Background", "Context"],
-  userNeeds: ["Problem Definition / User Needs", "User Needs", "Problem Definition"],
+  userNeeds: ["Problem to Solve", "Problem Definition / User Needs", "User Needs", "Problem Definition"],
   valueProposition: ["Purpose and Value Proposition", "Value Proposition"],
   vision: ["Vision"],
   objectives: ["Goals / Measurable Outcomes", "Goals", "Measurable Outcomes"],
   positioning: ["Product Positioning", "Positioning"],
   stakeholders: ["Stakeholder List", "Stakeholders"],
   personas: ["User Profiles / Personas", "Personas", "User Profiles"],
-  requirements: ["Requirements"],
-  userStories: ["User Stories / Use Cases", "User Stories", "Use Cases"],
-  prioritization: ["Prioritization"],
-  uiUx: ["UI/UX Design Specifications", "UI UX Design Specifications", "UI/UX"],
+  requirements: ["What to Build", "Requirements"],
+  userStories: ["Key User Flows", "User Stories / Use Cases", "User Stories", "Use Cases"],
+  prioritization: ["Build Order", "Build Order & Experience", "Prioritization"],
+  uiUx: ["Product Experience", "UI/UX Design Specifications", "UI UX Design Specifications", "UI/UX"],
   technical: ["Technical Requirements"],
 }
 
 function getTitle(content: string) {
-  return content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? "Product Requirements"
+  return content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? "Product Plan"
 }
 
 function getSection(sections: PlanningDocumentSection[], aliases: string[]) {
@@ -109,7 +109,7 @@ export function getPrdDocumentViewModel(content: string): PrdDocumentViewModel {
   if (usefulSectionCount < 3) {
     return {
       canRenderModules: false,
-      warning: "This PRD does not have enough recognizable sections for block rendering.",
+      warning: "This Product Plan does not have enough recognizable sections for block rendering.",
       structured,
     }
   }

@@ -89,6 +89,56 @@ test("getMvpPlanViewModel parses block-ready MVP content", () => {
   assert.match(viewModel.structured.successMetrics[0].content, /80%/)
 })
 
+test("getMvpPlanViewModel parses current First Version Plan headings", () => {
+  const viewModel = getMvpPlanViewModel(`# First Version Plan: Maker Compass
+
+## I. First Version Overview
+
+### 1.1 Product Vision
+Maker Compass helps founders move from idea to plan.
+
+### 1.2 What We Need to Prove
+Founders will complete a plan in one session.
+
+### 1.3 Problem to Prove
+Planning work is scattered.
+
+### 1.4 Target Customer
+- Solo founder
+
+### 1.5 What's In / Out
+| In Scope (First Version) | Out of Scope (Later) |
+|---|---|
+| Idea intake | Team approvals |
+
+## II. Core Features
+
+### 2.1 Feature Summary Table
+| ID | Feature | Priority |
+|---|---|---|
+| MVP-001 | Idea intake | P1 |
+
+### 2.2 Feature Details
+#### MVP-001: Idea intake
+Capture the founder's idea.
+
+## III. User Flow
+Founder submits an idea and reviews the plan.
+
+## VI. Timeline & Risks
+Week 1: Intake and generation.
+
+## VII. Success Signals & Validation
+- 70% complete the first plan.
+`)
+
+  assert.equal(viewModel.canRenderModules, true)
+  assert.equal(viewModel.structured.title, "First Version Plan: Maker Compass")
+  assert.equal(viewModel.structured.scope.table?.headers[0], "In Scope (First Version)")
+  assert.match(viewModel.structured.hypothesis.paragraphs.join(" "), /complete a plan/)
+  assert.match(viewModel.structured.successMetrics[0].content, /70%/)
+})
+
 test("getMvpPlanViewModel preserves direct feature details and direct H2 content", () => {
   const viewModel = getMvpPlanViewModel(`# MVP Plan: ADR Helper
 

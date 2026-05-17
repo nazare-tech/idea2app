@@ -31,12 +31,14 @@ const fastComparisonColumns = [
 function PencilCard({
   title,
   kicker,
+  description,
   dark = false,
   className,
   children,
 }: {
   title: string
   kicker?: string
+  description?: string
   dark?: boolean
   className?: string
   children: React.ReactNode
@@ -63,6 +65,11 @@ function PencilCard({
         >
           {title}
         </h2>
+        {description ? (
+          <p className="max-w-2xl ui-type-body-sm text-[#666666]">
+            {description}
+          </p>
+        ) : null}
       </div>
       <div className="pb-6">{children}</div>
     </section>
@@ -169,7 +176,7 @@ function FounderVerdictCard({
   verdict: CompetitiveAnalysisStructuredData["founderVerdict"]
 }) {
   return (
-    <PencilCard title="Founder Verdict" kicker="Founder Verdict" dark>
+    <PencilCard title="Opportunity Verdict" kicker="Opportunity Verdict" dark>
       <ParagraphStack paragraphs={verdict.paragraphs} dark={true} />
       <div className="pt-5">
         <NumberedList items={verdict.bullets} dark={true} />
@@ -445,13 +452,15 @@ function pointTone(point: CompetitiveAnalysisPositioningPoint, index: number) {
 
 function PositioningMap({
   title,
+  description,
   positioningMap,
 }: {
   title: string
+  description?: string
   positioningMap: CompetitiveAnalysisStructuredData["positioningMap"]
 }) {
   return (
-    <PencilCard title={title}>
+    <PencilCard title={title} description={description}>
       <div className="space-y-4">
         {(positioningMap.xAxis || positioningMap.yAxis) && (
           <div className="grid gap-2 md:grid-cols-2">
@@ -642,7 +651,7 @@ function MVPCard({
   bullets: string[]
 }) {
   return (
-    <PencilCard title="Launch with one sharp workflow, not a platform." kicker="MVP Wedge" dark>
+    <PencilCard title="First Version Focus" kicker="Build Scope" dark>
       <ParagraphStack paragraphs={paragraphs} dark={true} />
       <div className="pt-5">
         <NumberedList items={bullets} dark={true} />
@@ -670,7 +679,7 @@ function CompetitiveResearchPage({
                 "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
               )}
             >
-              Competitive Research
+              Market Research
             </h1>
             <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
               Compare positioning, pricing, workflow depth, distribution signals,
@@ -685,31 +694,32 @@ function CompetitiveResearchPage({
       <CompetitorProfiles competitors={structured.directCompetitors} />
 
       <CompactTableCard
-        title="Feature and Workflow Matrix"
+        title="Feature Comparison"
         paragraphs={structured.featureMatrix.paragraphs}
         headers={structured.featureMatrix.table?.headers ?? []}
         rows={structured.featureMatrix.table?.rows ?? []}
       />
 
       <PositioningMap
-        title="Competitive Positioning Map"
+        title="Positioning Map"
+        description="Where you fit in the market."
         positioningMap={structured.positioningMap}
       />
 
       <CompactTableCard
-        title="Pricing And Packaging"
+        title="Pricing Comparison"
         paragraphs={structured.pricingAndPackaging.paragraphs}
         headers={structured.pricingAndPackaging.table?.headers ?? []}
         rows={structured.pricingAndPackaging.table?.rows ?? []}
       />
 
       <SmallListCard
-        title="Audience Segments"
+        title="Best Customer Segments"
         items={structured.audienceSegments}
       />
 
       <SmallListCard
-        title="GTM / Distribution Signals"
+        title="How You'll Reach Customers"
         items={structured.gtmSignals}
         dark={true}
       />
@@ -717,13 +727,13 @@ function CompetitiveResearchPage({
       <SmallListCard title="Gap Analysis" items={structured.gapAnalysis} />
 
       <SmallListCard
-        title="Differentiation Wedges"
+        title="Ways to Stand Out"
         items={structured.differentiationWedges}
         dark={true}
       />
 
       <SmallListCard
-        title="Moat And Defensibility"
+        title="What Makes It Hard to Copy"
         items={structured.moatAndDefensibility}
       />
 
@@ -735,7 +745,7 @@ function CompetitiveResearchPage({
       />
 
       <SmallListCard
-        title="Risks And Countermoves"
+        title="Risks & Competitor Responses"
         items={structured.risksAndCountermoves}
       />
 
@@ -745,7 +755,7 @@ function CompetitiveResearchPage({
       />
 
       <SmallListCard
-        title="Strategic Recommendations"
+        title="Recommended Next Moves"
         items={structured.strategicRecommendations}
       />
     </div>
@@ -753,8 +763,8 @@ function CompetitiveResearchPage({
 }
 
 /**
- * Overview portion of competitive analysis: executive summary, founder verdict,
- * strategic recommendations. Used by ScrollableContent for the "Overview" section.
+ * Overview portion of competitive analysis: executive summary and opportunity
+ * verdict. Used by ScrollableContent for the "Overview" section.
  */
 export function CompetitiveOverviewSection({
   content,
@@ -788,7 +798,7 @@ export function CompetitiveOverviewSection({
             Overview
           </h1>
           <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-            Executive summary and founder verdict.
+            Executive summary and opportunity verdict.
           </p>
         </div>
       </header>
@@ -854,7 +864,7 @@ export function CompetitiveDetailSection({
 
       <div id="market-research-feature-matrix">
         <CompactTableCard
-          title="Feature and Workflow Matrix"
+          title="Feature Comparison"
           paragraphs={structured.featureMatrix.paragraphs}
           headers={structured.featureMatrix.table?.headers ?? []}
           rows={structured.featureMatrix.table?.rows ?? []}
@@ -863,14 +873,15 @@ export function CompetitiveDetailSection({
 
       <div id="market-research-positioning">
         <PositioningMap
-          title="Competitive Positioning Map"
+          title="Positioning Map"
+          description="Where you fit in the market."
           positioningMap={structured.positioningMap}
         />
       </div>
 
       <div id="market-research-pricing">
         <CompactTableCard
-          title="Pricing And Packaging"
+          title="Pricing Comparison"
           paragraphs={structured.pricingAndPackaging.paragraphs}
           headers={structured.pricingAndPackaging.table?.headers ?? []}
           rows={structured.pricingAndPackaging.table?.rows ?? []}
@@ -879,14 +890,14 @@ export function CompetitiveDetailSection({
 
       <div id="market-research-audience">
         <SmallListCard
-          title="Audience Segments"
+          title="Best Customer Segments"
           items={structured.audienceSegments}
         />
       </div>
 
       <div id="market-research-gtm">
         <SmallListCard
-          title="GTM / Distribution Signals"
+          title="How You'll Reach Customers"
           items={structured.gtmSignals}
           dark={true}
         />
@@ -898,7 +909,7 @@ export function CompetitiveDetailSection({
 
       <div id="market-research-differentiation">
         <SmallListCard
-          title="Differentiation Wedges"
+          title="Ways to Stand Out"
           items={structured.differentiationWedges}
           dark={true}
         />
@@ -906,7 +917,7 @@ export function CompetitiveDetailSection({
 
       <div id="market-research-moat">
         <SmallListCard
-          title="Moat And Defensibility"
+          title="What Makes It Hard to Copy"
           items={structured.moatAndDefensibility}
         />
       </div>
@@ -919,7 +930,7 @@ export function CompetitiveDetailSection({
           rows={structured.swotAnalysis.table?.rows ?? []}
         />
         <SmallListCard
-          title="Risks And Countermoves"
+          title="Risks & Competitor Responses"
           items={structured.risksAndCountermoves}
         />
       </div>
@@ -933,7 +944,7 @@ export function CompetitiveDetailSection({
 
       <div id="market-research-strategic-recommendations">
         <SmallListCard
-          title="Strategic Recommendations"
+          title="Recommended Next Moves"
           items={structured.strategicRecommendations}
         />
       </div>

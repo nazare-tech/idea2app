@@ -17,7 +17,7 @@ import {
 const OPTION_LABELS = ["A", "B", "C"]
 
 /**
- * Stage 1: Call OpenRouter (gemini-3.1-pro-preview) with the MVP plan to
+ * Stage 1: Call OpenRouter (gemini-3.1-pro-preview) with the First Version Plan to
  * produce a rich, product-specific design brief for Stitch.
  * Falls back to a minimal prompt if OpenRouter returns empty content.
  */
@@ -104,7 +104,7 @@ async function generateOptionDescriptions(
  * Generate 3 Stitch designs: 1 original + 2 variants using direct tool calls.
  *
  * Pipeline:
- *   Stage 1 — OpenRouter generates a rich Stitch design brief from the MVP plan
+ *   Stage 1 — OpenRouter generates a rich Stitch design brief from the First Version Plan
  *   Stage 2 — Stitch create_project
  *   Stage 3 — Stitch generate_screen_from_text (uses AI-generated brief)
  *   Stage 4 — Stitch generate_variants (2 variants)

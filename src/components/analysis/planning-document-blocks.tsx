@@ -612,9 +612,9 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Product Requirements"
-        title="PRD"
-        description="A structured requirements brief covering user needs, value, personas, scope, and implementation constraints."
+        eyebrow="Product Plan"
+        title="Product Plan"
+        description="A clear brief covering user needs, value, personas, scope, and implementation constraints."
       />
 
       {hasNarrativeContent(structured.background) || hasNarrativeContent(structured.vision) ? (
@@ -633,7 +633,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
       ) : null}
 
       <div id="prd-user-needs">
-        <PencilCard title="User Needs / Problem" kicker="Problem Definition">
+        <PencilCard title="Problem to Solve" kicker="Problem Definition">
           <NarrativeContent narrative={structured.userNeeds} />
         </PencilCard>
       </div>
@@ -689,27 +689,27 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
       </div>
 
       <div id="prd-requirements">
-        <PencilCard title="Requirements" kicker="Functional Scope">
+        <PencilCard title="What to Build" kicker="Functional Scope">
           <RequirementsContent narrative={structured.requirements} />
         </PencilCard>
       </div>
 
       <div id="prd-user-stories">
-        <PencilCard title="User Stories / Use Cases" kicker="Behavior">
+        <PencilCard title="Key User Flows" kicker="Behavior">
           <UserStoriesContent narrative={structured.userStories} />
         </PencilCard>
       </div>
 
       <div id="prd-prioritization" className="space-y-6">
         {hasNarrativeContent(structured.prioritization) ? (
-          <PencilCard title="Prioritization" kicker="Release Focus" dark>
+          <PencilCard title="Build Order" kicker="Release Focus" dark>
             <NarrativeContent narrative={structured.prioritization} dark />
           </PencilCard>
         ) : null}
         {hasNarrativeContent(structured.uiUx) || hasNarrativeContent(structured.technical) ? (
           <div className="grid gap-6 xl:grid-cols-2">
             {hasNarrativeContent(structured.uiUx) ? (
-              <PencilCard title="UI/UX Specifications" kicker="Experience">
+              <PencilCard title="Product Experience" kicker="Experience">
                 <NarrativeContent narrative={structured.uiUx} />
               </PencilCard>
             ) : null}
@@ -742,35 +742,35 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Minimum Viable Product"
-        title="MVP Plan"
-        description="A launchable scope plan focused on the validation hypothesis, core workflow, feature boundaries, and success signals."
+        eyebrow="First Version"
+        title="First Version Plan"
+        description="A launchable scope plan focused on what to prove, the core workflow, feature boundaries, and success signals."
       />
 
       <div id="mvp-wedge" className="space-y-6">
         {hasNarrativeContent(structured.overview) ? (
-          <PencilCard title="Product Vision Summary" kicker="Overview">
+          <PencilCard title="Product Vision" kicker="Overview">
             <NarrativeContent narrative={structured.overview} />
           </PencilCard>
         ) : null}
-        <PencilCard title="MVP Hypothesis" kicker="Validation Wedge" dark>
+        <PencilCard title="What We Need to Prove" kicker="Validation" dark>
           <NarrativeContent narrative={structured.hypothesis} dark />
         </PencilCard>
         <div className="grid gap-6 xl:grid-cols-2">
-          <PencilCard title="Problem Being Validated" kicker="Problem">
+          <PencilCard title="Problem to Prove" kicker="Problem">
             <NarrativeContent narrative={structured.problem} />
           </PencilCard>
-          <PencilCard title="Target User Segment" kicker="Audience">
+          <PencilCard title="Target Customer" kicker="Audience">
             <NarrativeContent narrative={structured.targetUser} />
           </PencilCard>
         </div>
-        <PencilCard title="Scope Boundaries" kicker="In / Out">
+        <PencilCard title="What's In / Out" kicker="Scope">
           <NarrativeContent narrative={structured.scope} />
         </PencilCard>
       </div>
 
       <div id="mvp-core-features" className="space-y-6">
-        <PencilCard title="Core MVP Features" kicker="Feature Set">
+        <PencilCard title="Core Features" kicker="Feature Set">
           <NarrativeContent narrative={structured.featureSummary} />
         </PencilCard>
         <div className="grid gap-6 xl:grid-cols-2">
@@ -809,7 +809,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
             key={`${section.heading}-${index}`}
             section={section}
             projectId={projectId}
-            title={index === 0 ? "Timeline / Risks" : section.heading}
+            title={index === 0 ? "Timeline & Risks" : section.heading}
             kicker="Delivery Plan"
             dark={index === 0}
           />
@@ -830,7 +830,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
             key={`${section.heading}-${index}`}
             section={section}
             projectId={projectId}
-            title={index === 0 ? "Success Metrics" : section.heading}
+            title={index === 0 ? "Success Signals" : section.heading}
             kicker="Validation"
           />
         ))}

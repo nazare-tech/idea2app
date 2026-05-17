@@ -449,7 +449,7 @@ export function ContentEditor({
             <div className="h-full overflow-y-auto p-3 sm:p-6 lg:p-10 relative">
               {documentType === "launch" && (
                 <div className="mx-auto mb-6 max-w-4xl rounded-lg border border-border bg-card p-4">
-                  <p className="mb-3 text-sm font-semibold">Marketing Brief (required)</p>
+                  <p className="mb-3 text-sm font-semibold">Launch Brief (required)</p>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <input
                       className="rounded-xl border border-border-strong bg-background px-3 py-2 text-sm outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"

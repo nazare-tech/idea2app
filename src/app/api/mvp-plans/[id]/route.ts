@@ -39,7 +39,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Content is required" }, { status: 400 })
     }
 
-    // Verify the MVP plan belongs to the user's project
+    // Verify the First Version Plan belongs to the user's project
     const { data: mvpPlan, error: fetchError } = await supabase
       .from("mvp_plans")
       .select("project_id, projects!inner(user_id)")
@@ -49,8 +49,8 @@ export async function PATCH(
     if (fetchError || !mvpPlan) {
       statusCode = 404
       errorType = "not_found"
-      errorMessage = "MVP plan not found"
-      return NextResponse.json({ error: "MVP plan not found" }, { status: 404 })
+      errorMessage = "First Version Plan not found"
+      return NextResponse.json({ error: "First Version Plan not found" }, { status: 404 })
     }
 
     projectId = mvpPlan.project_id
@@ -64,7 +64,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    // Update the MVP plan
+    // Update the First Version Plan
     const { data: updated, error: updateError } = await supabase
       .from("mvp_plans")
       .update({ content, updated_at: new Date().toISOString() })
@@ -73,12 +73,12 @@ export async function PATCH(
       .single()
 
     if (updateError) {
-      console.error("Error updating MVP plan:", updateError)
+      console.error("Error updating First Version Plan:", updateError)
       statusCode = 500
       errorType = "server_error"
       errorMessage = updateError.message
       return NextResponse.json(
-        { error: "Failed to update MVP plan" },
+        { error: "Failed to update First Version Plan" },
         { status: 500 }
       )
     }

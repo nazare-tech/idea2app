@@ -84,12 +84,12 @@ Please provide a detailed gap analysis including:
 
 Use markdown formatting with clear headings and bullet points.`
 
-const PRD_TEMPLATE = `You are an expert product manager. Create a comprehensive Product Requirements Document (PRD) for the following business idea.
+const PRD_TEMPLATE = `You are an expert product manager. Create a comprehensive Product Plan for the following business idea.
 
 **Product Name:** {{name}}
 **Product Idea:** {{idea}}
 
-Please create a detailed PRD including:
+Please create a detailed Product Plan including:
 
 ## Executive Summary
 - Product vision and mission
@@ -123,7 +123,7 @@ For each key feature:
 - Measurement methodology
 
 ## Release Plan
-- MVP scope
+- First-version scope
 - Phase 1, 2, 3 features
 - Timeline recommendations
 

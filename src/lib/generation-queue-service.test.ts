@@ -148,7 +148,7 @@ test("buildManualGenerationQueue: strips client authority fields", () => {
   ])
 
   assert.equal(queue.length, 1)
-  assert.equal(queue[0].label, "Competitive Research")
+  assert.equal(queue[0].label, "Market Research")
   assert.equal(queue[0].status, "pending")
   assert.equal(queue[0].source, "manual")
   assert.equal(queue[0].creditStatus, "unprocessed")

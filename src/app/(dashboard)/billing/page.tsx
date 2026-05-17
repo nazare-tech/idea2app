@@ -322,7 +322,7 @@ Token Balance
               { name: "Chat Message", action: "chat" },
               { name: "Competitive Analysis", action: "competitive-analysis" },
               { name: "Gap Analysis", action: "gap-analysis" },
-              { name: "PRD Document", action: "prd" },
+              { name: "Product Plan", action: "prd" },
               { name: "Technical Spec", action: "tech-spec" },
               { name: "Static Website", action: "app-static" },
               { name: "Dynamic Website", action: "app-dynamic" },
@@ -340,7 +340,7 @@ Token Balance
           </div>
 
           <div className="rounded-lg border border-border-subtle bg-white p-4 text-sm text-muted-foreground">
-            <p>Model multiplier examples (full report = Competitive + PRD + MVP + Tech Spec):</p>
+            <p>Model multiplier examples (full report = Market Research + Product Plan + First Version Plan + Tech Spec):</p>
             <ul className="mt-2 space-y-1">
               <li>Fast model: ~{fullReportFast} tokens</li>
               <li>Balanced model: ~{fullReportBalanced} tokens</li>

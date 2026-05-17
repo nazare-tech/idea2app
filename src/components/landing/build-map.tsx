@@ -17,21 +17,21 @@ const NODES: BuildMapNode[] = [
   },
   {
     key: "prd",
-    label: "2. PRD",
+    label: "2. Product Plan",
     description:
       "Translate your idea into a real product spec. User personas, requirements, and acceptance criteria so engineering knows exactly what to build.",
   },
   {
     key: "mockups",
-    label: "3. Mockups",
+    label: "3. Design Mockups",
     description:
       "Get multiple design directions for the same core screens. Compare them side-by-side and pick the one to ship before writing UI code.",
   },
   {
     key: "marketing",
-    label: "4. Marketing",
+    label: "4. Launch Plan",
     description:
-      "Plan your go-to-market in one place: audience segments, channel signals, and a budget to land your first customers.",
+      "Plan your launch in one place: best customer segments, channels, and a budget to land your first customers.",
   },
 ]
 

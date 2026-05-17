@@ -119,7 +119,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
     (analysis) => analysis.type === "competitive-analysis"
   )
 
-  // Get the latest PRD
+  // Get the latest Product Plan
   const latestPrd = prds?.[0]
 
   const runAnalysis = async (analysisType: string) => {
@@ -139,12 +139,12 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
         name: project.name,
       }
 
-      // Include competitive analysis for PRD generation
+      // Include market research for Product Plan generation
       if (analysisType === "prd" && latestCompetitiveAnalysis?.content) {
         payload.competitiveAnalysis = latestCompetitiveAnalysis.content
       }
 
-      // Include PRD for tech spec generation
+      // Include Product Plan for tech spec generation
       if (analysisType === "tech-spec" && latestPrd?.content) {
         payload.prd = latestPrd.content
       }
@@ -347,9 +347,9 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                   <FileText className="h-5 w-5 text-text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="ui-section-title">Product Requirements Document</CardTitle>
+                  <CardTitle className="ui-section-title">Product Plan</CardTitle>
                   <CardDescription>
-                    Generate a comprehensive PRD for your business idea
+                    Generate a clear brief for what to build
                   </CardDescription>
                 </div>
               </div>
@@ -373,7 +373,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
                       Generating...
                     </>
                   ) : (
-                    "Generate PRD"
+                    "Generate Product Plan"
                   )}
                 </Button>
               </div>
@@ -383,7 +383,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
 
         {showCompetitiveAnalysisBanner && !hasCompetitiveAnalysis && (
           <div className={uiStylePresets.analysisDependencyBanner}>
-            <span>You need to generate a Competitive Analysis first before creating a PRD.</span>
+            <span>You need to generate Market Research first before creating a Product Plan.</span>
             <Button
               variant="ghost"
               size="sm"
@@ -503,7 +503,7 @@ export function AnalysisPanel({ projectId, project, analyses, competitiveAnalyse
 
         {showPrdBanner && !hasPrd && (
           <div className={uiStylePresets.analysisDependencyBanner}>
-            <span>You need to generate a PRD first before creating a Technical Specification.</span>
+            <span>You need to generate a Product Plan first before creating a Technical Specification.</span>
             <Button
               variant="ghost"
               size="sm"

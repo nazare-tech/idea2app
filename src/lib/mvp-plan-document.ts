@@ -30,16 +30,16 @@ export interface MvpPlanViewModel {
 }
 
 const H3_ALIASES = {
-  overview: ["Product Vision Summary", "MVP Overview"],
-  hypothesis: ["MVP Hypothesis"],
-  problem: ["Problem Being Validated"],
-  targetUser: ["Target User Segment"],
-  scope: ["MVP Scope Boundaries", "Scope Boundaries"],
+  overview: ["Product Vision", "Product Vision Summary", "MVP Overview"],
+  hypothesis: ["What We Need to Prove", "MVP Hypothesis"],
+  problem: ["Problem to Prove", "Problem Being Validated"],
+  targetUser: ["Target Customer", "Target User Segment"],
+  scope: ["What's In / Out", "What Is In / Out", "MVP Scope Boundaries", "Scope Boundaries"],
   featureSummary: ["Feature Summary Table", "Feature Summary"],
 }
 
 function getTitle(content: string) {
-  return content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? "MVP Plan"
+  return content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? "First Version Plan"
 }
 
 function getSection(sections: PlanningDocumentSection[], aliases: string[]) {
@@ -69,7 +69,7 @@ function getFeatureDetails(
   h2Sections: PlanningDocumentSection[],
   h3Sections: PlanningDocumentSection[],
 ) {
-  const coreFeaturesContent = findH2Content(h2Sections, ["Core MVP Features"])
+  const coreFeaturesContent = findH2Content(h2Sections, ["Core Features", "Core MVP Features"])
   const nestedFeatures = extractSectionsByHeading(coreFeaturesContent, 4)
   if (nestedFeatures.length > 0) return nestedFeatures
 
@@ -90,18 +90,18 @@ export function getMvpPlanViewModel(content: string): MvpPlanViewModel {
     scope: parseNarrativeTable(getSection(h3Sections, H3_ALIASES.scope)),
     featureSummary: parseNarrativeTable(getSection(h3Sections, H3_ALIASES.featureSummary)),
     featureDetails,
-    userFlow: sectionsOrFallback(findH2Content(h2Sections, ["User Flow"]), "User Flow"),
+    userFlow: sectionsOrFallback(findH2Content(h2Sections, ["User Flow", "Key User Flow"]), "User Flow"),
     techStack: sectionsOrFallback(
       findH2Content(h2Sections, ["Tech Stack", "Tool Recommendations"]),
       "Tech Stack",
     ),
     timeline: sectionsOrFallback(
-      findH2Content(h2Sections, ["Timeline", "Milestones"]),
+      findH2Content(h2Sections, ["Timeline", "Timeline & Risks", "Milestones"]),
       "Timeline / Milestones",
     ),
     successMetrics: sectionsOrFallback(
-      findH2Content(h2Sections, ["Success Metrics", "Validation"]),
-      "Success Metrics",
+      findH2Content(h2Sections, ["Success Signals", "Success Metrics", "Validation"]),
+      "Success Signals",
     ),
     assumptions: sectionsOrFallback(
       findH2Content(h2Sections, ["Open Questions", "Assumptions"]),
@@ -126,7 +126,7 @@ export function getMvpPlanViewModel(content: string): MvpPlanViewModel {
   if (usefulSectionCount < 3) {
     return {
       canRenderModules: false,
-      warning: "This MVP plan does not have enough recognizable sections for block rendering.",
+      warning: "This First Version Plan does not have enough recognizable sections for block rendering.",
       structured,
     }
   }

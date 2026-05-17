@@ -36,7 +36,7 @@ test("mapOnboardingLoadingRows: exposes mockup progress", () => {
   })
 
   const mockups = rows.find((row) => row.key === "mockups")
-  assert.equal(mockups?.label, "Mockups")
+  assert.equal(mockups?.label, "Design mockups")
   assert.equal(mockups?.docType, "mockups")
   assert.equal(mockups?.status, "generating")
 })

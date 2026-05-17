@@ -153,7 +153,7 @@ export async function POST(request: Request) {
       })
     }
     if (prds?.length) {
-      context += `\n\n## PRD Summary:\n${prds[0].content.slice(0, 1500)}...\n`
+      context += `\n\n## Product Plan Summary:\n${prds[0].content.slice(0, 1500)}...\n`
     }
     if (techSpecs?.length) {
       context += `\n\n## Tech Spec Summary:\n${techSpecs[0].content.slice(0, 1500)}...\n`

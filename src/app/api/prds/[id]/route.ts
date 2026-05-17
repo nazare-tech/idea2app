@@ -39,7 +39,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Content is required" }, { status: 400 })
     }
 
-    // Verify the PRD belongs to the user's project
+    // Verify the Product Plan belongs to the user's project
     const { data: prd, error: fetchError } = await supabase
       .from("prds")
       .select("project_id, projects!inner(user_id)")
@@ -49,8 +49,8 @@ export async function PATCH(
     if (fetchError || !prd) {
       statusCode = 404
       errorType = "not_found"
-      errorMessage = "PRD not found"
-      return NextResponse.json({ error: "PRD not found" }, { status: 404 })
+      errorMessage = "Product Plan not found"
+      return NextResponse.json({ error: "Product Plan not found" }, { status: 404 })
     }
 
     projectId = prd.project_id
@@ -64,7 +64,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    // Update the PRD
+    // Update the Product Plan
     const { data: updated, error: updateError } = await supabase
       .from("prds")
       .update({ content, updated_at: new Date().toISOString() })
@@ -73,12 +73,12 @@ export async function PATCH(
       .single()
 
     if (updateError) {
-      console.error("Error updating PRD:", updateError)
+      console.error("Error updating Product Plan:", updateError)
       statusCode = 500
       errorType = "server_error"
       errorMessage = updateError.message
       return NextResponse.json(
-        { error: "Failed to update PRD" },
+        { error: "Failed to update Product Plan" },
         { status: 500 }
       )
     }

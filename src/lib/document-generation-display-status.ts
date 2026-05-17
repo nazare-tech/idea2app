@@ -49,8 +49,8 @@ const DEFAULT_MESSAGES: Record<DocumentType, string> = {
 
 const QUEUED_DETAILS: Partial<Record<DocumentType, string>> = {
   prd: "This will start automatically after market research is ready.",
-  mvp: "This will start automatically after PRD is ready.",
-  mockups: "Visual directions will generate after the MVP plan is ready.",
+  mvp: "This will start automatically after the Product Plan is ready.",
+  mockups: "Visual directions will generate after the First Version Plan is ready.",
   launch: "This will start automatically.",
 }
 
@@ -88,7 +88,7 @@ export function buildDocumentGenerationDisplayStates({
           label,
           message: queueItem?.stageMessage ?? DEFAULT_MESSAGES[docType],
           detail: docType === "mockups"
-            ? "Mockups will appear here when the generated concepts are ready."
+            ? "Design mockups will appear here when the generated concepts are ready."
             : "This may take a moment.",
           queueStatus,
           stageMessage: queueItem?.stageMessage,

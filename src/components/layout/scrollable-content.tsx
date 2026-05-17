@@ -457,7 +457,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
 
         <DocumentWrapper navKey="prd">
           {!renderDeferred ? (
-            <DocumentSkeleton label="PRD" />
+            <DocumentSkeleton label="Product Plan" />
           ) : prdData?.content ? (
             <PrdDocumentBlocks
               content={prdData.content}
@@ -465,20 +465,20 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             />
           ) : prdData?.displayState && prdData.displayState.displayStatus !== "idle" ? (
             <GenerationStatusModule
-              label="PRD"
+              label="Product Plan"
               state={prdData.displayState}
               onGenerateDocument={onGenerateDocument}
             />
           ) : prdData?.isGenerating || prdData?.isLoading ? (
-            <DocumentSkeleton label="PRD" mode={getSkeletonMode(prdData)} />
+            <DocumentSkeleton label="Product Plan" mode={getSkeletonMode(prdData)} />
           ) : (
-            <EmptyState label="PRD" />
+            <EmptyState label="Product Plan" />
           )}
         </DocumentWrapper>
 
         <DocumentWrapper navKey="mvp">
           {!renderDeferred ? (
-            <DocumentSkeleton label="MVP Plan" />
+            <DocumentSkeleton label="First Version Plan" />
           ) : mvpData?.content ? (
             <MvpPlanDocumentBlocks
               content={mvpData.content}
@@ -486,38 +486,38 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             />
           ) : mvpData?.displayState && mvpData.displayState.displayStatus !== "idle" ? (
             <GenerationStatusModule
-              label="MVP Plan"
+              label="First Version Plan"
               state={mvpData.displayState}
               onGenerateDocument={onGenerateDocument}
             />
           ) : mvpData?.isGenerating || mvpData?.isLoading ? (
-            <DocumentSkeleton label="MVP Plan" mode={getSkeletonMode(mvpData)} />
+            <DocumentSkeleton label="First Version Plan" mode={getSkeletonMode(mvpData)} />
           ) : (
-            <EmptyState label="MVP Plan" />
+            <EmptyState label="First Version Plan" />
           )}
         </DocumentWrapper>
 
         <DocumentWrapper navKey="mockups">
           {!renderDeferred ? (
-            <DocumentSkeleton label="Mockups" />
+            <DocumentSkeleton label="Design Mockups" />
           ) : mockupsData?.content ? (
             <MockupsSection content={mockupsData.content} projectId={projectId} />
           ) : mockupsData?.displayState && mockupsData.displayState.displayStatus !== "idle" ? (
             <GenerationStatusModule
-              label="Mockups"
+              label="Design Mockups"
               state={mockupsData.displayState}
               onGenerateDocument={onGenerateDocument}
             />
           ) : mockupsData?.isGenerating || mockupsData?.isLoading ? (
-            <DocumentSkeleton label="Mockups" mode={getSkeletonMode(mockupsData)} />
+            <DocumentSkeleton label="Design Mockups" mode={getSkeletonMode(mockupsData)} />
           ) : (
-            <EmptyState label="Mockups" />
+            <EmptyState label="Design Mockups" />
           )}
         </DocumentWrapper>
 
         <DocumentWrapper navKey="launch">
           {!renderDeferred ? (
-            <DocumentSkeleton label="Marketing" />
+            <DocumentSkeleton label="Launch Plan" />
           ) : launchData?.content ? (
             <MarkdownDocumentSection
               content={launchData.content}
@@ -526,14 +526,14 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             />
           ) : launchData?.displayState && launchData.displayState.displayStatus !== "idle" ? (
             <GenerationStatusModule
-              label="Marketing"
+              label="Launch Plan"
               state={launchData.displayState}
               onGenerateDocument={onGenerateDocument}
             />
           ) : launchData?.isGenerating || launchData?.isLoading ? (
-            <DocumentSkeleton label="Marketing" mode={getSkeletonMode(launchData)} />
+            <DocumentSkeleton label="Launch Plan" mode={getSkeletonMode(launchData)} />
           ) : (
-            <EmptyState label="Marketing" />
+            <EmptyState label="Launch Plan" />
           )}
         </DocumentWrapper>
       </div>

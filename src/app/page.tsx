@@ -34,8 +34,8 @@ const productOutputs = [
     eyebrow: "Product",
     title: "Turn the idea into a buildable plan.",
     description:
-      "Generate the PRD, MVP scope, acceptance criteria, mockup directions, and technical blueprint your coding agent needs to start cleanly.",
-    artifacts: ["PRD", "MVP plan", "Mockups", "Technical spec"],
+      "Generate the product plan, first-version scope, acceptance criteria, mockup directions, and technical blueprint your coding agent needs to start cleanly.",
+    artifacts: ["Product plan", "First version plan", "Design mockups", "Technical spec"],
   },
 ]
 
@@ -56,7 +56,7 @@ const steps = [
   },
   {
     number: "03",
-    body: "Create your MVP plan + mockups\nProduce actionable docs and compare design directions before implementation.",
+    body: "Create your first-version plan + mockups\nProduce actionable docs and compare design directions before implementation.",
   },
   {
     number: "04",
@@ -88,7 +88,7 @@ const plans = [
     points: [
       `${PRICING_CARD_TOKENS.starter} tokens monthly`,
       `~${Math.floor(PRICING_CARD_TOKENS.starter / fullReportTokensBalanced)} full reports (balanced)`,
-      "PRD + tech spec export",
+      "Product plan + tech spec export",
     ],
     tone: "light",
     cta: "Start Starter",
@@ -208,7 +208,7 @@ export default async function LandingPage() {
         </h1>
 
         <p className="mx-auto mt-6 max-w-[780px] text-center text-base leading-relaxed text-text-secondary sm:text-[20px]">
-          Turn one idea into research, MVP plan, and actionable mockups in minutes. No fluff. No &ldquo;where do I start?&rdquo; spiral.
+          Turn one idea into research, a first-version plan, and actionable mockups in minutes. No fluff. No &ldquo;where do I start?&rdquo; spiral.
         </p>
 
         {/* Hero CTA — waitlist input or sign-up buttons */}

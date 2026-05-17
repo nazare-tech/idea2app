@@ -749,11 +749,11 @@ export function ProjectWorkspace({
   const displayStates = buildDocumentGenerationDisplayStates({
     documentTypes: ["competitive", "prd", "mvp", "mockups", "launch"],
     labels: {
-      competitive: "Competitive Research",
-      prd: "PRD",
-      mvp: "MVP Plan",
-      mockups: "Mockups",
-      launch: "Marketing",
+      competitive: "Market Research",
+      prd: "Product Plan",
+      mvp: "First Version Plan",
+      mockups: "Design Mockups",
+      launch: "Launch Plan",
     },
     hasContent: {
       competitive: analyses.some(a => a.type === "competitive-analysis"),
@@ -1015,22 +1015,22 @@ export function ProjectWorkspace({
       case "prd":
         const hasCompetitiveAnalysis = analyses.some(a => a.type === "competitive-analysis")
         if (!hasCompetitiveAnalysis) {
-          return { canGenerate: false, reason: "Generate Competitive Research first" }
+          return { canGenerate: false, reason: "Generate Market Research first" }
         }
         return { canGenerate: true }
       case "mvp":
         if (prds.length === 0) {
-          return { canGenerate: false, reason: "Generate PRD first" }
+          return { canGenerate: false, reason: "Generate Product Plan first" }
         }
         return { canGenerate: true }
       case "mockups":
         if (mvpPlans.length === 0) {
-          return { canGenerate: false, reason: "Generate MVP Plan first" }
+          return { canGenerate: false, reason: "Generate First Version Plan first" }
         }
         return { canGenerate: true }
       case "techspec":
         if (prds.length === 0) {
-          return { canGenerate: false, reason: "Generate PRD first" }
+          return { canGenerate: false, reason: "Generate Product Plan first" }
         }
         return { canGenerate: true }
       case "deploy":
@@ -1103,13 +1103,13 @@ export function ProjectWorkspace({
           throw new Error("Unsupported document type")
       }
 
-      // Get competitive analysis for PRD generation
+      // Get market research for Product Plan generation
       const competitiveAnalysis = analyses.find(a => a.type === "competitive-analysis")
 
-      // Get latest PRD for MVP plan and tech spec generation
+      // Get latest Product Plan for First Version Plan and tech spec generation
       const latestPrd = prds[0]
 
-      // Get latest MVP plan for mockup generation
+      // Get latest First Version Plan for mockup generation
       const latestMvp = mvpPlans[0]
 
       const controller = new AbortController()
@@ -1268,7 +1268,7 @@ export function ProjectWorkspace({
 
         if (docType === "mockups") {
           if (!mvpContent) {
-            throw new Error("Generate MVP Plan first")
+            throw new Error("Generate First Version Plan first")
           }
 
           const optionLabels = ["A", "B", "C"] as const
