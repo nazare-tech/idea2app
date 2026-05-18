@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import {
   runCompetitiveAnalysis,
+  runLaunchPlan,
   runMVPPlan,
   runPRD,
   runTechSpec,
@@ -173,27 +174,26 @@ export async function generateProjectDocument({
       .single()
     return requireGeneratedOutput(data, error, "mockups")
   } else if (docType === "launch") {
-    const channels = [
-      "Product Hunt",
-      "X",
-      "Show HN",
-      "Founder communities",
-      "Email/waitlist",
-    ]
-    const content = buildLaunchPlanContent(name, idea, {
-      targetAudience: "Early adopters and tech-savvy users",
-      stage: "Pre-launch",
-      budget: "Bootstrap / Lean",
-      channels: channels.join(", "),
-      launchWindow: "Next 30 days",
+    const result = await runLaunchPlan({
+      idea,
+      name,
+      model: modelId,
+      brief: {
+        targetAudience: "Early adopters and tech-savvy users",
+        stage: "Pre-launch",
+        budget: "Bootstrap / Lean",
+        channels: "Product Hunt, X, Show HN, Founder communities, Email/waitlist",
+        launchWindow: "Next 30 days",
+      },
     })
+    const content = linkifyBareUrls(result.content)
     const { data, error } = await supabase
       .from("analyses")
       .insert({
         project_id: projectId,
         type: "launch-plan",
         content,
-        metadata: { source: "inhouse", generated_at: new Date().toISOString() },
+        metadata: { source: result.source, model: result.model, generated_at: new Date().toISOString() },
       })
       .select("id")
       .single()
@@ -238,69 +238,4 @@ function requireGeneratedOutput(
   }
 
   return { outputTable, outputId: data.id }
-}
-
-function buildLaunchPlanContent(
-  name: string,
-  idea: string,
-  brief: {
-    targetAudience: string
-    stage: string
-    budget: string
-    channels: string
-    launchWindow: string
-  },
-): string {
-  const channels = brief.channels
-    .split(",")
-    .map((c) => c.trim())
-    .filter(Boolean)
-  const immediateChannels = channels.slice(0, 3)
-  const scheduledChannels = channels.slice(3)
-
-  return `# Launch Plan: ${name}
-
-## Brief Inputs
-- **Target audience:** ${brief.targetAudience}
-- **Stage:** ${brief.stage}
-- **Budget:** ${brief.budget}
-- **Launch window:** ${brief.launchWindow}
-- **Channels:** ${channels.join(", ")}
-
-## Positioning
-- **Product:** ${name}
-- **Who it is for:** ${brief.targetAudience}
-- **Core value prop:** ${idea.slice(0, 240)}${idea.length > 240 ? "..." : ""}
-
-## How You'll Reach Customers
-### Immediate (${brief.launchWindow})
-${immediateChannels.length > 0 ? immediateChannels.map((c, i) => `${i + 1}. ${c}`).join("\n") : "1. Product Hunt\n2. X\n3. Founder communities"}
-
-### Scheduled (next cycle)
-${scheduledChannels.length > 0 ? scheduledChannels.map((c, i) => `${i + 1}. ${c}`).join("\n") : "1. Show HN\n2. Niche communities\n3. Email/waitlist"}
-
-### Budget Allocation (starting point)
-- **Content & creative:** 40%
-- **Distribution/boosts:** 40%
-- **Experiments:** 20%
-
-> Adjust for stage: **${brief.stage}** and budget ceiling **${brief.budget}**.
-
-## Launch Copy
-### One-liner
-${name} helps ${brief.targetAudience} move from idea to launch faster with clearer execution and distribution planning.
-
-### Short description
-${name} turns raw concepts into build-ready plans and practical marketing execution so teams can ship and validate faster.
-
-### Founder comment template
-We are launching ${name} for ${brief.targetAudience}. Current stage: ${brief.stage}. Looking for feedback on messaging clarity, channel fit, and activation friction.
-
-## 14-Day Execution Checklist
-- [ ] Finalize positioning + one-liner
-- [ ] Prepare launch assets (logo, screenshots, demo)
-- [ ] Ship first 3 channel posts
-- [ ] Track signups, activation, and channel-level conversion
-- [ ] Publish one iteration based on feedback within 48h
-`
 }

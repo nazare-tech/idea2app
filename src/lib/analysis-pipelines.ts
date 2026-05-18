@@ -1,7 +1,7 @@
 import OpenAI from "openai"
 import { searchCompetitors } from "./perplexity"
 import { extractCompetitorInfo, type TavilyExtractResult } from "./tavily"
-import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, PRD_SYSTEM_PROMPT, buildPRDUserPrompt, MVP_PLAN_SYSTEM_PROMPT, buildMVPPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt } from "@/lib/prompts"
+import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, PRD_SYSTEM_PROMPT, buildPRDUserPrompt, MVP_PLAN_SYSTEM_PROMPT, buildMVPPlanUserPrompt, LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt, type LaunchPlanBrief } from "@/lib/prompts"
 
 // Re-use the same OpenRouter client pattern from openrouter.ts
 const openrouter = new OpenAI({
@@ -46,6 +46,13 @@ export interface TechSpecInput {
   idea: string
   name: string
   prd?: string
+  model?: string
+}
+
+export interface LaunchPlanInput {
+  idea: string
+  name: string
+  brief: LaunchPlanBrief
   model?: string
 }
 
@@ -276,6 +283,34 @@ export async function runTechSpec(
 
   if (!content) throw new Error("No content returned from OpenRouter for Tech Spec")
   callbacks?.onStage?.("Finalizing tech spec...", 2, 2)
+
+  return { content, source: "inhouse", model }
+}
+
+// ─── Launch Plan Pipeline ───────────────────────────────────────────────────
+
+export async function runLaunchPlan(
+  input: LaunchPlanInput,
+  callbacks?: StreamCallbacks
+): Promise<AnalysisResult> {
+  const model = input.model || process.env.OPENROUTER_LAUNCH_PLAN_MODEL || "openai/gpt-5.4-mini"
+
+  callbacks?.onStage?.("Writing launch plan...", 1, 2)
+  const completion = await openrouter.chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: LAUNCH_PLAN_SYSTEM_PROMPT },
+      { role: "user", content: buildLaunchPlanUserPrompt(input.idea, input.name, input.brief) },
+    ],
+    max_tokens: DOWNSTREAM_DOCUMENT_MAX_TOKENS,
+    temperature: 0.35,
+    stream: callbacks?.onToken ? true : false,
+  }, { signal: AbortSignal.timeout(120_000) })
+
+  const content = await consumeStream(completion, callbacks?.onToken)
+
+  if (!content) throw new Error("No content returned from OpenRouter for Launch Plan")
+  callbacks?.onStage?.("Finalizing launch plan...", 2, 2)
 
   return { content, source: "inhouse", model }
 }

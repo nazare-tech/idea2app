@@ -383,6 +383,145 @@ export type Database = {
           },
         ]
       }
+      prompt_lab_experiments: {
+        Row: {
+          artifact_type: string
+          created_at: string
+          id: string
+          metadata: Json
+          model_id: string
+          project_id: string | null
+          system_prompt: string
+          title: string
+          updated_at: string
+          user_id: string
+          user_prompt: string
+        }
+        Insert: {
+          artifact_type: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          model_id: string
+          project_id?: string | null
+          system_prompt: string
+          title?: string
+          updated_at?: string
+          user_id: string
+          user_prompt: string
+        }
+        Update: {
+          artifact_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          model_id?: string
+          project_id?: string | null
+          system_prompt?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          user_prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_lab_experiments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_lab_experiments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_lab_runs: {
+        Row: {
+          artifact_type: string
+          created_at: string
+          error_message: string | null
+          experiment_id: string | null
+          id: string
+          input_snapshot: Json
+          model_id: string
+          notes: string | null
+          output_content: string | null
+          output_metadata: Json
+          project_id: string
+          status: string
+          system_prompt: string
+          title: string
+          updated_at: string
+          user_id: string
+          user_prompt: string
+        }
+        Insert: {
+          artifact_type: string
+          created_at?: string
+          error_message?: string | null
+          experiment_id?: string | null
+          id?: string
+          input_snapshot?: Json
+          model_id: string
+          notes?: string | null
+          output_content?: string | null
+          output_metadata?: Json
+          project_id: string
+          status?: string
+          system_prompt: string
+          title?: string
+          updated_at?: string
+          user_id: string
+          user_prompt: string
+        }
+        Update: {
+          artifact_type?: string
+          created_at?: string
+          error_message?: string | null
+          experiment_id?: string | null
+          id?: string
+          input_snapshot?: Json
+          model_id?: string
+          notes?: string | null
+          output_content?: string | null
+          output_metadata?: Json
+          project_id?: string
+          status?: string
+          system_prompt?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          user_prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_lab_runs_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_lab_experiments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_lab_runs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_lab_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mvp_plans: {
         Row: {
           content: string

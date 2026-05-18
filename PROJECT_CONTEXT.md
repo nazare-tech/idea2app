@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-05-17 (main branch landing hero + free-plan project gates)
+**Last Updated**: 2026-05-18 (dev Prompt Lab + AI Launch Plan)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -19,6 +19,8 @@
 - **Product Plan Generation**: Complete Product Plans with user personas, features, and release plans. Completed Product Plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. Unlabeled persona/profile bullets are preserved as one target-user profile block so demographic, background, goals, and pain-point fields do not split into fake personas. The renderer cleans legacy horizontal rules/blockquotes, presents labeled bullets as compact prose rows, stacks requirements vertically by functional/non-functional/integration groups, and renders key user flows as story cards with acceptance criteria. The Product Plan prompt now uses clearer headings such as Problem to Solve, What to Build, Key User Flows, Build Order, and Product Experience.
 - **First Version Plan Generation**: Strategic first-release development plan based on the Product Plan. Completed First Version Plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. Direct H2/H3 content is preserved as fallback section cards when a generated First Version Plan lacks deeper nested headings.
 - **Mockup Generation**: Three UI mockup alternatives generated from First Version Plans. The default path uses OpenRouter image-output model `openai/gpt-5.4-image-2`, configurable with `OPENROUTER_MOCKUP_IMAGE_MODEL`; images are stored in private Supabase Storage and rendered through an authenticated image proxy. On Vercel Hobby, manual workspace mockup generation runs separate option-level invocations for Options A/B/C one after another, then finalizes one normal mockup document after all three images are saved. Each OpenRouter image call defaults to a `285s` timeout inside its own `300s` Hobby function envelope. This can make the full three-option run take roughly 15 minutes when the provider takes close to the timeout for each high-fidelity image; sequential generation is intentionally safer on Hobby because one slow option no longer causes all three browser requests to fail together. Manual retries persist the option run id in localStorage and call `/api/mockups/recover-options` before spending more OpenRouter credits, so images that reached Supabase Storage can be finalized even if the browser or route timed out. Local/no-credit fixture testing is available through `/api/mockups/fixture` when running outside production, or in production only with `ENABLE_MOCKUP_FIXTURE_GENERATION=true`. The renderer also supports json-render specs/patches and legacy Stitch HTML for older saved mockups.
+- **Launch Plan Generation**: Launch Plans are now generated through an AI-backed Launch Plan prompt module instead of a deterministic template. The route keeps the existing marketing-brief input contract and still saves markdown `launch-plan` rows in `analyses`.
+- **Dev Prompt Lab**: Local-development-only workbench at `/dev/prompt-lab` for iterating artifact system/user prompts against existing projects without creating workflow artifacts, consuming credits, or starting queues. It supports Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan; stores prompt drafts/runs in Supabase `prompt_lab_experiments` and `prompt_lab_runs`; uses existing workspace renderers for artifact-accurate preview; and includes a lab-only renderer playground for experiments that do not affect production workspace rendering.
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **Landing Page + Waitlist Gate**: The marketing landing page now switches between standard signup CTAs and a public waitlist flow once the early-access user cap is reached. Features:
   - Dynamic CTA mode based on current `profiles` count
@@ -511,6 +513,7 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | `competitive-analysis.ts` | `COMPETITIVE_ANALYSIS_SYSTEM_PROMPT`, `buildCompetitiveAnalysisUserPrompt()` | `analysis-pipelines.ts` |
 | `prd.ts` | `PRD_SYSTEM_PROMPT` | `analysis-pipelines.ts` |
 | `mvp-plan.ts` | `MVP_PLAN_SYSTEM_PROMPT` | `analysis-pipelines.ts` |
+| `launch-plan.ts` | `LAUNCH_PLAN_SYSTEM_PROMPT`, `buildLaunchPlanUserPrompt()` | `analysis-pipelines.ts`, Prompt Lab |
 | `tech-spec.ts` | `TECH_SPEC_SYSTEM_PROMPT` | `analysis-pipelines.ts` |
 | `prompt-chat.ts` | `PROMPT_CHAT_SYSTEM`, `IDEA_SUMMARY_PROMPT`, `POST_SUMMARY_SYSTEM` | `prompt-chat-config.ts`, `api/prompt-chat/` |
 | `general-chat.ts` | `buildGeneralChatSystemPrompt()` | `openrouter.ts` |
@@ -1014,6 +1017,14 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `project_id`, `content`, `model_used`, `metadata`, `created_at`, `updated_at`
   - RLS: Users can only access mockups from their projects
 
+- **prompt_lab_experiments**: Local-dev Prompt Lab saved prompt drafts
+  - Fields: `id`, `user_id`, `project_id`, `artifact_type`, `title`, `system_prompt`, `user_prompt`, `model_id`, `metadata`, timestamps
+  - RLS: Users can only access their own Prompt Lab drafts; project-scoped writes must target their own projects
+
+- **prompt_lab_runs**: Local-dev Prompt Lab isolated generation history
+  - Fields: `id`, `experiment_id`, `user_id`, `project_id`, `artifact_type`, `title`, `model_id`, prompt snapshots, `input_snapshot`, `output_content`, `output_metadata`, `status`, `error_message`, `notes`, timestamps
+  - RLS: Users can only access their own Prompt Lab runs; rows are separate from canonical `analyses`, `prds`, `mvp_plans`, `mockups`, and queue tables
+
 - **tech_specs**: Technical specifications
   - Fields: `id`, `project_id`, `content`, `created_at`
   - RLS: Users can only access tech specs from their projects
@@ -1120,6 +1131,24 @@ docker run -p 3000:3000 idea2app
 - **GET /api/mockups/image**: Proxy stored OpenRouter mockup images through the server
   - Query: `projectId`, `path`, optional `mockupId`
   - Requires auth, verifies the storage path belongs to a saved mockup for a project owned by the current user, then streams the private Supabase Storage image
+
+### Dev Prompt Lab
+- **GET /dev/prompt-lab**: Local-development-only authenticated prompt iteration workbench. It is unavailable when `NODE_ENV=production` or `VERCEL_ENV=production`.
+
+- **GET /api/dev/prompt-lab/context**: Load owned project context, latest upstream artifacts, and default editable system/user prompts for one artifact.
+  - Query: `projectId`, `artifact`, optional `mockupOption`
+  - Does not create artifacts, consume credits, or start queues
+
+- **POST /api/dev/prompt-lab/run**: Run one artifact with editable prompts and model override, then save the isolated result to `prompt_lab_runs`.
+  - Body: `{ projectId, artifact, title?, notes?, systemPrompt, userPrompt, model, mockupOption? }`
+  - Supports single-option mockup image generation for Option A/B/C
+  - Never writes to canonical artifact tables or generation queues
+
+- **GET/POST /api/dev/prompt-lab/drafts**: List and save Prompt Lab prompt drafts in `prompt_lab_experiments`.
+
+- **GET /api/dev/prompt-lab/runs**: List recent isolated Prompt Lab runs for an owned project/artifact pair.
+
+- **GET /api/dev/prompt-lab/mockup-image**: Local-dev-only proxy for private Supabase Storage images created by Prompt Lab mockup runs. It verifies the storage path appears in an owned `prompt_lab_runs.output_content` row.
 
 ### Generate All
 
@@ -1383,6 +1412,13 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details and ownership-scoped paid-plan DELETE |
 | [src/app/api/projects/[id]/workspace/route.ts](src/app/api/projects/[id]/workspace/route.ts) | Lazy workspace payload endpoint for requested document collections, project metadata, credits, and structured-intake presence |
 | [src/app/api/projects/[id]/status/route.ts](src/app/api/projects/[id]/status/route.ts) | Lightweight document-count snapshot used by generation polling |
+| [src/app/dev/prompt-lab/page.tsx](src/app/dev/prompt-lab/page.tsx) | Local-development-only Prompt Lab page for isolated prompt iteration against existing projects |
+| [src/components/dev/prompt-lab-client.tsx](src/components/dev/prompt-lab-client.tsx) | Prompt Lab workbench UI with project/artifact selectors, prompt editors, saved drafts/runs, workspace-style preview, and lab-only renderer playground |
+| [src/app/api/dev/prompt-lab/context/route.ts](src/app/api/dev/prompt-lab/context/route.ts) | Dev-only endpoint that loads owned project context, upstream artifacts, and default prompts for one artifact |
+| [src/app/api/dev/prompt-lab/run/route.ts](src/app/api/dev/prompt-lab/run/route.ts) | Dev-only isolated generation endpoint that saves Prompt Lab run history without writing canonical artifacts |
+| [src/app/api/dev/prompt-lab/drafts/route.ts](src/app/api/dev/prompt-lab/drafts/route.ts) | Dev-only endpoint for listing and saving Prompt Lab prompt drafts |
+| [src/app/api/dev/prompt-lab/runs/route.ts](src/app/api/dev/prompt-lab/runs/route.ts) | Dev-only endpoint for listing recent Prompt Lab runs |
+| [src/app/api/dev/prompt-lab/mockup-image/route.ts](src/app/api/dev/prompt-lab/mockup-image/route.ts) | Dev-only proxy for private mockup images associated with Prompt Lab runs |
 | [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering, authenticated-user redirect, and Figma-matched hero artwork |
 | [src/components/landing/hero-artwork.tsx](src/components/landing/hero-artwork.tsx) | Desktop-only layered raster hero artwork using assets from `public/landing/hero/` |
 | [src/components/landing/waitlist-form.tsx](src/components/landing/waitlist-form.tsx) | Public waitlist email capture form for the landing page |
@@ -1424,6 +1460,9 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/workspace-tab-policy.ts](src/lib/workspace-tab-policy.ts) | Workspace tab resolution and deprecated prompt-tab redirect policy |
 | [src/lib/json-render/catalog.ts](src/lib/json-render/catalog.ts) | Allowed json-render component catalog and mockup system prompt context |
 | [src/lib/json-render/registry.tsx](src/lib/json-render/registry.tsx) | json-render registry backed by `@json-render/shadcn` components |
+| [src/lib/prompt-lab.ts](src/lib/prompt-lab.ts) | Server-side Prompt Lab prompt composition, local-dev guard, isolated text generation, and single-option mockup run helper |
+| [src/lib/prompt-lab-shared.ts](src/lib/prompt-lab-shared.ts) | Client-safe Prompt Lab artifact labels and default launch brief constants |
+| [src/lib/prompts/launch-plan.ts](src/lib/prompts/launch-plan.ts) | AI Launch Plan system prompt and secure user prompt builder |
 | [src/app/api/analyses/[id]/route.ts](src/app/api/analyses/[id]/route.ts) | PATCH endpoint to update analysis content |
 | [src/app/api/prds/[id]/route.ts](src/app/api/prds/[id]/route.ts) | PATCH endpoint to update PRD content |
 | [src/app/api/mvp-plans/[id]/route.ts](src/app/api/mvp-plans/[id]/route.ts) | PATCH endpoint to update First Version Plan content |
@@ -1471,6 +1510,7 @@ export const BASE_ACTION_TOKENS = {
 | [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
 | [supabase/migrations/20260425001000_create_mockups_table.sql](supabase/migrations/20260425001000_create_mockups_table.sql) | Supabase migration for mockups table |
 | [supabase/migrations/20260425004000_security_hardening_followups.sql](supabase/migrations/20260425004000_security_hardening_followups.sql) | Security follow-up migration: service-role-only `refund_credits`, Stripe event idempotency table, and project creation locks. |
+| [supabase/migrations/20260518000000_create_prompt_lab_tables.sql](supabase/migrations/20260518000000_create_prompt_lab_tables.sql) | Supabase migration for Prompt Lab drafts/runs with user-scoped RLS. |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Deprecated setup guide for the removed Prompt tab AI chat feature |
 
 ---

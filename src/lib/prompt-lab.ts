@@ -1,0 +1,247 @@
+import OpenAI from "openai"
+
+import {
+  COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+  LAUNCH_PLAN_SYSTEM_PROMPT,
+  MVP_PLAN_SYSTEM_PROMPT,
+  PRD_SYSTEM_PROMPT,
+  buildCompetitiveAnalysisUserPrompt,
+  buildLaunchPlanUserPrompt,
+  buildMVPPlanUserPrompt,
+  buildPRDUserPrompt,
+  type LaunchPlanBrief,
+} from "@/lib/prompts"
+import {
+  PROMPT_LAB_ARTIFACT_LABELS,
+  PROMPT_LAB_ARTIFACTS,
+  PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
+  type PromptLabArtifact,
+} from "@/lib/prompt-lab-shared"
+import {
+  OPENROUTER_IMAGE_MOCKUP_SOURCE,
+  buildMockupImageProxyUrl,
+  type OpenRouterImageMockupContent,
+} from "@/lib/openrouter-image-mockup-format"
+import {
+  OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
+  OPENROUTER_MOCKUP_OPTION_CONFIGS,
+  buildOpenRouterMockupImagePrompt,
+  generateOpenRouterImageMockupOption,
+  getOpenRouterMockupImageModel,
+  type OpenRouterMockupOptionLabel,
+} from "@/lib/openrouter-image-mockup-pipeline"
+
+export {
+  PROMPT_LAB_ARTIFACT_LABELS,
+  PROMPT_LAB_ARTIFACTS,
+  PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
+  type PromptLabArtifact,
+}
+
+export const PROMPT_LAB_DEFAULT_MODELS: Record<PromptLabArtifact, string> = {
+  competitive: "google/gemini-3.1-pro-preview",
+  prd: "anthropic/claude-sonnet-4-6",
+  mvp: "anthropic/claude-sonnet-4-6",
+  mockups: getOpenRouterMockupImageModel(),
+  launch: "openai/gpt-5.4-mini",
+}
+
+export interface PromptLabDefaultPromptInput {
+  artifact: PromptLabArtifact
+  idea: string
+  name: string
+  competitiveAnalysis?: string | null
+  prd?: string | null
+  mvpPlan?: string | null
+  launchBrief?: LaunchPlanBrief
+  mockupOption?: OpenRouterMockupOptionLabel
+}
+
+export interface PromptLabPromptPair {
+  systemPrompt: string
+  userPrompt: string
+  model: string
+}
+
+export interface PromptLabRunInput {
+  artifact: PromptLabArtifact
+  projectId: string
+  projectName: string
+  systemPrompt: string
+  userPrompt: string
+  model: string
+  mockupOption?: OpenRouterMockupOptionLabel
+}
+
+export interface PromptLabRunResult {
+  content: string
+  model: string
+  source: "inhouse" | typeof OPENROUTER_IMAGE_MOCKUP_SOURCE
+  metadata: Record<string, unknown>
+}
+
+export function isPromptLabEnabled(
+  env: Partial<Pick<NodeJS.ProcessEnv, "NODE_ENV" | "VERCEL_ENV">> = process.env,
+) {
+  return env.NODE_ENV !== "production" && env.VERCEL_ENV !== "production"
+}
+
+export function isPromptLabArtifact(value: unknown): value is PromptLabArtifact {
+  return typeof value === "string" && PROMPT_LAB_ARTIFACTS.includes(value as PromptLabArtifact)
+}
+
+export function isMockupOptionLabel(value: unknown): value is OpenRouterMockupOptionLabel {
+  return typeof value === "string" && OPENROUTER_MOCKUP_OPTION_CONFIGS.some((config) => config.label === value)
+}
+
+export function buildPromptLabDefaultPrompts({
+  artifact,
+  idea,
+  name,
+  competitiveAnalysis,
+  prd,
+  mvpPlan,
+  launchBrief = PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
+  mockupOption = "A",
+}: PromptLabDefaultPromptInput): PromptLabPromptPair {
+  if (artifact === "competitive") {
+    return {
+      systemPrompt: COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+      userPrompt: buildCompetitiveAnalysisUserPrompt(
+        idea,
+        name,
+        "No live competitor search is included in Prompt Lab defaults. Add competitor notes here if this run should test evidence-grounded Market Research output.",
+      ),
+      model: PROMPT_LAB_DEFAULT_MODELS.competitive,
+    }
+  }
+
+  if (artifact === "prd") {
+    return {
+      systemPrompt: PRD_SYSTEM_PROMPT,
+      userPrompt: buildPRDUserPrompt(
+        idea,
+        name,
+        competitiveAnalysis
+          ? `\n\nCompetitive and Gap analysis: ${competitiveAnalysis}`
+          : "",
+      ),
+      model: PROMPT_LAB_DEFAULT_MODELS.prd,
+    }
+  }
+
+  if (artifact === "mvp") {
+    return {
+      systemPrompt: MVP_PLAN_SYSTEM_PROMPT,
+      userPrompt: buildMVPPlanUserPrompt(
+        idea,
+        name,
+        prd ? `\nProduct Plan: ${prd}` : "",
+      ),
+      model: PROMPT_LAB_DEFAULT_MODELS.mvp,
+    }
+  }
+
+  if (artifact === "mockups") {
+    const config = OPENROUTER_MOCKUP_OPTION_CONFIGS.find((option) => option.label === mockupOption) ?? OPENROUTER_MOCKUP_OPTION_CONFIGS[0]
+    return {
+      systemPrompt: OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
+      userPrompt: buildOpenRouterMockupImagePrompt({
+        projectName: name,
+        mvpPlan: mvpPlan || `First Version Plan for ${name}: ${idea}`,
+        label: config.label,
+        title: config.title,
+        strategy: config.strategy,
+      }),
+      model: PROMPT_LAB_DEFAULT_MODELS.mockups,
+    }
+  }
+
+  return {
+    systemPrompt: LAUNCH_PLAN_SYSTEM_PROMPT,
+    userPrompt: buildLaunchPlanUserPrompt(idea, name, launchBrief),
+    model: PROMPT_LAB_DEFAULT_MODELS.launch,
+  }
+}
+
+export async function runPromptLabArtifact({
+  artifact,
+  projectId,
+  projectName,
+  systemPrompt,
+  userPrompt,
+  model,
+  mockupOption = "A",
+}: PromptLabRunInput): Promise<PromptLabRunResult> {
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY environment variable is not configured")
+  }
+
+  if (artifact === "mockups") {
+    const result = await generateOpenRouterImageMockupOption({
+      projectId,
+      projectName,
+      mvpPlan: userPrompt,
+      label: mockupOption,
+      model,
+      systemPrompt,
+      userPrompt,
+    })
+    const content: OpenRouterImageMockupContent = {
+      type: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      model: result.model,
+      generatedAt: new Date().toISOString(),
+      options: [
+        {
+          ...result.option,
+          imageUrl: buildPromptLabMockupImageUrl(projectId, result.option.storagePath),
+        },
+      ],
+    }
+
+    return {
+      content: JSON.stringify(content),
+      model: result.model,
+      source: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      metadata: {
+        mockupOption,
+        storagePath: result.option.storagePath,
+        runId: result.runId,
+      },
+    }
+  }
+
+  const openrouter = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+  })
+
+  const completion = await openrouter.chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    max_tokens: artifact === "competitive" ? 8192 : 4096,
+    temperature: artifact === "launch" ? 0.35 : 0.3,
+  }, { signal: AbortSignal.timeout(120_000) })
+
+  const content = completion.choices[0]?.message?.content?.trim()
+  if (!content) throw new Error(`No content returned for ${PROMPT_LAB_ARTIFACT_LABELS[artifact]}`)
+
+  return {
+    content,
+    model,
+    source: "inhouse",
+    metadata: {},
+  }
+}
+
+export function buildPromptLabMockupImageUrl(projectId: string, storagePath: string) {
+  const params = new URLSearchParams({ projectId, path: storagePath })
+  return `/api/dev/prompt-lab/mockup-image?${params.toString()}`
+}
+
+export function buildProductionMockupImageUrl(projectId: string, storagePath: string) {
+  return buildMockupImageProxyUrl({ projectId, storagePath })
+}

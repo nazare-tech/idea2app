@@ -68,7 +68,10 @@ export interface GenerateOpenRouterImageMockupOptionInput {
   projectName: string
   projectId: string
   label: OpenRouterMockupOptionLabel
+  model?: string
   runId?: string
+  systemPrompt?: string
+  userPrompt?: string
 }
 
 export interface GenerateOpenRouterImageMockupOptionResult {
@@ -186,7 +189,10 @@ export async function generateOpenRouterImageMockupOption({
   projectName,
   projectId,
   label,
+  model: modelOverride,
   runId = crypto.randomUUID(),
+  systemPrompt,
+  userPrompt,
 }: GenerateOpenRouterImageMockupOptionInput): Promise<GenerateOpenRouterImageMockupOptionResult> {
   if (!process.env.OPENROUTER_API_KEY) {
     throw new Error("OPENROUTER_API_KEY environment variable is not configured")
@@ -197,7 +203,7 @@ export async function generateOpenRouterImageMockupOption({
     throw new Error(`Unsupported mockup option label: ${label}`)
   }
 
-  const model = getOpenRouterMockupImageModel()
+  const model = modelOverride || getOpenRouterMockupImageModel()
   const storageSupabase = createServiceClient() as ServerSupabaseClient
   const openrouter = new OpenAI({
     baseURL: "https://openrouter.ai/api/v1",
@@ -213,6 +219,8 @@ export async function generateOpenRouterImageMockupOption({
     projectName,
     projectId,
     runId,
+    systemPrompt,
+    userPrompt,
   })
 
   return {
@@ -232,6 +240,8 @@ async function generateAndStoreOption({
   projectName,
   projectId,
   runId,
+  systemPrompt,
+  userPrompt,
 }: {
   config: typeof OPENROUTER_MOCKUP_OPTION_CONFIGS[number]
   model: string
@@ -241,6 +251,8 @@ async function generateAndStoreOption({
   projectName: string
   projectId: string
   runId: string
+  systemPrompt?: string
+  userPrompt?: string
 }) {
   let response: OpenAI.Chat.Completions.ChatCompletion
   try {
@@ -249,12 +261,11 @@ async function generateAndStoreOption({
       messages: [
         {
           role: "system",
-          content:
-            "You generate production-quality static UI mockup images for software products. Return an image and a concise design rationale. Do not call external APIs. Do not mention implementation details.",
+          content: systemPrompt || OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
         },
         {
           role: "user",
-          content: buildImagePrompt({
+          content: userPrompt || buildOpenRouterMockupImagePrompt({
             projectName,
             mvpPlan,
             title: config.title,
@@ -314,7 +325,10 @@ function isAbortError(error: unknown) {
   )
 }
 
-function buildImagePrompt({
+export const OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT =
+  "You generate production-quality static UI mockup images for software products. Return an image and a concise design rationale. Do not call external APIs. Do not mention implementation details."
+
+export function buildOpenRouterMockupImagePrompt({
   projectName,
   mvpPlan,
   title,
