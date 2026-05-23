@@ -225,13 +225,18 @@ export async function runPromptLabArtifact({
     apiKey: process.env.OPENROUTER_API_KEY,
   })
 
+  const maxTokens =
+    artifact === "competitive" || artifact === "prd" || artifact === "mvp"
+      ? 8192
+      : 4096
+
   const completion = await openrouter.chat.completions.create({
     model,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    max_tokens: artifact === "competitive" ? 8192 : 4096,
+    max_tokens: maxTokens,
     temperature: artifact === "launch" ? 0.35 : 0.3,
   }, { signal: AbortSignal.timeout(120_000) })
 
