@@ -41,7 +41,7 @@ test("buildPromptLabDefaultPrompts: builds upstream-aware PRD prompt", () => {
   })
 
   assert.equal(result.model, "anthropic/claude-sonnet-4-6")
-  assert.match(result.systemPrompt, /Product Plan Agent/)
+  assert.match(result.systemPrompt, /expert product manager and PRD writer/)
   assert.match(result.userPrompt, /ClinicFlow/)
   assert.match(result.userPrompt, /Competitor A has weak intake automation/)
 })
