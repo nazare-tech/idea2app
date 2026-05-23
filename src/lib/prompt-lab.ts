@@ -16,7 +16,12 @@ import {
   PROMPT_LAB_ARTIFACT_LABELS,
   PROMPT_LAB_ARTIFACTS,
   PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
+  PROMPT_LAB_IMAGE_MODEL_OPTIONS,
+  PROMPT_LAB_TEXT_MODEL_OPTIONS,
+  getBasePromptLabModelOptions,
+  getPromptLabModelOptions,
   type PromptLabArtifact,
+  type PromptLabModelOption,
 } from "@/lib/prompt-lab-shared"
 import {
   OPENROUTER_IMAGE_MOCKUP_SOURCE,
@@ -36,7 +41,12 @@ export {
   PROMPT_LAB_ARTIFACT_LABELS,
   PROMPT_LAB_ARTIFACTS,
   PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
+  PROMPT_LAB_IMAGE_MODEL_OPTIONS,
+  PROMPT_LAB_TEXT_MODEL_OPTIONS,
+  getBasePromptLabModelOptions,
+  getPromptLabModelOptions,
   type PromptLabArtifact,
+  type PromptLabModelOption,
 }
 
 export const PROMPT_LAB_DEFAULT_MODELS: Record<PromptLabArtifact, string> = {

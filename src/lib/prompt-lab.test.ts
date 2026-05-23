@@ -2,7 +2,12 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
+  PROMPT_LAB_DEFAULT_MODELS,
+  PROMPT_LAB_IMAGE_MODEL_OPTIONS,
+  PROMPT_LAB_TEXT_MODEL_OPTIONS,
   buildPromptLabDefaultPrompts,
+  getBasePromptLabModelOptions,
+  getPromptLabModelOptions,
   isMockupOptionLabel,
   isPromptLabArtifact,
   isPromptLabEnabled,
@@ -53,4 +58,35 @@ test("buildPromptLabDefaultPrompts: builds single-option mockup prompt", () => {
   assert.match(result.systemPrompt, /static UI mockup images/)
   assert.match(result.userPrompt, /Create option B/)
   assert.match(result.userPrompt, /Core scheduling workflow/)
+})
+
+test("Prompt Lab model options filter text and image models by artifact", () => {
+  const textOptions = getBasePromptLabModelOptions("prd")
+  const mockupOptions = getBasePromptLabModelOptions("mockups")
+
+  assert.deepEqual(textOptions, PROMPT_LAB_TEXT_MODEL_OPTIONS)
+  assert.deepEqual(mockupOptions, PROMPT_LAB_IMAGE_MODEL_OPTIONS)
+  assert.ok(textOptions.some((option) => option.id === "anthropic/claude-sonnet-4-6"))
+  assert.ok(textOptions.some((option) => option.id === "google/gemini-3.1-pro-preview"))
+  assert.ok(mockupOptions.some((option) => option.id === "openai/gpt-5.4-image-2"))
+  assert.ok(mockupOptions.some((option) => option.id === "google/gemini-2.5-flash-image"))
+  assert.equal(mockupOptions.some((option) => option.id === "anthropic/claude-sonnet-4-6"), false)
+})
+
+test("Prompt Lab curated options include configured defaults or a current-model fallback", () => {
+  for (const [artifact, defaultModel] of Object.entries(PROMPT_LAB_DEFAULT_MODELS)) {
+    const options = getPromptLabModelOptions(artifact as keyof typeof PROMPT_LAB_DEFAULT_MODELS, defaultModel)
+    assert.ok(
+      options.some((option) => option.id === defaultModel),
+      `${artifact} default model should be selectable`,
+    )
+  }
+})
+
+test("Prompt Lab model options keep saved legacy models selectable", () => {
+  const options = getPromptLabModelOptions("launch", "custom/provider-model")
+
+  assert.equal(options[0].id, "custom/provider-model")
+  assert.match(options[0].label, /current/)
+  assert.ok(options.some((option) => option.id === "openai/gpt-5.4-mini"))
 })

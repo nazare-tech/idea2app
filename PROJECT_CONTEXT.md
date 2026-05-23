@@ -20,7 +20,7 @@
 - **First Version Plan Generation**: Strategic first-release development plan based on the Product Plan. Completed First Version Plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. Direct H2/H3 content is preserved as fallback section cards when a generated First Version Plan lacks deeper nested headings.
 - **Mockup Generation**: Three UI mockup alternatives generated from First Version Plans. The default path uses OpenRouter image-output model `openai/gpt-5.4-image-2`, configurable with `OPENROUTER_MOCKUP_IMAGE_MODEL`; images are stored in private Supabase Storage and rendered through an authenticated image proxy. On Vercel Hobby, manual workspace mockup generation runs separate option-level invocations for Options A/B/C one after another, then finalizes one normal mockup document after all three images are saved. Each OpenRouter image call defaults to a `285s` timeout inside its own `300s` Hobby function envelope. This can make the full three-option run take roughly 15 minutes when the provider takes close to the timeout for each high-fidelity image; sequential generation is intentionally safer on Hobby because one slow option no longer causes all three browser requests to fail together. Manual retries persist the option run id in localStorage and call `/api/mockups/recover-options` before spending more OpenRouter credits, so images that reached Supabase Storage can be finalized even if the browser or route timed out. Local/no-credit fixture testing is available through `/api/mockups/fixture` when running outside production, or in production only with `ENABLE_MOCKUP_FIXTURE_GENERATION=true`. The renderer also supports json-render specs/patches and legacy Stitch HTML for older saved mockups.
 - **Launch Plan Generation**: Launch Plans are now generated through an AI-backed Launch Plan prompt module instead of a deterministic template. The route keeps the existing marketing-brief input contract and still saves markdown `launch-plan` rows in `analyses`.
-- **Dev Prompt Lab**: Local-development-only workbench at `/dev/prompt-lab` for iterating artifact system/user prompts against existing projects without creating workflow artifacts, consuming credits, or starting queues. It supports Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan; stores prompt drafts/runs in Supabase `prompt_lab_experiments` and `prompt_lab_runs`; uses existing workspace renderers for artifact-accurate preview; and includes a lab-only renderer playground for experiments that do not affect production workspace rendering.
+- **Dev Prompt Lab**: Local-development-only workbench at `/dev/prompt-lab` for iterating artifact prompts against existing projects without creating workflow artifacts, consuming credits, or starting queues. It supports Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan; stores artifact-scoped reusable system/model drafts in Supabase `prompt_lab_experiments`, stores project-scoped isolated runs in `prompt_lab_runs`, uses existing workspace renderers for artifact-accurate preview, and includes a lab-only renderer playground for experiments that do not affect production workspace rendering. The user prompt/context is regenerated from the selected project and should not be overwritten by shared system drafts.
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **Landing Page + Waitlist Gate**: The marketing landing page now switches between standard signup CTAs and a public waitlist flow once the early-access user cap is reached. Features:
   - Dynamic CTA mode based on current `profiles` count
@@ -1016,8 +1016,9 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `project_id`, `content`, `model_used`, `metadata`, `created_at`, `updated_at`
   - RLS: Users can only access mockups from their projects
 
-- **prompt_lab_experiments**: Local-dev Prompt Lab saved prompt drafts
+- **prompt_lab_experiments**: Local-dev Prompt Lab saved system/model drafts
   - Fields: `id`, `user_id`, `project_id`, `artifact_type`, `title`, `system_prompt`, `user_prompt`, `model_id`, `metadata`, timestamps
+  - New Prompt Lab draft saves use `project_id = NULL` so the reusable system prompt and selected model are available across all owned projects for the same artifact. `metadata.savedFromProjectId` records the project used when the draft was saved; older project-scoped rows are still listed for the user/artifact.
   - RLS: Users can only access their own Prompt Lab drafts; project-scoped writes must target their own projects
 
 - **prompt_lab_runs**: Local-dev Prompt Lab isolated generation history
@@ -1143,7 +1144,9 @@ docker run -p 3000:3000 idea2app
   - Supports single-option mockup image generation for Option A/B/C
   - Never writes to canonical artifact tables or generation queues
 
-- **GET/POST /api/dev/prompt-lab/drafts**: List and save Prompt Lab prompt drafts in `prompt_lab_experiments`.
+- **GET/POST /api/dev/prompt-lab/drafts**: List and save Prompt Lab system/model drafts in `prompt_lab_experiments`.
+  - `GET` validates the selected owned project, then returns the user's recent drafts for the selected artifact across projects.
+  - `POST` saves a reusable artifact draft with `project_id = NULL`, keeps a snapshot of the current user prompt for history, and records the selected source project in `metadata`.
 
 - **GET /api/dev/prompt-lab/runs**: List recent isolated Prompt Lab runs for an owned project/artifact pair.
 

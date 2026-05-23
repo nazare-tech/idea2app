@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { AlertCircle, CheckCircle2, FlaskConical, History, Loader2, Play, Save, Wand2 } from "lucide-react"
 
 import {
@@ -21,6 +21,7 @@ import {
   PROMPT_LAB_ARTIFACT_LABELS,
   PROMPT_LAB_ARTIFACTS,
   PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
+  getPromptLabModelOptions,
   type PromptLabArtifact,
 } from "@/lib/prompt-lab-shared"
 import { cn } from "@/lib/utils"
@@ -216,8 +217,11 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const [launchBrief, setLaunchBrief] = useState(PROMPT_LAB_DEFAULT_LAUNCH_BRIEF)
   const [busyAction, setBusyAction] = useState<"draft" | "run" | null>(null)
   const [isPending, startTransition] = useTransition()
+  const lastLoadedArtifactRef = useRef<PromptLabArtifact>(artifact)
 
   const selectedProject = projects.find((project) => project.id === projectId) ?? null
+  const modelOptions = useMemo(() => getPromptLabModelOptions(artifact, model), [artifact, model])
+  const selectedModelOption = modelOptions.find((option) => option.id === model) ?? null
   const canRun = Boolean(projectId && artifact && systemPrompt.trim() && userPrompt.trim() && model.trim())
 
   const contextUrl = useMemo(() => {
@@ -258,11 +262,25 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
       })
       .then((data) => {
         if (cancelled) return
+        const artifactChanged = lastLoadedArtifactRef.current !== artifact
+        lastLoadedArtifactRef.current = artifact
         setContext(data)
-        setSystemPrompt(data.promptDefaults.systemPrompt)
+        setSystemPrompt((currentSystemPrompt) =>
+          artifactChanged || !currentSystemPrompt.trim()
+            ? data.promptDefaults.systemPrompt
+            : currentSystemPrompt,
+        )
         setUserPrompt(data.promptDefaults.userPrompt)
-        setModel(data.promptDefaults.model)
-        setTitle(`${PROMPT_LAB_ARTIFACT_LABELS[artifact]} prompt test`)
+        setModel((currentModel) =>
+          artifactChanged || !currentModel.trim()
+            ? data.promptDefaults.model
+            : currentModel,
+        )
+        setTitle((currentTitle) =>
+          artifactChanged || !currentTitle.trim()
+            ? `${PROMPT_LAB_ARTIFACT_LABELS[artifact]} prompt test`
+            : currentTitle,
+        )
         setOutput("")
         setStatus(null)
         void loadHistory(data.project.id, artifact)
@@ -359,8 +377,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     setTitle(draft.title)
     setModel(draft.model_id)
     setSystemPrompt(draft.system_prompt)
-    setUserPrompt(draft.user_prompt)
-    setStatus(`Loaded draft from ${formatTime(draft.updated_at)}`)
+    setStatus(`Loaded system draft from ${formatTime(draft.updated_at)}`)
   }
 
   function applyRun(run: PromptLabRun) {
@@ -443,7 +460,23 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
 
             <label className="block space-y-1.5">
               <span className="text-xs font-medium text-muted-foreground">Model override</span>
-              <Input value={model} onChange={(event) => setModel(event.target.value)} />
+              <select
+                value={model}
+                onChange={(event) => setModel(event.target.value)}
+                className="h-11 w-full rounded-xl border border-surface-strong bg-surface-soft px-3 text-sm text-foreground"
+              >
+                {!model && <option value="">Loading model options...</option>}
+                {modelOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label} - {option.id}
+                  </option>
+                ))}
+              </select>
+              {selectedModelOption?.description && (
+                <span className="block text-xs leading-relaxed text-muted-foreground">
+                  {selectedModelOption.description}
+                </span>
+              )}
             </label>
 
             <label className="block space-y-1.5">
@@ -482,7 +515,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
           </div>
           <div className="mt-3 space-y-2">
             {drafts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No drafts for this artifact yet.</p>
+              <p className="text-sm text-muted-foreground">No shared system drafts for this artifact yet.</p>
             ) : drafts.map((draft) => (
               <button
                 key={draft.id}

@@ -29,7 +29,6 @@ export async function GET(request: Request) {
     .from("prompt_lab_experiments")
     .select("*")
     .eq("user_id", guard.user.id)
-    .eq("project_id", projectId)
     .eq("artifact_type", artifact)
     .order("updated_at", { ascending: false })
     .limit(30)
@@ -80,13 +79,16 @@ export async function POST(request: Request) {
     .from("prompt_lab_experiments")
     .insert({
       user_id: guard.user.id,
-      project_id: projectId,
+      project_id: null,
       artifact_type: artifact,
       title,
       system_prompt: systemPrompt,
       user_prompt: userPrompt,
       model_id: model,
-      metadata: {},
+      metadata: {
+        savedFromProjectId: project.id,
+        savedFromProjectName: project.name,
+      },
     })
     .select("*")
     .single()
