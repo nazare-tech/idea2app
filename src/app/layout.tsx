@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { Hanken_Grotesk, Fira_Mono } from "next/font/google"
 import "./globals.css"
-import { AgentationGate } from "@/components/AgentationGate"
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken-grotesk",
@@ -36,7 +35,6 @@ export default function RootLayout({
         className={`${hankenGrotesk.variable} ${firaMono.variable} antialiased min-h-screen bg-background`}
       >
         {children}
-        <AgentationGate />
       </body>
     </html>
   )

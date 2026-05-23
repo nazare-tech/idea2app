@@ -667,7 +667,7 @@ function CompetitiveResearchPage({
 }) {
   return (
     <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
-      <header className="-mx-5 border-b border-[#E0E0E0] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Market Intelligence
         </p>
@@ -784,7 +784,7 @@ export function CompetitiveOverviewSection({
 
   return (
     <>
-      <header className="-mx-5 border-b border-[#E0E0E0] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Market Intelligence
         </p>
@@ -835,7 +835,7 @@ export function CompetitiveDetailSection({
 
   return (
     <>
-      <header className="-mx-5 border-b border-[#E0E0E0] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Deep Analysis
         </p>

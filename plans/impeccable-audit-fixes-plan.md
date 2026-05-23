@@ -7,7 +7,6 @@ Fix the issues found by the `$impeccable audit` pass: mobile landing overflow, u
 - The existing dirty worktree contains user or prior-agent changes. This work will avoid reverting unrelated changes and will only touch files required for the audit fixes.
 - This is a UI quality pass, not a product architecture change. No new dependencies should be needed.
 - `PROJECT_CONTEXT.md`, `PRODUCT.md`, and `DESIGN.md` remain the source of truth for architecture, brand voice, and visual rules.
-- The existing `agentation` overlay appears in runtime screenshots and may contribute console/resource noise. It is work-in-progress/dev tooling and should be left alone.
 - The unhealthy `localhost:3000` process should be documented and worked around during verification. We should not kill unrelated user-owned dev processes without explicit permission.
 
 ## Clarifying Questions

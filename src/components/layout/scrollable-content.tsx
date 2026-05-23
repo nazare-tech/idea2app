@@ -178,7 +178,7 @@ function GenerationStatusModule({
 
 function DocumentWrapper({
   navKey,
-  contentClassName,
+  contentClassName = "space-y-2",
   children,
 }: {
   navKey: string
@@ -188,7 +188,7 @@ function DocumentWrapper({
   return (
     <div
       id={navKey}
-      className="mx-auto w-full max-w-[1020px] rounded-lg border border-border-subtle bg-card"
+      className="mx-auto w-full max-w-[1020px] rounded-lg bg-card"
       data-section={navKey}
     >
       <div className={cn("px-5 py-6 sm:px-8 lg:px-10 lg:py-8", contentClassName)}>
@@ -408,10 +408,10 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
     return (
       <div
         ref={ref}
-        className="flex-1 space-y-4 overflow-y-auto bg-background px-3 py-3 sm:px-6 sm:py-4 lg:px-8"
+        className="flex-1 space-y-8 overflow-y-auto bg-background px-3 py-3 sm:px-6 sm:py-4 lg:px-8"
       >
         {/* Overview — rendered immediately (first visible section) */}
-        <DocumentWrapper navKey="overview" contentClassName="space-y-6">
+        <DocumentWrapper navKey="overview">
           {competitiveData?.content ? (
             <CompetitiveOverviewSection
               content={competitiveData.content}
@@ -433,7 +433,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
 
         {/* All sections below are deferred to next animation frame */}
 
-        <DocumentWrapper navKey="market-research" contentClassName="space-y-6">
+        <DocumentWrapper navKey="market-research">
           {!renderDeferred ? (
             <DocumentSkeleton label="Market Research" />
           ) : competitiveData?.content ? (

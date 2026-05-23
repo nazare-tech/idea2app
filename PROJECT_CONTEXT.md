@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-05-22 (dev-only Agentation gate)
+**Last Updated**: 2026-05-23 (removed local instrumentation)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -106,7 +106,6 @@
 | **Puppeteer** | 24.37.1 | Server-side PDF rendering in `/api/generate-pdf` |
 | **Perplexity** | - | AI-powered competitor search (sonar-pro model, OpenAI-compatible API) |
 | **Tavily** | - | Web content extraction from competitor URLs |
-| **agentation / agentation-mcp** | 2.2.1 / 1.2.0 | Local development instrumentation wrapper rendered from the root layout only when the shared dev-only gate is enabled (`NODE_ENV !== "production"` and `VERCEL_ENV !== "production"`); dev CSP permits the local `localhost:4747` Agentation endpoint, while production builds alias the wrapper to a no-op so the instrumentation client is not bundled |
 
 ### Development Tools
 
@@ -1405,9 +1404,6 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/globals.css](src/app/globals.css) | Pencil design tokens (CSS custom properties), status badge styles, scrollbar styles, Mermaid diagram styles (light/dark mode with media query) |
 | [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout — verifies auth and renders `DashboardShell` with user profile and credits |
 | [src/components/layout/dashboard-shell.tsx](src/components/layout/dashboard-shell.tsx) | Authenticated dashboard shell for top-level dashboard, projects, billing, and preferences pages |
-| [src/components/AgentationGate.tsx](src/components/AgentationGate.tsx) | Root-layout Agentation gate using the same dev-only environment predicate as Prompt Lab |
-| [src/components/AgentationWrapper.noop.tsx](src/components/AgentationWrapper.noop.tsx) | Production build alias target for Agentation so the local instrumentation client is excluded |
-| [src/components/AgentationWrapper.tsx](src/components/AgentationWrapper.tsx) | Local Agentation instrumentation wrapper rendered only through `AgentationGate` |
 | [src/app/(dashboard)/projects/page.tsx](src/app/(dashboard)/projects/page.tsx) | Projects dashboard — loads owned projects plus allowance status and renders project cards with paid-plan delete gating |
 | [src/components/projects/dashboard-project-card.tsx](src/components/projects/dashboard-project-card.tsx) | Interactive project card with relative updated time, workspace prefetch/warmup, delete confirmation, and free-plan upgrade prompt |
 | [src/app/(dashboard)/projects/[projectRef]/page.tsx](src/app/(dashboard)/projects/[projectRef]/page.tsx) | Project page — parses slugged project refs, canonicalizes stale URLs, blocks deprecated prompt tabs, and passes the project shell to `ProjectWorkspace` |

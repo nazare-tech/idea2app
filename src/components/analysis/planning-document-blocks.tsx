@@ -71,7 +71,7 @@ function PageHeader({
   description: string
 }) {
   return (
-    <header className="-mx-5 border-b border-[#E0E0E0] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+    <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
       <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
         {eyebrow}
       </p>
@@ -102,7 +102,7 @@ function ParagraphStack({
   if (paragraphs.length === 0) return null
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {paragraphs.map((paragraph, index) => (
         <p
           key={`${paragraph}-${index}`}
@@ -189,7 +189,7 @@ function StructuredItemList({ items, dark = false }: { items: string[]; dark?: b
   const groups = buildItemGroups(items)
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {groups.map((group, index) => {
         const key = `${group.label ?? group.body}-${index}`
 
@@ -610,7 +610,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   const { structured } = viewModel
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <PageHeader
         eyebrow="Product Plan"
         title="Product Plan"
@@ -644,7 +644,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
         </PencilCard>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-2">
         <PencilCard title="Measurable Objectives" kicker="Outcomes">
           <NarrativeContent narrative={structured.objectives} />
         </PencilCard>
@@ -700,7 +700,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
         </PencilCard>
       </div>
 
-      <div id="prd-prioritization" className="space-y-6">
+      <div id="prd-prioritization" className="space-y-2">
         {hasNarrativeContent(structured.prioritization) ? (
           <PencilCard title="Build Order" kicker="Release Focus" dark>
             <NarrativeContent narrative={structured.prioritization} dark />
@@ -740,14 +740,14 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
   const { structured } = viewModel
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <PageHeader
         eyebrow="First Version"
         title="First Version Plan"
         description="A launchable scope plan focused on what to prove, the core workflow, feature boundaries, and success signals."
       />
 
-      <div id="mvp-wedge" className="space-y-6">
+      <div id="mvp-wedge" className="space-y-2">
         {hasNarrativeContent(structured.overview) ? (
           <PencilCard title="Product Vision" kicker="Overview">
             <NarrativeContent narrative={structured.overview} />
@@ -769,7 +769,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
         </PencilCard>
       </div>
 
-      <div id="mvp-core-features" className="space-y-6">
+      <div id="mvp-core-features" className="space-y-2">
         <PencilCard title="Core Features" kicker="Feature Set">
           <NarrativeContent narrative={structured.featureSummary} />
         </PencilCard>
@@ -791,7 +791,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
         </div>
       </div>
 
-      <div id="mvp-user-flow" className="space-y-6">
+      <div id="mvp-user-flow" className="space-y-2">
         {structured.userFlow.map((section, index) => (
           <MarkdownSectionCard
             key={`${section.heading}-${index}`}
@@ -803,7 +803,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
         ))}
       </div>
 
-      <div id="mvp-timeline" className="space-y-6">
+      <div id="mvp-timeline" className="space-y-2">
         {structured.timeline.map((section, index) => (
           <MarkdownSectionCard
             key={`${section.heading}-${index}`}
@@ -824,7 +824,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
         ))}
       </div>
 
-      <div id="mvp-success-metrics" className="space-y-6">
+      <div id="mvp-success-metrics" className="space-y-2">
         {structured.successMetrics.map((section, index) => (
           <MarkdownSectionCard
             key={`${section.heading}-${index}`}

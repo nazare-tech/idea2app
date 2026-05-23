@@ -82,7 +82,8 @@ test("competitive overview renders only executive summary and opportunity verdic
   )
 
   assert.match(html, /Overview/)
-  assert.match(html, /-mx-5 border-b border-\[#E0E0E0\] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.match(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.doesNotMatch(html, /border-b border-\[#E0E0E0\]/)
   assert.match(html, /Market Snapshot &amp; Entry Thesis/)
   assert.match(html, /Opportunity Verdict/)
   assert.match(html, /Win with a narrow wedge\./)
@@ -108,7 +109,8 @@ test("competitive detail owns market research and strategy modules", () => {
   )
 
   assert.match(html, /Market Research/)
-  assert.match(html, /-mx-5 border-b border-\[#E0E0E0\] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.match(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.doesNotMatch(html, /border-b border-\[#E0E0E0\]/)
   assert.match(html, /Competitor Profiles &amp; Quick Comparison/)
   assert.match(html, /Competitor One/)
   assert.match(html, /Best Customer Segments/)

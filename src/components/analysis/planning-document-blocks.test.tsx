@@ -107,7 +107,8 @@ test("PrdDocumentBlocks renders organized module anchors", () => {
   )
 
   assert.match(html, /Product Plan/)
-  assert.match(html, /-mx-5 border-b border-\[#E0E0E0\] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.match(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.doesNotMatch(html, /border-b border-\[#E0E0E0\]/)
   assert.match(html, /id="prd-user-needs"/)
   assert.match(html, /Problem to Solve/)
   assert.match(html, /Founder Fiona/)
@@ -231,7 +232,8 @@ test("MvpPlanDocumentBlocks renders organized module anchors", () => {
   )
 
   assert.match(html, /First Version Plan/)
-  assert.match(html, /-mx-5 border-b border-\[#E0E0E0\] bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.match(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.doesNotMatch(html, /border-b border-\[#E0E0E0\]/)
   assert.match(html, /id="mvp-wedge"/)
   assert.match(html, /What We Need to Prove/)
   assert.match(html, /id="mvp-core-features"/)

@@ -20,7 +20,6 @@
   - 768x1024: page overflow `0`.
   - 1440x1000: page overflow `0`.
   - Footer contains only copyright text.
-  - Remaining tiny controls and CSP console messages are from the existing `agentation` overlay, which was explicitly left alone.
 
 ## Code Review Findings
 - [Fixed] Landing mobile header and inspiration links had controls below 44px.
