@@ -1,5 +1,6 @@
 import OpenAI from "openai"
 
+import { isDevOnlyFeatureEnabled, type DevOnlyFeatureEnv } from "@/lib/dev-only"
 import {
   COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
   LAUNCH_PLAN_SYSTEM_PROMPT,
@@ -80,10 +81,8 @@ export interface PromptLabRunResult {
   metadata: Record<string, unknown>
 }
 
-export function isPromptLabEnabled(
-  env: Partial<Pick<NodeJS.ProcessEnv, "NODE_ENV" | "VERCEL_ENV">> = process.env,
-) {
-  return env.NODE_ENV !== "production" && env.VERCEL_ENV !== "production"
+export function isPromptLabEnabled(env: DevOnlyFeatureEnv = process.env) {
+  return isDevOnlyFeatureEnabled(env)
 }
 
 export function isPromptLabArtifact(value: unknown): value is PromptLabArtifact {

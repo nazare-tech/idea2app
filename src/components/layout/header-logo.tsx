@@ -2,16 +2,11 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { APP_BRAND_LOGO_ALT } from "@/lib/app-brand"
+import { APP_BRAND_LOGO_ALT, APP_BRAND_LOGO_SRC } from "@/lib/app-brand"
 import { cn } from "@/lib/utils"
 
 export const APP_HEADER_LOGO_SIZE = 32
 
-/**
- * Shared header logo.
- * The source file includes a large white canvas, so we scale it inside an
- * overflow-hidden frame to crop out that padding and keep one consistent size.
- */
 interface HeaderLogoProps {
   href?: string
   size?: number
@@ -27,11 +22,11 @@ export function HeaderLogo({
 }: HeaderLogoProps) {
   const content = (
     <Image
-      src="/idea2app-logo.jpg"
+      src={APP_BRAND_LOGO_SRC}
       alt={APP_BRAND_LOGO_ALT}
       width={size}
       height={size}
-      className="object-cover scale-[1.7]"
+      className="object-contain"
       style={{ width: size, height: size }}
     />
   )

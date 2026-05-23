@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Hanken_Grotesk, Fira_Mono } from "next/font/google"
 import "./globals.css"
-import { AgentationWrapper } from "@/components/AgentationWrapper"
+import { AgentationGate } from "@/components/AgentationGate"
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken-grotesk",
@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   title: "Maker Compass - Transform Your Business Ideas into Reality",
   description: "AI-powered platform to analyze business ideas, generate product plans, technical specs, and deploy working applications.",
   keywords: ["business ideas", "market research", "product plan", "technical specs", "app generation", "AI"],
+  icons: {
+    icon: [{ url: "/maker-compass-logo.svg", type: "image/svg+xml" }],
+    shortcut: ["/maker-compass-logo.svg"],
+  },
 }
 
 export default function RootLayout({
@@ -32,7 +36,7 @@ export default function RootLayout({
         className={`${hankenGrotesk.variable} ${firaMono.variable} antialiased min-h-screen bg-background`}
       >
         {children}
-        <AgentationWrapper />
+        <AgentationGate />
       </body>
     </html>
   )

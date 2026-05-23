@@ -14,7 +14,7 @@ export const uiStylePresets = {
   authCardCompact:
     "w-full max-w-[480px] border-border-subtle bg-card",
   authTopIconBadge:
-    "flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground",
+    "flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-white",
   settingsIconBadge:
     "h-10 w-10 rounded bg-text-primary text-white flex items-center justify-center",
   settingsInfoCard:
@@ -36,7 +36,7 @@ export const uiStylePresets = {
   analysisDismissAction:
     "text-warm-sand hover:text-warm-coral",
   authIconCircle:
-    "flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground",
+    "flex h-9 w-9 items-center justify-center rounded-lg border border-border-subtle bg-white",
   authProfileAvatarFallback:
     "bg-text-primary text-white text-[12px] font-bold",
   subtleLinkHover:

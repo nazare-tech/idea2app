@@ -9,10 +9,40 @@ function findRoot(dir: string): string {
   return parent === dir ? dir : findRoot(parent);
 }
 
+const isDevOnlyFeatureBuild = process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production";
+const agentationWrapperNoopTurbopack = "./src/components/AgentationWrapper.noop.tsx";
+const agentationWrapperNoopWebpack = path.join(process.cwd(), "src/components/AgentationWrapper.noop.tsx");
+const connectSrc = [
+  "'self'",
+  "https://*.supabase.co",
+  "wss://*.supabase.co",
+  "https://api.openrouter.ai",
+  "https://api.anthropic.com",
+  "https://api.stripe.com",
+  "https://*.stripe.com",
+  "https://contribution.usercontent.google.com",
+  "https://lh3.googleusercontent.com",
+  ...(isDevOnlyFeatureBuild
+    ? ["http://localhost:4747", "ws://localhost:4747", "http://127.0.0.1:4747", "ws://127.0.0.1:4747"]
+    : []),
+].join(" ");
+
 const nextConfig: NextConfig = {
   // Pin Turbopack to the directory that owns node_modules so worktrees work.
   turbopack: {
     root: findRoot(process.cwd()),
+    resolveAlias: isDevOnlyFeatureBuild
+      ? {}
+      : {
+          "@/components/AgentationWrapper": agentationWrapperNoopTurbopack,
+        },
+  },
+  webpack(config) {
+    if (!isDevOnlyFeatureBuild) {
+      config.resolve.alias["@/components/AgentationWrapper"] = agentationWrapperNoopWebpack;
+    }
+
+    return config;
   },
   async headers() {
     const csp = [
@@ -21,7 +51,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openrouter.ai https://api.anthropic.com https://api.stripe.com https://*.stripe.com https://contribution.usercontent.google.com https://lh3.googleusercontent.com",
+      `connect-src ${connectSrc}`,
       "frame-src 'self' https://*.stripe.com",
       "frame-ancestors 'self'",
       "object-src 'none'",

@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { APP_BRAND_LOGO_ALT } from "@/lib/app-brand"
+import { APP_BRAND_LOGO_ALT, APP_BRAND_LOGO_SRC } from "@/lib/app-brand"
 import { cn } from "@/lib/utils"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
@@ -26,11 +26,11 @@ export function ChatAssistantAvatar({
         )}
       >
         <Image
-          src="/idea2app-logo.jpg"
+          src={APP_BRAND_LOGO_SRC}
           alt={APP_BRAND_LOGO_ALT}
           width={32}
           height={32}
-          className="object-cover scale-[1.7]"
+          className="h-6 w-6 object-contain"
         />
       </div>
     )
