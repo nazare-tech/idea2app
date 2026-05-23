@@ -59,6 +59,10 @@ function buildAnalysisMetadata(
   return metadata
 }
 
+function isSafeTimeoutMessage(message: string | undefined) {
+  return Boolean(message?.includes("generation timed out after"))
+}
+
 interface AnalysisParams {
   params: Promise<{ type: string }>
 }
@@ -374,9 +378,10 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     })
   } catch (error) {
     console.error("Analysis error:", error)
-    statusCode = 500
-    errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
+    const safeTimeoutMessage = isSafeTimeoutMessage(errorMessage)
+    statusCode = safeTimeoutMessage ? 504 : 500
+    errorType = getErrorType(statusCode, error)
 
     // Refund credits on generation failure
     if (creditsConsumed > 0 && userId) {
@@ -394,8 +399,8 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     return NextResponse.json(
-      { error: "Failed to generate analysis. Please try again." },
-      { status: 500 }
+      { error: safeTimeoutMessage ? errorMessage : "Failed to generate analysis. Please try again." },
+      { status: statusCode }
     )
   } finally {
     // Track metrics (fire and forget - won't block response)

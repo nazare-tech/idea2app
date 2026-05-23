@@ -2,6 +2,11 @@ import OpenAI from "openai"
 import { searchCompetitors } from "./perplexity"
 import { extractCompetitorInfo, type TavilyExtractResult } from "./tavily"
 import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, PRD_SYSTEM_PROMPT, buildPRDUserPrompt, MVP_PLAN_SYSTEM_PROMPT, buildMVPPlanUserPrompt, LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt, type LaunchPlanBrief } from "@/lib/prompts"
+import {
+  buildOpenRouterTimeoutMessage,
+  createOpenRouterLongTextSignal,
+  isOpenRouterAbortError,
+} from "@/lib/openrouter-timeout"
 
 // Re-use the same OpenRouter client pattern from openrouter.ts
 const openrouter = new OpenAI({
@@ -101,6 +106,14 @@ async function consumeStream(
   }
 }
 
+function rethrowOpenRouterTimeout(error: unknown, label: string): never {
+  if (isOpenRouterAbortError(error)) {
+    throw new Error(buildOpenRouterTimeoutMessage(label))
+  }
+
+  throw error
+}
+
 // ─── Competitive Analysis Pipeline ──────────────────────────────────
 
 export async function runCompetitiveAnalysis(
@@ -172,23 +185,28 @@ export async function runCompetitiveAnalysis(
   // Step 4: OpenRouter synthesis — produce the final report
   console.log("[CompetitiveAnalysis] Step 3: Synthesizing with OpenRouter")
 
-  const completion = await openrouter.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: COMPETITIVE_ANALYSIS_SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: buildCompetitiveAnalysisUserPrompt(
-          input.idea,
-          input.name,
-          competitorContext
-        ),
-      },
-    ],
-    max_tokens: 8192,
-    temperature: 0.3,
-    stream: callbacks?.onToken ? true : false,
-  }, { signal: AbortSignal.timeout(120_000) })
+  let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
+  try {
+    completion = await openrouter.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: COMPETITIVE_ANALYSIS_SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: buildCompetitiveAnalysisUserPrompt(
+            input.idea,
+            input.name,
+            competitorContext
+          ),
+        },
+      ],
+      max_tokens: 8192,
+      temperature: 0.3,
+      stream: callbacks?.onToken ? true : false,
+    }, { signal: createOpenRouterLongTextSignal() })
+  } catch (error) {
+    rethrowOpenRouterTimeout(error, "Market Research")
+  }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
@@ -208,19 +226,24 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
     : ""
 
   callbacks?.onStage?.("Writing product plan...", 1, 2)
-  const completion = await openrouter.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: PRD_SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: buildPRDUserPrompt(input.idea, input.name, competitiveContext),
-      },
-    ],
-    max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
-    temperature: 0.3,
-    stream: callbacks?.onToken ? true : false,
-  }, { signal: AbortSignal.timeout(120_000) })
+  let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
+  try {
+    completion = await openrouter.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: PRD_SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: buildPRDUserPrompt(input.idea, input.name, competitiveContext),
+        },
+      ],
+      max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
+      temperature: 0.3,
+      stream: callbacks?.onToken ? true : false,
+    }, { signal: createOpenRouterLongTextSignal() })
+  } catch (error) {
+    rethrowOpenRouterTimeout(error, "Product Plan")
+  }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
@@ -241,16 +264,21 @@ export async function runMVPPlan(
   const prdContext = input.prd ? `\nProduct Plan: ${trimDownstreamContext(input.prd, "Product Plan")}` : ""
 
   callbacks?.onStage?.("Writing first-version plan...", 1, 2)
-  const completion = await openrouter.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: MVP_PLAN_SYSTEM_PROMPT },
-      { role: "user", content: buildMVPPlanUserPrompt(input.idea, input.name, prdContext) },
-    ],
-    max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
-    temperature: 0.3,
-    stream: callbacks?.onToken ? true : false,
-  }, { signal: AbortSignal.timeout(120_000) })
+  let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
+  try {
+    completion = await openrouter.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: MVP_PLAN_SYSTEM_PROMPT },
+        { role: "user", content: buildMVPPlanUserPrompt(input.idea, input.name, prdContext) },
+      ],
+      max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
+      temperature: 0.3,
+      stream: callbacks?.onToken ? true : false,
+    }, { signal: createOpenRouterLongTextSignal() })
+  } catch (error) {
+    rethrowOpenRouterTimeout(error, "First Version Plan")
+  }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
@@ -269,16 +297,21 @@ export async function runTechSpec(
   const model = input.model || DEFAULT_MODEL
 
   callbacks?.onStage?.("Writing technical specifications...", 1, 2)
-  const completion = await openrouter.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: TECH_SPEC_SYSTEM_PROMPT },
-      { role: "user", content: buildTechSpecUserPrompt(input.idea, input.name, input.prd) },
-    ],
-    max_tokens: 8192,
-    temperature: 0.3,
-    stream: callbacks?.onToken ? true : false,
-  }, { signal: AbortSignal.timeout(120_000) })
+  let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
+  try {
+    completion = await openrouter.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: TECH_SPEC_SYSTEM_PROMPT },
+        { role: "user", content: buildTechSpecUserPrompt(input.idea, input.name, input.prd) },
+      ],
+      max_tokens: 8192,
+      temperature: 0.3,
+      stream: callbacks?.onToken ? true : false,
+    }, { signal: createOpenRouterLongTextSignal() })
+  } catch (error) {
+    rethrowOpenRouterTimeout(error, "Technical Specifications")
+  }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
@@ -297,16 +330,21 @@ export async function runLaunchPlan(
   const model = input.model || process.env.OPENROUTER_LAUNCH_PLAN_MODEL || "openai/gpt-5.4-mini"
 
   callbacks?.onStage?.("Writing launch plan...", 1, 2)
-  const completion = await openrouter.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: LAUNCH_PLAN_SYSTEM_PROMPT },
-      { role: "user", content: buildLaunchPlanUserPrompt(input.idea, input.name, input.brief) },
-    ],
-    max_tokens: LAUNCH_PLAN_MAX_TOKENS,
-    temperature: 0.35,
-    stream: callbacks?.onToken ? true : false,
-  }, { signal: AbortSignal.timeout(120_000) })
+  let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
+  try {
+    completion = await openrouter.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: LAUNCH_PLAN_SYSTEM_PROMPT },
+        { role: "user", content: buildLaunchPlanUserPrompt(input.idea, input.name, input.brief) },
+      ],
+      max_tokens: LAUNCH_PLAN_MAX_TOKENS,
+      temperature: 0.35,
+      stream: callbacks?.onToken ? true : false,
+    }, { signal: createOpenRouterLongTextSignal() })
+  } catch (error) {
+    rethrowOpenRouterTimeout(error, "Launch Plan")
+  }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 

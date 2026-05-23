@@ -36,6 +36,11 @@ import {
   getOpenRouterMockupImageModel,
   type OpenRouterMockupOptionLabel,
 } from "@/lib/openrouter-image-mockup-pipeline"
+import {
+  buildOpenRouterTimeoutMessage,
+  createOpenRouterLongTextSignal,
+  isOpenRouterAbortError,
+} from "@/lib/openrouter-timeout"
 
 export {
   PROMPT_LAB_ARTIFACT_LABELS,
@@ -230,15 +235,23 @@ export async function runPromptLabArtifact({
       ? 8192
       : 4096
 
-  const completion = await openrouter.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    max_tokens: maxTokens,
-    temperature: artifact === "launch" ? 0.35 : 0.3,
-  }, { signal: AbortSignal.timeout(120_000) })
+  let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
+  try {
+    completion = await openrouter.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: maxTokens,
+      temperature: artifact === "launch" ? 0.35 : 0.3,
+    }, { signal: createOpenRouterLongTextSignal() })
+  } catch (error) {
+    if (isOpenRouterAbortError(error)) {
+      throw new Error(buildOpenRouterTimeoutMessage(`Prompt Lab ${PROMPT_LAB_ARTIFACT_LABELS[artifact]}`))
+    }
+    throw error
+  }
 
   const content = completion.choices[0]?.message?.content?.trim()
   if (!content) throw new Error(`No content returned for ${PROMPT_LAB_ARTIFACT_LABELS[artifact]}`)
