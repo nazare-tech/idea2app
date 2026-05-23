@@ -2,8 +2,6 @@
 
 import { usePathname } from "next/navigation"
 import { Header } from "@/components/layout/header"
-import { BrandWordmark } from "@/components/layout/brand-wordmark"
-import { APP_BRAND_NAME } from "@/lib/app-brand"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -24,13 +22,15 @@ export function DashboardShell({
   const shouldShowHeader = pathname
     ? pathname === "/projects/new" || !pathname.startsWith("/projects/")
     : true
-  const brandLabel = pathname === "/projects/new"
-    ? APP_BRAND_NAME
+  const pageTitle = pathname === "/projects/new"
+    ? "New Project"
     : pathname?.startsWith("/preferences")
     ? "Preferences"
     : pathname?.startsWith("/billing")
       ? "Billing"
-      : "Projects"
+      : pathname === "/dashboard"
+        ? "Dashboard"
+        : "Projects"
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -39,13 +39,8 @@ export function DashboardShell({
           <Header
             user={user}
             credits={credits}
-          >
-            <BrandWordmark
-              href="/projects"
-              label={brandLabel}
-              labelClassName="text-lg font-bold tracking-tight"
-            />
-          </Header>
+            pageTitle={pageTitle}
+          />
         )}
         <main className="flex-1 overflow-y-auto bg-background">
           {children}

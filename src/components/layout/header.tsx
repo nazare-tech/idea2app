@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -21,13 +22,21 @@ interface HeaderProps {
     full_name?: string
     avatar_url?: string
   }
-  children?: React.ReactNode
-  rightContent?: React.ReactNode
+  pageTitle?: ReactNode
+  children?: ReactNode
+  rightContent?: ReactNode
   credits?: number
 }
 
-export function Header({ user, children, rightContent, credits }: HeaderProps) {
-  const brand = <BrandWordmark href="/projects" logoSize={APP_HEADER_LOGO_SIZE} />
+export function Header({ user, pageTitle, children, rightContent, credits }: HeaderProps) {
+  const brand = (
+    <BrandWordmark
+      href="/projects"
+      logoSize={APP_HEADER_LOGO_SIZE}
+      className="min-w-0"
+      labelClassName="truncate text-sm font-medium tracking-normal text-text-secondary"
+    />
+  )
   const handleSignOut = useAuthSignOut()
 
   const initials = user?.full_name
@@ -45,12 +54,22 @@ export function Header({ user, children, rightContent, credits }: HeaderProps) {
     : user?.email?.split("@")[0] || "User"
 
   return (
-    <header className="min-h-16 gap-3 border-b border-border-subtle bg-background px-4 py-3 ui-row-between sm:px-8 lg:px-14">
+    <header className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-subtle bg-background px-4 py-3 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:py-0">
       <div className="flex min-w-0 items-center gap-4">
-        {children || brand || <h1 className="ui-section-title">Dashboard</h1>}
+        {children ?? brand}
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+      <div className="hidden min-w-0 items-center justify-center lg:flex">
+        {typeof pageTitle === "string" ? (
+          <span className="truncate text-sm font-semibold text-foreground">
+            {pageTitle}
+          </span>
+        ) : (
+          pageTitle
+        )}
+      </div>
+
+      <div className="flex shrink-0 items-center justify-end gap-2 justify-self-end sm:gap-4">
         {rightContent}
 
         <DropdownMenu>

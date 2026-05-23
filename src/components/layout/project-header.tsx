@@ -91,11 +91,11 @@ export function ProjectHeader({
     : user.email?.split("@")[0] || "User"
 
   return (
-    <header className="grid min-h-16 grid-cols-[1fr_auto] items-center gap-3 border-b border-border-subtle bg-background px-4 py-3 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:py-0">
+    <header className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-subtle bg-background px-4 py-3 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:py-0">
       {/* Left: Brand wordmark */}
       <Link href="/projects" onClick={navigateToProjects} className="flex min-w-0 items-center gap-3">
         <HeaderLogo size={APP_HEADER_LOGO_SIZE} linked={false} />
-        <span className="hidden text-sm font-medium text-text-secondary sm:inline">
+        <span className="truncate text-sm font-medium text-text-secondary">
           {APP_BRAND_NAME}
         </span>
       </Link>

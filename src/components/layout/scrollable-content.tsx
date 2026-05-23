@@ -188,7 +188,7 @@ function DocumentWrapper({
   return (
     <div
       id={navKey}
-      className="rounded-lg border border-border-subtle bg-card"
+      className="mx-auto w-full max-w-[1020px] rounded-lg border border-border-subtle bg-card"
       data-section={navKey}
     >
       <div className={cn("px-5 py-6 sm:px-8 lg:px-10 lg:py-8", contentClassName)}>
