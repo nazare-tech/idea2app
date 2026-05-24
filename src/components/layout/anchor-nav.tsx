@@ -114,13 +114,11 @@ function NavTab({
 
   const containerStyle = isActive
     ? "bg-[#1C1917]"
-    : isInProgress
-      ? "bg-[#1C1917]"
-      : hasIssue
-        ? "bg-[#FFF4F1]"
-        : "bg-[#FFFFFE] hover:bg-[#F5F0EB]"
+    : hasIssue
+      ? "bg-[#FFF4F1]"
+      : "bg-[#FFFFFE] hover:bg-[#F5F0EB]"
 
-  const titleColor = isActive || isInProgress
+  const titleColor = isActive
     ? "text-[#FAFAFA]"
     : hasIssue
       ? "text-destructive"
@@ -128,13 +126,13 @@ function NavTab({
       ? "text-[#8A8480]"
       : "text-[#1C1917]"
 
-  const subColor = isActive || isInProgress
+  const subColor = isActive
     ? "text-[#FAFAFA]/70"
     : isPending
       ? "text-[#8A8480]"
       : "text-[#5D5551]"
-  const connectorColor = isActive || isInProgress ? "border-[#FAFAFA]/20" : "border-[#E5DCD4]"
-  const activeSubColor = isActive || isInProgress ? "text-[#FAFAFA]" : "text-primary"
+  const connectorColor = isActive ? "border-[#FAFAFA]/20" : "border-[#E5DCD4]"
+  const activeSubColor = isActive ? "text-[#FAFAFA]" : "text-primary"
 
   return (
     <div className={cn("min-w-[168px] shrink-0 rounded-md p-2 transition-colors lg:min-w-0 lg:shrink", containerStyle)}>
@@ -164,7 +162,7 @@ function NavTab({
             "inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
             hasIssue
               ? "border-destructive bg-destructive text-primary-foreground hover:bg-destructive/90"
-              : isActive || isInProgress
+              : isActive
                 ? "border-[#FAFAFA]/25 bg-[#FAFAFA]/10 text-[#FAFAFA] hover:bg-[#FAFAFA]/15"
                 : "border-[#D8CEC5] bg-[#FFFFFE] text-[#5D5551] hover:border-primary/50 hover:text-primary",
           )}
@@ -175,7 +173,7 @@ function NavTab({
         ) : (
           <span className={cn(
             "shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
-            isActive || isInProgress ? "text-[#FAFAFA]/75" : hasIssue ? "text-destructive" : "text-[#8A8480]",
+            isActive ? "text-[#FAFAFA]/75" : hasIssue ? "text-destructive" : "text-[#8A8480]",
           )}>
             <StatusText status={status} displayState={displayState} />
           </span>
