@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react"
-import { AlertCircle, CheckCircle2, FlaskConical, History, Loader2, Play, Save, Wand2 } from "lucide-react"
+import { AlertCircle, CheckCircle2, FlaskConical, History, Loader2, Play, Save, Trash2, Wand2 } from "lucide-react"
 
 import {
   CompetitiveDetailSection,
@@ -216,6 +216,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const [previewMode, setPreviewMode] = useState<"production" | "experimental">("production")
   const [launchBrief, setLaunchBrief] = useState(PROMPT_LAB_DEFAULT_LAUNCH_BRIEF)
   const [busyAction, setBusyAction] = useState<"draft" | "run" | null>(null)
+  const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const lastLoadedArtifactRef = useRef<PromptLabArtifact>(artifact)
 
@@ -380,6 +381,33 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     setStatus(`Loaded system draft from ${formatTime(draft.updated_at)}`)
   }
 
+  async function deleteDraft(draft: PromptLabDraft) {
+    const confirmed = window.confirm(`Delete "${draft.title}"? This cannot be undone.`)
+    if (!confirmed) return
+
+    setError(null)
+    setStatus("Deleting draft...")
+    setDeletingDraftId(draft.id)
+
+    try {
+      const response = await fetch(`/api/dev/prompt-lab/drafts?id=${encodeURIComponent(draft.id)}`, {
+        method: "DELETE",
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Failed to delete draft")
+        setStatus(null)
+        return
+      }
+
+      setDrafts((currentDrafts) => currentDrafts.filter((item) => item.id !== draft.id))
+      setStatus("Draft deleted")
+    } finally {
+      setDeletingDraftId(null)
+    }
+  }
+
   function applyRun(run: PromptLabRun) {
     setTitle(run.title)
     setModel(run.model_id)
@@ -517,15 +545,33 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             {drafts.length === 0 ? (
               <p className="text-sm text-muted-foreground">No shared system drafts for this artifact yet.</p>
             ) : drafts.map((draft) => (
-              <button
+              <div
                 key={draft.id}
-                type="button"
-                onClick={() => applyDraft(draft)}
-                className="block w-full rounded-md border border-border-subtle bg-background p-3 text-left transition-colors hover:border-primary/40"
+                className="flex items-stretch overflow-hidden rounded-md border border-border-subtle bg-background transition-colors hover:border-primary/40"
               >
-                <span className="block text-sm font-medium text-foreground">{draft.title}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">{draft.model_id} · {formatTime(draft.updated_at)}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => applyDraft(draft)}
+                  className="min-w-0 flex-1 p-3 text-left"
+                >
+                  <span className="block truncate text-sm font-medium text-foreground">{draft.title}</span>
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">{draft.model_id} · {formatTime(draft.updated_at)}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void deleteDraft(draft)}
+                  disabled={deletingDraftId === draft.id}
+                  aria-label={`Delete ${draft.title}`}
+                  title="Delete draft"
+                  className="flex w-11 shrink-0 items-center justify-center border-l border-border-subtle text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {deletingDraftId === draft.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             ))}
           </div>
         </section>

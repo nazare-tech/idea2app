@@ -99,3 +99,36 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ draft: data })
 }
+
+export async function DELETE(request: Request) {
+  const guard = await requirePromptLabRequest(request, {
+    rateLimitKey: "drafts-delete",
+    limit: 30,
+  })
+  if ("response" in guard) return guard.response
+
+  const { searchParams } = new URL(request.url)
+  const draftId = searchParams.get("id")
+
+  if (!draftId) {
+    return NextResponse.json({ error: "Draft id is required" }, { status: 400 })
+  }
+
+  const { data, error } = await guard.supabase
+    .from("prompt_lab_experiments")
+    .delete()
+    .eq("id", draftId)
+    .eq("user_id", guard.user.id)
+    .select("id")
+    .maybeSingle()
+
+  if (error) {
+    return NextResponse.json({ error: "Failed to delete Prompt Lab draft" }, { status: 500 })
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: "Draft not found" }, { status: 404 })
+  }
+
+  return NextResponse.json({ deleted: true })
+}
