@@ -10,7 +10,12 @@ import type {
   PlanningDocumentSection,
   PlanningNarrativeTable,
 } from "@/lib/planning-document-parser"
-import { stripInlineMarkdown } from "@/lib/planning-document-parser"
+import {
+  extractSectionsByHeading,
+  normalizeHeading,
+  parseNarrativeTable,
+  stripInlineMarkdown,
+} from "@/lib/planning-document-parser"
 import { cn } from "@/lib/utils"
 
 interface PlanningDocumentProps {
@@ -448,7 +453,7 @@ function parseAcceptanceCriteria(lines: string[]) {
     const cleaned = cleanStoryText(line)
     if (!cleaned) continue
 
-    const criteriaMatch = cleaned.match(/^Acceptance Criteria:\s*(.*)$/i)
+    const criteriaMatch = cleaned.match(/^Acceptance Criteria:?\s*(.*)$/i)
     if (criteriaMatch) {
       inCriteria = true
       const inline = criteriaMatch[1]?.trim()
@@ -595,6 +600,583 @@ function Warning({ message }: { message: string }) {
   )
 }
 
+const currentPrdSectionAliases = [
+  "Introduction/overview",
+  "Goals",
+  "User personas",
+  "User experience",
+  "Functional requirements",
+  "User stories and acceptance criteria",
+  "Technical considerations",
+]
+
+const currentMvpSectionAliases = [
+  "MVP Summary",
+  "Key Assumptions and Scope Decisions",
+  "Target User and Problem",
+  "MVP Goal, Definition of Done, and Riskiest Assumptions",
+  "Core User Flow",
+  "MVP Scope",
+  "Must-Have Features",
+  "Validation Plan",
+]
+
+function countRecognizedSections(sections: PlanningDocumentSection[], aliases: string[]) {
+  const normalizedAliases = aliases.map(normalizeHeading)
+
+  return sections.filter((section) => {
+    const heading = normalizeHeading(section.heading)
+    return normalizedAliases.some((alias) => heading === alias)
+  }).length
+}
+
+function getSectionByAlias(sections: PlanningDocumentSection[], aliases: string[]) {
+  const normalizedAliases = aliases.map(normalizeHeading)
+
+  return sections.find((section) => {
+    const heading = normalizeHeading(section.heading)
+    return normalizedAliases.some((alias) => heading === alias)
+  })
+}
+
+function isCurrentPromptDocument(content: string, aliases: string[]) {
+  return countRecognizedSections(extractSectionsByHeading(content, 2), aliases) >= 3
+}
+
+function getDocumentPreamble(content: string) {
+  const withoutTitle = content.replace(/^#\s+.+$/m, "").trimStart()
+  const firstH2Index = withoutTitle.search(/^##\s+/m)
+  const preamble = firstH2Index >= 0 ? withoutTitle.slice(0, firstH2Index) : withoutTitle
+
+  return preamble.trim()
+}
+
+function getCurrentSectionTitle(heading: string) {
+  const cleaned = stripInlineMarkdown(heading)
+    .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
+    .replace(/\s*\/\s*/g, " / ")
+    .trim()
+
+  return cleaned
+    .split(" ")
+    .map((word) =>
+      /^(?:MVP|PRD|AI|API|UX|UI)$/.test(word.toUpperCase())
+        ? word.toUpperCase()
+        : `${word.slice(0, 1).toUpperCase()}${word.slice(1)}`,
+    )
+    .join(" ")
+}
+
+function SectionFallbackCard({
+  section,
+  projectId,
+  kicker = "Section",
+  dark = false,
+}: {
+  section?: PlanningDocumentSection
+  projectId: string
+  kicker?: string
+  dark?: boolean
+}) {
+  if (!section?.content.trim()) return null
+
+  return (
+    <PencilCard title={getCurrentSectionTitle(section.heading)} kicker={kicker} dark={dark}>
+      <MarkdownRenderer content={section.content} projectId={projectId} />
+    </PencilCard>
+  )
+}
+
+function CurrentPromptPage({
+  content,
+  projectId,
+  eyebrow,
+  title,
+  description,
+  children,
+}: PlanningDocumentProps & {
+  eyebrow: string
+  title: string
+  description: string
+  children: React.ReactNode
+}) {
+  const preamble = getDocumentPreamble(content)
+
+  return (
+    <div className="space-y-2">
+      <PageHeader eyebrow={eyebrow} title={title} description={description} />
+
+      {preamble ? (
+        <PencilCard title="Plan Snapshot" kicker="Context" dark>
+          <MarkdownRenderer content={preamble} projectId={projectId} />
+        </PencilCard>
+      ) : null}
+
+      {children}
+    </div>
+  )
+}
+
+function MiniCardGrid({
+  items,
+  labelPrefix,
+}: {
+  items: string[]
+  labelPrefix: string
+}) {
+  if (items.length === 0) return null
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {items.map((item, index) => (
+        <div key={`${item}-${index}`} className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
+            {labelPrefix} {String(index + 1).padStart(2, "0")}
+          </p>
+          <p className="mt-2 ui-type-body-sm text-[#0A0A0A]">{item}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function SplitSectionCards({
+  sections,
+  darkFirst = false,
+  projectId,
+}: {
+  sections: PlanningDocumentSection[]
+  darkFirst?: boolean
+  projectId: string
+}) {
+  if (sections.length === 0) return null
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-2">
+      {sections.map((section, index) => (
+        <article
+          key={`${section.heading}-${index}`}
+          className={cn(
+            "border px-5 py-5",
+            darkFirst && index === 0
+              ? "border-[#4A4040] bg-[#4A4040] text-[#FAFAFA]"
+              : "border-[#E8DDD5] bg-[#FAFAFA]",
+          )}
+        >
+          <p
+            className={cn(
+              "font-mono text-[10px] uppercase tracking-[0.18em]",
+              darkFirst && index === 0 ? "text-[#D8CEC5]" : "text-[#8A8480]",
+            )}
+          >
+            {getCurrentSectionTitle(section.heading)}
+          </p>
+          <div className="mt-3">
+            <MarkdownRenderer content={section.content} projectId={projectId} />
+          </div>
+        </article>
+      ))}
+    </div>
+  )
+}
+
+function NestedSectionCardsOrNarrative({
+  section,
+  projectId,
+  darkFirst = false,
+  darkNarrative = false,
+}: {
+  section: PlanningDocumentSection
+  projectId: string
+  darkFirst?: boolean
+  darkNarrative?: boolean
+}) {
+  const nested = extractSectionsByHeading(section.content, 3)
+
+  if (nested.length > 0) {
+    return <SplitSectionCards sections={nested} projectId={projectId} darkFirst={darkFirst} />
+  }
+
+  return (
+    <NarrativeContent
+      narrative={parseNarrativeTable(section.content)}
+      dark={darkNarrative}
+    />
+  )
+}
+
+function SectionFallbackGrid({
+  cards,
+  projectId,
+}: {
+  cards: Array<{
+    section?: PlanningDocumentSection
+    kicker: string
+    dark?: boolean
+  }>
+  projectId: string
+}) {
+  const visibleCards = cards.filter((card) => card.section?.content.trim())
+
+  if (visibleCards.length === 0) return null
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-2">
+      {visibleCards.map((card) => (
+        <SectionFallbackCard
+          key={`${card.kicker}-${card.section?.heading}`}
+          section={card.section}
+          projectId={projectId}
+          kicker={card.kicker}
+          dark={card.dark}
+        />
+      ))}
+    </div>
+  )
+}
+
+function JourneySteps({ narrative }: { narrative: PlanningNarrativeTable }) {
+  if (narrative.items.length === 0) {
+    return <NarrativeContent narrative={narrative} />
+  }
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {narrative.items.map((item, index) => (
+        <article key={`${item}-${index}`} className="border border-[#E8DDD5] bg-[#FAFAFA] px-4 py-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
+            Step {String(index + 1).padStart(2, "0")}
+          </p>
+          <p className="mt-2 ui-type-body-sm text-[#0A0A0A]">{item}</p>
+        </article>
+      ))}
+    </div>
+  )
+}
+
+interface CurrentPersona {
+  name: string
+  fields: Array<{ label: string; body: string }>
+}
+
+function parseCurrentPersonas(content: string): CurrentPersona[] {
+  const personas: CurrentPersona[] = []
+  let active: CurrentPersona | null = null
+
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim()
+    const heading = trimmed.match(/^\*\*([^*:][^*]{1,96})\*\*$/)?.[1]?.trim()
+
+    if (heading) {
+      active = { name: heading, fields: [] }
+      personas.push(active)
+      continue
+    }
+
+    if (!active) continue
+
+    const field = trimmed
+      .replace(/^\s*(?:[-*+]|\d+\.)\s+/, "")
+      .match(/^\*\*([^*]+)\*\*:\s*(.+)$/)
+
+    if (field) {
+      active.fields.push({
+        label: field[1].trim(),
+        body: field[2].trim(),
+      })
+    }
+  }
+
+  return personas
+}
+
+function PersonaCards({ section, projectId }: { section?: PlanningDocumentSection; projectId: string }) {
+  if (!section) return null
+
+  const nested = extractSectionsByHeading(section.content, 3)
+  const keyUserTypes = parseNarrativeTable(
+    getSectionByAlias(nested, ["Key user types"])?.content ?? "",
+  )
+  const personaDetails = getSectionByAlias(nested, ["Persona details"])?.content ?? section.content
+  const roleAccess = parseNarrativeTable(
+    getSectionByAlias(nested, ["Role-based access"])?.content ?? "",
+  )
+  const personas = parseCurrentPersonas(personaDetails)
+
+  return (
+    <PencilCard title="User Personas" kicker="Target Users">
+      <div className="space-y-5">
+        <MiniCardGrid items={keyUserTypes.items} labelPrefix="User Type" />
+
+        {personas.length > 0 ? (
+          <div className="grid gap-4 xl:grid-cols-3">
+            {personas.map((persona, index) => (
+              <article key={`${persona.name}-${index}`} className="border border-[#D8CEC5] bg-[#F7F2ED] px-5 py-5">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A8480]">
+                  Persona {String(index + 1).padStart(2, "0")}
+                </p>
+                <h3 className={cn(displayFontClass, "mt-2 text-[18px] font-semibold tracking-[-0.03em] text-[#1C1917]")}>
+                  {persona.name}
+                </h3>
+                <div className="mt-4 space-y-3">
+                  {persona.fields.map((field) => (
+                    <div key={`${persona.name}-${field.label}`} className="border-t border-[#E8DDD5] pt-3">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8A8480]">
+                        {field.label}
+                      </p>
+                      <p className="mt-1 ui-type-body-sm text-[#1C1917]">{field.body}</p>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <MarkdownRenderer content={personaDetails} projectId={projectId} />
+        )}
+
+        {roleAccess.items.length > 0 ? (
+          <div className="border border-[#E0E0E0] bg-white px-5 py-4">
+            <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
+              Role-Based Access
+            </p>
+            <StructuredItemList items={roleAccess.items} />
+          </div>
+        ) : null}
+      </div>
+    </PencilCard>
+  )
+}
+
+function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps) {
+  const sections = extractSectionsByHeading(content, 2)
+  const introduction = getSectionByAlias(sections, ["Introduction/overview", "Introduction overview"])
+  const goals = getSectionByAlias(sections, ["Goals"])
+  const personas = getSectionByAlias(sections, ["User personas"])
+  const experience = getSectionByAlias(sections, ["User experience"])
+  const requirements = getSectionByAlias(sections, ["Functional requirements"])
+  const userStories = getSectionByAlias(sections, ["User stories and acceptance criteria"])
+  const outOfScope = getSectionByAlias(sections, ["Non-goals / out of scope", "Out of scope"])
+  const technical = getSectionByAlias(sections, ["Technical considerations"])
+  const metrics = getSectionByAlias(sections, ["Success metrics"])
+  const timeline = getSectionByAlias(sections, ["Timeline and milestones"])
+  const risks = getSectionByAlias(sections, ["Risks and mitigation"])
+  const dependencies = getSectionByAlias(sections, ["Dependencies and assumptions"])
+  const openQuestions = getSectionByAlias(sections, ["Open questions"])
+
+  return (
+    <CurrentPromptPage
+      content={content}
+      projectId={projectId}
+      eyebrow="Product Plan"
+      title="Product Plan"
+      description="A structured PRD covering goals, users, experience, requirements, scope, risks, dependencies, and open questions."
+    >
+      {introduction ? (
+        <PencilCard title="Introduction / Overview" kicker="Product Brief" dark>
+          <NarrativeContent narrative={parseNarrativeTable(introduction.content)} dark />
+        </PencilCard>
+      ) : null}
+
+      {goals ? (
+        <PencilCard title="Goals" kicker="Outcomes">
+          <NestedSectionCardsOrNarrative
+            section={goals}
+            projectId={projectId}
+            darkFirst
+          />
+        </PencilCard>
+      ) : null}
+
+      <PersonaCards section={personas} projectId={projectId} />
+
+      {experience ? (
+        <PencilCard title="User Experience" kicker="Workflow">
+          <NestedSectionCardsOrNarrative
+            section={experience}
+            projectId={projectId}
+          />
+        </PencilCard>
+      ) : null}
+
+      {requirements ? (
+        <PencilCard title="Functional Requirements" kicker="Build Scope">
+          <RequirementsContent narrative={parseNarrativeTable(requirements.content)} />
+        </PencilCard>
+      ) : null}
+
+      {userStories ? (
+        <PencilCard title="User Stories And Acceptance Criteria" kicker="Behavior">
+          <UserStoriesContent narrative={parseNarrativeTable(userStories.content)} />
+        </PencilCard>
+      ) : null}
+
+      <SectionFallbackGrid
+        projectId={projectId}
+        cards={[
+          { section: outOfScope, kicker: "Scope", dark: true },
+          { section: technical, kicker: "Technical" },
+        ]}
+      />
+
+      <SectionFallbackGrid
+        projectId={projectId}
+        cards={[
+          { section: metrics, kicker: "Measurement" },
+          { section: timeline, kicker: "Delivery", dark: true },
+        ]}
+      />
+
+      <SectionFallbackGrid
+        projectId={projectId}
+        cards={[
+          { section: risks, kicker: "Risk" },
+          { section: dependencies, kicker: "Inputs" },
+        ]}
+      />
+
+      <SectionFallbackCard section={openQuestions} projectId={projectId} kicker="Decisions" dark />
+    </CurrentPromptPage>
+  )
+}
+
+function TableOrNarrative({ narrative }: { narrative: PlanningNarrativeTable }) {
+  if (narrative.table) {
+    return <DataTable headers={narrative.table.headers} rows={narrative.table.rows} />
+  }
+
+  return <NarrativeContent narrative={narrative} />
+}
+
+function FeatureTableCards({ narrative }: { narrative: PlanningNarrativeTable }) {
+  if (!narrative.table) return <NarrativeContent narrative={narrative} />
+
+  const headers = narrative.table.headers
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-2">
+      {narrative.table.rows.map((row, index) => {
+        const feature = getTableCell(row, headers, ["feature"]) || row[0] || `Feature ${index + 1}`
+        const why = getTableCell(row, headers, ["why", "matters", "value"])
+        const criteria = getTableCell(row, headers, ["acceptance", "criteria"])
+
+        return (
+          <article key={`${feature}-${index}`} className="border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A8480]">
+              Feature {String(index + 1).padStart(2, "0")}
+            </p>
+            <h3 className={cn(displayFontClass, "mt-2 text-[18px] font-semibold tracking-[-0.03em] text-[#0A0A0A]")}>
+              {feature}
+            </h3>
+            {why ? <p className="mt-3 ui-type-body-sm text-[#4A4040]">{why}</p> : null}
+            {criteria ? (
+              <div className="mt-4 border-t border-[#E8DDD5] pt-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8A8480]">
+                  Acceptance Criteria
+                </p>
+                <p className="mt-2 ui-type-caption text-[#4A4040]">{criteria}</p>
+              </div>
+            ) : null}
+          </article>
+        )
+      })}
+    </div>
+  )
+}
+
+function CurrentMvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentProps) {
+  const sections = extractSectionsByHeading(content, 2)
+  const summary = getSectionByAlias(sections, ["MVP Summary"])
+  const assumptions = getSectionByAlias(sections, ["Key Assumptions and Scope Decisions"])
+  const targetProblem = getSectionByAlias(sections, ["Target User and Problem"])
+  const goal = getSectionByAlias(sections, ["MVP Goal, Definition of Done, and Riskiest Assumptions"])
+  const userFlow = getSectionByAlias(sections, ["Core User Flow"])
+  const scope = getSectionByAlias(sections, ["MVP Scope"])
+  const features = getSectionByAlias(sections, ["Must-Have Features"])
+  const buildApproach = getSectionByAlias(sections, ["Suggested Build Approach"])
+  const buildSequence = getSectionByAlias(sections, ["AI-Friendly Build Sequence"])
+  const guardrails = getSectionByAlias(sections, ["AI Build Guardrails"])
+  const validation = getSectionByAlias(sections, ["Validation Plan"])
+  const cutList = getSectionByAlias(sections, ["Cut List"])
+  const nextPrompt = getSectionByAlias(sections, ["Next Prompt for AI Coding Tool"])
+
+  return (
+    <CurrentPromptPage
+      content={content}
+      projectId={projectId}
+      eyebrow="First Version"
+      title="First Version Plan"
+      description="A focused first-version plan covering validation, core flow, scope, build sequence, guardrails, and success signals."
+    >
+      {summary ? (
+        <PencilCard title="MVP Summary" kicker="Thesis" dark>
+          <NarrativeContent narrative={parseNarrativeTable(summary.content)} dark />
+        </PencilCard>
+      ) : null}
+
+      <SectionFallbackGrid
+        projectId={projectId}
+        cards={[
+          { section: assumptions, kicker: "Scope Decisions" },
+          { section: goal, kicker: "Validation", dark: true },
+        ]}
+      />
+
+      {targetProblem ? (
+        <PencilCard title="Target User And Problem" kicker="Audience">
+          <NestedSectionCardsOrNarrative
+            section={targetProblem}
+            projectId={projectId}
+            darkFirst
+          />
+        </PencilCard>
+      ) : null}
+
+      {userFlow ? (
+        <PencilCard title="Core User Flow" kicker="Journey">
+          <JourneySteps narrative={parseNarrativeTable(userFlow.content)} />
+        </PencilCard>
+      ) : null}
+
+      {scope ? (
+        <PencilCard title="MVP Scope" kicker="Include / Exclude">
+          <TableOrNarrative narrative={parseNarrativeTable(scope.content)} />
+        </PencilCard>
+      ) : null}
+
+      {features ? (
+        <PencilCard title="Must-Have Features" kicker="Feature Set">
+          <FeatureTableCards narrative={parseNarrativeTable(features.content)} />
+        </PencilCard>
+      ) : null}
+
+      <SectionFallbackGrid
+        projectId={projectId}
+        cards={[
+          { section: buildApproach, kicker: "Build Approach" },
+          { section: buildSequence, kicker: "AI Build Sequence", dark: true },
+        ]}
+      />
+
+      <SectionFallbackGrid
+        projectId={projectId}
+        cards={[
+          { section: guardrails, kicker: "Guardrails" },
+          { section: validation, kicker: "Validation Plan" },
+        ]}
+      />
+
+      <SectionFallbackGrid
+        projectId={projectId}
+        cards={[
+          { section: cutList, kicker: "Simplify If Needed", dark: true },
+          { section: nextPrompt, kicker: "Next Prompt" },
+        ]}
+      />
+    </CurrentPromptPage>
+  )
+}
+
 export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps) {
   const viewModel = useMemo(() => getPrdDocumentViewModel(content), [content])
 
@@ -608,6 +1190,10 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   }
 
   const { structured } = viewModel
+
+  if (isCurrentPromptDocument(content, currentPrdSectionAliases)) {
+    return <CurrentPrdDocumentBlocks content={content} projectId={projectId} />
+  }
 
   return (
     <div className="space-y-2">
@@ -738,6 +1324,10 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
   }
 
   const { structured } = viewModel
+
+  if (isCurrentPromptDocument(content, currentMvpSectionAliases)) {
+    return <CurrentMvpPlanDocumentBlocks content={content} projectId={projectId} />
+  }
 
   return (
     <div className="space-y-2">

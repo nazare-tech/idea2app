@@ -52,7 +52,7 @@ function cleanPlanningContent(content: string) {
 export function normalizeHeading(value: string) {
   return stripInlineMarkdown(value)
     .toLowerCase()
-    .replace(/^\d+(?:\.\d+)*\s+/, "")
+    .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
     .replace(/^[ivxlcdm]+\.\s+/i, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim()

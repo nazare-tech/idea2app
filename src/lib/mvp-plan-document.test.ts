@@ -139,6 +139,128 @@ Week 1: Intake and generation.
   assert.match(viewModel.structured.successMetrics[0].content, /70%/)
 })
 
+test("getMvpPlanViewModel parses current numbered First Version Plan prompt headings", () => {
+  const viewModel = getMvpPlanViewModel(`# MVP Plan: Proposal Pilot
+
+> **Product type detected:** B2B SaaS, AI-first Product
+> **Recommended first version:** Functional software MVP
+
+## 1. MVP Summary
+
+Proposal Pilot helps freelance designers turn client discovery notes into client-ready proposals. The MVP validates whether designers will trust an AI-assisted draft enough to edit and send it.
+
+## 2. Key Assumptions and Scope Decisions
+
+- [HIGH CONFIDENCE] Freelancers need faster proposal turnaround.
+- [SCOPE DECISION] CRM features are excluded from the MVP.
+
+## 3. Target User and Problem
+
+### Primary User
+Freelance designers who manage proposals manually.
+
+### Problem
+They spend too much time rewriting scope, timeline, and pricing language for every lead.
+
+### Current Workaround
+They copy old proposal documents and manually edit them.
+
+### Desired Outcome
+Send a credible proposal shortly after a client call.
+
+## 4. MVP Goal, Definition of Done, and Riskiest Assumptions
+
+**Goal:** Validate whether freelance designers will generate and edit a proposal from structured client notes.
+
+**Definition of Done:** A user can complete the core proposal workflow end-to-end without help.
+
+### Riskiest Product Assumption
+Designers will trust the generated proposal enough to edit it instead of starting from a blank document.
+
+### Riskiest Technical Assumption
+AI output quality is good enough for first-draft proposal language.
+
+## 5. Core User Flow
+
+1. User opens the proposal workspace.
+2. User enters client notes, services, budget, and timeline.
+3. System generates a proposal draft.
+4. User edits the draft.
+5. User exports or copies the proposal.
+
+## 6. MVP Scope
+
+| Category | Include in MVP | Exclude for Now |
+|---|---|---|
+| User access | Email login | Team roles |
+| Core input | Structured proposal intake | CRM import |
+| Core output | Editable proposal draft | E-signature |
+
+## 7. Must-Have Features
+
+| Feature | Why It Matters | Acceptance Criteria |
+|---|---|---|
+| Proposal intake | Captures enough context for a useful draft | User can submit required fields |
+| Proposal generation | Delivers the core value | User sees loading, success, and error states |
+
+## 8. Suggested Build Approach
+
+### Suggested Stack
+
+| Layer | Recommendation | Reason |
+|---|---|---|
+| Frontend | Next.js | Fast web MVP |
+| Database | Supabase | Store proposals |
+| AI / API | Server-side AI route | Keep keys private |
+
+### Manual Shortcuts
+- Manually review the first generated proposals with beta users.
+
+## 9. AI-Friendly Build Sequence
+
+| Step | Build Chunk | Goal | Test Before Moving On |
+|---|---|---|---|
+| 1 | Proposal intake form | Capture required context | Submit valid and invalid input |
+| 2 | AI draft route | Generate proposal copy | Mock successful and failed generation |
+
+## 10. AI Build Guardrails
+- Do not build CRM integrations.
+
+## 11. Validation Plan
+
+### First Test Audience
+Five freelance designers who send at least two proposals per month.
+
+### Success Signals
+| Signal Type | What to Look For |
+|---|---|
+| Strong Signal | Users edit and send generated proposals |
+
+## 12. Cut List
+
+| If This Gets Complicated | Simplify By |
+|---|---|
+| Auth too slow | Use invite-only magic links |
+
+## 13. Next Prompt for AI Coding Tool
+
+\`\`\`text
+Build the proposal intake form first.
+\`\`\`
+`)
+
+  assert.equal(viewModel.canRenderModules, true)
+  assert.match(viewModel.structured.overview.paragraphs.join(" "), /Proposal Pilot/)
+  assert.match(viewModel.structured.hypothesis.source, /Validate whether/)
+  assert.match(viewModel.structured.targetUser.source, /Freelance designers/)
+  assert.equal(viewModel.structured.scope.table?.headers[0], "Category")
+  assert.equal(viewModel.structured.featureSummary.table?.rows[0][0], "Proposal intake")
+  assert.match(viewModel.structured.userFlow[0].content, /proposal workspace/)
+  assert.match(viewModel.structured.techStack[0].content, /Next.js/)
+  assert.match(viewModel.structured.timeline[0].content, /Build Chunk/)
+  assert.match(viewModel.structured.successMetrics[0].content, /freelance designers/)
+})
+
 test("getMvpPlanViewModel preserves direct feature details and direct H2 content", () => {
   const viewModel = getMvpPlanViewModel(`# MVP Plan: ADR Helper
 

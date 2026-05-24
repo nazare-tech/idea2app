@@ -432,3 +432,112 @@ test("planning document blocks fall back to markdown for loose legacy content", 
   assert.match(html, /Block view unavailable/)
   assert.match(html, /Loose legacy notes only/)
 })
+
+test("PrdDocumentBlocks renders current numbered PRD prompt content as blocks", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      projectId="project-1"
+      content={`# PRD: Proposal Pilot
+
+## 1. Introduction/overview
+Proposal Pilot helps freelance designers turn discovery notes into client-ready proposals.
+
+## 3. User personas
+### 3.1 Key user types
+- Freelance designer who sends proposals monthly.
+
+### 3.2 Persona details
+**Dana Designer**
+- **Description**: Freelance designer managing three active client leads.
+- **Needs**: Faster proposal creation and reuse.
+
+## 4. User experience
+- User starts from a proposal intake form.
+
+## 5. Functional requirements
+1. The system must let a registered user create a proposal from structured intake fields.
+2. The system must show a loading state while AI proposal generation is running.
+
+## 6. User stories and acceptance criteria
+### US-001: Generate proposal
+**User story**
+As a freelance designer, I want to generate a proposal from client notes.
+**Acceptance criteria**
+- Generated proposal includes scope, timeline, and pricing sections.
+
+## 8. Technical considerations
+- Keep AI calls on the server.
+`}
+    />,
+  )
+
+  assert.doesNotMatch(html, /Block view unavailable/)
+  assert.match(html, /Product Plan/)
+  assert.match(html, /Dana Designer/)
+  assert.match(html, /User Type 01/)
+  assert.match(html, /Persona 01/)
+  assert.match(html, /Introduction \/ Overview/)
+  assert.match(html, /Functional Requirements/)
+  assert.match(html, /User Stories And Acceptance Criteria/)
+  assert.match(html, /Generated proposal includes scope, timeline, and pricing sections/)
+  assert.doesNotMatch(html, /No structured content available/)
+  assert.doesNotMatch(html, /Problem to Solve/)
+  assert.doesNotMatch(html, /What to Build/)
+})
+
+test("MvpPlanDocumentBlocks renders current numbered MVP prompt content as blocks", () => {
+  const html = renderToStaticMarkup(
+    <MvpPlanDocumentBlocks
+      projectId="project-1"
+      content={`# MVP Plan: Proposal Pilot
+
+## 1. MVP Summary
+Proposal Pilot helps freelance designers turn client notes into proposals.
+
+## 3. Target User and Problem
+### Primary User
+Freelance designers who manage proposals manually.
+### Problem
+They rewrite scope and pricing language for every lead.
+
+## 4. MVP Goal, Definition of Done, and Riskiest Assumptions
+**Goal:** Validate whether designers will generate and edit a proposal.
+
+## 5. Core User Flow
+1. User opens the proposal workspace.
+2. User enters client notes.
+3. System generates a proposal draft.
+
+## 6. MVP Scope
+| Category | Include in MVP | Exclude for Now |
+|---|---|---|
+| Core input | Structured proposal intake | CRM import |
+
+## 7. Must-Have Features
+| Feature | Why It Matters | Acceptance Criteria |
+|---|---|---|
+| Proposal intake | Captures useful context | User can submit required fields |
+
+## 9. AI-Friendly Build Sequence
+| Step | Build Chunk | Goal | Test Before Moving On |
+|---|---|---|---|
+| 1 | Proposal intake form | Capture context | Submit valid and invalid input |
+
+## 11. Validation Plan
+### First Test Audience
+Five freelance designers who send proposals monthly.
+`}
+    />,
+  )
+
+  assert.doesNotMatch(html, /Block view unavailable/)
+  assert.match(html, /First Version Plan/)
+  assert.match(html, /MVP Summary/)
+  assert.match(html, /Step 01/)
+  assert.match(html, /Feature 01/)
+  assert.match(html, /Must-Have Features/)
+  assert.match(html, /MVP Scope/)
+  assert.match(html, /Validation Plan/)
+  assert.doesNotMatch(html, /What We Need to Prove/)
+  assert.doesNotMatch(html, /Core Features/)
+})
