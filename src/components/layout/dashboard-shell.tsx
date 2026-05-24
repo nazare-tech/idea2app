@@ -22,7 +22,9 @@ export function DashboardShell({
   const shouldShowHeader = pathname
     ? pathname === "/projects/new" || !pathname.startsWith("/projects/")
     : true
-  const pageTitle = pathname === "/projects/new"
+  const pageTitle = pathname === "/projects"
+    ? null
+    : pathname === "/projects/new"
     ? "New Project"
     : pathname?.startsWith("/preferences")
     ? "Preferences"
