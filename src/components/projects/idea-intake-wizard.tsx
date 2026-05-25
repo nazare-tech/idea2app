@@ -78,6 +78,7 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
   const canContinue = normalizedIdea.length >= MIN_IDEA_LENGTH
   const questions = questionSet?.questions ?? []
   const allQuestionsAnswered = questions.length > 0 && questions.every((question) => hasAnswer(question, answers[question.id]))
+  const isIdeaStepLocked = isLoadingPending || isGeneratingQuestions
 
   useEffect(() => {
     let cancelled = false
@@ -368,7 +369,7 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
                     onChange={(event) => updateIdea(event.target.value)}
                     placeholder="Example: A product intelligence tool that turns support tickets, sales calls, and customer chats into roadmap priorities..."
                     className="min-h-[190px] border-border-strong bg-white text-[15px] leading-relaxed"
-                    disabled={isLoadingPending}
+                    disabled={isIdeaStepLocked}
                   />
                 </div>
 
@@ -379,7 +380,13 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
                   </div>
                 )}
 
-                <div className="mt-6">
+                <div
+                  className={cn(
+                    "mt-6 transition-opacity duration-200",
+                    isIdeaStepLocked && "pointer-events-none opacity-0"
+                  )}
+                  aria-hidden={isIdeaStepLocked}
+                >
                   <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
                     Or start from an example
                   </p>
@@ -388,8 +395,9 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
                       <button
                         key={example.id}
                         type="button"
+                        disabled={isIdeaStepLocked}
                         onClick={() => updateIdea(example.description)}
-                        className="rounded-lg border border-border-subtle bg-white p-4 text-left transition-colors hover:border-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="rounded-lg border border-border-subtle bg-white p-4 text-left transition-colors hover:border-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed"
                       >
                         <span className="block text-sm font-semibold">{example.title}</span>
                         <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-text-secondary">
@@ -407,7 +415,7 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
                 <Button
                   type="button"
                   onClick={generateQuestions}
-                  disabled={!canContinue || isGeneratingQuestions || isLoadingPending}
+                  disabled={!canContinue || isIdeaStepLocked}
                   className="h-11 w-full rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10 sm:w-auto"
                   data-testid="intake-continue"
                 >
