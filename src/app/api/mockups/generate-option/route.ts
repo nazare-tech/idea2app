@@ -10,6 +10,7 @@ import {
   findLatestActiveDocument,
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
+import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 
@@ -18,6 +19,7 @@ export const maxDuration = 300
 const OPTION_LABELS = new Set<string>(
   OPENROUTER_MOCKUP_OPTION_CONFIGS.map((config) => config.label),
 )
+const SAFE_RUN_ID = /^[A-Za-z0-9_-]+$/
 
 function parseOptionLabel(value: unknown): OpenRouterMockupOptionLabel | null {
   if (typeof value !== "string") return null
@@ -57,6 +59,16 @@ export async function POST(request: Request) {
     const projectName = typeof body.projectName === "string" ? body.projectName.trim() : ""
     const runId = typeof body.runId === "string" ? body.runId.trim() : undefined
     const label = parseOptionLabel(body.label)
+    const idea = typeof body.idea === "string" ? body.idea : undefined
+    const productPlan = typeof body.productPlan === "string" ? body.productPlan : undefined
+    let designPlan: ReturnType<typeof parseMockupDesignPlan> | undefined
+    if (body.designPlan && typeof body.designPlan === "object") {
+      try {
+        designPlan = parseMockupDesignPlan(JSON.stringify(body.designPlan))
+      } catch {
+        return NextResponse.json({ error: "Invalid mockup design plan" }, { status: 400 })
+      }
+    }
 
     if (!projectId || !mvpPlan || !projectName || !label) {
       return NextResponse.json(
@@ -65,7 +77,13 @@ export async function POST(request: Request) {
       )
     }
 
-    if (mvpPlan.length > 50_000 || projectName.length > 160 || (runId && runId.length > 120)) {
+    if (
+      mvpPlan.length > 50_000 ||
+      projectName.length > 160 ||
+      (idea && idea.length > 10_000) ||
+      (productPlan && productPlan.length > 50_000) ||
+      (runId && (runId.length > 120 || !SAFE_RUN_ID.test(runId)))
+    ) {
       return NextResponse.json(
         { error: "Mockup generation input is too large" },
         { status: 400 },
@@ -97,6 +115,9 @@ export async function POST(request: Request) {
       projectId,
       label,
       runId,
+      idea,
+      productPlan,
+      designPlan,
     })
 
     return NextResponse.json(result)

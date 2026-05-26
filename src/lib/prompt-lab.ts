@@ -25,6 +25,7 @@ import {
 } from "@/lib/prompt-lab-shared"
 import {
   OPENROUTER_IMAGE_MOCKUP_SOURCE,
+  OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
   buildMockupImageProxyUrl,
   type OpenRouterImageMockupContent,
 } from "@/lib/openrouter-image-mockup-format"
@@ -92,7 +93,7 @@ export interface PromptLabRunInput {
 export interface PromptLabRunResult {
   content: string
   model: string
-  source: "inhouse" | typeof OPENROUTER_IMAGE_MOCKUP_SOURCE
+  source: "inhouse" | typeof OPENROUTER_IMAGE_MOCKUP_SOURCE | typeof OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE
   metadata: Record<string, unknown>
 }
 
@@ -202,7 +203,7 @@ export async function runPromptLabArtifact({
       userPrompt,
     })
     const content: OpenRouterImageMockupContent = {
-      type: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       model: result.model,
       generatedAt: new Date().toISOString(),
       options: [
@@ -216,11 +217,12 @@ export async function runPromptLabArtifact({
     return {
       content: JSON.stringify(content),
       model: result.model,
-      source: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       metadata: {
         mockupOption,
         storagePath: result.option.storagePath,
         runId: result.runId,
+        designPlan: result.designPlan,
       },
     }
   }

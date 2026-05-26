@@ -7,6 +7,7 @@ import {
   type IntakeQuestionSet,
   type IntakeSelectionMode,
 } from "./intake-types"
+import { ensureRequiredPlatformQuestion } from "./intake-required-questions"
 import {
   INTAKE_QUESTION_SYSTEM_PROMPT,
   buildIntakeQuestionUserPrompt,
@@ -99,7 +100,7 @@ export function parseIntakeQuestionSet(rawModelOutput: string): IntakeQuestionSe
   return {
     schemaVersion: INTAKE_QUESTION_SCHEMA_VERSION,
     source: "ai",
-    questions,
+    questions: ensureRequiredPlatformQuestion(questions),
   }
 }
 

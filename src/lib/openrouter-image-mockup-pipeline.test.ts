@@ -2,9 +2,13 @@ import test from "node:test"
 import assert from "node:assert/strict"
 
 import {
+  OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
   buildMockupImageProxyUrl,
+  buildOpenRouterMockupImagePrompt,
   extractImageDataUrlFromOpenRouterChoice,
   getOpenRouterMockupImageTimeoutMs,
+  getOpenRouterMockupImageConfig,
+  getOpenRouterMockupPlannerModel,
   parseImageDataUrl,
   parseOpenRouterImageMockupContent,
 } from "./openrouter-image-mockup-pipeline"
@@ -95,6 +99,168 @@ test("parseOpenRouterImageMockupContent: returns normalized options", () => {
   assert.equal(parsed?.type, "openrouter-image")
   assert.equal(parsed?.options[0]?.label, "A")
   assert.equal(parsed?.options[0]?.storagePath, "p/r/a.png")
+})
+
+test("parseOpenRouterImageMockupContent: returns normalized storyboard options", () => {
+  const parsed = parseOpenRouterImageMockupContent(JSON.stringify({
+    type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+    model: "openai/gpt-5.4-image-2",
+    generatedAt: "2026-05-25T12:00:00.000Z",
+    designPlan: {
+      version: "mockup-design-plan-v1",
+      primaryPlatform: "mobile-web",
+      happyPathScenario: "Returning planner checks generated meal plan.",
+      persona: "Busy parent",
+      screens: [
+        {
+          name: "Weekly Plan",
+          caption: "Review week",
+          purpose: "Show generated meal schedule",
+          happyPathState: "Plan is complete",
+        },
+        {
+          name: "Shopping List",
+          caption: "Buy ingredients",
+          purpose: "Show grouped grocery list",
+          happyPathState: "Items are categorized",
+        },
+      ],
+      directions: [],
+    },
+    options: [
+      {
+        label: "A",
+        title: "Guided flow",
+        imageUrl: "/api/mockups/image?projectId=p&path=p%2Fr%2Foption-a-storyboard.png",
+        storagePath: "p/r/option-a-storyboard.png",
+        description: "Primary option",
+        contentType: "image/png",
+        screens: [
+          { name: "Weekly Plan", caption: "Review week" },
+          { name: "Shopping List", caption: "Buy ingredients" },
+        ],
+        width: 1536,
+        height: 672,
+      },
+    ],
+  }))
+
+  assert.equal(parsed?.type, OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE)
+  assert.equal(parsed?.options[0]?.storagePath, "p/r/option-a-storyboard.png")
+  assert.equal(parsed?.options[0]?.screens?.length, 2)
+  assert.equal(parsed?.options[0]?.width, 1536)
+})
+
+test("getOpenRouterMockupImageConfig: defaults to wide 2K storyboard config", () => {
+  const previousSize = process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
+  const previousAspectRatio = process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
+  delete process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
+  delete process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
+
+  try {
+    assert.deepEqual(getOpenRouterMockupImageConfig(), {
+      aspect_ratio: "21:9",
+      image_size: "2K",
+    })
+  } finally {
+    if (previousSize === undefined) {
+      delete process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
+    } else {
+      process.env.OPENROUTER_MOCKUP_IMAGE_SIZE = previousSize
+    }
+    if (previousAspectRatio === undefined) {
+      delete process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
+    } else {
+      process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO = previousAspectRatio
+    }
+  }
+})
+
+test("buildOpenRouterMockupImagePrompt: adds strict mobile storyboard composition JSON", () => {
+  const prompt = buildOpenRouterMockupImagePrompt({
+    projectName: "MealMind",
+    mvpPlan: "## First Version Plan\nGenerate weekly meals, review details, and swap a meal.",
+    title: "Visual-Forward Friendly",
+    strategy: "Large food imagery with compact mobile controls and supportive rationale callouts.",
+    label: "C",
+    designPlan: {
+      version: "mockup-design-plan-v1",
+      primaryPlatform: "native-mobile-app",
+      happyPathScenario: "Sarah completes setup, reviews a generated menu, and opens a recipe detail.",
+      persona: "Healthcare worker planning meals after long shifts",
+      screens: [
+        {
+          name: "Onboarding Completion",
+          flowStep: 1,
+          caption: "Onboarding complete",
+          purpose: "Confirm preferences",
+          happyPathState: "Preferences are saved",
+          dataToShow: ["Night shift", "Vegetarian", "High protein"],
+          priority: "P0",
+        },
+        {
+          name: "Weekly Menu Generated",
+          flowStep: 2,
+          caption: "Menu generated",
+          purpose: "Review the generated plan",
+          happyPathState: "Meals are populated",
+          dataToShow: ["Meal cards", "Prep labels", "Swap action"],
+          priority: "P0",
+        },
+        {
+          name: "Recipe Detail View",
+          flowStep: 3,
+          caption: "Recipe detail",
+          purpose: "Inspect one meal",
+          happyPathState: "Ingredients and steps are visible",
+          dataToShow: ["Ingredients", "Steps", "Keep in plan action"],
+          priority: "P0",
+        },
+      ],
+      directions: [],
+    },
+  })
+
+  assert.match(prompt, /Mobile storyboard composition JSON:/)
+  assert.match(prompt, /"model": "iPhone 17 Pro"/)
+  assert.match(prompt, /"3 equal phone screen lanes"/)
+  assert.match(prompt, /"placement": "fixed top caption row only"/)
+  assert.match(prompt, /"format": "1\. Screen Name"/)
+  assert.match(prompt, /Fixed top label to render: 1\. Onboarding Completion/)
+  assert.match(prompt, /Caption intent, do not float elsewhere: Menu generated/)
+  assert.match(prompt, /render the planned fixed top labels verbatim/)
+  assert.match(prompt, /wide mobile devices/)
+  assert.match(prompt, /tablet-like phones/)
+  assert.match(prompt, /internal scroll\/continuation cue/)
+  assert.match(prompt, /Option C - Visual-Forward Friendly/)
+})
+
+test("getOpenRouterMockupPlannerModel: prefers planner model over analysis and image models", () => {
+  const previousPlanner = process.env.OPENROUTER_MOCKUP_PLANNER_MODEL
+  const previousAnalysis = process.env.OPENROUTER_ANALYSIS_MODEL
+
+  try {
+    process.env.OPENROUTER_MOCKUP_PLANNER_MODEL = "planner/model"
+    process.env.OPENROUTER_ANALYSIS_MODEL = "analysis/model"
+    assert.equal(getOpenRouterMockupPlannerModel("image/model"), "planner/model")
+
+    delete process.env.OPENROUTER_MOCKUP_PLANNER_MODEL
+    assert.equal(getOpenRouterMockupPlannerModel("image/model"), "analysis/model")
+
+    delete process.env.OPENROUTER_ANALYSIS_MODEL
+    assert.equal(getOpenRouterMockupPlannerModel("image/model"), "image/model")
+  } finally {
+    if (previousPlanner === undefined) {
+      delete process.env.OPENROUTER_MOCKUP_PLANNER_MODEL
+    } else {
+      process.env.OPENROUTER_MOCKUP_PLANNER_MODEL = previousPlanner
+    }
+    if (previousAnalysis === undefined) {
+      delete process.env.OPENROUTER_ANALYSIS_MODEL
+    } else {
+      process.env.OPENROUTER_ANALYSIS_MODEL = previousAnalysis
+    }
+  }
 })
 
 test("getOpenRouterMockupImageTimeoutMs: defaults to single-option Hobby-safe timeout", () => {

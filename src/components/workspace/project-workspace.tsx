@@ -120,6 +120,7 @@ type MockupOptionGenerationResult =
       skipped: false
       option: OpenRouterImageMockupOption | null
       model: string
+      designPlan?: unknown
       error?: string
     }
 
@@ -192,6 +193,7 @@ export function ProjectWorkspace({
   const nameJustSetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
   const mockupDraftRunStorageKey = `mockup_draft_run_${project.id}`
+  const mockupDraftDesignPlanStorageKey = `mockup_draft_design_plan_${project.id}`
 
   useEffect(() => {
     setProjectName(project.name)
@@ -221,6 +223,7 @@ export function ProjectWorkspace({
   const [mockupOptionStatuses, setMockupOptionStatuses] = useState<MockupOptionStatus[]>([])
   const [mockupDraftRunId, setMockupDraftRunId] = useState<string | null>(null)
   const [mockupDraftOptions, setMockupDraftOptions] = useState<OpenRouterImageMockupOption[]>([])
+  const [mockupDraftDesignPlan, setMockupDraftDesignPlan] = useState<unknown>(null)
   const [localGenerationErrors, setLocalGenerationErrors] = useState<Partial<Record<DocumentType, string>>>({})
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<Record<DocumentType, number>>({
     ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, 0])),
@@ -260,7 +263,16 @@ export function ProjectWorkspace({
     if (storedRunId) {
       setMockupDraftRunId(storedRunId)
     }
-  }, [mockupDraftRunId, mockupDraftRunStorageKey])
+
+    const storedDesignPlan = localStorage.getItem(mockupDraftDesignPlanStorageKey)
+    if (storedDesignPlan) {
+      try {
+        setMockupDraftDesignPlan(JSON.parse(storedDesignPlan))
+      } catch {
+        localStorage.removeItem(mockupDraftDesignPlanStorageKey)
+      }
+    }
+  }, [mockupDraftDesignPlanStorageKey, mockupDraftRunId, mockupDraftRunStorageKey])
 
   const generateAllQueue = useGenerateAll(project.id, (s) => s.queue)
 
@@ -1264,6 +1276,14 @@ export function ProjectWorkspace({
             .limit(1)
             .maybeSingle()
           mvpContent = data?.content ?? mvpPlans[0]?.content
+          const { data: productPlanData } = await supabase
+            .from("prds")
+            .select("content")
+            .eq("project_id", project.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          prdContent = productPlanData?.content ?? prds[0]?.content
         }
 
         if (docType === "mockups") {
@@ -1278,8 +1298,10 @@ export function ProjectWorkspace({
               localStorage.getItem("makercompass_mockup_fixture_mode") === "true")
           const clearMockupDraftRun = () => {
             setMockupDraftRunId(null)
+            setMockupDraftDesignPlan(null)
             if (typeof window !== "undefined") {
               localStorage.removeItem(mockupDraftRunStorageKey)
+              localStorage.removeItem(mockupDraftDesignPlanStorageKey)
             }
           }
 
@@ -1353,6 +1375,7 @@ export function ProjectWorkspace({
           const optionsByLabel = new Map(
             mockupDraftOptions.map((option) => [option.label.toUpperCase(), option])
           )
+          let activeMockupDesignPlan = mockupDraftDesignPlan
           const syncDraftOptions = () => {
             setMockupDraftOptions(
               optionLabels
@@ -1377,6 +1400,7 @@ export function ProjectWorkspace({
               body: JSON.stringify({
                 projectId: project.id,
                 runId,
+                designPlan: activeMockupDesignPlan,
               }),
             })
             const payload = await response.json().catch(() => null)
@@ -1440,6 +1464,7 @@ export function ProjectWorkspace({
                 skipped: false,
                 option: existingOption,
                 model,
+                designPlan: activeMockupDesignPlan ?? undefined,
               })
               continue
             }
@@ -1454,8 +1479,11 @@ export function ProjectWorkspace({
                   projectId: project.id,
                   mvpPlan: mvpContent,
                   projectName: project.name,
+                  idea: project.description,
+                  productPlan: prdContent,
                   label,
                   runId,
+                  designPlan: activeMockupDesignPlan,
                 }),
               })
 
@@ -1476,6 +1504,9 @@ export function ProjectWorkspace({
 
               const option = payload?.option as OpenRouterImageMockupOption | undefined
               const resultModel = typeof payload?.model === "string" ? payload.model : model
+              const returnedDesignPlan = payload?.designPlan && typeof payload.designPlan === "object"
+                ? payload.designPlan
+                : null
               if (!option) {
                 optionResults.push({
                   skipped: false,
@@ -1485,6 +1516,13 @@ export function ProjectWorkspace({
                 })
                 continue
               }
+              if (returnedDesignPlan && !activeMockupDesignPlan) {
+                activeMockupDesignPlan = returnedDesignPlan
+                setMockupDraftDesignPlan(returnedDesignPlan)
+                if (typeof window !== "undefined") {
+                  localStorage.setItem(mockupDraftDesignPlanStorageKey, JSON.stringify(returnedDesignPlan))
+                }
+              }
 
               updateMockupOptionStatus(label, "ready", "Ready")
               optionsByLabel.set(label, option)
@@ -1493,6 +1531,7 @@ export function ProjectWorkspace({
                 skipped: false,
                 option,
                 model: resultModel,
+                designPlan: returnedDesignPlan ?? activeMockupDesignPlan ?? undefined,
               })
             } catch (error) {
               if (externalSignal?.aborted) throw error
@@ -1546,6 +1585,9 @@ export function ProjectWorkspace({
             !result.skipped && result.option && typeof result.model === "string"
           )
           const finalizedModel = fulfilledModel?.skipped === false ? fulfilledModel.model : model
+          const finalizedDesignPlan = optionResults.find((result) =>
+            !result.skipped && result.designPlan
+          )
           const finalizeResponse = await requestWithTimeout("/api/mockups/finalize", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1554,6 +1596,9 @@ export function ProjectWorkspace({
               runId,
               model: finalizedModel,
               options: readyOptions,
+              designPlan: finalizedDesignPlan?.skipped === false
+                ? finalizedDesignPlan.designPlan
+                : activeMockupDesignPlan,
             }),
           }, 60000)
           const finalizePayload = await finalizeResponse.json().catch(() => null)
@@ -1653,6 +1698,8 @@ export function ProjectWorkspace({
     [
       analyses,
       loadWorkspaceDocuments,
+      mockupDraftDesignPlan,
+      mockupDraftDesignPlanStorageKey,
       mockupDraftOptions,
       mockupDraftRunId,
       mockupDraftRunStorageKey,

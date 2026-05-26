@@ -2,10 +2,11 @@ import { NextResponse } from "next/server"
 
 import {
   MOCKUP_STORAGE_BUCKET,
-  OPENROUTER_IMAGE_MOCKUP_SOURCE,
+  OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
 } from "@/lib/openrouter-image-mockup-pipeline"
 import {
   buildMockupImageProxyUrl,
+  type OpenRouterImageMockupScreen,
   type OpenRouterImageMockupContent,
   type OpenRouterImageMockupOption,
 } from "@/lib/openrouter-image-mockup-format"
@@ -14,12 +15,14 @@ import {
   findLatestActiveDocument,
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
+import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
 import { createClient } from "@/lib/supabase/server"
 import type { Json } from "@/types/database"
 
 export const maxDuration = 300
 
 const EXPECTED_LABELS = ["A", "B", "C"]
+const SAFE_RUN_ID = /^[A-Za-z0-9_-]+$/
 
 function normalizeOption(value: unknown, projectId: string): OpenRouterImageMockupOption | null {
   if (!value || typeof value !== "object") return null
@@ -30,6 +33,13 @@ function normalizeOption(value: unknown, projectId: string): OpenRouterImageMock
   const storagePath = typeof record.storagePath === "string" ? record.storagePath.trim() : ""
   const description = typeof record.description === "string" ? record.description.trim() : ""
   const contentType = typeof record.contentType === "string" ? record.contentType.trim() : "image/png"
+  const screens = normalizeScreens(record.screens)
+  const width = typeof record.width === "number" && Number.isFinite(record.width) && record.width > 0
+    ? record.width
+    : undefined
+  const height = typeof record.height === "number" && Number.isFinite(record.height) && record.height > 0
+    ? record.height
+    : undefined
 
   if (!EXPECTED_LABELS.includes(label) || !title || !storagePath) return null
   if (!storagePath.startsWith(`${projectId}/`)) return null
@@ -42,7 +52,33 @@ function normalizeOption(value: unknown, projectId: string): OpenRouterImageMock
     storagePath,
     description,
     contentType,
+    ...(screens.length > 0 ? { screens } : {}),
+    ...(width ? { width } : {}),
+    ...(height ? { height } : {}),
   }
+}
+
+function normalizeScreens(value: unknown): OpenRouterImageMockupScreen[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((screen) => {
+      if (!screen || typeof screen !== "object") return null
+      const record = screen as Record<string, unknown>
+      const name = typeof record.name === "string" ? record.name.trim() : ""
+      const caption = typeof record.caption === "string" ? record.caption.trim() : ""
+      if (!name || !caption) return null
+      return {
+        name,
+        caption,
+        ...(typeof record.purpose === "string" && record.purpose.trim()
+          ? { purpose: record.purpose.trim() }
+          : {}),
+        ...(typeof record.happyPathState === "string" && record.happyPathState.trim()
+          ? { happyPathState: record.happyPathState.trim() }
+          : {}),
+      }
+    })
+    .filter((screen): screen is OpenRouterImageMockupScreen => Boolean(screen))
 }
 
 export async function POST(request: Request) {
@@ -61,10 +97,24 @@ export async function POST(request: Request) {
     const model = typeof body.model === "string" ? body.model.trim() : ""
     const runId = typeof body.runId === "string" ? body.runId.trim() : ""
     const rawOptions: unknown[] = Array.isArray(body.options) ? body.options : []
+    let designPlan: unknown = null
+    if (body.designPlan && typeof body.designPlan === "object") {
+      try {
+        designPlan = parseMockupDesignPlan(JSON.stringify(body.designPlan))
+      } catch {
+        return NextResponse.json({ error: "Invalid mockup design plan" }, { status: 400 })
+      }
+    }
 
     if (!projectId || !model || !runId) {
       return NextResponse.json(
         { error: "projectId, model, and runId are required" },
+        { status: 400 },
+      )
+    }
+    if (model.length > 160 || runId.length > 120 || !SAFE_RUN_ID.test(runId)) {
+      return NextResponse.json(
+        { error: "model and runId must use supported values" },
         { status: 400 },
       )
     }
@@ -105,17 +155,18 @@ export async function POST(request: Request) {
 
     const generatedAt = new Date().toISOString()
     const content: OpenRouterImageMockupContent = {
-      type: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       model,
       generatedAt,
       options,
     }
     const metadata = {
-      source: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       model,
       storage_bucket: MOCKUP_STORAGE_BUCKET,
       storage_run_id: runId,
       generated_at: generatedAt,
+      ...(designPlan ? { design_plan: designPlan as Json } : {}),
       generation_mode: "option_invocations",
     } satisfies Record<string, Json>
 
@@ -143,7 +194,7 @@ export async function POST(request: Request) {
       id: data.id,
       content: JSON.stringify(content),
       model,
-      source: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
     })
   } catch (error) {
     console.error("Mockup finalization error:", error)

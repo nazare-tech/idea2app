@@ -56,16 +56,59 @@ const validModelOutput = JSON.stringify({
   ],
 })
 
+const platformOptions = ["Desktop web", "Mobile web", "Native mobile app", "Native desktop app"]
+
 test("parseIntakeQuestionSet: parses valid chip-only model JSON into typed questions", () => {
   const questionSet = parseIntakeQuestionSet(validModelOutput)
 
   assert.equal(questionSet.schemaVersion, "idea-intake-questions-v1")
   assert.equal(questionSet.source, "ai")
-  assert.equal(questionSet.questions.length, 4)
+  assert.equal(questionSet.questions.length, 5)
   assert.equal(questionSet.questions[0].selectionMode, "single")
   assert.equal(questionSet.questions[1].selectionMode, "single")
   assert.equal(questionSet.questions[3].selectionMode, "multiple")
   assert.equal(questionSet.questions[3].allowOther, false)
+})
+
+test("parseIntakeQuestionSet: adds required primary platform question when model omits it", () => {
+  const questionSet = parseIntakeQuestionSet(validModelOutput)
+  const platformQuestion = questionSet.questions.find((question) => question.id === "primary-platform")
+
+  assert.ok(platformQuestion)
+  assert.equal(platformQuestion.selectionMode, "single")
+  assert.equal(platformQuestion.allowOther, false)
+  assert.deepEqual(
+    platformQuestion.options.map((option) => option.label),
+    platformOptions,
+  )
+})
+
+test("parseIntakeQuestionSet: replaces model platform choices with canonical platform options", () => {
+  const output = JSON.stringify({
+    questions: [
+      ...JSON.parse(validModelOutput).questions.slice(0, 3),
+      {
+        id: "platform",
+        question: "Where should this live?",
+        selectionMode: "multiple",
+        options: [
+          { id: "desktop-mobile", label: "Desktop + mobile" },
+          { id: "responsive", label: "Responsive web" },
+        ],
+        allowOther: false,
+      },
+    ],
+  })
+
+  const questionSet = parseIntakeQuestionSet(output)
+  const platformQuestion = questionSet.questions.find((question) => question.id === "primary-platform")
+
+  assert.ok(platformQuestion)
+  assert.equal(questionSet.questions.length, 4)
+  assert.deepEqual(
+    platformQuestion.options.map((option) => option.label),
+    platformOptions,
+  )
 })
 
 test("parseIntakeQuestionSet: accepts JSON wrapped in a markdown fence", () => {

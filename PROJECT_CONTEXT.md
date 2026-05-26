@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-05-23 (removed local instrumentation)
+**Last Updated**: 2026-05-25 (storyboard mockup pipeline)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -11,14 +11,14 @@
 
 ### Core Functionality
 
-- **Idea Intake Wizard**: Canonical new-project flow at `/projects/new`. Users enter an idea, answer 4-5 AI-generated structured questions, then the app creates the project and starts the bundled onboarding document-generation queue. The wizard stores readable summaries in `projects.description`, structured intake JSON in `project_intakes`, and shows the Maker Compass loading state until Overview + Market Research are ready.
+- **Idea Intake Wizard**: Canonical new-project flow at `/projects/new`. Users enter an idea, answer 4-5 AI-generated structured questions, then the app creates the project and starts the bundled onboarding document-generation queue. The question parser always ensures a required single-select `primary-platform` question with the canonical choices Desktop web, Mobile web, Native mobile app, and Native desktop app; project creation validates that this question has exactly one supported answer so stale/bypassed clients cannot omit it. The wizard stores readable summaries in `projects.description`, structured intake JSON in `project_intakes`, and shows the Maker Compass loading state until Overview + Market Research are ready.
 - **Prompt Tab AI Chat Deprecated**: The Prompt tab is no longer reachable for any project, including legacy Prompt Chat projects. Direct project URLs with `?tab=prompt` are silently redirected to the workspace Overview, the Idea Brief nav entry is removed, and `/api/prompt-chat` returns `410 Gone`. Historical prompt chat rows are preserved unless explicitly deleted in a separate data cleanup.
 - **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
 - **Competitive Analysis / Market Research**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a full-width Pencil-faithful designed page, not generic markdown. The UI is built from typed parsing of the stored markdown source and uses founder-friendly display labels including Opportunity Verdict, Feature Comparison, Pricing Comparison, Best Customer Segments, How You'll Reach Customers, Ways to Stand Out, What Makes It Hard to Copy, Risks & Competitor Responses, First Version Focus, and Recommended Next Moves. Direct competitor entries still expect linked H3 headings plus concise fields for overview, core product, positioning, strengths, key edge, limitations, pricing model, and target audience so the app can render dense competitor cards and a fast-comparison table. Legacy v2 headings such as Founder Verdict and GTM / Distribution Signals are accepted as parser aliases; legacy or malformed documents fall back to markdown with upgrade guidance.
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **Product Plan Generation**: Complete Product Plans with user personas, features, and release plans. Completed Product Plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. Unlabeled persona/profile bullets are preserved as one target-user profile block so demographic, background, goals, and pain-point fields do not split into fake personas. The renderer cleans legacy horizontal rules/blockquotes, presents labeled bullets as compact prose rows, stacks requirements vertically by functional/non-functional/integration groups, and renders key user flows as story cards with acceptance criteria. The Product Plan prompt now generates PRD-style markdown with numbered sections for introduction/overview, goals, personas, user experience, functional requirements, user stories and acceptance criteria, out-of-scope items, technical considerations, success metrics, timeline, risks, dependencies, assumptions, and open questions.
 - **First Version Plan Generation**: Strategic first-release development plan based on the Product Plan. Completed First Version Plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. Direct H2/H3 content is preserved as fallback section cards when a generated First Version Plan lacks deeper nested headings.
-- **Mockup Generation**: Three UI mockup alternatives generated from First Version Plans. The default path uses OpenRouter image-output model `openai/gpt-5.4-image-2`, configurable with `OPENROUTER_MOCKUP_IMAGE_MODEL`; images are stored in private Supabase Storage and rendered through an authenticated image proxy. On Vercel Hobby, manual workspace mockup generation runs separate option-level invocations for Options A/B/C one after another, then finalizes one normal mockup document after all three images are saved. Each OpenRouter image call defaults to a `285s` timeout inside its own `300s` Hobby function envelope. This can make the full three-option run take roughly 15 minutes when the provider takes close to the timeout for each high-fidelity image; sequential generation is intentionally safer on Hobby because one slow option no longer causes all three browser requests to fail together. Manual retries persist the option run id in localStorage and call `/api/mockups/recover-options` before spending more OpenRouter credits, so images that reached Supabase Storage can be finalized even if the browser or route timed out. Local/no-credit fixture testing is available through `/api/mockups/fixture` when running outside production, or in production only with `ENABLE_MOCKUP_FIXTURE_GENERATION=true`. The renderer also supports json-render specs/patches and legacy Stitch HTML for older saved mockups.
+- **Mockup Generation**: Three UI mockup alternatives generated from First Version Plans. The default path uses OpenRouter image-output model `openai/gpt-5.4-image-2`, configurable with `OPENROUTER_MOCKUP_IMAGE_MODEL`; images are stored in private Supabase Storage and rendered through an authenticated image proxy. Before image generation, the pipeline creates a hidden `mockup-design-plan-v1` JSON plan from the First Version Plan and available project context using `OPENROUTER_MOCKUP_PLANNER_MODEL`, falling back to `OPENROUTER_ANALYSIS_MODEL` and then the image model. That plan chooses the primary platform, a populated happy-path scenario, 2-4 core MVP screens, captions, and three visual directions. The hidden plan is stored in `mockups.metadata.design_plan`, not in the user-rendered mockup content. Each option image is now a v2 storyboard (`openrouter-image-v2`): one wide horizontal image containing the selected screens, with display-safe screen names/captions stored in content metadata. OpenRouter is asked for `image_config: { aspect_ratio: "21:9", image_size: "2K" }` by default, configurable through `OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO` and `OPENROUTER_MOCKUP_IMAGE_SIZE`; actual decoded image dimensions are recorded when available. Manual workspace mockup generation still runs separate option-level invocations for Options A/B/C one after another, then finalizes one normal mockup document after all three storyboard images are saved. Manual retries persist the option run id and design plan in localStorage and call `/api/mockups/recover-options` before spending more OpenRouter credits, so images that reached Supabase Storage can be finalized even if the browser or route timed out. Local/no-credit fixture testing is available through `/api/mockups/fixture` when running outside production, or in production only with `ENABLE_MOCKUP_FIXTURE_GENERATION=true`. The renderer displays each option as a wide storyboard image plus generated screen captions; mobile storyboards are prompted with a structured Figma-style composition JSON that asks for same-width iPhone 17 Pro portrait frames, fixed top captions, neutral arrows between screens, optional side rationale cards, and same-width vertical continuation or scroll cues instead of wider phones.
 - **Launch Plan Generation**: Launch Plans are now generated through an AI-backed Launch Plan prompt module instead of a deterministic template. The route keeps the existing marketing-brief input contract and still saves markdown `launch-plan` rows in `analyses`.
 - **Dev Prompt Lab**: Local-development-only workbench at `/dev/prompt-lab` for iterating artifact prompts against existing projects without creating workflow artifacts, consuming credits, or starting queues. It supports Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan; stores artifact-scoped reusable system/model drafts in Supabase `prompt_lab_experiments`, stores project-scoped isolated runs in `prompt_lab_runs`, uses existing workspace renderers for artifact-accurate preview, and includes a lab-only renderer playground for experiments that do not affect production workspace rendering. The user prompt/context is regenerated from the selected project and should not be overwritten by shared system drafts. Prompt Lab text runs use the shared OpenRouter long-text timeout (`240s`) and render the completed artifact after the response finishes; mockup image runs keep their separate image timeout path.
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
@@ -29,12 +29,13 @@
   - Figma-matched desktop hero artwork from layered raster assets in `public/landing/hero/*`, rendered by `HeroArtwork`
   - Authenticated visitors to `/` are redirected to `/projects`
   - Fail-open API behavior so CTA rendering does not block on Supabase errors
-- **OpenRouter Image Mockups + Legacy Stitch Compatibility**: Mockup generation now defaults to OpenRouter image models and keeps Stitch rendering/proxy support for existing saved mockups. Features:
-  - `src/lib/openrouter-image-mockup-pipeline.ts` generates OpenRouter image alternatives and uploads image bytes to Supabase Storage, with a reusable single-option helper for Hobby-safe manual generation
+- **OpenRouter Image Mockups + Legacy Stitch Compatibility**: Mockup generation now defaults to OpenRouter image storyboards and keeps Stitch rendering/proxy support for older saved mockups until those records are cleaned up separately. Features:
+  - `src/lib/mockup-design-plan.ts` generates and validates hidden mockup design plans with primary platform, happy-path scenario, 2-4 screens, screen captions, and option-level design directions
+  - `src/lib/openrouter-image-mockup-pipeline.ts` generates OpenRouter storyboard alternatives and uploads image bytes to Supabase Storage, with a reusable single-option helper for Hobby-safe manual generation
   - `src/app/api/mockups/generate-option/route.ts` generates and stores one mockup option image for manual workspace generation
-  - `src/app/api/mockups/recover-options/route.ts` reconstructs saved option metadata from Supabase Storage for the current run before retrying failed/missing options
+  - `src/app/api/mockups/recover-options/route.ts` reconstructs saved storyboard option metadata from Supabase Storage for the current run before retrying failed/missing options
   - `src/app/api/mockups/finalize/route.ts` finalizes three generated options into the canonical `mockups` row
-  - `src/app/api/mockups/fixture/route.ts` creates three no-credit fixture mockups for local UI/finalization testing; append `?mockupFixture=1` or set `localStorage.makercompass_mockup_fixture_mode = "true"` in local development
+  - `src/app/api/mockups/fixture/route.ts` creates three no-credit storyboard fixture mockups for local UI/finalization testing; append `?mockupFixture=1` or set `localStorage.makercompass_mockup_fixture_mode = "true"` in local development
   - `src/app/api/mockups/image/route.ts` proxies stored mockup images after project ownership checks
   - `@google/stitch-sdk` client wrapper in `src/lib/stitch/client.ts`
   - Server-side HTML proxy route for safe rendering of legacy Stitch-hosted HTML
@@ -841,7 +842,10 @@ PERPLEXITY_API_KEY=pplx-xxx...
 TAVILY_API_KEY=tvly-xxx...
 
 # OpenRouter image mockups and legacy Stitch design tooling
+OPENROUTER_MOCKUP_PLANNER_MODEL=anthropic/claude-sonnet-4-6 # optional; falls back to OPENROUTER_ANALYSIS_MODEL
 OPENROUTER_MOCKUP_IMAGE_MODEL=openai/gpt-5.4-image-2
+OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO=21:9
+OPENROUTER_MOCKUP_IMAGE_SIZE=2K
 SUPABASE_MOCKUP_STORAGE_BUCKET=mockups
 STITCH_API_KEY=stitch_xxx... # legacy saved Stitch mockup compatibility / tooling
 
@@ -1120,11 +1124,11 @@ docker run -p 3000:3000 idea2app
     - PRD/MVP/Tech Spec: Direct OpenRouter calls with detailed system prompts
   - Competitive-analysis inserts metadata with `document_version` and `prompt_version` for renderer compatibility
 
-- **POST /api/mockups/generate**: Generate OpenRouter image UI mockups
+- **POST /api/mockups/generate**: Generate OpenRouter storyboard mockups
   - Body: `{ projectId, mvpPlan, projectName, stream? }`
-  - Returns: `{ content, model, source }` — content is JSON with `{ type: "openrouter-image", options: [{label, title, imageUrl, storagePath, description}] }`; duplicate requests return `200 OK` with `{ skipped: true, existingDocument }`
+  - Returns: `{ content, model, source }` — content is JSON with `{ type: "openrouter-image-v2", options: [{label, title, imageUrl, storagePath, description, screens, width?, height?}] }`; duplicate requests return `200 OK` with `{ skipped: true, existingDocument }`
   - Cost: project-bundled, no credits consumed
-  - Uses OpenRouter image generation for 3 static design alternatives
+  - Uses a hidden design plan plus OpenRouter image generation for 3 static storyboard alternatives
   - Route `maxDuration`: 300s
   - Generation logic lives in `src/lib/openrouter-image-mockup-pipeline.ts` and is shared with server-side document generation
 
@@ -1415,6 +1419,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/projects/[id]/workspace/route.ts](src/app/api/projects/[id]/workspace/route.ts) | Lazy workspace payload endpoint for requested document collections, project metadata, credits, and structured-intake presence |
 | [src/app/api/projects/[id]/status/route.ts](src/app/api/projects/[id]/status/route.ts) | Lightweight document-count snapshot used by generation polling |
 | [src/app/dev/prompt-lab/page.tsx](src/app/dev/prompt-lab/page.tsx) | Local-development-only Prompt Lab page for isolated prompt iteration against existing projects |
+| [src/app/dev/mockup-renderer-preview/page.tsx](src/app/dev/mockup-renderer-preview/page.tsx) | Local-development-only visual fixture page for the OpenRouter storyboard mockup renderer |
 | [src/components/dev/prompt-lab-client.tsx](src/components/dev/prompt-lab-client.tsx) | Prompt Lab workbench UI with project/artifact selectors, prompt editors, saved drafts/runs, workspace-style preview, and lab-only renderer playground |
 | [src/app/api/dev/prompt-lab/context/route.ts](src/app/api/dev/prompt-lab/context/route.ts) | Dev-only endpoint that loads owned project context, upstream artifacts, and default prompts for one artifact |
 | [src/app/api/dev/prompt-lab/run/route.ts](src/app/api/dev/prompt-lab/run/route.ts) | Dev-only isolated generation endpoint that saves Prompt Lab run history without writing canonical artifacts |
@@ -1443,7 +1448,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/components/analysis/competitive-analysis-document.tsx](src/components/analysis/competitive-analysis-document.tsx) | Market Research v2 hybrid modules/markdown renderer with legacy notice and upgrade CTA |
 | [src/components/analysis/planning-document-blocks.tsx](src/components/analysis/planning-document-blocks.tsx) | PRD and MVP block renderers that use the Pencil-style planning document parser/view-model layer with markdown fallback, PRD context/vision cards, compact labeled PRD prose rows, vertically stacked PRD requirement categories, user-story acceptance criteria cards, single-profile persona fallback labeling, and MVP overview placement |
 | [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with lazy syntax highlighting, responsive table column sizing, and beautiful-mermaid diagrams with expand/pan/zoom controls |
-| [src/components/ui/mockup-renderer.tsx](src/components/ui/mockup-renderer.tsx) | Mockup renderer for OpenRouter image mockups, json-render specs/patches, legacy Stitch HTML records, and legacy ASCII mockups |
+| [src/components/ui/mockup-renderer.tsx](src/components/ui/mockup-renderer.tsx) | Mockup renderer for OpenRouter storyboard images with screen captions, json-render specs/patches, legacy Stitch HTML records, and legacy ASCII mockups |
 | [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | General chat UI component |
 | [src/components/chat/prompt-chat-interface.tsx](src/components/chat/prompt-chat-interface.tsx) | Deprecated Prompt Chat UI retained for cleanup/history reference |
 | [src/components/chat/chat-primitives.tsx](src/components/chat/chat-primitives.tsx) | Shared chat presentation primitives used by both chat surfaces |
@@ -1469,11 +1474,11 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/analyses/[id]/route.ts](src/app/api/analyses/[id]/route.ts) | PATCH endpoint to update analysis content |
 | [src/app/api/prds/[id]/route.ts](src/app/api/prds/[id]/route.ts) | PATCH endpoint to update PRD content |
 | [src/app/api/mvp-plans/[id]/route.ts](src/app/api/mvp-plans/[id]/route.ts) | PATCH endpoint to update First Version Plan content |
-| [src/app/api/mockups/generate/route.ts](src/app/api/mockups/generate/route.ts) | POST endpoint to generate OpenRouter image UI mockups without credit consumption. |
-| [src/app/api/mockups/generate-option/route.ts](src/app/api/mockups/generate-option/route.ts) | POST endpoint to generate one OpenRouter image mockup option for Hobby-safe manual workspace generation. |
-| [src/app/api/mockups/finalize/route.ts](src/app/api/mockups/finalize/route.ts) | POST endpoint to finalize three saved OpenRouter mockup options into the canonical mockups document row. |
-| [src/app/api/mockups/recover-options/route.ts](src/app/api/mockups/recover-options/route.ts) | POST endpoint to recover already-uploaded option images for a mockup run before retrying OpenRouter generation. |
-| [src/app/api/mockups/fixture/route.ts](src/app/api/mockups/fixture/route.ts) | POST endpoint to save no-credit fixture mockups for local display and retry testing. |
+| [src/app/api/mockups/generate/route.ts](src/app/api/mockups/generate/route.ts) | POST endpoint to generate OpenRouter storyboard mockup alternatives without credit consumption. |
+| [src/app/api/mockups/generate-option/route.ts](src/app/api/mockups/generate-option/route.ts) | POST endpoint to generate one OpenRouter storyboard option for Hobby-safe manual workspace generation. |
+| [src/app/api/mockups/finalize/route.ts](src/app/api/mockups/finalize/route.ts) | POST endpoint to validate and finalize three saved OpenRouter storyboard options into the canonical mockups document row. |
+| [src/app/api/mockups/recover-options/route.ts](src/app/api/mockups/recover-options/route.ts) | POST endpoint to recover already-uploaded storyboard option images for a mockup run before retrying OpenRouter generation. |
+| [src/app/api/mockups/fixture/route.ts](src/app/api/mockups/fixture/route.ts) | POST endpoint to save no-credit storyboard fixture mockups for local display and retry testing. |
 | [src/app/api/mockups/[id]/route.ts](src/app/api/mockups/[id]/route.ts) | PATCH endpoint to update mockup content |
 | [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | PATCH endpoint to update tech spec content |
 | [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
@@ -1482,8 +1487,9 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/prd-document.ts](src/lib/prd-document.ts) | PRD parser/view-model helpers used by the PRD block renderer, including persona/profile grouping fallback |
 | [src/lib/mvp-plan-document.ts](src/lib/mvp-plan-document.ts) | First Version Plan parser/view-model helpers used by the First Version Plan block renderer, including direct-content fallback sections |
 | [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (market research, Product Plan, First Version Plan, tech spec). OpenRouter long-form text calls use the shared 240s AbortSignal timeout. |
-| [src/lib/openrouter-image-mockup-pipeline.ts](src/lib/openrouter-image-mockup-pipeline.ts) | OpenRouter-only image mockup generation and Supabase Storage upload. |
-| [src/lib/openrouter-image-mockup-format.ts](src/lib/openrouter-image-mockup-format.ts) | Client-safe parser/helpers for OpenRouter image mockup JSON. |
+| [src/lib/mockup-design-plan.ts](src/lib/mockup-design-plan.ts) | Hidden mockup design-plan prompt, schema parser, and validation for platform, happy path, 2-4 screens, and three visual directions. |
+| [src/lib/openrouter-image-mockup-pipeline.ts](src/lib/openrouter-image-mockup-pipeline.ts) | OpenRouter-only storyboard mockup generation, image config handling, decoded dimension capture, and Supabase Storage upload. |
+| [src/lib/openrouter-image-mockup-format.ts](src/lib/openrouter-image-mockup-format.ts) | Client-safe parser/helpers for OpenRouter image/storyboard mockup JSON. |
 | [src/lib/stitch-pipeline.ts](src/lib/stitch-pipeline.ts) | Legacy Stitch mockup generation retained for compatibility. |
 | [src/lib/with-retry.ts](src/lib/with-retry.ts) | Shared retry utility — 3 retries, exponential backoff [1s/2s/4s], retries on 429/5xx/network errors |
 | [src/lib/perplexity.ts](src/lib/perplexity.ts) | Perplexity API client for competitor search (wrapped with withRetry) |

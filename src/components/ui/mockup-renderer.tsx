@@ -731,19 +731,21 @@ function OpenRouterImageMockupViewer({
               <span className="text-sm font-medium text-foreground">{option.title}</span>
             </div>
 
-            <div className="flex min-h-[420px] flex-col lg:min-h-[600px] lg:flex-row">
-              <div className="flex flex-1 items-center justify-center bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px] p-3 sm:p-5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={option.imageUrl}
-                  alt={`${option.title} mockup option ${option.label}`}
-                  className="h-auto w-full rounded-lg border border-border bg-white object-contain shadow-sm"
-                  style={{ maxHeight: "min(600px, 70vh)" }}
-                />
+            <div className="flex min-h-[420px] flex-col">
+              <div className="overflow-x-auto bg-white p-3 sm:p-5">
+                <div className="min-w-[960px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={option.imageUrl}
+                    alt={`${option.title} mockup option ${option.label}`}
+                    className="h-auto w-full rounded-lg border border-border bg-white object-contain shadow-sm"
+                    style={{ maxHeight: "min(760px, 78vh)" }}
+                  />
+                </div>
               </div>
 
-              <div className="flex w-full shrink-0 flex-col justify-between border-t border-border p-5 lg:w-72 lg:border-l lg:border-t-0">
-                <div className="space-y-3">
+              <div className="flex w-full flex-col gap-5 border-t border-border p-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="space-y-4">
                   <div>
                     <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                       Option {option.label}
@@ -755,11 +757,21 @@ function OpenRouterImageMockupViewer({
                       {option.description}
                     </p>
                   )}
+                  {option.screens && option.screens.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                      {option.screens.map((screen, screenIndex) => (
+                        <div key={`${option.label}-${screen.name}-${screenIndex}`} className="rounded-md border border-border bg-muted/20 p-3">
+                          <p className="text-xs font-medium text-foreground">{screen.name}</p>
+                          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{screen.caption}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <button
                   type="button"
-                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-xs font-medium transition-colors hover:bg-muted/50 disabled:opacity-50"
+                  className="flex w-full shrink-0 items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-xs font-medium transition-colors hover:bg-muted/50 disabled:opacity-50 lg:w-auto"
                   disabled={downloadingLabel !== null}
                   onClick={() => handleDownload(index)}
                 >

@@ -39,6 +39,18 @@ const questions: IntakeQuestion[] = [
     ],
     allowOther: false,
   },
+  {
+    id: "primary-platform",
+    question: "Where should the first version primarily live?",
+    selectionMode: "single",
+    options: [
+      { id: "desktop-web", label: "Desktop web" },
+      { id: "mobile-web", label: "Mobile web" },
+      { id: "native-mobile-app", label: "Native mobile app" },
+      { id: "native-desktop-app", label: "Native desktop app" },
+    ],
+    allowOther: false,
+  },
 ]
 
 test("buildProjectIntakePayload: creates a normalized versioned payload", () => {
@@ -82,12 +94,16 @@ test("buildProjectSummary: creates a human-readable dashboard description", () =
         selectedOptionIds: ["small-businesses"],
         otherText: "independent bakery owners",
       },
-      {
-        questionId: "core-workflow",
-        selectedOptionIds: ["forecasting"],
-        otherText: "holiday-aware ingredient planning",
-      },
-    ],
+	      {
+	        questionId: "core-workflow",
+	        selectedOptionIds: ["forecasting"],
+	        otherText: "holiday-aware ingredient planning",
+	      },
+	      {
+	        questionId: "primary-platform",
+	        selectedOptionIds: ["desktop-web"],
+	      },
+	    ],
     createdAt: "2026-04-23T12:00:00.000Z",
   })
 
@@ -95,9 +111,10 @@ test("buildProjectSummary: creates a human-readable dashboard description", () =
 
   assert.match(summary, /Business idea summary:/)
   assert.match(summary, /AI inventory planning for bakeries/)
-  assert.match(summary, /Ideal first user: Small businesses, independent bakery owners/i)
-  assert.match(summary, /Which workflow should the product handle first: Forecasting, holiday-aware ingredient planning/i)
-})
+	  assert.match(summary, /Ideal first user: Small businesses, independent bakery owners/i)
+	  assert.match(summary, /Which workflow should the product handle first: Forecasting, holiday-aware ingredient planning/i)
+	  assert.match(summary, /Where should the first version primarily live: Desktop web/i)
+	})
 
 test("formatProjectIntakeForAi: creates plain-language context for downstream AI", () => {
   const payload = buildProjectIntakePayload({
@@ -108,11 +125,15 @@ test("formatProjectIntakeForAi: creates plain-language context for downstream AI
         questionId: "target-audience",
         selectedOptionIds: ["small-businesses"],
       },
-      {
-        questionId: "business-model",
-        selectedOptionIds: ["subscription"],
-      },
-    ],
+	      {
+	        questionId: "business-model",
+	        selectedOptionIds: ["subscription"],
+	      },
+	      {
+	        questionId: "primary-platform",
+	        selectedOptionIds: ["desktop-web"],
+	      },
+	    ],
     createdAt: "2026-04-23T12:00:00.000Z",
   })
 
@@ -120,6 +141,7 @@ test("formatProjectIntakeForAi: creates plain-language context for downstream AI
 
   assert.match(context, /Structured intake \(idea-intake-v1\)/)
   assert.match(context, /Original idea: AI inventory planning for bakeries/)
-  assert.match(context, /Who is the ideal first user\?: Small businesses/)
-  assert.match(context, /Which business model is most likely\?: Subscription/)
-})
+	  assert.match(context, /Who is the ideal first user\?: Small businesses/)
+	  assert.match(context, /Which business model is most likely\?: Subscription/)
+	  assert.match(context, /Where should the first version primarily live\?: Desktop web/)
+	})

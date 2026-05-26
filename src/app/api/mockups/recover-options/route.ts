@@ -6,10 +6,12 @@ import {
   getOpenRouterMockupImageModel,
 } from "@/lib/openrouter-image-mockup-pipeline"
 import {
-  OPENROUTER_IMAGE_MOCKUP_SOURCE,
+  OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
   buildMockupImageProxyUrl,
+  type OpenRouterImageMockupScreen,
   type OpenRouterImageMockupOption,
 } from "@/lib/openrouter-image-mockup-format"
+import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 
@@ -23,6 +25,34 @@ function getContentTypeFromName(name: string) {
   if (lowerName.endsWith(".webp")) return "image/webp"
   if (lowerName.endsWith(".png")) return "image/png"
   return null
+}
+
+function getScreensFromDesignPlan(value: unknown): OpenRouterImageMockupScreen[] | undefined {
+  if (!value || typeof value !== "object") return undefined
+  const record = value as Record<string, unknown>
+  if (!Array.isArray(record.screens)) return undefined
+
+  const screens = record.screens
+    .map((screen) => {
+      if (!screen || typeof screen !== "object") return null
+      const screenRecord = screen as Record<string, unknown>
+      const name = typeof screenRecord.name === "string" ? screenRecord.name.trim() : ""
+      const caption = typeof screenRecord.caption === "string" ? screenRecord.caption.trim() : ""
+      if (!name || !caption) return null
+      return {
+        name,
+        caption,
+        ...(typeof screenRecord.purpose === "string" && screenRecord.purpose.trim()
+          ? { purpose: screenRecord.purpose.trim() }
+          : {}),
+        ...(typeof screenRecord.happyPathState === "string" && screenRecord.happyPathState.trim()
+          ? { happyPathState: screenRecord.happyPathState.trim() }
+          : {}),
+      }
+    })
+    .filter((screen): screen is OpenRouterImageMockupScreen => Boolean(screen))
+
+  return screens.length > 0 ? screens : undefined
 }
 
 export async function POST(request: Request) {
@@ -39,6 +69,14 @@ export async function POST(request: Request) {
     const body = await request.json()
     const projectId = typeof body.projectId === "string" ? body.projectId.trim() : ""
     const runId = typeof body.runId === "string" ? body.runId.trim() : ""
+    let screens: OpenRouterImageMockupScreen[] | undefined
+    if (body.designPlan && typeof body.designPlan === "object") {
+      try {
+        screens = getScreensFromDesignPlan(parseMockupDesignPlan(JSON.stringify(body.designPlan)))
+      } catch {
+        return NextResponse.json({ error: "Invalid mockup design plan" }, { status: 400 })
+      }
+    }
 
     if (!projectId || !runId || !SAFE_RUN_ID.test(runId)) {
       return NextResponse.json({ error: "projectId and a valid runId are required" }, { status: 400 })
@@ -73,10 +111,10 @@ export async function POST(request: Request) {
     for (const config of OPENROUTER_MOCKUP_OPTION_CONFIGS) {
       const lowerLabel = config.label.toLowerCase()
       const file = [
-        `option-${lowerLabel}.png`,
-        `option-${lowerLabel}.jpg`,
-        `option-${lowerLabel}.jpeg`,
-        `option-${lowerLabel}.webp`,
+        `option-${lowerLabel}-storyboard.png`,
+        `option-${lowerLabel}-storyboard.jpg`,
+        `option-${lowerLabel}-storyboard.jpeg`,
+        `option-${lowerLabel}-storyboard.webp`,
       ]
         .map((name) => fileByName.get(name))
         .find(Boolean)
@@ -94,13 +132,14 @@ export async function POST(request: Request) {
         storagePath,
         description: config.strategy,
         contentType,
+        ...(screens ? { screens } : {}),
       })
     }
 
     return NextResponse.json({
       options,
       model: getOpenRouterMockupImageModel(),
-      source: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       runId,
     })
   } catch (error) {

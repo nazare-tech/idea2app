@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import {
   OPENROUTER_MOCKUP_OPTION_CONFIGS,
-  OPENROUTER_IMAGE_MOCKUP_SOURCE,
+  OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
 } from "@/lib/openrouter-image-mockup-pipeline"
 import type {
   OpenRouterImageMockupContent,
@@ -32,29 +32,37 @@ function buildFixtureSvgDataUrl({
   projectName: string
 }) {
   const accent = label === "A" ? "#2563eb" : label === "B" ? "#0f766e" : "#7c3aed"
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
-  <rect width="1600" height="900" fill="#f8fafc"/>
-  <rect x="96" y="72" width="1408" height="756" rx="28" fill="#ffffff" stroke="#dbe4ee" stroke-width="2"/>
-  <rect x="96" y="72" width="1408" height="96" rx="28" fill="#0f172a"/>
-  <text x="136" y="132" fill="#ffffff" font-family="Arial, sans-serif" font-size="34" font-weight="700">${escapeXml(projectName)}</text>
-  <circle cx="1440" cy="120" r="20" fill="${accent}"/>
-  <text x="136" y="242" fill="#0f172a" font-family="Arial, sans-serif" font-size="46" font-weight="700">Option ${label}: ${escapeXml(title)}</text>
-  <text x="136" y="292" fill="#64748b" font-family="Arial, sans-serif" font-size="24">Fixture mockup for no-credit local testing</text>
-  <rect x="136" y="352" width="392" height="296" rx="18" fill="#eef2ff" stroke="#c7d2fe"/>
-  <rect x="576" y="352" width="392" height="296" rx="18" fill="#ecfeff" stroke="#a5f3fc"/>
-  <rect x="1016" y="352" width="392" height="296" rx="18" fill="#f5f3ff" stroke="#ddd6fe"/>
-  <rect x="176" y="404" width="220" height="28" rx="14" fill="${accent}"/>
-  <rect x="176" y="462" width="292" height="18" rx="9" fill="#94a3b8"/>
-  <rect x="176" y="508" width="236" height="18" rx="9" fill="#cbd5e1"/>
-  <rect x="616" y="404" width="128" height="128" rx="22" fill="${accent}" opacity="0.92"/>
-  <rect x="784" y="414" width="144" height="18" rx="9" fill="#64748b"/>
-  <rect x="784" y="462" width="104" height="18" rx="9" fill="#cbd5e1"/>
-  <rect x="1056" y="404" width="276" height="24" rx="12" fill="#475569"/>
-  <rect x="1056" y="470" width="172" height="96" rx="14" fill="${accent}" opacity="0.82"/>
-  <rect x="1248" y="470" width="120" height="96" rx="14" fill="#e2e8f0"/>
-  <rect x="136" y="702" width="1272" height="48" rx="24" fill="#e2e8f0"/>
-  <rect x="136" y="702" width="${label === "A" ? "420" : label === "B" ? "720" : "1030"}" height="48" rx="24" fill="${accent}"/>
-</svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="672" viewBox="0 0 1536 672">
+	  <rect width="1536" height="672" fill="#ffffff"/>
+	  <text x="64" y="68" fill="#0f172a" font-family="Arial, sans-serif" font-size="32" font-weight="700">Option ${label}: ${escapeXml(title)}</text>
+	  <text x="64" y="104" fill="#64748b" font-family="Arial, sans-serif" font-size="18">${escapeXml(projectName)} storyboard fixture</text>
+	  <g transform="translate(64 148)">
+	    <rect width="420" height="360" rx="22" fill="#f8fafc" stroke="#dbe4ee" stroke-width="2"/>
+	    <rect x="28" y="28" width="364" height="56" rx="16" fill="${accent}"/>
+	    <rect x="28" y="116" width="250" height="22" rx="11" fill="#334155"/>
+	    <rect x="28" y="162" width="330" height="16" rx="8" fill="#94a3b8"/>
+	    <rect x="28" y="206" width="150" height="92" rx="16" fill="#e2e8f0"/>
+	    <rect x="204" y="206" width="154" height="92" rx="16" fill="#dbeafe"/>
+	    <text x="0" y="412" fill="#475569" font-family="Arial, sans-serif" font-size="18">1. Intake complete</text>
+	  </g>
+	  <g transform="translate(558 148)">
+	    <rect width="420" height="360" rx="22" fill="#f8fafc" stroke="#dbe4ee" stroke-width="2"/>
+	    <rect x="28" y="28" width="130" height="304" rx="18" fill="#e2e8f0"/>
+	    <rect x="190" y="28" width="202" height="34" rx="17" fill="${accent}"/>
+	    <rect x="190" y="96" width="156" height="20" rx="10" fill="#334155"/>
+	    <rect x="190" y="144" width="202" height="16" rx="8" fill="#94a3b8"/>
+	    <rect x="190" y="190" width="202" height="78" rx="16" fill="#ccfbf1"/>
+	    <text x="0" y="412" fill="#475569" font-family="Arial, sans-serif" font-size="18">2. Active workspace</text>
+	  </g>
+	  <g transform="translate(1052 148)">
+	    <rect width="420" height="360" rx="22" fill="#f8fafc" stroke="#dbe4ee" stroke-width="2"/>
+	    <rect x="28" y="28" width="292" height="24" rx="12" fill="#334155"/>
+	    <rect x="28" y="86" width="364" height="72" rx="18" fill="#ede9fe"/>
+	    <rect x="28" y="184" width="172" height="112" rx="18" fill="${accent}" opacity="0.88"/>
+	    <rect x="220" y="184" width="172" height="112" rx="18" fill="#e2e8f0"/>
+	    <text x="0" y="412" fill="#475569" font-family="Arial, sans-serif" font-size="18">3. Value delivered</text>
+	  </g>
+	</svg>`
 
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
@@ -115,6 +123,43 @@ export async function POST(request: Request) {
 
     const generatedAt = new Date().toISOString()
     const model = "fixture/mockup-no-credit"
+    const screens = [
+      {
+        name: "Intake complete",
+        caption: "Capture the user's context",
+        purpose: "Show completed setup with real data",
+        happyPathState: "The user has already provided the key inputs",
+      },
+      {
+        name: "Active workspace",
+        caption: "Use the core workflow",
+        purpose: "Show the main product surface in use",
+        happyPathState: "The product has generated useful working context",
+      },
+      {
+        name: "Value delivered",
+        caption: "Review the finished output",
+        purpose: "Show the product's primary value moment",
+        happyPathState: "The user can act on the completed result",
+      },
+    ]
+    const designPlan = {
+      version: "mockup-design-plan-v1",
+      primaryPlatform: "desktop-web",
+      happyPathScenario: "A returning user completes the core MVP workflow with realistic saved data.",
+      persona: "Primary MVP user",
+      screens,
+      directions: OPENROUTER_MOCKUP_OPTION_CONFIGS.map((config) => ({
+        label: config.label,
+        name: config.title,
+        layoutStrategy: config.strategy,
+        navigationPattern: "Horizontal storyboard",
+        density: "Medium",
+        visualTone: "Clean product UI",
+        reusableMotifs: ["Cards", "Status blocks", "Action rows"],
+        consistencyNotes: "Keep each screen in the same visual system.",
+      })),
+    }
     const options: OpenRouterImageMockupOption[] = OPENROUTER_MOCKUP_OPTION_CONFIGS.map((config) => ({
       label: config.label,
       title: config.title,
@@ -123,22 +168,26 @@ export async function POST(request: Request) {
         title: config.title,
         projectName,
       }),
-      storagePath: `fixture/${projectId}/option-${config.label.toLowerCase()}.svg`,
+      storagePath: `fixture/${projectId}/option-${config.label.toLowerCase()}-storyboard.svg`,
       description: config.strategy,
       contentType: "image/svg+xml",
+      screens,
+      width: 1536,
+      height: 672,
     }))
 
     const content: OpenRouterImageMockupContent = {
-      type: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       model,
       generatedAt,
       options,
     }
     const metadata = {
-      source: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       model,
       generated_at: generatedAt,
       generation_mode: "fixture",
+      design_plan: designPlan as unknown as Json,
     } satisfies Record<string, Json>
 
     const { data, error: insertError } = await supabase
@@ -165,7 +214,7 @@ export async function POST(request: Request) {
       id: data.id,
       content: JSON.stringify(content),
       model,
-      source: OPENROUTER_IMAGE_MOCKUP_SOURCE,
+      source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       fixture: true,
     })
   } catch (error) {

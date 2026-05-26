@@ -3,6 +3,7 @@ import OpenAI from "openai"
 
 import type { IntakeAnswer, IntakeQuestion, ProjectIntakeSource } from "@/lib/intake-types"
 import { formatProjectIntakeForAi } from "@/lib/intake-context"
+import { validateRequiredPlatformAnswer } from "@/lib/intake-required-questions"
 import { buildProjectIntakePayload, buildProjectSummary } from "@/lib/intake-summary"
 import {
   buildOnboardingGenerationQueue,
@@ -244,6 +245,10 @@ export async function POST(request: Request) {
   const answerResult = validateAnswers(questions, body.answers)
   if (answerResult.error) {
     return NextResponse.json({ error: answerResult.error }, { status: 400 })
+  }
+  const platformError = validateRequiredPlatformAnswer(questions, answerResult.answers)
+  if (platformError) {
+    return NextResponse.json({ error: platformError }, { status: 400 })
   }
 
   const pendingToken = normalizeText(body.pendingToken, 180)
