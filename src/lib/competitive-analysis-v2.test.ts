@@ -74,6 +74,45 @@ test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   assert.equal(structured.swotAnalysis.matrix?.externalNegative, "Incumbent copy risk")
 })
 
+test("positioning map parser reads score columns by header and preserves confidence", () => {
+  const parsed = parseCompetitiveAnalysisV2(
+    buildV2Fixture({
+      "Positioning Map":
+        "- **X-axis**: Ease of setup\n- **Y-axis**: Collaboration depth\n\n| Placement Rationale | Evidence Confidence | Y Score | Competitor | X Score |\n|---|---|---:|---|---:|\n| Slow setup but deep collaboration | High: public docs and pricing pages | 8 | Competitor One | 4 |\n| Fast setup with light collaboration | Medium: inferred from onboarding copy | 3 | Competitor Two | 9 |",
+    })
+  )
+  const structured = getCompetitiveAnalysisStructuredData(parsed)
+
+  assert.equal(structured.positioningMap.points[0]?.competitor, "Competitor One")
+  assert.equal(structured.positioningMap.points[0]?.x, 4)
+  assert.equal(structured.positioningMap.points[0]?.y, 8)
+  assert.equal(
+    structured.positioningMap.points[0]?.rationale,
+    "Slow setup but deep collaboration"
+  )
+  assert.equal(
+    structured.positioningMap.points[0]?.evidence,
+    "High: public docs and pricing pages"
+  )
+})
+
+test("positioning map parser leaves invalid or out-of-range scores unplotted", () => {
+  const parsed = parseCompetitiveAnalysisV2(
+    buildV2Fixture({
+      "Positioning Map":
+        "- **X-axis**: Ease of setup\n- **Y-axis**: Collaboration depth\n\n| Competitor | X Score | Y Score | Placement Rationale |\n|---|---:|---:|---|\n| Competitor One | unknown | 8 | Missing setup score |\n| Competitor Two | 11 | 3 | Out of range setup score |\n| Competitor Three | 6 | 0 | Valid edge score |",
+    })
+  )
+  const structured = getCompetitiveAnalysisStructuredData(parsed)
+
+  assert.equal(structured.positioningMap.points[0]?.x, null)
+  assert.equal(structured.positioningMap.points[0]?.y, 8)
+  assert.equal(structured.positioningMap.points[1]?.x, null)
+  assert.equal(structured.positioningMap.points[1]?.y, 3)
+  assert.equal(structured.positioningMap.points[2]?.x, 6)
+  assert.equal(structured.positioningMap.points[2]?.y, 0)
+})
+
 test("workspace section map keeps overview limited to summary and verdict", () => {
   const overviewSections = COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.filter(
     (heading) => COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP[heading] === "overview"

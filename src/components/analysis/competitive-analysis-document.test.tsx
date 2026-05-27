@@ -16,7 +16,9 @@ function countMatches(html: string, pattern: RegExp) {
   return html.match(pattern)?.length ?? 0
 }
 
-function buildV2Fixture() {
+function buildV2Fixture(
+  overrides: Partial<Record<CompetitiveAnalysisV2SectionName, string>> = {}
+) {
   const sections: Record<CompetitiveAnalysisV2SectionName, string> = {
     "Executive Summary":
       "This category has real demand, but underserved workflows still exist for smaller teams.",
@@ -45,9 +47,10 @@ function buildV2Fixture() {
     "Recommended Next Moves":
       "1. Validate pricing willingness.\n2. Launch narrow.\n3. Invest in integrations.",
   }
+  const mergedSections = { ...sections, ...overrides }
 
   return `# Competitive Analysis: Example Product\n\n${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.map(
-    (heading) => `## ${heading}\n${sections[heading]}`
+    (heading) => `## ${heading}\n${mergedSections[heading]}`
   ).join("\n\n")}`
 }
 
@@ -122,6 +125,29 @@ test("competitive detail owns market research and strategy modules", () => {
   assert.doesNotMatch(html, /px-6 pb-6/)
   assert.doesNotMatch(html, /border rounded-none/)
   assert.doesNotMatch(html, /border-\[#D8CEC5\] bg-\[#F5F0EB\]/)
+})
+
+test("competitive detail renders positioning scale and does not plot invalid scores", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={buildV2Fixture({
+        "Positioning Map":
+          "- **X-axis**: Ease of setup\n- **Y-axis**: Collaboration depth\n\n| Competitor | X Score | Y Score | Placement Rationale | Evidence Confidence |\n|---|---:|---:|---|---|\n| Competitor One | 5 | 8 | Broad platform | High: public docs |\n| Missing Score | unknown | 2 | Setup score unavailable | Low: insufficient evidence |",
+      })}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+
+  assert.match(html, /0\/10/)
+  assert.match(html, /5\/10/)
+  assert.match(html, /10\/10/)
+  assert.match(html, /data-positioning-state="scored"/)
+  assert.match(html, /aria-label="Competitor One: X 5\/10, Y 8\/10/)
+  assert.match(html, /Unscored placements/)
+  assert.match(html, /Missing Score/)
+  assert.equal(countMatches(html, /data-positioning-state="scored"/g), 1)
+  assert.equal(countMatches(html, /data-positioning-state="unscored"/g), 1)
 })
 
 test("competitive detail consolidates competitor profile cards into one quick comparison table", () => {

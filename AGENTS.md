@@ -26,6 +26,7 @@
 - Prefer lazy loading, streaming, pagination, and progressive rendering where appropriate rather than making the user wait for large content loads up front
 - When I ask for a change, do your best to test that change before returning control to me
 - If I ask for a visual/UI change, add it to your test plan and visually confirm the change actually happened before returning control to me
+- For UI verification in this repo, use Arc through the local computer-use/browser workflow by default. Avoid Puppeteer, Chrome, or headless browsers for routine visual checks unless the user explicitly asks for them or Arc cannot perform the needed deterministic/scripted test.
 - For backend or non-visual changes, still do your best to verify behavior with the best available tests, logs, requests, or local validation before returning control to me
 - Before making a medium or large change, think about whether the work should be re-architected across multiple files instead of patched in one place
 - Look for opportunities to break large functions into smaller functions when that will improve clarity, reuse, or testability

@@ -45,11 +45,6 @@ export default async function ProjectsPage() {
           eyebrow="Workspace"
           title="Projects"
           description="Manage the ideas, plans, and generated artifacts you are actively shaping."
-          actions={
-            <Link href="/projects/new" className="shrink-0" prefetch={false}>
-              <Button className="bg-primary px-5 text-primary-foreground">New Project</Button>
-            </Link>
-          }
         />
 
         {activeProjects.length === 0 ? (

@@ -1,0 +1,3 @@
+No output assets are required for this skill.
+
+This file is intentionally kept as a note so the generated skill scaffold contains no placeholder TODO content.

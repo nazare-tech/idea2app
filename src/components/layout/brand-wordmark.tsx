@@ -1,5 +1,6 @@
 "use client"
 
+import type { MouseEventHandler } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { APP_HEADER_LOGO_SIZE, HeaderLogo } from "@/components/layout/header-logo"
@@ -12,6 +13,7 @@ interface BrandWordmarkProps {
   labelClassName?: string
   logoSize?: number
   logoClassName?: string
+  onClick?: MouseEventHandler<HTMLAnchorElement>
 }
 
 export function BrandWordmark({
@@ -21,9 +23,10 @@ export function BrandWordmark({
   labelClassName,
   logoSize = APP_HEADER_LOGO_SIZE,
   logoClassName,
+  onClick,
 }: BrandWordmarkProps) {
   return (
-    <Link href={href} className={cn("inline-flex items-center gap-2.5", className)}>
+    <Link href={href} onClick={onClick} className={cn("inline-flex items-center gap-2.5", className)}>
       <HeaderLogo href={href} size={logoSize} className={logoClassName} linked={false} />
       <span className={cn("text-base ui-font-semibold tracking-[0.05em]", labelClassName)}>
         {label}

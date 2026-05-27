@@ -26,3 +26,14 @@ test("competitive analysis prompt defines workspace section ownership", () => {
     /Recommended Next Moves`: market-research/
   )
 })
+
+test("competitive analysis prompt requires scored positioning evidence", () => {
+  assert.match(
+    COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+    /Positioning Map.*0-10.*Evidence Confidence/s
+  )
+  assert.match(
+    COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+    /do not invent precision/i
+  )
+})

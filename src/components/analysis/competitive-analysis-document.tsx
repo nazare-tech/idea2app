@@ -436,9 +436,56 @@ function CompactTableCard({
   )
 }
 
-function clamp(value: number | null, fallback: number) {
-  if (value === null || Number.isNaN(value)) return fallback
-  return Math.min(10, Math.max(0, value))
+const POSITIONING_SCORE_MIN = 0
+const POSITIONING_SCORE_MID = 5
+const POSITIONING_SCORE_MAX = 10
+const POSITIONING_PLOT_MIN_PERCENT = 14
+const POSITIONING_PLOT_MAX_PERCENT = 86
+const POSITIONING_PLOT_RANGE_PERCENT =
+  POSITIONING_PLOT_MAX_PERCENT - POSITIONING_PLOT_MIN_PERCENT
+
+function hasPositioningScores(
+  point: CompetitiveAnalysisPositioningPoint
+): point is CompetitiveAnalysisPositioningPoint & { x: number; y: number } {
+  return point.x !== null && point.y !== null
+}
+
+function scoreToPlotPercent(score: number) {
+  return (
+    POSITIONING_PLOT_MIN_PERCENT +
+    (score / POSITIONING_SCORE_MAX) * POSITIONING_PLOT_RANGE_PERCENT
+  )
+}
+
+function formatAxisEndpointLabel(value: string) {
+  const trimmed = value.replace(/[.。]+$/g, "").trim()
+  if (!trimmed) return value
+  return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`
+}
+
+function positioningAxisLabels(axis: string | null, fallback: string) {
+  if (!axis) {
+    return {
+      low: `Low ${fallback}`,
+      high: `High ${fallback}`,
+    }
+  }
+
+  const endpointMatch = axis.match(
+    /where\s+0\s+means\s+(.+?)\s+and\s+10\s+means\s+(.+)$/i
+  )
+
+  if (endpointMatch) {
+    return {
+      low: formatAxisEndpointLabel(endpointMatch[1] ?? ""),
+      high: formatAxisEndpointLabel(endpointMatch[2] ?? ""),
+    }
+  }
+
+  return {
+    low: `Low ${axis}`,
+    high: `High ${axis}`,
+  }
 }
 
 function pointTone(point: CompetitiveAnalysisPositioningPoint, index: number) {
@@ -459,6 +506,13 @@ function PositioningMap({
   description?: string
   positioningMap: CompetitiveAnalysisStructuredData["positioningMap"]
 }) {
+  const scoredPoints = positioningMap.points.filter(hasPositioningScores)
+  const unscoredPoints = positioningMap.points.filter(
+    (point) => !hasPositioningScores(point)
+  )
+  const xAxisLabels = positioningAxisLabels(positioningMap.xAxis, "X")
+  const yAxisLabels = positioningAxisLabels(positioningMap.yAxis, "Y")
+
   return (
     <PencilCard title={title} description={description}>
       <div className="space-y-4">
@@ -466,7 +520,7 @@ function PositioningMap({
           <div className="grid gap-2 md:grid-cols-2">
             <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
-                X Axis
+                X Axis / 0-10 score
               </p>
               <p className="mt-1 ui-type-table text-[#0A0A0A]">
                 {positioningMap.xAxis ?? "Not specified"}
@@ -474,7 +528,7 @@ function PositioningMap({
             </div>
             <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
-                Y Axis
+                Y Axis / 0-10 score
               </p>
               <p className="mt-1 ui-type-table text-[#0A0A0A]">
                 {positioningMap.yAxis ?? "Not specified"}
@@ -483,68 +537,159 @@ function PositioningMap({
           </div>
         )}
 
-        <div className="relative h-[320px] border border-[#E0E0E0] bg-[#FAFAFA]">
-          <div className="absolute inset-x-[14%] top-1/2 h-px bg-[#E0E0E0]" />
-          <div className="absolute inset-y-[14%] left-1/2 w-px bg-[#E0E0E0]" />
-          <p className="absolute bottom-3 left-4 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.18em] text-[#777777]">
-            Low {positioningMap.xAxis ?? "X"}
+        <div
+          className="relative h-[340px] border border-[#E0E0E0] bg-[#FAFAFA]"
+          aria-label="Positioning map with 0 to 10 X and Y score axes"
+        >
+          <div
+            className="absolute h-px bg-[#D8D8D8]"
+            style={{
+              left: `${POSITIONING_PLOT_MIN_PERCENT}%`,
+              right: `${100 - POSITIONING_PLOT_MAX_PERCENT}%`,
+              top: "50%",
+            }}
+          />
+          <div
+            className="absolute w-px bg-[#D8D8D8]"
+            style={{
+              top: `${POSITIONING_PLOT_MIN_PERCENT}%`,
+              bottom: `${100 - POSITIONING_PLOT_MAX_PERCENT}%`,
+              left: "50%",
+            }}
+          />
+
+          {[POSITIONING_SCORE_MIN, POSITIONING_SCORE_MID, POSITIONING_SCORE_MAX].map(
+            (score) => (
+              <span
+                key={`x-${score}`}
+                className="absolute bottom-4 -translate-x-1/2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]"
+                style={{ left: `${scoreToPlotPercent(score)}%` }}
+              >
+                {score}/10
+              </span>
+            )
+          )}
+          {[POSITIONING_SCORE_MIN, POSITIONING_SCORE_MID, POSITIONING_SCORE_MAX].map(
+            (score) => (
+              <span
+                key={`y-${score}`}
+                className="absolute left-4 -translate-y-1/2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]"
+                style={{ top: `${100 - scoreToPlotPercent(score)}%` }}
+              >
+                {score}/10
+              </span>
+            )
+          )}
+          <p className="absolute bottom-8 left-4 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+            {xAxisLabels.low}
           </p>
-          <p className="absolute bottom-3 right-4 max-w-[24%] whitespace-normal text-right font-mono text-[10px] uppercase leading-4 tracking-[0.18em] text-[#777777]">
-            High {positioningMap.xAxis ?? "X"}
+          <p className="absolute bottom-8 right-4 max-w-[24%] whitespace-normal text-right font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+            {xAxisLabels.high}
           </p>
-          <p className="absolute left-4 top-3 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.18em] text-[#777777]">
-            High {positioningMap.yAxis ?? "Y"}
+          <p className="absolute left-4 top-4 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+            {yAxisLabels.high}
           </p>
-          <p className="absolute right-4 top-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[#777777]">
-            Map
+          <p className="absolute bottom-8 left-4 max-w-[24%] -translate-y-5 whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+            {yAxisLabels.low}
           </p>
 
-          {positioningMap.points.map((point, index) => {
-            const normalizedX = clamp(point.x, index * 2 + 3)
-            const normalizedY = clamp(point.y, 8 - index * 2)
+          {scoredPoints.map((point, index) => {
             const tone = pointTone(point, index)
+            const xPosition = scoreToPlotPercent(point.x)
+            const yPosition = 100 - scoreToPlotPercent(point.y)
+            const labelOnLeft = point.x >= 7
+            const labelAbove = point.y <= 2
+            const pointSummary = `${point.competitor}: X ${point.x}/10, Y ${point.y}/10. ${point.rationale}${point.evidence ? ` Evidence: ${point.evidence}` : ""}`
 
             return (
               <div
                 key={`${point.competitor}-${index}`}
-                className={cn(
-                  "absolute -translate-x-1/2 -translate-y-1/2 border px-3 py-2",
-                  tone === "accent"
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : tone === "dark"
-                      ? "border-[#4A4040] bg-[#4A4040] text-[#FAFAFA]"
-                      : tone === "muted"
-                        ? "border-[#D8CEC5] bg-[#E8DDD5] text-[#1C1917]"
-                        : "border-[#E0E0E0] bg-white text-[#0A0A0A]"
-                )}
+                className="absolute"
+                data-positioning-state="scored"
+                data-positioning-point={point.competitor}
+                aria-label={pointSummary}
+                title={pointSummary}
                 style={{
-                  left: `${14 + normalizedX * 7.2}%`,
-                  top: `${86 - normalizedY * 7.2}%`,
+                  left: `${xPosition}%`,
+                  top: `${yPosition}%`,
                 }}
               >
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em]">
+                <span
+                  className={cn(
+                    "block h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2",
+                    tone === "accent"
+                      ? "border-primary bg-primary"
+                      : tone === "dark"
+                        ? "border-[#4A4040] bg-[#4A4040]"
+                        : tone === "muted"
+                          ? "border-[#B9A99C] bg-[#E8DDD5]"
+                          : "border-[#0A0A0A] bg-white"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "absolute w-max max-w-[140px] font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#0A0A0A]",
+                    labelOnLeft ? "right-3 text-right" : "left-3",
+                    labelAbove ? "bottom-3" : "top-3"
+                  )}
+                >
                   {point.competitor}
-                </p>
+                </span>
               </div>
             )
           })}
         </div>
 
-        {positioningMap.points.length > 0 ? (
+        {scoredPoints.length > 0 ? (
           <div className="space-y-3">
-            {positioningMap.points.map((point) => (
+            {scoredPoints.map((point) => (
               <div
                 key={`${point.competitor}-rationale`}
                 className="border border-[#E0E0E0] px-4 py-3"
               >
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
-                  {point.competitor}
-                </p>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#999999]">
+                    {point.competitor}
+                  </p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]">
+                    {hasPositioningScores(point)
+                      ? `X ${point.x}/10 / Y ${point.y}/10`
+                      : "Score unavailable"}
+                  </p>
+                </div>
                 <p className="mt-1 ui-type-table text-[#0A0A0A]">
                   {point.rationale}
                 </p>
+                {point.evidence ? (
+                  <p className="mt-2 ui-type-caption text-[#777777]">
+                    {point.evidence}
+                  </p>
+                ) : null}
               </div>
             ))}
+          </div>
+        ) : null}
+
+        {unscoredPoints.length > 0 ? (
+          <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#777777]">
+              Unscored placements
+            </p>
+            <div className="mt-3 space-y-2">
+              {unscoredPoints.map((point) => (
+                <div
+                  key={`${point.competitor}-unscored`}
+                  data-positioning-state="unscored"
+                >
+                  <p className="ui-type-table font-medium text-[#0A0A0A]">
+                    {point.competitor}
+                  </p>
+                  <p className="ui-type-caption text-[#777777]">
+                    {point.rationale || "Missing a valid 0-10 X or Y score."}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>

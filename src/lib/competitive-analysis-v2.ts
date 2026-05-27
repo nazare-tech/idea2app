@@ -115,6 +115,7 @@ export interface CompetitiveAnalysisPositioningPoint {
   x: number | null
   y: number | null
   rationale: string
+  evidence: string
 }
 
 export interface CompetitiveAnalysisPositioningMap {
@@ -399,6 +400,38 @@ function parseCompetitorProfiles(entries: CompetitiveAnalysisSection[]) {
   })
 }
 
+function findTableColumn(headers: string[], candidates: string[], fallback: number) {
+  const normalizedHeaders = headers.map(normalizeFieldLabel)
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = normalizeFieldLabel(candidate)
+    const exactIndex = normalizedHeaders.findIndex(
+      (header) => header === normalizedCandidate
+    )
+    if (exactIndex >= 0) return exactIndex
+  }
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = normalizeFieldLabel(candidate)
+    const partialIndex = normalizedHeaders.findIndex(
+      (header) =>
+        header.includes(normalizedCandidate) ||
+        normalizedCandidate.includes(header)
+    )
+    if (partialIndex >= 0) return partialIndex
+  }
+
+  return fallback
+}
+
+function parsePositioningScore(value: string | undefined) {
+  const score = Number(value)
+  if (!Number.isFinite(score) || score < 0 || score > 10) {
+    return null
+  }
+  return score
+}
+
 function parsePositioningMap(content: string): CompetitiveAnalysisPositioningMap {
   const bullets = parseLabeledList(content)
   const table = parseMarkdownTable(content)
@@ -409,12 +442,37 @@ function parsePositioningMap(content: string): CompetitiveAnalysisPositioningMap
     bullets.find((item) => normalizeFieldLabel(item.label) === "y axis")?.value ??
     null
 
+  const competitorColumn = table
+    ? findTableColumn(table.headers, ["competitor", "product", "company"], 0)
+    : 0
+  const xColumn = table
+    ? findTableColumn(table.headers, ["x score", "x axis score"], 1)
+    : 1
+  const yColumn = table
+    ? findTableColumn(table.headers, ["y score", "y axis score"], 2)
+    : 2
+  const rationaleColumn = table
+    ? findTableColumn(
+        table.headers,
+        ["placement rationale", "rationale", "placement"],
+        3
+      )
+    : 3
+  const evidenceColumn = table
+    ? findTableColumn(
+        table.headers,
+        ["evidence confidence", "confidence", "source confidence", "source"],
+        -1
+      )
+    : -1
+
   const points =
     table?.rows.map((row) => ({
-      competitor: row[0] ?? "Unknown",
-      x: Number.isFinite(Number(row[1])) ? Number(row[1]) : null,
-      y: Number.isFinite(Number(row[2])) ? Number(row[2]) : null,
-      rationale: row[3] ?? "",
+      competitor: row[competitorColumn] ?? "Unknown",
+      x: parsePositioningScore(row[xColumn]),
+      y: parsePositioningScore(row[yColumn]),
+      rationale: row[rationaleColumn] ?? "",
+      evidence: evidenceColumn >= 0 ? row[evidenceColumn] ?? "" : "",
     })) ?? []
 
   return {

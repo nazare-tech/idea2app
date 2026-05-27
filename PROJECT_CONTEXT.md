@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-05-25 (storyboard mockup pipeline)
+**Last Updated**: 2026-05-26 (Arc UI testing guidance)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -852,6 +852,10 @@ STITCH_API_KEY=stitch_xxx... # legacy saved Stitch mockup compatibility / toolin
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
+
+# UI/browser testing login credentials (local only; never commit real values)
+UI_TEST_EMAIL=test-user@example.com
+UI_TEST_PASSWORD=replace-with-local-secret
 ```
 
 ### Installation
@@ -948,6 +952,8 @@ npm test
 
 - Uses Node's built-in test runner via `tsx`
 - Test discovery is recursive across `src/**/*.test.ts` and `src/**/*.test.tsx`
+- For browser/UI verification of authenticated routes, use the local test login from `UI_TEST_EMAIL` and `UI_TEST_PASSWORD` when those environment variables are present. Treat the values as secrets: keep them in `.env.local`, shell environment, or the local credential store; never commit real emails/passwords, screenshots containing secrets, cookies, or session storage dumps.
+- For UI verification in this repo, use Arc through the local computer-use/browser workflow by default, especially for authenticated flows, real profile state, and user-facing visual inspection. Avoid Puppeteer, Chrome, and headless browsers for routine UI checks unless the user explicitly requests them or Arc cannot perform a needed deterministic/scripted test.
 
 ### Deployment
 

@@ -1,7 +1,9 @@
 "use client"
 
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Header } from "@/components/layout/header"
+import { Button } from "@/components/ui/button"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -33,6 +35,15 @@ export function DashboardShell({
       : pathname === "/dashboard"
         ? "Dashboard"
         : "Projects"
+  const rightContent = pathname === "/projects"
+    ? (
+        <Link href="/projects/new" className="shrink-0" prefetch={false}>
+          <Button className="h-9 bg-primary px-4 text-sm text-primary-foreground">
+            New Project
+          </Button>
+        </Link>
+      )
+    : undefined
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -42,6 +53,7 @@ export function DashboardShell({
             user={user}
             credits={credits}
             pageTitle={pageTitle}
+            rightContent={rightContent}
           />
         )}
         <main className="flex-1 overflow-y-auto bg-background">

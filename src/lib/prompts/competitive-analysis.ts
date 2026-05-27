@@ -60,7 +60,7 @@ REQUIRED SECTION SHAPES
 - \`Pricing Comparison\`: a markdown table comparing pricing model, free tier, packaging motion, and notable pricing gaps
 - \`Best Customer Segments\`: 3-5 short ranked bullets for the most important buyer/user segments, including who is well served vs under-served
 - \`Competitive Landscape Overview\`: 3-5 concise bullets on saturation, battlegrounds, trends, and what matters strategically
-- \`Positioning Map\`: start with 2 bullets that define the X-axis and Y-axis, then include a markdown table with columns for competitor, x score, y score, and placement rationale
+- \`Positioning Map\`: start with 2 bullets that define the X-axis and Y-axis, including what 0 and 10 mean on each axis. Then include a markdown table with columns exactly named Competitor, X Score, Y Score, Placement Rationale, and Evidence Confidence. Scores must be 0-10 numbers only; do not invent precision when evidence is weak. Use Evidence Confidence to say High, Medium, Low, or Evidence insufficient with a concise source note.
 - \`How You'll Reach Customers\`: 3-5 short bullets on likely acquisition/distribution channels competitors use and where an indie entrant can still win
 - \`Gap Analysis\`: 3-5 short ranked bullets for unmet needs and whitespace opportunities
 - \`Ways to Stand Out\`: 3-5 short ranked bullets describing concrete product/positioning wedges

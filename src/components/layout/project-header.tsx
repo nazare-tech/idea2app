@@ -2,21 +2,10 @@
 "use client"
 
 import { useState, useRef, useEffect, type MouseEvent } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ChevronDown, Pencil } from "lucide-react"
-import { HeaderLogo, APP_HEADER_LOGO_SIZE } from "@/components/layout/header-logo"
-import { useAuthSignOut } from "@/hooks/use-auth-signout"
-import { CreditBalance } from "@/components/ui/credit-balance"
-import { APP_BRAND_NAME } from "@/lib/app-brand"
-import { uiStylePresets } from "@/lib/ui-style-presets"
+import { Pencil } from "lucide-react"
+import { HeaderBrand } from "@/components/layout/header-brand"
+import { HeaderProfileMenu } from "@/components/layout/header-profile-menu"
 
 interface ProjectHeaderProps {
   projectName: string
@@ -43,11 +32,9 @@ export function ProjectHeader({
   user,
   credits,
 }: ProjectHeaderProps) {
-  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(projectName)
   const inputRef = useRef<HTMLInputElement>(null)
-  const handleSignOut = useAuthSignOut()
 
   useEffect(() => {
     setDraft(projectName)
@@ -76,40 +63,19 @@ export function ProjectHeader({
     window.location.assign("/projects")
   }
 
-  const initials = user.full_name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase() || user.email?.[0].toUpperCase() || "U"
-
-  const profileLabel = user.full_name
-    ? (() => {
-        const parts = user.full_name.trim().split(/\s+/)
-        if (parts.length === 1) return parts[0]
-        return `${parts[0]} ${parts[1]?.charAt(0).toUpperCase() || ""}.`
-      })()
-    : user.email?.split("@")[0] || "User"
-
   return (
-    <header className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-subtle bg-background px-4 py-3 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:py-0">
-      {/* Left: Brand wordmark */}
-      <Link href="/projects" onClick={navigateToProjects} className="flex min-w-0 items-center gap-3">
-        <HeaderLogo size={APP_HEADER_LOGO_SIZE} linked={false} />
-        <span className="truncate text-sm font-medium text-text-secondary">
-          {APP_BRAND_NAME}
-        </span>
-      </Link>
+    <header className="relative flex h-16 shrink-0 items-center justify-between border-b border-border-strong bg-background px-6">
+      <HeaderBrand onClick={navigateToProjects} />
 
-      {/* Center: Breadcrumb */}
-      <div className="hidden min-w-0 items-center justify-center gap-3 lg:flex">
+      <div className="absolute left-1/2 hidden min-w-0 -translate-x-1/2 items-center justify-center gap-1 lg:flex">
         <Link
           href="/projects"
           onClick={navigateToProjects}
-          className="text-sm font-medium text-text-secondary transition-colors hover:text-foreground"
+          className="text-base font-normal leading-5 text-text-secondary transition-colors hover:text-foreground"
         >
           Projects
         </Link>
-        <span className="text-sm text-muted-foreground">/</span>
+        <span className="text-sm font-normal leading-5 text-muted-foreground">/</span>
         {isEditing ? (
           <input
             ref={inputRef}
@@ -120,90 +86,33 @@ export function ProjectHeader({
               if (e.key === "Enter") { e.preventDefault(); void finishEdit() }
               if (e.key === "Escape") { setDraft(projectName); setIsEditing(false) }
             }}
-            className="h-8 w-[min(22rem,40vw)] rounded-xl border border-border-strong bg-card px-2.5 text-sm font-semibold text-foreground outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
+            className="h-8 w-[min(24rem,40vw)] rounded-lg border border-border-strong bg-card px-2.5 text-base font-semibold leading-5 text-foreground outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
             disabled={isSavingName}
           />
         ) : isNameSet ? (
           <button
             type="button"
             onClick={() => { setIsEditing(true); onStartRename() }}
-            className="flex items-center gap-2 text-left"
+            className="flex min-w-0 items-center gap-2 text-left"
           >
             <span
-              className="text-sm font-semibold text-foreground"
+              className="max-w-[40vw] truncate text-base font-semibold leading-5 text-foreground"
               style={nameJustSet ? { animation: "projectNameFadeIn 0.7s ease forwards" } : undefined}
             >
               {projectName}
             </span>
-            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+            <Pencil className="h-3 w-3 shrink-0 text-muted-foreground" />
           </button>
         ) : (
-          <div className="flex items-center gap-2 cursor-default select-none">
-            <span className="text-sm font-semibold text-muted-foreground">
+          <div className="flex min-w-0 cursor-default select-none items-center gap-2">
+            <span className="max-w-[40vw] truncate text-base font-semibold leading-5 text-muted-foreground">
               {projectName}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-violet-300 bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-800">
-              ✦ AI naming
             </span>
           </div>
         )}
       </div>
 
-      {/* Right: User avatar dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            id="project-user-menu-trigger"
-            className="justify-self-end flex min-h-10 items-center gap-2 rounded-md border border-border-subtle bg-card px-2.5 py-1.5 sm:gap-2.5 sm:px-3"
-          >
-            <Avatar className="h-7 w-7 rounded-full">
-              <AvatarImage src={user.avatar_url} alt={user.full_name || "User"} />
-              <AvatarFallback className="bg-foreground text-[11px] font-bold text-background">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <span className="hidden text-[13px] font-medium text-foreground sm:inline">
-              {profileLabel}
-            </span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          aria-labelledby="project-user-menu-trigger"
-          className="w-[260px] border border-border-subtle bg-white p-2 text-text-primary"
-          align="end"
-        >
-          {typeof credits === "number" && (
-            <DropdownMenuItem className="cursor-default focus:bg-transparent focus:text-text-primary">
-              <span className="text-sm font-medium">
-                Credits: <CreditBalance credits={credits} compact />
-              </span>
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem
-            onSelect={() => router.push("/preferences?tab=profile")}
-            className={uiStylePresets.headerOutlineTab}
-          >
-            <span>Profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => router.push("/preferences?tab=settings")}
-            className={uiStylePresets.headerOutlineTab}
-          >
-            <span>Settings</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => router.push("/preferences?tab=subscriptions")}
-            className={uiStylePresets.headerOutlineTab}
-          >
-            <span>Subscriptions</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleSignOut} className={uiStylePresets.headerLogoutItem}>
-            <span>Log out</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <HeaderProfileMenu user={user} credits={credits} triggerId="project-user-menu-trigger" />
     </header>
   )
 }
