@@ -11,6 +11,7 @@ type ActiveProject = {
   name: string
   description: string | null
   href: string
+  createdAt: string | null
   updatedAt: string | null
 }
 
@@ -35,6 +36,7 @@ export default async function ProjectsPage() {
     name: project.name,
     description: project.description ?? null,
     href: getProjectUrl(project),
+    createdAt: project.created_at,
     updatedAt: project.updated_at,
   }))
 
@@ -66,6 +68,7 @@ export default async function ProjectsPage() {
                 name={project.name}
                 description={project.description}
                 href={project.href}
+                createdAt={project.createdAt}
                 updatedAt={project.updatedAt}
                 showDelete
                 canDelete={allowanceStatus.planName.toLowerCase() !== "free"}

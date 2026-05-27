@@ -12,9 +12,15 @@ interface DashboardProjectCardProps {
   name: string
   description: string | null
   href: string
+  createdAt: string | null
   updatedAt: string | null
   showDelete?: boolean
   canDelete?: boolean
+}
+
+function getProjectCardDescription(description: string | null) {
+  const displayDescription = description?.replace(/^Business idea summary:\s*/i, "").trim()
+  return displayDescription || "No project context captured yet."
 }
 
 export function DashboardProjectCard({
@@ -22,6 +28,7 @@ export function DashboardProjectCard({
   name,
   description,
   href,
+  createdAt,
   updatedAt,
   showDelete = false,
   canDelete = false,
@@ -30,18 +37,22 @@ export function DashboardProjectCard({
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isDeleted, setIsDeleted] = useState(false)
   const [isOpening, setIsOpening] = useState(false)
-  const lastEditedLabel = useMemo(() => {
-    if (!updatedAt) {
-      return "Last edited: recently"
+  const displayDescription = useMemo(() => getProjectCardDescription(description), [description])
+  const createdLabel = useMemo(() => {
+    const timestamp = createdAt ?? updatedAt
+
+    if (!timestamp) {
+      return "Created: recently"
     }
 
     try {
-      return `Last edited: ${formatDistanceToNow(new Date(updatedAt), { addSuffix: true })}`
+      return `Created: ${formatDistanceToNow(new Date(timestamp))} ago`
     } catch {
-      return "Last edited: recently"
+      return "Created: recently"
     }
-  }, [updatedAt])
+  }, [createdAt, updatedAt])
 
   useEffect(() => {
     if (!isOpening) return
@@ -71,6 +82,7 @@ export function DashboardProjectCard({
   const handleDelete = async () => {
     if (isDeleting) return
 
+    let didDelete = false
     setIsDeleting(true)
     try {
       const response = await fetch(`/api/projects/${id}`, { method: "DELETE" })
@@ -86,12 +98,20 @@ export function DashboardProjectCard({
         throw new Error(message)
       }
 
+      didDelete = true
+      setIsDeleted(true)
       router.refresh()
     } catch (error) {
       alert(error instanceof Error ? error.message : "Unable to delete project")
     } finally {
-      setIsDeleting(false)
+      if (!didDelete) {
+        setIsDeleting(false)
+      }
     }
+  }
+
+  if (isDeleted) {
+    return null
   }
 
   return (
@@ -101,20 +121,22 @@ export function DashboardProjectCard({
         onMouseEnter={() => setIsOpening(true)}
         onFocus={() => setIsOpening(true)}
         onClick={() => setIsOpening(true)}
-        className="block h-full min-h-[168px] rounded-lg border border-border-subtle bg-card p-5 transition-[background-color,border-color,transform] duration-200 ease-out-expo hover:-translate-y-0.5 hover:border-text-primary/20 hover:bg-muted/30"
+        className="block h-full min-h-[188px] rounded-lg border border-border-strong bg-card p-[21px] transition-[background-color,border-color] duration-200 ease-out-expo hover:border-text-primary/20 hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
-        <div className="flex h-full flex-col justify-between gap-6">
+        <div className="flex h-full flex-col justify-between gap-4">
           <div className="space-y-2">
-            <h2 className="line-clamp-1 pr-10 text-[18px] font-bold leading-tight tracking-[-0.4px] text-text-primary">
+            <h2 className="line-clamp-2 pr-10 text-[18px] font-bold leading-[1.2] text-text-primary">
               {name}
             </h2>
-            <p className="ui-type-caption text-text-secondary">
-              {lastEditedLabel}
+            <p className="min-h-[72px] overflow-hidden line-clamp-4 text-sm leading-[1.3] text-text-secondary">
+              {displayDescription}
             </p>
           </div>
-          <p className="min-h-[42px] overflow-hidden line-clamp-2 text-sm leading-[1.5] text-text-secondary">
-            {description || "No prompt captured yet."}
-          </p>
+          <div className="flex justify-end">
+            <p className="whitespace-nowrap text-sm leading-[1.3] text-text-secondary">
+              {createdLabel}
+            </p>
+          </div>
         </div>
       </Link>
 
@@ -131,10 +153,14 @@ export function DashboardProjectCard({
       )}
 
       {showDeleteConfirmation && (
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                onClick={() => setShowDeleteConfirmation(false)}
-            >
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => {
+            if (!isDeleting) {
+              setShowDeleteConfirmation(false)
+            }
+          }}
+        >
           <div
             className="w-full max-w-[560px] rounded-xl border border-border-strong bg-white p-6"
             onClick={(event) => event.stopPropagation()}
@@ -162,8 +188,7 @@ export function DashboardProjectCard({
               <button
                 type="button"
                 onClick={() => {
-                  setShowDeleteConfirmation(false)
-                  handleDelete()
+                  void handleDelete()
                 }}
                 disabled={isDeleting}
                 className="h-11 rounded-md bg-destructive px-5 text-[13px] ui-font-semibold text-destructive-foreground disabled:opacity-40"

@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-05-26 (Arc UI testing guidance)
+**Last Updated**: 2026-05-27 (Codex browser UI testing guidance)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -953,7 +953,7 @@ npm test
 - Uses Node's built-in test runner via `tsx`
 - Test discovery is recursive across `src/**/*.test.ts` and `src/**/*.test.tsx`
 - For browser/UI verification of authenticated routes, use the local test login from `UI_TEST_EMAIL` and `UI_TEST_PASSWORD` when those environment variables are present. Treat the values as secrets: keep them in `.env.local`, shell environment, or the local credential store; never commit real emails/passwords, screenshots containing secrets, cookies, or session storage dumps.
-- For UI verification in this repo, use Arc through the local computer-use/browser workflow by default, especially for authenticated flows, real profile state, and user-facing visual inspection. Avoid Puppeteer, Chrome, and headless browsers for routine UI checks unless the user explicitly requests them or Arc cannot perform a needed deterministic/scripted test.
+- For UI verification in this repo, use the Codex in-app browser/browser workflow by default when available, especially for authenticated flows, real profile state, and user-facing visual inspection. Avoid Playwright, Arc, Chrome, Puppeteer, and headless browsers for routine UI checks unless the Codex browser is unavailable or the user explicitly requests a different browser.
 
 ### Deployment
 
