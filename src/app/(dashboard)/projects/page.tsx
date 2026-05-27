@@ -31,10 +31,22 @@ export default async function ProjectsPage() {
     getProjectAllowanceStatus(supabase as unknown as ProjectAllowanceClient, user!.id),
   ])
 
+  const projectIds = (projects ?? []).map((project) => project.id)
+  const { data: projectIntakes } = projectIds.length > 0
+    ? await supabase
+        .from("project_intakes")
+        .select("project_id, original_idea")
+        .eq("user_id", user!.id)
+        .in("project_id", projectIds)
+    : { data: [] }
+  const originalIdeaByProjectId = new Map(
+    (projectIntakes ?? []).map((intake) => [intake.project_id, intake.original_idea])
+  )
+
   const activeProjects: ActiveProject[] = (projects ?? []).map((project) => ({
     id: project.id,
     name: project.name,
-    description: project.description ?? null,
+    description: originalIdeaByProjectId.get(project.id) ?? project.description ?? null,
     href: getProjectUrl(project),
     createdAt: project.created_at,
     updatedAt: project.updated_at,
@@ -60,7 +72,7 @@ export default async function ProjectsPage() {
             </Link>
           </div>
         ) : (
-          <div className="mt-8 grid gap-5 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
+          <div className="mt-8 grid gap-5 grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))]">
             {activeProjects.map((project) => (
               <DashboardProjectCard
                 key={project.id}

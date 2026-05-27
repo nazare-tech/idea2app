@@ -125,7 +125,7 @@ export function DashboardProjectCard({
       >
         <div className="flex h-full flex-col justify-between gap-4">
           <div className="space-y-2">
-            <h2 className="line-clamp-2 pr-10 text-[18px] font-bold leading-[1.2] text-text-primary">
+            <h2 className="truncate pr-10 text-[18px] font-bold leading-[1.2] text-text-primary">
               {name}
             </h2>
             <p className="min-h-[72px] overflow-hidden line-clamp-4 text-sm leading-[1.3] text-text-secondary">
