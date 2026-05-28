@@ -26,7 +26,7 @@
 - Prefer lazy loading, streaming, pagination, and progressive rendering where appropriate rather than making the user wait for large content loads up front
 - When I ask for a change, do your best to test that change before returning control to me
 - If I ask for a visual/UI change, add it to your test plan and visually confirm the change actually happened before returning control to me
-- For UI verification in this repo, use the Codex in-app browser/browser workflow by default when available. Avoid Playwright, Arc, Chrome, Puppeteer, or headless browsers for routine UI checks unless the Codex browser is unavailable or the user explicitly asks for a different browser.
+- For UI verification in this repo, use the Codex in-app browser/browser workflow by default when available. Arc is allowed when debugging is materially easier there or when the Codex browser blocks effective inspection. Avoid Chrome, Puppeteer, or headless browsers for routine UI checks unless the Codex browser and Arc are unavailable or the user explicitly asks for a different browser.
 - When local UI verification requires signing in, use the e2e credentials stored in `.env.e2e.local` (`E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD`) with the Codex in-app browser. Never print, paste, or commit the credential values.
 - For backend or non-visual changes, still do your best to verify behavior with the best available tests, logs, requests, or local validation before returning control to me
 - Before making a medium or large change, think about whether the work should be re-architected across multiple files instead of patched in one place

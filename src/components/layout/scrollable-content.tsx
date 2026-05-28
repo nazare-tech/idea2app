@@ -107,6 +107,11 @@ function GenerationStatusModule({
           <p className="text-sm leading-relaxed text-muted-foreground">
             The request took too long or hit a temporary service issue. Try again and we will use the latest saved project context.
           </p>
+          {state.detail && (
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {state.detail}
+            </p>
+          )}
         </div>
 
         {onGenerateDocument && (

@@ -94,7 +94,7 @@ export const PROMPT_LAB_IMAGE_MODEL_OPTIONS: PromptLabModelOption[] = [
   {
     id: "openai/gpt-5.4-image-2",
     label: "GPT-5.4 Image 2",
-    description: "Default high-fidelity OpenRouter image mockup model.",
+    description: "Default OpenRouter-hosted OpenAI image mockup model.",
   },
   {
     id: "google/gemini-2.5-flash-image",
@@ -104,7 +104,7 @@ export const PROMPT_LAB_IMAGE_MODEL_OPTIONS: PromptLabModelOption[] = [
   {
     id: "google/gemini-3.1-flash-image-preview",
     label: "Nano Banana 2",
-    description: "Newer Google image model optimized for quality and speed.",
+    description: "Lower-cost fallback image model when OpenAI image generation is too expensive.",
   },
   {
     id: "google/gemini-3-pro-image-preview",

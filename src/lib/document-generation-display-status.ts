@@ -54,6 +54,17 @@ const QUEUED_DETAILS: Partial<Record<DocumentType, string>> = {
   launch: "This will start automatically.",
 }
 
+function sanitizeGenerationErrorDetail(detail?: string) {
+  if (!detail) return detail
+
+  return detail
+    .replace(
+      /https:\/\/openrouter\.ai\/workspaces\/[^/\s)]+\/keys\/[^\s)]+/g,
+      "the OpenRouter key settings",
+    )
+    .replace(/key=[^&\s)]+/g, "key=[redacted]")
+}
+
 export function buildDocumentGenerationDisplayStates({
   documentTypes,
   labels,
@@ -97,15 +108,16 @@ export function buildDocumentGenerationDisplayStates({
       }
 
       if (queueStatus === "error" || queueStatus === "blocked" || queueStatus === "cancelled") {
+        const errorDetail = sanitizeGenerationErrorDetail(queueItem?.error)
         return [docType, {
           docType,
           displayStatus: "needs_retry",
           navStatus: "needs_retry",
           label,
           message: "Needs retry",
-          detail: queueItem?.error ?? "Generation did not complete.",
+          detail: errorDetail ?? "Generation did not complete.",
           queueStatus,
-          error: queueItem?.error,
+          error: errorDetail,
         }]
       }
 

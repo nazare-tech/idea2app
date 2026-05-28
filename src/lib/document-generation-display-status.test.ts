@@ -115,6 +115,22 @@ test("buildDocumentGenerationDisplayStates: queue error maps to needs_retry", ()
   assert.equal(states.launch.detail, "Launch failed")
 })
 
+test("buildDocumentGenerationDisplayStates: retry detail redacts OpenRouter key links", () => {
+  const states = buildDocumentGenerationDisplayStates({
+    documentTypes: docTypes,
+    labels,
+    hasContent: {},
+    queueItems: [item("mockups", "error", {
+      error: "402 requires fewer max_tokens. Visit https://openrouter.ai/workspaces/default/keys/sk-secret-key-value and adjust key=abc123",
+    })],
+  })
+
+  assert.equal(
+    states.mockups.detail,
+    "402 requires fewer max_tokens. Visit the OpenRouter key settings and adjust key=[redacted]",
+  )
+})
+
 test("buildDocumentGenerationDisplayStates: local generation overrides stale queue error", () => {
   const states = buildDocumentGenerationDisplayStates({
     documentTypes: docTypes,

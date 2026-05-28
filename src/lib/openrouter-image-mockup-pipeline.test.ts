@@ -6,8 +6,10 @@ import {
   buildMockupImageProxyUrl,
   buildOpenRouterMockupImagePrompt,
   extractImageDataUrlFromOpenRouterChoice,
+  getOpenRouterMockupImageMaxTokens,
   getOpenRouterMockupImageTimeoutMs,
   getOpenRouterMockupImageConfig,
+  getOpenRouterMockupPlannerMaxTokens,
   getOpenRouterMockupPlannerModel,
   parseImageDataUrl,
   parseOpenRouterImageMockupContent,
@@ -151,16 +153,39 @@ test("parseOpenRouterImageMockupContent: returns normalized storyboard options",
   assert.equal(parsed?.options[0]?.width, 1536)
 })
 
-test("getOpenRouterMockupImageConfig: defaults to wide 2K storyboard config", () => {
+test("getOpenRouterMockupImageConfig: omits provider-specific config by default", () => {
   const previousSize = process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
   const previousAspectRatio = process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
   delete process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
   delete process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
 
   try {
+    assert.equal(getOpenRouterMockupImageConfig(), undefined)
+  } finally {
+    if (previousSize === undefined) {
+      delete process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
+    } else {
+      process.env.OPENROUTER_MOCKUP_IMAGE_SIZE = previousSize
+    }
+    if (previousAspectRatio === undefined) {
+      delete process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
+    } else {
+      process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO = previousAspectRatio
+    }
+  }
+})
+
+test("getOpenRouterMockupImageConfig: uses explicit provider-specific env overrides", () => {
+  const previousSize = process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
+  const previousAspectRatio = process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
+
+  try {
+    process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO = "21:9"
+    process.env.OPENROUTER_MOCKUP_IMAGE_SIZE = "1K"
+
     assert.deepEqual(getOpenRouterMockupImageConfig(), {
       aspect_ratio: "21:9",
-      image_size: "2K",
+      image_size: "1K",
     })
   } finally {
     if (previousSize === undefined) {
@@ -172,6 +197,21 @@ test("getOpenRouterMockupImageConfig: defaults to wide 2K storyboard config", ()
       delete process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
     } else {
       process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO = previousAspectRatio
+    }
+  }
+})
+
+test("getOpenRouterMockupImageMaxTokens: caps image calls by default", () => {
+  const previousMaxTokens = process.env.OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS
+  delete process.env.OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS
+
+  try {
+    assert.equal(getOpenRouterMockupImageMaxTokens(), 4096)
+  } finally {
+    if (previousMaxTokens === undefined) {
+      delete process.env.OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS
+    } else {
+      process.env.OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS = previousMaxTokens
     }
   }
 })
@@ -235,20 +275,20 @@ test("buildOpenRouterMockupImagePrompt: adds strict mobile storyboard compositio
   assert.match(prompt, /Option C - Visual-Forward Friendly/)
 })
 
-test("getOpenRouterMockupPlannerModel: prefers planner model over analysis and image models", () => {
+test("getOpenRouterMockupPlannerModel: prefers planner model over analysis model", () => {
   const previousPlanner = process.env.OPENROUTER_MOCKUP_PLANNER_MODEL
   const previousAnalysis = process.env.OPENROUTER_ANALYSIS_MODEL
 
   try {
     process.env.OPENROUTER_MOCKUP_PLANNER_MODEL = "planner/model"
     process.env.OPENROUTER_ANALYSIS_MODEL = "analysis/model"
-    assert.equal(getOpenRouterMockupPlannerModel("image/model"), "planner/model")
+    assert.equal(getOpenRouterMockupPlannerModel(), "planner/model")
 
     delete process.env.OPENROUTER_MOCKUP_PLANNER_MODEL
-    assert.equal(getOpenRouterMockupPlannerModel("image/model"), "analysis/model")
+    assert.equal(getOpenRouterMockupPlannerModel(), "analysis/model")
 
     delete process.env.OPENROUTER_ANALYSIS_MODEL
-    assert.equal(getOpenRouterMockupPlannerModel("image/model"), "image/model")
+    assert.equal(getOpenRouterMockupPlannerModel(), "openai/gpt-5.4-mini")
   } finally {
     if (previousPlanner === undefined) {
       delete process.env.OPENROUTER_MOCKUP_PLANNER_MODEL
@@ -259,6 +299,21 @@ test("getOpenRouterMockupPlannerModel: prefers planner model over analysis and i
       delete process.env.OPENROUTER_ANALYSIS_MODEL
     } else {
       process.env.OPENROUTER_ANALYSIS_MODEL = previousAnalysis
+    }
+  }
+})
+
+test("getOpenRouterMockupPlannerMaxTokens: caps hidden design plan calls by default", () => {
+  const previousMaxTokens = process.env.OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS
+  delete process.env.OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS
+
+  try {
+    assert.equal(getOpenRouterMockupPlannerMaxTokens(), 2048)
+  } finally {
+    if (previousMaxTokens === undefined) {
+      delete process.env.OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS
+    } else {
+      process.env.OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS = previousMaxTokens
     }
   }
 })

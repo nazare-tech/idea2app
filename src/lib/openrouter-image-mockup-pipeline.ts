@@ -25,6 +25,9 @@ export const MOCKUP_STORAGE_BUCKET =
   process.env.SUPABASE_MOCKUP_STORAGE_BUCKET || "mockups"
 const MAX_MOCKUP_IMAGE_BYTES = 10 * 1024 * 1024
 const DEFAULT_IMAGE_TIMEOUT_MS = 285_000
+const DEFAULT_IMAGE_MAX_TOKENS = 4096
+const DEFAULT_PLANNER_MODEL = "openai/gpt-5.4-mini"
+const DEFAULT_PLANNER_MAX_TOKENS = 2048
 
 export const OPENROUTER_MOCKUP_OPTION_CONFIGS = [
   {
@@ -102,10 +105,10 @@ export function getOpenRouterMockupImageModel() {
   return process.env.OPENROUTER_MOCKUP_IMAGE_MODEL || DEFAULT_OPENROUTER_MOCKUP_IMAGE_MODEL
 }
 
-export function getOpenRouterMockupPlannerModel(imageModel = getOpenRouterMockupImageModel()) {
+export function getOpenRouterMockupPlannerModel() {
   return process.env.OPENROUTER_MOCKUP_PLANNER_MODEL ||
     process.env.OPENROUTER_ANALYSIS_MODEL ||
-    imageModel
+    DEFAULT_PLANNER_MODEL
 }
 
 export function parseImageDataUrl(dataUrl: string) {
@@ -160,7 +163,7 @@ export async function generateOpenRouterImageMockup({
   }
 
   const model = getOpenRouterMockupImageModel()
-  const plannerModel = getOpenRouterMockupPlannerModel(model)
+  const plannerModel = getOpenRouterMockupPlannerModel()
   const runId = crypto.randomUUID()
   const generatedAt = new Date().toISOString()
   const storageSupabase = createServiceClient() as ServerSupabaseClient
@@ -249,7 +252,7 @@ export async function generateOpenRouterImageMockupOption({
   }
 
   const model = modelOverride || getOpenRouterMockupImageModel()
-  const plannerModel = getOpenRouterMockupPlannerModel(model)
+  const plannerModel = getOpenRouterMockupPlannerModel()
   const storageSupabase = createServiceClient() as ServerSupabaseClient
   const openrouter = new OpenAI({
     baseURL: "https://openrouter.ai/api/v1",
@@ -325,6 +328,7 @@ async function generateAndStoreOption({
 
   let response: OpenAI.Chat.Completions.ChatCompletion
   try {
+    const imageConfig = getOpenRouterMockupImageConfig()
     response = await openrouter.chat.completions.create({
       model,
       messages: [
@@ -338,15 +342,16 @@ async function generateAndStoreOption({
         },
       ],
       modalities: ["image", "text"],
-      image_config: getOpenRouterMockupImageConfig(),
-    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming & { modalities: string[]; image_config: ReturnType<typeof getOpenRouterMockupImageConfig> }, {
+      max_completion_tokens: getOpenRouterMockupImageMaxTokens(),
+      ...(imageConfig && { image_config: imageConfig }),
+    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming & { modalities: string[]; image_config?: ReturnType<typeof getOpenRouterMockupImageConfig> }, {
       signal: AbortSignal.timeout(getOpenRouterMockupImageTimeoutMs()),
     })
   } catch (error) {
     if (isAbortError(error)) {
       throw new Error(`OpenRouter image generation timed out for option ${config.label}`)
     }
-    throw error
+    throw new Error(getOpenRouterProviderErrorMessage(error) || "OpenRouter image generation failed")
   }
 
   const choice = response.choices[0]
@@ -390,10 +395,31 @@ export function getOpenRouterMockupImageTimeoutMs() {
     : DEFAULT_IMAGE_TIMEOUT_MS
 }
 
+export function getOpenRouterMockupImageMaxTokens() {
+  const configured = Number(process.env.OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS)
+  return Number.isFinite(configured) && configured > 0
+    ? Math.floor(configured)
+    : DEFAULT_IMAGE_MAX_TOKENS
+}
+
+export function getOpenRouterMockupPlannerMaxTokens() {
+  const configured = Number(process.env.OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS)
+  return Number.isFinite(configured) && configured > 0
+    ? Math.floor(configured)
+    : DEFAULT_PLANNER_MAX_TOKENS
+}
+
 export function getOpenRouterMockupImageConfig() {
+  const aspectRatio = process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
+  const imageSize = process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
+
+  if (!aspectRatio && !imageSize) {
+    return undefined
+  }
+
   return {
-    aspect_ratio: process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO || "21:9",
-    image_size: process.env.OPENROUTER_MOCKUP_IMAGE_SIZE || "2K",
+    ...(aspectRatio && { aspect_ratio: aspectRatio }),
+    ...(imageSize && { image_size: imageSize }),
   }
 }
 
@@ -429,6 +455,7 @@ async function generateMockupDesignPlan({
         }),
       },
     ],
+    max_completion_tokens: getOpenRouterMockupPlannerMaxTokens(),
   }, {
     signal: AbortSignal.timeout(getOpenRouterMockupImageTimeoutMs()),
   })
@@ -439,6 +466,37 @@ async function generateMockupDesignPlan({
   }
 
   return parseMockupDesignPlan(content)
+}
+
+function getOpenRouterProviderErrorMessage(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return undefined
+  }
+
+  const record = error as Record<string, unknown>
+  const nested = record.error
+  const nestedMessage =
+    nested && typeof nested === "object" && "message" in nested
+      ? (nested as { message?: unknown }).message
+      : undefined
+  const message = typeof nestedMessage === "string"
+    ? nestedMessage
+    : typeof record.message === "string"
+      ? record.message
+      : undefined
+
+  return sanitizeOpenRouterErrorMessage(message)
+}
+
+function sanitizeOpenRouterErrorMessage(message?: string) {
+  if (!message) return undefined
+
+  return message
+    .replace(
+      /https:\/\/openrouter\.ai\/workspaces\/[^/\s)]+\/keys\/[^\s)]+/g,
+      "the OpenRouter key settings",
+    )
+    .replace(/key=[^&\s)]+/g, "key=[redacted]")
 }
 
 function isAbortError(error: unknown) {
