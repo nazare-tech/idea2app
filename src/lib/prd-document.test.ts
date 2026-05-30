@@ -136,9 +136,6 @@ Proposal Pilot helps freelance designers turn discovery notes into client-ready 
 ### 2.2 User goals
 - Create a polished proposal in under 15 minutes.
 
-### 2.3 Non-goals
-- Full CRM functionality is out of scope for the MVP.
-
 ## 3. User personas
 
 ### 3.1 Key user types
@@ -155,21 +152,7 @@ Proposal Pilot helps freelance designers turn discovery notes into client-ready 
 ### 3.3 Role-based access
 - **Registered user**: Can create, edit, and save proposals.
 
-## 4. User experience
-
-### 4.1 Entry points and first-time user flow
-- User lands on the app and starts from a proposal intake form.
-
-### 4.2 Core experience
-- **Capture brief**: User enters client goals, budget, and timeline.
-
-## 5. Functional requirements
-
-1. The system must let a registered user create a proposal from structured intake fields.
-2. The system must show a loading state while AI proposal generation is running.
-3. The system must save generated proposals and reload them on refresh.
-
-## 6. User stories and acceptance criteria
+## 4. User stories and acceptance criteria
 
 ### US-001: Generate proposal
 
@@ -183,14 +166,30 @@ So that I can respond to leads faster.
 - User can submit required client notes.
 - Generated proposal includes scope, timeline, and pricing sections.
 
-## 7. Non-goals / out of scope
-- Multi-seat team approvals are deferred.
+## 5. Functional requirements
 
-## 8. Technical considerations
+### 5.1 Functional
+- **FR-001**: Create proposal from intake fields
+  - The system must let a registered user create a proposal from structured intake fields.
+- **FR-002**: Save proposal drafts
+  - The system must save generated proposals and reload them on refresh.
+
+### 5.2 Non-Functional
+- **NFR-001**: Generation feedback
+  - The system must show a loading state while AI proposal generation is running.
+
+### 5.3 Integration
+- **IR-001**: AI generation service
+  - Proposal generation must connect to the server-side AI provider.
+
+## 6. Technical considerations
 - Store proposals in a relational database.
 - Keep AI calls on the server.
 
-## 9. Success metrics
+## 7. Non-goals / out of scope
+- Multi-seat team approvals are deferred.
+
+## 8. Success metrics
 
 ### 9.1 User metrics
 - 60% of registered users generate at least one proposal.
@@ -213,9 +212,9 @@ So that I can respond to leads faster.
   assert.match(viewModel.structured.userNeeds.paragraphs.join(" "), /Proposal Pilot/)
   assert.equal(viewModel.structured.personas.length, 1)
   assert.equal(viewModel.structured.personas[0].heading, "Dana Designer")
-  assert.match(viewModel.structured.requirements.items.join(" "), /registered user create a proposal/)
+  assert.match(viewModel.structured.requirements.items.join(" "), /FR-001/)
   assert.match(viewModel.structured.userStories.source, /US-001/)
-  assert.match(viewModel.structured.uiUx.items.join(" "), /proposal intake form/)
+  assert.equal(viewModel.structured.uiUx.items.length, 0)
   assert.match(viewModel.structured.technical.items.join(" "), /server/)
 })
 

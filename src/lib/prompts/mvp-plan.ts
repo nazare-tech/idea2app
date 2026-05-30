@@ -318,6 +318,23 @@ Never pad with generic advice.
 
 Every sentence should help the builder make a decision or take an action.
 
+## 9. Use bullet points where they improve scanability
+
+Use bullet points wherever they make the plan easier for a solo builder to act on, especially for:
+
+- Assumptions, contradictions, scope cuts, validation decisions, and compliance flags
+- Target-user context, current workaround, desired outcome, and core-flow notes
+- Must-have acceptance criteria, manual shortcuts, build guardrails, validation questions, and cut-list options
+- Risks, dependencies, success signals, and product-specific constraints
+
+Keep prose paragraphs short. If a paragraph lists more than two related ideas, convert it into bullets.
+
+Use numbered lists only when order matters, such as the core user flow or build sequence.
+
+Preserve required markdown tables where the template asks for tables. Do not replace those tables with bullets.
+
+Do not create long dense paragraphs inside tactical sections that should be easy to skim while building.
+
 ---
 
 # Output Format
