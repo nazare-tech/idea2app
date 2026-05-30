@@ -121,6 +121,103 @@ As a founder, I want a plan.
   assert.match(viewModel.structured.prioritization.items.join(" "), /Idea intake/)
 })
 
+test("getPrdDocumentViewModel parses current numbered PRD prompt headings", () => {
+  const viewModel = getPrdDocumentViewModel(`# PRD: Proposal Pilot
+
+## 1. Introduction/overview
+
+Proposal Pilot helps freelance designers turn discovery notes into client-ready proposals. It solves the problem of slow, inconsistent proposal writing for solo service providers.
+
+## 2. Goals
+
+### 2.1 Business goals
+- Convert 10% of visitors into registered users.
+
+### 2.2 User goals
+- Create a polished proposal in under 15 minutes.
+
+## 3. User personas
+
+### 3.1 Key user types
+- Freelance brand designer
+
+### 3.2 Persona details
+
+**Dana Designer**
+- **Description**: Freelance designer managing three active client leads.
+- **Needs**: Faster proposal creation and reuse.
+- **Pain points**: Rewrites scope, pricing, and timelines from scratch.
+- **Motivation**: Win more work without extra admin.
+
+### 3.3 Role-based access
+- **Registered user**: Can create, edit, and save proposals.
+
+## 4. User stories and acceptance criteria
+
+### US-001: Generate proposal
+
+**User story**
+
+As a freelance designer,
+I want to generate a proposal from client notes,
+So that I can respond to leads faster.
+
+**Acceptance criteria**
+- User can submit required client notes.
+- Generated proposal includes scope, timeline, and pricing sections.
+
+## 5. Functional requirements
+
+### 5.1 Functional
+- **FR-001**: Create proposal from intake fields
+  - The system must let a registered user create a proposal from structured intake fields.
+- **FR-002**: Save proposal drafts
+  - The system must save generated proposals and reload them on refresh.
+
+### 5.2 Non-Functional
+- **NFR-001**: Generation feedback
+  - The system must show a loading state while AI proposal generation is running.
+
+### 5.3 Integration
+- **IR-001**: AI generation service
+  - Proposal generation must connect to the server-side AI provider.
+
+## 6. Technical considerations
+- Store proposals in a relational database.
+- Keep AI calls on the server.
+
+## 7. Non-goals / out of scope
+- Multi-seat team approvals are deferred.
+
+## 8. Success metrics
+
+### 9.1 User metrics
+- 60% of registered users generate at least one proposal.
+
+## 10. Timeline and milestones
+- Phase 1: Intake and generated proposal preview.
+
+## 11. Risks and mitigation
+- **Risk**: Proposal quality is too generic.
+  - **Mitigation**: Add editable sections and feedback capture.
+
+## 12. Dependencies and assumptions
+- Assumes users are comfortable editing AI-generated drafts.
+
+## 13. Open questions
+- Which proposal template should be default?
+`)
+
+  assert.equal(viewModel.canRenderModules, true)
+  assert.match(viewModel.structured.userNeeds.paragraphs.join(" "), /Proposal Pilot/)
+  assert.equal(viewModel.structured.personas.length, 1)
+  assert.equal(viewModel.structured.personas[0].heading, "Dana Designer")
+  assert.match(viewModel.structured.requirements.items.join(" "), /FR-001/)
+  assert.match(viewModel.structured.userStories.source, /US-001/)
+  assert.equal(viewModel.structured.uiUx.items.length, 0)
+  assert.match(viewModel.structured.technical.items.join(" "), /server/)
+})
+
 test("getPrdDocumentViewModel keeps unlabeled persona fields in one profile block", () => {
   const viewModel = getPrdDocumentViewModel(`# PRD: ADR Helper
 

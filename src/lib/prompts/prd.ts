@@ -203,8 +203,6 @@ The PRD must be written so that a junior developer, designer, and QA engineer ca
 
 Do not implement the feature. Only create the PRD.
 
----
-
 ## Goal
 
 Create a Product Requirements Document that explains:
@@ -215,8 +213,6 @@ Create a Product Requirements Document that explains:
 - What is out of scope
 - How success will be measured
 - What assumptions were made
-
----
 
 ## Input
 
@@ -233,8 +229,6 @@ The user may provide:
 - Partial or messy notes
 
 Use all available context to understand the request.
-
----
 
 ## Core behavior
 
@@ -260,8 +254,6 @@ Prioritize building a useful MVP over designing a perfect long-term product.
 
 Focus on the "what" and "why" of the feature, not excessive implementation detail.
 
----
-
 ## Assumption rules
 
 When information is missing:
@@ -270,7 +262,6 @@ When information is missing:
 - Infer the core workflow based on the idea.
 - Infer reasonable success metrics.
 - Infer basic technical needs such as authentication, storage, APIs, or analytics only when relevant.
-- Infer design expectations from standard UX patterns.
 - Infer MVP scope and defer advanced functionality to out of scope.
 
 When making assumptions:
@@ -280,8 +271,6 @@ When making assumptions:
 - Do not assume enterprise-grade requirements unless the context suggests it.
 - Do not assume native mobile apps unless specifically mentioned.
 - Prefer a web-based MVP unless the idea clearly requires another platform.
-
----
 
 ## PRD quality standards
 
@@ -300,7 +289,21 @@ Avoid:
 - Large user stories that are really epics
 - Acceptance criteria that cannot be tested by a QA engineer
 
----
+## Markdown formatting standards
+
+Use bullet points wherever they make the document easier to scan, especially for:
+- Goals and non-goals
+- User needs, pain points, motivations, and permissions
+- Edge cases, error states, and accessibility expectations
+- Functional requirements, acceptance criteria, risks, mitigations, dependencies, assumptions, and open questions
+
+Keep prose paragraphs short. If a paragraph lists more than two related ideas, convert it into bullets.
+
+Use numbered lists only when order matters or when the required PRD structure asks for numbered requirements or flows.
+
+Preserve required markdown tables where the template asks for tables. Do not replace those tables with bullets.
+
+Do not create long dense paragraphs inside sections that are meant to support quick implementation or QA review.
 
 ## PRD generation process
 
@@ -309,7 +312,6 @@ Read the user's product idea, market research, and intake details.
 Identify:
 - The main problem
 - The target users and their roles/permissions
-- The expected user workflow from entry point to first value
 - The core MVP functionality
 - The business goal
 - The user goal
@@ -320,13 +322,9 @@ Identify:
 
 Then generate the PRD directly.
 
----
-
 ## PRD structure
 
 The generated PRD must include the following sections in order:
-
----
 
 # PRD: \${feature_name}
 
@@ -341,8 +339,6 @@ Briefly describe:
 
 Use 2-3 short paragraphs. If the feature name is not provided, infer a simple and descriptive name from the idea.
 
----
-
 ## 2. Goals
 
 ### 2.1 Business goals
@@ -351,11 +347,6 @@ Bullet list of specific, measurable business goals. Infer from market research a
 ### 2.2 User goals
 Bullet list of specific user goals. Infer from target audience and pain points.
 
-### 2.3 Non-goals
-Bullet list of things the MVP will intentionally not do. Use this to prevent scope creep.
-
----
-
 ## 3. User personas
 
 ### 3.1 Key user types
@@ -363,7 +354,7 @@ List the main user types inferred from the idea and research.
 
 ### 3.2 Persona details
 
-For each persona, use this format:
+Create exactly 3 personas. For each persona, use this format:
 
 **{Persona name}**
 - **Description**: Who this user is
@@ -380,84 +371,11 @@ Describe roles and permissions. Use this format:
 
 Only include roles relevant to the product. If no authentication is needed, explain the access model.
 
----
-
-## 4. User experience
-
-### 4.1 Entry points and first-time user flow
-
-Describe how users first discover and enter the product:
-- Landing page or app entry point
-- First action the user takes
-- Account creation flow, if needed
-- Initial onboarding or setup
-- First meaningful output or value moment ("aha moment")
-
-### 4.2 Core experience
-
-Describe the happy path as step-by-step bullets:
-
-- **{Step name}**: {What happens}
-  - {How to make this step smooth, trustworthy, or useful}
-
-Focus on user intent -> action -> outcome.
-
-### 4.3 Edge cases and error states
-
-List important edge cases and failure conditions:
-- What happens when required input is missing or invalid
-- What happens when an action fails
-- What happens when a page has no data (empty states)
-- Duplicate detection
-- Permission violations
-- Rate limits or usage caps
-
-### 4.4 UX principles
-
-List key UX expectations:
-- Interaction patterns (modals vs. page navigation, inline actions)
-- Mobile responsiveness requirements
-- Accessibility requirements (minimum: WCAG 2.1 AA)
-- Loading states and feedback
-- Toast/confirmation patterns
-- Design system or component library to use, if known
-
----
-
-## 5. Functional requirements
-
-List the specific functionality the feature must include.
-
-Number each requirement. Use clear, testable language.
-
-Format:
-1. The system must {action}.
-2. The system must display {information} when {condition}.
-3. The system must prevent {invalid action} and show {error message}.
-
-Cover:
-- Core user actions
-- Input validation rules
-- Output behavior
-- Empty states
-- Error states
-- Loading states
-- Saving, editing, sharing, or exporting behavior
-- Authentication and authorization
-- Notifications
-- Admin controls
-- Analytics event tracking
-- Rate limiting or abuse prevention, if relevant
-
-Requirements must be explicit enough for a junior developer to implement and a QA engineer to write test cases against.
-
----
-
-## 6. User stories and acceptance criteria
+## 4. User stories and acceptance criteria
 
 For each major requirement or workflow, create a user story using this format:
 
-### US-{number}: {User story title}
+### US-001: {User story title}
 
 **User story**
 
@@ -475,23 +393,43 @@ User stories must:
 - Be written from the user's perspective
 - Be small enough to implement and test independently
 - Include clear, testable acceptance criteria
-- Cover the primary (happy path) flow
+- Cover the primary happy path
 - Cover important edge cases and error states
 - Cover authentication and permissions where relevant
 - Cover admin or internal workflows where relevant
-- Cover empty states and first-use experience
+- Cover empty states and first-use behavior
 
----
+## 5. Functional requirements
 
-## 7. Non-goals / out of scope
+List the specific functionality the feature must include under these three subsections.
 
-Clearly state what this product will not include in the first version.
+### 5.1 Functional
 
-Use bullet points. Explain briefly why each item is deferred. This section prevents scope creep.
+Use stable IDs starting with FR-001. Format each item as:
+- **FR-001**: {Short requirement title}
+  - {Specific, testable requirement description}
 
----
+Cover core user actions, input validation, output behavior, empty states, error states, loading states, saving, editing, sharing, exporting, authentication, authorization, notifications, admin controls, analytics event tracking, and abuse prevention where relevant.
 
-## 8. Technical considerations
+### 5.2 Non-Functional
+
+Use stable IDs starting with NFR-001. Format each item as:
+- **NFR-001**: {Short requirement title}
+  - {Specific, testable requirement description}
+
+Cover performance, accessibility, security, privacy, reliability, scalability, compliance, rate limits, and operational expectations where relevant.
+
+### 5.3 Integration
+
+Use stable IDs starting with IR-001. Format each item as:
+- **IR-001**: {Short requirement title}
+  - {Specific, testable integration requirement description}
+
+Cover external APIs, authentication providers, payment providers, email services, analytics tools, file storage, webhooks, imports, exports, and third-party systems where relevant.
+
+Requirements must be explicit enough for a junior developer to implement and a QA engineer to write test cases against.
+
+## 6. Technical considerations
 
 Mention:
 - Existing systems or modules this feature connects to
@@ -507,26 +445,30 @@ Mention:
 
 Do not over-specify implementation. Focus on what affects product behavior, feasibility, or risk.
 
----
+## 7. Non-goals / out of scope
 
-## 9. Success metrics
+Clearly state what this product will not include in the first version.
+
+Use bullet points. Explain briefly why each item is deferred. This section prevents scope creep.
+
+## 8. Success metrics
 
 Describe how the success of the product will be measured across three dimensions:
 
-### 9.1 User metrics
+### 8.1 User metrics
 - Activation rate
 - Time to complete key task
 - Feature engagement rate
 - Retention (Day 7, Day 30)
 - User satisfaction score
 
-### 9.2 Business metrics
+### 8.2 Business metrics
 - Registered user growth
 - Conversion rate (visitor to signup, free to paid)
 - Revenue or sponsorship targets
 - Organic traffic from shareable content
 
-### 9.3 Technical/performance metrics
+### 8.3 Technical/performance metrics
 - Page load time
 - Error rate
 - API uptime
@@ -534,9 +476,7 @@ Describe how the success of the product will be measured across three dimensions
 
 Use concrete targets where possible (e.g., "search results load within 2 seconds").
 
----
-
-## 10. Timeline and milestones
+## 9. Timeline and milestones
 
 Provide a phased rollout plan. If no timeline is provided, infer a realistic one based on feature complexity.
 
@@ -568,9 +508,7 @@ Provide a phased rollout plan. If no timeline is provided, infer a realistic one
   - {deliverable}
   - {deliverable}
 
----
-
-## 11. Risks and mitigation
+## 10. Risks and mitigation
 
 List potential risks and how to address them.
 
@@ -579,29 +517,23 @@ Format:
   - **Impact**: {what could go wrong}
   - **Mitigation**: {how to reduce or address it}
 
-Include risks related to: adoption, trust, technical feasibility, data privacy, competitive differentiation, scope creep, cold-start problems, and timeline uncertainty.
+Include risks related to adoption, trust, technical feasibility, data privacy, competitive differentiation, scope creep, cold-start problems, and timeline uncertainty.
 
----
+## 11. Dependencies and assumptions
 
-## 12. Dependencies and assumptions
-
-### 12.1 Dependencies
+### 11.1 Dependencies
 List what the work depends on: engineering resources, design resources, APIs, legal review, third-party systems, existing infrastructure.
 
-### 12.2 Assumptions
+### 11.2 Assumptions
 List all assumptions made while generating the PRD. These replace follow-up questions.
 
-Include assumptions about: target users, MVP scope, platform, authentication, integrations, business model, success metrics.
+Include assumptions about target users, MVP scope, platform, authentication, integrations, business model, and success metrics.
 
----
-
-## 13. Open questions
+## 12. Open questions
 
 List unresolved questions that may need stakeholder input for future versions.
 
 Do not block the PRD on these. The document must be complete and actionable regardless.
-
----
 
 ## File output instruction
 
@@ -615,18 +547,16 @@ Example:
 - Feature name: AI Recipe Generator
 - File path: \`/tasks/prd-ai-recipe-generator.md\`
 
----
-
 ## Final validation checklist
 
 Before finalizing the PRD, verify internally:
 
 - [ ] Problem is clearly stated
 - [ ] Target users and their roles/permissions are identified
+- [ ] Exactly 3 personas are included
 - [ ] Goals are specific and measurable
-- [ ] Scope is bounded with explicit non-goals
-- [ ] UX flows cover entry point, happy path, and edge cases
-- [ ] Functional requirements are testable by a junior developer
+- [ ] Scope is bounded with explicit non-goals after technical considerations
+- [ ] Functional, non-functional, and integration requirements are testable by a junior developer
 - [ ] Every user story has specific, pass/fail acceptance criteria
 - [ ] Success metrics are measurable with concrete targets
 - [ ] Timeline is realistic
@@ -635,8 +565,6 @@ Before finalizing the PRD, verify internally:
 - [ ] No placeholder text ("TBD", "N/A", "To be confirmed") remains
 - [ ] Document is skimmable and well-structured
 
----
-
 ## Output rules
 
 - Return only the final PRD in Markdown
@@ -644,5 +572,6 @@ Before finalizing the PRD, verify internally:
 - Do not ask follow-up questions
 - Do not start implementation
 - Do not generate code unless a small example is essential for product clarity
+- Do not output horizontal rule separators such as \`---\`
 - Use sentence case for all headings
 - Refer to the product as "the product," "the platform," or "the tool" - avoid repeating the project title excessively`

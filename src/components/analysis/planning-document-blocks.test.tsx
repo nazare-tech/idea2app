@@ -347,13 +347,29 @@ Acceptance Criteria: - Every saved decision log has a share link - The shared UR
   assert.match(html, /Integration/)
 })
 
-test("PrdDocumentBlocks renders duplicate user story ids without dropping stories", () => {
+test("PrdDocumentBlocks normalizes duplicate user story ids without dropping stories", () => {
   const html = renderToStaticMarkup(
     <PrdDocumentBlocks
       projectId="project-1"
       content={`# PRD
 
+## I. Introduction
+
+### 1.2 Problem Definition / User Needs
+- Pet owners need safer booking.
+
+### 1.3 Purpose and Value Proposition
+Verified care updates improve trust.
+
+## III. Stakeholders
+
+### 3.2 User Profiles / Personas
+- Pet owner booking care.
+
 ## IV. Features and Functionality
+
+### 4.1 Requirements
+- FR-001: Book verified sitters.
 
 ### 4.2 User Stories / Use Cases
 #### US-002: Book a sitter
@@ -371,7 +387,8 @@ Acceptance Criteria:
 
   assert.match(html, /Book a sitter/)
   assert.match(html, /Track care updates/)
-  assert.equal((html.match(/US-002/g) ?? []).length, 2)
+  assert.match(html, /US-001/)
+  assert.equal((html.match(/US-002/g) ?? []).length, 1)
 })
 
 test("PrdDocumentBlocks stacks table-based PRD requirements vertically", () => {
@@ -431,4 +448,254 @@ test("planning document blocks fall back to markdown for loose legacy content", 
 
   assert.match(html, /Block view unavailable/)
   assert.match(html, /Loose legacy notes only/)
+})
+
+test("PrdDocumentBlocks renders current numbered PRD prompt content as blocks", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      projectId="project-1"
+      content={`# PRD: Proposal Pilot
+
+## 1. Introduction/overview
+Proposal Pilot helps freelance designers turn discovery notes into client-ready proposals.
+
+## 2. Goals
+### Business goals
+- Reduce proposal writing time by 50%.
+- Reach 25 paying teams within 90 days.
+
+### User goals
+- Create a proposal from messy client notes.
+- Review generated sections before sharing.
+
+## 3. User personas
+### 3.1 Key user types
+- Freelance designer who sends proposals monthly.
+- Solo agency owner who reuses proposal sections.
+
+### 3.2 Persona details
+**Dana Designer**
+- **Description**: Freelance designer managing three active client leads.
+- **Needs**: Faster proposal creation and reuse.
+
+**Omar Owner**
+- **Description**: Solo agency owner sending proposals to high-value prospects.
+- **Needs**: Consistent language across client proposals.
+
+**Priya Producer**
+- **Description**: Operations lead reviewing proposal details before send-off.
+- **Needs**: Clear status and editable proposal sections.
+
+## 4. User stories and acceptance criteria
+### US-009: Generate proposal
+**User story**
+As a freelance designer, I want to generate a proposal from client notes.
+**Acceptance criteria**
+- Generated proposal includes scope, timeline, and pricing sections.
+
+### US-009: Review generated draft
+**User story**
+As a solo agency owner,
+I want to review and edit generated sections,
+So that I can send client-ready proposals.
+**Acceptance criteria**
+- User can edit generated proposal sections before saving.
+
+## 5. Functional requirements
+### 5.1 Functional
+- **FR-001**: Proposal intake
+  - Users can create a proposal from structured intake fields.
+- **FR-002**: Draft editing
+  - Users can edit generated proposal sections before saving.
+
+### 5.2 Non-Functional
+- **NFR-001**: Generation feedback
+  - The page shows a loading state while AI proposal generation is running.
+
+### 5.3 Integration
+- **IR-001**: AI generation provider
+  - Server routes connect to the configured AI provider for proposal generation.
+
+## 6. Technical considerations
+- Keep AI calls on the server.
+- Store proposal drafts in the existing project workspace.
+
+## 7. Non-goals / out of scope
+- Multi-seat team approvals are deferred.
+
+## 8. Success metrics
+### 8.1 User metrics
+- 60% of users generate a first proposal within one day.
+- Draft review completes in under 10 minutes.
+
+### 8.2 Business metrics
+- 25 paying teams within 90 days.
+
+### 8.3 Technical/performance metrics
+- Generation errors stay below 2%.
+- Proposal draft page loads under 2 seconds.
+
+## 9. Timeline and milestones
+### Project estimate
+- **Size**: Medium
+- **Estimated total duration**: 8 weeks
+
+### Team composition
+- **Product manager**: Scope and acceptance criteria
+- **Full-stack engineer**: Product UI and backend routes
+- **Designer**: Proposal review workflow
+
+### Phase 1: Foundation
+- **Goal**: Create the intake and draft shell.
+- **Estimated duration**: 3 weeks
+- **Key deliverables**:
+  - Intake form
+  - Draft storage
+
+### Phase 2: Generation and review
+- **Goal**: Generate editable proposals.
+- **Estimated duration**: 5 weeks
+- **Key deliverables**:
+  - AI generation route
+  - Review editor
+
+## 10. Risks and mitigation
+- **Risk**: Proposal quality may be too generic.
+  - **Mitigation**: Add section-level review prompts.
+
+## 11. Dependencies and assumptions
+- Existing authentication and project workspace are available.
+
+## 12. Open questions
+- Which proposal export format matters first?
+
+## 99. User experience
+- This legacy section should not render for current PRD documents.
+`}
+    />,
+  )
+
+  assert.doesNotMatch(html, /Block view unavailable/)
+  assert.match(html, />Product Plan<\/h1>/)
+  assert.match(html, /text-\[36px\] font-bold tracking-\[-0\.05em\] text-\[#0A0A0A\] md:text-\[44px\]/)
+  assert.match(html, /text-\[22px\] font-bold tracking-\[-0\.03em\] text-\[#0A0A0A\]/)
+  assert.doesNotMatch(html, />Proposal Pilot<\/h1>/)
+  assert.match(html, /Proposal Pilot helps freelance designers turn discovery notes into client-ready proposals/)
+  assert.match(html, /Project Size/)
+  assert.match(html, /Medium/)
+  assert.match(html, /Est\. Duration/)
+  assert.match(html, /8 weeks/)
+  assert.match(html, /Team Members/)
+  assert.match(html, /User Stories/)
+  assert.match(html, /Requirements/)
+  assert.match(html, /Business Goals/)
+  assert.match(html, /User Goals/)
+  assert.match(html, /Dana Designer/)
+  assert.match(html, /Omar Owner/)
+  assert.match(html, /Priya Producer/)
+  assert.doesNotMatch(html, /Freelance designer who sends proposals monthly/)
+  assert.match(html, /Persona 01/)
+  assert.match(html, /Introduction &amp; Overview/)
+  assert.match(html, /Functional Requirements/)
+  assert.match(html, /User Stories &amp; Acceptance Criteria/)
+  assert.match(html, /Generated proposal includes scope, timeline, and pricing sections/)
+  assert.match(html, /US-001/)
+  assert.match(html, /US-002/)
+  assert.match(html, /grid gap-4 lg:grid-cols-2/)
+  assert.match(html, /Technical Considerations/)
+  assert.match(html, /aria-label="Technical Item 1 details"/)
+  assert.match(html, /aria-label="Technical Item 2 details"/)
+  assert.match(html, /Non-goals &amp; Out of Scope/)
+  assert.match(html, /Success Metrics/)
+  assert.match(html, /Technical \/ Performance Metrics/)
+  assert.match(html, /Timeline &amp; Milestones/)
+  assert.match(html, /Team Composition/)
+  assert.match(html, /Phase 1/)
+  assert.match(html, /Weeks 1-3/)
+  assert.match(html, /Weeks 4-8/)
+  assert.match(html, /Foundation/)
+  assert.match(html, /aria-label="Foundation key deliverables"/)
+  assert.match(html, /Intake form/)
+  assert.match(html, /Risks, Dependencies &amp; Open Questions/)
+  assert.match(html, /Which proposal export format matters first/)
+  assert.doesNotMatch(html, /No structured content available/)
+  assert.doesNotMatch(html, /bg-\[#4A4040\]/)
+  assert.doesNotMatch(html, /grid gap-4 xl:grid-cols-3/)
+  assert.doesNotMatch(html, /grid gap-3 sm:grid-cols-2 xl:grid-cols-3/)
+  assert.doesNotMatch(html, /This legacy section should not render/)
+  assert.doesNotMatch(html, /Problem to Solve/)
+  assert.doesNotMatch(html, /What to Build/)
+
+  assert.ok(html.indexOf("User Personas") < html.indexOf("User Stories &amp; Acceptance Criteria"))
+  assert.ok(html.indexOf("User Stories &amp; Acceptance Criteria") < html.indexOf("Functional Requirements"))
+  assert.ok(html.indexOf("Technical Considerations") < html.indexOf("Non-goals &amp; Out of Scope"))
+
+  const timelineHtml = html.slice(
+    html.indexOf("Timeline &amp; Milestones"),
+    html.indexOf("Risks, Dependencies &amp; Open Questions"),
+  )
+  assert.doesNotMatch(timelineHtml, /lucide-check h-3\.5 w-3\.5/)
+  assert.match(timelineHtml, /lucide-check mt-1 h-3 w-3/)
+  assert.doesNotMatch(timelineHtml, />Goal</)
+  assert.doesNotMatch(timelineHtml, /Phase 1: Foundation/)
+})
+
+test("MvpPlanDocumentBlocks renders current numbered MVP prompt content as blocks", () => {
+  const html = renderToStaticMarkup(
+    <MvpPlanDocumentBlocks
+      projectId="project-1"
+      content={`# MVP Plan: Proposal Pilot
+
+## 1. MVP Summary
+Proposal Pilot helps freelance designers turn client notes into proposals.
+
+## 3. Target User and Problem
+### Primary User
+Freelance designers who manage proposals manually.
+### Problem
+They rewrite scope and pricing language for every lead.
+
+## 4. MVP Goal, Definition of Done, and Riskiest Assumptions
+**Goal:** Validate whether designers will generate and edit a proposal.
+
+## 5. Core User Flow
+1. User opens the proposal workspace.
+2. User enters client notes.
+3. System generates a proposal draft.
+
+## 6. MVP Scope
+| Category | Include in MVP | Exclude for Now |
+|---|---|---|
+| Core input | Structured proposal intake | CRM import |
+
+## 7. Must-Have Features
+| Feature | Why It Matters | Acceptance Criteria |
+|---|---|---|
+| Proposal intake | Captures useful context | User can submit required fields |
+
+## 9. AI-Friendly Build Sequence
+| Step | Build Chunk | Goal | Test Before Moving On |
+|---|---|---|---|
+| 1 | Proposal intake form | Capture context | Submit valid and invalid input |
+
+## 11. Validation Plan
+### First Test Audience
+Five freelance designers who send proposals monthly.
+`}
+    />,
+  )
+
+  assert.doesNotMatch(html, /Block view unavailable/)
+  assert.match(html, /First Version Plan/)
+  assert.match(html, /MVP Summary/)
+  assert.match(html, /Primary User/)
+  assert.match(html, /Step 01/)
+  assert.match(html, /Feature 01/)
+  assert.match(html, /Must-Have Features/)
+  assert.match(html, /MVP Scope/)
+  assert.match(html, /Validation Plan/)
+  assert.doesNotMatch(html, /bg-\[#4A4040\]/)
+  assert.doesNotMatch(html, /grid gap-4 xl:grid-cols-2/)
+  assert.doesNotMatch(html, /What We Need to Prove/)
+  assert.doesNotMatch(html, /Core Features/)
 })
