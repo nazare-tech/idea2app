@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { CREDIT_COSTS } from "@/lib/utils"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 import {
-  BarChart3,
+  ChartNoAxesColumn,
   Search,
   FileText,
   Code,
@@ -63,7 +63,7 @@ const analysisTypes = [
     id: "competitive-analysis",
     name: "Competitive Analysis",
     description: "Analyze competitors, market positioning, and industry landscape",
-    icon: BarChart3,
+    icon: ChartNoAxesColumn,
     credits: CREDIT_COSTS["competitive-analysis"],
   },
   {

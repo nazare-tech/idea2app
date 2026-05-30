@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ElementType } from "react"
 import {
-  BarChart3,
+  ChartNoAxesColumn,
   ClipboardList,
   FileText,
   LayoutGrid,
@@ -68,7 +68,7 @@ const DEFAULT_ROWS: IntakeLoadingRow[] = [
 
 const ROW_ICONS: Record<OnboardingLoadingRowKey, ElementType> = {
   overview: FileText,
-  "market-research": BarChart3,
+  "market-research": ChartNoAxesColumn,
   prd: ClipboardList,
   mvp: Rocket,
   mockups: LayoutGrid,

@@ -3,7 +3,6 @@
 import { useMemo } from "react"
 import {
   AlertTriangle,
-  BarChart3,
   Check,
   ChevronDown,
   CircleGauge,
@@ -1817,7 +1816,7 @@ function RequirementShowcase({ section }: { section?: PlanningDocumentSection })
   )
 }
 
-const techIcons = [Layers, ShieldCheck, Database, CircleGauge, BarChart3, ClipboardList]
+const techIcons = [Layers, ShieldCheck, Database, CircleGauge, TrendingUp, ClipboardList]
 
 function TechnicalShowcase({ section, projectId }: { section?: PlanningDocumentSection; projectId: string }) {
   if (!section) return null
@@ -1866,7 +1865,7 @@ function MetricsShowcase({ section, projectId }: { section?: PlanningDocumentSec
     return <PlanningMarkdownRenderer content={section.content} projectId={projectId} />
   }
 
-  const icons = [UsersRound, TrendingUp, BarChart3]
+  const icons = [UsersRound, TrendingUp, CircleGauge]
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
