@@ -41,6 +41,7 @@ import {
   buildOpenRouterTimeoutMessage,
   createOpenRouterLongTextSignal,
   isOpenRouterAbortError,
+  OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS,
 } from "@/lib/openrouter-timeout"
 
 export {
@@ -62,6 +63,10 @@ export const PROMPT_LAB_DEFAULT_MODELS: Record<PromptLabArtifact, string> = {
   mockups: getOpenRouterMockupImageModel(),
   launch: "openai/gpt-5.4-mini",
 }
+
+const PROMPT_LAB_PLANNING_DOCUMENT_MAX_TOKENS = 16_384
+const PROMPT_LAB_LONG_TEXT_MAX_TOKENS = 8_192
+const PROMPT_LAB_STANDARD_TEXT_MAX_TOKENS = 4_096
 
 export interface PromptLabDefaultPromptInput {
   artifact: PromptLabArtifact
@@ -233,9 +238,15 @@ export async function runPromptLabArtifact({
   })
 
   const maxTokens =
-    artifact === "competitive" || artifact === "prd" || artifact === "mvp"
-      ? 8192
-      : 4096
+    artifact === "prd" || artifact === "mvp"
+      ? PROMPT_LAB_PLANNING_DOCUMENT_MAX_TOKENS
+      : artifact === "competitive"
+        ? PROMPT_LAB_LONG_TEXT_MAX_TOKENS
+        : PROMPT_LAB_STANDARD_TEXT_MAX_TOKENS
+  const timeoutMs =
+    artifact === "prd" || artifact === "mvp"
+      ? OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS
+      : undefined
 
   let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
   try {
@@ -247,10 +258,10 @@ export async function runPromptLabArtifact({
       ],
       max_tokens: maxTokens,
       temperature: artifact === "launch" ? 0.35 : 0.3,
-    }, { signal: createOpenRouterLongTextSignal() })
+    }, { signal: createOpenRouterLongTextSignal(timeoutMs) })
   } catch (error) {
     if (isOpenRouterAbortError(error)) {
-      throw new Error(buildOpenRouterTimeoutMessage(`Prompt Lab ${PROMPT_LAB_ARTIFACT_LABELS[artifact]}`))
+      throw new Error(buildOpenRouterTimeoutMessage(`Prompt Lab ${PROMPT_LAB_ARTIFACT_LABELS[artifact]}`, timeoutMs))
     }
     throw error
   }

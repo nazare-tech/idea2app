@@ -36,7 +36,7 @@ import {
   getActiveDocumentIdentityForDocumentType,
 } from "@/lib/active-document-policy"
 
-export const maxDuration = 300
+export const maxDuration = 540
 
 type SB = SupabaseClient<Database>
 

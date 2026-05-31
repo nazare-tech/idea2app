@@ -36,7 +36,7 @@ function createStreamSender(controller: ReadableStreamDefaultController) {
     controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"))
 }
 
-export const maxDuration = 300 // 5 min — competitive analysis pipeline (Perplexity + Tavily + synthesis) can take up to ~70s
+export const maxDuration = 540 // 9 min - PRD/MVP OpenRouter calls may run up to 8 min
 
 function buildAnalysisMetadata(
   type: string,

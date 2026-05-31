@@ -1,7 +1,8 @@
 export const OPENROUTER_LONG_TEXT_TIMEOUT_MS = 240_000
+export const OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS = 480_000
 
-export function createOpenRouterLongTextSignal() {
-  return AbortSignal.timeout(OPENROUTER_LONG_TEXT_TIMEOUT_MS)
+export function createOpenRouterLongTextSignal(timeoutMs = OPENROUTER_LONG_TEXT_TIMEOUT_MS) {
+  return AbortSignal.timeout(timeoutMs)
 }
 
 export function formatOpenRouterTimeoutDuration(timeoutMs = OPENROUTER_LONG_TEXT_TIMEOUT_MS) {
@@ -25,6 +26,6 @@ export function isOpenRouterAbortError(error: unknown) {
   )
 }
 
-export function buildOpenRouterTimeoutMessage(label: string) {
-  return `${label} generation timed out after ${formatOpenRouterTimeoutDuration()}. Try a smaller prompt, a faster model, or run it again.`
+export function buildOpenRouterTimeoutMessage(label: string, timeoutMs = OPENROUTER_LONG_TEXT_TIMEOUT_MS) {
+  return `${label} generation timed out after ${formatOpenRouterTimeoutDuration(timeoutMs)}. Try a smaller prompt, a faster model, or run it again.`
 }

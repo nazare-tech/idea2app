@@ -7,10 +7,12 @@ import {
   ChevronDown,
   CircleGauge,
   ClipboardList,
+  Compass,
   Database,
   Layers,
   Puzzle,
   ShieldCheck,
+  Target,
   TrendingUp,
   UsersRound,
 } from "lucide-react"
@@ -1207,29 +1209,6 @@ function CurrentPromptPage({
   )
 }
 
-function MiniCardGrid({
-  items,
-  labelPrefix,
-}: {
-  items: string[]
-  labelPrefix: string
-}) {
-  if (items.length === 0) return null
-
-  return (
-    <div className="space-y-3">
-      {items.map((item, index) => (
-        <div key={`${item}-${index}`} className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
-            {labelPrefix} {String(index + 1).padStart(2, "0")}
-          </p>
-          <p className="mt-2 ui-type-body-sm text-[#0A0A0A]">{item}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function SplitSectionCards({
   sections,
   projectId,
@@ -1323,12 +1302,13 @@ function JourneySteps({ narrative }: { narrative: PlanningNarrativeTable }) {
 
 interface CurrentPersona {
   name: string
-  fields: Array<{ label: string; body: string }>
+  fields: Array<{ label: string; body: string; items: string[] }>
 }
 
 function parseCurrentPersonas(content: string): CurrentPersona[] {
   const personas: CurrentPersona[] = []
   let active: CurrentPersona | null = null
+  let activeField: CurrentPersona["fields"][number] | null = null
 
   for (const line of content.split("\n")) {
     const trimmed = line.trim()
@@ -1336,83 +1316,322 @@ function parseCurrentPersonas(content: string): CurrentPersona[] {
 
     if (heading) {
       active = { name: heading, fields: [] }
+      activeField = null
       personas.push(active)
       continue
     }
 
     if (!active) continue
 
-    const field = trimmed
-      .replace(/^\s*(?:[-*+]|\d+\.)\s+/, "")
-      .match(/^\*\*([^*]+)\*\*:\s*(.+)$/)
+    const listMatch = line.match(/^(\s*)(?:[-*+]|\d+\.)\s+(.+)$/)
+    const listText = listMatch?.[2]?.trim() ?? trimmed
+    const field = listText.match(/^\*\*([^*]+)\*\*:\s*(.*)$/)
 
     if (field) {
-      active.fields.push({
+      activeField = {
         label: field[1].trim(),
         body: field[2].trim(),
-      })
+        items: [],
+      }
+      active.fields.push(activeField)
+      continue
+    }
+
+    const plainField = listText.match(/^([^:]{2,80}):\s*(.+)$/)
+    if (plainField && !/[.!?]$/.test(plainField[1].trim())) {
+      activeField = {
+        label: stripInlineMarkdown(plainField[1].trim()),
+        body: stripInlineMarkdown(plainField[2].trim()),
+        items: [],
+      }
+      active.fields.push(activeField)
+      continue
+    }
+
+    if (activeField && listMatch && listMatch[1].length > 0 && listText) {
+      activeField.items.push(stripInlineMarkdown(listText))
+      continue
+    }
+
+    if (activeField && trimmed && !/^#{1,6}\s+/.test(trimmed)) {
+      const body = stripInlineMarkdown(trimmed.replace(/^\s*(?:[-*+]|\d+\.)\s+/, ""))
+      activeField.body = [activeField.body, body].filter(Boolean).join(" ")
     }
   }
 
   return personas
 }
 
-function PersonaCards({ section, projectId }: { section?: PlanningDocumentSection; projectId: string }) {
-  if (!section) return null
+function normalizePersonaFieldLabel(value: string) {
+  return normalizeHeading(value).replace(/[^a-z0-9]+/g, " ").trim()
+}
 
-  const nested = extractSectionsByHeading(section.content, 3)
-  const keyUserTypes = parseNarrativeTable(
-    getSectionByAlias(nested, ["Key user types"])?.content ?? "",
+function getPersonaField(persona: CurrentPersona, aliases: string[]) {
+  const normalizedAliases = aliases.map(normalizePersonaFieldLabel)
+
+  return persona.fields.find((field) => {
+    const label = normalizePersonaFieldLabel(field.label)
+    return normalizedAliases.some((alias) => label === alias || label.includes(alias))
+  })
+}
+
+function getPersonaFieldText(field?: CurrentPersona["fields"][number]) {
+  if (!field) return ""
+  return [field.body, ...field.items].filter(Boolean).join(" ").trim()
+}
+
+function splitPersonaList(value: string) {
+  return value
+    .split(/\s*(?:;|\||\n)\s*/g)
+    .map((item) => stripInlineMarkdown(item).trim())
+    .filter(Boolean)
+}
+
+function getPersonaFieldItems(
+  persona: CurrentPersona,
+  aliases: string[],
+  fallbackAliases: string[] = [],
+) {
+  const field = getPersonaField(persona, aliases) ?? getPersonaField(persona, fallbackAliases)
+  if (!field) return []
+
+  if (field.items.length > 0) {
+    return field.items.map((item) => stripInlineMarkdown(item)).filter(Boolean)
+  }
+
+  return splitPersonaList(field.body)
+}
+
+function buildPersonaMeta(persona: CurrentPersona) {
+  const metaField = getPersonaField(persona, ["Meta", "Profile", "Context"])
+  if (metaField) {
+    return splitPersonaList([metaField.body, ...metaField.items].filter(Boolean).join("; ")).slice(0, 4)
+  }
+
+  return persona.fields
+    .filter((field) =>
+      ["Demographics", "Background", "Technology comfort level", "Technology comfort", "Tech comfort", "Role"].some(
+        (alias) => normalizePersonaFieldLabel(field.label).includes(normalizePersonaFieldLabel(alias)),
+      ),
+    )
+    .map((field) => `${field.label}: ${getPersonaFieldText(field)}`)
+    .filter((value) => value.length <= 96)
+    .slice(0, 4)
+}
+
+function normalizePersonaCard(persona: CurrentPersona, index: number) {
+  const description =
+    getPersonaFieldText(getPersonaField(persona, ["Description", "Who this user is", "Background"])) ||
+    getPersonaFieldText(persona.fields[0])
+  const needs = getPersonaFieldItems(
+    persona,
+    ["Needs", "What they need", "How this product addresses their needs"],
+    ["Goals", "Goal", "Goals and motivations"],
   )
-  const personaDetails = getSectionByAlias(nested, ["Persona details"])?.content ?? section.content
-  const roleAccess = parseNarrativeTable(
-    getSectionByAlias(nested, ["Role-based access"])?.content ?? "",
+  const painPoints = getPersonaFieldItems(
+    persona,
+    ["Pain points", "Pain point", "Problems they face today", "Pain points and frustrations", "Frustrations"],
   )
-  const personas = parseCurrentPersonas(personaDetails)
+  const motivation =
+    getPersonaFieldText(getPersonaField(persona, ["Motivation", "Why they would use this product"])) ||
+    getPersonaFieldText(getPersonaField(persona, ["Goals and motivations", "Goal", "Goals"])) ||
+    needs[0] ||
+    description
+
+  return {
+    name: persona.name,
+    archetype:
+      getPersonaFieldText(getPersonaField(persona, ["Archetype", "User type", "Role"])) ||
+      (persona.name === "Target User Profile" ? "Primary user" : `Persona ${String(index + 1).padStart(2, "0")}`),
+    meta: buildPersonaMeta(persona),
+    description,
+    needs,
+    painPoints,
+    motivation,
+  }
+}
+
+function PersonaSilhouette({ variant }: { variant: "female" | "male" | "neutral" }) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className="block h-full w-full text-[#4A4040]"
+      aria-hidden="true"
+    >
+      {variant === "female" ? (
+        <>
+          <rect x="28" y="18" width="44" height="58" rx="22" fill="currentColor" />
+          <path d="M17 100 C17 77 32 68 50 68 C68 68 83 77 83 100 Z" fill="currentColor" />
+        </>
+      ) : variant === "male" ? (
+        <>
+          <path d="M14 100 C14 73 31 64 50 64 C69 64 86 73 86 100 Z" fill="currentColor" />
+          <circle cx="50" cy="35" r="20" fill="currentColor" />
+        </>
+      ) : (
+        <>
+          <path d="M17 100 C17 75 32 66 50 66 C68 66 83 75 83 100 Z" fill="currentColor" />
+          <circle cx="50" cy="37" r="18" fill="currentColor" />
+        </>
+      )}
+    </svg>
+  )
+}
+
+function PersonaAvatar({ index }: { index: number }) {
+  const variants: Array<"female" | "male" | "neutral"> = ["female", "male", "neutral"]
 
   return (
-    <PencilCard title="User Personas" kicker="Target Users">
-      <div className="space-y-5">
-        <MiniCardGrid items={keyUserTypes.items} labelPrefix="User Type" />
-
-        {personas.length > 0 ? (
-          <div className="space-y-4">
-            {personas.map((persona, index) => (
-              <article key={`${persona.name}-${index}`} className="border border-[#D8CEC5] bg-[#F7F2ED] px-5 py-5">
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A8480]">
-                  Persona {String(index + 1).padStart(2, "0")}
-                </p>
-                <h3 className={cn(displayFontClass, "mt-2 text-[18px] font-semibold tracking-[-0.03em] text-[#1C1917]")}>
-                  {persona.name}
-                </h3>
-                <div className="mt-4 space-y-3">
-                  {persona.fields.map((field) => (
-                    <div key={`${persona.name}-${field.label}`} className="border-t border-[#E8DDD5] pt-3">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8A8480]">
-                        {field.label}
-                      </p>
-                      <p className="mt-1 ui-type-body-sm text-[#1C1917]">{field.body}</p>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <PlanningMarkdownRenderer content={personaDetails} projectId={projectId} />
-        )}
-
-        {roleAccess.items.length > 0 ? (
-          <div className="border border-[#E0E0E0] bg-white px-5 py-4">
-            <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
-              Role-Based Access
-            </p>
-            <StructuredItemList items={roleAccess.items} />
-          </div>
-        ) : null}
+    <div className="relative h-[104px] w-[104px] shrink-0 overflow-hidden rounded-full border border-[#E8DDD5] bg-[#F5F0EB] shadow-[0_0_0_3px_#FFFFFF,0_0_0_5px_#DC2626]">
+      <div className="absolute inset-0 pt-3.5">
+        <PersonaSilhouette variant={variants[index % variants.length]} />
       </div>
-    </PencilCard>
+    </div>
   )
+}
+
+function PersonaSectionLabel({
+  icon: Icon,
+  children,
+}: {
+  icon: typeof UsersRound
+  children: React.ReactNode
+}) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <Icon className="h-[15px] w-[15px] text-[#8A8480]" strokeWidth={1.75} />
+      <span className="font-mono text-[11px] font-medium uppercase leading-tight tracking-[0.18em] text-[#4A4040]">
+        {children}
+      </span>
+    </div>
+  )
+}
+
+function PersonaItemList({
+  items,
+  markerClassName,
+}: {
+  items: string[]
+  markerClassName: string
+}) {
+  if (items.length === 0) {
+    return <p className="text-[15px] leading-6 text-[#8A8480]">No structured details available.</p>
+  }
+
+  return (
+    <ul className="space-y-[11px]">
+      {items.map((item, index) => (
+        <li key={`${item}-${index}`} className="flex items-start gap-[11px]">
+          <span className={cn("mt-2 h-1.5 w-1.5 shrink-0 rounded-[1px]", markerClassName)} />
+          <span className="text-[15px] leading-[1.5] text-[#4A4040]">{item}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function DetailedPersonaCard({
+  persona,
+  index,
+}: {
+  persona: CurrentPersona
+  index: number
+}) {
+  const card = normalizePersonaCard(persona, index)
+
+  return (
+    <article className="overflow-hidden rounded-xl border border-[#E8DDD5] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
+      <div className="p-8 sm:p-10">
+        <header className="flex flex-col gap-6 sm:flex-row sm:items-start">
+          <PersonaAvatar index={index} />
+          <div className="min-w-0 flex-1 pt-1">
+            <div className="mb-[9px] flex items-center gap-2">
+              <span className="h-[7px] w-[7px] rounded-[1px] bg-primary" />
+              <span className="font-mono text-[11px] font-medium uppercase leading-tight tracking-[0.18em] text-[#4A4040]">
+                User persona
+              </span>
+              <span className="sr-only">Persona {String(index + 1).padStart(2, "0")}</span>
+            </div>
+            <h3 className={cn(displayFontClass, "text-[30px] font-extrabold leading-[1.05] tracking-[-0.04em] text-[#1C1917]")}>
+              {card.name}
+            </h3>
+            <p className="mt-1.5 text-[15px] font-semibold text-[#4A4040]">
+              {card.archetype}
+            </p>
+            {card.meta.length > 0 ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {card.meta.map((item) => (
+                  <span
+                    key={`${card.name}-${item}`}
+                    className="inline-flex rounded-full border border-[#EAE0D8] bg-[#F5F0EB] px-[11px] py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-[#6B7280]"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </header>
+
+        <div className="my-8 border-t border-[#EAE0D8] sm:my-10" />
+
+        <section>
+          <PersonaSectionLabel icon={UsersRound}>Description</PersonaSectionLabel>
+          <p className="max-w-[64ch] text-[16px] leading-[1.6] text-[#1C1917]">
+            {card.description || "No structured description available."}
+          </p>
+        </section>
+
+        <div className="mt-8 grid gap-8 md:grid-cols-2">
+          <section>
+            <PersonaSectionLabel icon={Target}>Needs</PersonaSectionLabel>
+            <PersonaItemList items={card.needs} markerClassName="bg-[#8A8480]" />
+          </section>
+          <section>
+            <PersonaSectionLabel icon={AlertTriangle}>Pain points</PersonaSectionLabel>
+            <PersonaItemList items={card.painPoints} markerClassName="bg-[#D95F3B]" />
+          </section>
+        </div>
+
+        <section className="mt-8 rounded-lg border border-[#EAE0D8] bg-[#F5F0EB] p-6">
+          <PersonaSectionLabel icon={Compass}>Motivation</PersonaSectionLabel>
+          <p className={cn(displayFontClass, "max-w-[60ch] text-[18px] font-semibold leading-[1.45] tracking-[-0.01em] text-[#1C1917]")}>
+            {card.motivation || "No structured motivation available."}
+          </p>
+        </section>
+      </div>
+    </article>
+  )
+}
+
+function DetailedPersonaCards({ personas }: { personas: CurrentPersona[] }) {
+  return (
+    <div className="space-y-5">
+      {personas.map((persona, index) => (
+        <DetailedPersonaCard
+          key={`${persona.name}-${index}`}
+          persona={persona}
+          index={index}
+        />
+      ))}
+    </div>
+  )
+}
+
+function currentPersonaFromSection(section: PlanningDocumentSection) {
+  const parsed = parseCurrentPersonas(`**${section.heading}**\n${section.content}`)[0]
+  if (parsed) return parsed
+
+  return {
+    name: section.heading,
+    fields: [
+      {
+        label: "Description",
+        body: stripInlineMarkdown(section.content),
+        items: [],
+      },
+    ],
+  }
 }
 
 function getCurrentPrdSubtitle(section?: PlanningDocumentSection) {
@@ -1668,28 +1887,7 @@ function PersonaShowcase({ section, projectId }: { section?: PlanningDocumentSec
   return (
     <div className="space-y-9">
       {personas.length > 0 ? (
-        <div className="grid gap-4 lg:grid-cols-3">
-          {personas.map((persona, index) => (
-            <article key={`${persona.name}-${index}`} className="border border-[#E8DDD5] bg-[#F5F0EB] px-6 py-6">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A8480]">
-                Persona {String(index + 1).padStart(2, "0")}
-              </p>
-              <h3 className={cn(displayFontClass, "mt-2 text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
-                {persona.name}
-              </h3>
-              <div className="mt-5 space-y-4">
-                {persona.fields.map((field) => (
-                  <div key={`${persona.name}-${field.label}`} className="border-t border-[#D8CEC5] pt-3">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8A8480]">
-                      {field.label}
-                    </p>
-                    <p className="mt-2 text-[13.5px] leading-6 text-[#4A4040]">{field.body}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
+        <DetailedPersonaCards personas={personas} />
       ) : (
         <PlanningMarkdownRenderer content={personaDetails} projectId={projectId} />
       )}
@@ -2371,24 +2569,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
             ) : null}
           </div>
           <div className="mt-4 space-y-4">
-            {structured.personas.map((persona, index) => (
-              <article
-                key={`${persona.heading}-${index}`}
-                className="border border-[#D8CEC5] bg-[#F7F2ED] px-5 py-5"
-              >
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A8480]">
-                  {persona.heading === "Target User Profile"
-                    ? "Target User"
-                    : `Persona ${String(index + 1).padStart(2, "0")}`}
-                </p>
-                <h3 className={cn(displayFontClass, "mt-2 text-[18px] font-semibold tracking-[-0.03em] text-[#1C1917]")}>
-                  {persona.heading}
-                </h3>
-                <div className="mt-3">
-                  <PlanningMarkdownRenderer content={persona.content} projectId={projectId} />
-                </div>
-              </article>
-            ))}
+            <DetailedPersonaCards personas={structured.personas.map(currentPersonaFromSection)} />
           </div>
         </PencilCard>
       </div>

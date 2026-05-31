@@ -222,8 +222,67 @@ As a founder, I want readable personas.
   assert.match(html, /Positioning/)
   assert.match(html, /Persona 03/)
   assert.match(html, /mt-4 space-y-4/)
+  assert.match(html, /User persona/)
   assert.doesNotMatch(html, /mt-4 grid gap-4 xl:grid-cols-2/)
   assert.doesNotMatch(html, /xl:col-span-2/)
+})
+
+test("PrdDocumentBlocks renders persona-card design from structured persona fields", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      projectId="project-1"
+      content={`# PRD: Weekend Builder
+
+## 1. Introduction/overview
+Weekend Builder helps product-minded operators validate side-project ideas.
+
+## 2. Goals
+### Business goals
+- Activate 100 builders.
+### User goals
+- Pick one idea worth building.
+
+## 3. User personas
+### 3.2 Persona details
+**Maya Okonkwo**
+- **Archetype**: The Weekend Builder
+- **Meta**: Age 31; Product designer; Toronto; Technical-adjacent
+- **Description**: Maya ships side projects on weekends while holding a full-time design role.
+- **Needs**:
+  - Pressure-test an idea before committing engineering time
+  - Structured outputs she can hand to a coding agent
+- **Pain points**:
+  - Loses momentum in the where-do-I-start spiral
+  - Burns weekends on prep work instead of building
+- **Motivation**: Wants to go from a one-line idea to something shippable in a single weekend.
+
+## 4. User stories and acceptance criteria
+### US-001: Generate plan
+**User story**
+As a builder, I want a product plan.
+**Acceptance criteria**
+- A plan is generated.
+
+## 5. Functional requirements
+### 5.1 Functional
+- **FR-001**: Plan generation
+  - Users can generate a plan.
+`}
+    />,
+  )
+
+  assert.match(html, /User persona/)
+  assert.match(html, /The Weekend Builder/)
+  assert.match(html, /Age 31/)
+  assert.match(html, /Description/)
+  assert.match(html, /Needs/)
+  assert.match(html, /Pain points/)
+  assert.match(html, /Motivation/)
+  assert.match(html, /Pressure-test an idea/)
+  assert.match(html, /where-do-I-start spiral/)
+  assert.match(html, /rounded-xl border border-\[#E8DDD5\] bg-white/)
+  assert.match(html, /shadow-\[0_4px_20px_rgba\(15,23,42,0\.06\)\]/)
+  assert.doesNotMatch(html, /grid gap-4 lg:grid-cols-3/)
 })
 
 test("MvpPlanDocumentBlocks renders organized module anchors", () => {
@@ -475,8 +534,11 @@ Proposal Pilot helps freelance designers turn discovery notes into client-ready 
 
 ### 3.2 Persona details
 **Dana Designer**
+- **Archetype**: The Fast Proposal Maker
 - **Description**: Freelance designer managing three active client leads.
 - **Needs**: Faster proposal creation and reuse.
+- **Pain points**: Rewrites scope and timeline language from scratch.
+- **Motivation**: Win more work without extra admin.
 
 **Omar Owner**
 - **Description**: Solo agency owner sending proposals to high-value prospects.
@@ -594,6 +656,10 @@ So that I can send client-ready proposals.
   assert.match(html, /Omar Owner/)
   assert.match(html, /Priya Producer/)
   assert.doesNotMatch(html, /Freelance designer who sends proposals monthly/)
+  assert.match(html, /The Fast Proposal Maker/)
+  assert.match(html, /User persona/)
+  assert.match(html, /Pain points/)
+  assert.match(html, /Motivation/)
   assert.match(html, /Persona 01/)
   assert.match(html, /Introduction &amp; Overview/)
   assert.match(html, /Functional Requirements/)
