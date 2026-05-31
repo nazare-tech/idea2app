@@ -261,7 +261,11 @@ If a section does not affect what to build, what to avoid, or how to validate, k
 
 ## 4. Section Compression Rule
 
-For simple products, you may combine or compress sections as long as the plan still clearly covers:
+For simple products, you may compress content inside sections, but do not omit, rename, reorder, or combine the required H2 sections in the Output Format.
+
+Every final plan must keep the title and all 13 numbered H2 headings exactly as shown in the Output Format. If a section has little to say, keep the heading and write a short, useful version rather than removing the section.
+
+Section compression should still clearly cover:
 
 1. MVP goal
 2. Target user and problem
@@ -334,6 +338,20 @@ Use numbered lists only when order matters, such as the core user flow or build 
 Preserve required markdown tables where the template asks for tables. Do not replace those tables with bullets.
 
 Do not create long dense paragraphs inside tactical sections that should be easy to skim while building.
+
+---
+
+# Block Rendering Contract
+
+The application renders this markdown as structured visual blocks. To keep the visual design reliable:
+
+- Keep the output title as exactly: # MVP Plan: [Product Name]
+- Keep all 13 numbered H2 section headings exactly as written in the Output Format.
+- Use these exact H3 labels where the template asks for them: Primary User, Problem, Current Workaround, Desired Outcome, Riskiest Product Assumption, Riskiest Technical Assumption, Suggested Stack, Manual Shortcuts, First Test Audience, How to Find Them, Success Signals, Suggested Metrics, and Key Feedback Questions.
+- Preserve the required markdown tables for MVP Scope, Must-Have Features, Suggested Stack, AI-Friendly Build Sequence, and Cut List.
+- Format Core User Flow as a short ordered list with action-oriented step text.
+- Format Suggested Metrics as 3-5 bullet/stat items, not a markdown table. Start each item with the target or signal value when useful, such as "60% - users complete the core workflow."
+- Keep Next Prompt for AI Coding Tool as one fenced text code block and do not add commentary after it.
 
 ---
 
@@ -611,8 +629,9 @@ Use directional signals unless the input supports exact numeric targets.
 
 Include only metrics relevant to this product.
 
-| Metric | Suggested Target | Why This Matters |
-|---|---|---|
+Use 3-5 bullet/stat items, not a markdown table.
+
+Start each item with the target or signal value when useful, followed by the metric and why it matters.
 
 Treat numeric targets as starting points, not benchmarks.
 

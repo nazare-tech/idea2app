@@ -1012,6 +1012,10 @@ test("MvpPlanDocumentBlocks renders current numbered MVP prompt content as block
 ## 1. MVP Summary
 Proposal Pilot helps freelance designers turn client notes into proposals.
 
+## 2. Key Assumptions and Scope Decisions
+- [HIGH CONFIDENCE] Freelance designers need faster proposal turnaround.
+- [SCOPE DECISION] CRM features are excluded from the MVP.
+
 ## 3. Target User and Problem
 ### Primary User
 Freelance designers who manage proposals manually.
@@ -1036,14 +1040,32 @@ They rewrite scope and pricing language for every lead.
 |---|---|---|
 | Proposal intake | Captures useful context | User can submit required fields |
 
+## 8. Suggested Build Approach
+| Layer | Recommendation | Why |
+|---|---|---|
+| Frontend | Next.js + Tailwind | Fast workspace UI |
+
 ## 9. AI-Friendly Build Sequence
 | Step | Build Chunk | Goal | Test Before Moving On |
 |---|---|---|---|
 | 1 | Proposal intake form | Capture context | Submit valid and invalid input |
 
+## 10. AI Build Guardrails
+- Build one chunk at a time.
+- Do not add features outside MVP scope.
+
 ## 11. Validation Plan
 ### First Test Audience
 Five freelance designers who send proposals monthly.
+
+### Suggested Metrics
+- 60% of users complete a generation.
+
+## 12. Cut List
+- If CRM import takes too long, then use CSV upload only.
+
+## 13. Next Prompt for AI Coding Tool
+Start with the proposal intake form and mock proposal generation.
 `}
     />,
   )
@@ -1051,12 +1073,36 @@ Five freelance designers who send proposals monthly.
   assert.doesNotMatch(html, /Block view unavailable/)
   assert.match(html, /First Version Plan/)
   assert.match(html, /MVP Summary/)
-  assert.match(html, /Primary User/)
-  assert.match(html, /Step 01/)
-  assert.match(html, /Feature 01/)
-  assert.match(html, /Must-Have Features/)
+  assert.match(html, /The Bet/)
+  assert.match(html, /Target User &amp; Problem/)
+  assert.match(html, /Core User Flow/)
+  assert.match(html, /Key Assumptions/)
   assert.match(html, /MVP Scope/)
+  assert.match(html, /Suggested Stack/)
+  assert.match(html, /AI-Friendly Build Sequence/)
+  assert.match(html, /AI Build Guardrails/)
   assert.match(html, /Validation Plan/)
+  assert.match(html, /Cut List/)
+  assert.match(html, /Next Prompt/)
+  assert.match(html, /01 \/ 12/)
+  assert.match(html, /12 \/ 12/)
+  assert.match(html, /fvp-flow/)
+  assert.match(html, /fvp-build/)
+  assert.match(html, /fvp-cuts/)
+  assert.match(html, /fvp-prompt/)
+  assert.match(html, /pp-tech-grid/)
+  assert.match(html, /pp-nongoals/)
+  assert.match(html, /Proposal intake/)
+  assert.match(html, /Next\.js \+ Tailwind/)
+  assert.match(html, /60%/)
+  assert.match(html, /HIGH CONFIDENCE/)
+  assert.match(html, /Freelance designers need faster proposal turnaround/)
+  assert.doesNotMatch(html, /\[HIGH CONFIDENCE\]/)
+  assert.doesNotMatch(html, /Key Assumptions &amp; Scope/)
+  assert.doesNotMatch(html, /Build Steps/)
+  assert.doesNotMatch(html, /min-w-\[140px\]/)
+  assert.doesNotMatch(html, /Plan Snapshot/)
+  assert.doesNotMatch(html, /bg-\[#FAFAFA\] px-5 py-5/)
   assert.doesNotMatch(html, /bg-\[#4A4040\]/)
   assert.doesNotMatch(html, /grid gap-4 xl:grid-cols-2/)
   assert.doesNotMatch(html, /What We Need to Prove/)

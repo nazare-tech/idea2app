@@ -41,3 +41,64 @@ test("First Version Plan prompt asks for bullet points where they improve scanab
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /If a paragraph lists more than two related ideas, convert it into bullets/)
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /Preserve required markdown tables/)
 })
+
+test("First Version Plan prompt preserves the renderer heading contract", () => {
+  const requiredHeadings = [
+    "# MVP Plan: [Product Name]",
+    "## 1. MVP Summary",
+    "## 2. Key Assumptions and Scope Decisions",
+    "## 3. Target User and Problem",
+    "## 4. MVP Goal, Definition of Done, and Riskiest Assumptions",
+    "## 5. Core User Flow",
+    "## 6. MVP Scope",
+    "## 7. Must-Have Features",
+    "## 8. Suggested Build Approach",
+    "## 9. AI-Friendly Build Sequence",
+    "## 10. AI Build Guardrails",
+    "## 11. Validation Plan",
+    "## 12. Cut List",
+    "## 13. Next Prompt for AI Coding Tool",
+  ]
+
+  let previousIndex = -1
+
+  for (const heading of requiredHeadings) {
+    const nextIndex = MVP_PLAN_SYSTEM_PROMPT.indexOf(heading)
+    assert.ok(nextIndex > previousIndex, `${heading} should appear after the previous required heading`)
+    previousIndex = nextIndex
+  }
+
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /do not omit, rename, reorder, or combine the required H2 sections/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Keep all 13 numbered H2 section headings exactly as written/)
+})
+
+test("First Version Plan prompt names required nested labels for visual cards", () => {
+  for (const label of [
+    "Primary User",
+    "Problem",
+    "Current Workaround",
+    "Desired Outcome",
+    "Riskiest Product Assumption",
+    "Riskiest Technical Assumption",
+    "Suggested Stack",
+    "Manual Shortcuts",
+    "First Test Audience",
+    "How to Find Them",
+    "Success Signals",
+    "Suggested Metrics",
+    "Key Feedback Questions",
+  ]) {
+    assert.match(MVP_PLAN_SYSTEM_PROMPT, new RegExp(label))
+  }
+})
+
+test("First Version Plan prompt keeps required tables but uses metric bullets", () => {
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Preserve the required markdown tables for MVP Scope, Must-Have Features, Suggested Stack, AI-Friendly Build Sequence, and Cut List/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| Category \| Include in MVP \| Exclude for Now \|/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| Feature \| Why It Matters \| Acceptance Criteria \|/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| Layer \| Recommendation \| Reason \|/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| Step \| Build Chunk \| Goal \| Test Before Moving On \|/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| If This Gets Complicated \| Simplify By \|/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Format Suggested Metrics as 3-5 bullet\/stat items, not a markdown table/)
+  assert.doesNotMatch(MVP_PLAN_SYSTEM_PROMPT, /\| Metric \| Suggested Target \| Why This Matters \|/)
+})
