@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react"
 import { AlertCircle, CheckCircle2, FlaskConical, History, Loader2, Play, Save, Trash2, Wand2 } from "lucide-react"
 
 import {
@@ -11,6 +11,7 @@ import {
   MvpPlanDocumentBlocks,
   PrdDocumentBlocks,
 } from "@/components/analysis/planning-document-blocks"
+import { WorkspaceDocumentFrame } from "@/components/layout/workspace-document-frame"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -154,47 +155,45 @@ function ArtifactPreview({
     )
   }
 
+  const renderWorkspaceFrame = (children: ReactNode) => (
+    <div className="rounded-lg bg-background px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
+      <WorkspaceDocumentFrame>{children}</WorkspaceDocumentFrame>
+    </div>
+  )
+
   if (artifact === "competitive") {
     return (
-      <div className="space-y-4">
-        <div className="rounded-lg border border-border-subtle bg-card p-5">
+      <div className="space-y-8 rounded-lg bg-background px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
+        <WorkspaceDocumentFrame navKey="overview">
           <CompetitiveOverviewSection content={content} metadata={null} projectId={projectId} />
-        </div>
-        <div className="rounded-lg border border-border-subtle bg-card p-5">
+        </WorkspaceDocumentFrame>
+        <WorkspaceDocumentFrame navKey="market-research">
           <CompetitiveDetailSection content={content} metadata={null} projectId={projectId} />
-        </div>
+        </WorkspaceDocumentFrame>
       </div>
     )
   }
 
   if (artifact === "prd") {
-    return (
-      <div className="rounded-lg border border-border-subtle bg-card p-5">
-        <PrdDocumentBlocks content={content} projectId={projectId} />
-      </div>
+    return renderWorkspaceFrame(
+      <PrdDocumentBlocks content={content} projectId={projectId} />,
     )
   }
 
   if (artifact === "mvp") {
-    return (
-      <div className="rounded-lg border border-border-subtle bg-card p-5">
-        <MvpPlanDocumentBlocks content={content} projectId={projectId} />
-      </div>
+    return renderWorkspaceFrame(
+      <MvpPlanDocumentBlocks content={content} projectId={projectId} />,
     )
   }
 
   if (artifact === "mockups") {
-    return (
-      <div className="rounded-lg border border-border-subtle bg-card p-5">
-        <MockupRenderer content={content} projectName={projectName} projectId={projectId} />
-      </div>
+    return renderWorkspaceFrame(
+      <MockupRenderer content={content} projectName={projectName} projectId={projectId} />,
     )
   }
 
-  return (
-    <div className="rounded-lg border border-border-subtle bg-card p-5">
-      <MarkdownRenderer content={content} projectId={projectId} />
-    </div>
+  return renderWorkspaceFrame(
+    <MarkdownRenderer content={content} projectId={projectId} />,
   )
 }
 
