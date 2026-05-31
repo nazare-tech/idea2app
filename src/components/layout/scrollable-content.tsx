@@ -13,6 +13,7 @@ import {
   MvpPlanDocumentBlocks,
   PrdDocumentBlocks,
 } from "@/components/analysis/planning-document-blocks"
+import { WorkspaceDocumentFrame as DocumentWrapper } from "@/components/layout/workspace-document-frame"
 import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
 import type { DocumentType } from "@/lib/document-definitions"
 import type { StreamStage } from "@/lib/parse-document-stream"
@@ -177,28 +178,6 @@ function GenerationStatusModule({
           ))}
         </div>
       )}
-    </div>
-  )
-}
-
-function DocumentWrapper({
-  navKey,
-  contentClassName = "space-y-2",
-  children,
-}: {
-  navKey: string
-  contentClassName?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div
-      id={navKey}
-      className="mx-auto w-full max-w-[1020px] rounded-lg bg-card"
-      data-section={navKey}
-    >
-      <div className={cn("px-5 py-6 sm:px-8 lg:px-10 lg:py-8", contentClassName)}>
-        {children}
-      </div>
     </div>
   )
 }
