@@ -919,6 +919,88 @@ So that I can send client-ready proposals.
   assert.doesNotMatch(timelineHtml, /Phase 1: Foundation/)
 })
 
+test("PrdDocumentBlocks renders current PRD follow-through sections with designed blocks", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      projectId="project-1"
+      content={`# PRD: Wear It Now AI Mirror
+
+## 1. Introduction/overview
+Wear It Now AI Mirror helps shoppers preview outfits before buying.
+
+## 2. Goals
+- Validate whether shoppers trust generated try-on previews.
+
+## 3. User personas
+### 3.2 Persona details
+**Priya Mehta**
+- **Description**: Priya wants outfit confidence before buying.
+
+## 4. User stories and acceptance criteria
+### US-001: Preview outfit
+**User story**
+As a shopper, I want to preview an outfit.
+**Acceptance criteria**
+- The preview appears.
+
+## 5. Functional requirements
+- **FR-001**: Preview outfit
+  - Users can preview an outfit.
+
+## 10. Risks and mitigation
+- **Risk**: Retailer websites break the extension by updating their DOM structure or implementing anti-scraping measures.
+  - **Impact**: The overlay fails to appear on affected sites.
+  - **Mitigation**: Use a remotely fetched selector configuration file.
+- **Risk**: AI image quality misses user expectations.
+  - **Impact**: Users lose trust after poor previews.
+  - **Mitigation**: Add quality gates before charging credits.
+
+## 11. Dependencies and assumptions
+### 11.1 Dependencies
+- **Chrome Web Store approval**: The extension must pass Google's review process.
+- **AI generation API**: A reliable image-to-image virtual try-on API must be selected.
+
+### 11.2 Assumptions
+- **Target user**: The primary target user is a mid-tier fashion influencer.
+- **AI model**: A suitable image-to-image model exists and is accessible via API with acceptable latency. This is the single highest-risk technical assumption.
+- **Credit pricing**: Suggested credit pricing is a starting hypothesis.
+
+## 12. Open questions
+- **AI model selection**: Which specific virtual try-on model will be used?
+- **Refund policy**: Beyond automatic refunds, will there be a manual policy?
+`}
+    />,
+  )
+
+  assert.match(html, /Risks &amp; Mitigation/)
+  assert.match(html, /R-01/)
+  assert.match(html, /R-02/)
+  assert.match(html, /Impact/)
+  assert.match(html, /Mitigation/)
+  assert.match(html, /Retailer websites break the extension/)
+  assert.doesNotMatch(html, /Site Compatibility/)
+
+  assert.match(html, /Dependencies/)
+  assert.match(html, /D01/)
+  assert.match(html, /D02/)
+  assert.match(html, /Chrome Web Store approval/)
+  assert.match(html, /divide-y divide-\[#E8DDD5\]/)
+
+  assert.match(html, /Assumptions/)
+  assert.match(html, /A01/)
+  assert.match(html, /A02/)
+  assert.match(html, /A03/)
+  assert.match(html, /Highest Risk/)
+  assert.match(html, /grid gap-px border border-\[#E8DDD5\] bg-\[#E8DDD5\] md:grid-cols-2/)
+  assert.match(html, /bg-\[#E7DDD6\]/)
+
+  assert.match(html, /Open Questions/)
+  assert.match(html, /Q01/)
+  assert.match(html, /Q02/)
+  assert.match(html, /grid gap-4 lg:grid-cols-2/)
+  assert.doesNotMatch(html, />Open<\/span>/)
+})
+
 test("MvpPlanDocumentBlocks renders current numbered MVP prompt content as blocks", () => {
   const html = renderToStaticMarkup(
     <MvpPlanDocumentBlocks

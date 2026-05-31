@@ -2398,6 +2398,284 @@ function TimelineShowcase({ section, projectId }: { section?: PlanningDocumentSe
   )
 }
 
+interface FollowThroughItem {
+  title: string
+  body: string
+}
+
+interface RiskItem {
+  title: string
+  impact: string
+  mitigation: string
+}
+
+function stripLeadingItemCode(value: string) {
+  return value.replace(/^[A-Z]-?\d{1,3}\s*:?\s+/i, "").trim()
+}
+
+function splitTitleAndBody(value: string): FollowThroughItem {
+  const cleaned = stripLeadingItemCode(stripInlineMarkdown(value))
+  const labeled = splitLabeledText(cleaned)
+  if (labeled) {
+    return {
+      title: labeled.label,
+      body: labeled.body,
+    }
+  }
+
+  const sentenceMatch = cleaned.match(/^(.+?[.!?])\s+(.+)$/)
+  if (sentenceMatch && sentenceMatch[1].length <= 96) {
+    return {
+      title: sentenceMatch[1].trim(),
+      body: sentenceMatch[2].trim(),
+    }
+  }
+
+  return {
+    title: cleaned,
+    body: "",
+  }
+}
+
+function parseFollowThroughItems(content: string): FollowThroughItem[] {
+  const narrative = parseNarrativeTable(content)
+  const items = narrative.items.length > 0 ? narrative.items : narrative.paragraphs
+
+  return items
+    .map(splitTitleAndBody)
+    .filter((item) => item.title || item.body)
+}
+
+function parseRiskItems(content: string): RiskItem[] {
+  const risks: RiskItem[] = []
+  let active: RiskItem | null = null
+
+  for (const rawLine of stripHorizontalRulesFromMarkdown(content).split("\n")) {
+    const line = rawLine.trim()
+    if (!line) continue
+
+    const listMatch = rawLine.match(/^(\s*)(?:[-*+]|\d+\.)\s+(.+)$/)
+    if (!listMatch) {
+      if (active) {
+        active.title = [active.title, stripInlineMarkdown(line)].filter(Boolean).join(" ")
+      }
+      continue
+    }
+
+    const indent = listMatch[1]?.length ?? 0
+    const text = stripInlineMarkdown(listMatch[2]?.trim() ?? "")
+    const labeled = splitLabeledText(text)
+
+    if (indent === 0) {
+      const title = labeled && normalizeHeading(labeled.label) === "risk"
+        ? labeled.body
+        : text.replace(/^Risk:\s*/i, "").trim()
+
+      active = {
+        title,
+        impact: "",
+        mitigation: "",
+      }
+      risks.push(active)
+      continue
+    }
+
+    if (!active) continue
+
+    const label = normalizeHeading(labeled?.label ?? "")
+    const body = labeled?.body ?? text
+    if (label === "impact") {
+      active.impact = [active.impact, body].filter(Boolean).join(" ")
+    } else if (label === "mitigation") {
+      active.mitigation = [active.mitigation, body].filter(Boolean).join(" ")
+    } else {
+      active.mitigation = [active.mitigation, body].filter(Boolean).join(" ")
+    }
+  }
+
+  if (risks.length > 0) {
+    return risks.filter((risk) => risk.title || risk.impact || risk.mitigation)
+  }
+
+  return parseFollowThroughItems(content).map((item) => ({
+    title: item.title,
+    impact: item.body,
+    mitigation: "",
+  }))
+}
+
+function FollowThroughHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="flex items-center gap-3 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[#1C1917]">
+      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+      {children}
+    </p>
+  )
+}
+
+function RiskMitigationShowcase({ section }: { section?: PlanningDocumentSection }) {
+  if (!section?.content.trim()) return null
+
+  const risks = parseRiskItems(section.content)
+  if (risks.length === 0) return null
+
+  return (
+    <section className="space-y-4">
+      <FollowThroughHeading>Risks & Mitigation</FollowThroughHeading>
+      <div className="space-y-4">
+        {risks.map((risk, index) => (
+          <article key={`${risk.title}-${index}`} className="border border-[#E8DDD5] bg-white">
+            <div className="flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-start">
+              <span className="w-fit border border-[#E8DDD5] px-3 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-primary">
+                R-{String(index + 1).padStart(2, "0")}
+              </span>
+              <h3 className="max-w-3xl text-[16px] font-bold leading-6 text-[#0A0A0A]">
+                {risk.title}
+              </h3>
+            </div>
+            <div className="grid divide-y divide-[#E8DDD5] border-t border-[#E8DDD5] md:grid-cols-2 md:divide-x md:divide-y-0">
+              <section className="bg-[#F3F0EC] px-6 py-6">
+                <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#D95F3B]">
+                  <AlertTriangle className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  Impact
+                </p>
+                <p className="text-[13.5px] leading-6 text-[#4A4040]">
+                  {risk.impact || "Impact details were not provided."}
+                </p>
+              </section>
+              <section className="px-6 py-6">
+                <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#16A34A]">
+                  <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  Mitigation
+                </p>
+                <p className="text-[13.5px] leading-6 text-[#4A4040]">
+                  {risk.mitigation || "Mitigation details were not provided."}
+                </p>
+              </section>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function DependenciesShowcase({ section }: { section?: PlanningDocumentSection }) {
+  if (!section?.content.trim()) return null
+
+  const dependencies = parseFollowThroughItems(section.content)
+  if (dependencies.length === 0) return null
+
+  return (
+    <section className="space-y-4">
+      <FollowThroughHeading>Dependencies</FollowThroughHeading>
+      <div className="divide-y divide-[#E8DDD5] border border-[#E8DDD5] bg-white">
+        {dependencies.map((dependency, index) => (
+          <article key={`${dependency.title}-${index}`} className="grid gap-4 px-6 py-6 sm:grid-cols-[48px_1fr]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#8A8480]">
+              D{String(index + 1).padStart(2, "0")}
+            </p>
+            <div>
+              <h3 className="text-[15px] font-bold leading-5 text-[#0A0A0A]">
+                {dependency.title}
+              </h3>
+              {dependency.body ? (
+                <p className="mt-2 max-w-3xl text-[13.5px] leading-6 text-[#4A4040]">
+                  {dependency.body}
+                </p>
+              ) : null}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function isHighestRiskAssumption(item: FollowThroughItem) {
+  return /highest[-\s]?risk|single highest|riskiest|high[-\s]?risk/i.test(`${item.title} ${item.body}`)
+}
+
+function AssumptionsShowcase({ section }: { section?: PlanningDocumentSection }) {
+  if (!section?.content.trim()) return null
+
+  const assumptions = parseFollowThroughItems(section.content)
+  if (assumptions.length === 0) return null
+
+  const needsFiller = assumptions.length % 2 === 1
+
+  return (
+    <section className="space-y-4">
+      <FollowThroughHeading>Assumptions</FollowThroughHeading>
+      <div className="grid gap-px border border-[#E8DDD5] bg-[#E8DDD5] md:grid-cols-2">
+        {assumptions.map((assumption, index) => {
+          const highestRisk = isHighestRiskAssumption(assumption)
+
+          return (
+            <article
+              key={`${assumption.title}-${index}`}
+              className={cn(
+                "min-h-[160px] px-6 py-6",
+                highestRisk ? "bg-[#E7DDD6]" : "bg-white",
+              )}
+            >
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#8A8480]">
+                  A{String(index + 1).padStart(2, "0")}
+                </p>
+                {highestRisk ? (
+                  <span className="border border-primary/20 bg-white px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
+                    Highest Risk
+                  </span>
+                ) : null}
+              </div>
+              <h3 className="text-[15px] font-bold leading-5 text-[#0A0A0A]">
+                {assumption.title}
+              </h3>
+              {assumption.body ? (
+                <p className="mt-3 text-[13.5px] leading-6 text-[#4A4040]">
+                  {assumption.body}
+                </p>
+              ) : null}
+            </article>
+          )
+        })}
+        {needsFiller ? <div className="hidden bg-[#E7DDD6] md:block" aria-hidden="true" /> : null}
+      </div>
+    </section>
+  )
+}
+
+function OpenQuestionsShowcase({ section }: { section?: PlanningDocumentSection }) {
+  if (!section?.content.trim()) return null
+
+  const questions = parseFollowThroughItems(section.content)
+  if (questions.length === 0) return null
+
+  return (
+    <section className="space-y-4">
+      <FollowThroughHeading>Open Questions</FollowThroughHeading>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {questions.map((question, index) => (
+          <article key={`${question.title}-${index}`} className="min-h-[170px] border border-[#E8DDD5] bg-white px-6 py-6">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#8A8480]">
+              Q{String(index + 1).padStart(2, "0")}
+            </p>
+            <h3 className="mt-5 text-[16px] font-bold leading-5 text-[#0A0A0A]">
+              {question.title}
+            </h3>
+            {question.body ? (
+              <p className="mt-3 text-[13.5px] leading-6 text-[#4A4040]">
+                {question.body}
+              </p>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps) {
   const sections = extractSectionsByHeading(content, 2)
   const introduction = getSectionByAlias(sections, ["Introduction/overview", "Introduction overview"])
@@ -2410,14 +2688,20 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   const metrics = getSectionByAlias(sections, ["Success metrics"])
   const timeline = getSectionByAlias(sections, ["Timeline and milestones"])
   const risks = getSectionByAlias(sections, ["Risks and mitigation"])
-  const dependencies = getSectionByAlias(sections, ["Dependencies and assumptions"])
+  const dependenciesAndAssumptions = getSectionByAlias(sections, ["Dependencies and assumptions"])
+  const dependencyAssumptionSections = dependenciesAndAssumptions
+    ? extractSectionsByHeading(dependenciesAndAssumptions.content, 3)
+    : []
+  const dependencies =
+    getSectionByAlias(dependencyAssumptionSections, ["Dependencies"]) ??
+    dependenciesAndAssumptions
+  const assumptions = getSectionByAlias(dependencyAssumptionSections, ["Assumptions"])
   const openQuestions = getSectionByAlias(sections, ["Open questions"])
-  const supplementalSections = [
-    { section: risks, kicker: "Risk" },
-    { section: dependencies, kicker: "Inputs" },
-    { section: openQuestions, kicker: "Decisions" },
-  ].filter((item): item is { section: PlanningDocumentSection; kicker: string } =>
-    Boolean(item.section?.content.trim()),
+  const hasFollowThroughSections = Boolean(
+    risks?.content.trim() ||
+      dependencies?.content.trim() ||
+      assumptions?.content.trim() ||
+      openQuestions?.content.trim(),
   )
   const sectionTotal =
     [
@@ -2430,7 +2714,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
       outOfScope,
       metrics,
       timeline,
-    ].filter(Boolean).length + (supplementalSections.length > 0 ? 1 : 0)
+    ].filter(Boolean).length + (hasFollowThroughSections ? 1 : 0)
   let sectionIndex = 1
   const nextSectionIndex = () => sectionIndex++
 
@@ -2566,22 +2850,18 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
         </DesignedSection>
       ) : null}
 
-      {supplementalSections.length > 0 ? (
+      {hasFollowThroughSections ? (
         <DesignedSection
           kicker="Follow Through"
           title="Risks, Dependencies & Open Questions"
           index={nextSectionIndex()}
           total={sectionTotal}
         >
-          <div className="space-y-4">
-            {supplementalSections.map(({ section, kicker }) => (
-              <SectionFallbackCard
-                key={`${kicker}-${section.heading}`}
-                section={section}
-                projectId={projectId}
-                kicker={kicker}
-              />
-            ))}
+          <div className="space-y-12">
+            <RiskMitigationShowcase section={risks} />
+            <DependenciesShowcase section={dependencies} />
+            <AssumptionsShowcase section={assumptions} />
+            <OpenQuestionsShowcase section={openQuestions} />
           </div>
         </DesignedSection>
       ) : null}
