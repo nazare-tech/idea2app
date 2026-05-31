@@ -11,7 +11,11 @@ import {
   GENERATE_ALL_DEFAULT_MODELS,
   type DocumentType,
 } from "@/lib/document-definitions"
-import { SCROLLABLE_NAV_ITEMS, getNavKeyForSection } from "@/lib/document-sections"
+import {
+  SCROLLABLE_NAV_ITEMS,
+  filterNavItemsByRenderedSections,
+  getNavKeyForSection,
+} from "@/lib/document-sections"
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
 import { useGenerateAll, type GenerateDocumentFn, type QueueItem } from "@/stores/generate-all-store"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
@@ -168,6 +172,16 @@ function getSourceTypeForScrollTarget(targetId: string): DocumentType | null {
   return navItem?.sourceType ?? null
 }
 
+function areStringSetsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>) {
+  if (left.size !== right.size) return false
+
+  for (const value of left) {
+    if (!right.has(value)) return false
+  }
+
+  return true
+}
+
 export function ProjectWorkspace({
   project,
   initialDocument = DEFAULT_WORKSPACE_DOCUMENT,
@@ -281,6 +295,7 @@ export function ProjectWorkspace({
   const anchorNavRef = useRef<HTMLElement>(null)
   const [activeNavKey, setActiveNavKey] = useState<string | null>(initialDocument === "competitive" ? "overview" : initialDocument)
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
+  const [renderedSectionIds, setRenderedSectionIds] = useState<ReadonlySet<string>>(() => new Set())
   const isScrollingProgrammatically = useRef(false)
 
   const analyses = useMemo(
@@ -716,6 +731,46 @@ export function ProjectWorkspace({
       window.removeEventListener("resize", scheduleUpdate)
     }
   }, [activeDocument])
+
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const navSectionIds = SCROLLABLE_NAV_ITEMS.flatMap((item) =>
+      item.sections.map((section) => section.id)
+    )
+
+    const collectRenderedSectionIds = () => {
+      const nextRenderedIds = new Set<string>()
+
+      for (const sectionId of navSectionIds) {
+        if (container.querySelector<HTMLElement>(`#${CSS.escape(sectionId)}`)) {
+          nextRenderedIds.add(sectionId)
+        }
+      }
+
+      setRenderedSectionIds((current) =>
+        areStringSetsEqual(current, nextRenderedIds) ? current : nextRenderedIds
+      )
+    }
+
+    collectRenderedSectionIds()
+
+    const observer = new MutationObserver(collectRenderedSectionIds)
+    observer.observe(container, {
+      attributes: true,
+      attributeFilter: ["id"],
+      childList: true,
+      subtree: true,
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!activeSectionId || renderedSectionIds.has(activeSectionId)) return
+    setActiveSectionId(null)
+  }, [activeSectionId, renderedSectionIds])
 
 
   const getLegacyDocumentStatus = (type: DocumentType): LegacyDocumentStatus => {
@@ -1817,6 +1872,10 @@ export function ProjectWorkspace({
       navDocumentDisplayStates[item.key] = displayStates[item.sourceType]
     }
   }
+  const visibleNavItems = filterNavItemsByRenderedSections(
+    SCROLLABLE_NAV_ITEMS,
+    renderedSectionIds,
+  )
 
   const handleGenerationStepComplete = useCallback((completedDocTypes: DocumentType[]) => {
     const docTypes = completedDocTypes.length > 0
@@ -1856,6 +1915,7 @@ export function ProjectWorkspace({
           ) : null}
           <AnchorNav
             ref={anchorNavRef}
+            navItems={visibleNavItems}
             documentStatuses={navDocumentStatuses}
             documentDisplayStates={navDocumentDisplayStates}
             activeKey={activeNavKey}

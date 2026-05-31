@@ -11,6 +11,8 @@ import type { DocumentGenerationDisplayState } from "@/lib/document-generation-d
 type NavStatus = "done" | "in_progress" | "pending" | "needs_retry"
 
 interface AnchorNavProps {
+  /** Navigation items after any document-pane visibility filtering */
+  navItems?: DocumentNavItem[]
   /** Status per sourceType (e.g., { competitive: "done", prd: "pending" }) */
   documentStatuses: Record<string, NavStatus>
   /** Rich status per visible nav key (overview, market-research, prd, etc.) */
@@ -213,6 +215,7 @@ function NavTab({
 }
 
 export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function AnchorNav({
+  navItems = SCROLLABLE_NAV_ITEMS,
   documentStatuses,
   documentDisplayStates = {},
   activeKey,
@@ -230,7 +233,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
       className="workspace-anchor-nav flex w-full shrink-0 gap-2 overflow-x-auto border-b border-[#E2DDD6] bg-[#FAFAFA] px-4 py-3 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-b-0 lg:px-6 lg:py-5"
     >
       {/* Document tabs */}
-      {SCROLLABLE_NAV_ITEMS.map((item) => (
+      {navItems.map((item) => (
         <NavTab
           key={item.key}
           item={item}

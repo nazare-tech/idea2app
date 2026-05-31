@@ -60,6 +60,16 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
     label: "Product Plan",
     sourceType: "prd",
     sections: [
+      { id: "prd-introduction-overview", label: "Introduction & Overview" },
+      { id: "prd-goals", label: "Goals" },
+      { id: "prd-user-personas", label: "User Personas" },
+      { id: "prd-user-stories-acceptance-criteria", label: "User Stories & Acceptance Criteria" },
+      { id: "prd-functional-requirements", label: "Functional Requirements" },
+      { id: "prd-technical-considerations", label: "Technical Considerations" },
+      { id: "prd-non-goals-out-of-scope", label: "Non-goals & Out of Scope" },
+      { id: "prd-success-metrics", label: "Success Metrics" },
+      { id: "prd-timeline-milestones", label: "Timeline & Milestones" },
+      { id: "prd-follow-through", label: "Risks, Dependencies & Open Questions" },
       { id: "prd-user-needs", label: "Problem to Solve" },
       { id: "prd-value-proposition", label: "Value Proposition" },
       { id: "prd-personas", label: "Personas" },
@@ -73,6 +83,18 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
     label: "First Version Plan",
     sourceType: "mvp",
     sections: [
+      { id: "mvp-summary", label: "MVP Summary" },
+      { id: "mvp-bet", label: "The Bet" },
+      { id: "mvp-target-user-problem", label: "Target User & Problem" },
+      { id: "mvp-core-user-flow", label: "Core User Flow" },
+      { id: "mvp-key-assumptions", label: "Key Assumptions" },
+      { id: "mvp-scope", label: "MVP Scope" },
+      { id: "mvp-suggested-stack", label: "Suggested Stack" },
+      { id: "mvp-ai-friendly-build-sequence", label: "AI-Friendly Build Sequence" },
+      { id: "mvp-validation-plan", label: "Validation Plan" },
+      { id: "mvp-cut-list", label: "Cut List" },
+      { id: "mvp-ai-build-guardrails", label: "AI Build Guardrails" },
+      { id: "mvp-next-prompt", label: "Next Prompt" },
       { id: "mvp-wedge", label: "First Version Scope" },
       { id: "mvp-core-features", label: "Core Features" },
       { id: "mvp-user-flow", label: "User Flow" },
@@ -119,4 +141,14 @@ export function getAllSectionIds(): string[] {
     item.key, // the document-level anchor
     ...item.sections.map((s) => s.id),
   ])
+}
+
+export function filterNavItemsByRenderedSections(
+  navItems: DocumentNavItem[],
+  renderedSectionIds: ReadonlySet<string>,
+): DocumentNavItem[] {
+  return navItems.map((item) => ({
+    ...item,
+    sections: item.sections.filter((section) => renderedSectionIds.has(section.id)),
+  }))
 }

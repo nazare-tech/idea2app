@@ -1730,12 +1730,14 @@ function ProductPlanMasthead({
 }
 
 function DesignedSection({
+  id,
   kicker,
   title,
   index,
   total,
   children,
 }: {
+  id?: string
   kicker: string
   title: string
   index: number
@@ -1743,7 +1745,7 @@ function DesignedSection({
   children: React.ReactNode
 }) {
   return (
-    <section className="pt-16">
+    <section id={id} className="pt-16">
       <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
         <div className="space-y-3">
           <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#1C1917]">
@@ -2579,6 +2581,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {introduction ? (
         <DesignedSection
+          id="prd-introduction-overview"
           kicker="Product Brief"
           title="Introduction & Overview"
           index={nextSectionIndex()}
@@ -2590,6 +2593,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {goals ? (
         <DesignedSection
+          id="prd-goals"
           kicker="Outcomes"
           title="Goals"
           index={nextSectionIndex()}
@@ -2601,6 +2605,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {personas ? (
         <DesignedSection
+          id="prd-user-personas"
           kicker="Target Users"
           title="User Personas"
           index={nextSectionIndex()}
@@ -2612,6 +2617,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {userStories ? (
         <DesignedSection
+          id="prd-user-stories-acceptance-criteria"
           kicker="Behavior"
           title="User Stories & Acceptance Criteria"
           index={nextSectionIndex()}
@@ -2623,6 +2629,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {requirements ? (
         <DesignedSection
+          id="prd-functional-requirements"
           kicker="Build Scope"
           title="Functional Requirements"
           index={nextSectionIndex()}
@@ -2634,6 +2641,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {technical ? (
         <DesignedSection
+          id="prd-technical-considerations"
           kicker="Technical"
           title="Technical Considerations"
           index={nextSectionIndex()}
@@ -2645,6 +2653,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {outOfScope ? (
         <DesignedSection
+          id="prd-non-goals-out-of-scope"
           kicker="Scope"
           title="Non-goals & Out of Scope"
           index={nextSectionIndex()}
@@ -2678,6 +2687,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {metrics ? (
         <DesignedSection
+          id="prd-success-metrics"
           kicker="Measurement"
           title="Success Metrics"
           index={nextSectionIndex()}
@@ -2689,6 +2699,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {timeline ? (
         <DesignedSection
+          id="prd-timeline-milestones"
           kicker="Delivery"
           title="Timeline & Milestones"
           index={nextSectionIndex()}
@@ -2700,6 +2711,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
       {hasFollowThroughSections ? (
         <DesignedSection
+          id="prd-follow-through"
           kicker="Follow Through"
           title="Risks, Dependencies & Open Questions"
           index={nextSectionIndex()}
@@ -2787,18 +2799,20 @@ function getDesignListRows(content: string) {
 }
 
 function FvpSection({
+  id,
   kicker,
   title,
   index,
   children,
 }: {
+  id?: string
   kicker: string
   title: string
   index: number
   children: React.ReactNode
 }) {
   return (
-    <section className="pt-16">
+    <section id={id} className="pt-16">
       <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
         <div className="space-y-3">
           <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#4A4040]">
@@ -3295,73 +3309,73 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
       <FvpMasthead />
 
       {summary ? (
-        <FvpSection kicker="Thesis" title="MVP Summary" index={1}>
+        <FvpSection id="mvp-summary" kicker="Thesis" title="MVP Summary" index={1}>
           <FvpSummary section={summary} />
         </FvpSection>
       ) : null}
 
       {goal ? (
-        <FvpSection kicker="Validation" title="The Bet" index={2}>
+        <FvpSection id="mvp-bet" kicker="Validation" title="The Bet" index={2}>
           <FvpTechGrid section={goal} fallbackTitle="Goal" />
         </FvpSection>
       ) : null}
 
       {targetProblem ? (
-        <FvpSection kicker="Audience" title="Target User & Problem" index={3}>
+        <FvpSection id="mvp-target-user-problem" kicker="Audience" title="Target User & Problem" index={3}>
           <FvpTechGrid section={targetProblem} fallbackTitle="Target user" />
         </FvpSection>
       ) : null}
 
       {userFlow ? (
-        <FvpSection kicker="Journey" title="Core User Flow" index={4}>
+        <FvpSection id="mvp-core-user-flow" kicker="Journey" title="Core User Flow" index={4}>
           <FvpFlow section={userFlow} />
         </FvpSection>
       ) : null}
 
       {assumptionRows.length > 0 ? (
-        <FvpSection kicker="Assumptions" title="Key Assumptions" index={assumptionIndex}>
+        <FvpSection id="mvp-key-assumptions" kicker="Assumptions" title="Key Assumptions" index={assumptionIndex}>
           <FvpScopeGrid rows={assumptionRows} />
         </FvpSection>
       ) : null}
 
       {scopeRows.length > 0 ? (
-        <FvpSection kicker="Scope Decisions" title="MVP Scope" index={scopeIndex}>
+        <FvpSection id="mvp-scope" kicker="Scope Decisions" title="MVP Scope" index={scopeIndex}>
           <FvpScopeGrid rows={scopeRows} />
         </FvpSection>
       ) : null}
 
       {buildApproach ? (
-        <FvpSection kicker="Tooling" title="Suggested Stack" index={7}>
+        <FvpSection id="mvp-suggested-stack" kicker="Tooling" title="Suggested Stack" index={7}>
           <FvpStack section={buildApproach} />
         </FvpSection>
       ) : null}
 
       {buildSequence ? (
-        <FvpSection kicker="Build Scope" title="AI-Friendly Build Sequence" index={8}>
+        <FvpSection id="mvp-ai-friendly-build-sequence" kicker="Build Scope" title="AI-Friendly Build Sequence" index={8}>
           <FvpBuildSequence section={buildSequence} />
         </FvpSection>
       ) : null}
 
       {validation ? (
-        <FvpSection kicker="Measurement" title="Validation Plan" index={validationIndex}>
+        <FvpSection id="mvp-validation-plan" kicker="Measurement" title="Validation Plan" index={validationIndex}>
           <FvpValidation section={validation} />
         </FvpSection>
       ) : null}
 
       {cutList ? (
-        <FvpSection kicker="Simplify If Needed" title="Cut List" index={cutListIndex}>
+        <FvpSection id="mvp-cut-list" kicker="Simplify If Needed" title="Cut List" index={cutListIndex}>
           <FvpCuts section={cutList} />
         </FvpSection>
       ) : null}
 
       {guardrails ? (
-        <FvpSection kicker="Discipline" title="AI Build Guardrails" index={guardrailsIndex}>
+        <FvpSection id="mvp-ai-build-guardrails" kicker="Discipline" title="AI Build Guardrails" index={guardrailsIndex}>
           <FvpGuardrails section={guardrails} />
         </FvpSection>
       ) : null}
 
       {nextPrompt ? (
-        <FvpSection kicker="Handoff" title="Next Prompt" index={12}>
+        <FvpSection id="mvp-next-prompt" kicker="Handoff" title="Next Prompt" index={12}>
           <FvpPromptBlock section={nextPrompt} />
         </FvpSection>
       ) : null}
