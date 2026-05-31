@@ -357,10 +357,20 @@ List the main user types inferred from the idea and research.
 Create exactly 3 personas. For each persona, use this format:
 
 **{Persona name}**
-- **Description**: Who this user is
-- **Needs**: What they need from the product
-- **Pain points**: Problems they face today
-- **Motivation**: Why they would use this product
+- **Archetype**: {3-5 word archetype label, e.g. The Weekend Builder}
+- **Meta**: Age {approximate age or range}; {occupation or role}; {location}; {technical level}
+- **Description**: {1-2 sentences explaining who this person is, their day-to-day context, and their relationship to the product's problem space.}
+- **Needs**:
+  - {Specific thing they need from the product - outcome-oriented, not feature-oriented}
+  - {Specific need}
+  - {Specific need}
+  - {Specific need}
+- **Pain points**:
+  - {Specific frustration or friction they experience today without the product}
+  - {Specific pain point}
+  - {Specific pain point}
+  - {Specific pain point}
+- **Motivation**: {1-2 sentences written from the persona's perspective. The core reason they would adopt this product - personal, specific, and non-generic.}
 
 ### 3.3 Role-based access
 

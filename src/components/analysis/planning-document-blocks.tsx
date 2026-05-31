@@ -1305,6 +1305,117 @@ interface CurrentPersona {
   fields: Array<{ label: string; body: string; items: string[] }>
 }
 
+const standalonePersonaFieldLabels = [
+  "Archetype",
+  "User type",
+  "Role",
+  "Meta",
+  "Profile",
+  "Context",
+  "Age",
+  "Occupation",
+  "Location",
+  "Technical level",
+  "Technology comfort level",
+  "Technology comfort",
+  "Tech comfort",
+  "Demographics",
+  "Background",
+  "Description",
+  "Who this user is",
+  "Needs",
+  "What they need",
+  "How this product addresses their needs",
+  "Pain points",
+  "Pain point",
+  "Problems they face today",
+  "Pain points and frustrations",
+  "Frustrations",
+  "Motivation",
+  "Why they would use this product",
+  "Goals",
+  "Goal",
+  "Goals and motivations",
+]
+
+function normalizePersonaFieldLabel(value: string) {
+  return normalizeHeading(value).replace(/[^a-z0-9]+/g, " ").trim()
+}
+
+function isKnownPersonaFieldLabel(value: string) {
+  const label = normalizePersonaFieldLabel(value)
+  return standalonePersonaFieldLabels.some((alias) => label === normalizePersonaFieldLabel(alias))
+}
+
+function createPersonaField(
+  persona: CurrentPersona,
+  label: string,
+  body = "",
+) {
+  const field = {
+    label: stripInlineMarkdown(label),
+    body: stripInlineMarkdown(body),
+    items: [],
+  }
+  persona.fields.push(field)
+  return field
+}
+
+function isPersonaListField(label: string) {
+  const normalized = normalizePersonaFieldLabel(label)
+  return [
+    "needs",
+    "what they need",
+    "how this product addresses their needs",
+    "pain points",
+    "pain point",
+    "problems they face today",
+    "pain points and frustrations",
+    "frustrations",
+    "goals",
+    "goal",
+    "goals and motivations",
+  ].includes(normalized)
+}
+
+function isPersonaMetadataField(label: string) {
+  const normalized = normalizePersonaFieldLabel(label)
+  return [
+    "meta",
+    "profile",
+    "context",
+    "age",
+    "occupation",
+    "location",
+    "technical level",
+    "technology comfort level",
+    "technology comfort",
+    "tech comfort",
+    "demographics",
+  ].includes(normalized)
+}
+
+function isPersonaFallbackProseField(label: string) {
+  return ![
+    "archetype",
+    "user type",
+    "role",
+    "needs",
+    "what they need",
+    "how this product addresses their needs",
+    "pain points",
+    "pain point",
+    "problems they face today",
+    "pain points and frustrations",
+    "frustrations",
+    "motivation",
+    "why they would use this product",
+    "goals",
+    "goal",
+    "goals and motivations",
+  ].includes(normalizePersonaFieldLabel(label)) && !isPersonaMetadataField(label)
+}
+
 function parseCurrentPersonas(content: string): CurrentPersona[] {
   const personas: CurrentPersona[] = []
   let active: CurrentPersona | null = null
@@ -1315,6 +1426,11 @@ function parseCurrentPersonas(content: string): CurrentPersona[] {
     const heading = trimmed.match(/^\*\*([^*:][^*]{1,96})\*\*$/)?.[1]?.trim()
 
     if (heading) {
+      if (active && isKnownPersonaFieldLabel(heading)) {
+        activeField = createPersonaField(active, heading)
+        continue
+      }
+
       active = { name: heading, fields: [] }
       activeField = null
       personas.push(active)
@@ -1323,32 +1439,28 @@ function parseCurrentPersonas(content: string): CurrentPersona[] {
 
     if (!active) continue
 
+    const tagline = trimmed.match(/^\*([^*]{2,96})\*$/)?.[1]?.trim()
+    if (tagline && active.fields.length === 0) {
+      activeField = createPersonaField(active, "Archetype", tagline)
+      continue
+    }
+
     const listMatch = line.match(/^(\s*)(?:[-*+]|\d+\.)\s+(.+)$/)
     const listText = listMatch?.[2]?.trim() ?? trimmed
     const field = listText.match(/^\*\*([^*]+)\*\*:\s*(.*)$/)
 
     if (field) {
-      activeField = {
-        label: field[1].trim(),
-        body: field[2].trim(),
-        items: [],
-      }
-      active.fields.push(activeField)
+      activeField = createPersonaField(active, field[1].trim(), field[2].trim())
       continue
     }
 
     const plainField = listText.match(/^([^:]{2,80}):\s*(.+)$/)
     if (plainField && !/[.!?]$/.test(plainField[1].trim())) {
-      activeField = {
-        label: stripInlineMarkdown(plainField[1].trim()),
-        body: stripInlineMarkdown(plainField[2].trim()),
-        items: [],
-      }
-      active.fields.push(activeField)
+      activeField = createPersonaField(active, plainField[1].trim(), plainField[2].trim())
       continue
     }
 
-    if (activeField && listMatch && listMatch[1].length > 0 && listText) {
+    if (activeField && listMatch && listText && (listMatch[1].length > 0 || isPersonaListField(activeField.label))) {
       activeField.items.push(stripInlineMarkdown(listText))
       continue
     }
@@ -1359,11 +1471,7 @@ function parseCurrentPersonas(content: string): CurrentPersona[] {
     }
   }
 
-  return personas
-}
-
-function normalizePersonaFieldLabel(value: string) {
-  return normalizeHeading(value).replace(/[^a-z0-9]+/g, " ").trim()
+  return personas.filter((persona) => !isKnownPersonaFieldLabel(persona.name))
 }
 
 function getPersonaField(persona: CurrentPersona, aliases: string[]) {
@@ -1402,6 +1510,16 @@ function getPersonaFieldItems(
   return splitPersonaList(field.body)
 }
 
+function formatPersonaMetaField(field: CurrentPersona["fields"][number]) {
+  const value = getPersonaFieldText(field)
+  if (!value) return ""
+
+  const label = normalizePersonaFieldLabel(field.label)
+  if (label === "age") return /^age\b/i.test(value) ? value : `Age ${value}`
+
+  return value
+}
+
 function buildPersonaMeta(persona: CurrentPersona) {
   const metaField = getPersonaField(persona, ["Meta", "Profile", "Context"])
   if (metaField) {
@@ -1410,19 +1528,21 @@ function buildPersonaMeta(persona: CurrentPersona) {
 
   return persona.fields
     .filter((field) =>
-      ["Demographics", "Background", "Technology comfort level", "Technology comfort", "Tech comfort", "Role"].some(
+      ["Age", "Occupation", "Location", "Demographics", "Technology comfort level", "Technology comfort", "Technical level", "Tech comfort", "Role"].some(
         (alias) => normalizePersonaFieldLabel(field.label).includes(normalizePersonaFieldLabel(alias)),
       ),
     )
-    .map((field) => `${field.label}: ${getPersonaFieldText(field)}`)
+    .map(formatPersonaMetaField)
+    .filter(Boolean)
     .filter((value) => value.length <= 96)
     .slice(0, 4)
 }
 
 function normalizePersonaCard(persona: CurrentPersona, index: number) {
+  const fallbackProseField = persona.fields.find((field) => isPersonaFallbackProseField(field.label))
   const description =
     getPersonaFieldText(getPersonaField(persona, ["Description", "Who this user is", "Background"])) ||
-    getPersonaFieldText(persona.fields[0])
+    getPersonaFieldText(fallbackProseField)
   const needs = getPersonaFieldItems(
     persona,
     ["Needs", "What they need", "How this product addresses their needs"],
@@ -1540,30 +1660,29 @@ function DetailedPersonaCard({
   const card = normalizePersonaCard(persona, index)
 
   return (
-    <article className="overflow-hidden rounded-xl border border-[#E8DDD5] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
-      <div className="p-8 sm:p-10">
-        <header className="flex flex-col gap-6 sm:flex-row sm:items-start">
+    <article className="overflow-hidden border border-[#E8DDD5] bg-white shadow-sm">
+      <div className="p-7 sm:p-8">
+        <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <PersonaAvatar index={index} />
-          <div className="min-w-0 flex-1 pt-1">
-            <div className="mb-[9px] flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-center gap-2">
               <span className="h-[7px] w-[7px] rounded-[1px] bg-primary" />
-              <span className="font-mono text-[11px] font-medium uppercase leading-tight tracking-[0.18em] text-[#4A4040]">
-                User persona
+              <span className="font-mono text-[10px] font-medium uppercase leading-tight tracking-[0.18em] text-[#4A4040]">
+                Persona {index + 1}
               </span>
-              <span className="sr-only">Persona {String(index + 1).padStart(2, "0")}</span>
             </div>
-            <h3 className={cn(displayFontClass, "text-[30px] font-extrabold leading-[1.05] tracking-[-0.04em] text-[#1C1917]")}>
+            <h3 className={cn(displayFontClass, "text-[26px] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#1C1917]")}>
               {card.name}
             </h3>
-            <p className="mt-1.5 text-[15px] font-semibold text-[#4A4040]">
+            <p className="mt-1 text-[14px] font-semibold leading-5 text-[#4A4040]">
               {card.archetype}
             </p>
             {card.meta.length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {card.meta.map((item) => (
                   <span
                     key={`${card.name}-${item}`}
-                    className="inline-flex rounded-full border border-[#EAE0D8] bg-[#F5F0EB] px-[11px] py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-[#6B7280]"
+                    className="inline-flex rounded-full border border-[#EAE0D8] bg-[#F5F0EB] px-[10px] py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#6B7280]"
                   >
                     {item}
                   </span>
@@ -1593,7 +1712,7 @@ function DetailedPersonaCard({
           </section>
         </div>
 
-        <section className="mt-8 rounded-lg border border-[#EAE0D8] bg-[#F5F0EB] p-6">
+        <section className="mt-8 border border-[#EAE0D8] bg-[#F5F0EB] p-6">
           <PersonaSectionLabel icon={Compass}>Motivation</PersonaSectionLabel>
           <p className={cn(displayFontClass, "max-w-[60ch] text-[18px] font-semibold leading-[1.45] tracking-[-0.01em] text-[#1C1917]")}>
             {card.motivation || "No structured motivation available."}

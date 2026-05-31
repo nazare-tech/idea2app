@@ -166,7 +166,8 @@ As an architect, I want to preserve rationale.
   )
 
   assert.match(html, /Target User Profile/)
-  assert.match(html, /Demographics/)
+  assert.match(html, /34 years old, Senior Software Architect/)
+  assert.doesNotMatch(html, /Demographics:/)
   assert.doesNotMatch(html, /Persona 02/)
 })
 
@@ -222,7 +223,7 @@ As a founder, I want readable personas.
   assert.match(html, /Positioning/)
   assert.match(html, /Persona 03/)
   assert.match(html, /mt-4 space-y-4/)
-  assert.match(html, /User persona/)
+  assert.match(html, /Persona 1/)
   assert.doesNotMatch(html, /mt-4 grid gap-4 xl:grid-cols-2/)
   assert.doesNotMatch(html, /xl:col-span-2/)
 })
@@ -271,7 +272,7 @@ As a builder, I want a product plan.
     />,
   )
 
-  assert.match(html, /User persona/)
+  assert.match(html, /Persona 1/)
   assert.match(html, /The Weekend Builder/)
   assert.match(html, /Age 31/)
   assert.match(html, /Description/)
@@ -280,9 +281,89 @@ As a builder, I want a product plan.
   assert.match(html, /Motivation/)
   assert.match(html, /Pressure-test an idea/)
   assert.match(html, /where-do-I-start spiral/)
-  assert.match(html, /rounded-xl border border-\[#E8DDD5\] bg-white/)
-  assert.match(html, /shadow-\[0_4px_20px_rgba\(15,23,42,0\.06\)\]/)
+  assert.match(html, /overflow-hidden border border-\[#E8DDD5\] bg-white/)
+  assert.match(html, /shadow-sm/)
+  assert.match(html, /text-\[26px\] font-extrabold/)
+  assert.doesNotMatch(html, /rounded-xl border border-\[#E8DDD5\] bg-white/)
+  assert.doesNotMatch(html, /shadow-\[0_4px_20px_rgba\(15,23,42,0\.06\)\]/)
+  assert.doesNotMatch(html, /mt-8 rounded-lg border border-\[#EAE0D8\]/)
   assert.doesNotMatch(html, /grid gap-4 lg:grid-cols-3/)
+})
+
+test("PrdDocumentBlocks keeps standalone bold persona labels inside the active persona", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      projectId="project-1"
+      content={`# PRD: Wear It Now AI Mirror
+
+## 1. Introduction/overview
+Wear It Now AI Mirror helps shoppers preview outfits before buying or styling them.
+
+## 2. Goals
+### 2.1 Business goals
+- Increase confident outfit decisions.
+### 2.2 User goals
+- Decide what to wear faster.
+
+## 3. User personas
+### 3.2 Persona details
+
+**Priya Mehta**
+*The Outfit Optimizer*
+
+- **Age**: 26
+- **Occupation**: Product designer
+- **Location**: Toronto
+- **Technical level**: Technical-adjacent
+
+**Description**
+Priya is a fashion-conscious shopper who wants outfit confidence before buying.
+
+**Needs**
+- Better styling guidance
+- Fast outfit previews
+- Confidence that items work together
+- Simple sharing with friends
+
+**Pain points**
+- Unclear fit and style from flat product photos
+- Wastes time comparing outfit combinations
+- Returns items that look different in context
+- Hard to know what works for an event
+
+**Motivation**
+Priya wants to feel confident before spending money on clothes.
+
+## 4. User stories and acceptance criteria
+### US-001: Preview outfit
+**User story**
+As a shopper, I want to preview an outfit.
+**Acceptance criteria**
+- The preview appears.
+
+## 5. Functional requirements
+### 5.1 Functional
+- **FR-001**: Preview outfit
+  - Users can preview an outfit.
+`}
+    />,
+  )
+
+  assert.match(html, /Priya Mehta/)
+  assert.match(html, /The Outfit Optimizer/)
+  assert.match(html, /Age 26/)
+  assert.match(html, /Product designer/)
+  assert.match(html, /Toronto/)
+  assert.match(html, /Technical-adjacent/)
+  assert.doesNotMatch(html, /Occupation: Product designer/)
+  assert.doesNotMatch(html, /Location: Toronto/)
+  assert.doesNotMatch(html, /Technical level: Technical-adjacent/)
+  assert.match(html, /fashion-conscious shopper/)
+  assert.match(html, /Better styling guidance/)
+  assert.match(html, /Unclear fit and style/)
+  assert.match(html, /feel confident before spending money/)
+  assert.doesNotMatch(html, /<h3[^>]*>Description<\/h3>/)
+  assert.doesNotMatch(html, />26<\/p><\/section>[\s\S]*>Needs</)
 })
 
 test("MvpPlanDocumentBlocks renders organized module anchors", () => {
@@ -657,10 +738,10 @@ So that I can send client-ready proposals.
   assert.match(html, /Priya Producer/)
   assert.doesNotMatch(html, /Freelance designer who sends proposals monthly/)
   assert.match(html, /The Fast Proposal Maker/)
-  assert.match(html, /User persona/)
+  assert.match(html, /Persona 1/)
   assert.match(html, /Pain points/)
   assert.match(html, /Motivation/)
-  assert.match(html, /Persona 01/)
+  assert.doesNotMatch(html, /User persona/)
   assert.match(html, /Introduction &amp; Overview/)
   assert.match(html, /Functional Requirements/)
   assert.match(html, /User Stories &amp; Acceptance Criteria/)
