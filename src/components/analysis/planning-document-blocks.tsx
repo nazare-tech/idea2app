@@ -662,7 +662,7 @@ function parseRequirementLine(line: string) {
 
   if (!cleaned) return null
 
-  const idMatch = cleaned.match(/^((?:FR|NFR|IR)[-\s]?\d+)\s*:?\s*(.*)$/i)
+  const idMatch = cleaned.match(/^([A-Z]{1,5}[-\s]?\d+)\s*:?\s*(.*)$/i)
   if (idMatch) {
     const id = idMatch[1].replace(/\s+/, "-").toUpperCase()
     const rest = idMatch[2]?.trim() ?? ""
@@ -2085,11 +2085,125 @@ const requirementIcons: Record<RequirementCategory, React.ComponentType<{ classN
   Integration: Layers,
 }
 
+interface RequirementDisplayGroup {
+  label: string
+  items: RequirementItem[]
+  Icon: React.ComponentType<{ className?: string }>
+  spanWide?: boolean
+}
+
+function getRequirementSubsectionLabel(heading: string) {
+  return stripInlineMarkdown(heading)
+    .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
+    .trim()
+}
+
+function getRequirementIcon(label: string, index: number) {
+  if (/states?|errors?|failure|empty/i.test(label)) return AlertTriangle
+  if (/constraints?|security|privacy|permissions?|limits?|compliance/i.test(label)) return ShieldCheck
+  if (/integration|api|provider|oauth|extension/i.test(label)) return Layers
+
+  const icons = [Puzzle, ClipboardList, Layers]
+  return icons[index % icons.length]
+}
+
+function normalizeRequirementItems(
+  items: Array<RequirementItem & { category?: RequirementCategory }>,
+) {
+  return items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    meta: item.meta,
+  }))
+}
+
+function getRequirementItemsFromNestedSection(content: string) {
+  const parsedItems = normalizeRequirementItems(parseRequirementItemsFromMarkdown(content))
+  if (parsedItems.length > 0) return parsedItems
+
+  const narrative = parseNarrativeTable(content)
+  if (narrative.items.length > 0) {
+    return narrative.items.map((item) => {
+      const labeled = splitLabeledText(item)
+
+      return {
+        title: labeled?.label,
+        description: labeled?.body || item,
+      }
+    })
+  }
+
+  return narrative.paragraphs.map((paragraph) => ({
+    description: paragraph,
+  }))
+}
+
+function getRequirementNestedSections(sectionContent: string) {
+  const h3Sections = extractSectionsByHeading(sectionContent, 3)
+  const h4Sections = extractSectionsByHeading(sectionContent, 4)
+  const hasOnlyWrapperH3 =
+    h3Sections.length === 1 &&
+    /^(?:\d+(?:\.\d+)*\.?\s+)?functional requirements?$/i.test(h3Sections[0]?.heading ?? "")
+
+  if (h4Sections.length > 0 && (h3Sections.length === 0 || hasOnlyWrapperH3)) {
+    return h4Sections
+  }
+
+  return h3Sections
+}
+
+function shouldSpanRequirementDisplayGroup(
+  groups: Array<Pick<RequirementDisplayGroup, "label">>,
+  index: number,
+) {
+  const isCoreStatesConstraintsLayout =
+    groups.length === 3 &&
+    normalizeHeading(groups[0]?.label ?? "") === "core requirements" &&
+    normalizeHeading(groups[1]?.label ?? "") === "states and errors" &&
+    normalizeHeading(groups[2]?.label ?? "") === "constraints"
+
+  if (isCoreStatesConstraintsLayout) {
+    return index === 0
+  }
+
+  return groups.length % 2 === 1 && index === groups.length - 1
+}
+
+function getRequirementDisplayGroups(sectionContent: string): RequirementDisplayGroup[] {
+  const nestedSections = getRequirementNestedSections(sectionContent)
+    .map((section, index) => {
+      const label = getRequirementSubsectionLabel(section.heading)
+
+      return {
+        label,
+        items: getRequirementItemsFromNestedSection(section.content),
+        Icon: getRequirementIcon(label, index),
+      }
+    })
+    .filter((group) => group.label && group.items.length > 0)
+
+  if (nestedSections.length > 0) {
+    return nestedSections.map((group, index) => ({
+      ...group,
+      spanWide: shouldSpanRequirementDisplayGroup(nestedSections, index),
+    }))
+  }
+
+  return Array.from(getRequirementGroups(parseNarrativeTable(sectionContent)).entries())
+    .filter(([, items]) => items.length > 0)
+    .map(([label, items]) => ({
+      label,
+      items,
+      Icon: requirementIcons[label],
+      spanWide: label === "Integration",
+    }))
+}
+
 function RequirementShowcase({ section }: { section?: PlanningDocumentSection }) {
   if (!section) return null
 
-  const groups = Array.from(getRequirementGroups(parseNarrativeTable(section.content)).entries())
-    .filter(([, items]) => items.length > 0)
+  const groups = getRequirementDisplayGroups(section.content)
 
   if (groups.length === 0) {
     return <NarrativeContent narrative={parseNarrativeTable(section.content)} />
@@ -2097,11 +2211,9 @@ function RequirementShowcase({ section }: { section?: PlanningDocumentSection })
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      {groups.map(([label, items]) => {
-        const Icon = requirementIcons[label]
-
+      {groups.map(({ label, items, Icon, spanWide }) => {
         return (
-          <section key={label} className={cn("border border-[#E8DDD5] bg-white px-6 py-6", label === "Integration" && "lg:col-span-2")}>
+          <section key={label} className={cn("border border-[#E8DDD5] bg-white px-6 py-6", spanWide && "lg:col-span-2")}>
             <div className="mb-5 flex items-center gap-3">
               <div className="grid h-9 w-9 place-items-center border border-[#E8DDD5] bg-[#FAFAFA]">
                 <Icon className="h-4 w-4 text-[#1C1917]" />
@@ -2117,7 +2229,7 @@ function RequirementShowcase({ section }: { section?: PlanningDocumentSection })
               {items.map((item, index) => (
                 <li key={`${item.id ?? item.title ?? item.description}-${index}`} className="flex gap-4 border-t border-[#E8DDD5] py-3 first:border-t-0">
                   <span className="min-w-6 font-mono text-[11px] text-[#8A8480]">
-                    {item.id ?? String(index + 1).padStart(2, "0")}
+                    {String(index + 1).padStart(2, "0")}
                   </span>
                   <span>
                     {item.title ? <span className="block text-[14px] font-semibold text-[#0A0A0A]">{item.title}</span> : null}

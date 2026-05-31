@@ -290,6 +290,138 @@ As a builder, I want a product plan.
   assert.doesNotMatch(html, /grid gap-4 lg:grid-cols-3/)
 })
 
+test("PrdDocumentBlocks preserves current PRD functional requirement subsections as separate blocks", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      projectId="project-1"
+      content={`# PRD: Wear It Now AI Mirror
+
+## 1. Introduction/overview
+Wear It Now AI Mirror helps shoppers preview outfits before buying.
+
+## 2. Goals
+- Increase confident outfit decisions.
+
+## 3. User personas
+### 3.2 Persona details
+**Priya Mehta**
+- **Description**: Priya wants outfit confidence before buying.
+
+## 4. User stories and acceptance criteria
+### US-001: Preview outfit
+**User story**
+As a shopper, I want to preview an outfit.
+**Acceptance criteria**
+- The preview appears.
+
+## 5. Functional requirements
+### 5.1 Core requirements
+- **CR-001**: Project input
+  - Users can create a mirror try-on project.
+- **CR-002**: Avatar upload
+  - Users can upload one avatar photo.
+
+### 5.2 States and errors
+- **SE-001**: Empty state
+  - Show guidance when no outfit image has been selected.
+- **SE-002**: Generation failure
+  - Show retry copy when AI generation fails.
+
+### 5.3 Constraints
+- **FR-005**: Supported file types
+  - Accept JPEG, PNG, and WEBP images only.
+- **FR-006**: Upload size
+  - Limit avatar uploads to 10 MB.
+
+## 6. Technical considerations
+- Keep image generation on the server.
+`}
+    />,
+  )
+
+  assert.match(html, /Core requirements/)
+  assert.match(html, /States and errors/)
+  assert.match(html, /Constraints/)
+  assert.match(html, /Project input/)
+  assert.match(html, /Generation failure/)
+  assert.match(html, /Supported file types/)
+  assert.match(html, /2 reqs/)
+  assert.match(html, />01<\/span>/)
+  assert.match(html, />02<\/span>/)
+  assert.doesNotMatch(html, /CR-001/)
+  assert.doesNotMatch(html, /CR-002/)
+  assert.doesNotMatch(html, /SE-001/)
+  assert.doesNotMatch(html, /SE-002/)
+  assert.doesNotMatch(html, /FR-005/)
+  assert.doesNotMatch(html, /<h3[^>]*>Functional<\/h3>/)
+  assert.doesNotMatch(html, /<h3[^>]*>Integration<\/h3>/)
+
+  const coreIndex = html.indexOf("Core requirements")
+  const statesIndex = html.indexOf("States and errors")
+  const constraintsIndex = html.indexOf("Constraints")
+  const getSectionOpeningTag = (index: number) => {
+    const sectionStart = html.lastIndexOf("<section", index)
+    return html.slice(sectionStart, html.indexOf(">", sectionStart))
+  }
+
+  assert.ok(coreIndex > -1)
+  assert.ok(statesIndex > coreIndex)
+  assert.ok(constraintsIndex > statesIndex)
+  assert.match(getSectionOpeningTag(coreIndex), /lg:col-span-2/)
+  assert.doesNotMatch(getSectionOpeningTag(statesIndex), /lg:col-span-2/)
+  assert.doesNotMatch(getSectionOpeningTag(constraintsIndex), /lg:col-span-2/)
+})
+
+test("PrdDocumentBlocks preserves deeper functional requirement subsections under a wrapper heading", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      projectId="project-1"
+      content={`# PRD: Wrapped Requirements
+
+## 1. Introduction/overview
+Wrapped Requirements helps validate nested planning output.
+
+## 2. Goals
+- Keep renderer output faithful.
+
+## 3. User personas
+### 3.2 Persona details
+**Builder**
+- **Description**: Builder needs clear scope.
+
+## 4. User stories and acceptance criteria
+### US-001: Read requirements
+**User story**
+As a builder, I want readable requirements.
+**Acceptance criteria**
+- The requirement groups are visible.
+
+## 5. Functional requirements
+### Functional requirements
+#### Core requirements
+- **FR-001**: Create project
+  - Users can create a project.
+
+#### States and errors
+- **FR-002**: Loading state
+  - Users see progress during generation.
+
+#### Constraints
+- **FR-003**: File size
+  - Uploads stay below the configured limit.
+
+## 6. Technical considerations
+- Keep rendering deterministic.
+`}
+    />,
+  )
+
+  assert.match(html, /Core requirements/)
+  assert.match(html, /States and errors/)
+  assert.match(html, /Constraints/)
+  assert.doesNotMatch(html, /<h3[^>]*>Functional requirements<\/h3>/)
+})
+
 test("PrdDocumentBlocks keeps standalone bold persona labels inside the active persona", () => {
   const html = renderToStaticMarkup(
     <PrdDocumentBlocks
