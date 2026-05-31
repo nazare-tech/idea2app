@@ -168,19 +168,13 @@ They copy old proposal documents and manually edit them.
 ### Desired Outcome
 Send a credible proposal shortly after a client call.
 
-## 4. MVP Goal, Definition of Done, and Riskiest Assumptions
-
-**Goal:** Validate whether freelance designers will generate and edit a proposal from structured client notes.
-
-**Definition of Done:** A user can complete the core proposal workflow end-to-end without help.
-
 ### Riskiest Product Assumption
 Designers will trust the generated proposal enough to edit it instead of starting from a blank document.
 
 ### Riskiest Technical Assumption
 AI output quality is good enough for first-draft proposal language.
 
-## 5. Core User Flow
+## 4. Core User Flow
 
 1. User opens the proposal workspace.
 2. User enters client notes, services, budget, and timeline.
@@ -188,7 +182,7 @@ AI output quality is good enough for first-draft proposal language.
 4. User edits the draft.
 5. User exports or copies the proposal.
 
-## 6. MVP Scope
+## 5. MVP Scope
 
 | Category | Include in MVP | Exclude for Now |
 |---|---|---|
@@ -196,14 +190,14 @@ AI output quality is good enough for first-draft proposal language.
 | Core input | Structured proposal intake | CRM import |
 | Core output | Editable proposal draft | E-signature |
 
-## 7. Must-Have Features
+## 6. Must-Have Features
 
 | Feature | Why It Matters | Acceptance Criteria |
 |---|---|---|
 | Proposal intake | Captures enough context for a useful draft | User can submit required fields |
 | Proposal generation | Delivers the core value | User sees loading, success, and error states |
 
-## 8. Suggested Build Approach
+## 7. Suggested Build Approach
 
 ### Suggested Stack
 
@@ -216,17 +210,14 @@ AI output quality is good enough for first-draft proposal language.
 ### Manual Shortcuts
 - Manually review the first generated proposals with beta users.
 
-## 9. AI-Friendly Build Sequence
+## 8. AI-Friendly Build Sequence
 
 | Step | Build Chunk | Goal | Test Before Moving On |
 |---|---|---|---|
 | 1 | Proposal intake form | Capture required context | Submit valid and invalid input |
 | 2 | AI draft route | Generate proposal copy | Mock successful and failed generation |
 
-## 10. AI Build Guardrails
-- Do not build CRM integrations.
-
-## 11. Validation Plan
+## 9. Validation Plan
 
 ### First Test Audience
 Five freelance designers who send at least two proposals per month.
@@ -236,13 +227,16 @@ Five freelance designers who send at least two proposals per month.
 |---|---|
 | Strong Signal | Users edit and send generated proposals |
 
-## 12. Cut List
+## 10. Cut List
 
 | If This Gets Complicated | Simplify By |
 |---|---|
 | Auth too slow | Use invite-only magic links |
 
-## 13. Next Prompt for AI Coding Tool
+## 11. AI Build Guardrails
+- Do not build CRM integrations.
+
+## 12. Next Prompt for AI Coding Tool
 
 \`\`\`text
 Build the proposal intake form first.
@@ -251,7 +245,7 @@ Build the proposal intake form first.
 
   assert.equal(viewModel.canRenderModules, true)
   assert.match(viewModel.structured.overview.paragraphs.join(" "), /Proposal Pilot/)
-  assert.match(viewModel.structured.hypothesis.source, /Validate whether/)
+  assert.match(viewModel.structured.hypothesis.source, /Designers will trust/)
   assert.match(viewModel.structured.targetUser.source, /Freelance designers/)
   assert.equal(viewModel.structured.scope.table?.headers[0], "Category")
   assert.equal(viewModel.structured.featureSummary.table?.rows[0][0], "Proposal intake")

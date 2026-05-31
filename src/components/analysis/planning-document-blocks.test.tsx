@@ -1021,50 +1021,49 @@ Proposal Pilot helps freelance designers turn client notes into proposals.
 Freelance designers who manage proposals manually.
 ### Problem
 They rewrite scope and pricing language for every lead.
+### Riskiest Product Assumption
+Designers will trust the generated draft enough to edit it.
 
-## 4. MVP Goal, Definition of Done, and Riskiest Assumptions
-**Goal:** Validate whether designers will generate and edit a proposal.
-
-## 5. Core User Flow
+## 4. Core User Flow
 1. User opens the proposal workspace.
 2. User enters client notes.
 3. System generates a proposal draft.
 
-## 6. MVP Scope
+## 5. MVP Scope
 | Category | Include in MVP | Exclude for Now |
 |---|---|---|
 | Core input | Structured proposal intake | CRM import |
 
-## 7. Must-Have Features
+## 6. Must-Have Features
 | Feature | Why It Matters | Acceptance Criteria |
 |---|---|---|
 | Proposal intake | Captures useful context | User can submit required fields |
 
-## 8. Suggested Build Approach
+## 7. Suggested Build Approach
 | Layer | Recommendation | Why |
 |---|---|---|
 | Frontend | Next.js + Tailwind | Fast workspace UI |
 
-## 9. AI-Friendly Build Sequence
+## 8. AI-Friendly Build Sequence
 | Step | Build Chunk | Goal | Test Before Moving On |
 |---|---|---|---|
 | 1 | Proposal intake form | Capture context | Submit valid and invalid input |
 
-## 10. AI Build Guardrails
-- Build one chunk at a time.
-- Do not add features outside MVP scope.
-
-## 11. Validation Plan
+## 9. Validation Plan
 ### First Test Audience
 Five freelance designers who send proposals monthly.
 
 ### Suggested Metrics
 - 60% of users complete a generation.
 
-## 12. Cut List
+## 10. Cut List
 - If CRM import takes too long, then use CSV upload only.
 
-## 13. Next Prompt for AI Coding Tool
+## 11. AI Build Guardrails
+- Build one chunk at a time.
+- Do not add features outside MVP scope.
+
+## 12. Next Prompt for AI Coding Tool
 Start with the proposal intake form and mock proposal generation.
 `}
     />,
@@ -1073,7 +1072,6 @@ Start with the proposal intake form and mock proposal generation.
   assert.doesNotMatch(html, /Block view unavailable/)
   assert.match(html, /First Version Plan/)
   assert.match(html, /MVP Summary/)
-  assert.match(html, /The Bet/)
   assert.match(html, /Target User &amp; Problem/)
   assert.match(html, /Core User Flow/)
   assert.match(html, /Key Assumptions/)

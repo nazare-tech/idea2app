@@ -31,7 +31,7 @@ export interface MvpPlanViewModel {
 
 const H3_ALIASES = {
   overview: ["Product Vision", "Product Vision Summary", "MVP Overview"],
-  hypothesis: ["What We Need to Prove", "MVP Hypothesis"],
+  hypothesis: ["What We Need to Prove", "MVP Hypothesis", "Riskiest Product Assumption"],
   problem: ["Problem to Prove", "Problem Being Validated", "Problem"],
   targetUser: ["Target Customer", "Target User Segment", "Primary User"],
   scope: ["What's In / Out", "What Is In / Out", "MVP Scope Boundaries", "Scope Boundaries"],

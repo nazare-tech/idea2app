@@ -48,16 +48,15 @@ test("First Version Plan prompt preserves the renderer heading contract", () => 
     "## 1. MVP Summary",
     "## 2. Key Assumptions and Scope Decisions",
     "## 3. Target User and Problem",
-    "## 4. MVP Goal, Definition of Done, and Riskiest Assumptions",
-    "## 5. Core User Flow",
-    "## 6. MVP Scope",
-    "## 7. Must-Have Features",
-    "## 8. Suggested Build Approach",
-    "## 9. AI-Friendly Build Sequence",
-    "## 10. AI Build Guardrails",
-    "## 11. Validation Plan",
-    "## 12. Cut List",
-    "## 13. Next Prompt for AI Coding Tool",
+    "## 4. Core User Flow",
+    "## 5. MVP Scope",
+    "## 6. Must-Have Features",
+    "## 7. Suggested Build Approach",
+    "## 8. AI-Friendly Build Sequence",
+    "## 9. Validation Plan",
+    "## 10. Cut List",
+    "## 11. AI Build Guardrails",
+    "## 12. Next Prompt for AI Coding Tool",
   ]
 
   let previousIndex = -1
@@ -69,7 +68,7 @@ test("First Version Plan prompt preserves the renderer heading contract", () => 
   }
 
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /do not omit, rename, reorder, or combine the required H2 sections/)
-  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Keep all 13 numbered H2 section headings exactly as written/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Keep all 12 numbered H2 section headings exactly as written/)
 })
 
 test("First Version Plan prompt names required nested labels for visual cards", () => {

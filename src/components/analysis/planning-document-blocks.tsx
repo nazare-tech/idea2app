@@ -3283,6 +3283,12 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
   const nextPrompt = getSectionByAlias(sections, ["Next Prompt for AI Coding Tool"])
   const assumptionRows = getFvpAssumptionRows(assumptions)
   const scopeRows = getFvpScopeRows({ scope, features })
+  const hasStandaloneGoal = Boolean(goal)
+  const assumptionIndex = hasStandaloneGoal ? 5 : 2
+  const scopeIndex = hasStandaloneGoal ? 6 : 5
+  const guardrailsIndex = hasStandaloneGoal ? 9 : 11
+  const validationIndex = hasStandaloneGoal ? 10 : 9
+  const cutListIndex = hasStandaloneGoal ? 11 : 10
 
   return (
     <div className="space-y-0">
@@ -3313,13 +3319,13 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
       ) : null}
 
       {assumptionRows.length > 0 ? (
-        <FvpSection kicker="Assumptions" title="Key Assumptions" index={5}>
+        <FvpSection kicker="Assumptions" title="Key Assumptions" index={assumptionIndex}>
           <FvpScopeGrid rows={assumptionRows} />
         </FvpSection>
       ) : null}
 
       {scopeRows.length > 0 ? (
-        <FvpSection kicker="Scope Decisions" title="MVP Scope" index={6}>
+        <FvpSection kicker="Scope Decisions" title="MVP Scope" index={scopeIndex}>
           <FvpScopeGrid rows={scopeRows} />
         </FvpSection>
       ) : null}
@@ -3336,21 +3342,21 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
         </FvpSection>
       ) : null}
 
-      {guardrails ? (
-        <FvpSection kicker="Discipline" title="AI Build Guardrails" index={9}>
-          <FvpGuardrails section={guardrails} />
-        </FvpSection>
-      ) : null}
-
       {validation ? (
-        <FvpSection kicker="Measurement" title="Validation Plan" index={10}>
+        <FvpSection kicker="Measurement" title="Validation Plan" index={validationIndex}>
           <FvpValidation section={validation} />
         </FvpSection>
       ) : null}
 
       {cutList ? (
-        <FvpSection kicker="Simplify If Needed" title="Cut List" index={11}>
+        <FvpSection kicker="Simplify If Needed" title="Cut List" index={cutListIndex}>
           <FvpCuts section={cutList} />
+        </FvpSection>
+      ) : null}
+
+      {guardrails ? (
+        <FvpSection kicker="Discipline" title="AI Build Guardrails" index={guardrailsIndex}>
+          <FvpGuardrails section={guardrails} />
         </FvpSection>
       ) : null}
 
