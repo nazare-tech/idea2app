@@ -6,6 +6,7 @@ import {
   buildOpenRouterTimeoutMessage,
   createOpenRouterLongTextSignal,
   isOpenRouterAbortError,
+  OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS,
 } from "@/lib/openrouter-timeout"
 
 // Re-use the same OpenRouter client pattern from openrouter.ts
@@ -17,7 +18,7 @@ const openrouter = new OpenAI({
 const DEFAULT_MODEL =
   process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4-6"
 const MAX_DOWNSTREAM_CONTEXT_CHARS = 6_000
-const PLANNING_DOCUMENT_MAX_TOKENS = 8_192
+const PLANNING_DOCUMENT_MAX_TOKENS = 16_384
 const LAUNCH_PLAN_MAX_TOKENS = 4_096
 
 // ─── Type Definitions ────────────────────────────────────────────────
@@ -106,9 +107,9 @@ async function consumeStream(
   }
 }
 
-function rethrowOpenRouterTimeout(error: unknown, label: string): never {
+function rethrowOpenRouterTimeout(error: unknown, label: string, timeoutMs?: number): never {
   if (isOpenRouterAbortError(error)) {
-    throw new Error(buildOpenRouterTimeoutMessage(label))
+    throw new Error(buildOpenRouterTimeoutMessage(label, timeoutMs))
   }
 
   throw error
@@ -240,9 +241,9 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
       max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
       temperature: 0.3,
       stream: callbacks?.onToken ? true : false,
-    }, { signal: createOpenRouterLongTextSignal() })
+    }, { signal: createOpenRouterLongTextSignal(OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS) })
   } catch (error) {
-    rethrowOpenRouterTimeout(error, "Product Plan")
+    rethrowOpenRouterTimeout(error, "Product Plan", OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS)
   }
 
   const content = await consumeStream(completion, callbacks?.onToken)
@@ -275,9 +276,9 @@ export async function runMVPPlan(
       max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
       temperature: 0.3,
       stream: callbacks?.onToken ? true : false,
-    }, { signal: createOpenRouterLongTextSignal() })
+    }, { signal: createOpenRouterLongTextSignal(OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS) })
   } catch (error) {
-    rethrowOpenRouterTimeout(error, "First Version Plan")
+    rethrowOpenRouterTimeout(error, "First Version Plan", OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS)
   }
 
   const content = await consumeStream(completion, callbacks?.onToken)

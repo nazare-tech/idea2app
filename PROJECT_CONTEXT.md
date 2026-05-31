@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-05-30 (Product Plan renderer design + mockup storyboard updates)
+**Last Updated**: 2026-05-30 (PRD/MVP planning-document timeout updates)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -20,7 +20,7 @@
 - **First Version Plan Generation**: Strategic first-release development plan based on the Product Plan. Completed First Version Plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. The parser accepts both the older First Version/MVP H2/H3 contract and the current numbered MVP Plan sections for summary, assumptions, target user/problem, goal, core flow, scope, must-have features, suggested build approach, AI-friendly build sequence, validation plan, cut list, and next prompt. Current numbered MVP Plan documents use a purpose-built visual block layout that preserves current prompt labels while turning summary, target/problem content, scope, must-have feature tables, build steps, and validation sections into vertically stacked light Pencil blocks/cards. Direct H2/H3 content is preserved as fallback section cards when a generated First Version Plan lacks deeper nested headings.
 - **Mockup Generation**: Three UI mockup alternatives generated from First Version Plans. The default path uses OpenRouter image-output model `openai/gpt-5.4-image-2`, configurable with `OPENROUTER_MOCKUP_IMAGE_MODEL`; images are stored in private Supabase Storage and rendered through an authenticated image proxy. Before image generation, the pipeline creates a hidden `mockup-design-plan-v1` JSON plan from the First Version Plan and available project context using `OPENROUTER_MOCKUP_PLANNER_MODEL`, falling back to `OPENROUTER_ANALYSIS_MODEL` and then `openai/gpt-5.4-mini`. That plan chooses the primary platform, a populated happy-path scenario, 2-4 core MVP screens, captions, and three visual directions. The hidden plan is stored in `mockups.metadata.design_plan`, not in the user-rendered mockup content. Each option image is now a v2 storyboard (`openrouter-image-v2`): one wide horizontal image containing the selected screens, with display-safe screen names/captions stored in content metadata. OpenRouter image calls omit provider-specific `image_config` by default; explicit `OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO` and `OPENROUTER_MOCKUP_IMAGE_SIZE` env values are still forwarded for providers that support them. Image-call text output is capped by `OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS` (default `4096`) while the hidden planner call is capped by `OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS` (default `2048`) to keep retries within normal key limits. Actual decoded image dimensions are recorded when available. Manual workspace mockup generation still runs separate option-level invocations for Options A/B/C one after another, then finalizes one normal mockup document after all three storyboard images are saved. Manual retries persist the option run id and design plan in localStorage and call `/api/mockups/recover-options` before spending more OpenRouter credits, so images that reached Supabase Storage can be finalized even if the browser or route timed out. Local/no-credit fixture testing is available through `/api/mockups/fixture` when running outside production, or in production only with `ENABLE_MOCKUP_FIXTURE_GENERATION=true`. The renderer displays each option as a wide storyboard image plus generated screen captions; mobile storyboards are prompted with a structured Figma-style composition JSON that asks for same-width iPhone 17 Pro portrait frames, fixed top captions, neutral arrows between screens, optional side rationale cards, and same-width vertical continuation or scroll cues instead of wider phones.
 - **Launch Plan Generation**: Launch Plans are now generated through an AI-backed Launch Plan prompt module instead of a deterministic template. The route keeps the existing marketing-brief input contract and still saves markdown `launch-plan` rows in `analyses`.
-- **Dev Prompt Lab**: Local-development-only workbench at `/dev/prompt-lab` for iterating artifact prompts against existing projects without creating workflow artifacts, consuming credits, or starting queues. It supports Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan; stores artifact-scoped reusable system/model drafts in Supabase `prompt_lab_experiments`, stores project-scoped isolated runs in `prompt_lab_runs`, uses existing workspace renderers for artifact-accurate preview, and includes a lab-only renderer playground for experiments that do not affect production workspace rendering. The user prompt/context is regenerated from the selected project and should not be overwritten by shared system drafts. Prompt Lab text runs use the shared OpenRouter long-text timeout (`240s`) and render the completed artifact after the response finishes; mockup image runs keep their separate image timeout path.
+- **Dev Prompt Lab**: Local-development-only workbench at `/dev/prompt-lab` for iterating artifact prompts against existing projects without creating workflow artifacts, consuming credits, or starting queues. It supports Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan; stores artifact-scoped reusable system/model drafts in Supabase `prompt_lab_experiments`, stores project-scoped isolated runs in `prompt_lab_runs`, uses existing workspace renderers for artifact-accurate preview, and includes a lab-only renderer playground for experiments that do not affect production workspace rendering. The user prompt/context is regenerated from the selected project and should not be overwritten by shared system drafts. Prompt Lab text runs use the shared OpenRouter long-text timeout (`240s`) for most text artifacts and the longer planning-document timeout (`480s`) for Product Plan and First Version Plan; mockup image runs keep their separate image timeout path.
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **Landing Page + Waitlist Gate**: The marketing landing page now switches between standard signup CTAs and a public waitlist flow once the early-access user cap is reached. Features:
   - Dynamic CTA mode based on current `profiles` count
@@ -207,8 +207,8 @@
    - Server verifies project ownership and checks `src/lib/active-document-policy.ts` for an existing active document before credit deduction or external generation. Duplicate requests return `200 OK` with `{ skipped: true, reason: "document_already_exists", existingDocument }` and do not charge credits.
    - If no active document exists, the server checks credits, deducts if available, and refunds through the service-role `refund_credits` RPC on generation failure
    - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`). When a `project_intakes` row exists, generation context is formatted through `formatProjectIntakeForAi()` and combined with the human-readable project summary; otherwise `projects.description` is used as the fallback:
-    - **Market Research**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail. External API calls use `withRetry` (3 retries, exponential backoff on 429/5xx). OpenRouter synthesis calls use the shared long-text timeout (`240s`) with clearer timeout messages; direct generation returns safe timeout failures as `504`.
-    - **Product Plan**: OpenRouter LLM call with detailed system prompt, receives a bounded market-research context excerpt so onboarding retries stay inside the 300s route envelope
+    - **Market Research**: 3-step pipeline — Perplexity (sonar-pro) finds competitors → Tavily extracts URL content → OpenRouter synthesizes final report. Graceful degradation if Perplexity/Tavily fail. External API calls use `withRetry` (3 retries, exponential backoff on 429/5xx). OpenRouter synthesis calls use the shared long-text timeout (`240s`) with clearer timeout messages; Product Plan and First Version Plan use a longer planning-document timeout (`480s`); direct generation returns safe timeout failures as `504`.
+    - **Product Plan**: OpenRouter LLM call with detailed system prompt, receives a bounded market-research context excerpt so onboarding retries stay inside the 540s route envelope
      - **First Version Plan**: OpenRouter LLM call with detailed system prompt, receives a bounded Product Plan context excerpt so downstream generation is less likely to strand the queue
      - **Tech Spec**: OpenRouter LLM call with detailed system prompt, receives the Product Plan as context
    - Result saved to the appropriate table (`analyses`, `prds`, `mvp_plans`, or `tech_specs`). Future row-based versioning should use an explicit versioning route/action rather than the default generate path.
@@ -217,7 +217,7 @@
 7. **Generate All / Onboarding Generation Flow** (server-side, durable):
    - Client calls `startGenerateAll()` in `generate-all-store.ts`
    - Store persists queue to DB via `POST /api/generate-all/start`
-   - Store fires `POST /api/generate-all/execute` as fire-and-forget (server runs up to 300s even if user closes tab)
+   - Store fires `POST /api/generate-all/execute` as fire-and-forget (server runs up to 540s even if user closes tab)
    - Store polls `GET /api/generate-all/status` every 3s to reflect server-side progress
    - When server marks a step "done", store calls `onStepComplete()` → `router.refresh()` to reload the document
    - The workspace consumes hydrated queue items to keep left-panel and right-panel document states stable across refresh, browser back/forward, and returning to a project. Content existence wins over stale queue state; Product Plan and First Version Plan current-session stream previews can render in the right panel when available, while background queues fall back to durable generating status until saved content exists.
@@ -311,8 +311,8 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 2. **Server Components by Default**: Pages default to server components; interactive components explicitly marked `"use client"`
 3. **Proxy-based Auth Session Refresh**: `src/proxy.ts` delegates to `src/lib/supabase/middleware.ts` to refresh Supabase auth cookies; dashboard route protection also happens in `src/app/(dashboard)/layout.tsx`
 4. **Credit System with Database Functions**: PostgreSQL stored procedures for atomic credit operations
-5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter) with retry logic on external calls; Product Plan, First Version Plan, and Tech Spec use direct OpenRouter calls with detailed prompts. Product Plan and First Version Plan bound upstream generated context before sending it downstream to keep onboarding generation reliable. OpenRouter long-form text synthesis uses a shared `240s` abort timeout, leaving buffer under the 300s route envelope. Credits are refunded through the service-role `refund_credits` RPC on generation failure.
-6. **Server-Side Generate All**: "Generate All" orchestration runs on the server (`/api/generate-all/execute`, `maxDuration=300`) instead of in the browser. Normalized `generation_queue_items` rows track per-document status, dependencies, retries, credit state, and output IDs; `generation_queues.queue` remains a synchronized compatibility snapshot. Queue mutations use trusted server routes/service role after user/project authorization. The Zustand store fires the execute request fire-and-forget and polls DB every 3s. This makes generation durable across tab close, refresh, and network interruptions.
+5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter) with retry logic on external calls; Product Plan, First Version Plan, and Tech Spec use direct OpenRouter calls with detailed prompts. Product Plan and First Version Plan bound upstream generated context before sending it downstream to keep onboarding generation reliable. OpenRouter long-form text synthesis uses a shared `240s` abort timeout for most text artifacts and a `480s` planning-document timeout for Product Plan and First Version Plan, leaving buffer under the 540s route envelope. Credits are refunded through the service-role `refund_credits` RPC on generation failure.
+6. **Server-Side Generate All**: "Generate All" orchestration runs on the server (`/api/generate-all/execute`, `maxDuration=540`) instead of in the browser. Normalized `generation_queue_items` rows track per-document status, dependencies, retries, credit state, and output IDs; `generation_queues.queue` remains a synchronized compatibility snapshot. Queue mutations use trusted server routes/service role after user/project authorization. The Zustand store fires the execute request fire-and-forget and polls DB every 3s. This makes generation durable across tab close, refresh, and network interruptions.
 7. **TypeScript-First**: Strict typing throughout, auto-generated database types
 8. **Component Composition**: Radix UI primitives + CVA for variants
 9. **Optimistic UI Updates**: Immediate feedback with graceful error handling
@@ -404,7 +404,7 @@ src/
 │   │   ├── generate-app/route.ts      # POST generate app code
 │   │   ├── generate-all/
 │   │   │   ├── start/route.ts         # POST create/reset generation_queues row
-│   │   │   ├── execute/route.ts       # POST server-side pipeline orchestrator (maxDuration=300)
+│   │   │   ├── execute/route.ts       # POST server-side pipeline orchestrator (maxDuration=540)
 │   │   │   ├── status/route.ts        # GET read queue row for polling
 │   │   │   ├── update/route.ts        # PATCH update queue fields
 │   │   │   └── cancel/route.ts        # POST mark queue as cancelled
@@ -1128,7 +1128,7 @@ docker run -p 3000:3000 idea2app
     - `prd` passed to First Version Plan and tech spec pipelines as context
   - Returns: `{ content, source, model, type }`
   - Cost: calculated by `getTokenCost()` in `src/lib/token-economics.ts`; current fixed defaults are Competitive 20, PRD 15, MVP 15, and Tech Spec 15 credits
-  - Route `maxDuration`: 300s
+  - Route `maxDuration`: 540s
   - Uses in-house pipelines (`src/lib/analysis-pipelines.ts`):
     - Competitive: Perplexity → Tavily → OpenRouter synthesis (graceful degradation)
     - PRD/MVP/Tech Spec: Direct OpenRouter calls with detailed system prompts
@@ -1155,7 +1155,7 @@ docker run -p 3000:3000 idea2app
 
 - **POST /api/dev/prompt-lab/run**: Run one artifact with editable prompts and model override, then save the isolated result to `prompt_lab_runs`.
   - Body: `{ projectId, artifact, title?, notes?, systemPrompt, userPrompt, model, mockupOption? }`
-  - Text artifact runs use the shared OpenRouter long-text timeout (`240s`) and return clearer timeout errors instead of the raw "operation was aborted" message.
+  - Text artifact runs use the shared OpenRouter long-text timeout (`240s`), while Product Plan and First Version Plan use the longer planning-document timeout (`480s`), and return clearer timeout errors instead of the raw "operation was aborted" message.
   - Supports single-option mockup image generation for Option A/B/C
   - Never writes to canonical artifact tables or generation queues
 
@@ -1180,7 +1180,7 @@ docker run -p 3000:3000 idea2app
   - Per-step: checks for an existing active document, deducts credits for legacy/manual runs only when generation is needed, skips credit charging for bundled onboarding runs, runs pipeline, saves to the correct table, and records `output_table`/`output_id`
   - Checks for cancellation before each batch
   - Refunds credits on legacy/manual step failure and marks dependent pending items `blocked`
-  - Route `maxDuration`: 300s — durable even if browser tab closes
+  - Route `maxDuration`: 540s — durable even if browser tab closes
 
 - **GET /api/generate-all/status**: Poll for queue progress
   - Query: `?projectId=xxx`
@@ -1497,7 +1497,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/planning-document-parser.ts](src/lib/planning-document-parser.ts) | Shared markdown section, list, paragraph, source cleanup, and table parser utilities for PRD/MVP block rendering |
 | [src/lib/prd-document.ts](src/lib/prd-document.ts) | PRD parser/view-model helpers used by the PRD block renderer, including persona/profile grouping fallback |
 | [src/lib/mvp-plan-document.ts](src/lib/mvp-plan-document.ts) | First Version Plan parser/view-model helpers used by the First Version Plan block renderer, including direct-content fallback sections |
-| [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (market research, Product Plan, First Version Plan, tech spec). OpenRouter long-form text calls use the shared 240s AbortSignal timeout. |
+| [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (market research, Product Plan, First Version Plan, tech spec). Most OpenRouter long-form text calls use the shared 240s AbortSignal timeout; Product Plan and First Version Plan use the 480s planning-document timeout. |
 | [src/lib/mockup-design-plan.ts](src/lib/mockup-design-plan.ts) | Hidden mockup design-plan prompt, schema parser, and validation for platform, happy path, 2-4 screens, and three visual directions. |
 | [src/lib/openrouter-image-mockup-pipeline.ts](src/lib/openrouter-image-mockup-pipeline.ts) | OpenRouter-only storyboard mockup generation, image config handling, decoded dimension capture, and Supabase Storage upload. |
 | [src/lib/openrouter-image-mockup-format.ts](src/lib/openrouter-image-mockup-format.ts) | Client-safe parser/helpers for OpenRouter image/storyboard mockup JSON. |
@@ -1510,7 +1510,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/generation-queue-service.ts](src/lib/generation-queue-service.ts) | Normalized queue item helpers for dependency checks, status computation, item claims, and legacy queue JSON sync. |
 | [src/lib/onboarding-generation.ts](src/lib/onboarding-generation.ts) | Onboarding queue metadata, loading row mapping, run-id helpers, and canonical `#overview` redirect construction. |
 | [src/lib/document-generation-service.ts](src/lib/document-generation-service.ts) | Shared server-side document generation service used by Generate All/onboarding; skips and returns existing output table/id references when an active document already exists. |
-| [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=300). Dependency-aware item execution with credit deduction/refund, retries, partial status, and DB state tracking. |
+| [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=540). Dependency-aware item execution with credit deduction/refund, retries, partial status, and DB state tracking. |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export client helper for `/api/generate-pdf` owned-document export |
 | [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | Compatibility re-export for deprecated Prompt Chat prompts plus legacy `DEFAULT_MODELS` imports |
 | [src/lib/stitch/client.ts](src/lib/stitch/client.ts) | Stitch SDK wrapper and raw response parsing helpers |
