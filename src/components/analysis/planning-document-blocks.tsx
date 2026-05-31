@@ -1660,7 +1660,7 @@ function DetailedPersonaCard({
   const card = normalizePersonaCard(persona, index)
 
   return (
-    <article className="overflow-hidden border border-[#E8DDD5] bg-white shadow-sm">
+    <article className="overflow-hidden border border-[#E8DDD5] bg-white">
       <div className="p-7 sm:p-8">
         <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <PersonaAvatar index={index} />
@@ -1753,18 +1753,6 @@ function currentPersonaFromSection(section: PlanningDocumentSection) {
   }
 }
 
-function getCurrentPrdSubtitle(section?: PlanningDocumentSection) {
-  if (!section) {
-    return "A structured plan covering users, stories, requirements, technical scope, success metrics, and delivery milestones."
-  }
-
-  const narrative = parseNarrativeTable(section.content)
-  const paragraph = narrative.paragraphs.find((item) => item.length > 40) ?? narrative.paragraphs[0]
-  const item = narrative.items.find((entry) => entry.length > 40) ?? narrative.items[0]
-
-  return stripInlineMarkdown(paragraph ?? item ?? "A structured plan covering users, stories, requirements, technical scope, success metrics, and delivery milestones.")
-}
-
 function getCurrentPrdMetaItems({
   timeline,
   userStories,
@@ -1830,10 +1818,8 @@ function getCurrentPrdMetaItems({
 }
 
 function ProductPlanMasthead({
-  subtitle,
   metaItems,
 }: {
-  subtitle: string
   metaItems: Array<{ value: string; label: string }>
 }) {
   return (
@@ -1852,10 +1838,6 @@ function ProductPlanMasthead({
       >
         Product Plan
       </h1>
-      <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-        {subtitle}
-      </p>
-
       {metaItems.length > 0 ? (
         <div className="mt-9 flex flex-wrap border border-[#E8DDD5] bg-white">
           {metaItems.map((item) => (
@@ -2506,8 +2488,8 @@ function parseRiskItems(content: string): RiskItem[] {
 
 function FollowThroughHeading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex items-center gap-3 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[#1C1917]">
-      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+    <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[#4A4040]">
+      <span className="h-1.5 w-1.5 bg-primary" />
       {children}
     </p>
   )
@@ -2602,8 +2584,6 @@ function AssumptionsShowcase({ section }: { section?: PlanningDocumentSection })
   const assumptions = parseFollowThroughItems(section.content)
   if (assumptions.length === 0) return null
 
-  const needsFiller = assumptions.length % 2 === 1
-
   return (
     <section className="space-y-4">
       <FollowThroughHeading>Assumptions</FollowThroughHeading>
@@ -2640,7 +2620,6 @@ function AssumptionsShowcase({ section }: { section?: PlanningDocumentSection })
             </article>
           )
         })}
-        {needsFiller ? <div className="hidden bg-[#E7DDD6] md:block" aria-hidden="true" /> : null}
       </div>
     </section>
   )
@@ -2721,7 +2700,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   return (
     <div className="space-y-2">
       <ProductPlanMasthead
-        subtitle={getCurrentPrdSubtitle(introduction)}
         metaItems={getCurrentPrdMetaItems({
           timeline,
           userStories,
