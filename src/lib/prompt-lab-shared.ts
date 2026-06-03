@@ -79,6 +79,16 @@ export const PROMPT_LAB_TEXT_MODEL_OPTIONS: PromptLabModelOption[] = [
     description: "Large Qwen model for coding and productivity-style artifacts.",
   },
   {
+    id: "qwen/qwen3.6-plus",
+    label: "Qwen3.6 Plus",
+    description: "Qwen agentic coding and reasoning model for artifact structure comparisons.",
+  },
+  {
+    id: "xiaomi/mimo-v2.5-pro",
+    label: "MiMo V2.5 Pro",
+    description: "Xiaomi long-context model for agentic and software-heavy prompt tests.",
+  },
+  {
     id: "moonshotai/kimi-k2-thinking",
     label: "Kimi K2 Thinking",
     description: "Moonshot reasoning model for alternate artifact structure.",

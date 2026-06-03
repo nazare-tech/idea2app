@@ -68,9 +68,13 @@ test("Prompt Lab model options filter text and image models by artifact", () => 
   assert.deepEqual(mockupOptions, PROMPT_LAB_IMAGE_MODEL_OPTIONS)
   assert.ok(textOptions.some((option) => option.id === "anthropic/claude-sonnet-4-6"))
   assert.ok(textOptions.some((option) => option.id === "google/gemini-3.1-pro-preview"))
+  assert.ok(textOptions.some((option) => option.id === "qwen/qwen3.6-plus"))
+  assert.ok(textOptions.some((option) => option.id === "xiaomi/mimo-v2.5-pro"))
   assert.ok(mockupOptions.some((option) => option.id === "openai/gpt-5.4-image-2"))
   assert.ok(mockupOptions.some((option) => option.id === "google/gemini-2.5-flash-image"))
   assert.equal(mockupOptions.some((option) => option.id === "anthropic/claude-sonnet-4-6"), false)
+  assert.equal(mockupOptions.some((option) => option.id === "qwen/qwen3.6-plus"), false)
+  assert.equal(mockupOptions.some((option) => option.id === "xiaomi/mimo-v2.5-pro"), false)
 })
 
 test("Prompt Lab curated options include configured defaults or a current-model fallback", () => {
