@@ -5,11 +5,9 @@ import {
   COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
   LAUNCH_PLAN_SYSTEM_PROMPT,
   MVP_PLAN_SYSTEM_PROMPT,
-  PRD_SYSTEM_PROMPT,
   buildCompetitiveAnalysisUserPrompt,
   buildLaunchPlanUserPrompt,
   buildMVPPlanUserPrompt,
-  buildPRDUserPrompt,
   type LaunchPlanBrief,
 } from "@/lib/prompts"
 import {
@@ -43,6 +41,14 @@ import {
   isOpenRouterAbortError,
   OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS,
 } from "@/lib/openrouter-timeout"
+import {
+  PRODUCT_PLAN_DEFAULT_MODEL,
+  PRODUCT_PLAN_MAX_TOKENS,
+  PRODUCT_PLAN_TEMPERATURE,
+} from "@/lib/product-plan-config"
+import {
+  buildProductPlanPromptRequest,
+} from "@/lib/product-plan-prompt-request"
 
 export {
   PROMPT_LAB_ARTIFACT_LABELS,
@@ -58,13 +64,13 @@ export {
 
 export const PROMPT_LAB_DEFAULT_MODELS: Record<PromptLabArtifact, string> = {
   competitive: "google/gemini-3.1-pro-preview",
-  prd: "anthropic/claude-sonnet-4-6",
+  prd: PRODUCT_PLAN_DEFAULT_MODEL,
   mvp: "anthropic/claude-sonnet-4-6",
   mockups: getOpenRouterMockupImageModel(),
   launch: "openai/gpt-5.4-mini",
 }
 
-const PROMPT_LAB_PLANNING_DOCUMENT_MAX_TOKENS = 16_384
+const PROMPT_LAB_PLANNING_DOCUMENT_MAX_TOKENS = PRODUCT_PLAN_MAX_TOKENS
 const PROMPT_LAB_LONG_TEXT_MAX_TOKENS = 8_192
 const PROMPT_LAB_STANDARD_TEXT_MAX_TOKENS = 4_096
 
@@ -137,16 +143,17 @@ export function buildPromptLabDefaultPrompts({
   }
 
   if (artifact === "prd") {
-    return {
-      systemPrompt: PRD_SYSTEM_PROMPT,
-      userPrompt: buildPRDUserPrompt(
-        idea,
-        name,
-        competitiveAnalysis
-          ? `\n\nCompetitive and Gap analysis: ${competitiveAnalysis}`
-          : "",
-      ),
+    const request = buildProductPlanPromptRequest({
+      idea,
+      name,
+      competitiveAnalysis,
       model: PROMPT_LAB_DEFAULT_MODELS.prd,
+    })
+
+    return {
+      systemPrompt: request.systemPrompt,
+      userPrompt: request.userPrompt,
+      model: request.model,
     }
   }
 
@@ -257,7 +264,7 @@ export async function runPromptLabArtifact({
         { role: "user", content: userPrompt },
       ],
       max_tokens: maxTokens,
-      temperature: artifact === "launch" ? 0.35 : 0.3,
+      temperature: artifact === "launch" ? 0.35 : artifact === "prd" ? PRODUCT_PLAN_TEMPERATURE : 0.3,
     }, { signal: createOpenRouterLongTextSignal(timeoutMs) })
   } catch (error) {
     if (isOpenRouterAbortError(error)) {

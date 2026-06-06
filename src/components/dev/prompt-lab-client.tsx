@@ -25,6 +25,7 @@ import {
   getPromptLabModelOptions,
   type PromptLabArtifact,
 } from "@/lib/prompt-lab-shared"
+import { isPromptLabDefaultProductionState } from "@/lib/prompt-lab-default-state"
 import { cn } from "@/lib/utils"
 
 export interface PromptLabProjectOption {
@@ -214,6 +215,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const [status, setStatus] = useState<string | null>(null)
   const [previewMode, setPreviewMode] = useState<"production" | "experimental">("production")
   const [launchBrief, setLaunchBrief] = useState(PROMPT_LAB_DEFAULT_LAUNCH_BRIEF)
+  const [promptSource, setPromptSource] = useState<"default" | "custom">("default")
   const [busyAction, setBusyAction] = useState<"draft" | "run" | null>(null)
   const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -223,6 +225,16 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const modelOptions = useMemo(() => getPromptLabModelOptions(artifact, model), [artifact, model])
   const selectedModelOption = modelOptions.find((option) => option.id === model) ?? null
   const canRun = Boolean(projectId && artifact && systemPrompt.trim() && userPrompt.trim() && model.trim())
+  const isDefaultProductionPrompt = isPromptLabDefaultProductionState({
+    artifact,
+    promptSource,
+    systemPrompt,
+    userPrompt,
+    model,
+    defaultSystemPrompt: context?.promptDefaults.systemPrompt,
+    defaultUserPrompt: context?.promptDefaults.userPrompt,
+    defaultModel: context?.promptDefaults.model,
+  })
 
   const contextUrl = useMemo(() => {
     if (!projectId) return ""
@@ -281,6 +293,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             ? `${PROMPT_LAB_ARTIFACT_LABELS[artifact]} prompt test`
             : currentTitle,
         )
+        setPromptSource("default")
         setOutput("")
         setStatus(null)
         void loadHistory(data.project.id, artifact)
@@ -377,6 +390,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     setTitle(draft.title)
     setModel(draft.model_id)
     setSystemPrompt(draft.system_prompt)
+    setPromptSource("custom")
     setStatus(`Loaded system draft from ${formatTime(draft.updated_at)}`)
   }
 
@@ -414,6 +428,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     setUserPrompt(run.user_prompt)
     setNotes(run.notes ?? "")
     setOutput(run.output_content ?? "")
+    setPromptSource("custom")
     setStatus(`Loaded run from ${formatTime(run.created_at)}`)
   }
 
@@ -422,6 +437,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     setLaunchBrief(next)
     if (artifact === "launch" && context) {
       setUserPrompt(buildLaunchUserPrompt(context.project.name, context.project.idea, next))
+      setPromptSource("custom")
     }
   }
 
@@ -448,7 +464,10 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
               <span className="text-xs font-medium text-muted-foreground">Project</span>
               <select
                 value={projectId}
-                onChange={(event) => setProjectId(event.target.value)}
+                onChange={(event) => {
+                  setProjectId(event.target.value)
+                  setPromptSource("default")
+                }}
                 className="h-11 w-full rounded-xl border border-surface-strong bg-surface-soft px-3 text-sm text-foreground"
               >
                 {projects.map((project) => (
@@ -461,7 +480,10 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
               <span className="text-xs font-medium text-muted-foreground">Artifact</span>
               <select
                 value={artifact}
-                onChange={(event) => setArtifact(event.target.value as PromptLabArtifact)}
+                onChange={(event) => {
+                  setArtifact(event.target.value as PromptLabArtifact)
+                  setPromptSource("default")
+                }}
                 className="h-11 w-full rounded-xl border border-surface-strong bg-surface-soft px-3 text-sm text-foreground"
               >
                 {ARTIFACTS.map((item) => (
@@ -489,7 +511,10 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
               <span className="text-xs font-medium text-muted-foreground">Model override</span>
               <select
                 value={model}
-                onChange={(event) => setModel(event.target.value)}
+                onChange={(event) => {
+                  setModel(event.target.value)
+                  setPromptSource("custom")
+                }}
                 className="h-11 w-full rounded-xl border border-surface-strong bg-surface-soft px-3 text-sm text-foreground"
               >
                 {!model && <option value="">Loading model options...</option>}
@@ -607,6 +632,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
                 <Badge variant="outline">Local only</Badge>
                 <Badge variant="secondary">{PROMPT_LAB_ARTIFACT_LABELS[artifact]}</Badge>
                 {selectedProject && <Badge variant="secondary">{selectedProject.name}</Badge>}
+                {isDefaultProductionPrompt && <Badge variant="outline">Default / Production</Badge>}
               </div>
               {context?.project.idea && (
                 <p className="mt-3 max-w-[88ch] text-sm leading-relaxed text-muted-foreground">
@@ -642,7 +668,10 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             <span className="text-sm font-semibold text-foreground">System prompt</span>
             <Textarea
               value={systemPrompt}
-              onChange={(event) => setSystemPrompt(event.target.value)}
+              onChange={(event) => {
+                setSystemPrompt(event.target.value)
+                setPromptSource("custom")
+              }}
               className="min-h-[420px] font-mono text-xs leading-relaxed"
               spellCheck={false}
             />
@@ -652,7 +681,10 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             <span className="text-sm font-semibold text-foreground">User prompt and context</span>
             <Textarea
               value={userPrompt}
-              onChange={(event) => setUserPrompt(event.target.value)}
+              onChange={(event) => {
+                setUserPrompt(event.target.value)
+                setPromptSource("custom")
+              }}
               className="min-h-[420px] font-mono text-xs leading-relaxed"
               spellCheck={false}
             />

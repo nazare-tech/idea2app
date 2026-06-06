@@ -1,13 +1,14 @@
 import OpenAI from "openai"
 import { searchCompetitors } from "./perplexity"
 import { extractCompetitorInfo, type TavilyExtractResult } from "./tavily"
-import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, PRD_SYSTEM_PROMPT, buildPRDUserPrompt, MVP_PLAN_SYSTEM_PROMPT, buildMVPPlanUserPrompt, LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt, type LaunchPlanBrief } from "@/lib/prompts"
+import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, MVP_PLAN_SYSTEM_PROMPT, buildMVPPlanUserPrompt, LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt, type LaunchPlanBrief } from "@/lib/prompts"
 import {
   buildOpenRouterTimeoutMessage,
   createOpenRouterLongTextSignal,
   isOpenRouterAbortError,
   OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS,
 } from "@/lib/openrouter-timeout"
+import { buildProductPlanPromptRequest } from "@/lib/product-plan-prompt-request"
 
 // Re-use the same OpenRouter client pattern from openrouter.ts
 const openrouter = new OpenAI({
@@ -220,26 +221,19 @@ export async function runCompetitiveAnalysis(
 // ─── Product Plan Pipeline ───────────────────────────────────────────
 
 export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Promise<AnalysisResult> {
-  const model = input.model || DEFAULT_MODEL
-
-  const competitiveContext = input.competitiveAnalysis
-    ? `\n\nCompetitive and Gap analysis: ${trimDownstreamContext(input.competitiveAnalysis, "Competitive analysis")}`
-    : ""
+  const request = buildProductPlanPromptRequest(input)
 
   callbacks?.onStage?.("Writing product plan...", 1, 2)
   let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
   try {
     completion = await openrouter.chat.completions.create({
-      model,
+      model: request.model,
       messages: [
-        { role: "system", content: PRD_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: buildPRDUserPrompt(input.idea, input.name, competitiveContext),
-        },
+        { role: "system", content: request.systemPrompt },
+        { role: "user", content: request.userPrompt },
       ],
-      max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
-      temperature: 0.3,
+      max_tokens: request.maxTokens,
+      temperature: request.temperature,
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal(OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS) })
   } catch (error) {
@@ -251,7 +245,7 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
   if (!content) throw new Error("No content returned from OpenRouter for Product Plan")
   callbacks?.onStage?.("Finalizing product plan...", 2, 2)
 
-  return { content, source: "inhouse", model }
+  return { content, source: "inhouse", model: request.model }
 }
 
 // ─── First Version Plan Pipeline ─────────────────────────────────────

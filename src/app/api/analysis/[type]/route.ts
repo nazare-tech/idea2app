@@ -20,11 +20,12 @@ import {
   getActiveDocumentIdentityForAnalysisType,
 } from "@/lib/active-document-policy"
 import type { Json } from "@/types/database"
+import { PRODUCT_PLAN_DEFAULT_MODEL } from "@/lib/product-plan-config"
 
 // Fixed default models per analysis type — user model selection removed
 const ANALYSIS_DEFAULT_MODELS: Record<string, string> = {
   "competitive-analysis": "google/gemini-3.1-pro-preview",
-  "prd":                  "anthropic/claude-sonnet-4-6",
+  "prd":                  PRODUCT_PLAN_DEFAULT_MODEL,
   "mvp-plan":             "anthropic/claude-sonnet-4-6",
   "tech-spec":            "anthropic/claude-sonnet-4-6",
 }
