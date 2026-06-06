@@ -10,6 +10,7 @@ import {
   Target,
 } from "lucide-react"
 import { PRODUCT_PLAN_DEFAULT_MODEL } from "@/lib/product-plan-config"
+import { FIRST_VERSION_PLAN_DEFAULT_MODEL } from "@/lib/first-version-plan-config"
 
 export const DOCUMENT_TYPES = [
   "prompt",
@@ -147,7 +148,7 @@ export const GENERATE_ALL_QUEUE_ORDER: DocumentType[] = [
 export const GENERATE_ALL_DEFAULT_MODELS: Record<string, string> = {
   competitive: "google/gemini-3.1-pro-preview",
   prd:         PRODUCT_PLAN_DEFAULT_MODEL,
-  mvp:         "anthropic/claude-sonnet-4-6",
+  mvp:         FIRST_VERSION_PLAN_DEFAULT_MODEL,
   mockups:     "openai/gpt-5.4-image-2",
   launch:      "openai/gpt-5.4-mini",
 }

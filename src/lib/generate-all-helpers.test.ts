@@ -292,7 +292,9 @@ test("loop: all items end up 'done' on successful completion", async () => {
 })
 
 test("loop: credits accumulate only for billable generated docs", async () => {
-  // competitive:20, prd:15, mvp:15, mockups:0, launch:5 → 55
+  const expectedCredits = GENERATE_ALL_QUEUE_ORDER.reduce((sum, docType) => {
+    return sum + getTokenCost(GENERATE_ALL_ACTION_MAP[docType], DEFAULT_MODELS[docType])
+  }, 0)
   const result = await simulateLoop(
     pendingQueue(),
     DEFAULT_MODELS,
@@ -300,7 +302,7 @@ test("loop: credits accumulate only for billable generated docs", async () => {
     allPending,
     { current: false },
   )
-  assert.equal(result.creditsUsed, 55)
+  assert.equal(result.creditsUsed, expectedCredits)
 })
 
 test("loop: empty queue (no pending items) completes immediately without calling generateDoc", async () => {
@@ -353,8 +355,12 @@ test("loop: skipped docs still have 0 credit cost", async () => {
   // mockups should be skipped and not charged
   const mockups = result.queue.find((item) => item.docType === "mockups")!
   assert.equal(mockups.status, "skipped")
-  // credits exclude project-bundled mockups → only competitive:20+prd:15+mvp:15+launch:5=55
-  assert.equal(result.creditsUsed, 55)
+  const expectedCredits = GENERATE_ALL_QUEUE_ORDER
+    .filter((docType) => docType !== "mockups")
+    .reduce((sum, docType) => {
+      return sum + getTokenCost(GENERATE_ALL_ACTION_MAP[docType], DEFAULT_MODELS[docType])
+    }, 0)
+  assert.equal(result.creditsUsed, expectedCredits)
 })
 
 // =============================================================================

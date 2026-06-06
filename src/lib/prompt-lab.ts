@@ -4,10 +4,8 @@ import { isDevOnlyFeatureEnabled, type DevOnlyFeatureEnv } from "@/lib/dev-only"
 import {
   COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
   LAUNCH_PLAN_SYSTEM_PROMPT,
-  MVP_PLAN_SYSTEM_PROMPT,
   buildCompetitiveAnalysisUserPrompt,
   buildLaunchPlanUserPrompt,
-  buildMVPPlanUserPrompt,
   type LaunchPlanBrief,
 } from "@/lib/prompts"
 import {
@@ -49,6 +47,14 @@ import {
 import {
   buildProductPlanPromptRequest,
 } from "@/lib/product-plan-prompt-request"
+import {
+  FIRST_VERSION_PLAN_DEFAULT_MODEL,
+  FIRST_VERSION_PLAN_MAX_TOKENS,
+  FIRST_VERSION_PLAN_TEMPERATURE,
+} from "@/lib/first-version-plan-config"
+import {
+  buildFirstVersionPlanPromptRequest,
+} from "@/lib/first-version-plan-prompt-request"
 
 export {
   PROMPT_LAB_ARTIFACT_LABELS,
@@ -65,12 +71,11 @@ export {
 export const PROMPT_LAB_DEFAULT_MODELS: Record<PromptLabArtifact, string> = {
   competitive: "google/gemini-3.1-pro-preview",
   prd: PRODUCT_PLAN_DEFAULT_MODEL,
-  mvp: "anthropic/claude-sonnet-4-6",
+  mvp: FIRST_VERSION_PLAN_DEFAULT_MODEL,
   mockups: getOpenRouterMockupImageModel(),
   launch: "openai/gpt-5.4-mini",
 }
 
-const PROMPT_LAB_PLANNING_DOCUMENT_MAX_TOKENS = PRODUCT_PLAN_MAX_TOKENS
 const PROMPT_LAB_LONG_TEXT_MAX_TOKENS = 8_192
 const PROMPT_LAB_STANDARD_TEXT_MAX_TOKENS = 4_096
 
@@ -158,14 +163,17 @@ export function buildPromptLabDefaultPrompts({
   }
 
   if (artifact === "mvp") {
-    return {
-      systemPrompt: MVP_PLAN_SYSTEM_PROMPT,
-      userPrompt: buildMVPPlanUserPrompt(
-        idea,
-        name,
-        prd ? `\nProduct Plan: ${prd}` : "",
-      ),
+    const request = buildFirstVersionPlanPromptRequest({
+      idea,
+      name,
+      prd,
       model: PROMPT_LAB_DEFAULT_MODELS.mvp,
+    })
+
+    return {
+      systemPrompt: request.systemPrompt,
+      userPrompt: request.userPrompt,
+      model: request.model,
     }
   }
 
@@ -245,8 +253,10 @@ export async function runPromptLabArtifact({
   })
 
   const maxTokens =
-    artifact === "prd" || artifact === "mvp"
-      ? PROMPT_LAB_PLANNING_DOCUMENT_MAX_TOKENS
+    artifact === "prd"
+      ? PRODUCT_PLAN_MAX_TOKENS
+      : artifact === "mvp"
+        ? FIRST_VERSION_PLAN_MAX_TOKENS
       : artifact === "competitive"
         ? PROMPT_LAB_LONG_TEXT_MAX_TOKENS
         : PROMPT_LAB_STANDARD_TEXT_MAX_TOKENS
@@ -264,7 +274,7 @@ export async function runPromptLabArtifact({
         { role: "user", content: userPrompt },
       ],
       max_tokens: maxTokens,
-      temperature: artifact === "launch" ? 0.35 : artifact === "prd" ? PRODUCT_PLAN_TEMPERATURE : 0.3,
+      temperature: artifact === "launch" ? 0.35 : artifact === "prd" ? PRODUCT_PLAN_TEMPERATURE : artifact === "mvp" ? FIRST_VERSION_PLAN_TEMPERATURE : 0.3,
     }, { signal: createOpenRouterLongTextSignal(timeoutMs) })
   } catch (error) {
     if (isOpenRouterAbortError(error)) {

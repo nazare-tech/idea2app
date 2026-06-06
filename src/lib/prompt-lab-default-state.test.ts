@@ -14,8 +14,15 @@ const defaultState = {
   defaultModel: "anthropic/claude-sonnet-4-6",
 }
 
-test("isPromptLabDefaultProductionState is true only for untouched Product Plan defaults", () => {
+test("isPromptLabDefaultProductionState is true for untouched production-backed defaults", () => {
   assert.equal(isPromptLabDefaultProductionState(defaultState), true)
+  assert.equal(
+    isPromptLabDefaultProductionState({
+      ...defaultState,
+      artifact: "mvp",
+    }),
+    true,
+  )
 })
 
 test("isPromptLabDefaultProductionState hides badge after edits or loaded saved content", () => {

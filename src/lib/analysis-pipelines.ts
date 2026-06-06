@@ -1,7 +1,7 @@
 import OpenAI from "openai"
 import { searchCompetitors } from "./perplexity"
 import { extractCompetitorInfo, type TavilyExtractResult } from "./tavily"
-import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, MVP_PLAN_SYSTEM_PROMPT, buildMVPPlanUserPrompt, LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt, type LaunchPlanBrief } from "@/lib/prompts"
+import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt, type LaunchPlanBrief } from "@/lib/prompts"
 import {
   buildOpenRouterTimeoutMessage,
   createOpenRouterLongTextSignal,
@@ -9,6 +9,7 @@ import {
   OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS,
 } from "@/lib/openrouter-timeout"
 import { buildProductPlanPromptRequest } from "@/lib/product-plan-prompt-request"
+import { buildFirstVersionPlanPromptRequest } from "@/lib/first-version-plan-prompt-request"
 
 // Re-use the same OpenRouter client pattern from openrouter.ts
 const openrouter = new OpenAI({
@@ -18,8 +19,6 @@ const openrouter = new OpenAI({
 
 const DEFAULT_MODEL =
   process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4-6"
-const MAX_DOWNSTREAM_CONTEXT_CHARS = 6_000
-const PLANNING_DOCUMENT_MAX_TOKENS = 16_384
 const LAUNCH_PLAN_MAX_TOKENS = 4_096
 
 // ─── Type Definitions ────────────────────────────────────────────────
@@ -67,17 +66,6 @@ export interface LaunchPlanInput {
 export interface StreamCallbacks {
   onStage?: (message: string, step: number, totalSteps: number) => void
   onToken?: (content: string) => void
-}
-
-function trimDownstreamContext(content: string, label: string) {
-  const normalized = content.trim()
-  if (normalized.length <= MAX_DOWNSTREAM_CONTEXT_CHARS) return normalized
-
-  return [
-    normalized.slice(0, MAX_DOWNSTREAM_CONTEXT_CHARS),
-    "",
-    `[${label} truncated to first ${MAX_DOWNSTREAM_CONTEXT_CHARS} characters for downstream generation.]`,
-  ].join("\n")
 }
 
 // ─── Streaming Helper ────────────────────────────────────────────────
@@ -254,21 +242,19 @@ export async function runMVPPlan(
   input: MVPPlanInput,
   callbacks?: StreamCallbacks
 ): Promise<AnalysisResult> {
-  const model = input.model || DEFAULT_MODEL
-
-  const prdContext = input.prd ? `\nProduct Plan: ${trimDownstreamContext(input.prd, "Product Plan")}` : ""
+  const request = buildFirstVersionPlanPromptRequest(input)
 
   callbacks?.onStage?.("Writing first-version plan...", 1, 2)
   let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
   try {
     completion = await openrouter.chat.completions.create({
-      model,
+      model: request.model,
       messages: [
-        { role: "system", content: MVP_PLAN_SYSTEM_PROMPT },
-        { role: "user", content: buildMVPPlanUserPrompt(input.idea, input.name, prdContext) },
+        { role: "system", content: request.systemPrompt },
+        { role: "user", content: request.userPrompt },
       ],
-      max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
-      temperature: 0.3,
+      max_tokens: request.maxTokens,
+      temperature: request.temperature,
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal(OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS) })
   } catch (error) {
@@ -280,7 +266,7 @@ export async function runMVPPlan(
   if (!content) throw new Error("No content returned from OpenRouter for First Version Plan")
   callbacks?.onStage?.("Finalizing first-version plan...", 2, 2)
 
-  return { content, source: "inhouse", model }
+  return { content, source: "inhouse", model: request.model }
 }
 
 // ─── Tech Spec Pipeline ─────────────────────────────────────────────

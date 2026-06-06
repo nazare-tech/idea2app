@@ -228,13 +228,14 @@ test("getTokenCost: deep-seek (0.8x) on mvp-plan (10) → ceil-to-5(8) = 10", ()
 // estimateGenerateAllCost
 // =============================================================================
 
-// Production default Generate All models:
-// competitive: gemini-3.1-pro → 20, prd: claude-sonnet → 15,
-// mvp: claude-sonnet → 15, mockups: project-bundled → 0, launch: gpt-5.4-mini → 5
 const DEFAULT_MODELS = GENERATE_ALL_DEFAULT_MODELS
+const DEFAULT_GENERATE_ALL_COST = Object.entries(GENERATE_ALL_ACTION_MAP).reduce(
+  (sum, [docType, action]) => sum + getTokenCost(action, DEFAULT_MODELS[docType]),
+  0,
+)
 
-test("estimateGenerateAllCost: all 5 docs with production defaults = 55 credits", () => {
-  assert.equal(estimateGenerateAllCost(DEFAULT_MODELS), 55)
+test("estimateGenerateAllCost: all docs match production default model costs", () => {
+  assert.equal(estimateGenerateAllCost(DEFAULT_MODELS), DEFAULT_GENERATE_ALL_COST)
 })
 
 test("estimateGenerateAllCost: skipping all docs = 0", () => {
@@ -275,11 +276,14 @@ test("estimateGenerateAllCost: switching mockups to gpt-5 does not change fixed 
   assert.equal(premiumCost - baseCost, 0)
 })
 
-test("estimateGenerateAllCost: skipping competitive and prd saves 35 credits (20+15)", () => {
+test("estimateGenerateAllCost: skipping competitive and prd saves their default costs", () => {
   const skip = new Set(["competitive", "prd"])
   const full = estimateGenerateAllCost(DEFAULT_MODELS)
   const partial = estimateGenerateAllCost(DEFAULT_MODELS, skip)
-  assert.equal(full - partial, 35)
+  const expectedSavings =
+    getTokenCost("competitive-analysis", DEFAULT_MODELS.competitive) +
+    getTokenCost("prd", DEFAULT_MODELS.prd)
+  assert.equal(full - partial, expectedSavings)
 })
 
 test("estimateGenerateAllCost: empty model selections uses default multiplier 1.0", () => {

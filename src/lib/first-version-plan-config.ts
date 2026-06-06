@@ -1,0 +1,3 @@
+export const FIRST_VERSION_PLAN_DEFAULT_MODEL = "xiaomi/mimo-v2.5-pro"
+export const FIRST_VERSION_PLAN_MAX_TOKENS = 16_384
+export const FIRST_VERSION_PLAN_TEMPERATURE = 0.3

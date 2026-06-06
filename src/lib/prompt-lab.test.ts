@@ -12,6 +12,8 @@ import {
   isPromptLabArtifact,
   isPromptLabEnabled,
 } from "./prompt-lab"
+import { PRODUCT_PLAN_DEFAULT_MODEL } from "./product-plan-config"
+import { FIRST_VERSION_PLAN_DEFAULT_MODEL } from "./first-version-plan-config"
 
 test("isPromptLabEnabled: blocks production environments", () => {
   assert.equal(isPromptLabEnabled({ NODE_ENV: "production", VERCEL_ENV: undefined }), false)
@@ -40,10 +42,25 @@ test("buildPromptLabDefaultPrompts: builds upstream-aware PRD prompt", () => {
     competitiveAnalysis: "Competitor A has weak intake automation.",
   })
 
-  assert.equal(result.model, "anthropic/claude-sonnet-4-6")
+  assert.equal(result.model, PRODUCT_PLAN_DEFAULT_MODEL)
   assert.match(result.systemPrompt, /expert product manager and PRD writer/)
   assert.match(result.userPrompt, /ClinicFlow/)
   assert.match(result.userPrompt, /Competitor A has weak intake automation/)
+})
+
+test("buildPromptLabDefaultPrompts: builds upstream-aware First Version Plan prompt", () => {
+  const result = buildPromptLabDefaultPrompts({
+    artifact: "mvp",
+    idea: "AI scheduling assistant for clinics",
+    name: "ClinicFlow",
+    prd: "## Product Plan\n\nPrioritize intake automation and appointment triage.",
+  })
+
+  assert.equal(result.model, FIRST_VERSION_PLAN_DEFAULT_MODEL)
+  assert.match(result.systemPrompt, /MVP Plan Generator/)
+  assert.match(result.userPrompt, /ClinicFlow/)
+  assert.match(result.userPrompt, /Product Plan:/)
+  assert.match(result.userPrompt, /Prioritize intake automation/)
 })
 
 test("buildPromptLabDefaultPrompts: builds single-option mockup prompt", () => {

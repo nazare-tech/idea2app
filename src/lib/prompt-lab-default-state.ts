@@ -11,6 +11,8 @@ export interface PromptLabDefaultProductionStateInput {
   defaultModel?: string
 }
 
+const PRODUCTION_DEFAULT_ARTIFACTS: PromptLabArtifact[] = ["prd", "mvp"]
+
 export function isPromptLabDefaultProductionState({
   artifact,
   promptSource,
@@ -22,7 +24,7 @@ export function isPromptLabDefaultProductionState({
   defaultModel,
 }: PromptLabDefaultProductionStateInput) {
   return (
-    artifact === "prd" &&
+    PRODUCTION_DEFAULT_ARTIFACTS.includes(artifact) &&
     promptSource === "default" &&
     systemPrompt === defaultSystemPrompt &&
     userPrompt === defaultUserPrompt &&
