@@ -17,8 +17,7 @@ const openrouter = new OpenAI({
 const DEFAULT_MODEL =
   process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4-6"
 const MAX_DOWNSTREAM_CONTEXT_CHARS = 6_000
-const PLANNING_DOCUMENT_MAX_TOKENS = 8_192
-const LAUNCH_PLAN_MAX_TOKENS = 4_096
+const GENERATION_MAX_TOKENS = 16_384
 
 // ─── Type Definitions ────────────────────────────────────────────────
 
@@ -200,7 +199,7 @@ export async function runCompetitiveAnalysis(
           ),
         },
       ],
-      max_tokens: 8192,
+      max_tokens: GENERATION_MAX_TOKENS,
       temperature: 0.3,
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal() })
@@ -237,7 +236,7 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
           content: buildPRDUserPrompt(input.idea, input.name, competitiveContext),
         },
       ],
-      max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
+      max_tokens: GENERATION_MAX_TOKENS,
       temperature: 0.3,
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal() })
@@ -272,7 +271,7 @@ export async function runMVPPlan(
         { role: "system", content: MVP_PLAN_SYSTEM_PROMPT },
         { role: "user", content: buildMVPPlanUserPrompt(input.idea, input.name, prdContext) },
       ],
-      max_tokens: PLANNING_DOCUMENT_MAX_TOKENS,
+      max_tokens: GENERATION_MAX_TOKENS,
       temperature: 0.3,
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal() })
@@ -305,7 +304,7 @@ export async function runTechSpec(
         { role: "system", content: TECH_SPEC_SYSTEM_PROMPT },
         { role: "user", content: buildTechSpecUserPrompt(input.idea, input.name, input.prd) },
       ],
-      max_tokens: 8192,
+      max_tokens: GENERATION_MAX_TOKENS,
       temperature: 0.3,
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal() })
@@ -338,7 +337,7 @@ export async function runLaunchPlan(
         { role: "system", content: LAUNCH_PLAN_SYSTEM_PROMPT },
         { role: "user", content: buildLaunchPlanUserPrompt(input.idea, input.name, input.brief) },
       ],
-      max_tokens: LAUNCH_PLAN_MAX_TOKENS,
+      max_tokens: GENERATION_MAX_TOKENS,
       temperature: 0.35,
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal() })

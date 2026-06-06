@@ -15,6 +15,7 @@ const openrouter = new OpenAI({
 })
 
 const CHAT_MODEL = process.env.OPENROUTER_CHAT_MODEL || "anthropic/claude-sonnet-4-6"
+const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
 const DEFAULT_PAGE_SIZE = 40
 const MAX_PAGE_SIZE = 200
 
@@ -379,7 +380,7 @@ export async function POST(request: Request) {
       const completionStream = await openrouter.chat.completions.create({
         model: selectedModel,
         messages: aiMessages,
-        max_tokens: 2048,
+        max_tokens: DEFAULT_MAX_OUTPUT_TOKENS,
         stream: true,
       })
 
@@ -515,7 +516,7 @@ export async function POST(request: Request) {
     const response = await openrouter.chat.completions.create({
       model: selectedModel,
       messages: aiMessages,
-      max_tokens: 2048,
+      max_tokens: DEFAULT_MAX_OUTPUT_TOKENS,
     })
 
     const assistantContent = response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response. Please try again."

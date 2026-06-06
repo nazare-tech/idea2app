@@ -206,7 +206,7 @@ test("getOpenRouterMockupImageMaxTokens: caps image calls by default", () => {
   delete process.env.OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS
 
   try {
-    assert.equal(getOpenRouterMockupImageMaxTokens(), 4096)
+    assert.equal(getOpenRouterMockupImageMaxTokens(), 16_384)
   } finally {
     if (previousMaxTokens === undefined) {
       delete process.env.OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS
@@ -308,7 +308,7 @@ test("getOpenRouterMockupPlannerMaxTokens: caps hidden design plan calls by defa
   delete process.env.OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS
 
   try {
-    assert.equal(getOpenRouterMockupPlannerMaxTokens(), 2048)
+    assert.equal(getOpenRouterMockupPlannerMaxTokens(), 16_384)
   } finally {
     if (previousMaxTokens === undefined) {
       delete process.env.OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS

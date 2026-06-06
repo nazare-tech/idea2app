@@ -4,6 +4,7 @@
 import React, { forwardRef, useRef, useMemo, useState, useEffect } from "react"
 import { AlertCircle, CheckCircle2, Circle, Loader2, RotateCcw } from "lucide-react"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
+import { MockupGenerationLoader } from "@/components/ui/mockup-generation-loader"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import {
   CompetitiveOverviewSection,
@@ -155,11 +156,15 @@ function GenerationStatusModule({
       </div>
 
       {isGenerating && (
-        <div className="space-y-3">
-          <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
-          <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
-          <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
-        </div>
+        state.docType === "mockups" ? (
+          <MockupGenerationLoader />
+        ) : (
+          <div className="space-y-3">
+            <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
+            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
+            <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
+          </div>
+        )
       )}
 
       {state.mockupOptionStatuses && state.mockupOptionStatuses.length > 0 && (

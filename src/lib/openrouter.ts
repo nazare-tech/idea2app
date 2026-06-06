@@ -6,6 +6,7 @@ import { LEGACY_ANALYSIS_PROMPTS, buildGeneralChatSystemPrompt } from "@/lib/pro
 // Browse available models at: https://openrouter.ai/models
 const CHAT_MODEL = process.env.OPENROUTER_CHAT_MODEL || "anthropic/claude-sonnet-4-6"
 const ANALYSIS_MODEL = process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4-6"
+const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
 // ────────────────────────────────────────────────────────────────────
 
 const openrouter = new OpenAI({
@@ -39,7 +40,7 @@ export async function callOpenRouterFallback(
         content: promptFn(idea, name),
       },
     ],
-    max_tokens: 4096,
+    max_tokens: DEFAULT_MAX_OUTPUT_TOKENS,
   })
 
   const content = response.choices[0]?.message?.content
@@ -68,7 +69,7 @@ export async function chatCompletion(
   const response = await openrouter.chat.completions.create({
     model: CHAT_MODEL,
     messages: [systemMessage, ...messages.slice(-20)], // Keep last 20 messages for context
-    max_tokens: 2048,
+    max_tokens: DEFAULT_MAX_OUTPUT_TOKENS,
   })
 
   const content = response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response. Please try again."

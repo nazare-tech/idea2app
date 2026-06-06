@@ -232,10 +232,7 @@ export async function runPromptLabArtifact({
     apiKey: process.env.OPENROUTER_API_KEY,
   })
 
-  const maxTokens =
-    artifact === "competitive" || artifact === "prd" || artifact === "mvp"
-      ? 8192
-      : 4096
+  const maxTokens = 16_384
 
   let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
   try {

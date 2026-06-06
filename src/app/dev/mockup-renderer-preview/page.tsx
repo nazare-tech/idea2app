@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 
+import { MockupGenerationLoader } from "@/components/ui/mockup-generation-loader"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import { OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE } from "@/lib/openrouter-image-mockup-format"
 
@@ -118,6 +119,16 @@ export default function MockupRendererPreviewPage() {
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">Storyboard Mockup Renderer Preview</h1>
         </header>
+        <section className="rounded-lg bg-card px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
+          <div className="mb-4">
+            <p className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Generation state
+            </p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight">Design mockups loading preview</h2>
+          </div>
+          <MockupGenerationLoader />
+        </section>
+
         <MockupRenderer content={content} projectId="preview" projectName="Preview" />
       </div>
     </main>
