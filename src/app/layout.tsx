@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { Hanken_Grotesk, Fira_Mono } from "next/font/google"
-import { AgentationToolbar } from "@/components/dev/agentation-toolbar"
 import "./globals.css"
 
 const hankenGrotesk = Hanken_Grotesk({
@@ -36,7 +35,6 @@ export default function RootLayout({
         className={`${hankenGrotesk.variable} ${firaMono.variable} antialiased min-h-screen bg-background`}
       >
         {children}
-        <AgentationToolbar />
       </body>
     </html>
   )

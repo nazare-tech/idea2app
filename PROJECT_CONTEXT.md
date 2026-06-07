@@ -116,7 +116,6 @@
 | **eslint-config-next** | 16.1.4 | Next.js ESLint configuration |
 | **tsx** | 4.20.6 | TypeScript test/runtime loader for Node's built-in test runner |
 | **shadcn** | 3.8.5 | Component scaffolding/tooling |
-| **Agentation** | 3.0.2 | Development-only visual feedback toolbar for annotating UI elements for AI coding agents |
 | **Clawpatch** | config only | Local review metadata and reports stored in `.clawpatch/` |
 | **@types/node** | ^24 | Node.js type definitions |
 | **@types/react** | ^19 | React type definitions |
@@ -1286,17 +1285,18 @@ docker run -p 3000:3000 idea2app
 | Plan | Credits/Month | Price | Stripe Product ID | Stripe Price ID |
 |------|--------------|-------|-------------------|-----------------|
 | **Free** | 10 | $0 | — | — |
-| **Starter** | 100 | $19/mo | `prod_U2GDQiAqtdQzYd` | `price_1T4BgvHkipUdBg5jpUOWPEnt` |
-| **Pro** | 500 | $49/mo | `prod_U2GDpeJ8JHRfOo` | `price_1T4BhIHkipUdBg5jzuXgvaVt` |
-| **Enterprise** | 2,500 | $199/mo | `prod_U2GElh8VRq2AGg` | `price_1T4BhZHkipUdBg5jumSZzNmy` |
+| **Starter** | 100 | $19/mo | `prod_Uere21C5j6LIO1` | `price_1TfXvFRZYXj2bJrBuC6JaIfj` |
+| **Pro** | 500 | $49/mo | `prod_UerevEhLASQiac` | `price_1TfXvFRZYXj2bJrB8vg41zH0` |
+| **Enterprise** | 2,500 | $199/mo | `prod_UeregY7eokD8gA` | `price_1TfXvERZYXj2bJrB2Seb3YKh` |
 
 ### Stripe Integration Details
 
-- **Account**: Nazare Sandbox (`acct_1SqyskHkipUdBg5j`) — Test Mode
+- **Account**: Makercompass (`acct_1TfXV9RZYXj2bJrB`) — Test Mode
 - **API Version**: `2026-01-28.clover`
 - **Singleton Client**: `src/lib/stripe.ts` — lazy-initialized Stripe instance via `getStripeClient()` with a `Proxy` export for ergonomic access
 - **Customer Linking**: Stripe customer ID stored in `profiles.stripe_customer_id`; created on first checkout and reused thereafter
 - **Checkout Flow**: Server-side redirect to Stripe-hosted checkout (no Stripe.js Elements needed)
+- **Customer Portal Configuration**: `bpc_1TfY2eRZYXj2bJrBcPHQWM7q` — test-mode portal for plan switching, payment method updates, invoice history, and cancel-at-period-end
 - **Webhook Processing**: Uses `SUPABASE_SERVICE_ROLE_KEY` (service role) to bypass RLS for subscription and credit updates
 - **Billing UI**: `src/app/(dashboard)/billing/page.tsx` — displays plan cards, current subscription, credit balance, and credit cost reference
 
@@ -1430,7 +1430,6 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/projects/[id]/status/route.ts](src/app/api/projects/[id]/status/route.ts) | Lightweight document-count snapshot used by generation polling |
 | [src/app/dev/prompt-lab/page.tsx](src/app/dev/prompt-lab/page.tsx) | Local-development-only Prompt Lab page for isolated prompt iteration against existing projects |
 | [src/app/dev/mockup-renderer-preview/page.tsx](src/app/dev/mockup-renderer-preview/page.tsx) | Local-development-only visual fixture page for the OpenRouter storyboard mockup renderer |
-| [src/components/dev/agentation-toolbar.tsx](src/components/dev/agentation-toolbar.tsx) | Development-only Agentation toolbar mounted from the root layout for visual UI annotations |
 | [src/components/dev/prompt-lab-client.tsx](src/components/dev/prompt-lab-client.tsx) | Prompt Lab workbench UI with project/artifact selectors, prompt editors, saved drafts/runs, workspace-style preview, and lab-only renderer playground |
 | [src/app/api/dev/prompt-lab/context/route.ts](src/app/api/dev/prompt-lab/context/route.ts) | Dev-only endpoint that loads owned project context, upstream artifacts, and default prompts for one artifact |
 | [src/app/api/dev/prompt-lab/run/route.ts](src/app/api/dev/prompt-lab/run/route.ts) | Dev-only isolated generation endpoint that saves Prompt Lab run history without writing canonical artifacts |
