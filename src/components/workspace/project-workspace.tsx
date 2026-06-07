@@ -1041,7 +1041,7 @@ export function ProjectWorkspace({
     const scrollPaddingTop = parseFloat(containerStyle.scrollPaddingTop) || parseFloat(containerStyle.paddingTop) || 0
     container.scrollTo({
       top: Math.max(0, container.scrollTop + targetRect.top - containerRect.top - scrollPaddingTop),
-      behavior: "smooth",
+      behavior: "auto",
     })
 
     // Update nav state immediately
@@ -1058,10 +1058,10 @@ export function ProjectWorkspace({
     // Update URL hash for deep-linking
     window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${targetId}`)
 
-    // Re-enable observer after scroll animation completes
+    // Re-enable observer after the instant scroll and active-state render settle.
     setTimeout(() => {
       isScrollingProgrammatically.current = false
-    }, 800)
+    }, 50)
   }, [loadWorkspaceDocuments])
 
   // Reset to latest version (index 0) when switching documents

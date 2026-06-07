@@ -76,6 +76,62 @@ function PencilCard({
   )
 }
 
+function WorkspaceSectionHeader({
+  kicker,
+  title,
+  index,
+  total,
+}: {
+  kicker: string
+  title: string
+  index: number
+  total: number
+}) {
+  return (
+    <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
+      <div className="space-y-3">
+        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#1C1917]">
+          {kicker}
+        </p>
+        <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
+          {title}
+        </h2>
+      </div>
+      <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#8A8480]">
+        {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
+      </p>
+    </div>
+  )
+}
+
+function WorkspaceDesignedSection({
+  id,
+  kicker,
+  title,
+  index,
+  total,
+  children,
+}: {
+  id: string
+  kicker: string
+  title: string
+  index: number
+  total: number
+  children: React.ReactNode
+}) {
+  return (
+    <section id={id} className="pt-16">
+      <WorkspaceSectionHeader
+        kicker={kicker}
+        title={title}
+        index={index}
+        total={total}
+      />
+      {children}
+    </section>
+  )
+}
+
 function ParagraphStack({
   paragraphs,
   dark = false,
@@ -948,13 +1004,25 @@ export function CompetitiveOverviewSection({
         </div>
       </header>
 
-      <div id="overview-executive-summary">
+      <WorkspaceDesignedSection
+        id="overview-executive-summary"
+        kicker="Market Intelligence"
+        title="Executive Summary"
+        index={1}
+        total={2}
+      >
         <ExecutiveSummaryCard paragraphs={structured.executiveSummary} />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="overview-founder-verdict">
+      <WorkspaceDesignedSection
+        id="overview-founder-verdict"
+        kicker="Market Intelligence"
+        title="Opportunity Verdict"
+        index={2}
+        total={2}
+      >
         <FounderVerdictCard verdict={structured.founderVerdict} />
-      </div>
+      </WorkspaceDesignedSection>
     </>
   )
 }
@@ -996,78 +1064,144 @@ export function CompetitiveDetailSection({
         </div>
       </header>
 
-      <div id="market-research-direct-competitors">
+      <WorkspaceDesignedSection
+        id="market-research-direct-competitors"
+        kicker="Deep Analysis"
+        title="Direct Competitors"
+        index={1}
+        total={13}
+      >
         <CompetitorProfiles competitors={structured.directCompetitors} />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-landscape-overview">
+      <WorkspaceDesignedSection
+        id="market-research-landscape-overview"
+        kicker="Deep Analysis"
+        title="Market Landscape"
+        index={2}
+        total={13}
+      >
         <SmallListCard
           title="Competitive Landscape Overview"
           items={structured.competitiveLandscapeOverview}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-feature-matrix">
+      <WorkspaceDesignedSection
+        id="market-research-feature-matrix"
+        kicker="Deep Analysis"
+        title="Feature Comparison"
+        index={3}
+        total={13}
+      >
         <CompactTableCard
           title="Feature Comparison"
           paragraphs={structured.featureMatrix.paragraphs}
           headers={structured.featureMatrix.table?.headers ?? []}
           rows={structured.featureMatrix.table?.rows ?? []}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-positioning">
+      <WorkspaceDesignedSection
+        id="market-research-positioning"
+        kicker="Deep Analysis"
+        title="Positioning Map"
+        index={4}
+        total={13}
+      >
         <PositioningMap
           title="Positioning Map"
           description="Where you fit in the market."
           positioningMap={structured.positioningMap}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-pricing">
+      <WorkspaceDesignedSection
+        id="market-research-pricing"
+        kicker="Deep Analysis"
+        title="Pricing Comparison"
+        index={5}
+        total={13}
+      >
         <CompactTableCard
           title="Pricing Comparison"
           paragraphs={structured.pricingAndPackaging.paragraphs}
           headers={structured.pricingAndPackaging.table?.headers ?? []}
           rows={structured.pricingAndPackaging.table?.rows ?? []}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-audience">
+      <WorkspaceDesignedSection
+        id="market-research-audience"
+        kicker="Deep Analysis"
+        title="Best Customer Segments"
+        index={6}
+        total={13}
+      >
         <SmallListCard
           title="Best Customer Segments"
           items={structured.audienceSegments}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-gtm">
+      <WorkspaceDesignedSection
+        id="market-research-gtm"
+        kicker="Deep Analysis"
+        title="How You'll Reach Customers"
+        index={7}
+        total={13}
+      >
         <SmallListCard
           title="How You'll Reach Customers"
           items={structured.gtmSignals}
           dark={true}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-gap-analysis">
+      <WorkspaceDesignedSection
+        id="market-research-gap-analysis"
+        kicker="Deep Analysis"
+        title="Gap Analysis"
+        index={8}
+        total={13}
+      >
         <SmallListCard title="Gap Analysis" items={structured.gapAnalysis} />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-differentiation">
+      <WorkspaceDesignedSection
+        id="market-research-differentiation"
+        kicker="Deep Analysis"
+        title="Ways to Stand Out"
+        index={9}
+        total={13}
+      >
         <SmallListCard
           title="Ways to Stand Out"
           items={structured.differentiationWedges}
           dark={true}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-moat">
+      <WorkspaceDesignedSection
+        id="market-research-moat"
+        kicker="Deep Analysis"
+        title="What Makes It Hard to Copy"
+        index={10}
+        total={13}
+      >
         <SmallListCard
           title="What Makes It Hard to Copy"
           items={structured.moatAndDefensibility}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-risks">
+      <WorkspaceDesignedSection
+        id="market-research-risks"
+        kicker="Deep Analysis"
+        title="Risks & Competitor Responses"
+        index={11}
+        total={13}
+      >
         <SWOTCard
           matrix={structured.swotAnalysis.matrix}
           paragraphs={structured.swotAnalysis.paragraphs}
@@ -1078,21 +1212,33 @@ export function CompetitiveDetailSection({
           title="Risks & Competitor Responses"
           items={structured.risksAndCountermoves}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-mvp-wedge">
+      <WorkspaceDesignedSection
+        id="market-research-mvp-wedge"
+        kicker="Deep Analysis"
+        title="First Version Focus"
+        index={12}
+        total={13}
+      >
         <MVPCard
           paragraphs={structured.mvpWedgeRecommendation.paragraphs}
           bullets={structured.mvpWedgeRecommendation.bullets}
         />
-      </div>
+      </WorkspaceDesignedSection>
 
-      <div id="market-research-strategic-recommendations">
+      <WorkspaceDesignedSection
+        id="market-research-strategic-recommendations"
+        kicker="Deep Analysis"
+        title="Recommended Next Moves"
+        index={13}
+        total={13}
+      >
         <SmallListCard
           title="Recommended Next Moves"
           items={structured.strategicRecommendations}
         />
-      </div>
+      </WorkspaceDesignedSection>
     </>
   )
 }
