@@ -1,3 +1,9 @@
+---
+implemented: false
+implemented_at:
+implementation_summary:
+---
+
 # Plan: Feature Flags Consolidation
 
 ## Goal

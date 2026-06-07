@@ -1,3 +1,9 @@
+---
+implemented: false
+implemented_at:
+implementation_summary:
+---
+
 # Plan: Remove User-Facing Credits And Keep Internal Usage Accounting
 
 ## Goal

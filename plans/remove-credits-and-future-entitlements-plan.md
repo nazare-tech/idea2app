@@ -1,3 +1,9 @@
+---
+implemented: false
+implemented_at:
+implementation_summary:
+---
+
 # Plan: Hide User-Facing Credits And Preserve Future Credit Entitlements
 
 ## Goal
