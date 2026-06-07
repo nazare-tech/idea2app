@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-05-28 (Mockup layout prompt study)
+**Last Updated**: 2026-06-06 (Generation status and timeout handling)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
