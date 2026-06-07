@@ -56,6 +56,8 @@ supabase/.temp/
 
 # local research and generated artifact exports
 /local-artifacts/
+/pi-session-*.json
+/pi-session-*.txt
 
 # Stitch test fixture (contains short-lived download URLs)
 src/lib/stitch/test-fixture.json
