@@ -7,7 +7,20 @@ import {
   isMockupOptionLabel,
   isPromptLabArtifact,
 } from "@/lib/prompt-lab"
+import {
+  MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT,
+  MOCKUP_PRIMARY_PLATFORMS,
+  buildMockupDesignPlanUserPrompt,
+  type MockupPrimaryPlatform,
+} from "@/lib/mockup-design-plan"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
+
+function readMockupPlatformPreference(value: string | null): MockupPrimaryPlatform | null {
+  if (!value || value === "auto") return null
+  return (MOCKUP_PRIMARY_PLATFORMS as readonly string[]).includes(value)
+    ? value as MockupPrimaryPlatform
+    : null
+}
 
 export async function GET(request: Request) {
   const guard = await requirePromptLabRequest(request, {
@@ -20,6 +33,7 @@ export async function GET(request: Request) {
   const projectId = searchParams.get("projectId")
   const artifact = searchParams.get("artifact")
   const mockupOptionParam = searchParams.get("mockupOption")
+  const mockupPlatformPreference = readMockupPlatformPreference(searchParams.get("mockupPlatform"))
 
   if (!projectId || !isPromptLabArtifact(artifact)) {
     return NextResponse.json({ error: "projectId and valid artifact are required" }, { status: 400 })
@@ -93,6 +107,19 @@ export async function GET(request: Request) {
     launchBrief: PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
     mockupOption,
   })
+  const mockupPlannerPrompt = artifact === "mockups"
+    ? {
+        systemPrompt: MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT,
+        userPrompt: buildMockupDesignPlanUserPrompt({
+          projectName: project.name,
+          idea: project.description,
+          intakeContext: idea,
+          platformPreference: mockupPlatformPreference,
+          productPlan: prd.data?.content,
+          mvpPlan: mvp.data?.content ?? `First Version Plan for ${project.name}: ${idea}`,
+        }),
+      }
+    : null
 
   return NextResponse.json({
     project: {
@@ -102,6 +129,7 @@ export async function GET(request: Request) {
       updatedAt: project.updated_at,
     },
     promptDefaults,
+    mockupPlannerPrompt,
     launchBrief: PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
     upstream: {
       competitive: competitive.data ?? null,

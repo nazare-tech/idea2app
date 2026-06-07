@@ -31,8 +31,12 @@ import {
   buildOpenRouterMockupImagePrompt,
   generateOpenRouterImageMockupOption,
   getOpenRouterMockupImageModel,
+  getOpenRouterMockupImageTimeoutMs,
+  getOpenRouterMockupPlannerMaxTokens,
+  getOpenRouterMockupPlannerModel,
   type OpenRouterMockupOptionLabel,
 } from "@/lib/openrouter-image-mockup-pipeline"
+import { parseMockupDesignPlan, type MockupDesignPlan, type MockupPrimaryPlatform } from "@/lib/mockup-design-plan"
 import {
   buildOpenRouterTimeoutMessage,
   createOpenRouterLongTextSignal,
@@ -104,6 +108,11 @@ export interface PromptLabRunInput {
   userPrompt: string
   model: string
   mockupOption?: OpenRouterMockupOptionLabel
+  mockupPlatform?: MockupPrimaryPlatform | "auto"
+  runMode?: "isolated" | "planner-option"
+  plannerSystemPrompt?: string
+  plannerUserPrompt?: string
+  mockupMvpPlan?: string
 }
 
 export interface PromptLabRunResult {
@@ -123,6 +132,15 @@ export function isPromptLabArtifact(value: unknown): value is PromptLabArtifact 
 
 export function isMockupOptionLabel(value: unknown): value is OpenRouterMockupOptionLabel {
   return typeof value === "string" && OPENROUTER_MOCKUP_OPTION_CONFIGS.some((config) => config.label === value)
+}
+
+export function applyPromptLabMockupPlatformOverride(
+  designPlan: MockupDesignPlan,
+  mockupPlatform: MockupPrimaryPlatform | "auto",
+): MockupDesignPlan {
+  return mockupPlatform === "auto"
+    ? designPlan
+    : { ...designPlan, primaryPlatform: mockupPlatform }
 }
 
 export function buildPromptLabDefaultPrompts({
@@ -207,12 +225,93 @@ export async function runPromptLabArtifact({
   userPrompt,
   model,
   mockupOption = "A",
+  mockupPlatform = "auto",
+  runMode = "isolated",
+  plannerSystemPrompt,
+  plannerUserPrompt,
+  mockupMvpPlan,
 }: PromptLabRunInput): Promise<PromptLabRunResult> {
   if (!process.env.OPENROUTER_API_KEY) {
     throw new Error("OPENROUTER_API_KEY environment variable is not configured")
   }
 
   if (artifact === "mockups") {
+    if (runMode === "planner-option") {
+      if (!plannerSystemPrompt?.trim() || !plannerUserPrompt?.trim()) {
+        throw new Error("Planner system prompt and planner user prompt are required")
+      }
+
+      const openrouter = new OpenAI({
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: process.env.OPENROUTER_API_KEY,
+      })
+      const plannerModel = getOpenRouterMockupPlannerModel()
+      let plannerCompletion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
+
+      try {
+        plannerCompletion = await openrouter.chat.completions.create({
+          model: plannerModel,
+          messages: [
+            { role: "system", content: plannerSystemPrompt },
+            { role: "user", content: plannerUserPrompt },
+          ],
+          max_completion_tokens: getOpenRouterMockupPlannerMaxTokens(),
+        }, {
+          signal: AbortSignal.timeout(getOpenRouterMockupImageTimeoutMs()),
+        })
+      } catch (error) {
+        if (isOpenRouterAbortError(error)) {
+          throw new Error(buildOpenRouterTimeoutMessage("Prompt Lab mockup planner", getOpenRouterMockupImageTimeoutMs()))
+        }
+        throw error
+      }
+
+      const plannerOutput = extractPromptLabAssistantText(plannerCompletion.choices[0])
+      if (!plannerOutput) {
+        throw new Error("OpenRouter did not return a mockup design plan")
+      }
+
+      const parsedDesignPlan = parseMockupDesignPlan(plannerOutput)
+      const designPlan = applyPromptLabMockupPlatformOverride(parsedDesignPlan, mockupPlatform)
+      const result = await generateOpenRouterImageMockupOption({
+        projectId,
+        projectName,
+        mvpPlan: mockupMvpPlan || userPrompt,
+        label: mockupOption,
+        model,
+        systemPrompt,
+        designPlan,
+      })
+      const content: OpenRouterImageMockupContent = {
+        type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+        model: result.model,
+        generatedAt: new Date().toISOString(),
+        options: [
+          {
+            ...result.option,
+            imageUrl: buildPromptLabMockupImageUrl(projectId, result.option.storagePath),
+          },
+        ],
+      }
+
+      return {
+        content: JSON.stringify(content),
+        model: result.model,
+        source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+        metadata: {
+          runMode,
+          mockupOption,
+          mockupPlatform,
+          platformOverrideApplied: mockupPlatform !== "auto",
+          storagePath: result.option.storagePath,
+          runId: result.runId,
+          plannerModel,
+          plannerOutput,
+          designPlan: result.designPlan,
+        },
+      }
+    }
+
     const result = await generateOpenRouterImageMockupOption({
       projectId,
       projectName,
@@ -239,6 +338,7 @@ export async function runPromptLabArtifact({
       model: result.model,
       source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       metadata: {
+        runMode,
         mockupOption,
         storagePath: result.option.storagePath,
         runId: result.runId,
@@ -292,6 +392,25 @@ export async function runPromptLabArtifact({
     source: "inhouse",
     metadata: {},
   }
+}
+
+function extractPromptLabAssistantText(choice: unknown) {
+  const choiceRecord = typeof choice === "object" && choice !== null ? choice as Record<string, unknown> : null
+  const message = typeof choiceRecord?.message === "object" && choiceRecord.message !== null
+    ? choiceRecord.message as Record<string, unknown>
+    : null
+  const content = message?.content
+
+  if (typeof content === "string") return content.trim()
+  if (!Array.isArray(content)) return ""
+
+  return content
+    .map((part) => {
+      const record = typeof part === "object" && part !== null ? part as Record<string, unknown> : null
+      return typeof record?.text === "string" ? record.text : ""
+    })
+    .join(" ")
+    .trim()
 }
 
 export function buildPromptLabMockupImageUrl(projectId: string, storagePath: string) {

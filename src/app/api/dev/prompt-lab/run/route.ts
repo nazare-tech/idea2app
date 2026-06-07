@@ -8,6 +8,7 @@ import {
   runPromptLabArtifact,
 } from "@/lib/prompt-lab"
 import { linkifyBareUrls } from "@/lib/markdown-links"
+import { MOCKUP_PRIMARY_PLATFORMS, type MockupPrimaryPlatform } from "@/lib/mockup-design-plan"
 import type { Json } from "@/types/database"
 
 function asString(value: unknown, fallback = "") {
@@ -19,6 +20,12 @@ function validatePromptText(value: string, label: string) {
   if (!trimmed) throw new Error(`${label} is required`)
   if (trimmed.length > 200_000) throw new Error(`${label} is too long`)
   return trimmed
+}
+
+function readMockupPlatformPreference(value: unknown): MockupPrimaryPlatform | "auto" {
+  if (typeof value !== "string" || !value || value === "auto") return "auto"
+  if ((MOCKUP_PRIMARY_PLATFORMS as readonly string[]).includes(value)) return value as MockupPrimaryPlatform
+  return "auto"
 }
 
 export async function POST(request: Request) {
@@ -41,9 +48,13 @@ export async function POST(request: Request) {
   const title = asString(body.title, "Untitled run").trim().slice(0, 160) || "Untitled run"
   const notes = asString(body.notes).trim().slice(0, 5000) || null
   const mockupOption = isMockupOptionLabel(body.mockupOption) ? body.mockupOption : "A"
+  const mockupPlatform = readMockupPlatformPreference(body.mockupPlatform)
+  const runMode = artifact === "mockups" && asString(body.runMode) === "planner-option" ? "planner-option" : "isolated"
   const model = asString(body.model).trim()
   let systemPrompt: string
   let userPrompt: string
+  let plannerSystemPrompt: string | undefined
+  let plannerUserPrompt: string | undefined
 
   if (!isPromptLabArtifact(artifact) || !projectId || !model) {
     return NextResponse.json({ error: "artifact, projectId, and model are required" }, { status: 400 })
@@ -52,6 +63,10 @@ export async function POST(request: Request) {
   try {
     systemPrompt = validatePromptText(asString(body.systemPrompt), "System prompt")
     userPrompt = validatePromptText(asString(body.userPrompt), "User prompt")
+    if (runMode === "planner-option") {
+      plannerSystemPrompt = validatePromptText(asString(body.plannerSystemPrompt), "Planner system prompt")
+      plannerUserPrompt = validatePromptText(asString(body.plannerUserPrompt), "Planner user prompt")
+    }
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Invalid prompt input" },
@@ -64,6 +79,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 })
   }
 
+  let mockupMvpPlan: string | undefined
+  if (artifact === "mockups" && runMode === "planner-option") {
+    const { data: mvpPlan, error: mvpError } = await guard.supabase
+      .from("mvp_plans")
+      .select("content")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (mvpError) {
+      return NextResponse.json({ error: "Failed to load First Version Plan context" }, { status: 500 })
+    }
+
+    mockupMvpPlan = mvpPlan?.content ?? `First Version Plan for ${project.name}: ${project.description ?? ""}`
+  }
+
   const inputSnapshot = {
     project: {
       id: project.id,
@@ -71,6 +103,16 @@ export async function POST(request: Request) {
       description: project.description,
     },
     mockupOption,
+    mockupPlatform,
+    runMode,
+    ...(runMode === "planner-option" && plannerSystemPrompt && plannerUserPrompt
+      ? {
+          plannerPrompts: {
+            systemPrompt: plannerSystemPrompt,
+            userPrompt: plannerUserPrompt,
+          },
+        }
+      : {}),
   } satisfies Record<string, Json>
 
   try {
@@ -82,6 +124,11 @@ export async function POST(request: Request) {
       userPrompt,
       model,
       mockupOption,
+      mockupPlatform,
+      runMode,
+      plannerSystemPrompt,
+      plannerUserPrompt,
+      mockupMvpPlan,
     })
 
     const outputContent = artifact === "mockups" ? result.content : linkifyBareUrls(result.content)
@@ -131,6 +178,8 @@ export async function POST(request: Request) {
         output_metadata: {
           source: "prompt-lab",
           mockupOption,
+          mockupPlatform,
+          runMode,
         },
         status: "failed",
         error_message: message,

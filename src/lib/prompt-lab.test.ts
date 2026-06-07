@@ -5,6 +5,7 @@ import {
   PROMPT_LAB_DEFAULT_MODELS,
   PROMPT_LAB_IMAGE_MODEL_OPTIONS,
   PROMPT_LAB_TEXT_MODEL_OPTIONS,
+  applyPromptLabMockupPlatformOverride,
   buildPromptLabDefaultPrompts,
   getBasePromptLabModelOptions,
   getPromptLabModelOptions,
@@ -12,6 +13,7 @@ import {
   isPromptLabArtifact,
   isPromptLabEnabled,
 } from "./prompt-lab"
+import type { MockupDesignPlan } from "./mockup-design-plan"
 import { PRODUCT_PLAN_DEFAULT_MODEL } from "./product-plan-config"
 import { FIRST_VERSION_PLAN_DEFAULT_MODEL } from "./first-version-plan-config"
 
@@ -32,6 +34,26 @@ test("Prompt Lab mockup option validation only accepts A/B/C", () => {
   assert.equal(isMockupOptionLabel("A"), true)
   assert.equal(isMockupOptionLabel("B"), true)
   assert.equal(isMockupOptionLabel("D"), false)
+})
+
+test("applyPromptLabMockupPlatformOverride: selected platform wins over parsed planner output", () => {
+  const designPlan: MockupDesignPlan = {
+    version: "mockup-design-plan-v1",
+    primaryPlatform: "native-mobile-app",
+    happyPathScenario: "A user completes the main flow.",
+    persona: "Primary user",
+    screens: [],
+    directions: [],
+  }
+
+  assert.equal(
+    applyPromptLabMockupPlatformOverride(designPlan, "mobile-web").primaryPlatform,
+    "mobile-web",
+  )
+  assert.equal(
+    applyPromptLabMockupPlatformOverride(designPlan, "auto").primaryPlatform,
+    "native-mobile-app",
+  )
 })
 
 test("buildPromptLabDefaultPrompts: builds upstream-aware PRD prompt", () => {

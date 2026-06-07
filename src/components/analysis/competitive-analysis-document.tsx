@@ -33,6 +33,8 @@ function PencilCard({
   kicker,
   description,
   dark = false,
+  showHeader = true,
+  showTitle = true,
   className,
   children,
 }: {
@@ -40,9 +42,13 @@ function PencilCard({
   kicker?: string
   description?: string
   dark?: boolean
+  showHeader?: boolean
+  showTitle?: boolean
   className?: string
   children: React.ReactNode
 }) {
+  const hasHeader = showHeader && (kicker || showTitle || description)
+
   return (
     <section
       className={cn(
@@ -50,27 +56,31 @@ function PencilCard({
         className
       )}
     >
-      <div className="space-y-2 py-5">
-        {kicker ? (
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
-            {kicker}
-          </p>
-        ) : null}
-        <h2
-          className={cn(
-            displayFontClass,
-            "text-[22px] font-bold tracking-[-0.03em]",
-            dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
-          )}
-        >
-          {title}
-        </h2>
-        {description ? (
-          <p className="max-w-2xl ui-type-body-sm text-[#666666]">
-            {description}
-          </p>
-        ) : null}
-      </div>
+      {hasHeader ? (
+        <div className="space-y-2 py-5">
+          {kicker ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
+              {kicker}
+            </p>
+          ) : null}
+          {showTitle ? (
+            <h2
+              className={cn(
+                displayFontClass,
+                "text-[22px] font-bold tracking-[-0.03em]",
+                dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
+              )}
+            >
+              {title}
+            </h2>
+          ) : null}
+          {description ? (
+            <p className="max-w-2xl ui-type-body-sm text-[#666666]">
+              {description}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="pb-6">{children}</div>
     </section>
   )
@@ -213,13 +223,16 @@ function MarketSignalStrip({ items }: { items: string[] }) {
 
 function ExecutiveSummaryCard({
   paragraphs,
+  showHeader = true,
 }: {
   paragraphs: string[]
+  showHeader?: boolean
 }) {
   return (
     <PencilCard
       title="Market Snapshot & Entry Thesis"
       kicker="Executive Summary"
+      showHeader={showHeader}
     >
       <ParagraphStack paragraphs={paragraphs} />
     </PencilCard>
@@ -228,11 +241,13 @@ function ExecutiveSummaryCard({
 
 function FounderVerdictCard({
   verdict,
+  showHeader = true,
 }: {
   verdict: CompetitiveAnalysisStructuredData["founderVerdict"]
+  showHeader?: boolean
 }) {
   return (
-    <PencilCard title="Opportunity Verdict" kicker="Opportunity Verdict" dark>
+    <PencilCard title="Opportunity Verdict" kicker="Opportunity Verdict" dark showHeader={showHeader}>
       <ParagraphStack paragraphs={verdict.paragraphs} dark={true} />
       <div className="pt-5">
         <NumberedList items={verdict.bullets} dark={true} />
@@ -450,14 +465,17 @@ function FastComparisonTable({
 
 function CompetitorProfiles({
   competitors,
+  showHeader = true,
 }: {
   competitors: CompetitiveAnalysisCompetitorProfile[]
+  showHeader?: boolean
 }) {
   return (
     <div className="space-y-6">
       <PencilCard
         title="Competitor Profiles & Quick Comparison"
         kicker="Competitive Intelligence"
+        showHeader={showHeader}
       >
         <p className="mb-5 ui-type-body text-[#666666]">
           Compare each competitor once across product scope, buying fit,
@@ -475,15 +493,17 @@ function CompactTableCard({
   paragraphs,
   headers,
   rows,
+  showHeader = true,
 }: {
   title: string
   kicker?: string
   paragraphs: string[]
   headers: string[]
   rows: string[][]
+  showHeader?: boolean
 }) {
   return (
-    <PencilCard title={title} kicker={kicker}>
+    <PencilCard title={title} kicker={kicker} showHeader={showHeader}>
       <ParagraphStack paragraphs={paragraphs} />
       <div className={paragraphs.length > 0 ? "pt-5" : ""}>
         <DataTable headers={headers} rows={rows} />
@@ -557,10 +577,12 @@ function PositioningMap({
   title,
   description,
   positioningMap,
+  showHeader = true,
 }: {
   title: string
   description?: string
   positioningMap: CompetitiveAnalysisStructuredData["positioningMap"]
+  showHeader?: boolean
 }) {
   const scoredPoints = positioningMap.points.filter(hasPositioningScores)
   const unscoredPoints = positioningMap.points.filter(
@@ -570,7 +592,7 @@ function PositioningMap({
   const yAxisLabels = positioningAxisLabels(positioningMap.yAxis, "Y")
 
   return (
-    <PencilCard title={title} description={description}>
+    <PencilCard title={title} description={description} showHeader={showHeader}>
       <div className="space-y-4">
         {(positioningMap.xAxis || positioningMap.yAxis) && (
           <div className="grid gap-2 md:grid-cols-2">
@@ -785,14 +807,16 @@ function SWOTCard({
   paragraphs,
   tableHeaders,
   rows,
+  showHeader = true,
 }: {
   matrix: CompetitiveAnalysisSwotMatrix | null
   paragraphs: string[]
   tableHeaders: string[]
   rows: string[][]
+  showHeader?: boolean
 }) {
   return (
-    <PencilCard title="SWOT Analysis">
+    <PencilCard title="SWOT Analysis" showHeader={showHeader}>
       <ParagraphStack paragraphs={paragraphs} />
       {matrix ? (
         <div className={paragraphs.length > 0 ? "grid gap-4 pt-5 md:grid-cols-2" : "grid gap-4 md:grid-cols-2"}>
@@ -831,14 +855,16 @@ function SmallListCard({
   kicker,
   items,
   dark = false,
+  showHeader = true,
 }: {
   title: string
   kicker?: string
   items: string[]
   dark?: boolean
+  showHeader?: boolean
 }) {
   return (
-    <PencilCard title={title} kicker={kicker} dark={dark}>
+    <PencilCard title={title} kicker={kicker} dark={dark} showHeader={showHeader}>
       <NumberedList items={items} dark={dark} />
     </PencilCard>
   )
@@ -847,12 +873,14 @@ function SmallListCard({
 function MVPCard({
   paragraphs,
   bullets,
+  showHeader = true,
 }: {
   paragraphs: string[]
   bullets: string[]
+  showHeader?: boolean
 }) {
   return (
-    <PencilCard title="First Version Focus" kicker="Build Scope" dark>
+    <PencilCard title="First Version Focus" kicker="Build Scope" dark showHeader={showHeader}>
       <ParagraphStack paragraphs={paragraphs} dark={true} />
       <div className="pt-5">
         <NumberedList items={bullets} dark={true} />
@@ -1011,7 +1039,7 @@ export function CompetitiveOverviewSection({
         index={1}
         total={2}
       >
-        <ExecutiveSummaryCard paragraphs={structured.executiveSummary} />
+        <ExecutiveSummaryCard paragraphs={structured.executiveSummary} showHeader={false} />
       </WorkspaceDesignedSection>
 
       <WorkspaceDesignedSection
@@ -1021,7 +1049,7 @@ export function CompetitiveOverviewSection({
         index={2}
         total={2}
       >
-        <FounderVerdictCard verdict={structured.founderVerdict} />
+        <FounderVerdictCard verdict={structured.founderVerdict} showHeader={false} />
       </WorkspaceDesignedSection>
     </>
   )
@@ -1071,7 +1099,7 @@ export function CompetitiveDetailSection({
         index={1}
         total={13}
       >
-        <CompetitorProfiles competitors={structured.directCompetitors} />
+        <CompetitorProfiles competitors={structured.directCompetitors} showHeader={false} />
       </WorkspaceDesignedSection>
 
       <WorkspaceDesignedSection
@@ -1084,6 +1112,7 @@ export function CompetitiveDetailSection({
         <SmallListCard
           title="Competitive Landscape Overview"
           items={structured.competitiveLandscapeOverview}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1099,6 +1128,7 @@ export function CompetitiveDetailSection({
           paragraphs={structured.featureMatrix.paragraphs}
           headers={structured.featureMatrix.table?.headers ?? []}
           rows={structured.featureMatrix.table?.rows ?? []}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1113,6 +1143,7 @@ export function CompetitiveDetailSection({
           title="Positioning Map"
           description="Where you fit in the market."
           positioningMap={structured.positioningMap}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1128,6 +1159,7 @@ export function CompetitiveDetailSection({
           paragraphs={structured.pricingAndPackaging.paragraphs}
           headers={structured.pricingAndPackaging.table?.headers ?? []}
           rows={structured.pricingAndPackaging.table?.rows ?? []}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1141,6 +1173,7 @@ export function CompetitiveDetailSection({
         <SmallListCard
           title="Best Customer Segments"
           items={structured.audienceSegments}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1155,6 +1188,7 @@ export function CompetitiveDetailSection({
           title="How You'll Reach Customers"
           items={structured.gtmSignals}
           dark={true}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1165,7 +1199,7 @@ export function CompetitiveDetailSection({
         index={8}
         total={13}
       >
-        <SmallListCard title="Gap Analysis" items={structured.gapAnalysis} />
+        <SmallListCard title="Gap Analysis" items={structured.gapAnalysis} showHeader={false} />
       </WorkspaceDesignedSection>
 
       <WorkspaceDesignedSection
@@ -1179,6 +1213,7 @@ export function CompetitiveDetailSection({
           title="Ways to Stand Out"
           items={structured.differentiationWedges}
           dark={true}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1192,6 +1227,7 @@ export function CompetitiveDetailSection({
         <SmallListCard
           title="What Makes It Hard to Copy"
           items={structured.moatAndDefensibility}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1207,10 +1243,12 @@ export function CompetitiveDetailSection({
           paragraphs={structured.swotAnalysis.paragraphs}
           tableHeaders={structured.swotAnalysis.table?.headers ?? []}
           rows={structured.swotAnalysis.table?.rows ?? []}
+          showHeader={false}
         />
         <SmallListCard
           title="Risks & Competitor Responses"
           items={structured.risksAndCountermoves}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1224,6 +1262,7 @@ export function CompetitiveDetailSection({
         <MVPCard
           paragraphs={structured.mvpWedgeRecommendation.paragraphs}
           bullets={structured.mvpWedgeRecommendation.bullets}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
 
@@ -1237,6 +1276,7 @@ export function CompetitiveDetailSection({
         <SmallListCard
           title="Recommended Next Moves"
           items={structured.strategicRecommendations}
+          showHeader={false}
         />
       </WorkspaceDesignedSection>
     </>

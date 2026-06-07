@@ -93,11 +93,15 @@ test("buildMockupDesignPlanUserPrompt: treats source documents as untrusted cont
     projectName: "Meal Planner",
     idea: "AI meal planning for families",
     intakeContext: "Platform: Mobile web",
+    platformPreference: "native-mobile-app",
     productPlan: "## Product Plan",
     mvpPlan: "## Core User Flow",
   })
 
   assert.match(prompt, /<user_input name="mvpPlan">/)
+  assert.match(prompt, /Trusted Prompt Lab platform override:/)
+  assert.match(prompt, /Set primaryPlatform to "native-mobile-app"\./)
+  assert.doesNotMatch(prompt, /<user_input name="platformPreference">/)
   assert.match(prompt, /untrusted product context/i)
   assert.match(prompt, /Mobile web/)
 })

@@ -53,6 +53,7 @@ interface PromptLabRun {
   system_prompt: string
   user_prompt: string
   output_content: string | null
+  output_metadata: Record<string, unknown> | null
   status: string
   error_message: string | null
   notes: string | null
@@ -71,11 +72,24 @@ interface PromptLabContextResponse {
     userPrompt: string
     model: string
   }
+  mockupPlannerPrompt: {
+    systemPrompt: string
+    userPrompt: string
+  } | null
   upstream: Record<string, { id: string; content: string; created_at?: string | null; metadata?: Record<string, unknown> | null } | null>
 }
 
 const ARTIFACTS = PROMPT_LAB_ARTIFACTS
 const MOCKUP_OPTIONS = ["A", "B", "C"] as const
+const MOCKUP_PLATFORM_OPTIONS = [
+  { value: "auto", label: "Auto from project context" },
+  { value: "desktop-web", label: "Desktop web" },
+  { value: "mobile-web", label: "Mobile web" },
+  { value: "native-mobile-app", label: "Native mobile app" },
+  { value: "native-desktop-app", label: "Native desktop app" },
+] as const
+
+type MockupPlatformPreference = typeof MOCKUP_PLATFORM_OPTIONS[number]["value"]
 
 function formatTime(value: string | null | undefined) {
   if (!value) return "No timestamp"
@@ -98,6 +112,17 @@ Launch brief:
 - Budget: ${brief.budget}
 - Preferred channels: ${brief.channels}
 - Launch window: ${brief.launchWindow}`
+}
+
+function formatHiddenDesignPlanJson(metadata: Record<string, unknown> | null | undefined) {
+  const designPlan = metadata?.designPlan
+  if (!designPlan || typeof designPlan !== "object") return ""
+
+  try {
+    return JSON.stringify(designPlan, null, 2)
+  } catch {
+    return ""
+  }
 }
 
 function LabPreviewDiagnostics({ content }: { content: string }) {
@@ -202,9 +227,13 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "")
   const [artifact, setArtifact] = useState<PromptLabArtifact>("competitive")
   const [mockupOption, setMockupOption] = useState<typeof MOCKUP_OPTIONS[number]>("A")
+  const [mockupPlatform, setMockupPlatform] = useState<MockupPlatformPreference>("auto")
   const [context, setContext] = useState<PromptLabContextResponse | null>(null)
   const [systemPrompt, setSystemPrompt] = useState("")
   const [userPrompt, setUserPrompt] = useState("")
+  const [plannerSystemPrompt, setPlannerSystemPrompt] = useState("")
+  const [plannerUserPrompt, setPlannerUserPrompt] = useState("")
+  const [hiddenDesignPlanJson, setHiddenDesignPlanJson] = useState("")
   const [model, setModel] = useState("")
   const [title, setTitle] = useState("")
   const [notes, setNotes] = useState("")
@@ -216,7 +245,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const [previewMode, setPreviewMode] = useState<"production" | "experimental">("production")
   const [launchBrief, setLaunchBrief] = useState(PROMPT_LAB_DEFAULT_LAUNCH_BRIEF)
   const [promptSource, setPromptSource] = useState<"default" | "custom">("default")
-  const [busyAction, setBusyAction] = useState<"draft" | "run" | null>(null)
+  const [busyAction, setBusyAction] = useState<"draft" | "run" | "planner-run" | null>(null)
   const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const lastLoadedArtifactRef = useRef<PromptLabArtifact>(artifact)
@@ -224,7 +253,8 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const selectedProject = projects.find((project) => project.id === projectId) ?? null
   const modelOptions = useMemo(() => getPromptLabModelOptions(artifact, model), [artifact, model])
   const selectedModelOption = modelOptions.find((option) => option.id === model) ?? null
-  const canRun = Boolean(projectId && artifact && systemPrompt.trim() && userPrompt.trim() && model.trim())
+  const canRunTextPrompt = Boolean(projectId && artifact && systemPrompt.trim() && userPrompt.trim() && model.trim())
+  const canRunPlannerOption = artifact === "mockups" && Boolean(projectId && model.trim() && plannerSystemPrompt.trim() && plannerUserPrompt.trim())
   const isDefaultProductionPrompt = isPromptLabDefaultProductionState({
     artifact,
     promptSource,
@@ -239,8 +269,9 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const contextUrl = useMemo(() => {
     if (!projectId) return ""
     const params = new URLSearchParams({ projectId, artifact, mockupOption })
+    if (artifact === "mockups") params.set("mockupPlatform", mockupPlatform)
     return `/api/dev/prompt-lab/context?${params.toString()}`
-  }, [artifact, mockupOption, projectId])
+  }, [artifact, mockupOption, mockupPlatform, projectId])
 
   async function loadHistory(nextProjectId = projectId, nextArtifact = artifact) {
     if (!nextProjectId) return
@@ -283,6 +314,8 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             : currentSystemPrompt,
         )
         setUserPrompt(data.promptDefaults.userPrompt)
+        setPlannerSystemPrompt(data.mockupPlannerPrompt?.systemPrompt ?? "")
+        setPlannerUserPrompt(data.mockupPlannerPrompt?.userPrompt ?? "")
         setModel((currentModel) =>
           artifactChanged || !currentModel.trim()
             ? data.promptDefaults.model
@@ -295,6 +328,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
         )
         setPromptSource("default")
         setOutput("")
+        setHiddenDesignPlanJson("")
         setStatus(null)
         void loadHistory(data.project.id, artifact)
       })
@@ -311,7 +345,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   }, [contextUrl])
 
   function saveDraft() {
-    if (!canRun) return
+    if (!canRunTextPrompt) return
     setError(null)
     setStatus("Saving draft...")
     setBusyAction("draft")
@@ -345,11 +379,20 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     })
   }
 
-  function runArtifact() {
-    if (!canRun || !selectedProject) return
+  function runArtifact(runMode: "isolated" | "planner-option" = "isolated") {
+    const isPlannerOptionRun = runMode === "planner-option"
+    if (!selectedProject) return
+    if (isPlannerOptionRun) {
+      if (!canRunPlannerOption) return
+    } else if (!canRunTextPrompt) {
+      return
+    }
+
     setError(null)
-    setStatus(`Running ${PROMPT_LAB_ARTIFACT_LABELS[artifact]}...`)
-    setBusyAction("run")
+    setStatus(isPlannerOptionRun
+      ? `Running mockup planner + Option ${mockupOption}...`
+      : `Running ${PROMPT_LAB_ARTIFACT_LABELS[artifact]}...`)
+    setBusyAction(isPlannerOptionRun ? "planner-run" : "run")
 
     startTransition(() => {
       void (async () => {
@@ -366,6 +409,14 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
               userPrompt,
               model,
               mockupOption,
+              mockupPlatform,
+              runMode,
+              ...(isPlannerOptionRun
+                ? {
+                    plannerSystemPrompt,
+                    plannerUserPrompt,
+                  }
+                : {}),
             }),
           })
           const data = await response.json()
@@ -376,6 +427,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             return
           }
           setOutput(data.content || data.run?.output_content || "")
+          setHiddenDesignPlanJson(formatHiddenDesignPlanJson(data.run?.output_metadata))
           setModel(data.model || model)
           setStatus("Run saved")
           await loadHistory()
@@ -428,6 +480,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     setUserPrompt(run.user_prompt)
     setNotes(run.notes ?? "")
     setOutput(run.output_content ?? "")
+    setHiddenDesignPlanJson(formatHiddenDesignPlanJson(run.output_metadata))
     setPromptSource("custom")
     setStatus(`Loaded run from ${formatTime(run.created_at)}`)
   }
@@ -451,7 +504,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
+    <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
       <aside className="space-y-4">
         <section className="rounded-lg border border-border-subtle bg-card p-4">
           <div className="flex items-center gap-2">
@@ -493,18 +546,40 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             </label>
 
             {artifact === "mockups" && (
-              <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Mockup option</span>
-                <select
-                  value={mockupOption}
-                  onChange={(event) => setMockupOption(event.target.value as typeof MOCKUP_OPTIONS[number])}
-                  className="h-11 w-full rounded-xl border border-surface-strong bg-surface-soft px-3 text-sm text-foreground"
-                >
-                  {MOCKUP_OPTIONS.map((option) => (
-                    <option key={option} value={option}>Option {option}</option>
-                  ))}
-                </select>
-              </label>
+              <>
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Mockup platform</span>
+                  <select
+                    value={mockupPlatform}
+                    onChange={(event) => {
+                      setMockupPlatform(event.target.value as MockupPlatformPreference)
+                      setHiddenDesignPlanJson("")
+                      setOutput("")
+                    }}
+                    className="h-11 w-full rounded-xl border border-surface-strong bg-surface-soft px-3 text-sm text-foreground"
+                  >
+                    {MOCKUP_PLATFORM_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  <span className="block text-xs leading-relaxed text-muted-foreground">
+                    Sets the planner JSON primaryPlatform before the option image prompt is built.
+                  </span>
+                </label>
+
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Mockup option</span>
+                  <select
+                    value={mockupOption}
+                    onChange={(event) => setMockupOption(event.target.value as typeof MOCKUP_OPTIONS[number])}
+                    className="h-11 w-full rounded-xl border border-surface-strong bg-surface-soft px-3 text-sm text-foreground"
+                  >
+                    {MOCKUP_OPTIONS.map((option) => (
+                      <option key={option} value={option}>Option {option}</option>
+                    ))}
+                  </select>
+                </label>
+              </>
             )}
 
             <label className="block space-y-1.5">
@@ -642,14 +717,27 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={saveDraft} disabled={!canRun || isPending || Boolean(busyAction)}>
-                <Save className="h-4 w-4" />
-                Save draft
-              </Button>
-              <Button onClick={runArtifact} disabled={!canRun || isPending || Boolean(busyAction)}>
-                {busyAction === "run" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                Run isolated
-              </Button>
+              {artifact !== "mockups" && (
+                <Button variant="outline" onClick={saveDraft} disabled={!canRunTextPrompt || isPending || Boolean(busyAction)}>
+                  <Save className="h-4 w-4" />
+                  Save draft
+                </Button>
+              )}
+              {artifact === "mockups" ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => runArtifact("planner-option")}
+                  disabled={!canRunPlannerOption || isPending || Boolean(busyAction)}
+                >
+                  {busyAction === "planner-run" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                  Run planner + option
+                </Button>
+              ) : (
+                <Button onClick={() => runArtifact()} disabled={!canRunTextPrompt || isPending || Boolean(busyAction)}>
+                  {busyAction === "run" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                  Run isolated
+                </Button>
+              )}
             </div>
           </div>
 
@@ -663,33 +751,84 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
           )}
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-2">
-          <label className="block space-y-2 rounded-lg border border-border-subtle bg-card p-4">
-            <span className="text-sm font-semibold text-foreground">System prompt</span>
-            <Textarea
-              value={systemPrompt}
-              onChange={(event) => {
-                setSystemPrompt(event.target.value)
-                setPromptSource("custom")
-              }}
-              className="min-h-[420px] font-mono text-xs leading-relaxed"
-              spellCheck={false}
-            />
-          </label>
+        {artifact !== "mockups" && (
+          <section className="grid gap-4 lg:grid-cols-2">
+            <label className="block space-y-2 rounded-lg border border-border-subtle bg-card p-4">
+              <span className="text-sm font-semibold text-foreground">System prompt</span>
+              <Textarea
+                value={systemPrompt}
+                onChange={(event) => {
+                  setSystemPrompt(event.target.value)
+                  setPromptSource("custom")
+                }}
+                className="min-h-[420px] font-mono text-xs leading-relaxed"
+                spellCheck={false}
+              />
+            </label>
 
-          <label className="block space-y-2 rounded-lg border border-border-subtle bg-card p-4">
-            <span className="text-sm font-semibold text-foreground">User prompt and context</span>
-            <Textarea
-              value={userPrompt}
-              onChange={(event) => {
-                setUserPrompt(event.target.value)
-                setPromptSource("custom")
-              }}
-              className="min-h-[420px] font-mono text-xs leading-relaxed"
-              spellCheck={false}
-            />
-          </label>
-        </section>
+            <label className="block space-y-2 rounded-lg border border-border-subtle bg-card p-4">
+              <span className="text-sm font-semibold text-foreground">User prompt and context</span>
+              <Textarea
+                value={userPrompt}
+                onChange={(event) => {
+                  setUserPrompt(event.target.value)
+                  setPromptSource("custom")
+                }}
+                className="min-h-[420px] font-mono text-xs leading-relaxed"
+                spellCheck={false}
+              />
+            </label>
+          </section>
+        )}
+
+        {artifact === "mockups" && context?.mockupPlannerPrompt && (
+          <section className="space-y-4 rounded-lg border border-border-subtle bg-card p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm font-semibold text-foreground">Hidden mockup planner prompt</h2>
+                  <Badge variant="outline">Planner + option</Badge>
+                </div>
+                <p className="mt-1 max-w-[82ch] text-sm leading-relaxed text-muted-foreground">
+                  Edit this to change the hidden design plan before generating the selected option from that plan.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <label className="block space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Planner system prompt</span>
+                <Textarea
+                  value={plannerSystemPrompt}
+                  onChange={(event) => setPlannerSystemPrompt(event.target.value)}
+                  className="min-h-[320px] font-mono text-xs leading-relaxed"
+                  spellCheck={false}
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Planner user prompt and context</span>
+                <Textarea
+                  value={plannerUserPrompt}
+                  onChange={(event) => setPlannerUserPrompt(event.target.value)}
+                  className="min-h-[320px] font-mono text-xs leading-relaxed"
+                  spellCheck={false}
+                />
+              </label>
+            </div>
+
+            <label className="block space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Generated hidden design plan JSON</span>
+              <Textarea
+                value={hiddenDesignPlanJson}
+                readOnly
+                placeholder="Run planner + option to generate and inspect the hidden design plan JSON."
+                className="min-h-[360px] font-mono text-xs leading-relaxed"
+                spellCheck={false}
+              />
+            </label>
+          </section>
+        )}
 
         <section className="space-y-3">
           <div className="flex flex-col gap-3 rounded-lg border border-border-subtle bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
