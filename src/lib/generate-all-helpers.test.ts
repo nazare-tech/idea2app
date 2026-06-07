@@ -1,6 +1,10 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { buildQueue, LOCAL_STORAGE_KEY } from "./generate-all-helpers"
+import {
+  buildQueue,
+  LOCAL_STORAGE_KEY,
+  shouldResumeQueueAfterDocumentRetry,
+} from "./generate-all-helpers"
 import { GENERATE_ALL_DEFAULT_MODELS, GENERATE_ALL_QUEUE_ORDER } from "./document-definitions"
 import { GENERATE_ALL_ACTION_MAP, getTokenCost } from "./token-economics"
 
@@ -126,6 +130,63 @@ test("buildQueue: mockups cost is project-bundled", () => {
   const queue = buildQueue(DEFAULT_MODELS, allPending)
   const mockups = queue.find((item) => item.docType === "mockups")!
   assert.equal(mockups.creditCost, 0)
+})
+
+test("shouldResumeQueueAfterDocumentRetry: resumes terminal queue after successful upstream retry", () => {
+  assert.equal(
+    shouldResumeQueueAfterDocumentRetry({
+      queueStatus: "partial",
+      retriedDocType: "prd",
+      queue: [
+        { docType: "competitive", label: "Market Research", status: "done", creditCost: 0 },
+        { docType: "prd", label: "Product Plan", status: "error", creditCost: 0 },
+        { docType: "mvp", label: "First Version Plan", status: "blocked", creditCost: 0 },
+        { docType: "mockups", label: "Design Mockups", status: "blocked", creditCost: 0 },
+      ],
+    }),
+    true,
+  )
+})
+
+test("shouldResumeQueueAfterDocumentRetry: does not restart active or unrelated queues", () => {
+  const queue = [
+    { docType: "competitive", label: "Market Research", status: "done", creditCost: 0 },
+    { docType: "prd", label: "Product Plan", status: "error", creditCost: 0 },
+  ] as const
+
+  assert.equal(
+    shouldResumeQueueAfterDocumentRetry({
+      queueStatus: "running",
+      retriedDocType: "prd",
+      queue,
+    }),
+    false,
+  )
+  assert.equal(
+    shouldResumeQueueAfterDocumentRetry({
+      queueStatus: "partial",
+      retriedDocType: "mvp",
+      queue,
+    }),
+    false,
+  )
+})
+
+test("shouldResumeQueueAfterDocumentRetry: ignores unrelated failed documents", () => {
+  assert.equal(
+    shouldResumeQueueAfterDocumentRetry({
+      queueStatus: "partial",
+      retriedDocType: "launch",
+      queue: [
+        { docType: "competitive", label: "Market Research", status: "done", creditCost: 0 },
+        { docType: "prd", label: "Product Plan", status: "error", creditCost: 0 },
+        { docType: "mvp", label: "First Version Plan", status: "blocked", creditCost: 0 },
+        { docType: "mockups", label: "Design Mockups", status: "blocked", creditCost: 0 },
+        { docType: "launch", label: "Launch Plan", status: "error", creditCost: 0 },
+      ],
+    }),
+    false,
+  )
 })
 
 test("buildQueue: launch production default cost is 5", () => {

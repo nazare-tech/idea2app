@@ -19,6 +19,7 @@ import {
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
 import { useGenerateAll, type GenerateDocumentFn, type QueueItem } from "@/stores/generate-all-store"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
+import { shouldResumeQueueAfterDocumentRetry } from "@/lib/generate-all-helpers"
 import {
   buildDocumentGenerationDisplayStates,
   type MockupOptionStatus,
@@ -292,6 +293,8 @@ export function ProjectWorkspace({
   }, [mockupDraftDesignPlanStorageKey, mockupDraftRunId, mockupDraftRunStorageKey])
 
   const generateAllQueue = useGenerateAll(project.id, (s) => s.queue)
+  const generateAllStatus = useGenerateAll(project.id, (s) => s.status)
+  const resumeGenerateAll = useGenerateAll(project.id, (s) => s.startGenerateAll)
 
   // Scroll-nav sync state
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -1802,7 +1805,17 @@ export function ProjectWorkspace({
       if (docType !== "mockups") {
         setMockupOptionStatuses([])
       }
-      await generateDocument(docType, GENERATE_ALL_DEFAULT_MODELS[docType] ?? "")
+      const didGenerate = await generateDocument(docType, GENERATE_ALL_DEFAULT_MODELS[docType] ?? "")
+      if (
+        didGenerate &&
+        shouldResumeQueueAfterDocumentRetry({
+          queueStatus: generateAllStatus,
+          retriedDocType: docType,
+          queue: generateAllQueue,
+        })
+      ) {
+        await resumeGenerateAll()
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Generation failed. Please try again."
       console.warn(`[WorkspaceGeneration] ${docType} failed: ${message}`)
@@ -1817,7 +1830,7 @@ export function ProjectWorkspace({
         alert("Generation failed. Please try again.")
       }
     }
-  }, [checkPrerequisites, generateDocument])
+  }, [checkPrerequisites, generateAllQueue, generateAllStatus, generateDocument, resumeGenerateAll])
 
   const handleUpdateDescription = async (description: string) => {
     try {

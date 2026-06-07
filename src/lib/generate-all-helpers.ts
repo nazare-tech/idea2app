@@ -31,7 +31,18 @@ export interface QueueItem {
   creditCost: number
   stageMessage?: string
   error?: string
+  dependsOn?: DocumentType[]
 }
+
+export type QueueResumeStatus =
+  | "idle"
+  | "loading"
+  | "running"
+  | "partial"
+  | "completed"
+  | "cancelled"
+  | "error"
+  | "interrupted"
 
 // ---------------------------------------------------------------------------
 // localStorage key for the active-generation flag
@@ -59,4 +70,77 @@ export function buildQueue(
       creditCost: cost,
     }
   })
+}
+
+export function shouldResumeQueueAfterDocumentRetry({
+  queueStatus,
+  retriedDocType,
+  queue,
+}: {
+  queueStatus: QueueResumeStatus
+  retriedDocType: DocumentType
+  queue: readonly QueueItem[]
+}) {
+  if (
+    queueStatus !== "partial" &&
+    queueStatus !== "error" &&
+    queueStatus !== "interrupted"
+  ) {
+    return false
+  }
+
+  const retriedItem = queue.find((item) => item.docType === retriedDocType)
+  if (
+    !retriedItem ||
+    retriedItem.status === "done" ||
+    retriedItem.status === "skipped" ||
+    retriedItem.status === "generating"
+  ) {
+    return false
+  }
+
+  return queue.some((item) =>
+    item.docType !== retriedDocType &&
+    isResettableQueueItem(item) &&
+    isDownstreamOf(item.docType, retriedDocType, queue)
+  )
+}
+
+function isResettableQueueItem(item: QueueItem) {
+  return (
+    item.status === "pending" ||
+    item.status === "error" ||
+    item.status === "blocked" ||
+    item.status === "cancelled"
+  )
+}
+
+function isDownstreamOf(
+  candidateDocType: DocumentType,
+  dependencyDocType: DocumentType,
+  queue: readonly QueueItem[],
+  seen = new Set<DocumentType>(),
+): boolean {
+  if (seen.has(candidateDocType)) return false
+  seen.add(candidateDocType)
+
+  const item = queue.find((queueItem) => queueItem.docType === candidateDocType)
+  const dependsOn = item?.dependsOn ?? getDefaultDependsOn(candidateDocType)
+  if (dependsOn.includes(dependencyDocType)) return true
+
+  return dependsOn.some((docType) => isDownstreamOf(docType, dependencyDocType, queue, seen))
+}
+
+function getDefaultDependsOn(docType: DocumentType): DocumentType[] {
+  switch (docType) {
+    case "prd":
+      return ["competitive"]
+    case "mvp":
+    case "techspec":
+      return ["prd"]
+    case "mockups":
+      return ["mvp"]
+    default:
+      return []
+  }
 }

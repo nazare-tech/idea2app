@@ -371,8 +371,13 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
         getDocStatusRef.current ?? (() => "pending" as const),
       )
 
+      const currentStatus = get().status
       const pendingItems = freshQueue.filter((item) => item.status === "pending")
-      if (pendingItems.length === 0) return
+      const shouldReconcileTerminalQueue =
+        currentStatus === "partial" ||
+        currentStatus === "error" ||
+        currentStatus === "interrupted"
+      if (pendingItems.length === 0 && !shouldReconcileTerminalQueue) return
 
       set(() => ({
         queue: freshQueue,

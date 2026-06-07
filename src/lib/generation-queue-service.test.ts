@@ -7,6 +7,7 @@ import {
   getBlockedItems,
   getRunnableItems,
   recoverStaleGenerationQueueItems,
+  resetGenerationQueueItemsForRetry,
   type GenerationQueueItemRow,
   type GenerationQueueItemUpdate,
 } from "./generation-queue-service"
@@ -206,4 +207,58 @@ test("recoverStaleGenerationQueueItems: requeues stale generating work for retry
   assert.equal(recovered[0].status, "pending")
   assert.equal(recovered[0].attempt, 1)
   assert.equal(recovered[0].started_at, null)
+})
+
+test("resetGenerationQueueItemsForRetry: resets failed and blocked items to pending", async () => {
+  const items = [
+    queueItem({ doc_type: "competitive", status: "done", output_table: "analyses", output_id: "analysis-1" }),
+    queueItem({ doc_type: "prd", status: "error", error: "Product Plan failed" }),
+    queueItem({ doc_type: "mvp", status: "blocked", error: "Blocked by Product Plan" }),
+    queueItem({ doc_type: "mockups", status: "blocked", error: "Blocked by First Version Plan" }),
+  ]
+  const updates: Array<{ id: string; update: GenerationQueueItemUpdate }> = []
+  let currentUpdate: GenerationQueueItemUpdate | null = null
+  let currentId: string | null = null
+  const supabase = {
+    from: () => ({
+      update(update: GenerationQueueItemUpdate) {
+        currentUpdate = update
+        return this
+      },
+      eq(column: string, value: string) {
+        if (column === "id") currentId = value
+        return this
+      },
+      select() {
+        return this
+      },
+      async single() {
+        const original = items.find((item) => item.id === currentId)
+        assert.ok(original)
+        assert.ok(currentUpdate)
+        updates.push({ id: original.id, update: currentUpdate })
+        return { data: { ...original, ...currentUpdate }, error: null }
+      },
+    }),
+  } as unknown as Parameters<typeof resetGenerationQueueItemsForRetry>[0]
+
+  const resetItems = await resetGenerationQueueItemsForRetry(supabase, items, {
+    source: "onboarding",
+    creditStatus: "not_charged",
+    creditCost: 0,
+    maxAttempts: 2,
+  })
+
+  assert.deepEqual(resetItems.map((item) => item.doc_type), ["prd", "mvp", "mockups"])
+  assert.deepEqual(updates.map((entry) => entry.id), ["prd-item", "mvp-item", "mockups-item"])
+  for (const item of resetItems) {
+    assert.equal(item.status, "pending")
+    assert.equal(item.error, null)
+    assert.equal(item.stage_message, null)
+    assert.equal(item.output_table, null)
+    assert.equal(item.output_id, null)
+    assert.equal(item.credit_status, "not_charged")
+    assert.equal(item.credit_cost, 0)
+    assert.equal(item.max_attempts, 2)
+  }
 })
