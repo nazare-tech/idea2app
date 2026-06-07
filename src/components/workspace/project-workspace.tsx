@@ -298,7 +298,6 @@ export function ProjectWorkspace({
 
   // Scroll-nav sync state
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const anchorNavRef = useRef<HTMLElement>(null)
   const [activeNavKey, setActiveNavKey] = useState<string | null>(initialDocument === "competitive" ? "overview" : initialDocument)
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
   const [renderedSectionIds, setRenderedSectionIds] = useState<ReadonlySet<string>>(() => new Set())
@@ -638,29 +637,6 @@ export function ProjectWorkspace({
     saveGeneratingState,
     router,
   ])
-
-  // Keep the rail scrolled to the active item while the document pane drives state.
-  useEffect(() => {
-    const nav = anchorNavRef.current
-    if (!nav || !activeNavKey) return
-
-    const activeTopTarget = nav.querySelector<HTMLElement>(`[data-nav-target="${CSS.escape(activeNavKey)}"]`)
-    const target = activeTopTarget
-
-    if (!target) return
-
-    const navRect = nav.getBoundingClientRect()
-    const targetRect = target.getBoundingClientRect()
-    const navStyle = window.getComputedStyle(nav)
-    const paddingTop = parseFloat(navStyle.paddingTop) || 0
-    const paddingLeft = parseFloat(navStyle.paddingLeft) || 0
-
-    nav.scrollTo({
-      top: Math.max(0, nav.scrollTop + targetRect.top - navRect.top - paddingTop),
-      left: Math.max(0, nav.scrollLeft + targetRect.left - navRect.left - paddingLeft),
-      behavior: isScrollingProgrammatically.current ? "auto" : "smooth",
-    })
-  }, [activeNavKey, activeSectionId])
 
   useEffect(() => {
     if (activeDocument === "prompt") return // No scroll sync in prompt mode
@@ -1951,7 +1927,6 @@ export function ProjectWorkspace({
             </div>
           ) : null}
           <AnchorNav
-            ref={anchorNavRef}
             navItems={visibleNavItems}
             documentStatuses={navDocumentStatuses}
             documentDisplayStates={navDocumentDisplayStates}

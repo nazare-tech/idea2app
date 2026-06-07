@@ -1,7 +1,7 @@
 // src/components/layout/anchor-nav.tsx
 "use client"
 
-import { forwardRef } from "react"
+import { forwardRef, type MouseEvent } from "react"
 import { Play, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
@@ -119,7 +119,7 @@ function NavTab({
     ? "bg-[#1C1917]"
     : hasIssue
       ? "bg-[#FFF4F1]"
-      : "bg-[#FFFFFE] hover:bg-[#F5F0EB]"
+      : "bg-[#FFFFFE]"
 
   const titleColor = isActive
     ? "text-[#FAFAFA]"
@@ -136,6 +136,27 @@ function NavTab({
       : "text-[#5D5551]"
   const connectorColor = isActive ? "border-[#FAFAFA]/20" : "border-[#E5DCD4]"
   const activeSubColor = isActive ? "text-[#FAFAFA]" : "text-primary"
+  const handleNavClick = (event: MouseEvent<HTMLButtonElement>, targetId: string) => {
+    const nav = event.currentTarget.closest("nav")
+    const scrollTop = nav?.scrollTop ?? 0
+    const scrollLeft = nav?.scrollLeft ?? 0
+
+    onNavigate(targetId)
+
+    if (!nav) return
+
+    const restoreNavPosition = () => {
+      nav.scrollTo({ top: scrollTop, left: scrollLeft, behavior: "auto" })
+    }
+
+    requestAnimationFrame(() => {
+      restoreNavPosition()
+      requestAnimationFrame(restoreNavPosition)
+    })
+    window.setTimeout(restoreNavPosition, 50)
+    window.setTimeout(restoreNavPosition, 250)
+    window.setTimeout(restoreNavPosition, 850)
+  }
 
   return (
     <div className={cn("min-w-[168px] shrink-0 rounded-md p-2 transition-colors lg:min-w-0 lg:shrink", containerStyle)}>
@@ -145,7 +166,8 @@ function NavTab({
         <button
           type="button"
           data-nav-target={item.key}
-          onClick={() => onNavigate(item.key)}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={(event) => handleNavClick(event, item.key)}
           aria-current={isActive ? "location" : undefined}
           aria-label={`${item.label}, ${status.replace("_", " ")}`}
           className="min-w-0 flex-1 cursor-pointer rounded-sm text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
@@ -200,10 +222,11 @@ function NavTab({
               key={section.id}
               type="button"
               data-nav-target={section.id}
-              onClick={() => onNavigate(section.id)}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={(event) => handleNavClick(event, section.id)}
               aria-current={isActiveSub ? "location" : undefined}
               className={cn(
-                "block w-full cursor-pointer rounded-sm px-2 py-[2px] text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0",
+                "block w-full cursor-pointer rounded-sm px-2 py-1 text-left text-[13px] transition-[background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0",
                 subHoverStyle,
                 isActiveSub
                   ? cn("font-semibold", activeSubColor)
