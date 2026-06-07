@@ -413,7 +413,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       }
 
       // Fire-and-forget: kick off server-side execution
-      // The server runs for up to 300s even if the user closes the tab.
+      // The server runs for up to 800s even if the user closes the tab.
       void kickOffExecute()
 
       // Start polling to reflect server-side progress in the UI

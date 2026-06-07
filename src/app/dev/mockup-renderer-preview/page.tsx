@@ -124,9 +124,19 @@ export default function MockupRendererPreviewPage() {
             <p className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Generation state
             </p>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight">Design mockups loading preview</h2>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight">Waiting for first image</h2>
           </div>
           <MockupGenerationLoader />
+        </section>
+
+        <section className="rounded-lg bg-card px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
+          <div className="mb-4">
+            <p className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Generation state
+            </p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight">First generated image available</h2>
+          </div>
+          <MockupGenerationLoader images={[buildStoryboardSvg("A", "Focused dashboard")]} />
         </section>
 
         <MockupRenderer content={content} projectId="preview" projectName="Preview" />

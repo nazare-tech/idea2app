@@ -36,10 +36,12 @@ import {
   getActiveDocumentIdentityForDocumentType,
 } from "@/lib/active-document-policy"
 
-export const maxDuration = 300
+export const maxDuration = 800
 
 type SB = SupabaseClient<Database>
 
+// This only parallelizes independent documents; getRunnableItems still requires
+// every declared dependency to be done or skipped before a document can run.
 const MAX_CONCURRENCY = 2
 
 async function fetchQueueRow(supabase: SB, projectId: string, userId: string) {

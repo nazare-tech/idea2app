@@ -115,6 +115,45 @@ test("buildDocumentGenerationDisplayStates: queue error maps to needs_retry", ()
   assert.equal(states.launch.detail, "Launch failed")
 })
 
+test("buildDocumentGenerationDisplayStates: blocked dependents show waiting without retry", () => {
+  const states = buildDocumentGenerationDisplayStates({
+    documentTypes: docTypes,
+    labels,
+    hasContent: {},
+    queueItems: [
+      item("prd", "error", { error: "Product Plan timed out" }),
+      item("mvp", "blocked", { error: "Blocked by a failed or missing dependency" }),
+      item("mockups", "blocked", { error: "Blocked by a failed or missing dependency" }),
+    ],
+  })
+
+  assert.equal(states.prd.displayStatus, "needs_retry")
+  assert.equal(states.prd.navStatus, "needs_retry")
+  assert.equal(states.mvp.displayStatus, "waiting")
+  assert.equal(states.mvp.navStatus, "pending")
+  assert.equal(states.mvp.message, "Waiting")
+  assert.match(states.mvp.detail ?? "", /waiting for the Product Plan/i)
+  assert.equal(states.mockups.displayStatus, "waiting")
+  assert.equal(states.mockups.navStatus, "pending")
+  assert.equal(states.mockups.message, "Waiting")
+  assert.match(states.mockups.detail ?? "", /waiting for the First Version Plan/i)
+})
+
+test("buildDocumentGenerationDisplayStates: blocked item becomes idle when prerequisite content exists", () => {
+  const states = buildDocumentGenerationDisplayStates({
+    documentTypes: docTypes,
+    labels,
+    hasContent: { prd: true },
+    queueItems: [
+      item("mvp", "blocked", { error: "Blocked by a failed or missing dependency" }),
+    ],
+  })
+
+  assert.equal(states.prd.displayStatus, "ready")
+  assert.equal(states.mvp.displayStatus, "idle")
+  assert.equal(states.mvp.navStatus, "pending")
+})
+
 test("buildDocumentGenerationDisplayStates: retry detail redacts OpenRouter key links", () => {
   const states = buildDocumentGenerationDisplayStates({
     documentTypes: docTypes,
@@ -128,6 +167,22 @@ test("buildDocumentGenerationDisplayStates: retry detail redacts OpenRouter key 
   assert.equal(
     states.mockups.detail,
     "402 requires fewer max_tokens. Visit the OpenRouter key settings and adjust key=[redacted]",
+  )
+})
+
+test("buildDocumentGenerationDisplayStates: retry detail hides technical JSON parser errors", () => {
+  const states = buildDocumentGenerationDisplayStates({
+    documentTypes: docTypes,
+    labels,
+    hasContent: {},
+    queueItems: [item("mockups", "error", {
+      error: "The request took too long or hit a temporary service issue. Try again and we will use the latest saved project context.\n\nExpected ',' or ']' after array element in JSON at position 6807 (line 84 column 6)",
+    })],
+  })
+
+  assert.equal(
+    states.mockups.detail,
+    "The request took too long or hit a temporary service issue. Try again and we will use the latest saved project context.",
   )
 })
 
@@ -170,4 +225,18 @@ test("buildDocumentGenerationDisplayStates: mockup option statuses are only atta
   })
 
   assert.equal(withoutOptions.mockups.mockupOptionStatuses, undefined)
+})
+
+test("buildDocumentGenerationDisplayStates: mockup preview images attach only while generating mockups", () => {
+  const previewImages = ["/api/mockups/image?projectId=p&path=p%2Fr%2Foption-a-storyboard.png"]
+  const states = buildDocumentGenerationDisplayStates({
+    documentTypes: docTypes,
+    labels,
+    hasContent: {},
+    queueItems: [item("mockups", "generating")],
+    mockupPreviewImages: previewImages,
+  })
+
+  assert.deepEqual(states.mockups.mockupPreviewImages, previewImages)
+  assert.equal(states.prd.mockupPreviewImages, undefined)
 })

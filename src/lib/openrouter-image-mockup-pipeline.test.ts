@@ -318,12 +318,12 @@ test("getOpenRouterMockupPlannerMaxTokens: caps hidden design plan calls by defa
   }
 })
 
-test("getOpenRouterMockupImageTimeoutMs: defaults to single-option Hobby-safe timeout", () => {
+test("getOpenRouterMockupImageTimeoutMs: defaults to the Pro generation timeout", () => {
   const previous = process.env.OPENROUTER_MOCKUP_IMAGE_TIMEOUT_MS
   delete process.env.OPENROUTER_MOCKUP_IMAGE_TIMEOUT_MS
 
   try {
-    assert.equal(getOpenRouterMockupImageTimeoutMs(), 285_000)
+    assert.equal(getOpenRouterMockupImageTimeoutMs(), 790_000)
   } finally {
     if (previous === undefined) {
       delete process.env.OPENROUTER_MOCKUP_IMAGE_TIMEOUT_MS

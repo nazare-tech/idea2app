@@ -24,7 +24,7 @@ import type { Database, Json } from "@/types/database"
 export const MOCKUP_STORAGE_BUCKET =
   process.env.SUPABASE_MOCKUP_STORAGE_BUCKET || "mockups"
 const MAX_MOCKUP_IMAGE_BYTES = 10 * 1024 * 1024
-const DEFAULT_IMAGE_TIMEOUT_MS = 285_000
+const DEFAULT_IMAGE_TIMEOUT_MS = 790_000
 const DEFAULT_IMAGE_MAX_TOKENS = 16_384
 const DEFAULT_PLANNER_MODEL = "openai/gpt-5.4-mini"
 const DEFAULT_PLANNER_MAX_TOKENS = 16_384

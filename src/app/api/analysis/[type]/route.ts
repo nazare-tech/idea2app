@@ -36,7 +36,7 @@ function createStreamSender(controller: ReadableStreamDefaultController) {
     controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"))
 }
 
-export const maxDuration = 300 // 5 min — competitive analysis pipeline (Perplexity + Tavily + synthesis) can take up to ~70s
+export const maxDuration = 800
 
 function buildAnalysisMetadata(
   type: string,
@@ -74,7 +74,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
   let errorMessage: string | undefined
   let creditsConsumed = 0
   let modelUsed: string | undefined
-  let aiSource: "openrouter" | "anthropic" | "n8n" | "inhouse" | undefined
+  let aiSource: "openrouter" | "anthropic" | "inhouse" | undefined
   let userId: string | undefined
   let projectId: string | undefined
   let analysisType: string | undefined

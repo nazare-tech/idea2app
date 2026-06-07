@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   let errorMessage: string | undefined
   let creditsConsumed = 0
   let modelUsed: string | undefined
-  let aiSource: "openrouter" | "anthropic" | "n8n" | undefined
+  let aiSource: "openrouter" | "anthropic" | undefined
   let userId: string | undefined
   let projectId: string | undefined
 

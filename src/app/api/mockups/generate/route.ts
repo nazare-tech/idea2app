@@ -16,7 +16,7 @@ function createStreamSender(controller: ReadableStreamDefaultController) {
     controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"))
 }
 
-export const maxDuration = 300 // 5 min — Stitch generation can take time
+export const maxDuration = 800
 
 export async function POST(request: Request) {
   const timer = new MetricsTimer()

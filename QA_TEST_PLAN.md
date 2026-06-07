@@ -53,7 +53,7 @@ We test for **Functionality** (Does it work?), **Reliability** (Does it always w
 
 ### D. Document Generation (PRD, MVP, Tech Spec, Analysis)
 *   **The "Waiting" Experience:**
-    *   These requests take time (N8N/Claude).
+    *   These requests take time (OpenRouter/Claude).
     *   **Test:** Trigger a generation. Is the loading state clear? Is there a skeleton loader or a subtle progress indicator?
     *   **Test:** Navigate *away* while generating. Come back. Is the state preserved, or did we lose progress? (Ideally, it continues in background).
 *   **Content verification:**

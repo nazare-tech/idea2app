@@ -31,6 +31,9 @@ import {
   type ScrollSyncCandidate,
 } from "@/lib/workspace-scroll-sync"
 
+const GENERATION_REQUEST_TIMEOUT_MS = 790_000
+const GENERATION_REQUEST_TIMEOUT_SECONDS = GENERATION_REQUEST_TIMEOUT_MS / 1000
+const GENERATION_TIMEOUT_MESSAGE = `Generation timed out after ${GENERATION_REQUEST_TIMEOUT_SECONDS} seconds. Please try again.`
 
 interface Project {
   id: string
@@ -407,7 +410,7 @@ export function ProjectWorkspace({
 
     try {
       const { timestamp } = JSON.parse(stored)
-      // Mockups can run as three separate Hobby-safe image calls, so keep local
+      // Mockups can run as three separate long image calls, so keep local
       // generation state long enough for the full sequence.
       if (Date.now() - timestamp > 1200000) {
         localStorage.removeItem(key)
@@ -630,10 +633,13 @@ export function ProjectWorkspace({
 
     const navRect = nav.getBoundingClientRect()
     const targetRect = target.getBoundingClientRect()
+    const navStyle = window.getComputedStyle(nav)
+    const paddingTop = parseFloat(navStyle.paddingTop) || 0
+    const paddingLeft = parseFloat(navStyle.paddingLeft) || 0
 
     nav.scrollTo({
-      top: Math.max(0, nav.scrollTop + targetRect.top - navRect.top),
-      left: Math.max(0, nav.scrollLeft + targetRect.left - navRect.left),
+      top: Math.max(0, nav.scrollTop + targetRect.top - navRect.top - paddingTop),
+      left: Math.max(0, nav.scrollLeft + targetRect.left - navRect.left - paddingLeft),
       behavior: isScrollingProgrammatically.current ? "auto" : "smooth",
     })
   }, [activeNavKey, activeSectionId])
@@ -758,6 +764,16 @@ export function ProjectWorkspace({
       } satisfies QueueItem))
   ), [localGenerationErrors])
 
+  const mockupPreviewImages = useMemo(() => (
+    Array.from(
+      new Set(
+        mockupDraftOptions
+          .map((option) => option.imageUrl)
+          .filter((imageUrl): imageUrl is string => Boolean(imageUrl?.trim()))
+      )
+    )
+  ), [mockupDraftOptions])
+
   const displayStates = buildDocumentGenerationDisplayStates({
     documentTypes: ["competitive", "prd", "mvp", "mockups", "launch"],
     labels: {
@@ -777,6 +793,7 @@ export function ProjectWorkspace({
     queueItems: [...generateAllQueue, ...localFailureQueueItems],
     locallyGenerating: generatingDocuments,
     mockupOptionStatuses,
+    mockupPreviewImages,
   })
 
   const getDocumentStatus = (type: DocumentType): LegacyDocumentStatus => {
@@ -984,7 +1001,14 @@ export function ProjectWorkspace({
     }
 
     isScrollingProgrammatically.current = true
-    target.scrollIntoView({ behavior: "smooth", block: "start" })
+    const containerRect = container.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+    const containerStyle = window.getComputedStyle(container)
+    const scrollPaddingTop = parseFloat(containerStyle.scrollPaddingTop) || parseFloat(containerStyle.paddingTop) || 0
+    container.scrollTo({
+      top: Math.max(0, container.scrollTop + targetRect.top - containerRect.top - scrollPaddingTop),
+      behavior: "smooth",
+    })
 
     // Update nav state immediately
     const parentKey = getNavKeyForSection(targetId)
@@ -1125,7 +1149,7 @@ export function ProjectWorkspace({
       const latestMvp = mvpPlans[0]
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 min client-side limit
+      const timeoutId = setTimeout(() => controller.abort(), GENERATION_REQUEST_TIMEOUT_MS)
 
       let response: Response
       try {
@@ -1194,7 +1218,7 @@ export function ProjectWorkspace({
     } catch (error) {
       console.error("Error generating content:", error)
       if (error instanceof Error && error.name === "AbortError") {
-        alert("Generation timed out after 5 minutes. Please try again.")
+        alert(GENERATION_TIMEOUT_MESSAGE)
       } else if (error instanceof Error) {
         alert(error.message)
       }
@@ -1429,7 +1453,7 @@ export function ProjectWorkspace({
           const requestWithTimeout = async (
             url: string,
             init: Omit<RequestInit, "signal">,
-            timeoutMs = 300000,
+            timeoutMs = GENERATION_REQUEST_TIMEOUT_MS,
           ) => {
             const requestController = new AbortController()
             const timeoutId = setTimeout(() => requestController.abort(), timeoutMs)
@@ -1616,7 +1640,7 @@ export function ProjectWorkspace({
         // Use external signal (from Generate All) if provided, otherwise create our own
         const externalSignal = options?.signal
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 300000)
+        const timeoutId = setTimeout(() => controller.abort(), GENERATION_REQUEST_TIMEOUT_MS)
 
         // If an external signal is provided, link it to our controller
         if (externalSignal) {
@@ -1731,7 +1755,7 @@ export function ProjectWorkspace({
         return
       }
       if (error instanceof Error && error.name === "AbortError") {
-        alert("Generation timed out after 5 minutes. Please try again.")
+        alert(GENERATION_TIMEOUT_MESSAGE)
       } else if (error instanceof Error) {
         alert(error.message)
       } else {

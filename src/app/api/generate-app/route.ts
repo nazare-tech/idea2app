@@ -15,6 +15,8 @@ const APP_TYPE_CREDITS: Record<string, number> = {
   pwa: CREDIT_COSTS["app-pwa"],
 }
 
+export const maxDuration = 800
+
 export async function POST(request: Request) {
   const timer = new MetricsTimer()
   let statusCode = 200
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
   let errorMessage: string | undefined
   let creditsConsumed = 0
   let modelUsed: string | undefined
-  let aiSource: "openrouter" | "anthropic" | "n8n" | undefined
+  let aiSource: "openrouter" | "anthropic" | undefined
   let userId: string | undefined
   let projectId: string | undefined
 

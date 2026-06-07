@@ -1,4 +1,4 @@
-export const OPENROUTER_LONG_TEXT_TIMEOUT_MS = 240_000
+export const OPENROUTER_LONG_TEXT_TIMEOUT_MS = 790_000
 
 export function createOpenRouterLongTextSignal() {
   return AbortSignal.timeout(OPENROUTER_LONG_TEXT_TIMEOUT_MS)
