@@ -17,8 +17,6 @@ interface AnchorNavProps {
   documentStatuses: Record<string, NavStatus>
   /** Rich status per visible nav key (overview, market-research, prd, etc.) */
   documentDisplayStates?: Record<string, DocumentGenerationDisplayState>
-  /** Currently visible section key (set by IntersectionObserver) */
-  activeKey: string | null
   /** Currently visible sub-section ID */
   activeSectionId: string | null
   /** Callback when user clicks a tab or sub-tab */
@@ -93,7 +91,6 @@ function StatusText({
 function NavTab({
   item,
   status,
-  isActive,
   activeSectionId,
   displayState,
   onNavigate,
@@ -101,7 +98,6 @@ function NavTab({
 }: {
   item: DocumentNavItem
   status: NavStatus
-  isActive: boolean
   activeSectionId: string | null
   displayState?: DocumentGenerationDisplayState
   onNavigate: (id: string) => void
@@ -115,27 +111,20 @@ function NavTab({
   const actionLabel = showRetryAction ? "Retry" : showGenerateAction ? "Generate" : null
   const ActionIcon = showRetryAction ? RotateCcw : Play
 
-  const containerStyle = isActive
-    ? "bg-[#1C1917]"
-    : hasIssue
+  const containerStyle = hasIssue
       ? "bg-[#FFF4F1]"
       : "bg-[#FFFFFE]"
 
-  const titleColor = isActive
-    ? "text-[#FAFAFA]"
-    : hasIssue
+  const titleColor = hasIssue
       ? "text-destructive"
     : isPending
       ? "text-[#8A8480]"
       : "text-[#1C1917]"
 
-  const subColor = isActive
-    ? "text-[#FAFAFA]/70"
-    : isPending
+  const subColor = isPending
       ? "text-[#8A8480]"
       : "text-[#5D5551]"
-  const connectorColor = isActive ? "border-[#FAFAFA]/20" : "border-[#E5DCD4]"
-  const activeSubColor = isActive ? "text-[#FAFAFA]" : "text-primary"
+  const connectorColor = "border-[#E5DCD4]"
   const handleNavClick = (event: MouseEvent<HTMLButtonElement>, targetId: string) => {
     const nav = event.currentTarget.closest("nav")
     const scrollTop = nav?.scrollTop ?? 0
@@ -168,7 +157,6 @@ function NavTab({
           data-nav-target={item.key}
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => handleNavClick(event, item.key)}
-          aria-current={isActive ? "location" : undefined}
           aria-label={`${item.label}, ${status.replace("_", " ")}`}
           className="min-w-0 flex-1 cursor-pointer rounded-sm text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
         >
@@ -187,9 +175,7 @@ function NavTab({
             "inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
             hasIssue
               ? "border-destructive bg-destructive text-primary-foreground hover:bg-destructive/90"
-              : isActive
-                ? "border-[#FAFAFA]/25 bg-[#FAFAFA]/10 text-[#FAFAFA] hover:bg-[#FAFAFA]/15"
-                : "border-[#D8CEC5] bg-[#FFFFFE] text-[#5D5551] hover:border-primary/50 hover:text-primary",
+              : "border-[#D8CEC5] bg-[#FFFFFE] text-[#5D5551] hover:border-primary/50 hover:text-primary",
           )}
         >
           <ActionIcon aria-hidden="true" className="h-3 w-3" />
@@ -198,7 +184,7 @@ function NavTab({
         ) : (
           <span className={cn(
             "shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
-            isActive ? "text-[#FAFAFA]/75" : hasIssue ? "text-destructive" : "text-[#8A8480]",
+            hasIssue ? "text-destructive" : "text-[#8A8480]",
           )}>
             <StatusText status={status} displayState={displayState} />
           </span>
@@ -213,10 +199,6 @@ function NavTab({
           const inProgressOpacity = isInProgress
             ? idx < 3 ? "opacity-90" : idx < 6 ? "opacity-55" : "opacity-45"
             : ""
-          const subHoverStyle = isActive
-            ? "hover:bg-[#FAFAFA]/10 hover:text-[#FAFAFA]"
-            : "hover:bg-[#F5F0EB] hover:text-[#1C1917]"
-
           return (
             <button
               key={section.id}
@@ -226,10 +208,9 @@ function NavTab({
               onClick={(event) => handleNavClick(event, section.id)}
               aria-current={isActiveSub ? "location" : undefined}
               className={cn(
-                "block w-full cursor-pointer rounded-sm px-2 py-1 text-left text-[13px] transition-[background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0",
-                subHoverStyle,
+                "block w-full cursor-pointer rounded-sm px-2 py-1 text-left text-[13px] transition-[background-color,color] hover:bg-[#F5F0EB] hover:text-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0",
                 isActiveSub
-                  ? cn("font-semibold", activeSubColor)
+                  ? "bg-[#1C1917] font-semibold text-[#FAFAFA] hover:bg-[#1C1917] hover:text-[#FAFAFA]"
                   : cn(subColor, inProgressOpacity)
               )}
             >
@@ -246,7 +227,6 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
   navItems = SCROLLABLE_NAV_ITEMS,
   documentStatuses,
   documentDisplayStates = {},
-  activeKey,
   activeSectionId,
   onNavigate,
   onGenerateDocument,
@@ -266,7 +246,6 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
           key={item.key}
           item={item}
           status={getStatus(item)}
-          isActive={activeKey === item.key}
           activeSectionId={activeSectionId}
           displayState={documentDisplayStates[item.key]}
           onNavigate={onNavigate}

@@ -1745,7 +1745,7 @@ function DesignedSection({
   children: React.ReactNode
 }) {
   return (
-    <section id={id} className="pt-16">
+    <section id={id} className="pt-0">
       <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
         <div className="space-y-3">
           <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#1C1917]">
@@ -2812,7 +2812,7 @@ function FvpSection({
   children: React.ReactNode
 }) {
   return (
-    <section id={id} className="pt-16">
+    <section id={id} className="pt-0">
       <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
         <div className="space-y-3">
           <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#4A4040]">

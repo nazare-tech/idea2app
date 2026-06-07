@@ -1,6 +1,5 @@
 export interface ScrollSyncCandidate {
   id: string
-  navKey: string
   top: number
 }
 

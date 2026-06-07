@@ -14,7 +14,6 @@ import {
 import {
   SCROLLABLE_NAV_ITEMS,
   filterNavItemsByRenderedSections,
-  getNavKeyForSection,
 } from "@/lib/document-sections"
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
 import { useGenerateAll, type GenerateDocumentFn, type QueueItem } from "@/stores/generate-all-store"
@@ -176,6 +175,12 @@ function getSourceTypeForScrollTarget(targetId: string): DocumentType | null {
   return navItem?.sourceType ?? null
 }
 
+function isScrollableSubsectionId(targetId: string) {
+  return SCROLLABLE_NAV_ITEMS.some((item) =>
+    item.sections.some((section) => section.id === targetId)
+  )
+}
+
 function areStringSetsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>) {
   if (left.size !== right.size) return false
 
@@ -298,7 +303,6 @@ export function ProjectWorkspace({
 
   // Scroll-nav sync state
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [activeNavKey, setActiveNavKey] = useState<string | null>(initialDocument === "competitive" ? "overview" : initialDocument)
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
   const [renderedSectionIds, setRenderedSectionIds] = useState<ReadonlySet<string>>(() => new Set())
   const isScrollingProgrammatically = useRef(false)
@@ -654,7 +658,6 @@ export function ProjectWorkspace({
         if (!sectionId) return
         candidates.push({
           id: sectionId,
-          navKey: sectionId,
           top: element.getBoundingClientRect().top,
         })
       })
@@ -665,7 +668,6 @@ export function ProjectWorkspace({
           if (!element) continue
           candidates.push({
             id: section.id,
-            navKey: item.key,
             top: element.getBoundingClientRect().top,
           })
         }
@@ -682,8 +684,7 @@ export function ProjectWorkspace({
       const activeCandidate = chooseActiveScrollCandidate(collectCandidates(), markerTop)
       if (!activeCandidate) return
 
-      const nextSectionId = activeCandidate.id === activeCandidate.navKey ? null : activeCandidate.id
-      setActiveNavKey((current) => current === activeCandidate.navKey ? current : activeCandidate.navKey)
+      const nextSectionId = isScrollableSubsectionId(activeCandidate.id) ? activeCandidate.id : null
       setActiveSectionId((current) => current === nextSectionId ? current : nextSectionId)
 
       const currentHash = decodeURIComponent(window.location.hash.replace(/^#/, ""))
@@ -1017,7 +1018,6 @@ export function ProjectWorkspace({
       window.history.pushState(null, "", `${pathname}?${nextParams.toString()}`)
     }
 
-    setActiveNavKey(type === "competitive" ? "overview" : type)
   }
 
   const handleScrollNavigate = useCallback((targetId: string) => {
@@ -1045,13 +1045,9 @@ export function ProjectWorkspace({
     })
 
     // Update nav state immediately
-    const parentKey = getNavKeyForSection(targetId)
-    if (parentKey) {
-      setActiveNavKey(parentKey)
+    if (isScrollableSubsectionId(targetId)) {
       setActiveSectionId(targetId)
     } else {
-      // It's a top-level key
-      setActiveNavKey(targetId)
       setActiveSectionId(null)
     }
 
@@ -1930,7 +1926,6 @@ export function ProjectWorkspace({
             navItems={visibleNavItems}
             documentStatuses={navDocumentStatuses}
             documentDisplayStates={navDocumentDisplayStates}
-            activeKey={activeNavKey}
             activeSectionId={activeSectionId}
             onNavigate={handleScrollNavigate}
             onGenerateDocument={handleGenerateDocument}

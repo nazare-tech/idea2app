@@ -130,7 +130,7 @@ function WorkspaceDesignedSection({
   children: React.ReactNode
 }) {
   return (
-    <section id={id} className="pt-16">
+    <section id={id} className="pt-0">
       <WorkspaceSectionHeader
         kicker={kicker}
         title={title}
