@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS public.api_request_metrics (
   -- Credits & Model info
   credits_consumed INTEGER DEFAULT 0,
   model_used VARCHAR(100),           -- e.g., 'anthropic/claude-sonnet-4', 'gpt-4'
-  ai_source VARCHAR(50),             -- 'openrouter', 'anthropic', 'n8n'
+  ai_source VARCHAR(50),             -- 'openrouter', 'anthropic', 'openrouter-image', 'inhouse', 'stitch'
 
   -- Error tracking
   error_type VARCHAR(100),           -- 'insufficient_credits', 'api_timeout', 'validation_error', etc.

@@ -31,7 +31,7 @@
   - Fail-open API behavior so CTA rendering does not block on Supabase errors
 - **OpenRouter Image Mockups + Legacy Stitch Compatibility**: Mockup generation now defaults to OpenRouter image storyboards and keeps Stitch rendering/proxy support for older saved mockups until those records are cleaned up separately. Features:
   - `src/lib/mockup-design-plan.ts` generates and validates hidden mockup design plans with primary platform, happy-path scenario, 2-4 screens, screen captions, and option-level design directions
-  - `src/lib/openrouter-image-mockup-pipeline.ts` generates OpenRouter storyboard alternatives and uploads image bytes to Supabase Storage, with a reusable single-option helper for Hobby-safe manual generation
+  - `src/lib/openrouter-image-mockup-pipeline.ts` generates OpenRouter storyboard alternatives and uploads image bytes to Supabase Storage, with a reusable single-option helper for manual generation
   - `src/app/api/mockups/generate-option/route.ts` generates and stores one mockup option image for manual workspace generation
   - `src/app/api/mockups/recover-options/route.ts` reconstructs saved storyboard option metadata from Supabase Storage for the current run before retrying failed/missing options
   - `src/app/api/mockups/finalize/route.ts` finalizes three generated options into the canonical `mockups` row
@@ -49,7 +49,7 @@
 - **Project-based Pricing Migration**: Project creation is guarded by project allowance. Free users get a one-project lifetime allowance; paid plans use monthly/subscription-period windows, explicit plan allowance fields/features where available, and plan-name fallbacks. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
 - **Paid-only Project Deletion**: The Projects dashboard renders `DashboardProjectCard` cards with hover/focus workspace warming and delete controls. `DELETE /api/projects/[id]` is ownership-scoped, metrics-tracked, and blocked for Free plan users; the UI shows an upgrade prompt before paid-plan-only deletion.
 - **Generate-Missing-Only Documents**: Planning documents are active singletons by default. Direct generation routes and Generate All/onboarding execution check for an existing active document before credits or external AI calls; duplicate attempts return/record a skipped existing output instead of inserting another row. Future document versioning must be a separate explicit product action.
-- **Dashboard Generation Status**: The project dashboard derives document loading states from the durable Generate All/onboarding queue, not only local browser flags. The left document rail shows compact queued/generating/ready indicators plus dark `Generate` buttons for missing idle modules and dark `Retry` buttons for failed modules. The right document modules show queued/loading states, centered retry placeholders with a user-friendly error message and wider dark `Retry` action, or canonical saved content. Product Plan and First Version Plan no longer show partial streaming previews in the workspace; they show loading/generating states until the saved document is ready. Overview and Market Research share the same competitive-analysis generation state, so a retry from either section moves both rail items together.
+- **Dashboard Generation Status**: The project dashboard derives document loading states from the durable Generate All/onboarding queue, not only local browser flags. The left document rail shows compact queued/waiting/generating/ready indicators plus dark `Generate` buttons for missing idle modules and dark `Retry` buttons only for modules that actually failed. Queue items blocked by a failed/missing prerequisite show `Waiting`, not `Retry`, until the prerequisite content exists. The right document modules show queued/waiting/loading states, centered retry placeholders with a user-friendly error message and wider dark `Retry` action, or canonical saved content. Product Plan and First Version Plan no longer show partial streaming previews in the workspace; they show loading/generating states until the saved document is ready. Overview and Market Research share the same competitive-analysis generation state, so a retry from either section moves both rail items together.
 - **Lazy Workspace Loading**: Project workspaces use slugged project refs at `/projects/[projectRef]` and lazy-load owned document collections through `/api/projects/[id]/workspace`. The workspace requests only the document types it needs, keeps section hash navigation in sync, and defers below-the-fold rendering to avoid freezing large generated documents.
 - **Prompt/Inline Edit Cleanup**: The Prompt tab remains deprecated and `/api/prompt-chat` returns `410 Gone`. The old inline "Edit with AI" client surface and `/api/document-edit` route are not present in the current app; document PATCH routes still exist for direct content updates.
 
@@ -86,6 +86,8 @@
 | **beautiful-mermaid** | Latest | Beautiful, themeable Mermaid diagram rendering with expansion |
 | **react-syntax-highlighter** | 16.1.0 | Code syntax highlighting |
 | **@json-render/core**, **@json-render/react**, **@json-render/shadcn** | 0.11.0 | Structured mockup rendering from json-render specs and patches |
+| **img-fx** | 0.3.1 | Animated WebGL mockup image-generation loading surface |
+| **three** | 0.184.0 | WebGL renderer peer dependency for `img-fx` |
 | **date-fns** | 4.1.0 | Relative project timestamp formatting on dashboard cards |
 | **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
 | **jspdf** | 4.0.0 | Client-side PDF generation |
@@ -827,8 +829,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
 
 # AI Models
 OPENROUTER_API_KEY=sk-or-xxx...
-OPENROUTER_CHAT_MODEL=anthropic/claude-sonnet-4
-OPENROUTER_ANALYSIS_MODEL=anthropic/claude-sonnet-4
+OPENROUTER_CHAT_MODEL=anthropic/claude-sonnet-4-6
+OPENROUTER_ANALYSIS_MODEL=anthropic/claude-sonnet-4-6
 ANTHROPIC_API_KEY=sk-ant-xxx...
 
 # Stripe
@@ -847,8 +849,8 @@ OPENROUTER_MOCKUP_IMAGE_MODEL=openai/gpt-5.4-image-2
 # Optional provider-specific image_config overrides; leave unset unless the selected provider supports them.
 # OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO=21:9
 # OPENROUTER_MOCKUP_IMAGE_SIZE=1K
-OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS=4096
-OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS=2048
+OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS=16384
+OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS=16384
 SUPABASE_MOCKUP_STORAGE_BUCKET=mockups
 STITCH_API_KEY=stitch_xxx... # legacy saved Stitch mockup compatibility / tooling
 
@@ -1138,7 +1140,7 @@ docker run -p 3000:3000 idea2app
   - Returns: `{ content, model, source }` — content is JSON with `{ type: "openrouter-image-v2", options: [{label, title, imageUrl, storagePath, description, screens, width?, height?}] }`; duplicate requests return `200 OK` with `{ skipped: true, existingDocument }`
   - Cost: project-bundled, no credits consumed
   - Uses a hidden design plan plus OpenRouter image generation for 3 static storyboard alternatives
-  - Route `maxDuration`: 300s
+  - Route `maxDuration`: 800s
   - Generation logic lives in `src/lib/openrouter-image-mockup-pipeline.ts` and is shared with server-side document generation
 
 - **GET /api/mockups/image**: Proxy stored OpenRouter mockup images through the server
@@ -1174,7 +1176,7 @@ docker run -p 3000:3000 idea2app
 
 - **POST /api/generate-all/execute**: Server-side pipeline orchestrator
   - Body: `{ projectId }`
-  - Reads `generation_queue_items`, claims pending runnable items atomically, and executes dependency-aware batches with max concurrency 2
+  - Reads `generation_queue_items`, claims pending runnable items atomically, and executes dependency-aware batches with max concurrency 2. Concurrency only applies to independent runnable documents; Product Plan, First Version Plan, and Design Mockups remain dependency-gated in sequence.
   - Dependencies: competitive → prd → mvp → mockups; launch has no dependency and may run independently
   - Per-step: checks for an existing active document, deducts credits for legacy/manual runs only when generation is needed, skips credit charging for bundled onboarding runs, runs pipeline, saves to the correct table, and records `output_table`/`output_id`
   - Checks for cancellation before each batch
@@ -1398,11 +1400,11 @@ export const BASE_ACTION_TOKENS = {
 - If generation appears stuck: check `generation_queues` row in Supabase — `status`, `current_index`, and `queue` show the live server state
 - If credits were lost without a document being generated: the hardened `refund_credits` RPC must exist in Supabase (run `supabase/migrations/20260425004000_security_hardening_followups.sql`)
 - After running the migration, regenerate database types: `npx supabase gen types typescript --project-id <id> > src/types/database.ts` to remove the `(supabase.rpc as any)` casts
-- Cancellation: the execute route checks DB `status === "cancelled"` before each step — cancel takes effect at the next step boundary (up to ~5min for a slow step like OpenRouter image mockups on Hobby-safe timeouts)
+- Cancellation: the execute route checks DB `status === "cancelled"` before each step — cancel takes effect at the next step boundary, which can be several minutes for a slow OpenRouter image mockup step
 
 **Mockup Generation Timing**
-- Manual mockup generation can take close to 5 minutes per option because OpenRouter image models can be slow and each option has a `285s` OpenRouter timeout inside Vercel Hobby's `300s` function limit.
-- The workspace intentionally runs Options A/B/C one after another on Hobby. This increases total wall-clock time, but it reduces wasted OpenRouter spend because successful uploaded options can be recovered and finalized instead of losing all three requests to one shared timeout.
+- Manual mockup generation can take several minutes per option because OpenRouter image models can be slow and each option has a `790s` OpenRouter timeout inside the Vercel Pro function window.
+- The workspace intentionally runs Options A/B/C one after another. This increases total wall-clock time, but it reduces wasted OpenRouter spend because successful uploaded options can be recovered and finalized instead of losing all three requests to one shared timeout.
 - Lowering the timeout only fails faster; it does not make image generation faster. To reduce actual delay, use a faster model via `OPENROUTER_MOCKUP_IMAGE_MODEL`, generate fewer default options, shorten the MVP context/prompt, ask for lower-detail wireframes, or move mockups to a durable background worker so the browser is not waiting on a long API request.
 
 **database.ts Corruption**
@@ -1485,7 +1487,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/prds/[id]/route.ts](src/app/api/prds/[id]/route.ts) | PATCH endpoint to update PRD content |
 | [src/app/api/mvp-plans/[id]/route.ts](src/app/api/mvp-plans/[id]/route.ts) | PATCH endpoint to update First Version Plan content |
 | [src/app/api/mockups/generate/route.ts](src/app/api/mockups/generate/route.ts) | POST endpoint to generate OpenRouter storyboard mockup alternatives without credit consumption. |
-| [src/app/api/mockups/generate-option/route.ts](src/app/api/mockups/generate-option/route.ts) | POST endpoint to generate one OpenRouter storyboard option for Hobby-safe manual workspace generation. |
+| [src/app/api/mockups/generate-option/route.ts](src/app/api/mockups/generate-option/route.ts) | POST endpoint to generate one OpenRouter storyboard option for manual workspace generation. |
 | [src/app/api/mockups/finalize/route.ts](src/app/api/mockups/finalize/route.ts) | POST endpoint to validate and finalize three saved OpenRouter storyboard options into the canonical mockups document row. |
 | [src/app/api/mockups/recover-options/route.ts](src/app/api/mockups/recover-options/route.ts) | POST endpoint to recover already-uploaded storyboard option images for a mockup run before retrying OpenRouter generation. |
 | [src/app/api/mockups/fixture/route.ts](src/app/api/mockups/fixture/route.ts) | POST endpoint to save no-credit storyboard fixture mockups for local display and retry testing. |

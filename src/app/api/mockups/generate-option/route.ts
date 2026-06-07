@@ -14,7 +14,7 @@ import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 
-export const maxDuration = 300
+export const maxDuration = 800
 
 const OPTION_LABELS = new Set<string>(
   OPENROUTER_MOCKUP_OPTION_CONFIGS.map((config) => config.label),

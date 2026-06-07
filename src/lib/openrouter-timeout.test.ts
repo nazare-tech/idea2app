@@ -9,9 +9,9 @@ import {
   isOpenRouterAbortError,
 } from "./openrouter-timeout"
 
-test("OpenRouter long text timeout stays below the 300s route envelope", () => {
+test("OpenRouter long text timeout stays below the planning route envelope", () => {
   assert.equal(OPENROUTER_LONG_TEXT_TIMEOUT_MS, 240_000)
-  assert.ok(OPENROUTER_LONG_TEXT_TIMEOUT_MS < 300_000)
+  assert.ok(OPENROUTER_LONG_TEXT_TIMEOUT_MS < 540_000)
 })
 
 test("OpenRouter planning document timeout supports longer PRD and MVP runs", () => {

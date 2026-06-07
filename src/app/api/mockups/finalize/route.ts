@@ -19,7 +19,7 @@ import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
 import { createClient } from "@/lib/supabase/server"
 import type { Json } from "@/types/database"
 
-export const maxDuration = 300
+export const maxDuration = 800
 
 const EXPECTED_LABELS = ["A", "B", "C"]
 const SAFE_RUN_ID = /^[A-Za-z0-9_-]+$/

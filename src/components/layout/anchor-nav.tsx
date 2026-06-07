@@ -84,6 +84,7 @@ function StatusText({
   }
 
   if (status === "needs_retry") return <span>Needs retry</span>
+  if (displayState?.displayStatus === "waiting") return <span>Waiting</span>
   if (displayState?.displayStatus === "queued") return <span>Queued</span>
   if (status === "done") return <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#22C55E] opacity-60" />
   return null

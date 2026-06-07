@@ -5,6 +5,7 @@ export type DocumentDisplayStatus =
   | "idle"
   | "ready"
   | "queued"
+  | "waiting"
   | "generating"
   | "needs_retry"
 
@@ -25,6 +26,7 @@ export interface DocumentGenerationDisplayState {
   stageMessage?: string
   error?: string
   mockupOptionStatuses?: MockupOptionStatus[]
+  mockupPreviewImages?: string[]
 }
 
 export interface BuildDocumentGenerationDisplayStatesInput {
@@ -34,6 +36,7 @@ export interface BuildDocumentGenerationDisplayStatesInput {
   queueItems?: QueueItem[]
   locallyGenerating?: Partial<Record<DocumentType, boolean>>
   mockupOptionStatuses?: MockupOptionStatus[]
+  mockupPreviewImages?: string[]
 }
 
 const DEFAULT_MESSAGES: Record<DocumentType, string> = {
@@ -54,15 +57,49 @@ const QUEUED_DETAILS: Partial<Record<DocumentType, string>> = {
   launch: "This will start automatically.",
 }
 
+const DEPENDENCY_DETAILS: Partial<Record<DocumentType, string>> = {
+  prd: "This is waiting for Market Research. Retry Market Research first.",
+  mvp: "This is waiting for the Product Plan. Retry Product Plan first.",
+  mockups: "This is waiting for the First Version Plan. Generate the First Version Plan first.",
+  techspec: "This is waiting for the Product Plan. Retry Product Plan first.",
+  deploy: "This is waiting for Technical Specifications. Generate Technical Specifications first.",
+}
+
+const GENERIC_RETRY_DETAIL = "The request took too long or hit a temporary service issue. Try again and we will use the latest saved project context."
+
+const TECHNICAL_ERROR_PATTERNS = [
+  /Expected (?:','|']'|'}'|property name|double-quoted property name) /i,
+  /JSON at position \d+/i,
+  /line \d+ column \d+/i,
+  /Unexpected token .* in JSON/i,
+  /Unexpected end of JSON input/i,
+  /SyntaxError/i,
+]
+
 function sanitizeGenerationErrorDetail(detail?: string) {
   if (!detail) return detail
 
-  return detail
+  const redactedDetail = detail
     .replace(
       /https:\/\/openrouter\.ai\/workspaces\/[^/\s)]+\/keys\/[^\s)]+/g,
       "the OpenRouter key settings",
     )
     .replace(/key=[^&\s)]+/g, "key=[redacted]")
+
+  if (TECHNICAL_ERROR_PATTERNS.some((pattern) => pattern.test(redactedDetail))) {
+    return GENERIC_RETRY_DETAIL
+  }
+
+  return redactedDetail
+}
+
+function getBlockingDependency(docType: DocumentType): DocumentType | undefined {
+  if (docType === "prd") return "competitive"
+  if (docType === "mvp") return "prd"
+  if (docType === "mockups") return "mvp"
+  if (docType === "techspec") return "prd"
+  if (docType === "deploy") return "techspec"
+  return undefined
 }
 
 export function buildDocumentGenerationDisplayStates({
@@ -72,6 +109,7 @@ export function buildDocumentGenerationDisplayStates({
   queueItems = [],
   locallyGenerating = {},
   mockupOptionStatuses,
+  mockupPreviewImages,
 }: BuildDocumentGenerationDisplayStatesInput): Record<DocumentType, DocumentGenerationDisplayState> {
   const queueByType = new Map(queueItems.map((item) => [item.docType, item]))
 
@@ -104,10 +142,38 @@ export function buildDocumentGenerationDisplayStates({
           queueStatus,
           stageMessage: queueItem?.stageMessage,
           mockupOptionStatuses: docType === "mockups" ? mockupOptionStatuses : undefined,
+          mockupPreviewImages: docType === "mockups" ? mockupPreviewImages : undefined,
         }]
       }
 
-      if (queueStatus === "error" || queueStatus === "blocked" || queueStatus === "cancelled") {
+      if (queueStatus === "blocked") {
+        const blockingDependency = getBlockingDependency(docType)
+        const isDependencyReady = blockingDependency ? Boolean(hasContent[blockingDependency]) : false
+
+        if (isDependencyReady) {
+          return [docType, {
+            docType,
+            displayStatus: "idle",
+            navStatus: "pending",
+            label,
+            message: "",
+            queueStatus,
+          }]
+        }
+
+        return [docType, {
+          docType,
+          displayStatus: "waiting",
+          navStatus: "pending",
+          label,
+          message: "Waiting",
+          detail: DEPENDENCY_DETAILS[docType] ?? "This is waiting for an earlier document to finish.",
+          queueStatus,
+          error: sanitizeGenerationErrorDetail(queueItem?.error),
+        }]
+      }
+
+      if (queueStatus === "error" || queueStatus === "cancelled") {
         const errorDetail = sanitizeGenerationErrorDetail(queueItem?.error)
         return [docType, {
           docType,
@@ -115,7 +181,7 @@ export function buildDocumentGenerationDisplayStates({
           navStatus: "needs_retry",
           label,
           message: "Needs retry",
-          detail: errorDetail ?? "Generation did not complete.",
+          detail: errorDetail ?? GENERIC_RETRY_DETAIL,
           queueStatus,
           error: errorDetail,
         }]

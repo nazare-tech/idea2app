@@ -4,6 +4,7 @@
 import React, { forwardRef, useRef, useMemo, useState, useEffect } from "react"
 import { AlertCircle, CheckCircle2, Circle, Loader2, RotateCcw } from "lucide-react"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
+import { MockupGenerationLoader } from "@/components/ui/mockup-generation-loader"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import {
   CompetitiveOverviewSection,
@@ -94,6 +95,7 @@ function GenerationStatusModule({
 
   const isGenerating = state.displayStatus === "generating"
   const needsRetry = state.displayStatus === "needs_retry"
+  const retryDetail = state.detail?.trim() || "Generation did not complete. Try again and we will use the latest saved project context."
 
   if (needsRetry) {
     return (
@@ -106,13 +108,8 @@ function GenerationStatusModule({
             We could not finish generating {label}.
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            The request took too long or hit a temporary service issue. Try again and we will use the latest saved project context.
+            {retryDetail}
           </p>
-          {state.detail && (
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {state.detail}
-            </p>
-          )}
         </div>
 
         {onGenerateDocument && (
@@ -135,7 +132,7 @@ function GenerationStatusModule({
         <div className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
           isGenerating && "bg-primary/10 text-primary",
-          state.displayStatus === "queued" && "bg-muted text-muted-foreground",
+          (state.displayStatus === "queued" || state.displayStatus === "waiting") && "bg-muted text-muted-foreground",
         )}>
           {isGenerating ? (
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -156,11 +153,15 @@ function GenerationStatusModule({
       </div>
 
       {isGenerating && (
-        <div className="space-y-3">
-          <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
-          <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
-          <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
-        </div>
+        state.docType === "mockups" ? (
+          <MockupGenerationLoader images={state.mockupPreviewImages} />
+        ) : (
+          <div className="space-y-3">
+            <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
+            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
+            <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
+          </div>
+        )
       )}
 
       {state.mockupOptionStatuses && state.mockupOptionStatuses.length > 0 && (

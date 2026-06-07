@@ -12,6 +12,8 @@ import {
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
 
+export const maxDuration = 800
+
 export async function POST(request: Request) {
   const timer = new MetricsTimer()
   let statusCode = 200
