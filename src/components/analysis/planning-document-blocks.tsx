@@ -1731,7 +1731,6 @@ function ProductPlanMasthead({
 
 function DesignedSection({
   id,
-  kicker,
   title,
   index,
   total,
@@ -1747,10 +1746,7 @@ function DesignedSection({
   return (
     <section id={id} className="pt-0">
       <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
-        <div className="space-y-3">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#1C1917]">
-            {kicker}
-          </p>
+        <div>
           <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
             {title}
           </h2>
@@ -2570,7 +2566,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   const nextSectionIndex = () => sectionIndex++
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-16">
       <ProductPlanMasthead
         metaItems={getCurrentPrdMetaItems({
           timeline,
@@ -2717,7 +2713,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
           index={nextSectionIndex()}
           total={sectionTotal}
         >
-          <div className="space-y-12">
+          <div className="flex flex-col gap-12">
             <RiskMitigationShowcase section={risks} />
             <DependenciesShowcase section={dependencies} />
             <AssumptionsShowcase section={assumptions} />
@@ -2800,7 +2796,6 @@ function getDesignListRows(content: string) {
 
 function FvpSection({
   id,
-  kicker,
   title,
   index,
   children,
@@ -2814,10 +2809,7 @@ function FvpSection({
   return (
     <section id={id} className="pt-0">
       <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
-        <div className="space-y-3">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#4A4040]">
-            {kicker}
-          </p>
+        <div>
           <h2 className={cn(displayFontClass, "text-[30px] font-extrabold leading-none tracking-[-0.045em] text-[#1C1917] sm:text-[40px]")}>
             {title}
           </h2>
@@ -3305,7 +3297,7 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
   const cutListIndex = hasStandaloneGoal ? 11 : 10
 
   return (
-    <div className="space-y-0">
+    <div className="flex flex-col gap-16">
       <FvpMasthead />
 
       {summary ? (
@@ -3402,7 +3394,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   }
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-8">
       <PageHeader
         eyebrow="Product Plan"
         title="Product Plan"
@@ -3436,7 +3428,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
         </PencilCard>
       </div>
 
-      <div className="space-y-2">
+      <div className="flex flex-col gap-6">
         <PencilCard title="Measurable Objectives" kicker="Outcomes">
           <NarrativeContent narrative={structured.objectives} />
         </PencilCard>
@@ -3475,7 +3467,7 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
         </PencilCard>
       </div>
 
-      <div id="prd-prioritization" className="space-y-2">
+      <div id="prd-prioritization" className="flex flex-col gap-6">
         {hasNarrativeContent(structured.prioritization) ? (
           <PencilCard title="Build Order" kicker="Release Focus" dark>
             <NarrativeContent narrative={structured.prioritization} dark />
@@ -3519,14 +3511,14 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
   }
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-8">
       <PageHeader
         eyebrow="First Version"
         title="First Version Plan"
         description="A launchable scope plan focused on what to prove, the core workflow, feature boundaries, and success signals."
       />
 
-      <div id="mvp-wedge" className="space-y-2">
+      <div id="mvp-wedge" className="flex flex-col gap-6">
         {hasNarrativeContent(structured.overview) ? (
           <PencilCard title="Product Vision" kicker="Overview">
             <NarrativeContent narrative={structured.overview} />
@@ -3548,7 +3540,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
         </PencilCard>
       </div>
 
-      <div id="mvp-core-features" className="space-y-2">
+      <div id="mvp-core-features" className="flex flex-col gap-6">
         <PencilCard title="Core Features" kicker="Feature Set">
           <NarrativeContent narrative={structured.featureSummary} />
         </PencilCard>
@@ -3570,7 +3562,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
         </div>
       </div>
 
-      <div id="mvp-user-flow" className="space-y-2">
+      <div id="mvp-user-flow" className="flex flex-col gap-6">
         {structured.userFlow.map((section, index) => (
           <MarkdownSectionCard
             key={`${section.heading}-${index}`}
@@ -3582,7 +3574,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
         ))}
       </div>
 
-      <div id="mvp-timeline" className="space-y-2">
+      <div id="mvp-timeline" className="flex flex-col gap-6">
         {structured.timeline.map((section, index) => (
           <MarkdownSectionCard
             key={`${section.heading}-${index}`}
@@ -3603,7 +3595,7 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
         ))}
       </div>
 
-      <div id="mvp-success-metrics" className="space-y-2">
+      <div id="mvp-success-metrics" className="flex flex-col gap-6">
         {structured.successMetrics.map((section, index) => (
           <MarkdownSectionCard
             key={`${section.heading}-${index}`}

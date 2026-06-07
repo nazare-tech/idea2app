@@ -38,6 +38,7 @@ import {
 const GENERATION_REQUEST_TIMEOUT_MS = 790_000
 const GENERATION_REQUEST_TIMEOUT_SECONDS = GENERATION_REQUEST_TIMEOUT_MS / 1000
 const GENERATION_TIMEOUT_MESSAGE = `Generation timed out after ${GENERATION_REQUEST_TIMEOUT_SECONDS} seconds. Please try again.`
+const SCROLL_SYNC_HYSTERESIS_PX = 32
 
 interface Project {
   id: string
@@ -304,6 +305,7 @@ export function ProjectWorkspace({
   // Scroll-nav sync state
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
+  const activeSectionIdRef = useRef<string | null>(null)
   const [renderedSectionIds, setRenderedSectionIds] = useState<ReadonlySet<string>>(() => new Set())
   const isScrollingProgrammatically = useRef(false)
 
@@ -643,6 +645,10 @@ export function ProjectWorkspace({
   ])
 
   useEffect(() => {
+    activeSectionIdRef.current = activeSectionId
+  }, [activeSectionId])
+
+  useEffect(() => {
     if (activeDocument === "prompt") return // No scroll sync in prompt mode
 
     const container = scrollContainerRef.current
@@ -652,15 +658,6 @@ export function ProjectWorkspace({
 
     const collectCandidates = (): ScrollSyncCandidate[] => {
       const candidates: ScrollSyncCandidate[] = []
-
-      container.querySelectorAll<HTMLElement>("[data-section]").forEach((element) => {
-        const sectionId = element.getAttribute("data-section")
-        if (!sectionId) return
-        candidates.push({
-          id: sectionId,
-          top: element.getBoundingClientRect().top,
-        })
-      })
 
       for (const item of SCROLLABLE_NAV_ITEMS) {
         for (const section of item.sections) {
@@ -681,11 +678,17 @@ export function ProjectWorkspace({
 
       const containerRect = container.getBoundingClientRect()
       const markerTop = containerRect.top + container.clientHeight * 0.22
-      const activeCandidate = chooseActiveScrollCandidate(collectCandidates(), markerTop)
+      const activeCandidate = chooseActiveScrollCandidate(collectCandidates(), markerTop, {
+        currentId: activeSectionIdRef.current,
+        hysteresisPx: SCROLL_SYNC_HYSTERESIS_PX,
+      })
       if (!activeCandidate) return
 
       const nextSectionId = isScrollableSubsectionId(activeCandidate.id) ? activeCandidate.id : null
-      setActiveSectionId((current) => current === nextSectionId ? current : nextSectionId)
+      setActiveSectionId((current) => {
+        activeSectionIdRef.current = nextSectionId
+        return current === nextSectionId ? current : nextSectionId
+      })
 
       const currentHash = decodeURIComponent(window.location.hash.replace(/^#/, ""))
       if (currentHash !== activeCandidate.id) {

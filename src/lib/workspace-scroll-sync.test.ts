@@ -47,3 +47,49 @@ test("chooseActiveScrollCandidate keeps stable ordering when candidates are unso
     top: 660,
   })
 })
+
+test("chooseActiveScrollCandidate keeps the current item until the next item clears the hysteresis buffer", () => {
+  const candidates = [
+    candidate("overview", 0),
+    candidate("market-research", 505),
+  ]
+
+  assert.deepEqual(chooseActiveScrollCandidate(candidates, 520, {
+    currentId: "overview",
+    hysteresisPx: 32,
+  }), {
+    id: "overview",
+    top: 0,
+  })
+
+  assert.deepEqual(chooseActiveScrollCandidate(candidates, 540, {
+    currentId: "overview",
+    hysteresisPx: 32,
+  }), {
+    id: "market-research",
+    top: 505,
+  })
+})
+
+test("chooseActiveScrollCandidate keeps the current item when scrolling upward inside the hysteresis buffer", () => {
+  const candidates = [
+    candidate("overview", 0),
+    candidate("market-research", 548),
+  ]
+
+  assert.deepEqual(chooseActiveScrollCandidate(candidates, 520, {
+    currentId: "market-research",
+    hysteresisPx: 32,
+  }), {
+    id: "market-research",
+    top: 548,
+  })
+
+  assert.deepEqual(chooseActiveScrollCandidate(candidates, 510, {
+    currentId: "market-research",
+    hysteresisPx: 32,
+  }), {
+    id: "overview",
+    top: 0,
+  })
+})

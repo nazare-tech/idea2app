@@ -87,22 +87,17 @@ function PencilCard({
 }
 
 function WorkspaceSectionHeader({
-  kicker,
   title,
   index,
   total,
 }: {
-  kicker: string
   title: string
   index: number
   total: number
 }) {
   return (
     <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
-      <div className="space-y-3">
-        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#1C1917]">
-          {kicker}
-        </p>
+      <div>
         <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
           {title}
         </h2>
@@ -116,7 +111,6 @@ function WorkspaceSectionHeader({
 
 function WorkspaceDesignedSection({
   id,
-  kicker,
   title,
   index,
   total,
@@ -132,7 +126,6 @@ function WorkspaceDesignedSection({
   return (
     <section id={id} className="pt-0">
       <WorkspaceSectionHeader
-        kicker={kicker}
         title={title}
         index={index}
         total={total}
@@ -1012,7 +1005,7 @@ export function CompetitiveOverviewSection({
   const { structured } = viewModel
 
   return (
-    <>
+    <section className="flex flex-col gap-y-3 gap-x-0">
       <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Market Intelligence
@@ -1051,7 +1044,7 @@ export function CompetitiveOverviewSection({
       >
         <FounderVerdictCard verdict={structured.founderVerdict} showHeader={false} />
       </WorkspaceDesignedSection>
-    </>
+    </section>
   )
 }
 
@@ -1075,7 +1068,7 @@ export function CompetitiveDetailSection({
   const { structured } = viewModel
 
   return (
-    <>
+    <section className="flex flex-col gap-y-3 gap-x-0">
       <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Deep Analysis
@@ -1279,7 +1272,7 @@ export function CompetitiveDetailSection({
           showHeader={false}
         />
       </WorkspaceDesignedSection>
-    </>
+    </section>
   )
 }
 
