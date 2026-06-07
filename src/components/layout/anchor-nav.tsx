@@ -191,6 +191,9 @@ function NavTab({
           const inProgressOpacity = isInProgress
             ? idx < 3 ? "opacity-90" : idx < 6 ? "opacity-55" : "opacity-45"
             : ""
+          const subHoverStyle = isActive
+            ? "hover:bg-[#FAFAFA]/10 hover:text-[#FAFAFA]"
+            : "hover:bg-[#F5F0EB] hover:text-[#1C1917]"
 
           return (
             <button
@@ -201,6 +204,7 @@ function NavTab({
               aria-current={isActiveSub ? "location" : undefined}
               className={cn(
                 "block w-full cursor-pointer rounded-sm px-2 py-[2px] text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0",
+                subHoverStyle,
                 isActiveSub
                   ? cn("font-semibold", activeSubColor)
                   : cn(subColor, inProgressOpacity)

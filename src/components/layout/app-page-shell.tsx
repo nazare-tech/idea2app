@@ -9,8 +9,9 @@ interface AppPageShellProps {
 
 interface AppPageHeaderProps {
   eyebrow?: string
-  title: string
+  title?: string
   description?: string
+  descriptionClassName?: string
   actions?: ReactNode
   className?: string
 }
@@ -38,6 +39,7 @@ export function AppPageHeader({
   eyebrow,
   title,
   description,
+  descriptionClassName,
   actions,
   className,
 }: AppPageHeaderProps) {
@@ -49,11 +51,17 @@ export function AppPageHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="mt-2 text-[1.75rem] font-semibold leading-tight tracking-[-0.04em] text-text-primary sm:text-[2rem]">
-          {title}
-        </h1>
+        {title && (
+          <h1 className="mt-2 text-[1.75rem] font-semibold leading-tight tracking-[-0.04em] text-text-primary sm:text-[2rem]">
+            {title}
+          </h1>
+        )}
         {description && (
-          <p className="mt-2 max-w-[68ch] text-sm leading-relaxed text-text-secondary">
+          <p className={cn(
+            "max-w-[68ch] text-sm leading-relaxed text-text-secondary",
+            (eyebrow || title) && "mt-2",
+            descriptionClassName
+          )}>
             {description}
           </p>
         )}

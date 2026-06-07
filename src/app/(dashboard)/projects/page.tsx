@@ -15,6 +15,21 @@ type ActiveProject = {
   updatedAt: string | null
 }
 
+function getWelcomeName({
+  profileFullName,
+  userMetadata,
+  email,
+}: {
+  profileFullName?: string | null
+  userMetadata?: Record<string, unknown>
+  email?: string | null
+}) {
+  const metadataName = userMetadata?.full_name ?? userMetadata?.name
+  const name = profileFullName ?? (typeof metadataName === "string" ? metadataName : null)
+
+  return name?.trim() || email?.split("@")[0] || "there"
+}
+
 export default async function ProjectsPage() {
   const supabase = await createClient()
 
@@ -22,13 +37,18 @@ export default async function ProjectsPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const [{ data: projects }, allowanceStatus] = await Promise.all([
+  const [{ data: projects }, allowanceStatus, { data: profileData }] = await Promise.all([
     supabase
       .from("projects")
       .select("*")
       .eq("user_id", user!.id)
       .order("updated_at", { ascending: false }),
     getProjectAllowanceStatus(supabase as unknown as ProjectAllowanceClient, user!.id),
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user!.id)
+      .single(),
   ])
 
   const projectIds = (projects ?? []).map((project) => project.id)
@@ -51,14 +71,25 @@ export default async function ProjectsPage() {
     createdAt: project.created_at,
     updatedAt: project.updated_at,
   }))
+  const welcomeName = getWelcomeName({
+    profileFullName: profileData?.full_name,
+    userMetadata: user?.user_metadata,
+    email: user?.email,
+  })
 
   return (
     <AppPageShell>
       <section className="text-text-primary">
         <AppPageHeader
-          eyebrow="Workspace"
-          title="Projects"
-          description="Manage the ideas, plans, and generated artifacts you are actively shaping."
+          description={`Welcome, ${welcomeName}`}
+          descriptionClassName="text-xl font-semibold leading-tight text-text-primary sm:text-2xl"
+          actions={(
+            <Link href="/projects/new" className="shrink-0" prefetch={false}>
+              <Button className="h-9 bg-primary px-4 text-sm text-primary-foreground">
+                New Project
+              </Button>
+            </Link>
+          )}
         />
 
         {activeProjects.length === 0 ? (
