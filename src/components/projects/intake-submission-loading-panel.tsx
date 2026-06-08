@@ -29,8 +29,8 @@ interface IntakeSubmissionLoadingPanelProps {
 
 const DEFAULT_ROWS: IntakeLoadingRow[] = [
   {
-    key: "overview",
-    label: "Overview",
+    key: "executive-summary",
+    label: "Executive Summary",
     message: "Finding market patterns",
     status: "generating",
   },
@@ -67,7 +67,7 @@ const DEFAULT_ROWS: IntakeLoadingRow[] = [
 ]
 
 const ROW_ICONS: Record<OnboardingLoadingRowKey, ElementType> = {
-  overview: FileText,
+  "executive-summary": FileText,
   "market-research": ChartNoAxesColumn,
   prd: ClipboardList,
   mvp: Rocket,
@@ -165,7 +165,10 @@ export function IntakeSubmissionLoadingPanel({
                     <div className="mt-3 h-1.5 w-full bg-[#E5E7EB]">
                       <div
                         className={cn(
-                          "h-full bg-[#0D1320] transition-[width] duration-500 ease-out",
+                          "intake-progress-fill relative h-full overflow-hidden bg-[#0D1320] transition-[width] duration-500 ease-out",
+                          (row.status === "pending" ||
+                            row.status === "generating") &&
+                            "intake-progress-fill--active",
                           row.status === "error" && "bg-destructive",
                           row.status === "done" && "bg-[#166534]",
                         )}

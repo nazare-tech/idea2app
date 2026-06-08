@@ -21,9 +21,7 @@ function buildV2Fixture(
 ) {
   const sections: Record<CompetitiveAnalysisV2SectionName, string> = {
     "Executive Summary":
-      "This category has real demand, but underserved workflows still exist for smaller teams.",
-    "Opportunity Verdict":
-      "Win with a narrow wedge.\n\n- **Verdict**: Enter with a wedge\n- **Why now**: Buyers want automation\n- **Biggest risk**: Incumbent copy",
+      "This category has real demand, but underserved workflows still exist for smaller teams.\n\nWin with a narrow wedge.\n\n- **Verdict**: Enter with a wedge\n- **Why now**: Buyers want automation\n- **Biggest risk**: Incumbent copy",
     "Direct Competitors":
       "### [Competitor One](https://competitor-one.example)\n- **Overview**: Broad platform\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Generalist\n- **Strengths**: Strong distribution\n- **Key Edge**: Distribution engine\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market\n\n### Competitor Two\n- **Overview**: Focused operator tool\n- **Core Product/Service**: Booking workflow automation\n- **Market Positioning**: Vertical specialist\n- **Strengths**: Fast setup\n- **Key Edge**: Mobile-first operations\n- **Limitations**: Narrow integration surface\n- **Pricing Model**: Usage-based\n- **Target Audience**: Solo service teams",
     "Feature Comparison":
@@ -66,7 +64,6 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
 
   assert.match(html, /Market Research/)
   assert.match(html, /Competitor Profiles &amp; Quick Comparison/)
-  assert.match(html, /Opportunity Verdict/)
   assert.match(html, /Win with a narrow wedge\./)
   assert.match(html, /href="https:\/\/competitor-one\.example"/)
   assert.match(html, /Key Edge/)
@@ -75,7 +72,7 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
   assert.doesNotMatch(html, /Markdown/)
 })
 
-test("competitive overview renders only executive summary and opportunity verdict", () => {
+test("competitive overview renders one merged executive summary block", () => {
   const html = renderToStaticMarkup(
     <CompetitiveOverviewSection
       content={buildV2Fixture()}
@@ -84,12 +81,15 @@ test("competitive overview renders only executive summary and opportunity verdic
     />
   )
 
-  assert.match(html, /Overview/)
+  assert.match(html, /Executive Summary/)
+  assert.doesNotMatch(html, /Opportunity Verdict/)
   assert.match(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
   assert.doesNotMatch(html, /border-b border-\[#E0E0E0\]/)
-  assert.match(html, /Executive Summary/)
+  assert.match(html, /id="executive-summary"/)
+  assert.doesNotMatch(html, /id="overview-executive-summary"/)
+  assert.equal(html.includes("01 / 02"), false)
+  assert.equal(html.includes("02 / 02"), false)
   assert.doesNotMatch(html, /Market Snapshot &amp; Entry Thesis/)
-  assert.match(html, /Opportunity Verdict/)
   assert.match(html, /Win with a narrow wedge\./)
   assert.doesNotMatch(html, /border border-\[#E0E0E0\] bg-white px-6 py-5/)
   assert.doesNotMatch(html, /space-y-2 px-6 py-5/)
@@ -186,6 +186,95 @@ test("competitive detail consolidates competitor profile cards into one quick co
   assert.doesNotMatch(html, /<colgroup>/)
   assert.doesNotMatch(html, /Competitor Profiles &amp; Fast Comparison/)
   assert.doesNotMatch(html, />PROFILE</)
+})
+
+test("competitive renderer normalizes redundant opportunity verdict into modules", () => {
+  const oldShapeContent = `# Competitive Analysis: Fuel Kit
+
+## Executive Summary
+The category is active and crowded.
+
+## Opportunity Verdict
+Focused wedge can win.
+
+- **Verdict**: Worth testing
+- **Why now**: Buyers want better planning
+- **Biggest risk**: Incumbent copy
+
+## Direct Competitors
+### Competitor One
+- **Overview**: Broad platform
+
+## Feature Comparison
+Feature notes
+
+## Pricing Comparison
+Pricing notes
+
+## Best Customer Segments
+- Busy operators
+
+## Competitive Landscape Overview
+- Crowded top end
+
+## Positioning Map
+- **X-axis**: Ease
+- **Y-axis**: Depth
+
+## How You'll Reach Customers
+- SEO
+
+## Gap Analysis
+- Lightweight workflows
+
+## Ways to Stand Out
+- Transparent pricing
+
+## What Makes It Hard to Copy
+- Embedded workflow context
+
+## SWOT Analysis
+| | Positive | Negative |
+|---|---|---|
+| **Internal** | Focus | Small team |
+| **External** | Demand | Copy risk |
+
+## Risks & Competitor Responses
+- Incumbents can copy
+
+## First Version Focus
+Launch one workflow.
+
+## Recommended Next Moves
+1. Interview buyers`
+
+  const overviewHtml = renderToStaticMarkup(
+    <CompetitiveOverviewSection
+      content={oldShapeContent}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+  const detailHtml = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={oldShapeContent}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+
+  assert.match(overviewHtml, /id="executive-summary"/)
+  assert.match(overviewHtml, /Focused wedge can win/)
+  assert.doesNotMatch(overviewHtml, /no longer matches/)
+  assert.doesNotMatch(overviewHtml, /Opportunity Verdict/)
+  assert.doesNotMatch(overviewHtml, /Direct Competitors/)
+  assert.match(detailHtml, /Market Research/)
+  assert.match(detailHtml, /id="market-research-direct-competitors"/)
+  assert.match(detailHtml, /id="market-research-feature-matrix"/)
+  assert.match(detailHtml, /Commercial Fit/)
+  assert.match(detailHtml, /Direct Competitors/)
+  assert.match(detailHtml, /Recommended Next Moves/)
+  assert.doesNotMatch(detailHtml, /no longer matches/)
 })
 
 test("legacy competitive document falls back to markdown renderer", () => {

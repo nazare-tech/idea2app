@@ -190,7 +190,7 @@ function ArtifactPreview({
   if (artifact === "competitive") {
     return (
       <div className="space-y-8 rounded-lg bg-background px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
-        <WorkspaceDocumentFrame navKey="overview">
+        <WorkspaceDocumentFrame navKey="executive-summary">
           <CompetitiveOverviewSection content={content} metadata={null} projectId={projectId} />
         </WorkspaceDocumentFrame>
         <WorkspaceDocumentFrame navKey="market-research">

@@ -14,7 +14,7 @@ test("isWorkspaceDocumentType: blocks prompt globally", () => {
   assert.equal(isWorkspaceDocumentType("prd"), true)
 })
 
-test("resolveWorkspaceDocumentTab: falls back to overview document for prompt or invalid tabs", () => {
+test("resolveWorkspaceDocumentTab: falls back to the default document for prompt or invalid tabs", () => {
   assert.equal(resolveWorkspaceDocumentTab("prompt"), DEFAULT_WORKSPACE_DOCUMENT)
   assert.equal(resolveWorkspaceDocumentTab("nope"), DEFAULT_WORKSPACE_DOCUMENT)
   assert.equal(resolveWorkspaceDocumentTab(null), DEFAULT_WORKSPACE_DOCUMENT)

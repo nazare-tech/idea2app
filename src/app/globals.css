@@ -183,6 +183,44 @@ body {
   height: 0;
 }
 
+.intake-progress-fill--active {
+  background-image: linear-gradient(90deg, #0D1320 0%, #251E1C 50%, #0D1320 100%);
+}
+
+.intake-progress-fill--active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(245, 240, 235, 0.16) 32%,
+    rgba(232, 221, 213, 0.9) 50%,
+    rgba(245, 240, 235, 0.16) 68%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  animation: intake-progress-sheen 1400ms linear infinite;
+  will-change: transform;
+}
+
+@keyframes intake-progress-sheen {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intake-progress-fill--active::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 /* Selection */
 ::selection {
   background: rgba(220, 38, 38, 0.2);

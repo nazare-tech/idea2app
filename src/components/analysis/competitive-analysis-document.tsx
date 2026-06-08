@@ -28,6 +28,144 @@ const fastComparisonColumns = [
   { label: "Advantage / Risk", className: "min-w-[260px] max-w-[310px]" },
 ] as const
 
+const fallbackMarketResearchSections = [
+  { id: "market-research-direct-competitors", title: "Direct Competitors", headings: ["Direct Competitors"] },
+  { id: "market-research-landscape-overview", title: "Market Landscape", headings: ["Competitive Landscape Overview", "Market Landscape"] },
+  { id: "market-research-feature-matrix", title: "Feature Comparison", headings: ["Feature Comparison"] },
+  { id: "market-research-positioning", title: "Positioning Map", headings: ["Positioning Map"] },
+  { id: "market-research-pricing", title: "Pricing Comparison", headings: ["Pricing Comparison"] },
+  { id: "market-research-audience", title: "Best Customer Segments", headings: ["Best Customer Segments"] },
+  { id: "market-research-gtm", title: "How You'll Reach Customers", headings: ["How You'll Reach Customers"] },
+  { id: "market-research-gap-analysis", title: "Gap Analysis", headings: ["Gap Analysis"] },
+  { id: "market-research-differentiation", title: "Ways to Stand Out", headings: ["Ways to Stand Out"] },
+  { id: "market-research-moat", title: "What Makes It Hard to Copy", headings: ["What Makes It Hard to Copy"] },
+  { id: "market-research-risks", title: "Risks & Competitor Responses", headings: ["Risks & Competitor Responses"] },
+  { id: "market-research-mvp-wedge", title: "First Version Focus", headings: ["First Version Focus"] },
+  { id: "market-research-strategic-recommendations", title: "Recommended Next Moves", headings: ["Recommended Next Moves"] },
+] as const
+
+function normalizeMarkdownHeading(heading: string) {
+  return heading.trim().toLowerCase()
+}
+
+function extractH2Sections(content: string) {
+  const matches = Array.from(content.matchAll(/^##\s+(.+)$/gm))
+  const sections = new Map<string, string>()
+
+  matches.forEach((match, index) => {
+    const heading = match[1]?.trim()
+    if (!heading || match.index === undefined) return
+
+    const bodyStart = match.index + match[0].length
+    const nextMatch = matches[index + 1]
+    const bodyEnd = nextMatch?.index ?? content.length
+    sections.set(normalizeMarkdownHeading(heading), content.slice(bodyStart, bodyEnd).trim())
+  })
+
+  return sections
+}
+
+function getFallbackSectionContent(
+  sections: Map<string, string>,
+  headings: readonly string[]
+) {
+  for (const heading of headings) {
+    const content = sections.get(normalizeMarkdownHeading(heading))
+    if (content) return content
+  }
+
+  return ""
+}
+
+function CompetitiveOverviewFallback({
+  content,
+  projectId,
+}: {
+  content: string
+  projectId: string
+}) {
+  const sections = extractH2Sections(content)
+  const summary = getFallbackSectionContent(sections, ["Executive Summary"])
+  const verdict = getFallbackSectionContent(sections, ["Opportunity Verdict"])
+  const fallbackContent = [summary, verdict].filter(Boolean).join("\n\n")
+
+  return (
+    <section id="executive-summary" className="flex flex-col gap-y-3 gap-x-0">
+      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
+          Market Intelligence
+        </p>
+        <div className="mt-3">
+          <h1
+            className={cn(
+              displayFontClass,
+              "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
+            )}
+          >
+            Executive Summary
+          </h1>
+          <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
+            Market snapshot, opportunity verdict, and key risk.
+          </p>
+        </div>
+      </header>
+
+      <MarkdownRenderer content={fallbackContent || content} projectId={projectId} />
+    </section>
+  )
+}
+
+function CompetitiveDetailFallback({
+  content,
+  projectId,
+}: {
+  content: string
+  projectId: string
+}) {
+  const sections = extractH2Sections(content)
+  const fallbackSections = fallbackMarketResearchSections
+    .map((section) => ({
+      ...section,
+      content: getFallbackSectionContent(sections, section.headings),
+    }))
+    .filter((section) => section.content.trim().length > 0)
+
+  if (fallbackSections.length === 0) return null
+
+  return (
+    <section className="flex flex-col gap-y-3 gap-x-0">
+      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
+          Deep Analysis
+        </p>
+        <div className="mt-3">
+          <h1
+            className={cn(
+              displayFontClass,
+              "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
+            )}
+          >
+            Market Research
+          </h1>
+        </div>
+      </header>
+
+      {fallbackSections.map((section, index) => (
+        <WorkspaceDesignedSection
+          key={section.id}
+          id={section.id}
+          kicker="Deep Analysis"
+          title={section.title}
+          index={index + 1}
+          total={fallbackSections.length}
+        >
+          <MarkdownRenderer content={section.content} projectId={projectId} />
+        </WorkspaceDesignedSection>
+      ))}
+    </section>
+  )
+}
+
 function PencilCard({
   title,
   kicker,
@@ -215,10 +353,10 @@ function MarketSignalStrip({ items }: { items: string[] }) {
 }
 
 function ExecutiveSummaryCard({
-  paragraphs,
+  summary,
   showHeader = true,
 }: {
-  paragraphs: string[]
+  summary: CompetitiveAnalysisStructuredData["executiveSummary"]
   showHeader?: boolean
 }) {
   return (
@@ -227,24 +365,12 @@ function ExecutiveSummaryCard({
       kicker="Executive Summary"
       showHeader={showHeader}
     >
-      <ParagraphStack paragraphs={paragraphs} />
-    </PencilCard>
-  )
-}
-
-function FounderVerdictCard({
-  verdict,
-  showHeader = true,
-}: {
-  verdict: CompetitiveAnalysisStructuredData["founderVerdict"]
-  showHeader?: boolean
-}) {
-  return (
-    <PencilCard title="Opportunity Verdict" kicker="Opportunity Verdict" dark showHeader={showHeader}>
-      <ParagraphStack paragraphs={verdict.paragraphs} dark={true} />
-      <div className="pt-5">
-        <NumberedList items={verdict.bullets} dark={true} />
-      </div>
+      <ParagraphStack paragraphs={summary.paragraphs} />
+      {summary.bullets.length > 0 ? (
+        <div className="pt-5">
+          <NumberedList items={summary.bullets} />
+        </div>
+      ) : null}
     </PencilCard>
   )
 }
@@ -303,11 +429,14 @@ function SnapshotHero({
   return (
     <div className="space-y-6">
       <PencilCard title="Market Snapshot & Entry Thesis" kicker="Category Snapshot">
-        <ParagraphStack paragraphs={structured.executiveSummary} />
+        <ParagraphStack paragraphs={structured.executiveSummary.paragraphs} />
+        {structured.executiveSummary.bullets.length > 0 ? (
+          <div className="pt-5">
+            <NumberedList items={structured.executiveSummary.bullets} />
+          </div>
+        ) : null}
         <MarketSignalStrip items={structured.competitiveLandscapeOverview} />
       </PencilCard>
-
-      <FounderVerdictCard verdict={structured.founderVerdict} />
     </div>
   )
 }
@@ -985,8 +1114,8 @@ function CompetitiveResearchPage({
 }
 
 /**
- * Overview portion of competitive analysis: executive summary and opportunity
- * verdict. Used by ScrollableContent for the "Overview" section.
+ * Executive Summary portion of competitive analysis. The generated executive
+ * summary and opportunity verdict are merged into one user-facing block.
  */
 export function CompetitiveOverviewSection({
   content,
@@ -999,13 +1128,13 @@ export function CompetitiveOverviewSection({
   )
 
   if (!viewModel.canRenderModules) {
-    return <MarkdownRenderer content={content} projectId={projectId} />
+    return <CompetitiveOverviewFallback content={content} projectId={projectId} />
   }
 
   const { structured } = viewModel
 
   return (
-    <section className="flex flex-col gap-y-3 gap-x-0">
+    <section id="executive-summary" className="flex flex-col gap-y-3 gap-x-0">
       <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
           Market Intelligence
@@ -1017,33 +1146,17 @@ export function CompetitiveOverviewSection({
               "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
             )}
           >
-            Overview
+            Executive Summary
           </h1>
           <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-            Executive summary and opportunity verdict.
+            Market snapshot, opportunity verdict, and key risk.
           </p>
         </div>
       </header>
 
-      <WorkspaceDesignedSection
-        id="overview-executive-summary"
-        kicker="Market Intelligence"
-        title="Executive Summary"
-        index={1}
-        total={2}
-      >
-        <ExecutiveSummaryCard paragraphs={structured.executiveSummary} showHeader={false} />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="overview-founder-verdict"
-        kicker="Market Intelligence"
-        title="Opportunity Verdict"
-        index={2}
-        total={2}
-      >
-        <FounderVerdictCard verdict={structured.founderVerdict} showHeader={false} />
-      </WorkspaceDesignedSection>
+      <div className="flex flex-col gap-y-3 gap-x-0">
+        <ExecutiveSummaryCard summary={structured.executiveSummary} showHeader={false} />
+      </div>
     </section>
   )
 }
@@ -1055,6 +1168,7 @@ export function CompetitiveOverviewSection({
 export function CompetitiveDetailSection({
   content,
   metadata,
+  projectId,
 }: CompetitiveAnalysisDocumentProps) {
   const viewModel = useMemo(
     () => getCompetitiveAnalysisViewModel(content, metadata),
@@ -1062,7 +1176,7 @@ export function CompetitiveDetailSection({
   )
 
   if (!viewModel.canRenderModules) {
-    return null // Overview section already shows fallback markdown
+    return <CompetitiveDetailFallback content={content} projectId={projectId} />
   }
 
   const { structured } = viewModel

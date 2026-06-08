@@ -395,8 +395,8 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         ref={ref}
         className="flex-1 space-y-8 overflow-y-auto bg-background px-3 py-3 sm:px-6 sm:py-4 lg:px-8"
       >
-        {/* Overview — rendered immediately (first visible section) */}
-        <DocumentWrapper navKey="overview">
+        {/* Executive Summary — rendered immediately (first visible section) */}
+        <DocumentWrapper navKey="executive-summary">
           {competitiveData?.content ? (
             <CompetitiveOverviewSection
               content={competitiveData.content}
@@ -405,14 +405,14 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             />
           ) : competitiveData?.displayState && competitiveData.displayState.displayStatus !== "idle" ? (
             <GenerationStatusModule
-              label="Overview"
+              label="Executive Summary"
               state={competitiveData.displayState}
               onGenerateDocument={onGenerateDocument}
             />
           ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
-            <DocumentSkeleton label="Overview" mode={getSkeletonMode(competitiveData)} />
+            <DocumentSkeleton label="Executive Summary" mode={getSkeletonMode(competitiveData)} />
           ) : (
-            <EmptyState label="Overview" />
+            <EmptyState label="Executive Summary" />
           )}
         </DocumentWrapper>
 

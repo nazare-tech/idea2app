@@ -11,7 +11,7 @@ function candidate(id: string, top: number): ScrollSyncCandidate {
 
 test("chooseActiveScrollCandidate selects the nearest candidate above the viewport marker", () => {
   const candidates = [
-    candidate("overview", 0),
+    candidate("executive-summary", 0),
     candidate("market-research", 420),
     candidate("prd", 960),
   ]
@@ -24,12 +24,12 @@ test("chooseActiveScrollCandidate selects the nearest candidate above the viewpo
 
 test("chooseActiveScrollCandidate falls forward when no candidate has reached the marker", () => {
   const candidates = [
-    candidate("overview", 240),
+    candidate("executive-summary", 240),
     candidate("market-research", 640),
   ]
 
   assert.deepEqual(chooseActiveScrollCandidate(candidates, 120), {
-    id: "overview",
+    id: "executive-summary",
     top: 240,
   })
 })
@@ -37,7 +37,7 @@ test("chooseActiveScrollCandidate falls forward when no candidate has reached th
 test("chooseActiveScrollCandidate keeps stable ordering when candidates are unsorted", () => {
   const candidates = [
     candidate("prd", 900),
-    candidate("overview", 0),
+    candidate("executive-summary", 0),
     candidate("market-research-pricing", 660),
     candidate("market-research", 420),
   ]
@@ -50,20 +50,20 @@ test("chooseActiveScrollCandidate keeps stable ordering when candidates are unso
 
 test("chooseActiveScrollCandidate keeps the current item until the next item clears the hysteresis buffer", () => {
   const candidates = [
-    candidate("overview", 0),
+    candidate("executive-summary", 0),
     candidate("market-research", 505),
   ]
 
   assert.deepEqual(chooseActiveScrollCandidate(candidates, 520, {
-    currentId: "overview",
+    currentId: "executive-summary",
     hysteresisPx: 32,
   }), {
-    id: "overview",
+    id: "executive-summary",
     top: 0,
   })
 
   assert.deepEqual(chooseActiveScrollCandidate(candidates, 540, {
-    currentId: "overview",
+    currentId: "executive-summary",
     hysteresisPx: 32,
   }), {
     id: "market-research",
@@ -73,7 +73,7 @@ test("chooseActiveScrollCandidate keeps the current item until the next item cle
 
 test("chooseActiveScrollCandidate keeps the current item when scrolling upward inside the hysteresis buffer", () => {
   const candidates = [
-    candidate("overview", 0),
+    candidate("executive-summary", 0),
     candidate("market-research", 548),
   ]
 
@@ -89,7 +89,7 @@ test("chooseActiveScrollCandidate keeps the current item when scrolling upward i
     currentId: "market-research",
     hysteresisPx: 32,
   }), {
-    id: "overview",
+    id: "executive-summary",
     top: 0,
   })
 })

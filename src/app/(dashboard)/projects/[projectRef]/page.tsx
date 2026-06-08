@@ -116,7 +116,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     }
 
     const queryString = query.toString()
-    const fragment = shouldRedirectPromptTab ? "#overview" : ""
+    const fragment = shouldRedirectPromptTab ? "#executive-summary" : ""
     redirect(`/projects/${canonicalProjectRef}${queryString ? `?${queryString}` : ""}${fragment}`)
   }
 

@@ -16,7 +16,7 @@ export type OnboardingGenerationStatus =
   | "cancelled"
 
 export type OnboardingLoadingRowKey =
-  | "overview"
+  | "executive-summary"
   | "market-research"
   | "prd"
   | "mvp"
@@ -104,8 +104,8 @@ const LOADING_ROW_DEFINITIONS: Array<{
   docType: DocumentType
 }> = [
   {
-    key: "overview",
-    label: "Overview",
+    key: "executive-summary",
+    label: "Executive Summary",
     phrase: "Finding market patterns",
     docType: "competitive",
   },
@@ -187,7 +187,7 @@ export function isOnboardingGenerationQueue(queueRow: Pick<QueueLike, "model_sel
 }
 
 export function buildOnboardingRedirectUrl(project: { id: string; name: string }) {
-  return `${getProjectUrl(project)}#overview`
+  return `${getProjectUrl(project)}#executive-summary`
 }
 
 export function mapOnboardingLoadingRows(params: {

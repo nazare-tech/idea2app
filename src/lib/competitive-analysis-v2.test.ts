@@ -15,9 +15,7 @@ function buildV2Fixture(
 ) {
   const baseSections: Record<CompetitiveAnalysisV2SectionName, string> = {
     "Executive Summary":
-      "This market is active and crowded, but the most valuable workflows are still fragmented for smaller teams.",
-    "Opportunity Verdict":
-      "A focused entrant can win if it avoids the broad all-in-one category fight.\n\n- **Verdict**: Worth entering with a narrow wedge\n- **Why now**: Teams want automation tied to outcomes\n- **Biggest risk**: Fast incumbent copy",
+      "This market is active and crowded, but the most valuable workflows are still fragmented for smaller teams.\n\nA focused entrant can win if it avoids the broad all-in-one category fight.\n\n- **Verdict**: Worth entering with a narrow wedge\n- **Why now**: Teams want automation tied to outcomes\n- **Biggest risk**: Fast incumbent copy",
     "Direct Competitors":
       "### [Competitor One](https://competitor-one.example) (conservative inference)\n- **Overview**: Strong incumbent\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Broad platform\n- **Strengths**: Distribution and integrations\n- **Key Edge**: Distribution + integrations\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market teams\n\n### Competitor Two\n- **Overview**: Specialist player\n- **Core Product/Service**: Single workflow tool\n- **Market Positioning**: Best-of-breed\n- **Strengths**: Fast setup\n- **Key Edge**: Fastest setup in category\n- **Limitations**: Narrow scope\n- **Pricing Model**: Usage-based\n- **Target Audience**: Operators",
     "Feature Comparison":
@@ -60,7 +58,7 @@ test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   const structured = getCompetitiveAnalysisStructuredData(parsed)
 
   assert.equal(parsed.isValid, true)
-  assert.equal(parsed.headings.length, 16)
+  assert.equal(parsed.headings.length, 15)
   assert.equal(parsed.competitorEntries.length, 2)
   assert.match(parsed.sections["Pricing Comparison"] ?? "", /Pricing Model/)
   assert.equal(structured.directCompetitors[0]?.heading, "Competitor One")
@@ -72,6 +70,33 @@ test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   assert.equal(structured.directCompetitors[0]?.fields["Key Edge"], "Distribution + integrations")
   assert.equal(structured.positioningMap.points[0]?.x, 4)
   assert.equal(structured.swotAnalysis.matrix?.externalNegative, "Incumbent copy risk")
+})
+
+test("parseCompetitiveAnalysisV2 folds a redundant opportunity verdict into executive summary", () => {
+  const oldShapeContent = buildV2Fixture().replace(
+    "## Direct Competitors",
+    "## Opportunity Verdict\nFocused wedge can win if the first version proves weekly value.\n\n- **Verdict**: Worth testing\n- **Why now**: Buyers want better planning\n- **Biggest risk**: Incumbent copy\n\n## Direct Competitors"
+  )
+  const parsed = parseCompetitiveAnalysisV2(oldShapeContent)
+  const structured = getCompetitiveAnalysisStructuredData(parsed)
+
+  assert.equal(parsed.isValid, true)
+  assert.equal(parsed.headings.length, COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.length)
+  assert.deepEqual(parsed.headings, [...COMPETITIVE_ANALYSIS_V2_SECTION_ORDER])
+  assert.match(
+    parsed.sections["Executive Summary"] ?? "",
+    /Focused wedge can win if the first version proves weekly value/
+  )
+  assert.equal(structured.executiveSummary.paragraphs.length, 3)
+  assert.match(
+    structured.executiveSummary.paragraphs.at(-1) ?? "",
+    /Focused wedge can win/
+  )
+  assert.deepEqual(structured.executiveSummary.bullets.slice(-3), [
+    "Verdict: Worth testing",
+    "Why now: Buyers want better planning",
+    "Biggest risk: Incumbent copy",
+  ])
 })
 
 test("positioning map parser reads score columns by header and preserves confidence", () => {
@@ -113,12 +138,12 @@ test("positioning map parser leaves invalid or out-of-range scores unplotted", (
   assert.equal(structured.positioningMap.points[2]?.y, 0)
 })
 
-test("workspace section map keeps overview limited to summary and verdict", () => {
-  const overviewSections = COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.filter(
-    (heading) => COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP[heading] === "overview"
+test("workspace section map assigns executive summary to its own section", () => {
+  const executiveSummarySections = COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.filter(
+    (heading) => COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP[heading] === "executive-summary"
   )
 
-  assert.deepEqual(overviewSections, ["Executive Summary", "Opportunity Verdict"])
+  assert.deepEqual(executiveSummarySections, ["Executive Summary"])
   assert.equal(
     COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP["Recommended Next Moves"],
     "market-research"
@@ -127,26 +152,6 @@ test("workspace section map keeps overview limited to summary and verdict", () =
     COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP["How You'll Reach Customers"],
     "market-research"
   )
-})
-
-test("parseCompetitiveAnalysisV2 accepts legacy v2 heading aliases", () => {
-  const legacyHeadingContent = buildV2Fixture()
-    .replace("## Opportunity Verdict", "## Founder Verdict")
-    .replace("## Feature Comparison", "## Feature and Workflow Matrix")
-    .replace("## Pricing Comparison", "## Pricing and Packaging")
-    .replace("## Best Customer Segments", "## Audience Segments")
-    .replace("## How You'll Reach Customers", "## GTM / Distribution Signals")
-    .replace("## Ways to Stand Out", "## Differentiation Wedges")
-    .replace("## What Makes It Hard to Copy", "## Moat and Defensibility")
-    .replace("## Risks & Competitor Responses", "## Risks and Countermoves")
-    .replace("## First Version Focus", "## MVP Wedge Recommendation")
-    .replace("## Recommended Next Moves", "## Strategic Recommendations")
-  const parsed = parseCompetitiveAnalysisV2(legacyHeadingContent)
-  const structured = getCompetitiveAnalysisStructuredData(parsed)
-
-  assert.equal(parsed.isValid, true)
-  assert.match(parsed.sections["Opportunity Verdict"] ?? "", /Worth entering/)
-  assert.equal(structured.strategicRecommendations.length, 3)
 })
 
 test("legacy metadata defaults competitive research to markdown view", () => {

@@ -15,7 +15,7 @@ interface AnchorNavProps {
   navItems?: DocumentNavItem[]
   /** Status per sourceType (e.g., { competitive: "done", prd: "pending" }) */
   documentStatuses: Record<string, NavStatus>
-  /** Rich status per visible nav key (overview, market-research, prd, etc.) */
+  /** Rich status per visible nav key (executive-summary, market-research, prd, etc.) */
   documentDisplayStates?: Record<string, DocumentGenerationDisplayState>
   /** Currently visible sub-section ID */
   activeSectionId: string | null

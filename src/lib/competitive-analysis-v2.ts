@@ -4,7 +4,6 @@ export const COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION =
 
 export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Executive Summary",
-  "Opportunity Verdict",
   "Direct Competitors",
   "Feature Comparison",
   "Pricing Comparison",
@@ -21,11 +20,10 @@ export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Recommended Next Moves",
 ] as const
 
-export type CompetitiveAnalysisWorkspaceSection = "overview" | "market-research"
+export type CompetitiveAnalysisWorkspaceSection = "executive-summary" | "market-research"
 
 export const COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP = {
-  "Executive Summary": "overview",
-  "Opportunity Verdict": "overview",
+  "Executive Summary": "executive-summary",
   "Direct Competitors": "market-research",
   "Feature Comparison": "market-research",
   "Pricing Comparison": "market-research",
@@ -48,7 +46,6 @@ export const COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP = {
 const COMPETITIVE_ANALYSIS_V2_SECTION_ALIASES: Partial<
   Record<CompetitiveAnalysisV2SectionName, readonly string[]>
 > = {
-  "Opportunity Verdict": ["Founder Verdict"],
   "Feature Comparison": ["Feature and Workflow Matrix"],
   "Pricing Comparison": ["Pricing and Packaging"],
   "Best Customer Segments": ["Audience Segments"],
@@ -136,8 +133,7 @@ export interface CompetitiveAnalysisSwotMatrix {
 }
 
 export interface CompetitiveAnalysisStructuredData {
-  executiveSummary: string[]
-  founderVerdict: { paragraphs: string[]; bullets: string[] }
+  executiveSummary: { paragraphs: string[]; bullets: string[] }
   directCompetitors: CompetitiveAnalysisCompetitorProfile[]
   featureMatrix: CompetitiveAnalysisNarrativeTable
   pricingAndPackaging: CompetitiveAnalysisNarrativeTable
@@ -531,12 +527,9 @@ export function getCompetitiveAnalysisStructuredData(
   const swotAnalysis = parseNarrativeTable(getSection(sections, "SWOT Analysis"))
 
   return {
-    executiveSummary: parseParagraphBlocks(
-      getSection(sections, "Executive Summary")
-    ),
-    founderVerdict: {
-      paragraphs: parseParagraphBlocks(getSection(sections, "Opportunity Verdict")),
-      bullets: parseListItems(getSection(sections, "Opportunity Verdict")),
+    executiveSummary: {
+      paragraphs: parseParagraphBlocks(getSection(sections, "Executive Summary")),
+      bullets: parseListItems(getSection(sections, "Executive Summary")),
     },
     directCompetitors: parseCompetitorProfiles(competitorEntries),
     featureMatrix: parseNarrativeTable(
@@ -610,10 +603,49 @@ function extractSectionsByHeading(
   })
 }
 
+function normalizeCompetitiveAnalysisV2Sections(
+  sections: CompetitiveAnalysisSection[]
+) {
+  const normalizedSections: CompetitiveAnalysisSection[] = []
+
+  for (const section of sections) {
+    if (
+      normalizeFieldLabel(section.heading) === "opportunity verdict" &&
+      normalizedSections.some(
+        (existingSection) =>
+          resolveCompetitiveAnalysisSectionName(existingSection.heading) ===
+          "Executive Summary"
+      )
+    ) {
+      const executiveSummaryIndex = normalizedSections.findIndex(
+        (existingSection) =>
+          resolveCompetitiveAnalysisSectionName(existingSection.heading) ===
+          "Executive Summary"
+      )
+      const executiveSummary = normalizedSections[executiveSummaryIndex]
+
+      normalizedSections[executiveSummaryIndex] = {
+        ...executiveSummary,
+        content: [executiveSummary.content, section.content]
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .join("\n\n"),
+      }
+      continue
+    }
+
+    normalizedSections.push(section)
+  }
+
+  return normalizedSections
+}
+
 export function parseCompetitiveAnalysisV2(
   content: string
 ): CompetitiveAnalysisV2ParseResult {
-  const h2Sections = extractSectionsByHeading(content, 2)
+  const h2Sections = normalizeCompetitiveAnalysisV2Sections(
+    extractSectionsByHeading(content, 2)
+  )
   const headings = h2Sections.map((section) => section.heading)
   const canonicalHeadings = h2Sections.map((section) =>
     resolveCompetitiveAnalysisSectionName(section.heading)
@@ -629,7 +661,7 @@ export function parseCompetitiveAnalysisV2(
   const errors: string[] = []
 
   if (headings.length !== COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.length) {
-    errors.push("Market Research v2 requires all 16 H2 sections.")
+    errors.push(`Market Research v2 requires all ${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.length} H2 sections.`)
   }
 
   const orderMatches = COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.every(

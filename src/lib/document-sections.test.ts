@@ -6,6 +6,13 @@ import {
   filterNavItemsByRenderedSections,
 } from "./document-sections"
 
+test("Executive Summary nav item has no child subsections", () => {
+  const executiveSummary = SCROLLABLE_NAV_ITEMS.find((item) => item.key === "executive-summary")
+
+  assert.equal(executiveSummary?.label, "Executive Summary")
+  assert.deepEqual(executiveSummary?.sections, [])
+})
+
 test("Product Plan nav labels match the current right-panel section text", () => {
   const productPlan = SCROLLABLE_NAV_ITEMS.find((item) => item.key === "prd")
 

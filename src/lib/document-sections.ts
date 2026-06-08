@@ -9,7 +9,7 @@ export interface DocumentSection {
 }
 
 export interface DocumentNavItem {
-  /** Matches DocumentType or a visual sub-type like "overview" / "market-research" */
+  /** Matches DocumentType or a visual sub-type like "executive-summary" / "market-research" */
   key: string
   /** Display label for the nav tab */
   label: string
@@ -21,19 +21,17 @@ export interface DocumentNavItem {
 
 /**
  * Ordered list of navigation items for the scrollable project view.
- * "competitive" is split into two visual items: "overview" and "market-research".
+ * "competitive" is split into two visual items: "executive-summary" and
+ * "market-research".
  * "prompt" is excluded (rendered as separate full-screen chat view).
  * "techspec" and "deploy" are excluded (not shown in nav per existing config).
  */
 export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
   {
-    key: "overview",
-    label: "Overview",
+    key: "executive-summary",
+    label: "Executive Summary",
     sourceType: "competitive",
-    sections: [
-      { id: "overview-executive-summary", label: "Executive Summary" },
-      { id: "overview-founder-verdict", label: "Opportunity Verdict" },
-    ],
+    sections: [],
   },
   {
     key: "market-research",
