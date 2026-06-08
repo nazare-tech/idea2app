@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Product Card" subtitle="rounded-lg, hairline border, hover tint" viewport="700x235" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 24px; }
+  .card { background: var(--card-white); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); padding: 21px; min-height: 150px; display: flex; flex-direction: column; justify-content: space-between; transition: all var(--duration-base) var(--ease-out-expo); }
+  .card:hover { border-color: rgba(28,25,23,0.2); background: rgba(245,240,235,0.4); }
+  h2 { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text-primary); }
+  p { margin: 8px 0 0; font-size: 14px; line-height: 1.4; color: var(--text-secondary); }
+  .meta { font-size: 13px; color: var(--text-secondary); text-align: right; margin-top: 18px; }
+  .cap { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+  <div class="cap">Product card — rounded-lg, hairline border, hover tint</div>
+  <div class="card">
+    <div>
+      <h2>Apex Revenue OS</h2>
+      <p>A CRM that surfaces qualified pipeline automatically and nudges reps toward the next best action.</p>
+    </div>
+    <div class="meta">Created 3 days ago</div>
+  </div>
+</body>
+</html>

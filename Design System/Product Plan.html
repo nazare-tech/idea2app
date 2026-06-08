@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Product Plan" subtitle="Visual PRD layout — Builder's Workshop system" -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product Plan — Wear It Now AI Mirror</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<link rel="stylesheet" href="product-plan.css">
+</head>
+<body>
+<div class="pp-topline"></div>
+<div class="pp-shell">
+
+  <!-- ============ STICKY NAV RAIL ============ -->
+  <aside class="pp-nav">
+    <div class="pp-nav-brand">
+      <img src="assets/maker-compass-logo.svg" alt="Maker Compass">
+      <span>Maker Compass</span>
+    </div>
+    <div class="pp-nav-doc">Product Plan / PRD</div>
+    <nav>
+      <ul class="pp-toc" id="toc">
+        <li><a href="#overview"><span class="n">01</span><span class="t">Overview</span></a></li>
+        <li><a href="#goals"><span class="n">02</span><span class="t">Goals</span></a></li>
+        <li><a href="#users"><span class="n">03</span><span class="t">Target Users</span></a></li>
+        <li><a href="#stories"><span class="n">04</span><span class="t">User Stories</span></a></li>
+        <li><a href="#requirements"><span class="n">05</span><span class="t">Functional Requirements</span></a></li>
+        <li><a href="#technical"><span class="n">06</span><span class="t">Technical</span></a></li>
+        <li><a href="#scope"><span class="n">07</span><span class="t">Out of Scope</span></a></li>
+        <li><a href="#metrics"><span class="n">08</span><span class="t">Success Metrics</span></a></li>
+        <li><a href="#delivery"><span class="n">09</span><span class="t">Timeline</span></a></li>
+        <li><a href="#risks"><span class="n">10</span><span class="t">Risks &amp; Open Qs</span></a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="pp-main">
+
+    <!-- MASTHEAD -->
+    <header class="pp-masthead">
+      <div class="pp-kicker">Product Plan</div>
+      <h1 class="pp-doc-title">Wear It Now AI&nbsp;Mirror</h1>
+      <p class="pp-doc-sub" style="max-width: none;">A desktop browser extension that replaces every product image on any clothing site, in real time, with a photo-realistic rendering of the user wearing those clothes.</p>
+      <div class="pp-meta-row">
+        <div class="pp-meta"><div class="v">Medium</div><div class="k">Project Size</div></div>
+        <div class="pp-meta"><div class="v">12 wks</div><div class="k">Est. Duration</div></div>
+        <div class="pp-meta"><div class="v">5</div><div class="k">Team Members</div></div>
+        <div class="pp-meta"><div class="v">11</div><div class="k">User Stories</div></div>
+        <div class="pp-meta"><div class="v">46</div><div class="k">Requirements</div></div>
+      </div>
+    </header>
+
+    <!-- 01 OVERVIEW -->
+    <section class="pp-section" id="overview">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Product Brief</div>
+          <h2>Introduction &amp; Overview</h2>
+        </div>
+        <div class="pp-sec-no">01 / 10</div>
+      </div>
+      <p class="pp-lead">Instead of imagining how a garment might look on their specific body, users see themselves in it instantly, on any site they browse.</p>
+      <p class="pp-body" style="margin-top:28px;">The product solves a critical pain point for fashion influencers: <strong>style confidence</strong>. Influencers must curate compelling content and affiliate recommendations without purchasing every item they consider. The timing is right because generative image-to-image diffusion models have recently crossed the photorealism threshold that influencers require to trust and share outputs publicly.</p>
+      <p class="pp-body">The MVP targets fashion influencers on desktop web via a Chrome-compatible browser extension, monetized through pay-per-use credits.</p>
+
+      <div class="pp-gap">
+        <p class="pp-gap-title">Today's tools don't follow the user across the open web</p>
+        <div class="pp-gap-grid">
+          <div class="pp-gap-cell"><div class="name">Veesual</div><div class="lim">Locked to specific retailer partnerships.</div></div>
+          <div class="pp-gap-cell"><div class="name">Google VTO</div><div class="lim">Restricted to pre-set models.</div></div>
+          <div class="pp-gap-cell"><div class="name">ZMO.ai</div><div class="lim">Manual uploads, no browsing integration.</div></div>
+        </div>
+        <p class="pp-gap-conc">Wear It Now AI Mirror is the first <span class="hl">consumer-controlled, universal try-on layer</span> that works on any clothing website.</p>
+      </div>
+    </section>
+
+    <!-- 02 GOALS -->
+    <section class="pp-section" id="goals">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Outcomes</div>
+          <h2>Goals</h2>
+        </div>
+        <div class="pp-sec-no">02 / 10</div>
+      </div>
+
+      <h3 class="pp-subhead"><span class="dot"></span>Business goals</h3>
+      <div class="pp-stat-grid">
+        <div class="pp-stat"><div class="num">1,000</div><div class="desc">Registered users acquired</div><div class="win">Within 60 days</div></div>
+        <div class="pp-stat"><div class="num"><span class="red">15%</span></div><div class="desc">Credit purchase conversion</div><div class="win">First 30 days</div></div>
+        <div class="pp-stat"><div class="num">$5,000</div><div class="desc">Credit revenue generated</div><div class="win">First 90 days</div></div>
+        <div class="pp-stat"><div class="num">40%</div><div class="desc">Active users return (PMF signal)</div><div class="win">Within 7 days</div></div>
+        <div class="pp-stat"><div class="num">25%</div><div class="desc">Try-on images shared or downloaded</div><div class="win">Organic loop</div></div>
+      </div>
+
+      <div class="pp-two">
+        <div>
+          <h3 class="pp-subhead"><span class="dot"></span>User goals</h3>
+          <ul class="pp-checklist" data-icon="check">
+            <li><span data-lucide="check"></span>See themselves wearing any garment on any clothing website, without buying or uploading each session.</li>
+            <li><span data-lucide="check"></span>Quickly evaluate whether an item suits their style and body before committing.</li>
+            <li><span data-lucide="check"></span>Generate high-quality, shareable try-on images for content and engagement.</li>
+            <li><span data-lucide="check"></span>Browse multiple retailers in one session with a consistent, personalized experience.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="pp-subhead"><span class="dot"></span>Non-goals</h3>
+          <ul class="pp-checklist muted" data-icon="x">
+            <li><span data-lucide="minus"></span>Mobile browsers or native mobile apps.</li>
+            <li><span data-lucide="minus"></span>Non-clothing categories (shoes, accessories, bags).</li>
+            <li><span data-lucide="minus"></span>A standalone web app for manual image uploads.</li>
+            <li><span data-lucide="minus"></span>B2B retailer integration or white-label product.</li>
+            <li><span data-lucide="minus"></span>Video or animated try-on.</li>
+            <li><span data-lucide="minus"></span>Social feed, community, or follower system.</li>
+            <li><span data-lucide="minus"></span>AI styling recommendations or advice.</li>
+            <li><span data-lucide="minus"></span>Multiple saved avatar profiles per user.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 TARGET USERS -->
+    <section class="pp-section" id="users">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Target Users</div>
+          <h2>User Personas</h2>
+        </div>
+        <div class="pp-sec-no">03 / 10</div>
+      </div>
+
+      <div class="pp-usertypes">
+        <div class="pp-usertype"><span class="tag">01 Primary</span><span class="nm">Fashion influencer</span></div>
+        <div class="pp-usertype"><span class="tag">02 Secondary</span><span class="nm">Personal stylist</span></div>
+        <div class="pp-usertype"><span class="tag">03 Tertiary</span><span class="nm">Frequent online shopper</span></div>
+      </div>
+
+      <div class="pp-persona-grid">
+        <article class="pp-persona">
+          <div class="pid">Persona 01</div>
+          <div class="pname">Maya</div>
+          <div class="ptier">The Fashion Influencer</div>
+          <div class="pp-pa"><div class="lbl">Description</div><div class="txt">A mid-tier content creator (10k–500k followers) posting outfit content on Instagram and TikTok, earning through affiliate links and brand partnerships.</div></div>
+          <div class="pp-pa"><div class="lbl">Needs</div><div class="txt">A fast, high-quality way to evaluate and showcase clothing from multiple brands without buying everything. Outputs polished enough to post.</div></div>
+          <div class="pp-pa"><div class="lbl">Pain points</div><div class="txt">Spends on clothes she never uses for content. Hard to visualize items on her body from flat photos. Existing tools don't span her brands.</div></div>
+          <div class="pp-pa"><div class="lbl">Motivation</div><div class="txt">Produce more content faster, lift affiliate click-through, and cut wasted spend on items that don't photograph well.</div></div>
+        </article>
+        <article class="pp-persona">
+          <div class="pid">Persona 02</div>
+          <div class="pname">Jordan</div>
+          <div class="ptier">The Personal Stylist</div>
+          <div class="pp-pa"><div class="lbl">Description</div><div class="txt">A freelance stylist who curates shopping edits for clients and presents options digitally before purchasing.</div></div>
+          <div class="pp-pa"><div class="lbl">Needs</div><div class="txt">A way to show clients exactly how items from various retailers look on the client's body, not a generic model.</div></div>
+          <div class="pp-pa"><div class="lbl">Pain points</div><div class="txt">Clients struggle to visualize items on themselves. Mood boards with generic models reduce client confidence.</div></div>
+          <div class="pp-pa"><div class="lbl">Motivation</div><div class="txt">Close client approvals faster and reduce return rates with a personalized preview before purchase.</div></div>
+        </article>
+        <article class="pp-persona">
+          <div class="pid">Persona 03</div>
+          <div class="pname">Alex</div>
+          <div class="ptier">The Frequent Shopper</div>
+          <div class="pp-pa"><div class="lbl">Description</div><div class="txt">A fashion-conscious professional who shops online regularly and has felt buyer's remorse from items that didn't look as expected.</div></div>
+          <div class="pp-pa"><div class="lbl">Needs</div><div class="txt">Confidence that a garment will suit their body before purchasing.</div></div>
+          <div class="pp-pa"><div class="lbl">Pain points</div><div class="txt">Returns are time-consuming. Generic model photos don't reflect their specific body type.</div></div>
+          <div class="pp-pa"><div class="lbl">Motivation</div><div class="txt">Shop smarter, reduce returns, and feel more confident in purchase decisions.</div></div>
+        </article>
+      </div>
+
+      <h3 class="pp-subhead" style="margin-top:44px;"><span class="dot"></span>Role-based access</h3>
+      <div class="pp-roles">
+        <div class="pp-role gated"><span class="badge">Gated</span><div class="rname">Guest</div><div class="rcap">Can install the extension and view the landing page. Cannot activate the overlay or generate images. Prompted to register on activation.</div></div>
+        <div class="pp-role gated"><span class="badge">Needs credits</span><div class="rname">Free user</div><div class="rcap">Can log in, save one avatar, and view their balance. Can activate on any site but is prompted to buy credits before generating.</div></div>
+        <div class="pp-role"><span class="badge">Full access</span><div class="rname">User with credits</div><div class="rcap">Full try-on overlay on any supported site. Each generation costs one credit. Can download images and view generation history.</div></div>
+        <div class="pp-role"><span class="badge">Admin</span><div class="rname">Admin</div><div class="rcap">View all users, balances, and transactions. Manually adjust credits, review flagged images, and manage site compatibility reports.</div></div>
+      </div>
+    </section>
+
+    <!-- 04 USER STORIES -->
+    <section class="pp-section" id="stories">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Behavior</div>
+          <h2>User Stories &amp; Acceptance Criteria</h2>
+        </div>
+        <div class="pp-sec-no">04 / 10</div>
+      </div>
+      <div class="pp-story-grid" id="storyGrid"></div>
+    </section>
+
+    <!-- 05 FUNCTIONAL REQUIREMENTS -->
+    <section class="pp-section" id="requirements">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Build Scope</div>
+          <h2>Functional Requirements</h2>
+        </div>
+        <div class="pp-sec-no">05 / 10</div>
+      </div>
+      <div class="pp-req-grid" id="reqGrid"></div>
+    </section>
+
+    <!-- 06 TECHNICAL -->
+    <section class="pp-section" id="technical">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Technical</div>
+          <h2>Technical Considerations</h2>
+        </div>
+        <div class="pp-sec-no">06 / 10</div>
+      </div>
+      <div class="pp-tech-grid">
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="layers"></span><h4>Existing systems</h4></div>
+          <ul>
+            <li>Greenfield product. No existing codebase to integrate with.</li>
+            <li>The extension talks to a backend API hosted separately from the marketing site.</li>
+          </ul>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="key-round"></span><h4>Authentication</h4></div>
+          <ul>
+            <li>Email/password and Google OAuth via a managed auth provider (assumed Supabase or Firebase Auth).</li>
+            <li>The extension stores a JWT or session token in <code>chrome.storage.local</code> for persistent login.</li>
+          </ul>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="cpu"></span><h4>AI generation API</h4></div>
+          <ul>
+            <li>Core try-on depends on an image-to-image model for realistic garment transfer (assumed Replicate, Fashn.ai, or a custom diffusion endpoint).</li>
+            <li>API accepts a product image URL and avatar reference, returns a generated image URL or blob.</li>
+            <li>Assumed latency 3–10s per image, communicated via loading states.</li>
+          </ul>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="database"></span><h4>Data storage</h4></div>
+          <ul>
+            <li><b>Database:</b> relational (assumed PostgreSQL via Supabase) for users, balances, transactions, history, and reports.</li>
+            <li><b>Entities:</b> <code>users</code>, <code>avatar_photos</code>, <code>credit_transactions</code>, <code>generation_sessions</code>, <code>generated_images</code>, <code>site_reports</code>.</li>
+            <li><b>Files:</b> avatars and generated images in object storage (assumed 30-day retention for caching).</li>
+          </ul>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="credit-card"></span><h4>Payments</h4></div>
+          <ul>
+            <li>Stripe for credit bundles. Webhooks update balances server-side on confirmed payment to prevent client-side manipulation.</li>
+          </ul>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="puzzle"></span><h4>Extension architecture</h4></div>
+          <ul>
+            <li>Manifest V3 Chrome extension.</li>
+            <li>Content script injected into retailer pages to scan the DOM and replace images.</li>
+            <li>Background service worker for API calls and session state; popup in a lightweight framework (React/Preact).</li>
+          </ul>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="shield-check"></span><h4>Privacy &amp; security</h4></div>
+          <ul>
+            <li>Avatar photos are biometric-adjacent. The privacy policy must disclose storage, processing, and retention.</li>
+            <li>No model training on avatars without explicit consent. Generated images are scoped to the owning account.</li>
+            <li>All API traffic over HTTPS. Minimum Chrome permissions: <code>activeTab</code>, <code>storage</code>, <code>identity</code>.</li>
+          </ul>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="gauge"></span><h4>Performance</h4></div>
+          <ul>
+            <li>Popup opens within 500ms; DOM scan under 2s for up to 50 images.</li>
+            <li>Each generation under 10s; over 30s triggers timeout with retry.</li>
+            <li>Marketing site &amp; dashboard target Lighthouse 80+. Balance updates within 3s of a confirmed action.</li>
+          </ul>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="bar-chart-3"></span><h4>Analytics</h4></div>
+          <ul>
+            <li>Assumed PostHog, configured to track the events defined in the functional requirements.</li>
+          </ul>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="trending-up"></span><h4>Scalability</h4></div>
+          <ul>
+            <li>MVP scale: up to 5,000 registered users and 500 concurrent generation requests. Evaluate AI provider rate limits at this scale.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 OUT OF SCOPE -->
+    <section class="pp-section" id="scope">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Scope</div>
+          <h2>Non-goals &amp; Out of Scope</h2>
+        </div>
+        <div class="pp-sec-no">07 / 10</div>
+      </div>
+      <div class="pp-nongoals" id="scopeGrid"></div>
+    </section>
+
+    <!-- 08 SUCCESS METRICS -->
+    <section class="pp-section" id="metrics">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Measurement</div>
+          <h2>Success Metrics</h2>
+        </div>
+        <div class="pp-sec-no">08 / 10</div>
+      </div>
+      <div class="pp-metric-cols">
+        <div class="pp-metric-group">
+          <div class="pp-mg-head"><span data-lucide="users-round"></span><span class="t">User</span></div>
+          <div class="pp-metric"><div class="mv">60%</div><div class="ml">Activation: avatar upload within 24h of registration</div></div>
+          <div class="pp-metric"><div class="mv">50%</div><div class="ml">Onboarded users generate first try-on same session</div></div>
+          <div class="pp-metric"><div class="mv">3+</div><div class="ml">Try-on sessions per active user per week</div></div>
+          <div class="pp-metric"><div class="mv">25%</div><div class="ml">Generated images downloaded same session</div></div>
+          <div class="pp-metric"><div class="mv">35%</div><div class="ml">Day-7 retention after first try-on</div></div>
+          <div class="pp-metric"><div class="mv">20%</div><div class="ml">Day-30 retention after first try-on</div></div>
+        </div>
+        <div class="pp-metric-group">
+          <div class="pp-mg-head"><span data-lucide="trending-up"></span><span class="t">Business</span></div>
+          <div class="pp-metric"><div class="mv">1,000</div><div class="ml">Registered users within 60 days of launch</div></div>
+          <div class="pp-metric"><div class="mv">15%</div><div class="ml">Buy credits within first 30 days</div></div>
+          <div class="pp-metric"><div class="mv">$5,000</div><div class="ml">Credit revenue within 90 days</div></div>
+          <div class="pp-metric"><div class="mv">$12</div><div class="ml">ARPPU within 30 days of first purchase</div></div>
+          <div class="pp-metric"><div class="mv">20%</div><div class="ml">New registrations from referral or sharing</div></div>
+        </div>
+        <div class="pp-metric-group">
+          <div class="pp-mg-head"><span data-lucide="gauge"></span><span class="t">Technical</span></div>
+          <div class="pp-metric"><div class="mv">95%</div><div class="ml">Generation requests complete successfully</div></div>
+          <div class="pp-metric"><div class="mv">500ms</div><div class="ml">Popup load time, 90th percentile</div></div>
+          <div class="pp-metric"><div class="mv">&lt;2s</div><div class="ml">Page scan for up to 50 images, 90th pct</div></div>
+          <div class="pp-metric"><div class="mv">99.5%</div><div class="ml">Monthly backend API uptime</div></div>
+          <div class="pp-metric"><div class="mv">98%</div><div class="ml">Stripe checkout sessions complete</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 TIMELINE -->
+    <section class="pp-section" id="delivery">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Delivery</div>
+          <h2>Timeline &amp; Milestones</h2>
+        </div>
+        <div class="pp-sec-no">09 / 10</div>
+      </div>
+
+      <div class="pp-delivery-top">
+        <div>
+          <div class="pp-estimate">
+            <div class="e"><div class="v">Medium</div><div class="k">Project size</div></div>
+            <div class="e"><div class="v">12 wks</div><div class="k">Total duration</div></div>
+          </div>
+        </div>
+        <div class="pp-team">
+          <div class="pp-team-label">Team composition · 5 people</div>
+          <div class="pp-team-list">
+            <div class="pp-team-row"><span class="role">Full-stack developer</span><span class="resp">Backend API, database, Stripe, admin panel</span></div>
+            <div class="pp-team-row"><span class="role">Frontend developer</span><span class="resp">Browser extension, dashboard, marketing site</span></div>
+            <div class="pp-team-row"><span class="role">AI/ML engineer</span><span class="resp">Generation API integration, image pipeline</span></div>
+            <div class="pp-team-row"><span class="role">Designer</span><span class="resp">Extension popup, dashboard, onboarding, site</span></div>
+            <div class="pp-team-row"><span class="role">QA engineer</span><span class="resp">Test authoring &amp; execution across phases</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pp-buildmap">
+        <div class="pp-bm-track"><div class="pp-bm-progress" id="bmProgress"></div></div>
+        <div class="pp-bm-weeks"><span>Week 1</span><span>Week 4</span><span>Week 8</span><span>Week 12</span></div>
+        <div class="pp-phases">
+          <article class="pp-phase" data-phase>
+            <div class="ph-no"><span class="p">Phase 1</span><span class="w">Weeks 1–3</span></div>
+            <div class="ph-title">Foundation</div>
+            <div class="ph-goal">Establish core infrastructure, authentication, and avatar management so the team can build on a stable base.</div>
+            <div class="ph-dl-label">Key deliverables</div>
+            <ul>
+              <li><span data-lucide="check"></span>Backend API, database schema, object storage</li>
+              <li><span data-lucide="check"></span>Registration &amp; login (email/password + Google OAuth)</li>
+              <li><span data-lucide="check"></span>Email verification flow</li>
+              <li><span data-lucide="check"></span>Avatar upload, quality check, and storage</li>
+              <li><span data-lucide="check"></span>Account dashboard shell &amp; settings</li>
+              <li><span data-lucide="check"></span>Chrome extension scaffold with popup &amp; session</li>
+              <li><span data-lucide="check"></span>Static marketing landing page</li>
+            </ul>
+          </article>
+          <article class="pp-phase" data-phase>
+            <div class="ph-no"><span class="p">Phase 2</span><span class="w">Weeks 4–8</span></div>
+            <div class="ph-title">Core try-on experience</div>
+            <div class="ph-goal">Deliver the end-to-end try-on flow from extension activation to generated image display.</div>
+            <div class="ph-dl-label">Key deliverables</div>
+            <ul>
+              <li><span data-lucide="check"></span>AI generation API integration &amp; image-to-image pipeline</li>
+              <li><span data-lucide="check"></span>Content script: DOM scanning, product detection, shimmer placeholders</li>
+              <li><span data-lucide="check"></span>Credit confirmation banner in extension</li>
+              <li><span data-lucide="check"></span>Image generation, replacement &amp; error handling</li>
+              <li><span data-lucide="check"></span>Session-level image caching</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 10 RISKS, DEPENDENCIES & OPEN QUESTIONS -->
+    <section class="pp-section" id="risks">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Follow Through</div>
+          <h2>Risks, Dependencies &amp; Open Questions</h2>
+        </div>
+        <div class="pp-sec-no">10 / 10</div>
+      </div>
+
+      <p class="pp-lead">Six risks carry the build. Each is paired with the impact if ignored and the concrete move that contains it.</p>
+
+      <h3 class="pp-subhead" style="margin-top:36px;"><span class="dot"></span>Risks &amp; mitigation</h3>
+      <div class="pp-risk-list" id="riskGrid"></div>
+
+      <h3 class="pp-subhead" style="margin-top:52px;"><span class="dot"></span>Dependencies</h3>
+      <div class="pp-dep-list" id="depList"></div>
+
+      <h3 class="pp-subhead" style="margin-top:52px;"><span class="dot"></span>Assumptions</h3>
+      <div class="pp-assume-grid" id="assumeGrid"></div>
+
+      <h3 class="pp-subhead" style="margin-top:52px;"><span class="dot"></span>Open questions</h3>
+      <div class="pp-oq-grid" id="oqGrid"></div>
+
+      <div class="pp-foot">
+        <span class="l">Maker Compass · Product Plan</span>
+        <span class="l">Wear It Now AI Mirror</span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+/* Product Plan — content data (extracted from the source PRD) */
+window.PP_STORIES = [
+  { id: "US-001", title: "Install and activate the extension",
+    role: "fashion influencer", want: "install the Wear It Now AI Mirror browser extension and activate it on a clothing website", so: "I can see myself wearing the products on that site",
+    ac: [
+      "Available on the Chrome Web Store and installs without errors on Chrome 110+.",
+      "After installation, the extension icon appears in the Chrome toolbar.",
+      "Clicking the icon on any page opens a popup with a \u201cTry On Mirror\u201d toggle.",
+      "If not logged in, the toggle is disabled and a \u201cSign In\u201d link is visible.",
+      "If logged in with an avatar and credits, the toggle is enabled."
+    ]},
+  { id: "US-002", title: "Register and create an account",
+    role: "new visitor", want: "create an account using my email or Google", so: "I can access the try-on features",
+    ac: [
+      "Registration accepts email and password or Google OAuth.",
+      "Invalid email format shows: \u201cPlease enter a valid email address.\u201d",
+      "Password under 8 chars or missing a number/letter shows the requirement.",
+      "Duplicate email shows: \u201cAn account with this email already exists. Sign in instead.\u201d",
+      "Successful registration sends a verification email.",
+      "User is redirected to the onboarding avatar upload flow.",
+      "User cannot generate try-on images until their email is verified."
+    ]},
+  { id: "US-003", title: "Upload an avatar photo",
+    role: "registered user", want: "upload a photo of myself as my avatar", so: "the AI can generate try-on images showing me in the clothes",
+    ac: [
+      "Accepts JPEG, PNG, and WEBP files up to 10 MB.",
+      "Files over 10 MB show: \u201cFile size exceeds 10 MB. Please upload a smaller image.\u201d",
+      "Unsupported formats show a specific error message.",
+      "No detectable face shows: \u201cWe couldn\u2019t detect a clear face in your photo\u2026\u201d",
+      "Processed photo shows a preview with \u201cConfirm\u201d and \u201cTry a different photo.\u201d",
+      "Confirming saves the avatar and advances onboarding.",
+      "User can replace their avatar anytime from settings with the same rules."
+    ]},
+  { id: "US-004", title: "Receive free trial credits",
+    role: "newly registered user who completed onboarding", want: "receive free trial credits automatically", so: "I can try the product before purchasing",
+    ac: [
+      "Exactly 5 credits added after email verification and avatar upload.",
+      "Dashboard balance reflects 5 credits immediately after onboarding.",
+      "Success toast: \u201c5 free credits added to your account. Start trying on clothes!\u201d",
+      "Trial credits granted once per account; re-uploading does not add more."
+    ]},
+  { id: "US-005", title: "Generate try-on images on a clothing site",
+    role: "fashion influencer with credits", want: "activate the mirror on a clothing website and see myself wearing the products", so: "I can evaluate styles and create content without buying items",
+    ac: [
+      "Activating on a page with product images shows a credit confirmation banner with count and total cost.",
+      "Banner includes \u201cGenerate Try-Ons \u2013 Use X Credits\u201d and \u201cCancel.\u201d",
+      "Cancel dismisses the banner, consumes no credits, and leaves the page unchanged.",
+      "Generate deducts credits immediately and begins generation.",
+      "Each image shows a shimmer placeholder while generating, then the result.",
+      "Popup balance updates to reflect deducted credits.",
+      "A single failure restores the original image, shows a retry icon, and charges no credit.",
+      "Full service outage shows an error banner; no images replaced, no credits consumed."
+    ]},
+  { id: "US-006", title: "Browse across pages with the mirror active",
+    role: "fashion influencer", want: "the mirror to keep working as I navigate between pages on a clothing site", so: "I can browse naturally without re-activating it every page",
+    ac: [
+      "Toggle state persists across pages within the same domain and session.",
+      "Each new page with product images shows a new credit confirmation before generating.",
+      "Returning to an already-generated page serves cached images with no charge.",
+      "Navigating away mid-generation cancels remaining work and charges nothing for them."
+    ]},
+  { id: "US-007", title: "Download a generated try-on image",
+    role: "fashion influencer", want: "download a generated try-on image", so: "I can use it in my content or share it with my audience",
+    ac: [
+      "Hovering a successful image reveals a download icon overlay.",
+      "Clicking saves the image locally in JPEG format.",
+      "File is named wearit-[timestamp].jpg.",
+      "The download consumes no additional credit.",
+      "No download icon on shimmer placeholders or failed slots."
+    ]},
+  { id: "US-008", title: "Purchase credits",
+    role: "registered user who ran out of credits", want: "purchase a credit bundle", so: "I can continue generating try-on images",
+    ac: [
+      "Purchase page shows at least three bundles with price, credits, and per-credit cost.",
+      "Selecting a bundle redirects to a Stripe-hosted checkout page.",
+      "Successful payment adds credits to the balance immediately.",
+      "Success toast on the dashboard: \u201cX credits added to your account.\u201d",
+      "Failed or cancelled payment returns to the credits page with no change.",
+      "Transaction appears in history with correct date, amount, and quantity."
+    ]},
+  { id: "US-009", title: "View generation history",
+    role: "registered user", want: "view a history of my try-on sessions", so: "I can track credit usage and revisit sites I\u2019ve used",
+    ac: [
+      "Lists all past sessions in reverse chronological order.",
+      "Each entry shows date, website domain, image count, and credits consumed.",
+      "Empty state: \u201cNo try-on sessions yet. Install the extension and start browsing.\u201d",
+      "History is paginated at 20 entries per page."
+    ]},
+  { id: "US-010", title: "Report an incompatible site",
+    role: "registered user", want: "report a clothing site where the extension couldn\u2019t detect product images", so: "the team can investigate and add support",
+    ac: [
+      "No detected images shows a \u201cReport this site\u201d button in the popup.",
+      "Clicking submits the page URL and account ID to the compatibility queue.",
+      "Confirmation: \u201cThanks! We\u2019ve logged this site for review.\u201d",
+      "Same URL can\u2019t be submitted more than once per user per day.",
+      "Report appears in the admin panel with URL, date, and status \u201cNew.\u201d"
+    ]},
+  { id: "US-011", title: "Admin manages user credits",
+    role: "admin", want: "manually adjust a user\u2019s credit balance", so: "I can resolve billing issues or grant goodwill credits",
+    ac: [
+      "Admin panel shows a searchable list of users by email.",
+      "Selecting a user shows current balance and full transaction history.",
+      "Admin can add/deduct an integer with a required reason field.",
+      "Submitting updates the balance and logs the admin ID and reason.",
+      "No reason shows: \u201cPlease provide a reason for this adjustment.\u201d",
+      "Deductions below zero are blocked: \u201cCannot reduce balance below zero.\u201d"
+    ]}
+];
+
+window.PP_REQ_GROUPS = [
+  { name: "Browser extension", icon: "puzzle", items: [
+    "Installable from the Chrome Web Store, compatible with Chrome 110+.",
+    "Injects a toolbar popup with a \u201cTry On Mirror\u201d toggle on any page.",
+    "When toggled on, scans the page DOM for clothing <code>&lt;img&gt;</code> elements and returns a count.",
+    "Shows a credit confirmation banner with image count and total credits before generating.",
+    "Does not begin generating until the user explicitly confirms.",
+    "Sends each product image URL and the avatar reference to the AI API on confirmation.",
+    "Replaces each original image with a shimmer placeholder while loading.",
+    "Replaces each shimmer with the generated try-on image on success.",
+    "On a single failure, restores the original image, shows a retry icon, charges no credit.",
+    "Shows an error banner if the AI service is fully unavailable; consumes no credits.",
+    "Caches generated images for the session so revisits don\u2019t re-charge.",
+    "Restores all originals instantly when the toggle is turned off (no reload).",
+    "Shows a hover download overlay on each successful image.",
+    "Download saves locally as JPEG at the original display dimensions.",
+    "Shows a \u201cReport this site\u201d button when no images are detected.",
+    "Cancels in-progress requests and charges nothing if the user navigates away.",
+    "Requires login before the toggle can be activated.",
+    "If logged out, shows a \u201cSign In\u201d link opening the dashboard in a new tab.",
+    "Maintains the session with a stored token; no re-login unless it expires.",
+    "Displays the current credit balance in the popup at all times when logged in."
+  ]},
+  { name: "Accounts & onboarding", icon: "user-round", items: [
+    "Register with email and password.",
+    "Register or log in with Google OAuth.",
+    "Passwords \u2265 8 chars with at least one number and one letter.",
+    "Send a verification email; require verification before generating.",
+    "Guided onboarding after first registration prompts avatar upload first.",
+    "Allow one avatar photo per account.",
+    "Accept JPEG, PNG, or WEBP avatars up to 10 MB.",
+    "Automated quality check rejects photos with no detectable face, with a specific reason.",
+    "Show a preview of the processed avatar for confirmation before saving.",
+    "Allow replacing the avatar anytime; prior images are not altered."
+  ]},
+  { name: "Credits & payments", icon: "credit-card", items: [
+    "Display the current balance prominently on the dashboard and in the popup.",
+    "Offer at least three credit bundles at checkout (assumed 20 / 60 / 150 with increasing discounts).",
+    "Process purchases via Stripe; add credits to the balance immediately on success.",
+    "Show full transaction history: date, amount paid, credits received.",
+    "Show generation history: date, website, image count, credits consumed.",
+    "Grant 5 free trial credits on completing avatar upload and email verification."
+  ]},
+  { name: "Admin", icon: "shield-check", items: [
+    "Paginated list of all users with email, registration date, balance, and total consumed.",
+    "Manually add or deduct credits from any account with a required reason.",
+    "View all site compatibility reports with reported URL and submission date.",
+    "Mark reports as \u201cUnder Review,\u201d \u201cResolved,\u201d or \u201cWon\u2019t Fix.\u201d"
+  ]},
+  { name: "Analytics events", icon: "bar-chart-3", span: true, items: [
+    "Extension installed.",
+    "Avatar upload completed.",
+    "Mirror activated on a page (includes the site domain).",
+    "Credit generation confirmed (includes image count and credits consumed).",
+    "Generated image downloaded.",
+    "Credit purchase initiated and successfully completed."
+  ]}
+];
+
+window.PP_SCOPE = [
+  { t: "Mobile", h: "Mobile browser or native app support", d: "The extension model requires a desktop browser. Deferred until the core experience is validated." },
+  { t: "Browsers", h: "Firefox, Safari, or Edge support", d: "MVP targets Chrome only to reduce QA and compatibility overhead." },
+  { t: "Categories", h: "Non-clothing categories", d: "Shoes, accessories, bags, and jewelry require separate model training. Deferred." },
+  { t: "Media", h: "Video or animated try-on", d: "Real-time video overlay needs far more compute and latency management. Deferred." },
+  { t: "Avatars", h: "Multiple avatar profiles per account", d: "Adds complexity to the credit model and UX. Deferred." },
+  { t: "Organize", h: "Outfit saving, wishlists, or lookbooks", d: "Valuable, but not required to validate the core try-on experience." },
+  { t: "Social", h: "Social sharing, community, or follower system", d: "A growth layer, not an MVP requirement." },
+  { t: "AI", h: "AI styling recommendations", d: "Suggesting what to wear is a separate capability deferred post-MVP." },
+  { t: "B2B", h: "B2B retailer integration or white-label", d: "The MVP is entirely consumer-facing. B2B is a future revenue stream." },
+  { t: "Pricing", h: "Subscription pricing model", d: "MVP uses pay-per-use credits only. Subscriptions may follow once usage is understood." },
+  { t: "Affiliate", h: "Affiliate link tracking or monetization tools", d: "Influencer-specific affiliate features are deferred to a later phase." },
+  { t: "Offline", h: "Offline mode", d: "The extension requires an active connection to call the AI generation API." }
+];
+
+</script>
+<script>
+/* Product Plan — render + interactions */
+(function () {
+  function el(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+
+  /* ---- User stories ---- */
+  const sg = document.getElementById("storyGrid");
+  (window.PP_STORIES || []).forEach(function (s) {
+    const card = el("article", "pp-story");
+    const top = el("div", "pp-story-top");
+    top.appendChild(el("span", "sid", s.id));
+    top.appendChild(el("h3", "stitle", s.title));
+    top.appendChild(el("p", "sstory",
+      "As a <b>" + s.role + "</b>, I want to " + s.want + ", so that " + s.so + "."));
+    card.appendChild(top);
+
+    const det = el("details", "pp-ac");
+    const sum = el("summary", null,
+      "Acceptance criteria (" + s.ac.length + ")<span data-lucide=\"chevron-down\" class=\"chev\"></span>");
+    det.appendChild(sum);
+    const ul = el("ul", "pp-ac-list");
+    s.ac.forEach(function (a) {
+      ul.appendChild(el("li", null, "<span data-lucide=\"check\"></span><span>" + a + "</span>"));
+    });
+    det.appendChild(ul);
+    card.appendChild(det);
+    sg.appendChild(card);
+  });
+
+  /* ---- Functional requirements ---- */
+  const rg = document.getElementById("reqGrid");
+  (window.PP_REQ_GROUPS || []).forEach(function (g) {
+    const card = el("div", "pp-req" + (g.span ? " span" : ""));
+    const head = el("div", "pp-req-head");
+    head.appendChild(el("div", "ic", "<span data-lucide=\"" + g.icon + "\"></span>"));
+    head.appendChild(el("div", "gname", g.name));
+    head.appendChild(el("div", "gcount", g.items.length + " reqs"));
+    card.appendChild(head);
+    const ul = el("ul", "pp-req-list");
+    g.items.forEach(function (it) { ul.appendChild(el("li", null, "<span>" + it + "</span>")); });
+    card.appendChild(ul);
+    rg.appendChild(card);
+  });
+
+  /* ---- Out of scope ---- */
+  const cg = document.getElementById("scopeGrid");
+  (window.PP_SCOPE || []).forEach(function (n) {
+    const item = el("div", "pp-ng");
+    item.appendChild(el("span", "ngt", n.t));
+    const c = el("div", "ngc");
+    c.appendChild(el("div", "h", n.h));
+    c.appendChild(el("div", "d", n.d));
+    item.appendChild(c);
+    cg.appendChild(item);
+  });
+
+  /* ---- Lucide icons ---- */
+  if (window.lucide) lucide.createIcons();
+
+  /* ---- Scroll-spy nav ---- */
+  const links = Array.prototype.slice.call(document.querySelectorAll(".pp-toc a"));
+  const map = {};
+  links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+  const sections = links.map(function (a) { return document.getElementById(a.getAttribute("href").slice(1)); });
+  const spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        links.forEach(function (l) { l.classList.remove("active"); });
+        const a = map[en.target.id];
+        if (a) a.classList.add("active");
+      }
+    });
+  }, { rootMargin: "-20% 0px -70% 0px", threshold: 0 });
+  sections.forEach(function (s) { if (s) spy.observe(s); });
+
+  /* ---- Build Map timeline reveal ---- */
+  const delivery = document.getElementById("delivery");
+  const progress = document.getElementById("bmProgress");
+  const phases = Array.prototype.slice.call(document.querySelectorAll("[data-phase]"));
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) {
+    if (progress) progress.style.width = "67%";
+    phases.forEach(function (p) { p.classList.add("in"); });
+  } else if (delivery) {
+    const tObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          if (progress) progress.style.width = "67%"; /* weeks 1-8 of 12 */
+          phases.forEach(function (p, i) {
+            setTimeout(function () { p.classList.add("in"); }, 120 + i * 140);
+          });
+          tObs.disconnect();
+        }
+      });
+    }, { threshold: 0.25 });
+    tObs.observe(delivery);
+  }
+})();
+
+</script>
+<script>
+/* Section 10 — Risks, Dependencies & Open Questions */
+(function () {
+  function el(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  const RISKS = [
+    { cat: "Site compatibility",
+      risk: "Retailer websites break the extension by updating their DOM structure or implementing anti-scraping measures.",
+      impact: "The \u201cTry On Me\u201d overlay fails to appear on affected sites, rendering the product unusable on those retailers without warning.",
+      mit: "Use a remotely fetched configuration file for site selectors so fixes deploy without a full extension release. Monitor selector health with automated daily checks. Prioritize a whitelist of 10 stable, high-traffic sites for MVP rather than attempting broad coverage." },
+    { cat: "Generation quality",
+      risk: "AI generation quality is insufficient for influencers to post publicly, causing immediate churn.",
+      impact: "Users exhaust free credits, see poor results, and do not convert to paid credits. Negative reviews on the Chrome Web Store damage organic growth.",
+      mit: "Validate AI output quality with 3\u20135 design partner influencers before public launch. Set clear quality thresholds (garment color and pattern preservation, face accuracy). If quality is below threshold, delay launch rather than ship a poor experience. Offer a credit refund policy for clearly failed outputs." },
+    { cat: "Unit economics",
+      risk: "AI compute costs per generation exceed the unit economics of the credit pricing model.",
+      impact: "The product loses money on every generation, making the business unsustainable at scale.",
+      mit: "Calculate exact cost-per-generation using the chosen AI API before finalizing credit pack pricing. Target a minimum 40% gross margin. Use a queue system to batch requests during off-peak hours to reduce GPU costs. Evaluate open-source model hosting (Replicate, Modal) against proprietary API pricing." },
+    { cat: "Onboarding friction",
+      risk: "Low onboarding completion rate due to friction in the photo upload step.",
+      impact: "Users install the extension but never activate, resulting in low engagement and poor retention metrics.",
+      mit: "Design the onboarding flow to be completable in under 3 minutes with clear photo guidance (example photos, lighting tips). Offer a \u201cskip for now\u201d option that surfaces a persistent reminder. A/B test onboarding copy and photo requirements (1 photo minimum against 3 photos)." },
+    { cat: "Platform competition",
+      risk: "A major platform (Google Chrome, Apple, or Meta) ships a native virtual try-on feature that commoditizes the extension.",
+      impact: "The core value proposition is replicated for free by a platform with massive distribution, making user acquisition significantly harder.",
+      mit: "Build user lock-in through the calibrated body profile (users are reluctant to re-setup elsewhere) and try-on history. Accelerate the influencer network effect so the brand is established before platform competition arrives. Plan Phase 2 differentiation features (bulk grid try-on, affiliate export, client profiles) that platforms are unlikely to replicate quickly." },
+    { cat: "Legal exposure",
+      risk: "Legal challenge from clothing retailers claiming unauthorized modification of their intellectual property or website content.",
+      impact: "Cease-and-desist letters, forced removal from the Chrome Web Store, or reputational damage.",
+      mit: "Consult a technology attorney before launch regarding the legality of client-side DOM modification and image processing. The extension modifies the user\u2019s local browser view only and does not scrape or republish retailer content. Add clear terms of service stating the tool is for personal use only. Monitor retailer terms of service for relevant clauses." }
+  ];
+
+  const DEPS = [
+    { lead: "Chrome Web Store approval", desc: "The extension must pass Google\u2019s review process, which can take 1\u20137 business days and may require policy revisions." },
+    { lead: "AI generation API", desc: "A reliable image-to-image virtual try-on API or self-hosted model (e.g., OOTDiffusion via Replicate or Modal) must be selected and contracted before Phase 2 development begins." },
+    { lead: "Stripe account", desc: "A verified Stripe account must be set up and approved for the target geography before credit purchase can be tested." },
+    { lead: "Cloud storage provider", desc: "AWS S3 (or equivalent) account and IAM configuration must be in place before Phase 1 photo upload can be built." },
+    { lead: "Legal review", desc: "Privacy policy and terms of service must be reviewed by a technology attorney before Chrome Web Store submission." },
+    { lead: "Design partner influencers", desc: "3\u20135 influencers must be recruited and available for quality validation testing before Phase 3 launch." }
+  ];
+
+  const ASSUMPTIONS = [
+    { lead: "Target user", desc: "The primary target user is a mid-tier fashion influencer (50k\u2013500k followers) using a desktop computer with Chrome. Non-influencer consumers are a secondary audience, not optimized for in MVP." },
+    { lead: "Platform", desc: "Desktop Chrome browser only. No mobile app or other browser support is assumed for MVP." },
+    { lead: "Authentication", desc: "Email/password authentication is sufficient for MVP. Social login (Google, Apple) is not required." },
+    { lead: "AI model", flag: true, desc: "A suitable image-to-image virtual try-on model exists and is accessible via API with acceptable latency (under 45 seconds) and cost (allowing 40%+ gross margin). This is the single highest-risk technical assumption." },
+    { lead: "Credit pricing", desc: "The suggested credit pack pricing ($4.99 / $9.99 / $17.99) is a starting hypothesis. Final pricing must be validated against actual compute costs before launch." },
+    { lead: "Supported retailers", desc: "The 10 retailers named in FR-003 have stable enough DOM structures to support reliable CSS selector-based image detection. This must be validated during Phase 2." },
+    { lead: "Business model", desc: "Pay-per-use credits are the sole revenue model for MVP. No subscription tier, enterprise plan, or B2B offering is assumed." },
+    { lead: "User data consent", desc: "Users will consent to photo storage and processing as part of account creation. Explicit opt-in for AI model training is required and assumed to be opt-out by default." },
+    { lead: "Single user per account", desc: "Each account represents one person\u2019s body profile. Multi-user or client management is not assumed for MVP." },
+    { lead: "Export formats", desc: "Instagram Stories (1080\u00d71920px) and full resolution are the two most valuable export formats for the target user. TikTok and Pinterest formats are deferred." },
+    { lead: "Watermarking", desc: "Free onboarding credit generations are watermarked to drive organic discovery. Paid generations are watermark-free." }
+  ];
+
+  const QUESTIONS = [
+    { lead: "AI model selection", q: "Which specific virtual try-on model (OOTDiffusion, IDM-VTON, or a proprietary API) will be used, and what is the confirmed cost-per-generation at the chosen quality level? This directly determines credit pricing viability." },
+    { lead: "Retailer legal posture", q: "Have any of the 10 target retailers been consulted or reviewed for terms of service clauses that might prohibit client-side DOM modification? Should the product proactively reach out to retailers, or proceed without disclosure?" },
+    { lead: "Photo quality threshold", q: "What is the minimum acceptable photo quality for avatar calibration? Specifically, does the MVP require a full-body photo, or is a waist-up photo sufficient for garment try-on accuracy?" },
+    { lead: "Refund policy", q: "Beyond automatic credit refunds for system failures, will there be a manual refund policy for users dissatisfied with generation quality? If so, what is the threshold and process?" },
+    { lead: "Influencer seeding budget", q: "What is the budget allocated for gifting credits to design partner influencers and the initial seeding campaign? This affects Phase 3 planning." },
+    { lead: "GDPR and data residency", q: "Are there specific data residency requirements (e.g., EU user data must stay in EU regions) that affect the choice of cloud storage provider and AI API?" },
+    { lead: "Chrome Web Store category", q: "Should the extension be listed under \u201cShopping\u201d or \u201cPhotos\u201d in the Chrome Web Store? This affects organic discovery and keyword strategy." },
+    { lead: "Generation queue UX", q: "If a user navigates away from the retailer page while a generation is in progress, should the result be delivered via a browser notification, or should the user return to the page manually?" },
+    { lead: "Body profile updates", q: "Can a user replace or add to their base photos after initial onboarding? If so, does updating the body profile affect the consistency of future generations compared to older ones in their history?" },
+    { lead: "Subscription model trigger", q: "At what monthly active user or revenue threshold should a subscription pricing tier be evaluated as an alternative or complement to pay-per-use credits?" }
+  ];
+
+  const rg = document.getElementById("riskGrid");
+  RISKS.forEach(function (r, i) {
+    const card = el("article", "pp-risk");
+    const head = el("div", "pp-risk-head");
+    head.appendChild(el("span", "rk", "R-" + pad(i + 1)));
+    const rt = el("div", "rk-txt");
+    rt.appendChild(el("div", "rcat", r.cat));
+    rt.appendChild(el("div", "rstmt", r.risk));
+    head.appendChild(rt);
+    card.appendChild(head);
+    const body = el("div", "pp-risk-body");
+    const c1 = el("div", "pp-risk-cell impact");
+    c1.appendChild(el("div", "lbl", "<span data-lucide=\"alert-triangle\"></span>Impact"));
+    c1.appendChild(el("div", "txt", r.impact));
+    const c2 = el("div", "pp-risk-cell mit");
+    c2.appendChild(el("div", "lbl", "<span data-lucide=\"shield-check\"></span>Mitigation"));
+    c2.appendChild(el("div", "txt", r.mit));
+    body.appendChild(c1); body.appendChild(c2);
+    card.appendChild(body);
+    rg.appendChild(card);
+  });
+
+  const dl = document.getElementById("depList");
+  DEPS.forEach(function (d, i) {
+    const row = el("div", "pp-dep");
+    row.appendChild(el("span", "ix", "D" + pad(i + 1)));
+    const dc = el("div", "dc");
+    dc.appendChild(el("div", "lead", d.lead));
+    dc.appendChild(el("div", "desc", d.desc));
+    row.appendChild(dc);
+    dl.appendChild(row);
+  });
+
+  const ag = document.getElementById("assumeGrid");
+  ASSUMPTIONS.forEach(function (a, i) {
+    const card = el("div", "pp-assume" + (a.flag ? " flag" : ""));
+    const top = el("div", "atop");
+    top.appendChild(el("span", "ax", "A" + pad(i + 1)));
+    if (a.flag) top.appendChild(el("span", "flagtag", "Highest risk"));
+    card.appendChild(top);
+    card.appendChild(el("div", "h", a.lead));
+    card.appendChild(el("div", "d", a.desc));
+    ag.appendChild(card);
+  });
+
+  const qg = document.getElementById("oqGrid");
+  QUESTIONS.forEach(function (q, i) {
+    const card = el("div", "pp-oq");
+    const top = el("div", "pp-oq-top");
+    top.appendChild(el("span", "qx", "Q" + pad(i + 1)));
+    top.appendChild(el("span", "qstatus", "Open"));
+    card.appendChild(top);
+    card.appendChild(el("div", "qh", q.lead));
+    card.appendChild(el("div", "qt", q.q));
+    qg.appendChild(card);
+  });
+
+  if (window.lucide) lucide.createIcons();
+})();
+</script>
+</body>
+</html>

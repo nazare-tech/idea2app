@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Badges & Status Pills" subtitle="Pill badges and mono status pills" viewport="700x210" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 24px; }
+  .grp { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .badge { display: inline-flex; align-items: center; border-radius: var(--radius-full); padding: 3px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid transparent; }
+  .b-default { background: var(--action-red); color: #fff; }
+  .b-secondary { background: var(--warm-paper); color: var(--text-muted); border-color: var(--border-subtle); }
+  .b-outline { background: var(--cloud); color: var(--text-muted); border-color: var(--border-subtle); }
+  .status { display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-full); padding: 4px 11px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .cap { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 10px; }
+  .cap2 { margin-top: 20px; }
+</style>
+</head>
+<body>
+  <p class="cap">Badges</p>
+  <div class="grp">
+    <span class="badge b-default">New</span>
+    <span class="badge b-secondary">Draft</span>
+    <span class="badge b-outline">Archived</span>
+  </div>
+  <p class="cap cap2">Status pills</p>
+  <div class="grp">
+    <span class="status" style="background: var(--success-bg); color: var(--success);">Done</span>
+    <span class="status" style="background: var(--info-bg); color: var(--info);">In Progress</span>
+    <span class="status" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border);">Pending</span>
+  </div>
+</body>
+</html>

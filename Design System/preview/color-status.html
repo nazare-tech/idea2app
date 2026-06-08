@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Status Colors" subtitle="Success, Info, Destructive" viewport="700x190" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; padding: 7px 14px; border-radius: var(--radius-full); width: fit-content; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .meta { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); letter-spacing: 0.03em; }
+  .line { display: flex; align-items: center; gap: 14px; }
+</style>
+</head>
+<body>
+  <div class="line">
+    <span class="pill" style="background: var(--success-bg); color: var(--success);"><span class="dot" style="background: var(--success);"></span>Success</span>
+    <span class="meta">#22C55E on #ECFDF5 — confirmation pills</span>
+  </div>
+  <div class="line">
+    <span class="pill" style="background: var(--info-bg); color: var(--info);"><span class="dot" style="background: var(--info);"></span>Info</span>
+    <span class="meta">#3B82F6 on #EFF6FF — informational banners</span>
+  </div>
+  <div class="line">
+    <span class="pill" style="background: #FCEBEA; color: var(--destructive);"><span class="dot" style="background: var(--destructive);"></span>Destructive</span>
+    <span class="meta">#C0392B — destructive actions & errors</span>
+  </div>
+</body>
+</html>

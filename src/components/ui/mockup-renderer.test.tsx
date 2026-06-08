@@ -34,4 +34,5 @@ test("MockupRenderer: renders storyboard images with screen captions", () => {
   assert.match(markup, /Intake complete/)
   assert.match(markup, /Capture context/)
   assert.match(markup, /Export Image/)
+  assert.doesNotMatch(markup, /max-height/)
 })

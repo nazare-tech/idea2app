@@ -359,16 +359,7 @@ async function generateAndStoreOption({
   const parsedImage = parseImageDataUrl(dataUrl)
   const storagePath = `${projectId}/${runId}/option-${config.label.toLowerCase()}-storyboard.${parsedImage.extension}`
 
-  const { error: uploadError } = await storageSupabase.storage
-    .from(MOCKUP_STORAGE_BUCKET)
-    .upload(storagePath, parsedImage.buffer, {
-      contentType: parsedImage.contentType,
-      upsert: false,
-    })
-
-  if (uploadError) {
-    throw new Error(`Failed to upload generated mockup image: ${uploadError.message}`)
-  }
+  await uploadMockupImageWithRetry(storageSupabase, storagePath, parsedImage.buffer, parsedImage.contentType)
 
   return {
     label: config.label,
@@ -685,6 +676,57 @@ function extractAssistantText(choice: unknown) {
     })
     .join(" ")
     .trim()
+}
+
+/**
+ * Uploads a mockup image buffer to Supabase Storage with up to 3 retry
+ * attempts on transient network errors (e.g. "fetch failed" / ECONNRESET).
+ *
+ * The Supabase JS SDK wraps low-level fetch failures as StorageUnknownError
+ * with message "fetch failed". These are almost always transient, so a short
+ * wait + retry resolves them without surfacing noise to users.
+ */
+async function uploadMockupImageWithRetry(
+  storageSupabase: ServerSupabaseClient,
+  storagePath: string,
+  buffer: Buffer,
+  contentType: string,
+  maxAttempts = 3,
+): Promise<void> {
+  const isNetworkError = (msg: string) =>
+    msg === "fetch failed" || msg.startsWith("network") || msg.includes("ECONNRESET") || msg.includes("ENOTFOUND")
+
+  let lastError: Error | undefined
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const { error: uploadError } = await storageSupabase.storage
+      .from(MOCKUP_STORAGE_BUCKET)
+      .upload(storagePath, buffer, { contentType, upsert: false })
+
+    if (!uploadError) return
+
+    // On a transient network error, log with the underlying cause and retry.
+    // On a hard error (e.g. bucket missing, MIME type rejected), fail fast.
+    const isTransient = isNetworkError(uploadError.message)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cause = (uploadError as any).originalError?.cause
+    const causeDetail = cause
+      ? ` (${cause.code ?? cause.message ?? String(cause)})`
+      : ""
+    const fullMsg = `${uploadError.message}${causeDetail}`
+
+    if (!isTransient || attempt === maxAttempts) {
+      throw new Error(`Failed to upload generated mockup image: ${fullMsg}`)
+    }
+
+    console.warn(
+      `[mockup] Storage upload attempt ${attempt}/${maxAttempts} failed with "${fullMsg}" — retrying in ${attempt * 500}ms`,
+    )
+    await new Promise((resolve) => setTimeout(resolve, attempt * 500))
+    lastError = new Error(fullMsg)
+  }
+
+  // Should be unreachable, but satisfies TS.
+  throw lastError ?? new Error("Failed to upload generated mockup image: unknown error")
 }
 
 function readImageDimensions(buffer: Buffer, contentType: string) {

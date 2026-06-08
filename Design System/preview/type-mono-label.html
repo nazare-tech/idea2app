@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Mono Labels" subtitle="Fira Mono, UPPERCASE, 0.18em — the metadata voice" viewport="700x175" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 26px; }
+  .spec { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .labels { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .pill { border: 1px solid var(--border-subtle); background: var(--card-white); border-radius: var(--radius-full); padding: 6px 12px; }
+  .codeline { margin-top: 18px; font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+  <div class="spec">Label / Mono — Fira Mono 500 · 11px · 0.18em · UPPERCASE</div>
+  <div class="labels">
+    <span class="mc-label">Features</span>
+    <span class="mc-label">How It Works</span>
+    <span class="mc-label">Pricing</span>
+    <span class="pill mc-label">The Build Map</span>
+    <span class="pill mc-label" style="color: var(--text-muted);">Signature Feature</span>
+  </div>
+  <div class="codeline">const idea = <span class="mc-code">"one line"</span>;</div>
+</body>
+</html>

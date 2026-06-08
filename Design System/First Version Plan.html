@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="First Version Plan" subtitle="Rebuilt on the Builder's Workshop / Product Plan design system" -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First Version Plan — Wear It Now AI Mirror</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<link rel="stylesheet" href="product-plan.css">
+<link rel="stylesheet" href="first-version-plan.css">
+</head>
+<body>
+<div class="pp-topline"></div>
+<div class="pp-shell">
+
+  <!-- ============ STICKY NAV RAIL ============ -->
+  <aside class="pp-nav">
+    <div class="pp-nav-brand">
+      <img src="assets/maker-compass-logo.svg" alt="Maker Compass">
+      <span>Maker Compass</span>
+    </div>
+    <div class="pp-nav-doc">First Version Plan / MVP</div>
+    <nav>
+      <ul class="pp-toc" id="toc">
+        <li><a href="#summary"><span class="n">01</span><span class="t">MVP Summary</span></a></li>
+        <li><a href="#bet"><span class="n">02</span><span class="t">The Bet</span></a></li>
+        <li><a href="#users"><span class="n">03</span><span class="t">Target User</span></a></li>
+        <li><a href="#flow"><span class="n">04</span><span class="t">Core User Flow</span></a></li>
+        <li><a href="#scope"><span class="n">05</span><span class="t">Scope Decisions</span></a></li>
+        <li><a href="#stack"><span class="n">06</span><span class="t">Suggested Stack</span></a></li>
+        <li><a href="#build"><span class="n">07</span><span class="t">Build Sequence</span></a></li>
+        <li><a href="#guardrails"><span class="n">08</span><span class="t">Guardrails</span></a></li>
+        <li><a href="#validation"><span class="n">09</span><span class="t">Validation Plan</span></a></li>
+        <li><a href="#cuts"><span class="n">10</span><span class="t">Cut List</span></a></li>
+        <li><a href="#prompt"><span class="n">11</span><span class="t">Next Prompt</span></a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="pp-main">
+
+    <!-- MASTHEAD -->
+    <header class="pp-masthead">
+      <div class="pp-kicker">First Version Plan</div>
+      <h1 class="pp-doc-title">Wear It Now AI&nbsp;Mirror</h1>
+      <p class="pp-doc-sub">A focused first-version plan that validates one thing before anything else — whether AI try-on output is good enough that influencers would download, share, and pay to generate more.</p>
+      <div class="pp-meta-row">
+        <div class="pp-meta"><div class="v">Prototype</div><div class="k">First Version</div></div>
+        <div class="pp-meta"><div class="v">10</div><div class="k">Build Steps</div></div>
+        <div class="pp-meta"><div class="v">7</div><div class="k">Flow Steps</div></div>
+        <div class="pp-meta"><div class="v">&lt;30s</div><div class="k">Gen Target</div></div>
+        <div class="pp-meta"><div class="v">5</div><div class="k">Success Metrics</div></div>
+      </div>
+    </header>
+
+    <!-- 01 MVP SUMMARY -->
+    <section class="pp-section" id="summary">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Thesis</div>
+          <h2>MVP Summary</h2>
+        </div>
+        <div class="pp-sec-no">01 / 11</div>
+      </div>
+      <p class="pp-body">Wear It Now AI Mirror is a Chrome extension that replaces product images on clothing sites with AI-generated photos of the user wearing those clothes. It targets fashion influencers (10k–500k followers) who need to evaluate and showcase garments across retailers without buying them. The core problem is <strong>style confidence</strong>: flat product photos don't show how clothes look on a specific body.</p>
+      <p class="pp-body">This MVP validates one critical assumption before anything else: <strong>can AI output quality reach a threshold influencers would trust enough to download, share, or use in content?</strong> If the output looks cheap or uncanny, the product collapses regardless of how well the extension is built.</p>
+    </section>
+
+    <!-- 03 THE BET -->
+    <section class="pp-section" id="bet">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Validation</div>
+          <h2>The Bet</h2>
+        </div>
+        <div class="pp-sec-no">02 / 11</div>
+      </div>
+      <div class="pp-tech-grid">
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="target"></span><h4>Goal</h4></div>
+          <p class="lead-p">Validate whether AI try-on quality is high enough that influencers would download, share, or use the result — and whether they'll pay credits to generate more.</p>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="circle-check"></span><h4>Definition of Done</h4></div>
+          <p class="lead-p">A user can upload their photo, add a product image, generate a try-on, and download it — without help — and the riskiest assumption has been testably exposed.</p>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="triangle-alert"></span><h4>Riskiest Product Assumption</h4></div>
+          <p>The AI output is realistic enough that influencers trust it for content or affiliate showcasing. If outputs look uncanny, users won't pay for credits regardless of UX.</p>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="cpu"></span><h4>Riskiest Technical Assumption</h4></div>
+          <p>The image-to-image model produces consistent, photorealistic garment-on-person results within an acceptable window (&lt;30s) using only a single reference photo and a product image.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 TARGET USER -->
+    <section class="pp-section" id="users">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Audience</div>
+          <h2>Target User &amp; Problem</h2>
+        </div>
+        <div class="pp-sec-no">03 / 11</div>
+      </div>
+      <div class="pp-tech-grid">
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="user-round"></span><h4>Primary user</h4></div>
+          <p>Mid-tier fashion influencers (10k–500k followers) who post outfit content on Instagram or TikTok and earn income through affiliate links.</p>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="circle-alert"></span><h4>The problem</h4></div>
+          <p>They can't tell how a garment looks on their body from flat photos — so they buy speculatively (wasted spend) or skip items (lost affiliate revenue).</p>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="history"></span><h4>Current workaround</h4></div>
+          <p>Buy, photograph, return if it doesn't work — or skip entirely. Generic retailer try-on tools don't cover the brands they actually shop.</p>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="sparkles"></span><h4>Desired outcome</h4></div>
+          <p>See a realistic, shareable image of themselves in any garment from any retailer — fast enough to use in their content workflow without buying first.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 CORE FLOW -->
+    <section class="pp-section" id="flow">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Journey</div>
+          <h2>Core User Flow</h2>
+        </div>
+        <div class="pp-sec-no">04 / 11</div>
+      </div>
+      <div class="fvp-flow">
+        <div class="fvp-step"><div class="rail"><div class="node">1</div><div class="line"></div></div><div class="content"><div class="h">Land on the web app</div><div class="d">A focused single-page experience — no extension required.</div></div></div>
+        <div class="fvp-step"><div class="rail"><div class="node">2</div><div class="line"></div></div><div class="content"><div class="h">Sign up</div><div class="d">Google OAuth or magic link via Supabase Auth.</div></div></div>
+        <div class="fvp-step"><div class="rail"><div class="node">3</div><div class="line"></div></div><div class="content"><div class="h">Upload one avatar photo</div><div class="d">A single reference photo of themselves.</div></div></div>
+        <div class="fvp-step"><div class="rail"><div class="node">4</div><div class="line"></div></div><div class="content"><div class="h">Add the product</div><div class="d">Paste a product image URL or upload a product photo.</div></div></div>
+        <div class="fvp-step key"><div class="rail"><div class="node">5</div><div class="line"></div></div><div class="content"><div class="h">Click “Try It On”</div><div class="d">The generation is kicked off.</div><span class="tag"><span data-lucide="coins"></span>−1 credit consumed</span></div></div>
+        <div class="fvp-step key"><div class="rail"><div class="node">6</div><div class="line"></div></div><div class="content"><div class="h">AI generates the try-on</div><div class="d">A photo-realistic image of the user wearing the garment.</div><span class="tag"><span data-lucide="clock"></span>under 30 seconds</span></div></div>
+        <div class="fvp-step"><div class="rail"><div class="node">7</div></div><div class="content"><div class="h">View, download, or buy more credits</div><div class="d">The result is usable and shareable straight away.</div></div></div>
+      </div>
+    </section>
+
+    <!-- 06 SCOPE DECISIONS -->
+    <section class="pp-section" id="scope">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Scope Decisions</div>
+          <h2>Key Assumptions &amp; Scope</h2>
+        </div>
+        <div class="pp-sec-no">05 / 11</div>
+      </div>
+      <div class="pp-nongoals">
+        <div class="pp-ng"><span class="ngt">High&nbsp;Confidence</span><div class="ngc"><div class="h">Fashion influencers are the primary user</div><div class="d">Every scope decision prioritizes their workflow.</div></div></div>
+        <div class="pp-ng"><span class="ngt red">Validation</span><div class="ngc"><div class="h">A full extension is not the first step</div><div class="d">AI output quality is the riskiest assumption. v1 is a standalone web page where users upload a photo + product image and the AI generates a try-on — testing quality before any extension infrastructure.</div></div></div>
+        <div class="pp-ng"><span class="ngt">Assumption</span><div class="ngc"><div class="h">One avatar photo per user is enough</div><div class="d">The PRD confirms no multiple saved profiles for the MVP.</div></div></div>
+        <div class="pp-ng"><span class="ngt">Scope</span><div class="ngc"><div class="h">Only four capabilities ship</div><div class="d">The PRD lists role-based access, generation history, download tracking, and share analytics. The MVP includes <b>only</b> avatar upload, single try-on generation, credit purchase, and result download. Everything else is deferred.</div></div></div>
+        <div class="pp-ng"><span class="ngt">Scope</span><div class="ngc"><div class="h">The extension is deferred to Phase 2</div><div class="d">It's the target delivery format, but it adds 2–4 weeks and Chrome Web Store review risk before the core assumption is validated.</div></div></div>
+        <div class="pp-ng"><span class="ngt red">Compliance</span><div class="ngc"><div class="h">Uploaded photos are personal data</div><div class="d">Don't store raw uploads beyond the session unless the user opts in; store only the output image, show a clear data-use disclosure at upload, and never train on uploads without consent. Defer persistent avatar storage until privacy review.</div></div></div>
+        <div class="pp-ng"><span class="ngt">Conflict&nbsp;Resolved</span><div class="ngc"><div class="h">Overriding the “no web app” non-goal</div><div class="d">The PRD lists it as a non-goal, but a minimal web prototype is the fastest way to test output quality without Chrome Web Store delays. The extension remains the target — this is a sequencing decision, not a direction change.</div></div></div>
+        <div class="pp-ng pp-ng-spacer" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- 07 STACK -->
+    <section class="pp-section" id="stack">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Tooling</div>
+          <h2>Suggested Stack</h2>
+        </div>
+        <div class="pp-sec-no">06 / 11</div>
+      </div>
+      <div class="fvp-stack">
+        <div class="fvp-sc"><div class="layer"><span data-lucide="monitor"></span>Frontend</div><div class="rec">Next.js + Tailwind + shadcn/ui</div><div class="why">Fast to build and deploy; ideal for a single-page flow.</div></div>
+        <div class="fvp-sc"><div class="layer"><span data-lucide="server"></span>Backend</div><div class="rec">Next.js API routes</div><div class="why">Keeps the stack simple; AI calls run server-side to protect keys.</div></div>
+        <div class="fvp-sc"><div class="layer"><span data-lucide="database"></span>Database</div><div class="rec">Supabase</div><div class="why">Auth, user records, credit balances, and output URLs in one place.</div></div>
+        <div class="fvp-sc"><div class="layer"><span data-lucide="key-round"></span>Auth</div><div class="rec">Supabase Auth</div><div class="why">Google OAuth + magic link. Fast setup, no custom auth.</div></div>
+        <div class="fvp-sc"><div class="layer"><span data-lucide="cpu"></span>AI / API</div><div class="rec">Replicate · IDM-VTON</div><div class="why">Fastest path to test output quality without model infrastructure.</div></div>
+        <div class="fvp-sc"><div class="layer"><span data-lucide="hard-drive"></span>File storage</div><div class="rec">Supabase Storage</div><div class="why">Avatars + outputs; don't keep raw uploads beyond session if opted out.</div></div>
+        <div class="fvp-sc"><div class="layer"><span data-lucide="credit-card"></span>Payments</div><div class="rec">Stripe Payment Links → Checkout</div><div class="why">Validate willingness to pay before building full billing.</div></div>
+        <div class="fvp-sc"><div class="layer"><span data-lucide="bar-chart-3"></span>Analytics</div><div class="rec">Plausible / PostHog</div><div class="why">Track attempts, completions, downloads, and purchases.</div></div>
+        <div class="fvp-sc"><div class="layer"><span data-lucide="rocket"></span>Deployment</div><div class="rec">Vercel</div><div class="why">One-command deploy, works natively with Next.js.</div></div>
+      </div>
+      <div class="fvp-shortcuts">
+        <div class="lbl">Manual shortcuts for v1</div>
+        <ul>
+          <li><span data-lucide="zap"></span>Send Stripe Payment Links via email for the first 20 credit purchases instead of embedded checkout.</li>
+          <li><span data-lucide="zap"></span>Manually review the first 50 generated outputs to assess quality before exposing more users.</li>
+          <li><span data-lucide="zap"></span>Manage credit balances directly in a Supabase table for the first week.</li>
+          <li><span data-lucide="zap"></span>Handle support and feedback via a simple email address or Tally form — no live chat.</li>
+          <li><span data-lucide="zap"></span>Onboard the first 10 users manually via a Loom walkthrough or direct message.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 08 BUILD SEQUENCE -->
+    <section class="pp-section" id="build">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Build Scope</div>
+          <h2>AI-Friendly Build Sequence</h2>
+        </div>
+        <div class="pp-sec-no">07 / 11</div>
+      </div>
+      <div class="fvp-build">
+        <div class="fvp-bstep first"><div class="fvp-bn">1</div><div class="fvp-bcard"><div class="chunk">AI prompt / output prototype — connect to the Replicate try-on model, test 5–10 sample user + product images, evaluate quality manually.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Validate AI output quality before building any UI.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>≥3 of 5 test users say they'd share or use the image.</div></div></div></div></div>
+        <div class="fvp-bstep"><div class="fvp-bn">2</div><div class="fvp-bcard"><div class="chunk">Project setup — Next.js + Supabase + Tailwind, deploy an empty shell to Vercel.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Working deployment baseline.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>App loads at the production URL.</div></div></div></div></div>
+        <div class="fvp-bstep"><div class="fvp-bn">3</div><div class="fvp-bcard"><div class="chunk">Auth — Google OAuth + magic link via Supabase Auth.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Users can sign up and log in.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>Sign up, log out, log back in; session persists on refresh.</div></div></div></div></div>
+        <div class="fvp-bstep"><div class="fvp-bn">4</div><div class="fvp-bcard"><div class="chunk">Avatar upload — file upload UI + Supabase Storage + save reference to the user record.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Avatar is stored and reusable.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>Upload a photo; it appears; it persists after refresh.</div></div></div></div></div>
+        <div class="fvp-bstep"><div class="fvp-bn">5</div><div class="fvp-bcard"><div class="chunk">Product image input — URL paste field + file upload fallback.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Garment source is captured.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>Paste a URL or upload a file; preview renders correctly.</div></div></div></div></div>
+        <div class="fvp-bstep"><div class="fvp-bn">6</div><div class="fvp-bcard"><div class="chunk">Credit system — balance stored in Supabase, shown in UI, decremented on generation, blocked with a purchase prompt at zero.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Credits gate usage.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>0 credits → purchase prompt; balance drops after a generation.</div></div></div></div></div>
+        <div class="fvp-bstep"><div class="fvp-bn">7</div><div class="fvp-bcard"><div class="chunk">AI generation endpoint — server-side route calls Replicate, returns the image URL, stores the result.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Core value is delivered.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>Try It On → loading → result &lt;30s; error state shown on failure.</div></div></div></div></div>
+        <div class="fvp-bstep"><div class="fvp-bn">8</div><div class="fvp-bcard"><div class="chunk">Result display + download — show the generated image with a download button.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Output is usable.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>User can view and download the result as a PNG.</div></div></div></div></div>
+        <div class="fvp-bstep"><div class="fvp-bn">9</div><div class="fvp-bcard"><div class="chunk">Credit purchase — Stripe Payment Link or embedded Stripe Checkout.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Willingness to pay is tested.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>Purchase a credit pack; credits appear in the balance after payment.</div></div></div></div></div>
+        <div class="fvp-bstep"><div class="fvp-bn">10</div><div class="fvp-bcard"><div class="chunk">Feedback widget — thumbs up / down on each output.</div><div class="fvp-bmeta"><div class="m goal"><div class="lb">Goal</div><div class="tx">Output quality signal collected.</div></div><div class="m gate"><div class="lb">Test before moving on</div><div class="tx"><span data-lucide="check"></span>User can rate an output; the rating is stored in Supabase.</div></div></div></div></div>
+      </div>
+    </section>
+
+    <!-- 09 GUARDRAILS -->
+    <section class="pp-section" id="guardrails">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Discipline</div>
+          <h2>AI Build Guardrails</h2>
+        </div>
+        <div class="pp-sec-no">08 / 11</div>
+      </div>
+
+      <div class="pp-two">
+        <div>
+          <h3 class="pp-subhead"><span class="dot"></span>Process</h3>
+          <ul class="pp-checklist" data-icon="check">
+            <li><span data-lucide="check"></span>Build one chunk at a time. Do not skip ahead.</li>
+            <li><span data-lucide="check"></span>Do not add features outside MVP scope.</li>
+            <li><span data-lucide="check"></span>Do not build the extension, generation history, share-to-social, or admin dashboard.</li>
+            <li><span data-lucide="check"></span>Do not introduce new libraries unless necessary. Ask first.</li>
+            <li><span data-lucide="check"></span>Before changing anything, inspect the codebase and summarize the current architecture.</li>
+            <li><span data-lucide="check"></span>Use mock data before connecting real backend logic.</li>
+            <li><span data-lucide="check"></span>Keep files under 200 lines where practical.</li>
+            <li><span data-lucide="check"></span>Reuse existing components. Avoid duplicate logic.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="pp-subhead"><span class="dot"></span>Quality &amp; safety</h3>
+          <ul class="pp-checklist" data-icon="check">
+            <li><span data-lucide="check"></span>Add loading, error, empty, and success states for every core flow.</li>
+            <li><span data-lucide="check"></span>Prioritize a working core flow over visual polish.</li>
+            <li><span data-lucide="check"></span>All AI API calls go through server routes. Never expose Replicate or Stripe keys client-side.</li>
+            <li><span data-lucide="check"></span>Do not refactor unrelated files.</li>
+            <li><span data-lucide="check"></span>After each chunk: list files changed and explain how to test locally.</li>
+            <li><span data-lucide="shield-alert"></span><b style="color:var(--text-primary);font-weight:600;">Never store raw avatar photos</b> without explicit consent and a visible data-use disclosure.</li>
+            <li><span data-lucide="shield-alert"></span><b style="color:var(--text-primary);font-weight:600;">Do not train on uploaded photos</b> — requires separate legal review and explicit opt-in.</li>
+            <li><span data-lucide="check"></span>Do not add admin functionality in this phase.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 VALIDATION PLAN -->
+    <section class="pp-section" id="validation">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Measurement</div>
+          <h2>Validation Plan</h2>
+        </div>
+        <div class="pp-sec-no">09 / 11</div>
+      </div>
+
+      <div class="pp-tech-grid" style="margin-bottom:40px;">
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="users-round"></span><h4>First test audience</h4></div>
+          <p>10–15 fashion influencers with 10k–200k followers who actively post outfit content and use affiliate links on Instagram or TikTok.</p>
+        </div>
+        <div class="pp-tech">
+          <div class="pp-tech-head"><span data-lucide="search"></span><h4>How to find them</h4></div>
+          <p>DM mid-tier accounts found via “OOTD” search, or post in fashion-influencer and creator-economy communities. Offer 20 free credits for 15 minutes of feedback.</p>
+        </div>
+      </div>
+
+      <h3 class="pp-subhead"><span class="dot"></span>Success signals</h3>
+      <div class="fvp-signals">
+        <div class="fvp-sig strong"><div class="sh"><span data-lucide="trending-up"></span>Strong</div><p>Generates an image, downloads it, and shares it or says they'd use it in content; purchases credits unprompted or asks how to get more.</p></div>
+        <div class="fvp-sig weak"><div class="sh"><span data-lucide="minus"></span>Weak</div><p>Completes the flow but says output quality isn't good enough to share publicly; engages only when prompted.</p></div>
+        <div class="fvp-sig pivot"><div class="sh"><span data-lucide="git-fork"></span>Pivot</div><p>Understands the product but says the problem isn't painful enough to pay for, or prefers buying the item anyway.</p></div>
+      </div>
+
+      <h3 class="pp-subhead" style="margin-top:44px;"><span class="dot"></span>Suggested metrics</h3>
+      <div class="pp-stat-grid">
+        <div class="pp-stat"><div class="num">60%</div><div class="desc">Of avatar-uploaders complete a generation</div><div class="win">Flow clarity</div></div>
+        <div class="pp-stat"><div class="num"><span class="red">50%</span></div><div class="desc">Thumbs-up on generated images</div><div class="win">Output bar</div></div>
+        <div class="pp-stat"><div class="num">40%</div><div class="desc">Of generated images downloaded</div><div class="win">Quality proxy</div></div>
+        <div class="pp-stat"><div class="num">15%</div><div class="desc">Buy credits in the first session</div><div class="win">Willingness to pay</div></div>
+        <div class="pp-stat"><div class="num">&lt;5m</div><div class="desc">Time to first generation from signup</div><div class="win">Onboarding</div></div>
+      </div>
+
+      <h3 class="pp-subhead" style="margin-top:44px;"><span class="dot"></span>Key feedback questions</h3>
+      <div class="pp-req">
+        <ul class="pp-req-list">
+          <li><span>When you first saw the generated image, what was your honest reaction?</span></li>
+          <li><span>Is this output quality good enough that you'd post it or share it with your audience?</span></li>
+          <li><span>Where did you feel confused or stuck during the process?</span></li>
+          <li><span>What would need to change about the output for you to use this regularly?</span></li>
+          <li><span>Would you pay for credits to keep using this, and what price feels right?</span></li>
+          <li><span>What clothing sites do you shop most — and would you want this to work there automatically?</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 11 CUT LIST -->
+    <section class="pp-section" id="cuts">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Simplify If Needed</div>
+          <h2>Cut List</h2>
+        </div>
+        <div class="pp-sec-no">10 / 11</div>
+      </div>
+      <div class="fvp-cuts">
+        <div class="fvp-cut"><div class="iff"><b>Replicate latency is too high</b> or outputs are poor quality.</div><div class="ar"><span data-lucide="arrow-right"></span></div><div class="then">Test 3–5 try-on models on Replicate before committing; swap models without changing the UI.</div></div>
+        <div class="fvp-cut"><div class="iff"><b>Stripe Checkout</b> integration takes too long.</div><div class="ar"><span data-lucide="arrow-right"></span></div><div class="then">Send Payment Links manually for the first 20 purchases; add embedded checkout in Phase 2.</div></div>
+        <div class="fvp-cut"><div class="iff"><b>Avatar storage &amp; privacy</b> handling becomes complex.</div><div class="ar"><span data-lucide="arrow-right"></span></div><div class="then">Skip persistent storage in v1; require re-upload each session until privacy review is complete.</div></div>
+        <div class="fvp-cut"><div class="iff"><b>Product URL parsing</b> breaks on certain retailer sites.</div><div class="ar"><span data-lucide="arrow-right"></span></div><div class="then">Accept file upload only in v1; URL parsing is a Phase 2 problem.</div></div>
+        <div class="fvp-cut"><div class="iff"><b>Credit system logic</b> becomes complex.</div><div class="ar"><span data-lucide="arrow-right"></span></div><div class="then">Store credits as a single integer in Supabase; no ledger, no auto-reload, no tiers.</div></div>
+      </div>
+    </section>
+
+    <!-- 12 NEXT PROMPT -->
+    <section class="pp-section" id="prompt">
+      <div class="pp-section-head">
+        <div class="lead">
+          <div class="pp-sec-kicker">Handoff</div>
+          <h2>Next Prompt</h2>
+        </div>
+        <div class="pp-sec-no">11 / 11</div>
+      </div>
+      <p class="pp-body" style="margin-bottom:24px;">Hand this to your AI coding tool to start the first build chunk.</p>
+      <div class="fvp-prompt">
+        <div class="bar">
+          <span class="d" style="background:#FF5F57;"></span>
+          <span class="d" style="background:#FEBC2E;"></span>
+          <span class="d" style="background:#28C840;"></span>
+          <span class="t">first-version-prompt.txt</span>
+        </div>
+        <pre>You are helping me build the MVP for Wear It Now AI Mirror.
+
+<span class="cm"># Product type</span>
+Primary: B2C Consumer, Secondary: AI-first Product
+
+<span class="cm"># Recommended first version</span>
+AI prompt/output prototype — test generation quality before building any UI
+
+<span class="cm"># MVP goal</span>
+Validate whether AI-generated try-on output quality is high enough that fashion
+influencers would download, share, or use the result in content, and whether they
+will pay credits to generate more.
+
+<span class="cm"># Definition of done</span>
+The MVP is complete when a user can upload their photo, provide a product image,
+generate a try-on result, and download it without help — and the riskiest assumption
+(AI output quality) has been testably exposed.
+
+<span class="cm"># Target user</span>
+Mid-tier fashion influencers (10k–500k followers) who post outfit content on
+Instagram or TikTok and earn income through affiliate links.
+
+<span class="cm"># Core user flow</span>
+1. User lands on the web app
+2. User signs up with Google OAuth or magic link
+3. User uploads one photo of themselves (avatar)
+4. User pastes a product image URL or uploads a product photo
+5. User clicks "Try It On" — one credit is consumed
+6. AI generates a photo-realistic image of the user wearing the garment (under 30 seconds)
+7. User views the result, downloads it, or purchases more credits
+
+<span class="cm"># Tech stack</span>
+- Frontend: Next.js + Tailwind + shadcn/ui
+- Backend: Next.js API routes (server-side only for all AI and payment calls)
+- Database: Supabase (auth, user records, credit balances, output image URLs)
+- Auth: Supabase Auth — Google OAuth + magic link
+- AI/API: Replicate (IDM-VTON or equivalent try-on model)
+- File Storage: Supabase Storage
+- Deployment: Vercel
+
+<span class="cm"># Build only this first chunk</span>
+Set up a standalone test harness (no UI required) that calls the Replicate try-on
+API with a hardcoded sample user photo and a hardcoded product image. Log the
+returned image URL to the console. The goal is to confirm the model works, evaluate
+output quality, and measure latency. Test with at least 5 different user photo +
+product image combinations and note which model parameters produce the best results.
+
+<span class="cm"># Out of scope for now</span>
+- Browser extension (deferred to Phase 2)
+- Generation history or output gallery
+- Share-to-social functionality
+- Admin dashboard
+- Multiple avatar profiles
+- Subscription billing or auto-reload credits
+
+<span class="cm"># Rules</span>
+- Before making changes, inspect the existing codebase and summarize the current architecture.
+- Do not build features outside this chunk.
+- Do not build anything listed as out of scope.
+- Do not refactor unrelated files.
+- All Replicate API calls must go through a backend/server route — never expose the API key client-side.
+- Do not store any user photos at this stage — use local test files only.
+- After implementation: list which files were changed.
+- After implementation: explain how to test this locally.
+- Ask before adding new libraries or changing the stack.</pre>
+      </div>
+
+      <div class="pp-foot">
+        <span class="l">Maker Compass · First Version Plan</span>
+        <span class="l">Wear It Now AI Mirror</span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+(function () {
+  if (window.lucide) lucide.createIcons();
+
+  /* Scroll-spy nav (mirrors Product Plan behavior) */
+  var links = Array.prototype.slice.call(document.querySelectorAll(".pp-toc a"));
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+  var sections = links.map(function (a) { return document.getElementById(a.getAttribute("href").slice(1)); });
+  var spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        links.forEach(function (l) { l.classList.remove("active"); });
+        var a = map[en.target.id];
+        if (a) a.classList.add("active");
+      }
+    });
+  }, { rootMargin: "-20% 0px -70% 0px", threshold: 0 });
+  sections.forEach(function (s) { if (s) spy.observe(s); });
+})();
+</script>
+</body>
+</html>

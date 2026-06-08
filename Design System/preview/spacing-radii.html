@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Corner Radii" subtitle="Sharp on landing, rounded inside product" viewport="700x185" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 22px; }
+  .row { display: flex; gap: 16px; align-items: flex-end; }
+  .item { text-align: center; }
+  .box { width: 76px; height: 56px; background: var(--card-white); border: 1.5px solid var(--workshop-black); }
+  .nm { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-primary); margin-top: 8px; font-weight: 500; }
+  .px { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .note { margin-top: 16px; font-size: 11.5px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="item"><div class="box" style="border-radius: 0;"></div><div class="nm">none</div><div class="px">0 · landing</div></div>
+    <div class="item"><div class="box" style="border-radius: 6px;"></div><div class="nm">md</div><div class="px">6px · buttons</div></div>
+    <div class="item"><div class="box" style="border-radius: 8px;"></div><div class="nm">lg</div><div class="px">8px · cards</div></div>
+    <div class="item"><div class="box" style="border-radius: 12px;"></div><div class="nm">xl</div><div class="px">12px · inputs</div></div>
+    <div class="item"><div class="box" style="border-radius: 9999px; width: 56px;"></div><div class="nm">full</div><div class="px">pills</div></div>
+  </div>
+  <div class="note">Register split: <strong>sharp</strong> on landing, <strong>gently rounded</strong> inside the product.</div>
+</body>
+</html>

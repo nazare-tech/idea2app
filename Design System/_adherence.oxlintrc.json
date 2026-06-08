@@ -1,0 +1,213 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "PersonaCard.jsx",
+              "image-slot.js",
+              "product-plan-data.js",
+              "product-plan.js",
+              "tweaks-panel.jsx",
+              "ui_kits/maker-compass-app/**",
+              "ui_kits/maker-compass-landing/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Hanken Grotesk|Fira Mono))/i]",
+        "message": "Font not provided by the design system. Available: Hanken Grotesk, Fira Mono."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {},
+    "tokens": [
+      "--accent-primary-faint",
+      "--accent-primary-light",
+      "--accent-primary-mid",
+      "--accent-primary-soft",
+      "--accent-primary-subtle",
+      "--accent-primary-whisper",
+      "--action-red",
+      "--action-red-hover",
+      "--ash-mist",
+      "--background",
+      "--border",
+      "--border-strong",
+      "--border-subtle",
+      "--card",
+      "--card-white",
+      "--cloud",
+      "--destructive",
+      "--destructive-foreground",
+      "--duration-base",
+      "--duration-fast",
+      "--duration-slow",
+      "--ease-out-expo",
+      "--font-display",
+      "--font-mono",
+      "--font-sans",
+      "--foreground",
+      "--fs-body",
+      "--fs-body-sm",
+      "--fs-caption",
+      "--fs-display",
+      "--fs-headline",
+      "--fs-label",
+      "--fs-title",
+      "--info",
+      "--info-bg",
+      "--logo-orange",
+      "--muted",
+      "--muted-foreground",
+      "--primary",
+      "--primary-foreground",
+      "--radius-full",
+      "--radius-lg",
+      "--radius-md",
+      "--radius-none",
+      "--radius-xl",
+      "--ring",
+      "--secondary",
+      "--shadow-ambient",
+      "--sidebar-active",
+      "--sidebar-bg",
+      "--sidebar-border",
+      "--sidebar-foreground",
+      "--sidebar-hover",
+      "--sidebar-muted",
+      "--slate-plum",
+      "--space-2xl",
+      "--space-lg",
+      "--space-md",
+      "--space-sm",
+      "--space-xl",
+      "--space-xs",
+      "--success",
+      "--success-bg",
+      "--text-accent",
+      "--text-muted",
+      "--text-primary",
+      "--text-secondary",
+      "--warm-coral",
+      "--warm-ember",
+      "--warm-paper",
+      "--warm-sand",
+      "--workshop-black"
+    ],
+    "tokenKinds": {
+      "--font-display": "font",
+      "--font-sans": "font",
+      "--font-mono": "font",
+      "--action-red": "color",
+      "--action-red-hover": "color",
+      "--logo-orange": "color",
+      "--workshop-black": "color",
+      "--slate-plum": "color",
+      "--ash-mist": "color",
+      "--cloud": "color",
+      "--card-white": "color",
+      "--warm-paper": "color",
+      "--border-subtle": "color",
+      "--border-strong": "color",
+      "--warm-coral": "color",
+      "--warm-sand": "color",
+      "--warm-ember": "color",
+      "--success": "color",
+      "--success-bg": "color",
+      "--info": "color",
+      "--info-bg": "color",
+      "--destructive": "color",
+      "--destructive-foreground": "color",
+      "--sidebar-bg": "color",
+      "--sidebar-foreground": "color",
+      "--sidebar-muted": "color",
+      "--sidebar-border": "color",
+      "--sidebar-active": "color",
+      "--sidebar-hover": "color",
+      "--accent-primary-light": "color",
+      "--accent-primary-mid": "color",
+      "--accent-primary-soft": "color",
+      "--accent-primary-subtle": "color",
+      "--accent-primary-faint": "color",
+      "--accent-primary-whisper": "color",
+      "--background": "color",
+      "--foreground": "color",
+      "--card": "color",
+      "--primary": "color",
+      "--primary-foreground": "color",
+      "--secondary": "color",
+      "--muted": "color",
+      "--muted-foreground": "color",
+      "--text-primary": "font",
+      "--text-secondary": "font",
+      "--text-muted": "font",
+      "--text-accent": "font",
+      "--border": "color",
+      "--ring": "color",
+      "--radius-none": "radius",
+      "--radius-md": "radius",
+      "--radius-lg": "radius",
+      "--radius-xl": "radius",
+      "--radius-full": "radius",
+      "--space-xs": "spacing",
+      "--space-sm": "spacing",
+      "--space-md": "spacing",
+      "--space-lg": "spacing",
+      "--space-xl": "spacing",
+      "--space-2xl": "spacing",
+      "--shadow-ambient": "shadow",
+      "--ease-out-expo": "other",
+      "--duration-fast": "other",
+      "--duration-base": "other",
+      "--duration-slow": "other",
+      "--fs-display": "other",
+      "--fs-headline": "other",
+      "--fs-title": "spacing",
+      "--fs-body": "spacing",
+      "--fs-body-sm": "spacing",
+      "--fs-caption": "spacing",
+      "--fs-label": "spacing"
+    },
+    "fontFamilies": [
+      "Fira Mono",
+      "Hanken Grotesk"
+    ]
+  }
+}

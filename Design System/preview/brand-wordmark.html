@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Wordmark Lockup" subtitle="Mark + Maker Compass wordmark, light & dark" viewport="700x210" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 26px; display: flex; align-items: center; gap: 30px; }
+  .lockup { display: inline-flex; align-items: center; gap: 11px; }
+  .lockup img { width: 42px; height: 42px; }
+  .wordmark { font-size: 22px; font-weight: 600; letter-spacing: 0.01em; color: var(--text-primary); }
+  .dark { background: var(--workshop-black); padding: 16px 20px; border-radius: var(--radius-lg); }
+  .dark .wordmark { color: var(--cloud); }
+  .cap { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; }
+  .wrap { display: flex; flex-direction: column; gap: 18px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="cap">Wordmark lockup</div>
+    <div class="lockup">
+      <img src="../assets/maker-compass-logo.svg" alt="Maker Compass">
+      <span class="wordmark">Maker Compass</span>
+    </div>
+    <div class="lockup dark">
+      <img src="../assets/maker-compass-logo.svg" alt="Maker Compass">
+      <span class="wordmark">Maker Compass</span>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="User Persona Card" subtitle="Maker Compass persona template — Description, Needs, Pain Points, Motivation" viewport="860x720" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>User Persona Card</title>
+<link rel="stylesheet" href="colors_and_type.css" />
+<style>
+  html, body { margin: 0; }
+  body {
+    background: var(--cloud);
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 24px;
+    box-sizing: border-box;
+  }
+  /* faint workshop grid, well below the One Voice red threshold */
+  body::before {
+    content: "";
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(var(--border-subtle) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 45%, #000 0%, transparent 75%);
+            mask-image: radial-gradient(ellipse 70% 70% at 50% 45%, #000 0%, transparent 75%);
+    opacity: 0.5;
+  }
+  #root { position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script src="image-slot.js"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="PersonaCard.jsx"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // Example persona — a real Maker Compass user. Edit this object to template.
+    const PERSONA = {
+      name: "Maya Okonkwo",
+      archetype: "The Weekend Builder",
+      meta: ["Age 31", "Product designer", "Toronto", "Technical-adjacent"],
+      description:
+        "Maya ships side projects on weekends while holding a full-time design role. She has more ideas than time and wants to validate one before sinking a month into it. She can read a PRD, recognize a feature matrix, and hand a clean spec straight to a coding agent.",
+      needs: [
+        "Pressure-test an idea before committing engineering time",
+        "Structured outputs (PRD, MVP plan) she can hand to Cursor or Claude Code",
+        "Competitive context without a week of manual research",
+        "One place where every artifact stays tied to the same idea",
+      ],
+      painPoints: [
+        "Loses momentum in the \u201Cwhere do I start\u201D spiral",
+        "Burns weekends on prep work instead of building",
+        "Docs scattered across Notion, browser tabs, and notebooks",
+        "Hard to tell which ideas are worth real time",
+      ],
+      motivation:
+        "Wants to go from a one-line idea to something shippable in a single weekend, not \u201Csomeday.\u201D Every hour spent figuring out what to build is an hour not spent building it.",
+    };
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "avatar": "female",
+      "density": "regular",
+      "brandRing": true
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      return (
+        <>
+          <PersonaCard
+            data={PERSONA}
+            avatar={t.avatar}
+            density={t.density}
+            showRing={t.brandRing}
+          />
+          <TweaksPanel>
+            <TweakSection label="Avatar" />
+            <TweakSelect label="Silhouette" value={t.avatar}
+              options={["female", "male", "neutral", "photo"]}
+              onChange={(v) => setTweak("avatar", v)} />
+            <TweakToggle label="Brand ring" value={t.brandRing}
+              onChange={(v) => setTweak("brandRing", v)} />
+            <TweakSection label="Layout" />
+            <TweakRadio label="Density" value={t.density}
+              options={["compact", "regular", "comfy"]}
+              onChange={(v) => setTweak("density", v)} />
+          </TweaksPanel>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

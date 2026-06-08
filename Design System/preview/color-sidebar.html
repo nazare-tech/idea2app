@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Sidebar (Dark) Palette" subtitle="Deliberate dark inversion for the product rail" viewport="700x175" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--sidebar-bg); padding: 22px; }
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .sw { border: 1px solid var(--sidebar-border); overflow: hidden; border-radius: var(--radius-lg); }
+  .chip { height: 54px; }
+  .meta { padding: 8px 10px; background: var(--sidebar-active); }
+  .name { font-weight: 700; font-size: 12px; color: var(--sidebar-foreground); }
+  .hex { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.03em; color: var(--sidebar-muted); margin-top: 2px; }
+  .cap { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sidebar-muted); margin-bottom: 14px; }
+</style>
+</head>
+<body>
+  <div class="cap">Sidebar — deliberate dark inversion</div>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background: var(--sidebar-bg);"></div><div class="meta"><div class="name">Sidebar BG</div><div class="hex">#1C1917</div></div></div>
+    <div class="sw"><div class="chip" style="background: var(--sidebar-active);"></div><div class="meta"><div class="name">Active</div><div class="hex">#2A2118</div></div></div>
+    <div class="sw"><div class="chip" style="background: var(--sidebar-border);"></div><div class="meta"><div class="name">Border</div><div class="hex">#2C2520</div></div></div>
+  </div>
+</body>
+</html>

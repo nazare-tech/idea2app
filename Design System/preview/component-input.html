@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Input Field" subtitle="Rest and red-ring focus states" viewport="700x210" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 7px; }
+  .inp { width: 100%; box-sizing: border-box; height: 44px; padding: 0 16px; border-radius: var(--radius-xl); border: 1px solid var(--border-strong); background: var(--card-white); font-size: 14px; font-family: var(--font-sans); color: var(--text-primary); outline: none; }
+  .inp::placeholder { color: var(--text-secondary); }
+  .focused { border-color: var(--accent-primary-mid); box-shadow: 0 0 0 3px var(--accent-primary-light); background: var(--accent-primary-faint); }
+</style>
+</head>
+<body>
+  <div>
+    <label>Rest</label>
+    <input class="inp" placeholder="Describe your business idea…">
+  </div>
+  <div>
+    <label>Focus — red ring, never an outline</label>
+    <input class="inp focused" value="A weekend tool for indie builders">
+  </div>
+</body>
+</html>

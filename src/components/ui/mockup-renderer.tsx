@@ -739,7 +739,6 @@ function OpenRouterImageMockupViewer({
                     src={option.imageUrl}
                     alt={`${option.title} mockup option ${option.label}`}
                     className="h-auto w-full rounded-lg border border-border bg-white object-contain shadow-sm"
-                    style={{ maxHeight: "min(760px, 78vh)" }}
                   />
                 </div>
               </div>

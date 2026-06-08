@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Motion" subtitle="ease-out-expo, no bounce" viewport="700x165" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 24px; }
+  .cap { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
+  .track { position: relative; height: 10px; background: var(--warm-paper); border: 1px solid var(--border-subtle); border-radius: var(--radius-full); overflow: hidden; }
+  .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--action-red); border-radius: var(--radius-full); animation: draw 3s var(--ease-out-expo) infinite; }
+  @keyframes draw { 0% { width: 0; } 60%,100% { width: 100%; } }
+  .meta { margin-top: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); line-height: 1.7; }
+  .meta b { color: var(--text-primary); }
+</style>
+</head>
+<body>
+  <div class="cap">Motion — ease-out-expo, no bounce</div>
+  <div class="track"><div class="fill"></div></div>
+  <div class="meta">
+    <b>cubic-bezier(0.16, 1, 0.3, 1)</b><br>
+    150 / 200 / 300ms · transform &amp; opacity only · honor prefers-reduced-motion
+  </div>
+</body>
+</html>

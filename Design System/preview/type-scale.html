@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Type Scale" subtitle="Display → Label, sizes and weights" viewport="700x270" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 22px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 9px 8px; border-bottom: 1px solid var(--border-subtle); vertical-align: baseline; }
+  tr:last-child td { border-bottom: none; }
+  .nm { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); white-space: nowrap; width: 90px; }
+  .sz { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); white-space: nowrap; text-align: right; width: 130px; }
+  .sample { color: var(--text-primary); font-family: var(--font-display); }
+</style>
+</head>
+<body>
+  <table>
+    <tr><td class="nm">Display</td><td><span class="sample" style="font-size: 28px; font-weight: 800; letter-spacing: -0.05em;">Aa</span></td><td class="sz">clamp 2.5–4.5rem / 800</td></tr>
+    <tr><td class="nm">Headline</td><td><span class="sample" style="font-size: 24px; font-weight: 800; letter-spacing: -0.05em;">Aa</span></td><td class="sz">clamp 2–3.35rem / 800</td></tr>
+    <tr><td class="nm">Title</td><td><span class="sample" style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Aa</span></td><td class="sz">1.5rem / 700</td></tr>
+    <tr><td class="nm">Body</td><td><span class="sample" style="font-size: 16px; font-weight: 400; font-family: var(--font-sans);">Aa</span></td><td class="sz">1rem / 400 · lh 1.6</td></tr>
+    <tr><td class="nm">Label</td><td><span style="font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.18em; color: var(--text-primary);">AA</span></td><td class="sz">0.6875rem / mono</td></tr>
+  </table>
+</body>
+</html>

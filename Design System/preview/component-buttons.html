@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Buttons — Variants" subtitle="Primary, outline, ghost, destructive" viewport="700x130" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 24px; }
+  .grp { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 20px; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; font-family: var(--font-sans); border: 1px solid transparent; cursor: pointer; transition: all var(--duration-base) var(--ease-out-expo); }
+  .primary { background: var(--action-red); color: #fff; }
+  .primary:hover { background: var(--action-red-hover); }
+  .primary:active { transform: scale(0.98); }
+  .outline { background: var(--card-white); color: var(--text-primary); border-color: var(--border-subtle); }
+  .outline:hover { background: var(--warm-paper); }
+  .ghost { background: transparent; color: var(--text-muted); }
+  .ghost:hover { background: var(--warm-paper); color: var(--text-primary); }
+  .destructive { background: var(--destructive); color: #fff; }
+  .cap { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+  <div class="cap">Variants</div>
+  <div class="grp">
+    <button class="btn primary">Get Started</button>
+    <button class="btn outline">Sign In</button>
+    <button class="btn ghost">Skip for now</button>
+    <button class="btn destructive">Delete</button>
+  </div>
+</body>
+</html>

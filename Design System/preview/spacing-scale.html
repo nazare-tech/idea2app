@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Brand" name="Spacing Scale" subtitle="4 · 8 · 16 · 24 · 40 · 64 px" viewport="700x240" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; font-family: var(--font-sans); background: var(--cloud); padding: 22px; }
+  .grid { display: flex; flex-direction: column; gap: 11px; }
+  .item { display: flex; align-items: center; gap: 14px; }
+  .bar { background: var(--action-red); height: 14px; }
+  .nm { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); width: 44px; }
+  .px { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="item"><span class="nm">xs</span><span class="bar" style="width: 4px;"></span><span class="px">4px · 0.25rem</span></div>
+    <div class="item"><span class="nm">sm</span><span class="bar" style="width: 8px;"></span><span class="px">8px · 0.5rem</span></div>
+    <div class="item"><span class="nm">md</span><span class="bar" style="width: 16px;"></span><span class="px">16px · 1rem</span></div>
+    <div class="item"><span class="nm">lg</span><span class="bar" style="width: 24px;"></span><span class="px">24px · 1.5rem</span></div>
+    <div class="item"><span class="nm">xl</span><span class="bar" style="width: 40px;"></span><span class="px">40px · 2.5rem</span></div>
+    <div class="item"><span class="nm">2xl</span><span class="bar" style="width: 64px;"></span><span class="px">64px · 4rem</span></div>
+  </div>
+</body>
+</html>
