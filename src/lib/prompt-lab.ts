@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 
 import { isDevOnlyFeatureEnabled, type DevOnlyFeatureEnv } from "@/lib/dev-only"
@@ -13,6 +14,7 @@ import {
   PROMPT_LAB_ARTIFACTS,
   PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
   PROMPT_LAB_IMAGE_MODEL_OPTIONS,
+  PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT,
   PROMPT_LAB_TEXT_MODEL_OPTIONS,
   getBasePromptLabModelOptions,
   getPromptLabModelOptions,
@@ -28,6 +30,7 @@ import {
 import {
   OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
   OPENROUTER_MOCKUP_OPTION_CONFIGS,
+  buildMockupImagePromptForOption,
   buildOpenRouterMockupImagePrompt,
   generateOpenRouterImageMockupOption,
   getOpenRouterMockupImageModel,
@@ -65,6 +68,7 @@ export {
   PROMPT_LAB_ARTIFACTS,
   PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
   PROMPT_LAB_IMAGE_MODEL_OPTIONS,
+  PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT,
   PROMPT_LAB_TEXT_MODEL_OPTIONS,
   getBasePromptLabModelOptions,
   getPromptLabModelOptions,
@@ -113,6 +117,10 @@ export interface PromptLabRunInput {
   plannerSystemPrompt?: string
   plannerUserPrompt?: string
   mockupMvpPlan?: string
+  /** When true, runs the planner but stops before calling the image model.
+   *  Returns the final image prompt in metadata so it can be pasted into
+   *  an external tool (e.g. ChatGPT). Defaults to true for Prompt Lab mockups. */
+  skipImageGeneration?: boolean
 }
 
 export interface PromptLabRunResult {
@@ -230,8 +238,12 @@ export async function runPromptLabArtifact({
   plannerSystemPrompt,
   plannerUserPrompt,
   mockupMvpPlan,
+  skipImageGeneration = PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT,
 }: PromptLabRunInput): Promise<PromptLabRunResult> {
-  if (!process.env.OPENROUTER_API_KEY) {
+  const isPromptOnlyMockupPlannerRun = artifact === "mockups" && runMode === "planner-option" && skipImageGeneration
+  const willUseAnthropicPlanner = isPromptOnlyMockupPlannerRun && Boolean(process.env.ANTHROPIC_API_KEY)
+  const requiresOpenRouter = !willUseAnthropicPlanner
+  if (requiresOpenRouter && !process.env.OPENROUTER_API_KEY) {
     throw new Error("OPENROUTER_API_KEY environment variable is not configured")
   }
 
@@ -241,38 +253,86 @@ export async function runPromptLabArtifact({
         throw new Error("Planner system prompt and planner user prompt are required")
       }
 
-      const openrouter = new OpenAI({
-        baseURL: "https://openrouter.ai/api/v1",
-        apiKey: process.env.OPENROUTER_API_KEY,
-      })
       const plannerModel = getOpenRouterMockupPlannerModel()
-      let plannerCompletion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
+      let plannerOutput: string
 
-      try {
-        plannerCompletion = await openrouter.chat.completions.create({
-          model: plannerModel,
-          messages: [
-            { role: "system", content: plannerSystemPrompt },
-            { role: "user", content: plannerUserPrompt },
-          ],
-          max_completion_tokens: getOpenRouterMockupPlannerMaxTokens(),
-        }, {
-          signal: AbortSignal.timeout(getOpenRouterMockupImageTimeoutMs()),
+      // When skipping image generation, use Claude (Anthropic) directly for the planner
+      // so no OpenRouter credits are consumed at all.
+      if (skipImageGeneration && process.env.ANTHROPIC_API_KEY) {
+        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+        const anthropicResponse = await anthropic.messages.create({
+          model: "claude-haiku-4-5",
+          max_tokens: getOpenRouterMockupPlannerMaxTokens(),
+          system: plannerSystemPrompt,
+          messages: [{ role: "user", content: plannerUserPrompt }],
         })
-      } catch (error) {
-        if (isOpenRouterAbortError(error)) {
-          throw new Error(buildOpenRouterTimeoutMessage("Prompt Lab mockup planner", getOpenRouterMockupImageTimeoutMs()))
+        const textBlock = anthropicResponse.content.find((b) => b.type === "text")
+        plannerOutput = (textBlock && "text" in textBlock ? textBlock.text : "").trim()
+        if (!plannerOutput) {
+          throw new Error("Claude did not return a mockup design plan")
         }
-        throw error
-      }
+      } else {
+        const openrouter = new OpenAI({
+          baseURL: "https://openrouter.ai/api/v1",
+          apiKey: process.env.OPENROUTER_API_KEY,
+        })
+        let plannerCompletion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
 
-      const plannerOutput = extractPromptLabAssistantText(plannerCompletion.choices[0])
-      if (!plannerOutput) {
-        throw new Error("OpenRouter did not return a mockup design plan")
+        try {
+          plannerCompletion = await openrouter.chat.completions.create({
+            model: plannerModel,
+            messages: [
+              { role: "system", content: plannerSystemPrompt },
+              { role: "user", content: plannerUserPrompt },
+            ],
+            max_completion_tokens: getOpenRouterMockupPlannerMaxTokens(),
+          }, {
+            signal: AbortSignal.timeout(getOpenRouterMockupImageTimeoutMs()),
+          })
+        } catch (error) {
+          if (isOpenRouterAbortError(error)) {
+            throw new Error(buildOpenRouterTimeoutMessage("Prompt Lab mockup planner", getOpenRouterMockupImageTimeoutMs()))
+          }
+          throw error
+        }
+
+        plannerOutput = extractPromptLabAssistantText(plannerCompletion.choices[0])
+        if (!plannerOutput) {
+          throw new Error("OpenRouter did not return a mockup design plan")
+        }
       }
 
       const parsedDesignPlan = parseMockupDesignPlan(plannerOutput)
       const designPlan = applyPromptLabMockupPlatformOverride(parsedDesignPlan, mockupPlatform)
+
+      // --- Prompt-only mode: return the image prompt without calling OpenRouter ---
+      if (skipImageGeneration) {
+        const imagePrompts = buildMockupImagePromptForOption({
+          projectName,
+          mvpPlan: mockupMvpPlan || userPrompt,
+          label: mockupOption,
+          systemPromptOverride: systemPrompt,
+          designPlan,
+        })
+        return {
+          content: imagePrompts.userPrompt,
+          model: plannerModel,
+          source: "inhouse",
+          metadata: {
+            runMode: "planner-only",
+            mockupOption,
+            mockupPlatform,
+            platformOverrideApplied: mockupPlatform !== "auto",
+            skipImageGeneration: true,
+            plannerModel,
+            plannerOutput,
+            designPlan,
+            imageSystemPrompt: imagePrompts.systemPrompt,
+            imageUserPrompt: imagePrompts.userPrompt,
+          },
+        }
+      }
+
       const result = await generateOpenRouterImageMockupOption({
         projectId,
         projectName,

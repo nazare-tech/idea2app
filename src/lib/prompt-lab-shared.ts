@@ -32,6 +32,8 @@ export const PROMPT_LAB_DEFAULT_LAUNCH_BRIEF: LaunchPlanBrief = {
   launchWindow: "Next 30 days",
 }
 
+export const PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT = true
+
 export const PROMPT_LAB_TEXT_MODEL_OPTIONS: PromptLabModelOption[] = [
   {
     id: "anthropic/claude-sonnet-4-6",

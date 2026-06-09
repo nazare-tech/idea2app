@@ -650,6 +650,43 @@ ${mobileCompositionSpec}
 Follow the JSON structure above exactly for mobile storyboards. The most important constraints are: every phone uses the same ${IPHONE_PRO_STORYBOARD_DEVICE} portrait width and scale, captions stay in one top row, arrows sit between screens, and rationale cards stay outside the phone lanes.` : ""}`
 }
 
+/**
+ * Builds the system + user prompts that would be sent to the image model for a given
+ * option, WITHOUT making any API call. Used in "planner-only" mode so the caller can
+ * take the prompt to an external tool (e.g. ChatGPT) instead of consuming OpenRouter credits.
+ */
+export function buildMockupImagePromptForOption({
+  projectName,
+  mvpPlan,
+  label,
+  systemPromptOverride,
+  designPlan,
+}: {
+  projectName: string
+  mvpPlan: string
+  label: OpenRouterMockupOptionLabel
+  systemPromptOverride?: string
+  designPlan: MockupDesignPlan
+}): { systemPrompt: string; userPrompt: string } {
+  const config = OPENROUTER_MOCKUP_OPTION_CONFIGS.find((c) => c.label === label)
+  if (!config) throw new Error(`Unsupported mockup option label: ${label}`)
+
+  const direction = designPlan.directions.find((item) => item.label === config.label)
+  const userPrompt = buildOpenRouterMockupImagePrompt({
+    projectName,
+    mvpPlan,
+    title: direction?.name ?? config.title,
+    strategy: direction ? formatDirectionForPrompt(direction) : config.strategy,
+    label: config.label,
+    designPlan,
+  })
+
+  return {
+    systemPrompt: systemPromptOverride || OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
+    userPrompt,
+  }
+}
+
 function formatDirectionForPrompt(direction: MockupDesignDirection) {
   return [
     direction.layoutStrategy,

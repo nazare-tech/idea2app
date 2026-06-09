@@ -22,6 +22,7 @@ import {
   PROMPT_LAB_ARTIFACT_LABELS,
   PROMPT_LAB_ARTIFACTS,
   PROMPT_LAB_DEFAULT_LAUNCH_BRIEF,
+  PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT,
   getPromptLabModelOptions,
   type PromptLabArtifact,
 } from "@/lib/prompt-lab-shared"
@@ -123,6 +124,26 @@ function formatHiddenDesignPlanJson(metadata: Record<string, unknown> | null | u
   } catch {
     return ""
   }
+}
+
+function formatChatGptImagePrompt(metadata: Record<string, unknown> | null | undefined) {
+  if (!metadata?.skipImageGeneration || typeof metadata.imageUserPrompt !== "string") return ""
+  const systemPrompt = typeof metadata.imageSystemPrompt === "string"
+    ? metadata.imageSystemPrompt.trim()
+    : ""
+  const userPrompt = metadata.imageUserPrompt.trim()
+
+  if (!systemPrompt) return userPrompt
+
+  return [
+    "Use the image model to create the mockup from these instructions.",
+    "",
+    "System instructions:",
+    systemPrompt,
+    "",
+    "User prompt:",
+    userPrompt,
+  ].join("\n")
 }
 
 function LabPreviewDiagnostics({ content }: { content: string }) {
@@ -238,6 +259,8 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const [title, setTitle] = useState("")
   const [notes, setNotes] = useState("")
   const [output, setOutput] = useState("")
+  const [finalImagePrompt, setFinalImagePrompt] = useState("")
+  const [skipImageGeneration, setSkipImageGeneration] = useState(PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT)
   const [drafts, setDrafts] = useState<PromptLabDraft[]>([])
   const [runs, setRuns] = useState<PromptLabRun[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -329,6 +352,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
         setPromptSource("default")
         setOutput("")
         setHiddenDesignPlanJson("")
+        setFinalImagePrompt("")
         setStatus(null)
         void loadHistory(data.project.id, artifact)
       })
@@ -390,7 +414,9 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
 
     setError(null)
     setStatus(isPlannerOptionRun
-      ? `Running mockup planner + Option ${mockupOption}...`
+      ? skipImageGeneration
+        ? `Building ChatGPT prompt for Option ${mockupOption}...`
+        : `Running mockup planner + Option ${mockupOption}...`
       : `Running ${PROMPT_LAB_ARTIFACT_LABELS[artifact]}...`)
     setBusyAction(isPlannerOptionRun ? "planner-run" : "run")
 
@@ -411,6 +437,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
               mockupOption,
               mockupPlatform,
               runMode,
+              skipImageGeneration: isPlannerOptionRun ? skipImageGeneration : false,
               ...(isPlannerOptionRun
                 ? {
                     plannerSystemPrompt,
@@ -428,8 +455,11 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
           }
           setOutput(data.content || data.run?.output_content || "")
           setHiddenDesignPlanJson(formatHiddenDesignPlanJson(data.run?.output_metadata))
+          // If the run was prompt-only, surface the image prompt in the dedicated textarea
+          const meta = data.run?.output_metadata as Record<string, unknown> | null | undefined
+          setFinalImagePrompt(formatChatGptImagePrompt(meta))
           setModel(data.model || model)
-          setStatus("Run saved")
+          setStatus(meta?.skipImageGeneration ? "Planner done — copy the ChatGPT prompt below" : "Run saved")
           await loadHistory()
         } finally {
           setBusyAction(null)
@@ -481,6 +511,8 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     setNotes(run.notes ?? "")
     setOutput(run.output_content ?? "")
     setHiddenDesignPlanJson(formatHiddenDesignPlanJson(run.output_metadata))
+    const meta = run.output_metadata
+    setFinalImagePrompt(formatChatGptImagePrompt(meta))
     setPromptSource("custom")
     setStatus(`Loaded run from ${formatTime(run.created_at)}`)
   }
@@ -578,6 +610,21 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
                       <option key={option} value={option}>Option {option}</option>
                     ))}
                   </select>
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border-subtle bg-background p-3">
+                  <input
+                    type="checkbox"
+                    checked={skipImageGeneration}
+                    onChange={(event) => setSkipImageGeneration(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                  />
+                  <span className="space-y-0.5">
+                    <span className="block text-xs font-medium text-foreground">Image generation disabled</span>
+                    <span className="block text-xs leading-relaxed text-muted-foreground">
+                      Default on. Runs the planner and returns a ChatGPT-ready image prompt instead of calling the OpenRouter image model.
+                    </span>
+                  </span>
                 </label>
               </>
             )}
@@ -730,7 +777,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
                   disabled={!canRunPlannerOption || isPending || Boolean(busyAction)}
                 >
                   {busyAction === "planner-run" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-                  Run planner + option
+                  {skipImageGeneration ? "Build ChatGPT prompt" : "Run planner + option"}
                 </Button>
               ) : (
                 <Button onClick={() => runArtifact()} disabled={!canRunTextPrompt || isPending || Boolean(busyAction)}>
@@ -827,6 +874,32 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
                 spellCheck={false}
               />
             </label>
+
+            {skipImageGeneration && (
+              <label className="block space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    ChatGPT image prompt
+                  </span>
+                  {finalImagePrompt && (
+                    <button
+                      type="button"
+                      onClick={() => void navigator.clipboard.writeText(finalImagePrompt)}
+                      className="rounded px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      Copy prompt
+                    </button>
+                  )}
+                </div>
+                <Textarea
+                  value={finalImagePrompt}
+                  readOnly
+                  placeholder="Build the ChatGPT prompt to see the exact image instructions here."
+                  className="min-h-[280px] font-mono text-xs leading-relaxed"
+                  spellCheck={false}
+                />
+              </label>
+            )}
           </section>
         )}
 

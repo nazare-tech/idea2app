@@ -4,6 +4,7 @@ import test from "node:test"
 import {
   PROMPT_LAB_DEFAULT_MODELS,
   PROMPT_LAB_IMAGE_MODEL_OPTIONS,
+  PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT,
   PROMPT_LAB_TEXT_MODEL_OPTIONS,
   applyPromptLabMockupPlatformOverride,
   buildPromptLabDefaultPrompts,
@@ -34,6 +35,10 @@ test("Prompt Lab mockup option validation only accepts A/B/C", () => {
   assert.equal(isMockupOptionLabel("A"), true)
   assert.equal(isMockupOptionLabel("B"), true)
   assert.equal(isMockupOptionLabel("D"), false)
+})
+
+test("Prompt Lab mockup runs default to prompt-only image generation", () => {
+  assert.equal(PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT, true)
 })
 
 test("applyPromptLabMockupPlatformOverride: selected platform wins over parsed planner output", () => {

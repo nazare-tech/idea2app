@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { requirePromptLabRequest, getOwnedProject } from "../_utils"
 import {
   PROMPT_LAB_ARTIFACT_LABELS,
+  PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT,
   isMockupOptionLabel,
   isPromptLabArtifact,
   runPromptLabArtifact,
@@ -50,6 +51,11 @@ export async function POST(request: Request) {
   const mockupOption = isMockupOptionLabel(body.mockupOption) ? body.mockupOption : "A"
   const mockupPlatform = readMockupPlatformPreference(body.mockupPlatform)
   const runMode = artifact === "mockups" && asString(body.runMode) === "planner-option" ? "planner-option" : "isolated"
+  const skipImageGeneration = artifact === "mockups" && runMode === "planner-option"
+    ? body.skipImageGeneration === undefined
+      ? PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT
+      : body.skipImageGeneration !== false
+    : false
   const model = asString(body.model).trim()
   let systemPrompt: string
   let userPrompt: string
@@ -129,6 +135,7 @@ export async function POST(request: Request) {
       plannerSystemPrompt,
       plannerUserPrompt,
       mockupMvpPlan,
+      skipImageGeneration,
     })
 
     const outputContent = artifact === "mockups" ? result.content : linkifyBareUrls(result.content)
