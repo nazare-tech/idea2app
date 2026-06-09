@@ -47,7 +47,17 @@ test("applyPromptLabMockupPlatformOverride: selected platform wins over parsed p
     primaryPlatform: "native-mobile-app",
     happyPathScenario: "A user completes the main flow.",
     persona: "Primary user",
-    screens: [],
+    screens: [
+      {
+        name: "Screen 1",
+        flowStep: 1,
+        caption: "First",
+        purpose: "Start the flow",
+        happyPathState: "First state",
+        dataToShow: ["First item"],
+        priority: "P0",
+      },
+    ],
     directions: [],
   }
 
@@ -59,6 +69,50 @@ test("applyPromptLabMockupPlatformOverride: selected platform wins over parsed p
     applyPromptLabMockupPlatformOverride(designPlan, "auto").primaryPlatform,
     "native-mobile-app",
   )
+})
+
+test("applyPromptLabMockupPlatformOverride: trims screens after a desktop override", () => {
+  const designPlan: MockupDesignPlan = {
+    version: "mockup-design-plan-v1",
+    primaryPlatform: "native-mobile-app",
+    happyPathScenario: "A user completes the main flow.",
+    persona: "Primary user",
+    screens: [
+      {
+        name: "Screen 1",
+        flowStep: 1,
+        caption: "First",
+        purpose: "Start the flow",
+        happyPathState: "First state",
+        dataToShow: ["First item"],
+        priority: "P0",
+      },
+      {
+        name: "Screen 2",
+        flowStep: 2,
+        caption: "Second",
+        purpose: "Continue the flow",
+        happyPathState: "Second state",
+        dataToShow: ["Second item"],
+        priority: "P0",
+      },
+      {
+        name: "Screen 3",
+        flowStep: 3,
+        caption: "Third",
+        purpose: "Finish the flow",
+        happyPathState: "Third state",
+        dataToShow: ["Third item"],
+        priority: "P0",
+      },
+    ],
+    directions: [],
+  }
+
+  const overridden = applyPromptLabMockupPlatformOverride(designPlan, "desktop-web")
+
+  assert.equal(overridden.primaryPlatform, "desktop-web")
+  assert.deepEqual(overridden.screens.map((screen) => screen.name), ["Screen 1", "Screen 2"])
 })
 
 test("buildPromptLabDefaultPrompts: builds upstream-aware PRD prompt", () => {

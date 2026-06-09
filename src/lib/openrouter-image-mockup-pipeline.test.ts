@@ -275,6 +275,50 @@ test("buildOpenRouterMockupImagePrompt: adds strict mobile storyboard compositio
   assert.match(prompt, /Option C - Visual-Forward Friendly/)
 })
 
+test("buildOpenRouterMockupImagePrompt: adds strict desktop storyboard composition JSON", () => {
+  const prompt = buildOpenRouterMockupImagePrompt({
+    projectName: "OpsDesk",
+    mvpPlan: "## First Version Plan\nReview operational issues, triage the riskiest account, and assign follow-up.",
+    title: "Dense Operator Console",
+    strategy: "A readable desktop operations surface with strong hierarchy and full-width data panels.",
+    label: "A",
+    designPlan: {
+      version: "mockup-design-plan-v1",
+      primaryPlatform: "desktop-web",
+      happyPathScenario: "An operator reviews account risk and assigns the next action.",
+      persona: "Customer success operator",
+      screens: [
+        {
+          name: "Risk Dashboard",
+          flowStep: 1,
+          caption: "Review risk",
+          purpose: "Show the account risk overview",
+          happyPathState: "Accounts are ranked by urgency",
+          dataToShow: ["Risk score", "Account owner", "Next action"],
+          priority: "P0",
+        },
+        {
+          name: "Account Detail",
+          flowStep: 2,
+          caption: "Assign follow-up",
+          purpose: "Show the focused account workflow",
+          happyPathState: "The operator is assigning a task",
+          dataToShow: ["Timeline", "Signals", "Assign action"],
+          priority: "P0",
+        },
+      ],
+      directions: [],
+    },
+  })
+
+  assert.match(prompt, /Desktop storyboard composition JSON:/)
+  assert.match(prompt, /"screenLanes": "1 or 2 equal desktop screen lanes"/)
+  assert.match(prompt, /single-screen hero mode/)
+  assert.match(prompt, /Never add a third desktop screen/)
+  assert.match(prompt, /No compressed desktop thumbnails/)
+  assert.doesNotMatch(prompt, /Mobile storyboard composition JSON:/)
+})
+
 test("getOpenRouterMockupPlannerModel: prefers planner model over analysis model", () => {
   const previousPlanner = process.env.OPENROUTER_MOCKUP_PLANNER_MODEL
   const previousAnalysis = process.env.OPENROUTER_ANALYSIS_MODEL

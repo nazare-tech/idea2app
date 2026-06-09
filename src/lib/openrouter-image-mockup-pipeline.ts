@@ -15,6 +15,7 @@ import {
 import {
   MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT,
   buildMockupDesignPlanUserPrompt,
+  getMockupScreenLimitForPlatform,
   parseMockupDesignPlan,
   type MockupDesignDirection,
   type MockupDesignPlan,
@@ -509,7 +510,7 @@ function buildMobileStoryboardCompositionSpec({
 }: {
   label: string
   title: string
-  screenCount: number | "2-4"
+  screenCount: number | "1-3"
 }) {
   return JSON.stringify({
     canvas: {
@@ -576,6 +577,68 @@ function buildMobileStoryboardCompositionSpec({
   }, null, 2)
 }
 
+function buildDesktopStoryboardCompositionSpec({
+  label,
+  title,
+  screenCount,
+}: {
+  label: string
+  title: string
+  screenCount: number | "1-2"
+}) {
+  return JSON.stringify({
+    canvas: {
+      aspectRatio: "21:9",
+      background: "clean warm-white Figma canvas",
+      composition: "horizontal desktop product storyboard",
+      screenLanes: "1 or 2 equal desktop screen lanes",
+      mode: screenCount === 1 ? "single-screen hero mode" : "two-screen comparison flow",
+      margins: "wide outer margins with generous gutters so desktop UI remains inspectable",
+    },
+    desktopFrames: {
+      count: screenCount,
+      maxCount: 2,
+      proportions: "real desktop web or native desktop app aspect ratio",
+      widthRule: "use one large full-width desktop frame for complex single-screen views, or two equal-width desktop frames for simple two-step flows",
+      readabilityRule: "preserve full desktop proportions with readable navigation, tables, panels, and labels",
+      prohibited: [
+        "third desktop screen",
+        "fourth desktop screen",
+        "compressed desktop thumbnails",
+        "tiny unreadable multi-screen strips",
+        "decorative fake browser chrome",
+      ],
+    },
+    captions: {
+      placement: "fixed top caption row only",
+      format: "1. Screen Name",
+      source: "use the numbered fixed top labels from the Screens to show section; do not invent new screen headings",
+      alignment: "center each caption directly above its desktop lane",
+      rules: [
+        "one caption per screen",
+        "render the planned fixed top labels verbatim",
+        "do not add floating captions inside the canvas",
+        "do not place captions below the desktop frames except the option label",
+      ],
+    },
+    flow: {
+      direction: "left to right when two screens are present",
+      connectors: "simple neutral gray arrow between the two desktop screens only",
+      connectorRule: "omit arrows in single-screen hero mode",
+    },
+    optionLabel: {
+      text: `Option ${label} - ${title}`,
+      placement: "bottom center below the desktop row",
+      style: "small muted italic label",
+    },
+    hardRules: [
+      "Never add a third desktop screen.",
+      "No compressed desktop thumbnails.",
+      "If a third screen seems necessary, combine its most important content into one of the two allowed desktop frames.",
+    ],
+  }, null, 2)
+}
+
 export function buildOpenRouterMockupImagePrompt({
   projectName,
   mvpPlan,
@@ -592,24 +655,34 @@ export function buildOpenRouterMockupImagePrompt({
   designPlan?: MockupDesignPlan
 }) {
   const platform = designPlan?.primaryPlatform ?? "desktop-web"
+  const isMobilePlatform = platform.includes("mobile")
+  const screenLimit = getMockupScreenLimitForPlatform(platform)
+  const screenRange = `${screenLimit.min}-${screenLimit.max}`
   const screenBrief = designPlan
     ? designPlan.screens.map((screen, index) => [
-      `${index + 1}. ${screen.name} — ${screen.caption}`,
+      `${index + 1}. ${screen.name} - ${screen.caption}`,
       `Purpose: ${screen.purpose}`,
       `Fixed top label to render: ${index + 1}. ${screen.name}`,
       `Caption intent, do not float elsewhere: ${screen.caption}`,
       `Happy-path state: ${screen.happyPathState}`,
       `Data to show: ${screen.dataToShow.join(", ") || "realistic populated product data"}`,
     ].join("\n")).join("\n\n")
-    : "Choose 2-4 screens from the core happy path."
-  const canvasInstruction = platform.includes("mobile")
+    : `Choose ${screenRange} ${isMobilePlatform ? "mobile" : "desktop"} screens from the core happy path.`
+  const canvasInstruction = isMobilePlatform
     ? "Create a Figma-style user-flow canvas on a clean white background with phone screens shown side by side and short captions."
-    : "Create a wide horizontal storyboard on a clean white background with desktop app screens shown side by side and short captions."
-  const mobileCompositionSpec = platform.includes("mobile")
+    : "Create a wide horizontal storyboard on a clean white background with one or two desktop app screens shown side by side and short captions."
+  const mobileCompositionSpec = isMobilePlatform
     ? buildMobileStoryboardCompositionSpec({
       label,
       title,
-      screenCount: designPlan?.screens.length ?? "2-4",
+      screenCount: designPlan?.screens.length ?? "1-3",
+    })
+    : null
+  const desktopCompositionSpec = !isMobilePlatform
+    ? buildDesktopStoryboardCompositionSpec({
+      label,
+      title,
+      screenCount: designPlan?.screens.length ?? "1-2",
     })
     : null
 
@@ -643,6 +716,11 @@ Output requirements:
 - Make it feel like a modern SaaS/product interface, not a marketing landing page.
 - Avoid unreadable filler text, fake browser chrome, watermarks, and code snippets.
 - Include enough visual detail to evaluate layout, hierarchy, and product direction.
+${desktopCompositionSpec ? `
+Desktop storyboard composition JSON:
+${desktopCompositionSpec}
+
+Follow the JSON structure above exactly for desktop storyboards. The most important constraints are: use one or two readable desktop frames only, preserve full desktop proportions, never add a third desktop screen, and avoid compressed desktop thumbnails.` : ""}
 ${mobileCompositionSpec ? `
 Mobile storyboard composition JSON:
 ${mobileCompositionSpec}

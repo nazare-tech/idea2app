@@ -45,6 +45,11 @@ export interface MockupDesignPlan {
   directions: MockupDesignDirection[]
 }
 
+export interface MockupScreenLimit {
+  min: number
+  max: number
+}
+
 export interface BuildMockupDesignPlanPromptInput {
   projectName: string
   idea?: string
@@ -90,7 +95,9 @@ The JSON must match this shape:
 }
 
 Rules:
-- Choose 2 screens for very simple products, 3 for normal products, and 4 for complex products.
+- For desktop platforms, choose 1 or 2 screens; never 3 or 4 desktop screens in one storyboard.
+- For mobile platforms, choose 1, 2, or 3 screens; never 4 screens in one storyboard.
+- Use 1 screen when a complex product needs one readable, fully populated surface; use the platform maximum only when each screen can remain readable.
 - Screens must come from the MVP happy path and show active product usage, not empty states.
 - Do not choose login, signup, settings, or billing unless that screen is central to the MVP value.
 - Generate exactly 3 directions labeled A, B, and C.
@@ -161,10 +168,8 @@ export function parseMockupDesignPlan(rawModelOutput: string): MockupDesignPlan 
   const parsed = parseJsonObject(rawModelOutput)
   const screensValue = Array.isArray(parsed.screens) ? parsed.screens : []
   const directionsValue = Array.isArray(parsed.directions) ? parsed.directions : []
+  const primaryPlatform = normalizePrimaryPlatform(readString(parsed.primaryPlatform) || "desktop-web")
 
-  if (screensValue.length < 2 || screensValue.length > 4) {
-    throw new Error("screens must include 2-4 items")
-  }
   if (directionsValue.length !== 3) {
     throw new Error("directions must include exactly 3 items")
   }
@@ -177,12 +182,48 @@ export function parseMockupDesignPlan(rawModelOutput: string): MockupDesignPlan 
 
   return {
     version: MOCKUP_DESIGN_PLAN_SCHEMA_VERSION,
-    primaryPlatform: normalizePrimaryPlatform(readString(parsed.primaryPlatform) || "desktop-web"),
+    primaryPlatform,
     happyPathScenario: readString(parsed.happyPathScenario) || "A returning user completes the core workflow with realistic saved data.",
     persona: readString(parsed.persona) || "Primary MVP user",
-    screens: screensValue.map(parseScreen),
+    screens: normalizeMockupDesignPlanScreens(screensValue.map(parseScreen), primaryPlatform),
     directions,
   }
+}
+
+export function getMockupScreenLimitForPlatform(platform: MockupPrimaryPlatform): MockupScreenLimit {
+  return platform.includes("mobile")
+    ? { min: 1, max: 3 }
+    : { min: 1, max: 2 }
+}
+
+export function normalizeMockupDesignPlanScreens(
+  screens: MockupDesignPlanScreen[],
+  platform: MockupPrimaryPlatform,
+): MockupDesignPlanScreen[] {
+  const limit = getMockupScreenLimitForPlatform(platform)
+
+  if (screens.length < limit.min) {
+    throw new Error(`${platform} mockup plans must include ${limit.min}-${limit.max} screens`)
+  }
+  if (screens.length <= limit.max) {
+    return screens
+  }
+
+  return screens
+    .map((screen, index) => ({ screen, index }))
+    .sort((a, b) => {
+      const priorityDelta = getScreenPriorityRank(a.screen.priority) - getScreenPriorityRank(b.screen.priority)
+      if (priorityDelta !== 0) return priorityDelta
+
+      const flowDelta = a.screen.flowStep - b.screen.flowStep
+      return flowDelta !== 0 ? flowDelta : a.index - b.index
+    })
+    .slice(0, limit.max)
+    .sort((a, b) => {
+      const flowDelta = a.screen.flowStep - b.screen.flowStep
+      return flowDelta !== 0 ? flowDelta : a.index - b.index
+    })
+    .map(({ screen }) => screen)
 }
 
 function parseScreen(value: unknown, index: number): MockupDesignPlanScreen {
@@ -254,6 +295,11 @@ function normalizeDirectionLabel(value: string, index: number): MockupDesignDire
     return label as MockupDesignDirectionLabel
   }
   return MOCKUP_DESIGN_DIRECTION_LABELS[index] ?? "A"
+}
+
+function getScreenPriorityRank(priority: string) {
+  const match = priority.trim().match(/^P(\d+)/i)
+  return match ? Number(match[1]) : 99
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

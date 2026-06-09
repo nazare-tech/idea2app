@@ -39,7 +39,12 @@ import {
   getOpenRouterMockupPlannerModel,
   type OpenRouterMockupOptionLabel,
 } from "@/lib/openrouter-image-mockup-pipeline"
-import { parseMockupDesignPlan, type MockupDesignPlan, type MockupPrimaryPlatform } from "@/lib/mockup-design-plan"
+import {
+  normalizeMockupDesignPlanScreens,
+  parseMockupDesignPlan,
+  type MockupDesignPlan,
+  type MockupPrimaryPlatform,
+} from "@/lib/mockup-design-plan"
 import {
   buildOpenRouterTimeoutMessage,
   createOpenRouterLongTextSignal,
@@ -146,9 +151,13 @@ export function applyPromptLabMockupPlatformOverride(
   designPlan: MockupDesignPlan,
   mockupPlatform: MockupPrimaryPlatform | "auto",
 ): MockupDesignPlan {
-  return mockupPlatform === "auto"
-    ? designPlan
-    : { ...designPlan, primaryPlatform: mockupPlatform }
+  const effectivePlatform = mockupPlatform === "auto" ? designPlan.primaryPlatform : mockupPlatform
+
+  return {
+    ...designPlan,
+    primaryPlatform: effectivePlatform,
+    screens: normalizeMockupDesignPlanScreens(designPlan.screens, effectivePlatform),
+  }
 }
 
 export function buildPromptLabDefaultPrompts({

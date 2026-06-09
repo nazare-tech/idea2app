@@ -5,8 +5,56 @@ import {
   MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT,
   MOCKUP_DESIGN_PLAN_SCHEMA_VERSION,
   buildMockupDesignPlanUserPrompt,
+  getMockupScreenLimitForPlatform,
   parseMockupDesignPlan,
 } from "./mockup-design-plan"
+
+function buildTestDirections() {
+  return [
+    {
+      label: "A",
+      name: "Guided planner",
+      layoutStrategy: "A calm step-by-step planner with screens arranged left to right.",
+      navigationPattern: "Bottom tabs",
+      density: "Medium",
+      visualTone: "Warm, practical, and clean",
+      reusableMotifs: ["Cards", "Progress chips"],
+      consistencyNotes: "Use the same card style across screens.",
+    },
+    {
+      label: "B",
+      name: "Dashboard overview",
+      layoutStrategy: "A summary-first layout with status panels.",
+      navigationPattern: "Top tabs",
+      density: "High",
+      visualTone: "Crisp and operational",
+      reusableMotifs: ["Stats", "Tables"],
+      consistencyNotes: "Use compact summaries across screens.",
+    },
+    {
+      label: "C",
+      name: "Editorial flow",
+      layoutStrategy: "A visually polished flow focused on recommendations.",
+      navigationPattern: "Card navigation",
+      density: "Low",
+      visualTone: "Friendly and premium",
+      reusableMotifs: ["Large cards", "Soft imagery"],
+      consistencyNotes: "Keep the recommendation module prominent.",
+    },
+  ]
+}
+
+function buildTestScreen(index: number, priority = "P0") {
+  return {
+    name: `Screen ${index}`,
+    flowStep: index,
+    caption: `Step ${index}`,
+    purpose: `Show step ${index}`,
+    happyPathState: `Step ${index} is populated`,
+    dataToShow: [`Item ${index}`, `Metric ${index}`],
+    priority,
+  }
+}
 
 test("parseMockupDesignPlan: normalizes a valid design plan", () => {
   const plan = parseMockupDesignPlan(JSON.stringify({
@@ -34,38 +82,7 @@ test("parseMockupDesignPlan: normalizes a valid design plan", () => {
         priority: "P0",
       },
     ],
-    directions: [
-      {
-        label: "A",
-        name: "Guided planner",
-        layoutStrategy: "A calm step-by-step planner with phone screens arranged left to right.",
-        navigationPattern: "Bottom tabs",
-        density: "Medium",
-        visualTone: "Warm, practical, and clean",
-        reusableMotifs: ["Meal cards", "Progress chips"],
-        consistencyNotes: "Use the same tabs and meal card style across screens.",
-      },
-      {
-        label: "B",
-        name: "Dashboard overview",
-        layoutStrategy: "A summary-first layout with status panels.",
-        navigationPattern: "Top tabs",
-        density: "High",
-        visualTone: "Crisp and operational",
-        reusableMotifs: ["Stats", "Tables"],
-        consistencyNotes: "Use compact summaries across screens.",
-      },
-      {
-        label: "C",
-        name: "Editorial flow",
-        layoutStrategy: "A visually polished flow focused on recommendations.",
-        navigationPattern: "Card navigation",
-        density: "Low",
-        visualTone: "Friendly and premium",
-        reusableMotifs: ["Large cards", "Soft imagery"],
-        consistencyNotes: "Keep the recommendation module prominent.",
-      },
-    ],
+    directions: buildTestDirections(),
   }))
 
   assert.equal(plan.version, MOCKUP_DESIGN_PLAN_SCHEMA_VERSION)
@@ -75,16 +92,63 @@ test("parseMockupDesignPlan: normalizes a valid design plan", () => {
   assert.equal(plan.directions[0].label, "A")
 })
 
-test("parseMockupDesignPlan: rejects plans without two to four screens", () => {
+test("getMockupScreenLimitForPlatform: returns platform-specific limits", () => {
+  assert.deepEqual(getMockupScreenLimitForPlatform("desktop-web"), { min: 1, max: 2 })
+  assert.deepEqual(getMockupScreenLimitForPlatform("native-desktop-app"), { min: 1, max: 2 })
+  assert.deepEqual(getMockupScreenLimitForPlatform("mobile-web"), { min: 1, max: 3 })
+  assert.deepEqual(getMockupScreenLimitForPlatform("native-mobile-app"), { min: 1, max: 3 })
+})
+
+test("parseMockupDesignPlan: accepts one-screen plans for desktop and mobile", () => {
+  const desktopPlan = parseMockupDesignPlan(JSON.stringify({
+    primaryPlatform: "desktop-web",
+    happyPathScenario: "User finishes the main flow.",
+    persona: "Operator",
+    screens: [buildTestScreen(1)],
+    directions: buildTestDirections(),
+  }))
+  const mobilePlan = parseMockupDesignPlan(JSON.stringify({
+    primaryPlatform: "mobile-web",
+    happyPathScenario: "User finishes the main flow.",
+    persona: "Operator",
+    screens: [buildTestScreen(1)],
+    directions: buildTestDirections(),
+  }))
+
+  assert.equal(desktopPlan.screens.length, 1)
+  assert.equal(mobilePlan.screens.length, 1)
+})
+
+test("parseMockupDesignPlan: trims over-limit screens by platform", () => {
+  const desktopPlan = parseMockupDesignPlan(JSON.stringify({
+    primaryPlatform: "native desktop app",
+    happyPathScenario: "User finishes the main flow.",
+    persona: "Operator",
+    screens: [buildTestScreen(1), buildTestScreen(2), buildTestScreen(3)],
+    directions: buildTestDirections(),
+  }))
+  const mobilePlan = parseMockupDesignPlan(JSON.stringify({
+    primaryPlatform: "native mobile app",
+    happyPathScenario: "User finishes the main flow.",
+    persona: "Operator",
+    screens: [buildTestScreen(1), buildTestScreen(2), buildTestScreen(3), buildTestScreen(4)],
+    directions: buildTestDirections(),
+  }))
+
+  assert.deepEqual(desktopPlan.screens.map((screen) => screen.name), ["Screen 1", "Screen 2"])
+  assert.deepEqual(mobilePlan.screens.map((screen) => screen.name), ["Screen 1", "Screen 2", "Screen 3"])
+})
+
+test("parseMockupDesignPlan: rejects plans without any screens", () => {
   assert.throws(
     () => parseMockupDesignPlan(JSON.stringify({
       primaryPlatform: "desktop-web",
       happyPathScenario: "User finishes the main flow.",
       persona: "Operator",
-      screens: [{ name: "Only screen" }],
-      directions: [],
+      screens: [],
+      directions: buildTestDirections(),
     })),
-    /screens must include 2-4 items/,
+    /desktop-web mockup plans must include 1-2 screens/,
   )
 })
 
@@ -110,4 +174,11 @@ test("MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT: constrains mobile storyboard planning", 
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /iPhone 17 Pro portrait frames/)
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /one fixed top caption per screen/)
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /scroll cues rather than wider devices/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /mobile platforms, choose 1, 2, or 3 screens/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /never 4 screens/)
+})
+
+test("MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT: constrains desktop storyboard planning", () => {
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /desktop platforms, choose 1 or 2 screens/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /never 3 or 4 desktop screens/)
 })
