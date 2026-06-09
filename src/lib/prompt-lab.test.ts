@@ -46,7 +46,7 @@ test("applyPromptLabMockupPlatformOverride: selected platform wins over parsed p
     version: "mockup-design-plan-v1",
     primaryPlatform: "native-mobile-app",
     happyPathScenario: "A user completes the main flow.",
-    persona: "Primary user",
+    targetUser: "Primary user",
     screens: [
       {
         name: "Screen 1",
@@ -76,7 +76,7 @@ test("applyPromptLabMockupPlatformOverride: trims screens after a desktop overri
     version: "mockup-design-plan-v1",
     primaryPlatform: "native-mobile-app",
     happyPathScenario: "A user completes the main flow.",
-    persona: "Primary user",
+    targetUser: "Primary user",
     screens: [
       {
         name: "Screen 1",
@@ -155,7 +155,8 @@ test("buildPromptLabDefaultPrompts: builds single-option mockup prompt", () => {
 
   assert.match(result.systemPrompt, /static UI mockup images/)
   assert.match(result.userPrompt, /Create option B/)
-  assert.match(result.userPrompt, /Core scheduling workflow/)
+  assert.doesNotMatch(result.userPrompt, /Core scheduling workflow/)
+  assert.doesNotMatch(result.userPrompt, /First Version Plan context/)
 })
 
 test("Prompt Lab model options filter text and image models by artifact", () => {

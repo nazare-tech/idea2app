@@ -112,7 +112,7 @@ test("parseOpenRouterImageMockupContent: returns normalized storyboard options",
       version: "mockup-design-plan-v1",
       primaryPlatform: "mobile-web",
       happyPathScenario: "Returning planner checks generated meal plan.",
-      persona: "Busy parent",
+      targetUser: "Busy parent",
       screens: [
         {
           name: "Weekly Plan",
@@ -227,7 +227,7 @@ test("buildOpenRouterMockupImagePrompt: adds strict mobile storyboard compositio
       version: "mockup-design-plan-v1",
       primaryPlatform: "native-mobile-app",
       happyPathScenario: "Sarah completes setup, reviews a generated menu, and opens a recipe detail.",
-      persona: "Healthcare worker planning meals after long shifts",
+      targetUser: "Healthcare worker planning meals after long shifts",
       screens: [
         {
           name: "Onboarding Completion",
@@ -268,6 +268,9 @@ test("buildOpenRouterMockupImagePrompt: adds strict mobile storyboard compositio
   assert.match(prompt, /"format": "1\. Screen Name"/)
   assert.match(prompt, /Fixed top label to render: 1\. Onboarding Completion/)
   assert.match(prompt, /Caption intent, do not float elsewhere: Menu generated/)
+  assert.match(prompt, /Target user:\nHealthcare worker planning meals after long shifts/)
+  assert.doesNotMatch(prompt, /First Version Plan context:/)
+  assert.doesNotMatch(prompt, /Generate weekly meals, review details/)
   assert.match(prompt, /render the planned fixed top labels verbatim/)
   assert.match(prompt, /wide mobile devices/)
   assert.match(prompt, /tablet-like phones/)
@@ -286,7 +289,7 @@ test("buildOpenRouterMockupImagePrompt: adds strict desktop storyboard compositi
       version: "mockup-design-plan-v1",
       primaryPlatform: "desktop-web",
       happyPathScenario: "An operator reviews account risk and assigns the next action.",
-      persona: "Customer success operator",
+      targetUser: "Customer success operator",
       screens: [
         {
           name: "Risk Dashboard",

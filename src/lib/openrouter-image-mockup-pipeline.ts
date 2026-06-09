@@ -14,7 +14,9 @@ import {
 } from "@/lib/openrouter-image-mockup-format"
 import {
   MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT,
+  buildMockupGenerationBrief,
   buildMockupDesignPlanUserPrompt,
+  formatMockupGenerationBrief,
   getMockupScreenLimitForPlatform,
   parseMockupDesignPlan,
   type MockupDesignDirection,
@@ -174,6 +176,20 @@ export async function generateOpenRouterImageMockup({
   })
 
   send?.({ type: "stage", message: "Preparing image mockup prompts...", step: 1, totalSteps: 5 })
+  const compactBrief = formatMockupGenerationBrief(buildMockupGenerationBrief({
+    projectName,
+    idea,
+    intakeContext,
+    productPlan,
+    mvpPlan,
+  }))
+  const plannerUserPrompt = buildMockupDesignPlanUserPrompt({
+    projectName,
+    idea,
+    intakeContext,
+    productPlan,
+    mvpPlan,
+  })
 
   const designPlan = await generateMockupDesignPlan({
     openrouter,
@@ -202,6 +218,10 @@ export async function generateOpenRouterImageMockup({
       }),
     ),
   )
+  const imagePromptCharCounts = Object.fromEntries(
+    generatedOptions.map((option) => [option.label, option.imagePromptCharCount]),
+  )
+  const contentOptions = generatedOptions.map(({ imagePromptCharCount: _imagePromptCharCount, ...option }) => option)
 
   send?.({ type: "stage", message: "Saving mockup images...", step: 5, totalSteps: 5 })
 
@@ -209,7 +229,7 @@ export async function generateOpenRouterImageMockup({
     type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
     model,
     generatedAt,
-    options: generatedOptions,
+    options: contentOptions,
   }
 
   return {
@@ -225,6 +245,10 @@ export async function generateOpenRouterImageMockup({
       design_plan: designPlan as unknown as Json,
       planner_model: plannerModel,
       image_config: getOpenRouterMockupImageConfig() as unknown as Json,
+      prompt_version: "mockup-compact-v1",
+      compact_brief_char_count: compactBrief.length,
+      planner_prompt_char_count: plannerUserPrompt.length,
+      image_prompt_char_counts: imagePromptCharCounts as unknown as Json,
     } satisfies Record<string, Json>,
   }
 }
@@ -318,11 +342,14 @@ async function generateAndStoreOption({
   designPlan: MockupDesignPlan
 }) {
   const direction = designPlan.directions.find((item) => item.label === config.label)
+  if (!direction) {
+    throw new Error(`Mockup design plan is missing direction ${config.label}`)
+  }
   const storyboardPrompt = userPrompt || buildOpenRouterMockupImagePrompt({
     projectName,
     mvpPlan,
-    title: direction?.name ?? config.title,
-    strategy: direction ? formatDirectionForPrompt(direction) : config.strategy,
+    title: direction.name,
+    strategy: formatDirectionForPrompt(direction),
     label: config.label,
     designPlan,
   })
@@ -364,10 +391,10 @@ async function generateAndStoreOption({
 
   return {
     label: config.label,
-    title: config.title,
+    title: direction.name,
     imageUrl: buildMockupImageProxyUrl({ projectId, storagePath }),
     storagePath,
-    description: extractAssistantText(choice) || config.strategy,
+    description: extractAssistantText(choice) || formatDirectionForPrompt(direction),
     contentType: parsedImage.contentType,
     screens: designPlan.screens.map((screen) => ({
       name: screen.name,
@@ -377,6 +404,7 @@ async function generateAndStoreOption({
     })),
     ...(parsedImage.width ? { width: parsedImage.width } : {}),
     ...(parsedImage.height ? { height: parsedImage.height } : {}),
+    imagePromptCharCount: storyboardPrompt.length,
   }
 }
 
@@ -432,32 +460,48 @@ async function generateMockupDesignPlan({
   intakeContext?: string
   productPlan?: string
 }) {
-  const response = await openrouter.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: buildMockupDesignPlanUserPrompt({
-          projectName,
-          idea,
-          intakeContext,
-          productPlan,
-          mvpPlan,
-        }),
-      },
-    ],
-    max_completion_tokens: getOpenRouterMockupPlannerMaxTokens(),
-  }, {
-    signal: AbortSignal.timeout(getOpenRouterMockupImageTimeoutMs()),
+  const plannerUserPrompt = buildMockupDesignPlanUserPrompt({
+    projectName,
+    idea,
+    intakeContext,
+    productPlan,
+    mvpPlan,
   })
+  let lastError: unknown
 
-  const content = extractAssistantText(response.choices[0])
-  if (!content) {
-    throw new Error("OpenRouter did not return a mockup design plan")
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const response = await openrouter.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: attempt === 1
+            ? plannerUserPrompt
+            : `${plannerUserPrompt}\n\nYour previous response was invalid. Return corrected JSON only. Include complete targetUser, screens, and exactly three complete directions labeled A, B, and C.`,
+        },
+      ],
+      max_completion_tokens: getOpenRouterMockupPlannerMaxTokens(),
+    }, {
+      signal: AbortSignal.timeout(getOpenRouterMockupImageTimeoutMs()),
+    })
+
+    const content = extractAssistantText(response.choices[0])
+    if (!content) {
+      lastError = new Error("OpenRouter did not return a mockup design plan")
+      continue
+    }
+
+    try {
+      return parseMockupDesignPlan(content)
+    } catch (error) {
+      lastError = error
+    }
   }
 
-  return parseMockupDesignPlan(content)
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("OpenRouter did not return a valid mockup design plan")
 }
 
 function getOpenRouterProviderErrorMessage(error: unknown) {
@@ -697,14 +741,11 @@ ${platform}
 Happy-path scenario:
 ${designPlan?.happyPathScenario ?? "A returning user is fully using the product and completing the core workflow."}
 
-Persona:
-${designPlan?.persona ?? "Primary MVP user"}
+Target user:
+${designPlan?.targetUser ?? "Primary MVP user"}
 
 Screens to show in this one storyboard image:
 ${screenBrief}
-
-First Version Plan context:
-${mvpPlan.slice(0, 7000)}
 
 Output requirements:
 - Generate one high-fidelity static storyboard image that contains all selected screens.
@@ -712,7 +753,7 @@ Output requirements:
 - ${canvasInstruction}
 - Label each screen once, using the fixed caption placement described below.
 - Show populated happy-path product states, not empty states.
-- Use realistic UI labels and concise product copy derived from the First Version Plan.
+- Use realistic UI labels and concise product copy derived from the planned screens and data.
 - Make it feel like a modern SaaS/product interface, not a marketing landing page.
 - Avoid unreadable filler text, fake browser chrome, watermarks, and code snippets.
 - Include enough visual detail to evaluate layout, hierarchy, and product direction.
@@ -750,11 +791,14 @@ export function buildMockupImagePromptForOption({
   if (!config) throw new Error(`Unsupported mockup option label: ${label}`)
 
   const direction = designPlan.directions.find((item) => item.label === config.label)
+  if (!direction) {
+    throw new Error(`Mockup design plan is missing direction ${config.label}`)
+  }
   const userPrompt = buildOpenRouterMockupImagePrompt({
     projectName,
     mvpPlan,
-    title: direction?.name ?? config.title,
-    strategy: direction ? formatDirectionForPrompt(direction) : config.strategy,
+    title: direction.name,
+    strategy: formatDirectionForPrompt(direction),
     label: config.label,
     designPlan,
   })

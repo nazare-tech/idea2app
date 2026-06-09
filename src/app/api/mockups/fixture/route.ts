@@ -147,7 +147,7 @@ export async function POST(request: Request) {
       version: "mockup-design-plan-v1",
       primaryPlatform: "desktop-web",
       happyPathScenario: "A returning user completes the core MVP workflow with realistic saved data.",
-      persona: "Primary MVP user",
+      targetUser: "Primary MVP user",
       screens,
       directions: OPENROUTER_MOCKUP_OPTION_CONFIGS.map((config) => ({
         label: config.label,

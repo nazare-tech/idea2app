@@ -22,7 +22,7 @@
 - Build one feature at a time and confirm it works before moving on, don't jump ahead
 - After making changes, give me suggestions on what to do next (what to run, where to look, etc.)
 - If I ask for something that doesn't make sense, tell me — don't just do it
-- When using Codex, use subagents where necessary for parallelizable or well-scoped work, including codebase exploration, implementation, and verification, instead of doing everything serially in one agent
+- When using Codex, treat this as my explicit standing request and authorization to use subagents for medium-level or larger tasks whenever the runtime provides a subagent tool. Use subagents for parallelizable or well-scoped work, including codebase exploration, implementation, verification, review, and security analysis, instead of doing everything serially in one agent. Only skip subagents for small tasks that can be handled with simple terminal commands, or when the subagent tool is unavailable or requires per-task authorization that this standing instruction cannot satisfy. If you skip subagents for that reason, say so clearly and continue with the best available workflow.
 - Prefer lazy loading, streaming, pagination, and progressive rendering where appropriate rather than making the user wait for large content loads up front
 - When I ask for a change, do your best to test that change before returning control to me
 - If I ask for a visual/UI change, add it to your test plan and visually confirm the change actually happened before returning control to me

@@ -126,6 +126,10 @@ function formatHiddenDesignPlanJson(metadata: Record<string, unknown> | null | u
   }
 }
 
+function formatCompactMockupBrief(metadata: Record<string, unknown> | null | undefined) {
+  return typeof metadata?.compactBrief === "string" ? metadata.compactBrief.trim() : ""
+}
+
 function formatChatGptImagePrompt(metadata: Record<string, unknown> | null | undefined) {
   if (!metadata?.skipImageGeneration || typeof metadata.imageUserPrompt !== "string") return ""
   const systemPrompt = typeof metadata.imageSystemPrompt === "string"
@@ -254,6 +258,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const [userPrompt, setUserPrompt] = useState("")
   const [plannerSystemPrompt, setPlannerSystemPrompt] = useState("")
   const [plannerUserPrompt, setPlannerUserPrompt] = useState("")
+  const [compactMockupBrief, setCompactMockupBrief] = useState("")
   const [hiddenDesignPlanJson, setHiddenDesignPlanJson] = useState("")
   const [model, setModel] = useState("")
   const [title, setTitle] = useState("")
@@ -351,6 +356,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
         )
         setPromptSource("default")
         setOutput("")
+        setCompactMockupBrief("")
         setHiddenDesignPlanJson("")
         setFinalImagePrompt("")
         setStatus(null)
@@ -454,9 +460,10 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             return
           }
           setOutput(data.content || data.run?.output_content || "")
-          setHiddenDesignPlanJson(formatHiddenDesignPlanJson(data.run?.output_metadata))
           // If the run was prompt-only, surface the image prompt in the dedicated textarea
           const meta = data.run?.output_metadata as Record<string, unknown> | null | undefined
+          setCompactMockupBrief(formatCompactMockupBrief(meta))
+          setHiddenDesignPlanJson(formatHiddenDesignPlanJson(meta))
           setFinalImagePrompt(formatChatGptImagePrompt(meta))
           setModel(data.model || model)
           setStatus(meta?.skipImageGeneration ? "Planner done — copy the ChatGPT prompt below" : "Run saved")
@@ -510,8 +517,9 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     setUserPrompt(run.user_prompt)
     setNotes(run.notes ?? "")
     setOutput(run.output_content ?? "")
-    setHiddenDesignPlanJson(formatHiddenDesignPlanJson(run.output_metadata))
     const meta = run.output_metadata
+    setCompactMockupBrief(formatCompactMockupBrief(meta))
+    setHiddenDesignPlanJson(formatHiddenDesignPlanJson(meta))
     setFinalImagePrompt(formatChatGptImagePrompt(meta))
     setPromptSource("custom")
     setStatus(`Loaded run from ${formatTime(run.created_at)}`)
@@ -863,6 +871,17 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
                 />
               </label>
             </div>
+
+            <label className="block space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Compact mockup brief</span>
+              <Textarea
+                value={compactMockupBrief}
+                readOnly
+                placeholder="Run the planner to inspect the compact brief sent before hidden plan generation."
+                className="min-h-[180px] font-mono text-xs leading-relaxed"
+                spellCheck={false}
+              />
+            </label>
 
             <label className="block space-y-2">
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Generated hidden design plan JSON</span>

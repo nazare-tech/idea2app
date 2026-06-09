@@ -4,7 +4,9 @@ import assert from "node:assert/strict"
 import {
   MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT,
   MOCKUP_DESIGN_PLAN_SCHEMA_VERSION,
+  buildMockupGenerationBrief,
   buildMockupDesignPlanUserPrompt,
+  formatMockupGenerationBrief,
   getMockupScreenLimitForPlatform,
   parseMockupDesignPlan,
 } from "./mockup-design-plan"
@@ -61,7 +63,7 @@ test("parseMockupDesignPlan: normalizes a valid design plan", () => {
     version: MOCKUP_DESIGN_PLAN_SCHEMA_VERSION,
     primaryPlatform: "Mobile web",
     happyPathScenario: "A returning parent reviews a finished weekly meal plan and grocery list.",
-    persona: "Busy parent planning weeknight meals",
+    targetUser: "Busy parent planning weeknight meals",
     screens: [
       {
         name: "Weekly Plan",
@@ -103,14 +105,14 @@ test("parseMockupDesignPlan: accepts one-screen plans for desktop and mobile", (
   const desktopPlan = parseMockupDesignPlan(JSON.stringify({
     primaryPlatform: "desktop-web",
     happyPathScenario: "User finishes the main flow.",
-    persona: "Operator",
+    targetUser: "Operator",
     screens: [buildTestScreen(1)],
     directions: buildTestDirections(),
   }))
   const mobilePlan = parseMockupDesignPlan(JSON.stringify({
     primaryPlatform: "mobile-web",
     happyPathScenario: "User finishes the main flow.",
-    persona: "Operator",
+    targetUser: "Operator",
     screens: [buildTestScreen(1)],
     directions: buildTestDirections(),
   }))
@@ -123,14 +125,14 @@ test("parseMockupDesignPlan: trims over-limit screens by platform", () => {
   const desktopPlan = parseMockupDesignPlan(JSON.stringify({
     primaryPlatform: "native desktop app",
     happyPathScenario: "User finishes the main flow.",
-    persona: "Operator",
+    targetUser: "Operator",
     screens: [buildTestScreen(1), buildTestScreen(2), buildTestScreen(3)],
     directions: buildTestDirections(),
   }))
   const mobilePlan = parseMockupDesignPlan(JSON.stringify({
     primaryPlatform: "native mobile app",
     happyPathScenario: "User finishes the main flow.",
-    persona: "Operator",
+    targetUser: "Operator",
     screens: [buildTestScreen(1), buildTestScreen(2), buildTestScreen(3), buildTestScreen(4)],
     directions: buildTestDirections(),
   }))
@@ -144,7 +146,7 @@ test("parseMockupDesignPlan: rejects plans without any screens", () => {
     () => parseMockupDesignPlan(JSON.stringify({
       primaryPlatform: "desktop-web",
       happyPathScenario: "User finishes the main flow.",
-      persona: "Operator",
+      targetUser: "Operator",
       screens: [],
       directions: buildTestDirections(),
     })),
@@ -152,22 +154,98 @@ test("parseMockupDesignPlan: rejects plans without any screens", () => {
   )
 })
 
-test("buildMockupDesignPlanUserPrompt: treats source documents as untrusted context", () => {
+test("parseMockupDesignPlan: rejects incomplete directions instead of using defaults", () => {
+  assert.throws(
+    () => parseMockupDesignPlan(JSON.stringify({
+      primaryPlatform: "desktop-web",
+      happyPathScenario: "User finishes the main flow.",
+      targetUser: "Operator",
+      screens: [buildTestScreen(1)],
+      directions: [
+        {
+          label: "A",
+          name: "Complete direction",
+          layoutStrategy: "Readable dashboard",
+          navigationPattern: "Top nav",
+          density: "Medium",
+          visualTone: "Focused",
+          reusableMotifs: ["Cards"],
+          consistencyNotes: "Keep styles aligned.",
+        },
+        {
+          label: "B",
+          name: "Missing required fields",
+        },
+        {
+          label: "C",
+          name: "Complete direction",
+          layoutStrategy: "Readable dashboard",
+          navigationPattern: "Top nav",
+          density: "Medium",
+          visualTone: "Focused",
+          reusableMotifs: ["Cards"],
+          consistencyNotes: "Keep styles aligned.",
+        },
+      ],
+    })),
+    /direction 2 is missing required mockup data/,
+  )
+})
+
+test("buildMockupDesignPlanUserPrompt: uses a compact mockup brief instead of full source documents", () => {
+  const oversizedProductPlan = `## User personas
+Busy clinic coordinators who need fewer scheduling interruptions.
+
+## Functional Requirements
+${"Do not include this product-plan filler. ".repeat(500)}`
+  const oversizedMvpPlan = `## Target User and Problem
+Primary user: Clinic coordinator managing daily appointment chaos.
+
+## Core User Flow
+Coordinator opens the triage dashboard, reviews AI-sorted appointment requests, confirms a suggested slot, and sends the patient update.
+
+## Must-Have Features
+- Appointment triage dashboard
+- Suggested slot confirmation
+- Patient update composer
+
+${"Do not include this mvp filler. ".repeat(500)}`
+
   const prompt = buildMockupDesignPlanUserPrompt({
     projectName: "Meal Planner",
     idea: "AI meal planning for families",
     intakeContext: "Platform: Mobile web",
     platformPreference: "native-mobile-app",
-    productPlan: "## Product Plan",
-    mvpPlan: "## Core User Flow",
+    productPlan: oversizedProductPlan,
+    mvpPlan: oversizedMvpPlan,
   })
 
-  assert.match(prompt, /<user_input name="mvpPlan">/)
-  assert.match(prompt, /Trusted Prompt Lab platform override:/)
-  assert.match(prompt, /Set primaryPlatform to "native-mobile-app"\./)
-  assert.doesNotMatch(prompt, /<user_input name="platformPreference">/)
-  assert.match(prompt, /untrusted product context/i)
-  assert.match(prompt, /Mobile web/)
+  assert.match(prompt, /<user_input name="brief">/)
+  assert.match(prompt, /Selected primary platform: native-mobile-app/)
+  assert.match(prompt, /Clinic coordinator managing daily appointment chaos/)
+  assert.match(prompt, /triage dashboard/)
+  assert.doesNotMatch(prompt, /<user_input name="mvpPlan">/)
+  assert.doesNotMatch(prompt, /<user_input name="productPlan">/)
+  assert.doesNotMatch(prompt, /Do not include this mvp filler/)
+  assert.doesNotMatch(prompt, /Do not include this product-plan filler/)
+  assert.ok(prompt.length < 4_500)
+})
+
+test("buildMockupGenerationBrief: exposes the minimum fields needed by the planner", () => {
+  const brief = buildMockupGenerationBrief({
+    projectName: "ClinicFlow",
+    intakeContext: "Primary platform: Desktop web",
+    productPlan: "## User personas\nClinic coordinators handling patient appointment requests.",
+    mvpPlan: "## Core User Flow\nReview queue, confirm slot, notify patient.\n\n## Must-Have Features\n- Triage queue\n- Slot confirmation",
+  })
+  const formatted = formatMockupGenerationBrief(brief)
+
+  assert.equal(brief.primaryPlatform, "desktop-web")
+  assert.match(formatted, /Project name: ClinicFlow/)
+  assert.match(formatted, /Target user: Clinic coordinators/)
+  assert.match(formatted, /MVP workflow: Review queue/)
+  assert.match(formatted, /MVP capabilities: - Triage queue/)
+  assert.ok(formatted.length < 4_000)
 })
 
 test("MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT: constrains mobile storyboard planning", () => {
@@ -181,4 +259,6 @@ test("MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT: constrains mobile storyboard planning", 
 test("MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT: constrains desktop storyboard planning", () => {
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /desktop platforms, choose 1 or 2 screens/)
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /never 3 or 4 desktop screens/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /Do not invent a new persona/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /"targetUser"/)
 })

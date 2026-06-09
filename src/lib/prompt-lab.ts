@@ -40,6 +40,8 @@ import {
   type OpenRouterMockupOptionLabel,
 } from "@/lib/openrouter-image-mockup-pipeline"
 import {
+  buildMockupGenerationBrief,
+  formatMockupGenerationBrief,
   normalizeMockupDesignPlanScreens,
   parseMockupDesignPlan,
   type MockupDesignPlan,
@@ -313,6 +315,11 @@ export async function runPromptLabArtifact({
 
       const parsedDesignPlan = parseMockupDesignPlan(plannerOutput)
       const designPlan = applyPromptLabMockupPlatformOverride(parsedDesignPlan, mockupPlatform)
+      const compactBrief = formatMockupGenerationBrief(buildMockupGenerationBrief({
+        projectName,
+        mvpPlan: mockupMvpPlan || userPrompt,
+        platformPreference: mockupPlatform === "auto" ? null : mockupPlatform,
+      }))
 
       // --- Prompt-only mode: return the image prompt without calling OpenRouter ---
       if (skipImageGeneration) {
@@ -334,10 +341,14 @@ export async function runPromptLabArtifact({
             platformOverrideApplied: mockupPlatform !== "auto",
             skipImageGeneration: true,
             plannerModel,
+            compactBrief,
+            compactBriefCharCount: compactBrief.length,
+            plannerPromptCharCount: plannerUserPrompt.length,
             plannerOutput,
             designPlan,
             imageSystemPrompt: imagePrompts.systemPrompt,
             imageUserPrompt: imagePrompts.userPrompt,
+            imagePromptCharCount: imagePrompts.userPrompt.length,
           },
         }
       }
@@ -375,8 +386,12 @@ export async function runPromptLabArtifact({
           storagePath: result.option.storagePath,
           runId: result.runId,
           plannerModel,
+          compactBrief,
+          compactBriefCharCount: compactBrief.length,
+          plannerPromptCharCount: plannerUserPrompt.length,
           plannerOutput,
           designPlan: result.designPlan,
+          imagePromptCharCount: result.option.imagePromptCharCount,
         },
       }
     }

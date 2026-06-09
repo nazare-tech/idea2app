@@ -19,6 +19,7 @@ export interface OpenRouterImageMockupOption {
   screens?: OpenRouterImageMockupScreen[]
   width?: number
   height?: number
+  imagePromptCharCount?: number
 }
 
 export interface OpenRouterImageMockupContent {
