@@ -162,6 +162,19 @@ test("buildManualGenerationQueue: strips client authority fields", () => {
   assert.ok(queue[0].creditCost > 0)
 })
 
+test("buildManualGenerationQueue: drops archived launch items", () => {
+  const queue = buildManualGenerationQueue([
+    {
+      docType: "launch",
+      label: "Launch Plan",
+      status: "pending",
+      creditCost: 5,
+    } as never,
+  ])
+
+  assert.deepEqual(queue, [])
+})
+
 test("recoverStaleGenerationQueueItems: requeues stale generating work for retry", async () => {
   const now = Date.now()
   const stale = queueItem({

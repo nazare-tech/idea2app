@@ -223,6 +223,18 @@ async function executeQueueItem({
     isOnboardingQueue &&
     claimed.run_id === getQueueRunId(queueRow) &&
     claimed.source === "onboarding"
+
+  if (claimed.doc_type === "launch") {
+    return finishGeneratingItem(queueSupabase, claimed, {
+      status: "skipped",
+      stage_message: null,
+      error: null,
+      completed_at: new Date().toISOString(),
+      credit_cost: 0,
+      credit_status: "not_charged",
+    })
+  }
+
   const action = GENERATE_ALL_ACTION_MAP[claimed.doc_type]
   const model = claimed.model_id ?? GENERATE_ALL_DEFAULT_MODELS[claimed.doc_type]
   const creditCost = isBundledItem ? 0 : action ? getTokenCost(action, model) : claimed.credit_cost

@@ -14,11 +14,7 @@ test("getActiveDocumentIdentity: maps document types to storage identities", () 
     outputTable: "analyses",
     analysisType: "competitive-analysis",
   })
-  assert.deepEqual(getActiveDocumentIdentity("launch"), {
-    documentType: "launch",
-    outputTable: "analyses",
-    analysisType: "launch-plan",
-  })
+  assert.equal(getActiveDocumentIdentity("launch"), null)
   assert.deepEqual(getActiveDocumentIdentity("prd"), {
     documentType: "prd",
     outputTable: "prds",

@@ -76,7 +76,6 @@ export async function GET(
     prdResult,
     mvpResult,
     mockupResult,
-    launchResult,
   ] = await Promise.all([
     supabase
       .from("analyses")
@@ -107,14 +106,6 @@ export async function GET(
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase
-      .from("analyses")
-      .select("id")
-      .eq("project_id", id)
-      .eq("type", "launch-plan")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
   ])
 
   const competitiveReady = hasCompetitiveV2Metadata(competitiveResult.data?.metadata)
@@ -123,7 +114,6 @@ export async function GET(
     prd: Boolean(prdResult.data?.id),
     mvp: Boolean(mvpResult.data?.id),
     mockups: Boolean(mockupResult.data?.id),
-    launch: Boolean(launchResult.data?.id),
   }
   const queueSupabase = createServiceClient()
   let queueItems = await getGenerationQueueItems(queueSupabase, queueRow)

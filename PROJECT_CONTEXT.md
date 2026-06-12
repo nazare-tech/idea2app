@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-06-09 (Stripe interval billing catalog)
+**Last Updated**: 2026-06-12 (Launch Plan archived; Stripe interval billing catalog)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -19,7 +19,7 @@
 - **Product Plan Generation**: Complete Product Plans with exactly three user personas, user stories, grouped requirements, and release planning. Production Product Plan generation and Prompt Lab defaults share the same Product Plan request builder for system prompt, user prompt shape, default model, max tokens, and temperature. Product Plan generation passes the full latest Market Research document into the shared secure prompt builder rather than applying the older production-only 6,000-character downstream trim; the secure prompt builder still applies its normal per-field safety limits. Completed Product Plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. The parser accepts both the older Product Plan H2/H3 contract and the current numbered PRD-style prompt sections for introduction/overview, goals, personas, user stories and acceptance criteria, functional requirements, technical considerations, out-of-scope items, success metrics, timeline, risks, dependencies, assumptions, and open questions. Current numbered PRD-style documents render with a design-faithful Product Plan document layout inspired by the Claude Design Product Plan right panel: a fixed `Product Plan` masthead (AI-generated names are not used as the H1), a dynamic summary metric strip, numbered editorial sections, stat-style goals, persona cards, expandable user-story cards with normalized display IDs, grouped requirements, icon-led technical cards with designed bullet rows, metric columns, compact phase-card timeline milestones with computed week ranges and deliverable-only checklists, and compact follow-through sections for risks, dependencies, and open questions. Legacy Product Plan documents continue to use the specialized legacy block layout with persona/profile grouping, compact labeled rows, vertical requirement categories, cleaned horizontal rules, and user-story acceptance criteria cards.
 - **First Version Plan Generation**: Strategic first-release development plan based on the Product Plan. Production First Version Plan generation and Prompt Lab defaults share the same First Version Plan request builder for system prompt, user prompt shape, default model, max tokens, and temperature. First Version Plan generation passes the full latest Product Plan document into the shared secure prompt builder rather than applying the older production-only 6,000-character downstream trim; the secure prompt builder still applies its normal per-field safety limits. Completed First Version Plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. The parser accepts both the older First Version/MVP H2/H3 contract and the current 13-section MVP Plan contract for summary, assumptions, target user/problem, MVP goal and definition of done with riskiest assumptions, core flow, scope, must-have features, suggested build approach, AI-friendly build sequence, AI build guardrails, validation plan, cut list, and next prompt. Current numbered MVP Plan documents use a purpose-built visual block layout that preserves current prompt labels while turning summary, target/problem content, scope, must-have feature tables, build steps, and validation sections into vertically stacked light Pencil blocks/cards. Direct H2/H3 content is preserved as fallback section cards when a generated First Version Plan lacks deeper nested headings.
 - **Mockup Generation**: Three UI mockup alternatives generated from First Version Plans. The default path uses OpenRouter image-output model `openai/gpt-5.4-image-2`, configurable with `OPENROUTER_MOCKUP_IMAGE_MODEL`; images are stored in private Supabase Storage and rendered through an authenticated image proxy. Before image generation, the pipeline creates a compact deterministic mockup brief from the project name, selected primary platform, extracted target user, MVP workflow, core capabilities, candidate screens/features, and UI constraints. The hidden planner receives that compact brief instead of whole Product Plan / First Version Plan documents, then creates a hidden `mockup-design-plan-v1` JSON plan using `OPENROUTER_MOCKUP_PLANNER_MODEL`, falling back to `OPENROUTER_ANALYSIS_MODEL` and then `openai/gpt-5.4-mini`. That plan chooses the primary platform, copies/condenses the input-derived `targetUser` instead of inventing a new persona, defines a populated happy-path scenario, selects platform-specific core MVP screens, captions, and exactly three complete visual directions labeled A/B/C: desktop web and native desktop app plans use 1-2 screens per storyboard image, while mobile web and native mobile app plans use 1-3 screens. Over-limit planner output is normalized after the final effective platform is known so desktop storyboards cannot silently retain three compressed frames. Invalid planner output gets one stricter JSON-only retry and then fails clearly rather than falling back to generic directions. The final image prompt is built from the validated hidden plan and static rendering/composition rules only; raw MVP/Product Plan/persona context is not re-sent to the image model. The hidden plan is stored in `mockups.metadata.design_plan`, not in the user-rendered mockup content; prompt version and prompt character counts are stored in mockup metadata for regression diagnosis. Each option image is now a v2 storyboard (`openrouter-image-v2`): one wide horizontal image containing the selected screens, with display-safe screen names/captions stored in content metadata. OpenRouter image calls omit provider-specific `image_config` by default; explicit `OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO` and `OPENROUTER_MOCKUP_IMAGE_SIZE` env values are still forwarded for providers that support them. Image-call text output is capped by `OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS` (default `4096`) while the hidden planner call is capped by `OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS` (default `2048`) to keep retries within normal key limits. Actual decoded image dimensions are recorded when available. Manual workspace mockup generation still runs separate option-level invocations for Options A/B/C one after another, then finalizes one normal mockup document after all three storyboard images are saved. Manual retries persist the option run id and design plan in localStorage and call `/api/mockups/recover-options` before spending more OpenRouter credits, so images that reached Supabase Storage can be finalized even if the browser or route timed out. Local/no-credit fixture testing is available through `/api/mockups/fixture` when running outside production, or in production only with `ENABLE_MOCKUP_FIXTURE_GENERATION=true`. The renderer displays each option as a wide storyboard image plus generated screen captions; desktop storyboards are prompted with a structured composition JSON that permits one large desktop frame or two equal-width desktop frames and explicitly forbids third desktop screens or compressed thumbnails, while mobile storyboards are prompted with a structured Figma-style composition JSON that asks for same-width iPhone 17 Pro portrait frames, fixed top captions, neutral arrows between screens, optional side rationale cards, and same-width vertical continuation or scroll cues instead of wider phones.
-- **Launch Plan Generation**: Launch Plans are now generated through an AI-backed Launch Plan prompt module instead of a deterministic template. The route keeps the existing marketing-brief input contract and still saves markdown `launch-plan` rows in `analyses`.
+- **Launch Plan Archived**: Launch Plan is no longer part of project creation, Generate All/onboarding, workspace navigation/rendering, project status/workspace payloads, PDF export, or production credit paths. `/api/launch/plan` returns `410 Gone` before rate limiting, AI calls, inserts, or credit consumption. Existing `analyses.type = 'launch-plan'` rows are preserved but hidden from project surfaces. The AI-backed Launch Plan prompt/pipeline remains available only through local Dev Prompt Lab for future reactivation.
 - **Dev Prompt Lab**: Local-development-only workbench at `/dev/prompt-lab` for iterating artifact prompts against existing projects without creating workflow artifacts, consuming credits, or starting queues. It supports Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan; stores artifact-scoped reusable system/model drafts in Supabase `prompt_lab_experiments`, stores project-scoped isolated runs in `prompt_lab_runs`, uses existing workspace renderers for artifact-accurate preview, and includes a lab-only renderer playground for experiments that do not affect production workspace rendering. Product Plan and First Version Plan defaults are generated through the same shared request builders production uses, and the Prompt Lab UI shows a `Default / Production` badge while the untouched shared Product Plan or First Version Plan default prompt/model is displayed. The user prompt/context is regenerated from the selected project and should not be overwritten by shared system drafts. For Design Mockups, Prompt Lab centers the production-like planner flow: it shows editable hidden planner prompts, supports a dedicated planner + selected-option run that parses the planner JSON through the shared mockup design-plan validator, and displays the compact mockup brief, generated hidden design-plan JSON, and final image prompt in separate read-only inspectors when available. Design Mockup runs default to prompt-only mode: image generation is disabled unless explicitly re-enabled, and the lab returns a ChatGPT-ready prompt bundle containing the system instructions plus final image prompt instead of calling the OpenRouter image model. A Design Mockups-only platform dropdown can force the parsed design plan's `primaryPlatform` to desktop web, mobile web, native mobile app, or native desktop app, or leave it on auto from project context; selected overrides are treated as trusted Prompt Lab controls and are applied after planner JSON parsing so conflicting intake context cannot win, then screen counts are normalized to the final effective platform before building the ChatGPT-ready prompt. The generic isolated system/user prompt editors are not shown for Design Mockups because the selected-option image prompt is rebuilt internally from the planner JSON. Prompt Lab text runs use the shared OpenRouter long-text timeout (`240s`) for most text artifacts and the longer planning-document timeout (`480s`) for Product Plan and First Version Plan; mockup image runs keep their separate image timeout path when image generation is explicitly enabled.
 - **Technical Specifications**: Architecture design, technology stack recommendations, and API designs
 - **Landing Page + Waitlist Gate**: The marketing landing page now switches between standard signup CTAs and a public waitlist flow once the early-access user cap is reached. Features:
@@ -63,7 +63,7 @@
 5. Final submit calls `/api/projects/create-from-intake`, enforces monthly project allowance, generates a short project name, creates `projects`, writes the canonical `project_intakes` row, and creates an onboarding `generation_queues` run
 6. The wizard shows the full-page Maker Compass loading state, starts `/api/generate-all/execute` server-side, and polls `/api/projects/[id]/onboarding-status`
 7. User lands at the workspace `#executive-summary` section once the v2 `competitive-analysis` document exists, which powers Executive Summary and Market Research
-8. Product Plan, First Version Plan, Launch Plan, design mockups, tech specs, app code, and launch materials continue through the document pipeline
+8. Product Plan, First Version Plan, design mockups, tech specs, and app code continue through the document pipeline
 9. The project workspace is served from `/projects/[projectRef]`, canonicalizes stale slugs through `src/lib/project-routing.ts`, and fetches document collections lazily from `/api/projects/[id]/workspace`
 
 ---
@@ -205,7 +205,7 @@
    - Project workspace navigation starts at Overview; `?tab=prompt` is blocked and redirected to Overview.
 
 6. **Analysis Flow** (individual tab generation):
-   - Client requests analysis (market research, Product Plan, First Version Plan, Design Mockups, Launch Plan, or tech spec) from the workspace generation handlers
+   - Client requests analysis (market research, Product Plan, First Version Plan, Design Mockups, or tech spec) from the workspace generation handlers
    - Server verifies project ownership and checks `src/lib/active-document-policy.ts` for an existing active document before credit deduction or external generation. Duplicate requests return `200 OK` with `{ skipped: true, reason: "document_already_exists", existingDocument }` and do not charge credits.
    - If no active document exists, the server checks credits, deducts if available, and refunds through the service-role `refund_credits` RPC on generation failure
    - Routes to the appropriate in-house pipeline (`src/lib/analysis-pipelines.ts`). When a `project_intakes` row exists, generation context is formatted through `formatProjectIntakeForAi()` and combined with the human-readable project summary; otherwise `projects.description` is used as the fallback:
@@ -228,7 +228,7 @@
    - Queue rows and queue item rows are user-readable but server-mutable only. Browser clients cannot directly write billing/workflow authority fields such as `source`, `credit_status`, dependencies, attempts, or output refs.
    - Manual Generate All starts rebuild the queue server-side from allowed document types. The server derives source, credit status, credit cost, dependencies, attempts, model ids, run ids, and idempotency keys; client-supplied authority fields are ignored.
    - Bundled onboarding generation is trusted only when the parent queue has server-created onboarding metadata (`mode`, `source`, `version`, and `runId`) and item run metadata matches that queue.
-   - Server-side execute route runs dependency-aware batches through the shared `generateProjectDocument()` service with max concurrency 2. Market Research and Launch Plan can run independently; Product Plan waits on Market Research; First Version Plan waits on Product Plan; Design Mockups wait on First Version Plan.
+   - Server-side execute route runs dependency-aware batches through the shared `generateProjectDocument()` service with max concurrency 2. Market Research starts first; Product Plan waits on Market Research; First Version Plan waits on Product Plan; Design Mockups wait on First Version Plan. Stale archived Launch Plan queue items are skipped without charging credits.
    - Queue start and execution verify current DB state through `active-document-policy.ts`. Already-existing documents are marked `skipped`, linked to their existing `output_table`/`output_id`, and not charged; stale or retried queue items cannot casually create a second active planning document.
    - Per-step: checks cancellation, optionally deducts credits for legacy/manual runs, runs the pipeline, requires a saved output id before marking the item done, updates the normalized item row, and records `output_table`/`output_id`. Mockup generation is project-bundled and has `creditCost: 0`.
    - On step failure: legacy/manual runs refund credits; onboarding runs skip refunds because bundled project creation does not charge per-document credits. Onboarding items retry up to their configured `maxAttempts`.
@@ -236,7 +236,7 @@
    - Queue status remains `running` while any item is pending or generating. Terminal `partial`/`error` states are only exposed once no active work remains.
    - Cancellation immediately cancels pending work. Already-generating work is acknowledged by the executor so refunds and saved outputs have a single owner.
    - Queue-level status can be `running`, `completed`, `partial`, `cancelled`, or `error`; `partial` means at least one document completed and at least one dependent/remaining document failed or became blocked.
-   - Onboarding status is exposed by `/api/projects/[id]/onboarding-status`, which maps the backend queue to loading rows: Overview, Market research, Product Plan, First Version Plan, Design Mockups, and Launch Plan. Overview and Market research are ready when a v2 `competitive-analysis` row exists.
+   - Onboarding status is exposed by `/api/projects/[id]/onboarding-status`, which maps the backend queue to loading rows: Overview, Market research, Product Plan, First Version Plan, and Design Mockups. Overview and Market research are ready when a v2 `competitive-analysis` row exists.
    - Generation is durable — survives browser tab close, page refresh, and network interruptions
 
 8. **App Generation Flow**:
@@ -283,7 +283,6 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 │ Product Plan       │ Product Plan markdown/streaming state
 │ First Version Plan │ First Version Plan markdown/streaming state
 │ Design Mockups     │ Mockup renderer / progress state
-│ Launch Plan        │ Launch-plan markdown/progress state
 └──────────────┴───────────────────┴──────────────────────────────┘
   300px rail on desktop; horizontal rail on small screens
 ```
@@ -291,7 +290,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 - **`DashboardShell`** — authenticated app shell rendered by `src/app/(dashboard)/layout.tsx`; receives the current user profile and credit balance server-side.
 - **`ProjectHeader`** — per-project header with editable project name and account/credit affordances.
 - **`AnchorNav`** — scroll-aware document rail. It renders `Queued`, `Generating`, `Needs retry`, or ready check marks from `DocumentGenerationDisplayState`.
-- **`ScrollableContent`** — renders Overview, Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan as stacked sections. It defers below-the-fold sections by one animation frame and uses generation placeholders when content is not saved yet.
+- **`ScrollableContent`** — renders Overview, Market Research, Product Plan, First Version Plan, and Design Mockups as stacked sections. It defers below-the-fold sections by one animation frame and uses generation placeholders when content is not saved yet.
 - **`ProjectWorkspace`** — orchestrator component that manages active document/hash state, lazy document loading through `/api/projects/[id]/workspace`, version selection, local/manual generation flags, durable Generate All queue hydration, and dispatches API calls.
 
 ### Shared UI Architecture
@@ -402,7 +401,7 @@ src/
 │   │   ├── mockups/image/route.ts     # Authenticated proxy for stored OpenRouter mockup images
 │   │   ├── stitch/html/route.ts       # Proxy legacy Stitch-hosted HTML for safe rendering
 │   │   ├── generate-pdf/route.ts      # PDF generation support route
-│   │   ├── launch/plan/route.ts       # Launch-plan generation route
+│   │   ├── launch/plan/route.ts       # Archived Launch Plan route; returns 410
 │   │   ├── generate-app/route.ts      # POST generate app code
 │   │   ├── generate-all/
 │   │   │   ├── start/route.ts         # POST create/reset generation_queues row
@@ -578,7 +577,7 @@ interface AnalysisPanelProps { ... }
 
 // Type aliases: PascalCase or lowercase
 type AnalysisType = 'competitive-analysis' | 'prd' | 'mvp-plan' | 'tech-spec'
-type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'mockups' | 'techspec' | 'deploy' | 'launch'
+type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'mockups' | 'techspec' | 'deploy'
 ```
 
 ### Component Structure
@@ -782,7 +781,7 @@ interface ComponentProps {
 
 // Type unions for specific values
 type AnalysisType = 'competitive-analysis' | 'prd' | 'mvp-plan' | 'tech-spec'
-type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'mockups' | 'techspec' | 'deploy' | 'launch'
+type DocumentType = 'prompt' | 'competitive' | 'prd' | 'mvp' | 'mockups' | 'techspec' | 'deploy'
 
 // Const assertions for immutable objects
 const COSTS = {
@@ -1117,7 +1116,7 @@ docker run -p 3000:3000 idea2app
   - Used by the workspace header/description flows
 
 - **GET /api/projects/[id]/workspace**: Lazy-load owned workspace payloads
-  - Query: `docs=competitive,prd,mvp,mockups,launch` and optional `tab`
+  - Query: `docs=competitive,prd,mvp,mockups` and optional `tab`
   - Returns project summary, credit balance, structured-intake presence, and only the requested document collections
   - Used by `ProjectWorkspace` so large documents and non-visible tabs do not have to load up front
 
@@ -1180,7 +1179,7 @@ docker run -p 3000:3000 idea2app
 - **POST /api/generate-all/execute**: Server-side pipeline orchestrator
   - Body: `{ projectId }`
   - Reads `generation_queue_items`, claims pending runnable items atomically, and executes dependency-aware batches with max concurrency 2. Concurrency only applies to independent runnable documents; Product Plan, First Version Plan, and Design Mockups remain dependency-gated in sequence.
-  - Dependencies: competitive → prd → mvp → mockups; launch has no dependency and may run independently
+  - Dependencies: competitive → prd → mvp → mockups
   - Per-step: checks for an existing active document, deducts credits for legacy/manual runs only when generation is needed, skips credit charging for bundled onboarding runs, runs pipeline, saves to the correct table, and records `output_table`/`output_id`
   - Checks for cancellation before each batch
   - Refunds credits on legacy/manual step failure and marks dependent pending items `blocked`
@@ -1274,14 +1273,13 @@ docker run -p 3000:3000 idea2app
 | Product Plan Generation | 15 credits with current default model |
 | First Version Plan Generation | 15 credits with current default model |
 | Mockup Generation | Included in project generation |
-| Launch Plan | 5 credits |
 | Tech Spec Generation | 15 credits with current default model |
 | App Generation (Deploy) | 50-200 credits by app type |
 
 ### Credit Management
 
 - **Consumption**: Atomic operation via `consume_credits()` stored procedure. Non-bundled generation costs come from `src/lib/token-economics.ts` (`BASE_ACTION_TOKENS`, model multipliers, and `getTokenCost()`).
-- **Refund**: Via service-role-only `refund_credits()` through `src/lib/credits.ts` — called on generation failure in credit-billed analysis, chat, prompt chat, app generation, launch plan generation, and billable Generate All queue paths. Mockup generation is project-bundled and does not consume/refund credits.
+- **Refund**: Via service-role-only `refund_credits()` through `src/lib/credits.ts` — called on generation failure in credit-billed analysis, chat, prompt chat, app generation, and billable Generate All queue paths. Mockup generation is project-bundled and does not consume/refund credits.
 - **Addition**: Via `add_credits()` (subscription refill, purchases)
 - **Balance Check**: Real-time via `get_credit_balance()`
 - **History**: All transactions logged in `credits_history`
@@ -1453,14 +1451,14 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/mockups/image/route.ts](src/app/api/mockups/image/route.ts) | Authenticated proxy for private Supabase Storage mockup images |
 | [src/app/api/stitch/html/route.ts](src/app/api/stitch/html/route.ts) | Server-side proxy for legacy Stitch HTML downloads |
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Lazy-loading scroll workspace orchestrator |
-| [src/components/layout/anchor-nav.tsx](src/components/layout/anchor-nav.tsx) | Sticky/horizontal document rail for Overview, Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan with queued/generating/ready/needs-retry indicators |
+| [src/components/layout/anchor-nav.tsx](src/components/layout/anchor-nav.tsx) | Sticky/horizontal document rail for Overview, Market Research, Product Plan, First Version Plan, and Design Mockups with queued/generating/ready/needs-retry indicators |
 | [src/components/layout/scrollable-content.tsx](src/components/layout/scrollable-content.tsx) | Scrollable document body renderer with deferred sections, queue-aware placeholders, PRD/MVP completed-document block rendering, and mockup/status modules |
 | [src/components/layout/sidebar.tsx](src/components/layout/sidebar.tsx) | Legacy dashboard sidebar retained for existing layouts |
 | [src/components/layout/app-page-shell.tsx](src/components/layout/app-page-shell.tsx) | Shared authenticated page shell and header for consistent dashboard page spacing and hierarchy |
 | [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Legacy pipeline-step nav retained for older document surfaces |
 | [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Legacy active-document view retained while the main workspace uses `ScrollableContent` |
 | [src/lib/document-definitions.ts](src/lib/document-definitions.ts) | Shared typed document registry for workspace tabs, editor titles, icons, credit cost, and nav visibility |
-| [src/lib/document-sections.ts](src/lib/document-sections.ts) | Scroll workspace section registry and anchor IDs for Overview, Market Research, Product Plan, First Version Plan, Design Mockups, and Launch Plan |
+| [src/lib/document-sections.ts](src/lib/document-sections.ts) | Scroll workspace section registry and anchor IDs for Overview, Market Research, Product Plan, First Version Plan, and Design Mockups |
 | [src/lib/document-generation-display-status.ts](src/lib/document-generation-display-status.ts) | Pure helper that merges content existence, durable queue state, local generation flags, PRD/MVP stream previews, and optional mockup option statuses into nav/body display states |
 | [src/lib/active-document-policy.ts](src/lib/active-document-policy.ts) | Shared active-document identity and lookup helper used to prevent duplicate default document generation across direct APIs and Generate All/onboarding |
 | [src/components/analysis/competitive-analysis-document.tsx](src/components/analysis/competitive-analysis-document.tsx) | Market Research v2 hybrid modules/markdown renderer with legacy notice and upgrade CTA |

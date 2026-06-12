@@ -22,16 +22,16 @@ const NODES: BuildMapNode[] = [
       "Translate your idea into a real product spec. User personas, requirements, and acceptance criteria so engineering knows exactly what to build.",
   },
   {
-    key: "mockups",
-    label: "3. Design Mockups",
+    key: "mvp",
+    label: "3. First Version Plan",
     description:
-      "Get multiple design directions for the same core screens. Compare them side-by-side and pick the one to ship before writing UI code.",
+      "Narrow the first release into a realistic build sequence with must-have features, validation steps, and guardrails.",
   },
   {
-    key: "marketing",
-    label: "4. Launch Plan",
+    key: "mockups",
+    label: "4. Design Mockups",
     description:
-      "Plan your launch in one place: best customer segments, channels, and a budget to land your first customers.",
+      "Get multiple design directions for the same core screens. Compare them side-by-side and pick the one to ship before writing UI code.",
   },
 ]
 
@@ -76,7 +76,7 @@ export function BuildMap() {
               &ldquo;I have an idea, but I do not know the first build move.&rdquo;
             </p>
             <p className="mt-4 text-[13px] leading-relaxed text-text-secondary">
-              Unsorted market assumptions, product scope, screens, and launch questions.
+              Unsorted market assumptions, product scope, screens, and build questions.
             </p>
           </div>
           <div className="build-map-split__arrow" />

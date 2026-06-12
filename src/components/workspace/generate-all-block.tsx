@@ -24,7 +24,6 @@ const TAB_MAP: Record<string, string> = {
   prd: "prd",
   mvp: "mvp",
   mockups: "mockups",
-  launch: "launch",
 }
 
 // ---------------------------------------------------------------------------

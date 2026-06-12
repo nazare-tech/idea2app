@@ -8,13 +8,12 @@ import {
 import type { DocumentType } from "./document-definitions"
 import type { QueueItem } from "./generate-all-helpers"
 
-const docTypes: DocumentType[] = ["competitive", "prd", "mvp", "mockups", "launch"]
+const docTypes: DocumentType[] = ["competitive", "prd", "mvp", "mockups"]
 const labels: Partial<Record<DocumentType, string>> = {
   competitive: "Market Research",
   prd: "Product Plan",
   mvp: "First Version Plan",
   mockups: "Design Mockups",
-  launch: "Launch Plan",
 }
 
 function item(docType: DocumentType, status: QueueItem["status"], extra: Partial<QueueItem> = {}): QueueItem {
@@ -107,12 +106,12 @@ test("buildDocumentGenerationDisplayStates: queue error maps to needs_retry", ()
     documentTypes: docTypes,
     labels,
     hasContent: {},
-    queueItems: [item("launch", "error", { error: "Launch failed" })],
+    queueItems: [item("competitive", "error", { error: "Market research failed" })],
   })
 
-  assert.equal(states.launch.displayStatus, "needs_retry")
-  assert.equal(states.launch.navStatus, "needs_retry")
-  assert.equal(states.launch.detail, "Launch failed")
+  assert.equal(states.competitive.displayStatus, "needs_retry")
+  assert.equal(states.competitive.navStatus, "needs_retry")
+  assert.equal(states.competitive.detail, "Market research failed")
 })
 
 test("buildDocumentGenerationDisplayStates: blocked dependents show waiting without retry", () => {

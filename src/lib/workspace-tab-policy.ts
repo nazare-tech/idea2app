@@ -3,7 +3,7 @@ import { isDocumentType, type DocumentType } from "@/lib/document-definitions"
 export const DEFAULT_WORKSPACE_DOCUMENT: DocumentType = "competitive"
 
 export function isWorkspaceDocumentType(value: string | null | undefined): value is DocumentType {
-  return isDocumentType(value) && value !== "prompt"
+  return value !== "prompt" && value !== "launch" && isDocumentType(value)
 }
 
 export function resolveWorkspaceDocumentTab(value: string | null | undefined): DocumentType {
@@ -11,5 +11,5 @@ export function resolveWorkspaceDocumentTab(value: string | null | undefined): D
 }
 
 export function shouldRedirectBlockedWorkspaceTab(value: string | null | undefined) {
-  return value === "prompt"
+  return value === "prompt" || value === "launch"
 }

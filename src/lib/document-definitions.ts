@@ -3,7 +3,6 @@ import {
   Code,
   FileText,
   LayoutGrid,
-  Megaphone,
   PenLine,
   Rocket,
   Search,
@@ -20,7 +19,6 @@ export const DOCUMENT_TYPES = [
   "mockups",
   "techspec",
   "deploy",
-  "launch",
 ] as const
 
 export type DocumentType = typeof DOCUMENT_TYPES[number]
@@ -107,16 +105,6 @@ export const DOCUMENT_DEFINITIONS: DocumentDefinition[] = [
     creditCost: 5,
     showInNav: false,
   },
-  {
-    type: "launch",
-    label: "Launch Plan",
-    title: "Launch Plan",
-    subtitle: "Generate launch plan and distribution copy",
-    description: "",
-    icon: Megaphone,
-    creditCost: 5,
-    showInNav: true,
-  },
 ] satisfies DocumentDefinition[]
 
 export const DOCUMENT_DEFINITION_MAP = Object.fromEntries(
@@ -141,7 +129,6 @@ export const GENERATE_ALL_QUEUE_ORDER: DocumentType[] = [
   "prd",
   "mvp",
   "mockups",
-  "launch",
 ]
 
 /** Default AI models for each Generate All document type */
@@ -150,5 +137,4 @@ export const GENERATE_ALL_DEFAULT_MODELS: Record<string, string> = {
   prd:         PRODUCT_PLAN_DEFAULT_MODEL,
   mvp:         FIRST_VERSION_PLAN_DEFAULT_MODEL,
   mockups:     "openai/gpt-5.4-image-2",
-  launch:      "openai/gpt-5.4-mini",
 }

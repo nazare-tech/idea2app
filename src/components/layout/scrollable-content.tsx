@@ -1,9 +1,8 @@
 // src/components/layout/scrollable-content.tsx
 "use client"
 
-import React, { forwardRef, useRef, useMemo, useState, useEffect } from "react"
+import React, { forwardRef, useMemo, useState, useEffect } from "react"
 import { AlertCircle, CheckCircle2, Circle, Loader2, RotateCcw } from "lucide-react"
-import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { MockupGenerationLoader } from "@/components/ui/mockup-generation-loader"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import {
@@ -15,7 +14,6 @@ import {
   PrdDocumentBlocks,
 } from "@/components/analysis/planning-document-blocks"
 import { WorkspaceDocumentFrame as DocumentWrapper } from "@/components/layout/workspace-document-frame"
-import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
 import type { DocumentType } from "@/lib/document-definitions"
 import type { StreamStage } from "@/lib/parse-document-stream"
 import type {
@@ -184,43 +182,6 @@ function GenerationStatusModule({
 }
 
 /**
- * Renders a markdown document as a single MarkdownRenderer instance.
- * After the DOM renders, injects anchor IDs onto H2 elements by position
- * so sub-tab scroll targeting works from the AnchorNav.
- */
-function MarkdownDocumentSection({
-  content,
-  projectId,
-  navKey,
-}: {
-  content: string
-  projectId: string
-  navKey: string
-}) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const navItem = SCROLLABLE_NAV_ITEMS.find((item) => item.key === navKey)
-  const sections = useMemo(() => navItem?.sections ?? [], [navItem?.sections])
-
-  // After render, stamp anchor IDs onto H2 headings by their ordinal position.
-  // This is intentionally post-render DOM work so it doesn't block the initial paint.
-  useEffect(() => {
-    if (!containerRef.current || sections.length === 0) return
-    const h2s = containerRef.current.querySelectorAll("h2")
-    h2s.forEach((h2, idx) => {
-      if (idx < sections.length) {
-        h2.id = sections[idx].id
-      }
-    })
-  }, [content, sections])
-
-  return (
-    <div ref={containerRef}>
-      <MarkdownRenderer content={content} projectId={projectId} />
-    </div>
-  )
-}
-
-/**
  * Renders a single Stitch mockup concept as a two-column card:
  * iframe on the left, description + download button on the right.
  */
@@ -378,7 +339,6 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
     const prdData = documents["prd"]
     const mvpData = documents["mvp"]
     const mockupsData = documents["mockups"]
-    const launchData = documents["launch"]
     // Defer rendering of all sections below the first one to the next animation
     // frame. This allows the browser to paint the initial layout (first section +
     // skeletons) before doing the heavy markdown/structured-data rendering work,
@@ -500,27 +460,6 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        <DocumentWrapper navKey="launch">
-          {!renderDeferred ? (
-            <DocumentSkeleton label="Launch Plan" />
-          ) : launchData?.content ? (
-            <MarkdownDocumentSection
-              content={launchData.content}
-              projectId={projectId}
-              navKey="launch"
-            />
-          ) : launchData?.displayState && launchData.displayState.displayStatus !== "idle" ? (
-            <GenerationStatusModule
-              label="Launch Plan"
-              state={launchData.displayState}
-              onGenerateDocument={onGenerateDocument}
-            />
-          ) : launchData?.isGenerating || launchData?.isLoading ? (
-            <DocumentSkeleton label="Launch Plan" mode={getSkeletonMode(launchData)} />
-          ) : (
-            <EmptyState label="Launch Plan" />
-          )}
-        </DocumentWrapper>
       </div>
     )
   }

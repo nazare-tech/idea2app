@@ -6,7 +6,6 @@ export type ActiveDocumentType =
   | "mvp"
   | "mockups"
   | "techspec"
-  | "launch"
 
 export type ActiveDocumentOutputTable =
   | "analyses"
@@ -18,7 +17,7 @@ export type ActiveDocumentOutputTable =
 export interface ActiveDocumentIdentity {
   documentType: ActiveDocumentType
   outputTable: ActiveDocumentOutputTable
-  analysisType?: "competitive-analysis" | "launch-plan"
+  analysisType?: "competitive-analysis"
 }
 
 export interface ExistingActiveDocument extends ActiveDocumentIdentity {
@@ -54,11 +53,6 @@ const ACTIVE_DOCUMENT_IDENTITIES: Record<ActiveDocumentType, ActiveDocumentIdent
   techspec: {
     documentType: "techspec",
     outputTable: "tech_specs",
-  },
-  launch: {
-    documentType: "launch",
-    outputTable: "analyses",
-    analysisType: "launch-plan",
   },
 }
 
