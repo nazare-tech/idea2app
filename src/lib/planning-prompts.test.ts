@@ -3,43 +3,48 @@ import assert from "node:assert/strict"
 
 import { MVP_PLAN_SYSTEM_PROMPT, PRD_SYSTEM_PROMPT } from "./prompts"
 
-test("Product Plan prompt asks for bullet points where they improve scanability", () => {
-  assert.match(PRD_SYSTEM_PROMPT, /Use bullet points wherever they make the document easier to scan/)
-  assert.match(PRD_SYSTEM_PROMPT, /If a paragraph lists more than two related ideas, convert it into bullets/)
-  assert.match(PRD_SYSTEM_PROMPT, /Preserve required markdown tables/)
+// These tests guard the prompt-to-renderer contract: the prompts must keep
+// instructing the exact headings, labels, and tables that the block parsers
+// (src/lib/prd-document.ts, src/lib/mvp-plan-document.ts) consume by name.
+// They were last aligned to the current 13-section MVP / numbered-PRD contract
+// on 2026-06-12 after the prompt-shortening work; the parsers' alias lists are
+// the source of truth and were verified to match these assertions.
+
+test("Product Plan prompt asks for a scannable, bulleted structure with a quality bar", () => {
+  assert.match(PRD_SYSTEM_PROMPT, /## PRD quality standards/)
+  assert.match(PRD_SYSTEM_PROMPT, /Bullet list of specific, measurable business goals/)
+  assert.match(PRD_SYSTEM_PROMPT, /Use bullet points\. Explain briefly why each item is deferred/)
 })
 
 test("Product Plan prompt uses the requested section order and requirement groups", () => {
-  assert.doesNotMatch(PRD_SYSTEM_PROMPT, /^---$/m)
-  assert.doesNotMatch(PRD_SYSTEM_PROMPT, /##\s+\d+\.\s+User experience/i)
-  assert.match(PRD_SYSTEM_PROMPT, /Create exactly 3 personas/)
-  assert.match(PRD_SYSTEM_PROMPT, /- \*\*Archetype\*\*:/)
-  assert.match(PRD_SYSTEM_PROMPT, /- \*\*Meta\*\*: Age/)
-  assert.match(PRD_SYSTEM_PROMPT, /- \*\*Description\*\*:/)
-  assert.match(PRD_SYSTEM_PROMPT, /- \*\*Needs\*\*:/)
-  assert.match(PRD_SYSTEM_PROMPT, /- \*\*Pain points\*\*:/)
-  assert.match(PRD_SYSTEM_PROMPT, /- \*\*Motivation\*\*:/)
-  assert.match(PRD_SYSTEM_PROMPT, /### 5\.1 Functional/)
-  assert.match(PRD_SYSTEM_PROMPT, /### 5\.2 Non-Functional/)
-  assert.match(PRD_SYSTEM_PROMPT, /### 5\.3 Integration/)
+  // Personas: exactly 3, with the card fields the persona renderer reads.
+  assert.match(PRD_SYSTEM_PROMPT, /Exactly 3 personas/)
+  assert.match(PRD_SYSTEM_PROMPT, /\*\*Description\*\*/)
+  assert.match(PRD_SYSTEM_PROMPT, /\*\*Needs\*\*/)
+  assert.match(PRD_SYSTEM_PROMPT, /\*\*Pain points\*\*/)
+  assert.match(PRD_SYSTEM_PROMPT, /\*\*Motivation\*\*/)
 
+  // Functional requirements are split into the three grouped subsections.
+  assert.match(PRD_SYSTEM_PROMPT, /5\.1 Core requirements/)
+  assert.match(PRD_SYSTEM_PROMPT, /5\.2 States and errors/)
+  assert.match(PRD_SYSTEM_PROMPT, /5\.3 Constraints/)
+
+  // Numbered top-level sections appear in the contract order the renderer expects.
   const personasIndex = PRD_SYSTEM_PROMPT.indexOf("## 3. User personas")
-  const storiesIndex = PRD_SYSTEM_PROMPT.indexOf("## 4. User stories and acceptance criteria")
-  const requirementsIndex = PRD_SYSTEM_PROMPT.indexOf("## 5. Functional requirements")
-  const technicalIndex = PRD_SYSTEM_PROMPT.indexOf("## 6. Technical considerations")
+  const storiesIndex = PRD_SYSTEM_PROMPT.indexOf("## 6. User stories and acceptance criteria")
   const nonGoalsIndex = PRD_SYSTEM_PROMPT.indexOf("## 7. Non-goals / out of scope")
+  const technicalIndex = PRD_SYSTEM_PROMPT.indexOf("## 8. Technical considerations")
 
   assert.ok(personasIndex > -1)
   assert.ok(storiesIndex > personasIndex)
-  assert.ok(requirementsIndex > storiesIndex)
-  assert.ok(technicalIndex > requirementsIndex)
-  assert.ok(nonGoalsIndex > technicalIndex)
+  assert.ok(nonGoalsIndex > storiesIndex)
+  assert.ok(technicalIndex > nonGoalsIndex)
 })
 
-test("First Version Plan prompt asks for bullet points where they improve scanability", () => {
-  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Use bullet points wherever they make the plan easier/)
-  assert.match(MVP_PLAN_SYSTEM_PROMPT, /If a paragraph lists more than two related ideas, convert it into bullets/)
-  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Preserve required markdown tables/)
+test("First Version Plan prompt keeps concision and compression guidance", () => {
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Adaptive depth & compression/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Be concise/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Avoid fake precision/)
 })
 
 test("First Version Plan prompt preserves the renderer heading contract", () => {
@@ -48,15 +53,16 @@ test("First Version Plan prompt preserves the renderer heading contract", () => 
     "## 1. MVP Summary",
     "## 2. Key Assumptions and Scope Decisions",
     "## 3. Target User and Problem",
-    "## 4. Core User Flow",
-    "## 5. MVP Scope",
-    "## 6. Must-Have Features",
-    "## 7. Suggested Build Approach",
-    "## 8. AI-Friendly Build Sequence",
-    "## 9. Validation Plan",
-    "## 10. Cut List",
-    "## 11. AI Build Guardrails",
-    "## 12. Next Prompt for AI Coding Tool",
+    "## 4. MVP Goal, Definition of Done, and Riskiest Assumptions",
+    "## 5. Core User Flow",
+    "## 6. MVP Scope",
+    "## 7. Must-Have Features",
+    "## 8. Suggested Build Approach",
+    "## 9. AI-Friendly Build Sequence",
+    "## 10. AI Build Guardrails",
+    "## 11. Validation Plan",
+    "## 12. Cut List",
+    "## 13. Next Prompt for AI Coding Tool",
   ]
 
   let previousIndex = -1
@@ -66,20 +72,15 @@ test("First Version Plan prompt preserves the renderer heading contract", () => 
     assert.ok(nextIndex > previousIndex, `${heading} should appear after the previous required heading`)
     previousIndex = nextIndex
   }
-
-  assert.match(MVP_PLAN_SYSTEM_PROMPT, /do not omit, rename, reorder, or combine the required H2 sections/)
-  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Keep all 12 numbered H2 section headings exactly as written/)
 })
 
 test("First Version Plan prompt names required nested labels for visual cards", () => {
   for (const label of [
     "Primary User",
-    "Problem",
     "Current Workaround",
     "Desired Outcome",
     "Riskiest Product Assumption",
     "Riskiest Technical Assumption",
-    "Suggested Stack",
     "Manual Shortcuts",
     "First Test Audience",
     "How to Find Them",
@@ -91,13 +92,11 @@ test("First Version Plan prompt names required nested labels for visual cards", 
   }
 })
 
-test("First Version Plan prompt keeps required tables but uses metric bullets", () => {
-  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Preserve the required markdown tables for MVP Scope, Must-Have Features, Suggested Stack, AI-Friendly Build Sequence, and Cut List/)
+test("First Version Plan prompt keeps the required markdown tables", () => {
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| Category \| Include in MVP \| Exclude for Now \|/)
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| Feature \| Why It Matters \| Acceptance Criteria \|/)
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| Layer \| Recommendation \| Reason \|/)
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| Step \| Build Chunk \| Goal \| Test Before Moving On \|/)
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| If This Gets Complicated \| Simplify By \|/)
-  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Format Suggested Metrics as 3-5 bullet\/stat items, not a markdown table/)
-  assert.doesNotMatch(MVP_PLAN_SYSTEM_PROMPT, /\| Metric \| Suggested Target \| Why This Matters \|/)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /\| Metric \| Suggested Target \| Why It Matters \|/)
 })

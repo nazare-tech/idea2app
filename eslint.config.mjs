@@ -13,6 +13,10 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     ".claude/**",
+    // Design tooling artifacts and scratch dirs are not app code. Kept here
+    // even after "Design System/" relocates, as a guard against re-adding it.
+    "Design System/**",
+    "tmp/**",
   ]),
 ]);
 

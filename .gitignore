@@ -67,3 +67,15 @@ src/lib/stitch/test-fixture.json
 /design/*.png
 /tmp/
 
+# build, lint, and tooling artifacts (regenerable; do not track)
+/build.log
+/lint_final.txt
+/*.pdf
+/rebrand-preview.html
+/tmp-projects-empty-state.html
+.codex-artifacts/
+
+# Design tooling source — relocated to its own repo (kept on disk, not tracked)
+/Design System/
+/assets/logos/
+
