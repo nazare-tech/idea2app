@@ -69,10 +69,6 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     notFound()
   }
 
-  const newProjectFlag = resolvedSearchParams.new
-  const isNewProject =
-    newProjectFlag === "1" || newProjectFlag === "true"
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -135,8 +131,6 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         full_name: profileData?.full_name ?? undefined,
         avatar_url: profileData?.avatar_url ?? undefined,
       }}
-      isNewProject={isNewProject}
-      hasStructuredIntake={false}
     />
   )
 }

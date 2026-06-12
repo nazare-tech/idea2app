@@ -107,7 +107,6 @@ export const GENERATE_ALL_ACTION_MAP: Record<string, TokenBillableAction> = {
   prd: "prd",
   mvp: "mvp-plan",
   mockups: "mockup",
-  launch: "launch-plan",
 }
 
 /** Calculate total credit cost for Generate All given per-doc model selections and skipped types */

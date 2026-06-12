@@ -53,18 +53,13 @@ test("GENERATE_ALL_ACTION_MAP: mockups → mockup", () => {
   assert.equal(GENERATE_ALL_ACTION_MAP["mockups"], "mockup")
 })
 
-test("GENERATE_ALL_ACTION_MAP: launch → launch-plan", () => {
-  assert.equal(GENERATE_ALL_ACTION_MAP["launch"], "launch-plan")
-})
-
-test("GENERATE_ALL_ACTION_MAP: covers all 5 Generate All doc types", () => {
+test("GENERATE_ALL_ACTION_MAP: covers active Generate All doc types", () => {
   const keys = Object.keys(GENERATE_ALL_ACTION_MAP)
   assert.ok(keys.includes("competitive"))
   assert.ok(keys.includes("prd"))
   assert.ok(keys.includes("mvp"))
   assert.ok(keys.includes("mockups"))
-  assert.ok(keys.includes("launch"))
-  assert.equal(keys.length, 5)
+  assert.equal(keys.length, 4)
 })
 
 // =============================================================================
@@ -239,7 +234,7 @@ test("estimateGenerateAllCost: all docs match production default model costs", (
 })
 
 test("estimateGenerateAllCost: skipping all docs = 0", () => {
-  const skipAll = new Set(["competitive", "prd", "mvp", "mockups", "launch"])
+  const skipAll = new Set(["competitive", "prd", "mvp", "mockups"])
   assert.equal(estimateGenerateAllCost(DEFAULT_MODELS, skipAll), 0)
 })
 
@@ -253,12 +248,6 @@ test("estimateGenerateAllCost: skipping competitive reduces total by 20", () => 
   const full = estimateGenerateAllCost(DEFAULT_MODELS)
   const withoutCompetitive = estimateGenerateAllCost(DEFAULT_MODELS, new Set(["competitive"]))
   assert.equal(full - withoutCompetitive, 20)
-})
-
-test("estimateGenerateAllCost: skipping launch reduces total by 5", () => {
-  const full = estimateGenerateAllCost(DEFAULT_MODELS)
-  const withoutLaunch = estimateGenerateAllCost(DEFAULT_MODELS, new Set(["launch"]))
-  assert.equal(full - withoutLaunch, 5)
 })
 
 test("estimateGenerateAllCost: switching competitive to gpt-5 (1.5x) increases cost", () => {
@@ -287,7 +276,7 @@ test("estimateGenerateAllCost: skipping competitive and prd saves their default 
 })
 
 test("estimateGenerateAllCost: empty model selections uses default multiplier 1.0", () => {
-  // competitive-analysis=15×1.0=15, prd=10, mvp=10, mockup=0, launch=5 → total=40
+  // competitive-analysis=15×1.0=15, prd=10, mvp=10, mockup=0 → total=35
   const cost = estimateGenerateAllCost({})
-  assert.equal(cost, 40)
+  assert.equal(cost, 35)
 })

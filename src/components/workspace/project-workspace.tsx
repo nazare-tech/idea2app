@@ -96,8 +96,6 @@ interface ProjectWorkspaceProps {
   initialDocuments?: Partial<Record<DocumentType, unknown[]>>
   initialCredits?: number
   user: unknown
-  isNewProject?: boolean
-  hasStructuredIntake?: boolean
 }
 
 interface WorkspaceDocumentCollections {
@@ -107,7 +105,6 @@ interface WorkspaceDocumentCollections {
   mockups: Mockup[]
   techspec: TechSpec[]
   deploy: Deployment[]
-  launch: Analysis[]
 }
 
 const EMPTY_DOCUMENT_COLLECTIONS: WorkspaceDocumentCollections = {
@@ -117,7 +114,6 @@ const EMPTY_DOCUMENT_COLLECTIONS: WorkspaceDocumentCollections = {
   mockups: [],
   techspec: [],
   deploy: [],
-  launch: [],
 }
 
 type WorkspaceGenerationCounts = Partial<Record<DocumentType, number>>
@@ -162,9 +158,6 @@ function applyWorkspaceDocuments(
     case "deploy":
       next.deploy = documents as Deployment[]
       break
-    case "launch":
-      next.launch = documents as Analysis[]
-      break
   }
 }
 
@@ -198,44 +191,22 @@ export function ProjectWorkspace({
   initialDocuments,
   initialCredits = 0,
   user,
-  isNewProject = false,
-  hasStructuredIntake = false,
 }: ProjectWorkspaceProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [projectName, setProjectName] = useState(project.name)
-  const [draftProjectName, setDraftProjectName] = useState(project.name)
-  const [isEditingProjectName, setIsEditingProjectName] = useState(false)
-  const [isSavingProjectName, setIsSavingProjectName] = useState(false)
   const [isNameSet, setIsNameSet] = useState(
     project.name !== "Untitled" || !!project.description
   )
-  const [nameJustSet, setNameJustSet] = useState(false)
   const defaultActiveDocument: DocumentType = initialDocument
-  const projectNameInputRef = useRef<HTMLInputElement>(null)
-  const nameJustSetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeDocumentStorageKey = `project_${project.id}_active_tab`
   const mockupDraftRunStorageKey = `mockup_draft_run_${project.id}`
   const mockupDraftDesignPlanStorageKey = `mockup_draft_design_plan_${project.id}`
 
   useEffect(() => {
     setProjectName(project.name)
-    setDraftProjectName(project.name)
   }, [project.name])
-
-  useEffect(() => {
-    if (isEditingProjectName) {
-      projectNameInputRef.current?.focus()
-      projectNameInputRef.current?.select()
-    }
-  }, [isEditingProjectName])
-
-  useEffect(() => {
-    return () => {
-      if (nameJustSetTimerRef.current) clearTimeout(nameJustSetTimerRef.current)
-    }
-  }, [])
 
   const [activeDocument, setActiveDocument] = useState<DocumentType>(() => {
     // Only use searchParams for initial render to avoid hydration mismatch.
@@ -254,7 +225,6 @@ export function ProjectWorkspace({
   } as Record<DocumentType, number>)
   // Local content overrides for immediate UI updates after inline edits
   // Key format: `${documentType}-${recordId}` -> updated content
-  const [localContentOverrides, setLocalContentOverrides] = useState<Record<string, string>>({})
   const [credits, setCredits] = useState(initialCredits)
   const [documentCollections, setDocumentCollections] = useState<WorkspaceDocumentCollections>({
     ...EMPTY_DOCUMENT_COLLECTIONS,
@@ -264,7 +234,6 @@ export function ProjectWorkspace({
     mockups: (initialDocuments?.mockups as Mockup[] | undefined) ?? [],
     techspec: (initialDocuments?.techspec as TechSpec[] | undefined) ?? [],
     deploy: (initialDocuments?.deploy as Deployment[] | undefined) ?? [],
-    launch: (initialDocuments?.launch as Analysis[] | undefined) ?? [],
   })
   const [loadedDocuments, setLoadedDocuments] = useState<Record<DocumentType, boolean>>({
     prompt: true,
@@ -274,7 +243,6 @@ export function ProjectWorkspace({
     mockups: Boolean(initialDocuments?.mockups),
     techspec: Boolean(initialDocuments?.techspec),
     deploy: Boolean(initialDocuments?.deploy),
-    launch: Boolean(initialDocuments?.launch),
   })
   const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false)
   const loadedDocumentsRef = useRef(loadedDocuments)
@@ -309,10 +277,7 @@ export function ProjectWorkspace({
   const [renderedSectionIds, setRenderedSectionIds] = useState<ReadonlySet<string>>(() => new Set())
   const isScrollingProgrammatically = useRef(false)
 
-  const analyses = useMemo(
-    () => [...documentCollections.competitive, ...documentCollections.launch],
-    [documentCollections.competitive, documentCollections.launch]
-  )
+  const analyses = documentCollections.competitive
   const prds = documentCollections.prd
   const mvpPlans = documentCollections.mvp
   const mockups = documentCollections.mockups
@@ -406,8 +371,6 @@ export function ProjectWorkspace({
         return techSpecs.length
       case "deploy":
         return deployments.length
-      case "launch":
-        return analyses.filter(a => a.type === "launch-plan").length
       default:
         return 0
     }
@@ -456,7 +419,6 @@ export function ProjectWorkspace({
         mockups: false,
         techspec: false,
         deploy: false,
-        launch: false,
       }
     }
 
@@ -468,7 +430,6 @@ export function ProjectWorkspace({
       mockups: loadGeneratingState("mockups"),
       techspec: loadGeneratingState("techspec"),
       deploy: loadGeneratingState("deploy"),
-      launch: loadGeneratingState("launch"),
     }
   }, [loadGeneratingState])
 
@@ -615,7 +576,7 @@ export function ProjectWorkspace({
         })
 
         if (didChange) {
-          void loadWorkspaceDocuments(["competitive", "prd", "mvp", "mockups", "techspec", "deploy", "launch"], { force: true })
+          void loadWorkspaceDocuments(["competitive", "prd", "mvp", "mockups", "techspec", "deploy"], { force: true })
         }
       }
 
@@ -640,8 +601,8 @@ export function ProjectWorkspace({
     getGenerationSnapshot,
     checkIfContentIncreased,
     loadGeneratingState,
+    loadWorkspaceDocuments,
     saveGeneratingState,
-    router,
   ])
 
   useEffect(() => {
@@ -783,8 +744,6 @@ export function ProjectWorkspace({
         return techSpecs.length > 0 ? "done" : "pending"
       case "deploy":
         return deployments.length > 0 ? "done" : "pending"
-      case "launch":
-        return analyses.some(a => a.type === "launch-plan") ? "done" : "pending"
       default:
         return "pending"
     }
@@ -813,20 +772,18 @@ export function ProjectWorkspace({
   ), [mockupDraftOptions])
 
   const displayStates = buildDocumentGenerationDisplayStates({
-    documentTypes: ["competitive", "prd", "mvp", "mockups", "launch"],
+    documentTypes: ["competitive", "prd", "mvp", "mockups"],
     labels: {
       competitive: "Market Research",
       prd: "Product Plan",
       mvp: "First Version Plan",
       mockups: "Design Mockups",
-      launch: "Launch Plan",
     },
     hasContent: {
       competitive: analyses.some(a => a.type === "competitive-analysis"),
       prd: prds.length > 0,
       mvp: mvpPlans.length > 0,
       mockups: mockups.length > 0,
-      launch: analyses.some(a => a.type === "launch-plan"),
     },
     queueItems: [...generateAllQueue, ...localFailureQueueItems],
     locallyGenerating: generatingDocuments,
@@ -841,58 +798,8 @@ export function ProjectWorkspace({
     return getLegacyDocumentStatus(type)
   }
 
-  const getVersionsForDocument = (type: DocumentType) => {
-    switch (type) {
-      case "competitive":
-        return analyses.filter(a => a.type === "competitive-analysis")
-      case "prd":
-        return prds
-      case "mvp":
-        return mvpPlans
-      case "mockups":
-        return mockups
-      case "techspec":
-        return techSpecs
-      case "deploy":
-        return deployments
-      case "launch":
-        return analyses.filter(a => a.type === "launch-plan")
-      default:
-        return []
-    }
-  }
-
   const getDocumentContent = (type: DocumentType): string | null => {
     const versionIndex = selectedVersionIndex[type] || 0
-
-    // Helper to get record ID for local override lookup
-    const getRecordId = (): string | null => {
-      switch (type) {
-        case "competitive":
-          return analyses.filter(a => a.type === "competitive-analysis")[versionIndex]?.id || null
-        case "prd":
-          return prds[versionIndex]?.id || null
-        case "mvp":
-          return mvpPlans[versionIndex]?.id || null
-        case "mockups":
-          return mockups[versionIndex]?.id || null
-        case "techspec":
-          return techSpecs[versionIndex]?.id || null
-        case "launch":
-          return analyses.filter(a => a.type === "launch-plan")[versionIndex]?.id || null
-        default:
-          return null
-      }
-    }
-
-    // Check for local override first (for immediate UI updates after inline edits)
-    const recordId = getRecordId()
-    if (recordId) {
-      const overrideKey = `${type}-${recordId}`
-      if (localContentOverrides[overrideKey]) {
-        return localContentOverrides[overrideKey]
-      }
-    }
 
     switch (type) {
       case "prompt":
@@ -914,9 +821,6 @@ export function ProjectWorkspace({
         return deployment.deployment_url
           ? `**Deployment URL:** ${deployment.deployment_url}\n\n**Status:** ${deployment.status || "Unknown"}`
           : deployment.error_message || deployment.build_logs || null
-      case "launch":
-        const launchPlans = analyses.filter(a => a.type === "launch-plan")
-        return launchPlans[versionIndex]?.content || null
       default:
         return null
     }
@@ -930,22 +834,9 @@ export function ProjectWorkspace({
     switch (type) {
       case "competitive":
         return analyses.filter(a => a.type === "competitive-analysis")[versionIndex]?.metadata || null
-      case "launch":
-        return analyses.filter(a => a.type === "launch-plan")[versionIndex]?.metadata || null
       default:
         return null
     }
-  }
-
-  const getTotalVersions = (type: DocumentType): number => {
-    return getVersionsForDocument(type).length
-  }
-
-  const handleVersionChange = (type: DocumentType, index: number) => {
-    setSelectedVersionIndex(prev => ({
-      ...prev,
-      [type]: index,
-    }))
   }
 
   const handleProjectNameUpdate = async (nextName: string) => {
@@ -973,54 +864,6 @@ export function ProjectWorkspace({
       console.error("Error updating project name:", error)
       throw error
     }
-  }
-
-  const finishProjectRename = async () => {
-    const nextName = draftProjectName.trim() || "Untitled"
-    setIsEditingProjectName(false)
-
-    if (nextName === projectName) {
-      setDraftProjectName(projectName)
-      return
-    }
-
-    setIsSavingProjectName(true)
-    try {
-      await handleProjectNameUpdate(nextName)
-      setDraftProjectName(nextName)
-      setIsNameSet(true)
-    } catch {
-      setDraftProjectName(projectName)
-    } finally {
-      setIsSavingProjectName(false)
-    }
-  }
-
-  const handleProjectNameGenerated = useCallback((name: string) => {
-    setProjectName(name)
-    setDraftProjectName(name)
-    setIsNameSet(true)
-    setNameJustSet(true)
-    if (nameJustSetTimerRef.current) clearTimeout(nameJustSetTimerRef.current)
-    nameJustSetTimerRef.current = setTimeout(() => setNameJustSet(false), 1200)
-  }, [])
-
-  const handleDocumentSelect = (type: DocumentType) => {
-    if (!isWorkspaceDocumentType(type)) {
-      return
-    }
-
-    setActiveDocument(type)
-
-    // Use window.history directly to avoid triggering Next.js RSC re-fetch.
-    // router.push/replace with only search param changes re-fetches all server data,
-    // causing a visible freeze. We only need the URL updated for deep-linking.
-    if (typeof window !== "undefined") {
-      const nextParams = new URLSearchParams(window.location.search)
-      nextParams.set("tab", type)
-      window.history.pushState(null, "", `${pathname}?${nextParams.toString()}`)
-    }
-
   }
 
   const handleScrollNavigate = useCallback((targetId: string) => {
@@ -1107,171 +950,10 @@ export function ProjectWorkspace({
           return { canGenerate: false, reason: "Generate Tech Spec first" }
         }
         return { canGenerate: true }
-      case "launch":
-        if (!project.description) {
-          return { canGenerate: false, reason: "Please add a project description first" }
-        }
-        return { canGenerate: true }
       default:
         return { canGenerate: true }
     }
   }, [analyses, mvpPlans.length, prds.length, project.description, techSpecs.length])
-
-  const documentStatuses = (["prompt", "competitive", "prd", "mvp", "mockups", "techspec", "deploy", "launch"] as DocumentType[]).map(
-    type => ({ type, status: getDocumentStatus(type) })
-  )
-
-  const handleGenerateContent = async (
-    model?: string,
-    options?: {
-      marketingBrief?: {
-        targetAudience: string
-        stage: string
-        budget: string
-        channels: string
-        launchWindow: string
-      }
-    }
-  ) => {
-    const generatingType = activeDocument
-    let didGenerate = false
-    let wasStreaming = false
-
-    // Set generating state for the active document
-    setGeneratingDocuments(prev => ({ ...prev, [generatingType]: true }))
-    saveGeneratingState(generatingType, true)
-
-    try {
-      let endpoint = ""
-
-      switch (generatingType) {
-        case "prompt":
-          throw new Error("Prompt generation is not supported")
-        case "competitive":
-          endpoint = "/api/analysis/competitive-analysis"
-          break
-        case "prd":
-          endpoint = "/api/analysis/prd"
-          break
-        case "mvp":
-          endpoint = "/api/analysis/mvp-plan"
-          break
-        case "mockups":
-          endpoint = "/api/mockups/generate"
-          break
-        case "techspec":
-          endpoint = "/api/analysis/tech-spec"
-          break
-        case "deploy":
-          endpoint = "/api/generate-app"
-          break
-        case "launch":
-          endpoint = "/api/launch/plan"
-          break
-        default:
-          throw new Error("Unsupported document type")
-      }
-
-      // Get market research for Product Plan generation
-      const competitiveAnalysis = analyses.find(a => a.type === "competitive-analysis")
-
-      // Get latest Product Plan for First Version Plan and tech spec generation
-      const latestPrd = prds[0]
-
-      // Get latest First Version Plan for mockup generation
-      const latestMvp = mvpPlans[0]
-
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), GENERATION_REQUEST_TIMEOUT_MS)
-
-      let response: Response
-      try {
-        response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            projectId: project.id,
-            idea: project.description,
-            name: projectName,
-            ...(model && { model }),
-            ...(!["deploy", "launch", "prd", "mvp"].includes(generatingType) && { stream: true }),
-            ...(generatingType === "deploy" && { appType: "dynamic" }),
-            ...(generatingType === "prd" && competitiveAnalysis?.content && {
-              competitiveAnalysis: competitiveAnalysis.content
-            }),
-            ...(generatingType === "mvp" && latestPrd?.content && {
-              prd: latestPrd.content
-            }),
-            ...(generatingType === "mockups" && latestMvp?.content && {
-              mvpPlan: latestMvp.content,
-              projectName: project.name
-            }),
-            ...(generatingType === "techspec" && latestPrd?.content && {
-              prd: latestPrd.content
-            }),
-            ...(generatingType === "launch" && options?.marketingBrief && {
-              marketingBrief: options.marketingBrief,
-            }),
-          }),
-        })
-      } finally {
-        clearTimeout(timeoutId)
-      }
-
-      if (!response.ok) {
-        let errorMsg = "Failed to generate content"
-        try {
-          const errorData = await response.json()
-          if (errorData?.error) errorMsg = errorData.error
-        } catch {
-          // ignore parse errors
-        }
-        throw new Error(errorMsg)
-      }
-
-      const contentType = response.headers.get("Content-Type") ?? ""
-      if (contentType.includes("application/x-ndjson")) {
-        // Streaming path: process NDJSON events live
-        wasStreaming = true
-        let streamError: string | undefined
-        await parseDocumentStream(response, {
-          onStage: () => {},
-          onToken: () => {},
-          onDone: () => { didGenerate = true },
-          onError: (message) => {
-            streamError = message
-          },
-        })
-        if (streamError) throw new Error(streamError)
-      } else {
-        // Non-streaming JSON path (deploy or fallback)
-        didGenerate = true
-      }
-    } catch (error) {
-      console.error("Error generating content:", error)
-      if (error instanceof Error && error.name === "AbortError") {
-        alert(GENERATION_TIMEOUT_MESSAGE)
-      } else if (error instanceof Error) {
-        alert(error.message)
-      }
-    } finally {
-      // Clear generation state once request finishes
-      setGeneratingDocuments(prev => ({ ...prev, [generatingType]: false }))
-      saveGeneratingState(generatingType, false)
-    }
-
-    if (!didGenerate) return
-
-    if (wasStreaming) {
-      // DB save already committed before server sent 'done'; no delay needed
-      await loadWorkspaceDocuments([generatingType], { force: true })
-    } else {
-      // Wait a moment for database transaction to complete
-      await new Promise(resolve => setTimeout(resolve, 500))
-      await loadWorkspaceDocuments([generatingType], { force: true })
-    }
-  }
 
   // Generate a specific document type (decoupled from activeDocument state).
   // Used by GenerateAllContext for sequential pipeline generation.
@@ -1287,7 +969,6 @@ export function ProjectWorkspace({
           prd: "/api/analysis/prd",
           mvp: "/api/analysis/mvp-plan",
           mockups: "/api/mockups/generate",
-          launch: "/api/launch/plan",
         }
         const endpoint = endpointMap[docType]
         if (!endpoint) throw new Error(`Unsupported document type: ${docType}`)
@@ -1695,15 +1376,12 @@ export function ProjectWorkspace({
               idea: project.description,
               name: projectName,
               ...(model && { model }),
-              ...(!["launch", "prd", "mvp"].includes(docType) && { stream: true }),
+              ...(!["prd", "mvp"].includes(docType) && { stream: true }),
               ...(docType === "prd" && competitiveContent && {
                 competitiveAnalysis: competitiveContent,
               }),
               ...(docType === "mvp" && prdContent && {
                 prd: prdContent,
-              }),
-              ...(docType === "launch" && options?.marketingBrief && {
-                marketingBrief: options.marketingBrief,
               }),
             }),
           })
@@ -1807,26 +1485,6 @@ export function ProjectWorkspace({
     }
   }, [checkPrerequisites, generateAllQueue, generateAllStatus, generateDocument, resumeGenerateAll])
 
-  const handleUpdateDescription = async (description: string) => {
-    try {
-      const response = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to update description")
-      }
-
-      void loadWorkspaceDocuments([activeDocument], { force: true })
-      // Fallback: unblock name editing if AI name generation failed silently
-      if (!isNameSet) setTimeout(() => setIsNameSet(true), 3000)
-    } catch (error) {
-      console.error("Error updating description:", error)
-    }
-  }
-
   // Build document data map for ScrollableContent
   const scrollableDocuments: Record<string, {
     content: string | null
@@ -1862,13 +1520,6 @@ export function ProjectWorkspace({
       isGenerating: generatingDocuments["mockups"] || displayStates.mockups?.displayStatus === "generating",
       isLoading: !loadedDocuments.mockups,
       displayState: displayStates.mockups,
-    },
-    launch: {
-      content: getDocumentContent("launch"),
-      metadata: null,
-      isGenerating: generatingDocuments["launch"] || displayStates.launch?.displayStatus === "generating",
-      isLoading: !loadedDocuments.launch,
-      displayState: displayStates.launch,
     },
   }
 
@@ -1909,12 +1560,13 @@ export function ProjectWorkspace({
         <ProjectHeader
           projectName={projectName}
           isNameSet={isNameSet}
-          nameJustSet={nameJustSet}
+          nameJustSet={false}
           onStartRename={() => {}}
           onFinishRename={async (name) => {
             await handleProjectNameUpdate(name)
+            setIsNameSet(true)
           }}
-          isSavingName={isSavingProjectName}
+          isSavingName={false}
           user={user as { email?: string; full_name?: string; avatar_url?: string }}
           credits={credits}
         />

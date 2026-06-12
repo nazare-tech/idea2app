@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { isDocumentType, type DocumentType } from "@/lib/document-definitions"
-import { resolveWorkspaceDocumentTab } from "@/lib/workspace-tab-policy"
+import type { DocumentType } from "@/lib/document-definitions"
+import { isWorkspaceDocumentType, resolveWorkspaceDocumentTab } from "@/lib/workspace-tab-policy"
 
 interface WorkspacePayload {
   project: {
@@ -19,7 +19,6 @@ interface WorkspacePayload {
     mockups: Array<{ id: string; content: string; model_used: string | null; created_at: string | null }>
     techspec: Array<{ id: string; content: string; created_at: string | null }>
     deploy: Array<{ id: string; deployment_url: string | null; github_repo_url: string | null; status: string | null; build_logs: string | null; error_message: string | null; created_at: string | null }>
-    launch: Array<{ id: string; type: string; content: string; created_at: string | null; metadata?: unknown }>
   }
 }
 
@@ -30,7 +29,6 @@ const EMPTY_DOCUMENTS: WorkspacePayload["documents"] = {
   mockups: [],
   techspec: [],
   deploy: [],
-  launch: [],
 }
 
 function parseRequestedDocuments(searchParams: URLSearchParams): DocumentType[] {
@@ -42,7 +40,7 @@ function parseRequestedDocuments(searchParams: URLSearchParams): DocumentType[] 
   const requested = docsParam
     .split(",")
     .map((value) => value.trim())
-    .filter((value): value is DocumentType => isDocumentType(value))
+    .filter((value): value is DocumentType => isWorkspaceDocumentType(value))
 
   return requested.length > 0 ? Array.from(new Set(requested)) : [resolveWorkspaceDocumentTab(searchParams.get("tab"))]
 }
@@ -140,16 +138,6 @@ export async function GET(
               .eq("project_id", id)
               .order("created_at", { ascending: false })
             documents.deploy = data ?? []
-            break
-          }
-          case "launch": {
-            const { data } = await supabase
-              .from("analyses")
-              .select("id, type, content, created_at, metadata")
-              .eq("project_id", id)
-              .eq("type", "launch-plan")
-              .order("created_at", { ascending: false })
-            documents.launch = data ?? []
             break
           }
           case "prompt":

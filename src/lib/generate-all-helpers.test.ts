@@ -93,13 +93,11 @@ test("buildQueue: mixed statuses — only done docs are skipped", () => {
   const mvp = queue.find((item) => item.docType === "mvp")!
   const prd = queue.find((item) => item.docType === "prd")!
   const mockups = queue.find((item) => item.docType === "mockups")!
-  const launch = queue.find((item) => item.docType === "launch")!
 
   assert.equal(competitive.status, "skipped")
   assert.equal(mvp.status, "skipped")
   assert.equal(prd.status, "pending")
   assert.equal(mockups.status, "pending")
-  assert.equal(launch.status, "pending")
 })
 
 // =============================================================================
@@ -176,23 +174,17 @@ test("shouldResumeQueueAfterDocumentRetry: ignores unrelated failed documents", 
   assert.equal(
     shouldResumeQueueAfterDocumentRetry({
       queueStatus: "partial",
-      retriedDocType: "launch",
+      retriedDocType: "mockups",
       queue: [
         { docType: "competitive", label: "Market Research", status: "done", creditCost: 0 },
         { docType: "prd", label: "Product Plan", status: "error", creditCost: 0 },
         { docType: "mvp", label: "First Version Plan", status: "blocked", creditCost: 0 },
         { docType: "mockups", label: "Design Mockups", status: "blocked", creditCost: 0 },
-        { docType: "launch", label: "Launch Plan", status: "error", creditCost: 0 },
+        { docType: "techspec", label: "Tech Spec", status: "error", creditCost: 0 },
       ],
     }),
     false,
   )
-})
-
-test("buildQueue: launch production default cost is 5", () => {
-  const queue = buildQueue(DEFAULT_MODELS, allPending)
-  const launch = queue.find((item) => item.docType === "launch")!
-  assert.equal(launch.creditCost, 5)
 })
 
 test("buildQueue: switching competitive to gpt-5 (1.5x) → cost 25 instead of 20", () => {
@@ -315,7 +307,7 @@ async function simulateLoop(
   return { queue: final, status: "completed", creditsUsed }
 }
 
-/** Build a fresh all-pending queue for all 5 Generate All docs */
+/** Build a fresh all-pending queue for all active Generate All docs */
 function pendingQueue(): SimItem[] {
   return GENERATE_ALL_QUEUE_ORDER.map((docType) => ({
     docType,
@@ -327,7 +319,7 @@ function pendingQueue(): SimItem[] {
 // Loop: happy path
 // =============================================================================
 
-test("loop: processes all 5 docs in GENERATE_ALL_QUEUE_ORDER", async () => {
+test("loop: processes all active docs in GENERATE_ALL_QUEUE_ORDER", async () => {
   const order: string[] = []
   const result = await simulateLoop(
     pendingQueue(),
@@ -467,24 +459,24 @@ test("loop: error on middle doc leaves preceding docs done and following docs pe
   assert.equal(mvp.status, "pending") // never reached
 })
 
-test("loop: error on last doc (launch) marks only launch as error", async () => {
+test("loop: error on last doc marks only that doc as error", async () => {
   const result = await simulateLoop(
     pendingQueue(),
     DEFAULT_MODELS,
     async (docType) => {
-      if (docType === "launch") throw new Error("Launch failed")
+      if (docType === "mockups") throw new Error("Mockups failed")
       return true
     },
     allPending,
     { current: false },
   )
   assert.equal(result.status, "error")
-  const launch = result.queue.find((item) => item.docType === "launch")!
-  assert.equal(launch.status, "error")
-  assert.equal(launch.error, "Launch failed")
-  // first 4 docs should be done
+  const mockups = result.queue.find((item) => item.docType === "mockups")!
+  assert.equal(mockups.status, "error")
+  assert.equal(mockups.error, "Mockups failed")
+  // first 3 docs should be done
   const doneCount = result.queue.filter((item) => item.status === "done").length
-  assert.equal(doneCount, 4)
+  assert.equal(doneCount, 3)
 })
 
 test("loop: generateDocument returning false is treated as an error (not crash)", async () => {
@@ -554,7 +546,7 @@ test("loop: cancel mid-generation stops further docs from being processed", asyn
   )
   assert.equal(result.status, "cancelled")
   // competitive was processed; prd might have been called then loop saw cancel
-  // At minimum, not all 5 should have been processed
+  // At minimum, not all active docs should have been processed
   assert.ok(processed.length < GENERATE_ALL_QUEUE_ORDER.length)
 })
 
@@ -574,7 +566,7 @@ test("loop: cancelled docs remain in pending/generating — not forced to 'cance
   )
   assert.equal(result.status, "cancelled")
 
-  // mvp, mockups, launch were never touched by the loop → still pending
+  // mvp and mockups were never touched by the loop → still pending
   const mvp = result.queue.find((item) => item.docType === "mvp")!
   assert.ok(mvp.status === "pending" || mvp.status === "cancelled") // pending in sim, context marks cancelled
 })
@@ -645,7 +637,6 @@ test("loop: queue with pre-skipped items still generates remaining pending docs"
   assert.ok(generated.includes("prd"))
   assert.ok(generated.includes("mvp"))
   assert.ok(generated.includes("mockups"))
-  assert.ok(generated.includes("launch"))
 })
 
 test("legacy loop: deterministic queue order is retained", async () => {
@@ -660,5 +651,4 @@ test("legacy loop: deterministic queue order is retained", async () => {
   assert.ok(order.indexOf("competitive") < order.indexOf("prd"))
   assert.ok(order.indexOf("prd") < order.indexOf("mvp"))
   assert.ok(order.indexOf("mvp") < order.indexOf("mockups"))
-  assert.ok(order.indexOf("mockups") < order.indexOf("launch"))
 })

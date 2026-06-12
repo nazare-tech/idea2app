@@ -21,7 +21,6 @@ export type OnboardingLoadingRowKey =
   | "prd"
   | "mvp"
   | "mockups"
-  | "launch"
 
 export interface OnboardingQueueItem {
   docType: DocumentType
@@ -89,12 +88,6 @@ const ONBOARDING_QUEUE_DEFINITIONS: Array<{
     dependsOn: ["mvp"],
     stageMessage: "Generating visual directions",
   },
-  {
-    docType: "launch",
-    label: "Launch Plan",
-    dependsOn: [],
-    stageMessage: "Mapping channels",
-  },
 ]
 
 const LOADING_ROW_DEFINITIONS: Array<{
@@ -132,12 +125,6 @@ const LOADING_ROW_DEFINITIONS: Array<{
     label: "Design mockups",
     phrase: "Generating visual directions",
     docType: "mockups",
-  },
-  {
-    key: "launch",
-    label: "Launch plan",
-    phrase: "Mapping launch channels",
-    docType: "launch",
   },
 ]
 

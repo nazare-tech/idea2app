@@ -6,7 +6,6 @@ import {
   ClipboardList,
   FileText,
   LayoutGrid,
-  Megaphone,
   Rocket,
 } from "lucide-react"
 
@@ -58,12 +57,6 @@ const DEFAULT_ROWS: IntakeLoadingRow[] = [
     message: "Generating visual directions",
     status: "pending",
   },
-  {
-    key: "launch",
-    label: "Launch plan",
-    message: "Mapping launch channels",
-    status: "pending",
-  },
 ]
 
 const ROW_ICONS: Record<OnboardingLoadingRowKey, ElementType> = {
@@ -72,7 +65,6 @@ const ROW_ICONS: Record<OnboardingLoadingRowKey, ElementType> = {
   prd: ClipboardList,
   mvp: Rocket,
   mockups: LayoutGrid,
-  launch: Megaphone,
 }
 
 export function IntakeSubmissionLoadingPanel({

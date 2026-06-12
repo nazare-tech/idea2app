@@ -47,14 +47,12 @@ const DEFAULT_MESSAGES: Record<DocumentType, string> = {
   mockups: "Generating visual directions",
   techspec: "Drafting technical specifications",
   deploy: "Preparing deployment",
-  launch: "Mapping launch channels",
 }
 
 const QUEUED_DETAILS: Partial<Record<DocumentType, string>> = {
   prd: "This will start automatically after market research is ready.",
   mvp: "This will start automatically after the Product Plan is ready.",
   mockups: "Visual directions will generate after the First Version Plan is ready.",
-  launch: "This will start automatically.",
 }
 
 const DEPENDENCY_DETAILS: Partial<Record<DocumentType, string>> = {

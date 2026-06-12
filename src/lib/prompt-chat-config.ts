@@ -12,7 +12,6 @@ export const DEFAULT_MODELS: Record<string, string> = {
   prd:         "anthropic/claude-sonnet-4-6",    // Product Plan
   mvp:         "anthropic/claude-sonnet-4-6",    // First Version Plan
   mockups:     "openai/gpt-5.4-image-2",         // Design Mockups
-  launch:      "openai/gpt-5.4-mini",            // Launch Plan
 }
 
 /** Fallback when a tab key isn't in DEFAULT_MODELS */

@@ -48,13 +48,6 @@ export interface GenerateDocumentFn {
     model: string,
     options?: {
       signal?: AbortSignal
-      marketingBrief?: {
-        targetAudience: string
-        stage: string
-        budget: string
-        channels: string
-        launchWindow: string
-      }
     },
   ): Promise<boolean>
 }

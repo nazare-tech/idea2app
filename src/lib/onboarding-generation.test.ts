@@ -11,7 +11,7 @@ test("buildOnboardingGenerationQueue: includes mockups after MVP", () => {
   const queue = buildOnboardingGenerationQueue("test-run")
   const docTypes = queue.map((item) => item.docType)
 
-  assert.deepEqual(docTypes, ["competitive", "prd", "mvp", "mockups", "launch"])
+  assert.deepEqual(docTypes, ["competitive", "prd", "mvp", "mockups"])
   assert.deepEqual(queue.find((item) => item.docType === "mockups")?.dependsOn, ["mvp"])
   assert.equal(queue.find((item) => item.docType === "mockups")?.creditCost, 0)
 })

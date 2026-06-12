@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import {
   runCompetitiveAnalysis,
-  runLaunchPlan,
   runMVPPlan,
   runPRD,
   runTechSpec,
@@ -173,31 +172,6 @@ export async function generateProjectDocument({
       .select("id")
       .single()
     return requireGeneratedOutput(data, error, "mockups")
-  } else if (docType === "launch") {
-    const result = await runLaunchPlan({
-      idea,
-      name,
-      model: modelId,
-      brief: {
-        targetAudience: "Early adopters and tech-savvy users",
-        stage: "Pre-launch",
-        budget: "Bootstrap / Lean",
-        channels: "Product Hunt, X, Show HN, Founder communities, Email/waitlist",
-        launchWindow: "Next 30 days",
-      },
-    })
-    const content = linkifyBareUrls(result.content)
-    const { data, error } = await supabase
-      .from("analyses")
-      .insert({
-        project_id: projectId,
-        type: "launch-plan",
-        content,
-        metadata: { source: result.source, model: result.model, generated_at: new Date().toISOString() },
-      })
-      .select("id")
-      .single()
-    return requireGeneratedOutput(data, error, "analyses")
   } else if (docType === "techspec") {
     const { data: prdRow } = await supabase
       .from("prds")

@@ -110,17 +110,6 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
       { id: "mockups-concept-3", label: "Concept 3" },
     ],
   },
-  {
-    key: "launch",
-    label: "Launch Plan",
-    sourceType: "launch",
-    sections: [
-      { id: "marketing-audience", label: "Best Customer Segments" },
-      { id: "marketing-gtm", label: "How You'll Reach Customers" },
-      { id: "marketing-budget", label: "Budget Allocation" },
-      { id: "marketing-copy-pack", label: "Launch Copy & 14-Day Checklist" },
-    ],
-  },
 ]
 
 /** Get the nav item key for a given anchor section ID */

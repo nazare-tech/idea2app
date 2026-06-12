@@ -224,17 +224,6 @@ async function loadOwnedDocument({
     return data ? toPdfDocument(data.content, project.name, "Competitive Analysis") : null
   }
 
-  if (documentType === "launch" || documentType === "launch-plan") {
-    const { data } = await supabase
-      .from("analyses")
-      .select("content, type")
-      .eq("id", documentId)
-      .eq("project_id", projectId)
-      .eq("type", "launch-plan")
-      .single()
-    return data ? toPdfDocument(data.content, project.name, "Launch Plan") : null
-  }
-
   return null
 }
 
