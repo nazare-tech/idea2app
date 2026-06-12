@@ -256,7 +256,7 @@ export function getActiveMonthlyProjectWindow(
   const start = parseDate(subscription?.current_period_start)
   const end = parseDate(subscription?.current_period_end)
 
-  if (start && end && start < end && start <= date && date < end) {
+  if (start && end && start < end && start <= date && date < end && isMonthlyLikeWindow(start, end)) {
     return {
       start: start.toISOString(),
       end: end.toISOString(),
@@ -265,6 +265,11 @@ export function getActiveMonthlyProjectWindow(
   }
 
   return getUtcCalendarMonthWindow(date)
+}
+
+function isMonthlyLikeWindow(start: Date, end: Date): boolean {
+  const maxMonthlyWindowMs = 45 * 24 * 60 * 60 * 1000
+  return end.getTime() - start.getTime() <= maxMonthlyWindowMs
 }
 
 export function getLifetimeProjectWindow(): MonthlyProjectWindow {

@@ -22,14 +22,52 @@ interface Plan {
   features: string[]
   stripe_price_id: string | null
   is_active: boolean | null
+  plan_prices?: PlanPrice[]
+}
+
+interface PlanPrice {
+  id: string
+  plan_id: string
+  stripe_price_id: string | null
+  unit_amount_cents: number
+  interval_unit: string
+  interval_count: number
+  label: string
+  savings_label: string | null
+  checkout_enabled: boolean
+  sort_order: number
 }
 
 interface Subscription {
   id: string
   plan_id: string | null
+  plan_price_id: string | null
   status: string
   cancel_at_period_end: boolean | null
   current_period_end: string | null
+}
+
+function normalizePlanPrices(value: unknown): PlanPrice[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value
+    .filter((price): price is PlanPrice => {
+      return Boolean(
+        price &&
+          typeof price === "object" &&
+          "id" in price &&
+          typeof price.id === "string" &&
+          "unit_amount_cents" in price &&
+          typeof price.unit_amount_cents === "number"
+      )
+    })
+    .sort((left, right) => left.sort_order - right.sort_order)
+}
+
+function isCheckoutReadyPlanPrice(price: PlanPrice) {
+  return Boolean(price.checkout_enabled && price.stripe_price_id)
 }
 
 export default function BillingPage() {
@@ -38,6 +76,7 @@ export default function BillingPage() {
   const [credits, setCredits] = useState(0)
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
+  const [selectedPriceByPlan, setSelectedPriceByPlan] = useState<Record<string, string>>({})
   const { loading: billingPortalLoading, openBillingPortal } = useBillingPortal()
 
   useEffect(() => {
@@ -53,16 +92,30 @@ export default function BillingPage() {
       // Get plans
       const { data: plansData } = await supabase
         .from("plans")
-        .select("*")
+        .select("*, plan_prices(*)")
         .eq("is_active", true)
         .eq("is_public", true)
         .order("price_monthly", { ascending: true })
 
       if (plansData) {
-        setPlans(plansData.map((p) => ({
-          ...p,
-          features: Array.isArray(p.features) ? p.features as string[] : [],
-        })))
+        const nextSelectedPriceByPlan: Record<string, string> = {}
+        const nextPlans = plansData.map((p) => {
+          const prices = normalizePlanPrices(p.plan_prices)
+          const defaultPrice = prices.find(isCheckoutReadyPlanPrice) ?? prices[0]
+
+          if (defaultPrice) {
+            nextSelectedPriceByPlan[p.id] = defaultPrice.id
+          }
+
+          return {
+            ...p,
+            features: Array.isArray(p.features) ? p.features as string[] : [],
+            plan_prices: prices,
+          }
+        })
+
+        setPlans(nextPlans)
+        setSelectedPriceByPlan(nextSelectedPriceByPlan)
       }
 
       // Get subscription
@@ -116,6 +169,41 @@ export default function BillingPage() {
     }
   }
 
+  const getSelectedPlanPrice = (plan: Plan) => {
+    const prices = plan.plan_prices ?? []
+    const selectedPriceId = selectedPriceByPlan[plan.id]
+    return prices.find((price) => price.id === selectedPriceId) ?? prices.find(isCheckoutReadyPlanPrice) ?? prices[0] ?? null
+  }
+
+  const getCurrentPlanPrice = (plan: Plan) => {
+    if (subscription?.plan_id !== plan.id || !subscription.plan_price_id) {
+      return null
+    }
+
+    return plan.plan_prices?.find((price) => price.id === subscription.plan_price_id) ?? null
+  }
+
+  const getBillingPeriodLabel = (price: PlanPrice) => {
+    if (price.interval_unit === "year" && price.interval_count === 1) {
+      return "/year"
+    }
+
+    if (price.interval_unit === "month" && price.interval_count === 6) {
+      return "/6 months"
+    }
+
+    return "/month"
+  }
+
+  const getMonthlyEquivalent = (price: PlanPrice) => {
+    const months = price.interval_unit === "year" ? price.interval_count * 12 : price.interval_count
+    if (months <= 1) {
+      return null
+    }
+
+    return `${formatPrice(Math.round(price.unit_amount_cents / months))}/mo equivalent`
+  }
+
   const getPlanIcon = (name: string) => {
     switch (name.toLowerCase()) {
       case "free":
@@ -135,6 +223,10 @@ export default function BillingPage() {
   const fullReportFast = estimateFullReportTokens("openai/gpt-5.4-mini")
   const fullReportBalanced = estimateFullReportTokens("anthropic/claude-sonnet-4-6")
   const fullReportThinking = estimateFullReportTokens("google/gemini-3.1-pro-preview")
+  const currentPlan = subscription
+    ? plans.find((plan) => plan.id === subscription.plan_id) ?? null
+    : null
+  const currentPlanPrice = currentPlan ? getCurrentPlanPrice(currentPlan) : null
 
   if (loading) {
     return (
@@ -167,12 +259,15 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-black tracking-tight">
-              {subscription
-                ? plans.find((p) => p.id === subscription.plan_id)?.name || "Active"
-                : "Free"}
+              {subscription ? currentPlan?.name || "Active" : "Free"}
             </p>
             {subscription?.cancel_at_period_end && (
               <Badge variant="warning" className="mt-2">Cancels at period end</Badge>
+            )}
+            {currentPlanPrice && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {currentPlanPrice.label} billing
+              </p>
             )}
             {subscription && (
               <Button
@@ -197,7 +292,7 @@ export default function BillingPage() {
                 <Coins className="h-5 w-5 text-primary" />
               </div>
               <CardTitle className="text-sm font-medium text-muted-foreground">
-Token Balance
+                Token Balance
               </CardTitle>
             </div>
           </CardHeader>
@@ -219,12 +314,15 @@ Token Balance
       {/* Plans */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold tracking-[-0.03em]">Available Plans</h2>
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {plans.map((plan) => {
             const Icon = getPlanIcon(plan.name)
             const isCurrentPlan = subscription?.plan_id === plan.id
             const isFree = plan.price_monthly === 0
             const isPro = plan.name.toLowerCase() === "pro"
+            const prices = plan.plan_prices ?? []
+            const selectedPrice = getCurrentPlanPrice(plan) ?? getSelectedPlanPrice(plan)
+            const canCheckout = Boolean(selectedPrice && isCheckoutReadyPlanPrice(selectedPrice))
 
             return (
               <Card
@@ -259,14 +357,57 @@ Token Balance
                   <CardDescription>{plan.description}</CardDescription>
                   <div className="mt-2">
                     <span className={`text-3xl font-black tracking-tight ${isPro ? "text-primary" : ""}`}>
-                      {isFree ? "Free" : formatPrice(plan.price_monthly)}
+                      {isFree ? "Free" : formatPrice(selectedPrice?.unit_amount_cents ?? plan.price_monthly)}
                     </span>
-                    {!isFree && (
-                      <span className="text-muted-foreground text-sm">/month</span>
+                    {!isFree && selectedPrice && (
+                      <span className="text-muted-foreground text-sm">{getBillingPeriodLabel(selectedPrice)}</span>
                     )}
                   </div>
+                  {!isFree && selectedPrice && getMonthlyEquivalent(selectedPrice) && (
+                    <p className="text-xs text-muted-foreground">
+                      {getMonthlyEquivalent(selectedPrice)}
+                    </p>
+                  )}
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                  {!isFree && prices.length > 0 && (
+                    <div className="grid grid-cols-3 gap-1 rounded-lg border border-border-subtle bg-secondary p-1">
+                      {prices.map((price) => {
+                        const isSelected = selectedPrice?.id === price.id
+                        const isReady = isCheckoutReadyPlanPrice(price)
+
+                        return (
+                          <button
+                            key={price.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedPriceByPlan((current) => ({
+                                ...current,
+                                [plan.id]: price.id,
+                              }))
+                            }}
+                            className={`min-h-12 rounded-md px-2 py-1.5 text-center text-xs font-medium transition-colors ${
+                              isSelected
+                                ? "bg-white text-text-primary shadow-sm"
+                                : "text-muted-foreground hover:bg-white/70 hover:text-text-primary"
+                            }`}
+                          >
+                            <span className="block truncate">{price.label}</span>
+                            {price.savings_label && (
+                              <span className="block truncate text-[11px] text-primary">
+                                {price.savings_label}
+                              </span>
+                            )}
+                            {!isReady && (
+                              <span className="block truncate text-[11px] text-muted-foreground">
+                                Soon
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                   <ul className="space-y-2.5">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-center gap-2.5 text-sm">
@@ -291,10 +432,10 @@ Token Balance
                     <Button
                       className="w-full"
                       onClick={() =>
-                        plan.stripe_price_id &&
-                        handleCheckout(plan.id, plan.stripe_price_id)
+                        selectedPrice?.stripe_price_id &&
+                        handleCheckout(plan.id, selectedPrice.stripe_price_id)
                       }
-                      disabled={!plan.stripe_price_id || checkoutLoading !== null}
+                      disabled={!canCheckout || checkoutLoading !== null}
                     >
                       {checkoutLoading === plan.id ? (
                         <Spinner size="sm" />

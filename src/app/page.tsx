@@ -85,10 +85,11 @@ const plans = [
   },
   {
     name: "Starter",
-    price: "$29/mo",
+    price: "$19/mo",
     points: [
       `${PRICING_CARD_TOKENS.starter} tokens monthly`,
       `~${Math.floor(PRICING_CARD_TOKENS.starter / fullReportTokensBalanced)} full reports (balanced)`,
+      "6-month and annual savings available",
       "Product plan + tech spec export",
     ],
     tone: "light",
@@ -97,23 +98,16 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$79/mo",
+    price: "$49/mo",
     points: [
       `${PRICING_CARD_TOKENS.pro} tokens monthly`,
       `~${Math.floor(PRICING_CARD_TOKENS.pro / fullReportTokensThinking)} full reports (thinking)`,
+      "6-month and annual savings available",
       "App generation + priority support",
     ],
     tone: "dark",
     cta: "Go Pro",
     ctaClasses: "h-11 bg-primary text-primary-foreground hover:bg-primary/90",
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    points: ["Custom token pools", "Dedicated VPC", "SSO + RBAC", "Custom integrations"],
-    tone: "light",
-    cta: "Talk to Sales",
-    ctaClasses: "h-11 border border-text-primary bg-white text-text-primary hover:bg-muted",
   },
 ]
 
@@ -298,7 +292,7 @@ export default async function LandingPage() {
             1 token = {tokenUsdLabel}. Full report estimate: fast {fullReportTokensFast} tokens, balanced {fullReportTokensBalanced} tokens, thinking {fullReportTokensThinking} tokens.
           </p>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
             {plans.map((plan) => {
               const isDark = plan.tone === "dark"
               return (

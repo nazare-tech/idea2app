@@ -218,6 +218,41 @@ test("getProjectAllowanceStatus allows users below an explicit plan limit", asyn
   )
 })
 
+test("getProjectAllowanceStatus keeps paid project allowance on a calendar month for annual subscriptions", async () => {
+  const { client, queries } = createFakeClient({
+    subscriptions: {
+      data: [
+        {
+          status: "active",
+          current_period_start: "2026-01-01T00:00:00.000Z",
+          current_period_end: "2027-01-01T00:00:00.000Z",
+          plans: {
+            name: "Pro",
+            monthly_project_allowance: 10,
+          },
+        },
+      ],
+      error: null,
+    },
+    projects: { data: null, error: null, count: 4 },
+  })
+
+  const result = await getProjectAllowanceStatus(client, "user-1", { now: NOW })
+
+  assert.equal(result.canCreate, true)
+  assert.equal(result.window.source, "calendar_month")
+
+  const projectsQuery = queries.find((query) => query.table === "projects")
+  assert.ok(projectsQuery)
+  assert.deepEqual(
+    projectsQuery.filters.filter((filter) => filter.method === "gte" || filter.method === "lt"),
+    [
+      { method: "gte", column: "created_at", value: "2026-04-01T00:00:00.000Z" },
+      { method: "lt", column: "created_at", value: "2026-05-01T00:00:00.000Z" },
+    ]
+  )
+})
+
 test("canCreateProject blocks users at the monthly limit", async () => {
   const { client } = createFakeClient({
     subscriptions: {

@@ -3,6 +3,7 @@
 ## Scope
 Close pre-release gaps around:
 - RLS policies (`subscriptions`, `credits_ledger` / related credit tables)
+- Billing price catalog and Stripe credit grant idempotency
 - Env key hygiene
 - Stripe webhook observability
 
@@ -19,6 +20,13 @@ Close pre-release gaps around:
 - [ ] Users can only read their own credit rows
 - [ ] Direct user writes to ledger are blocked (writes should come from trusted RPC/server path)
 - [ ] `add_credits` RPC is security-definer and validates caller path
+- [ ] `stripe_credit_grants` has no browser access and grants can only be inserted through trusted service-role webhook paths
+- [ ] `grant_subscription_credits_once` is service-role-only and deduplicates grants by `idempotency_key`
+
+### billing price catalog
+- [ ] `plan_prices` exposes only active public-plan prices to browser clients
+- [ ] Disabled or null-`stripe_price_id` prices cannot create Checkout sessions
+- [ ] Enterprise plan rows remain non-public or checkout-disabled until sales/support workflows are ready
 
 ## 2) Env hygiene
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` never exposed client-side
@@ -34,3 +42,5 @@ Close pre-release gaps around:
 
 ## Notes
 - Structured webhook logging was added in `src/app/api/stripe/webhook/route.ts`.
+- Stripe webhook event claims now allow failed or stale processing rows to be retried; duplicate processed events remain ignored.
+- Interval billing adds `plan_prices`, `subscriptions.plan_price_id`, and `stripe_credit_grants`; include these in the production RLS audit.

@@ -3,6 +3,12 @@ import { headers } from "next/headers"
 import { getStripeClient } from "@/lib/stripe"
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js"
 import type Stripe from "stripe"
+import {
+  buildSubscriptionCreditGrantKey,
+  buildSubscriptionSyncSnapshot,
+  type StripePlanPriceMapping,
+  type SubscriptionSyncSnapshot,
+} from "@/lib/stripe-subscription-sync"
 
 function logWebhook(level: "info" | "warn" | "error", message: string, context: Record<string, unknown> = {}) {
   const payload = {
@@ -31,6 +37,227 @@ function getAdminClient() {
   return createSupabaseAdmin(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
+type AdminClient = ReturnType<typeof getAdminClient>
+
+const WEBHOOK_PROCESSING_RETRY_AFTER_MS = 5 * 60 * 1000
+
+type WebhookClaim =
+  | { shouldProcess: true; retrying: boolean }
+  | { shouldProcess: false; reason: "processed" | "processing" }
+
+async function claimWebhookEvent(
+  supabase: AdminClient,
+  event: Stripe.Event
+): Promise<WebhookClaim> {
+  const { error: insertError } = await supabase.from("stripe_webhook_events").insert({
+    event_id: event.id,
+    event_type: event.type,
+    livemode: event.livemode,
+    status: "processing",
+  })
+
+  if (!insertError) {
+    return { shouldProcess: true, retrying: false }
+  }
+
+  if (insertError.code !== "23505") {
+    throw new Error(`Failed to claim Stripe event: ${insertError.message}`)
+  }
+
+  const { data: existingEvent, error: existingError } = await supabase
+    .from("stripe_webhook_events")
+    .select("status, received_at")
+    .eq("event_id", event.id)
+    .maybeSingle()
+
+  if (existingError) {
+    throw new Error(`Failed to read existing Stripe event claim: ${existingError.message}`)
+  }
+
+  if (!existingEvent || existingEvent.status === "processed") {
+    return { shouldProcess: false, reason: "processed" }
+  }
+
+  const receivedAt = Date.parse(String(existingEvent.received_at ?? ""))
+  const isStaleProcessing =
+    existingEvent.status === "processing" &&
+    Number.isFinite(receivedAt) &&
+    Date.now() - receivedAt > WEBHOOK_PROCESSING_RETRY_AFTER_MS
+
+  if (existingEvent.status !== "failed" && !isStaleProcessing) {
+    return { shouldProcess: false, reason: "processing" }
+  }
+
+  let reclaimQuery = supabase
+    .from("stripe_webhook_events")
+    .update({
+      event_type: event.type,
+      livemode: event.livemode,
+      status: "processing",
+      error: null,
+      received_at: new Date().toISOString(),
+      processed_at: null,
+    })
+    .eq("event_id", event.id)
+    .eq("status", existingEvent.status)
+
+  if (existingEvent.status === "processing") {
+    reclaimQuery = reclaimQuery.eq("received_at", existingEvent.received_at)
+  }
+
+  const { data: reclaimedEvent, error: reclaimError } = await reclaimQuery
+    .select("event_id")
+    .maybeSingle()
+
+  if (reclaimError) {
+    throw new Error(`Failed to reclaim Stripe event: ${reclaimError.message}`)
+  }
+
+  if (!reclaimedEvent) {
+    return { shouldProcess: false, reason: "processing" }
+  }
+
+  return { shouldProcess: true, retrying: true }
+}
+
+async function getPlanPricesByStripePriceId(supabase: AdminClient) {
+  const { data, error } = await supabase
+    .from("plan_prices")
+    .select("id, plan_id, stripe_price_id, interval_unit, interval_count, credits_multiplier, plans(id, name, credits_monthly)")
+    .not("stripe_price_id", "is", null)
+    .eq("is_active", true)
+
+  if (error) {
+    throw new Error(`Failed to load Stripe plan prices: ${error.message}`)
+  }
+
+  return new Map(
+    ((data ?? []) as StripePlanPriceMapping[])
+      .filter((planPrice) => planPrice.stripe_price_id)
+      .map((planPrice) => [planPrice.stripe_price_id, planPrice])
+  )
+}
+
+async function retrieveSubscription(stripe: Stripe, subscriptionId: string) {
+  return stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price"],
+  }) as unknown as Promise<Record<string, unknown>>
+}
+
+function getStripeObjectId(value: unknown): string {
+  if (typeof value === "string") {
+    return value
+  }
+
+  if (value && typeof value === "object" && "id" in value && typeof value.id === "string") {
+    return value.id
+  }
+
+  return ""
+}
+
+async function findUserIdForSubscription(
+  supabase: AdminClient,
+  snapshot: SubscriptionSyncSnapshot,
+  preferredUserId?: string | null
+) {
+  if (preferredUserId) {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", preferredUserId)
+      .eq("stripe_customer_id", snapshot.stripeCustomerId)
+      .maybeSingle()
+
+    if (error) {
+      throw new Error(`Failed to verify Stripe checkout profile: ${error.message}`)
+    }
+
+    return typeof profile?.id === "string" ? profile.id : null
+  }
+
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("stripe_customer_id", snapshot.stripeCustomerId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Failed to resolve Stripe customer profile: ${error.message}`)
+  }
+
+  return typeof profile?.id === "string" ? profile.id : null
+}
+
+async function syncSubscriptionSnapshot(
+  supabase: AdminClient,
+  userId: string,
+  snapshot: SubscriptionSyncSnapshot
+) {
+  const { error } = await supabase.from("subscriptions").upsert(
+    {
+      user_id: userId,
+      plan_id: snapshot.planId,
+      plan_price_id: snapshot.planPriceId,
+      stripe_price_id: snapshot.stripePriceId,
+      stripe_subscription_id: snapshot.stripeSubscriptionId,
+      status: snapshot.status,
+      cancel_at_period_end: snapshot.cancelAtPeriodEnd,
+      current_period_start: snapshot.currentPeriodStart,
+      current_period_end: snapshot.currentPeriodEnd,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  )
+
+  if (error) {
+    throw new Error(`Failed to sync subscription: ${error.message}`)
+  }
+}
+
+async function grantSubscriptionCreditsOnce(
+  supabase: AdminClient,
+  userId: string,
+  snapshot: SubscriptionSyncSnapshot,
+  eventId: string,
+  grantType: "subscription_initial" | "subscription_renewal",
+  stripeInvoiceId: string | null
+) {
+  const { data, error } = await supabase.rpc("grant_subscription_credits_once", {
+    p_idempotency_key: buildSubscriptionCreditGrantKey(snapshot),
+    p_user_id: userId,
+    p_plan_id: snapshot.planId,
+    p_plan_price_id: snapshot.planPriceId,
+    p_stripe_event_id: eventId,
+    p_stripe_subscription_id: snapshot.stripeSubscriptionId,
+    p_stripe_invoice_id: stripeInvoiceId,
+    p_period_start: snapshot.currentPeriodStart,
+    p_period_end: snapshot.currentPeriodEnd,
+    p_amount: snapshot.creditsForPeriod,
+    p_grant_type: grantType,
+    p_description:
+      grantType === "subscription_initial"
+        ? `${snapshot.planName} plan subscription`
+        : `Subscription renewal - ${snapshot.planName}`,
+  })
+
+  if (error) {
+    throw new Error(`Failed to grant subscription credits: ${error.message}`)
+  }
+
+  return data === true
+}
+
+async function buildSnapshotForSubscription(
+  supabase: AdminClient,
+  subscription: Record<string, unknown>
+) {
+  return buildSubscriptionSyncSnapshot(
+    subscription,
+    await getPlanPricesByStripePriceId(supabase)
   )
 }
 
@@ -71,155 +298,185 @@ export async function POST(request: Request) {
     livemode: event.livemode,
   })
 
-  const { error: claimError } = await supabase.from("stripe_webhook_events").insert({
-    event_id: event.id,
-    event_type: event.type,
-    livemode: event.livemode,
-    status: "processing",
-  })
+  let claim: WebhookClaim
 
-  if (claimError) {
-    if (claimError.code === "23505") {
-      logWebhook("info", "Duplicate Stripe event ignored", {
-        event_id: event.id,
-        event_type: event.type,
-      })
-      return NextResponse.json({ received: true, duplicate: true })
-    }
-
+  try {
+    claim = await claimWebhookEvent(supabase, event)
+  } catch (error) {
     logWebhook("error", "Failed to claim Stripe event", {
       event_id: event.id,
       event_type: event.type,
-      error: claimError.message,
+      error: error instanceof Error ? error.message : String(error),
     })
     return NextResponse.json({ error: "Webhook claim failed" }, { status: 500 })
+  }
+
+  if (!claim.shouldProcess) {
+    logWebhook("info", "Duplicate Stripe event ignored", {
+      event_id: event.id,
+      event_type: event.type,
+      duplicate_reason: claim.reason,
+    })
+    return NextResponse.json({ received: true, duplicate: true })
+  }
+
+  if (claim.retrying) {
+    logWebhook("info", "Retrying previously failed or stale Stripe event", {
+      event_id: event.id,
+      event_type: event.type,
+    })
   }
 
   try {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session
-        const userId = session.metadata?.supabase_user_id
-        const planId = session.metadata?.plan_id
+        const subscriptionId = getStripeObjectId(session.subscription)
 
-        if (userId && planId) {
-          // Get plan details
-          const { data: plan } = await supabase
-            .from("plans")
-            .select("*")
-            .eq("id", planId)
-            .eq("is_active", true)
-            .eq("checkout_enabled", true)
-            .not("stripe_price_id", "is", null)
-            .single()
-
-          if (plan) {
-            // Create or update subscription
-            await supabase.from("subscriptions").upsert(
-              {
-                user_id: userId,
-                plan_id: planId,
-                stripe_subscription_id: session.subscription as string,
-                status: "active",
-                current_period_start: new Date().toISOString(),
-                current_period_end: new Date(
-                  Date.now() + 30 * 24 * 60 * 60 * 1000
-                ).toISOString(),
-              },
-              { onConflict: "user_id" }
-            )
-
-            // Add credits
-            await supabase.rpc("add_credits", {
-              p_user_id: userId,
-              p_amount: plan.credits_monthly,
-              p_action: "subscription",
-              p_description: `${plan.name} plan subscription`,
-            })
-          }
+        if (!subscriptionId) {
+          throw new Error("Checkout session is missing subscription id")
         }
+
+        const stripe = getStripeClient()
+        const subscription = await retrieveSubscription(stripe, subscriptionId)
+        const snapshot = await buildSnapshotForSubscription(supabase, subscription)
+        const userId = await findUserIdForSubscription(
+          supabase,
+          snapshot,
+          session.metadata?.supabase_user_id
+        )
+
+        if (!userId) {
+          throw new Error(`No profile found for Stripe customer ${snapshot.stripeCustomerId}`)
+        }
+
+        if (session.metadata?.plan_id && session.metadata.plan_id !== snapshot.planId) {
+          logWebhook("warn", "Checkout metadata plan did not match Stripe subscription price", {
+            event_id: event.id,
+            metadata_plan_id: session.metadata.plan_id,
+            resolved_plan_id: snapshot.planId,
+            stripe_price_id: snapshot.stripePriceId,
+          })
+        }
+
+        await syncSubscriptionSnapshot(supabase, userId, snapshot)
         break
       }
 
       case "customer.subscription.updated": {
-        const subscription = event.data.object as unknown as Record<string, unknown>
-        const customerId = subscription.customer as string
+        const stripe = getStripeClient()
+        const rawSubscription = event.data.object as unknown as Record<string, unknown>
+        const subscriptionId = getStripeObjectId(rawSubscription)
+        const subscription = subscriptionId
+          ? await retrieveSubscription(stripe, subscriptionId)
+          : rawSubscription
+        const snapshot = await buildSnapshotForSubscription(supabase, subscription)
+        const userId = await findUserIdForSubscription(supabase, snapshot)
 
-        // Find user by Stripe customer ID
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("stripe_customer_id", customerId)
-          .single()
-
-        if (profile) {
-          const periodEnd = subscription.current_period_end as number | undefined
-          await supabase
-            .from("subscriptions")
-            .update({
-              status: subscription.status as string,
-              cancel_at_period_end: subscription.cancel_at_period_end as boolean,
-              ...(periodEnd ? { current_period_end: new Date(periodEnd * 1000).toISOString() } : {}),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("user_id", profile.id)
+        if (!userId) {
+          throw new Error(`No profile found for Stripe customer ${snapshot.stripeCustomerId}`)
         }
+
+        await syncSubscriptionSnapshot(supabase, userId, snapshot)
         break
       }
 
       case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription
-        const customerId = subscription.customer as string
+        const subscription = event.data.object as unknown as Record<string, unknown>
+        const subscriptionId = getStripeObjectId(subscription)
+        const customerId = getStripeObjectId(subscription.customer)
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("stripe_customer_id", customerId)
-          .single()
-
-        if (profile) {
-          await supabase
+        if (subscriptionId) {
+          const { data: canceledSubscription, error: cancelBySubscriptionError } = await supabase
             .from("subscriptions")
             .update({
               status: "canceled",
+              cancel_at_period_end: false,
               updated_at: new Date().toISOString(),
             })
-            .eq("user_id", profile.id)
+            .eq("stripe_subscription_id", subscriptionId)
+            .select("id")
+            .maybeSingle()
+
+          if (cancelBySubscriptionError) {
+            throw new Error(`Failed to cancel subscription: ${cancelBySubscriptionError.message}`)
+          }
+
+          if (canceledSubscription) {
+            break
+          }
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle()
+
+        if (profileError) {
+          throw new Error(`Failed to resolve cancellation profile: ${profileError.message}`)
+        }
+
+        if (!profile) {
+          logWebhook("warn", "No local subscription or profile found for deleted Stripe subscription", {
+            event_id: event.id,
+            stripe_subscription_id: subscriptionId,
+            stripe_customer_id: customerId,
+          })
+          break
+        }
+
+        const { error: updateError } = await supabase
+          .from("subscriptions")
+          .update({
+            status: "canceled",
+            cancel_at_period_end: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", profile.id)
+
+        if (updateError) {
+          throw new Error(`Failed to cancel subscription by profile: ${updateError.message}`)
         }
         break
       }
 
       case "invoice.paid": {
         const invoice = event.data.object as unknown as Record<string, unknown>
-        const customerId = invoice.customer as string
-        const subscriptionId = invoice.subscription as string
+        const subscriptionId = getStripeObjectId(invoice.subscription)
 
-        // Only process for renewal (not first payment)
-        if (invoice.billing_reason === "subscription_cycle") {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("stripe_customer_id", customerId)
-            .single()
+        if (invoice.billing_reason === "subscription_create" || invoice.billing_reason === "subscription_cycle") {
+          if (!subscriptionId) {
+            throw new Error("Paid subscription invoice is missing subscription id")
+          }
 
-          if (profile) {
-            // Get the plan from subscription
-            const { data: sub } = await supabase
-              .from("subscriptions")
-              .select("plan_id, plans(*)")
-              .eq("stripe_subscription_id", subscriptionId)
-              .single()
+          const stripe = getStripeClient()
+          const subscription = await retrieveSubscription(stripe, subscriptionId)
+          const snapshot = await buildSnapshotForSubscription(supabase, subscription)
+          const userId = await findUserIdForSubscription(supabase, snapshot)
 
-            if (sub?.plans) {
-              const plan = sub.plans as unknown as { credits_monthly: number; name: string }
-              // Add monthly credits
-              await supabase.rpc("add_credits", {
-                p_user_id: profile.id,
-                p_amount: plan.credits_monthly,
-                p_action: "subscription_renewal",
-                p_description: `Monthly credit renewal - ${plan.name}`,
-              })
-            }
+          if (!userId) {
+            throw new Error(`No profile found for Stripe customer ${snapshot.stripeCustomerId}`)
+          }
+
+          await syncSubscriptionSnapshot(supabase, userId, snapshot)
+          const granted = await grantSubscriptionCreditsOnce(
+            supabase,
+            userId,
+            snapshot,
+            event.id,
+            invoice.billing_reason === "subscription_create"
+              ? "subscription_initial"
+              : "subscription_renewal",
+            getStripeObjectId(invoice.id)
+          )
+
+          if (!granted) {
+            logWebhook("info", "Subscription credits already granted for period", {
+              event_id: event.id,
+              stripe_subscription_id: snapshot.stripeSubscriptionId,
+              period_start: snapshot.currentPeriodStart,
+            })
           }
         }
         break

@@ -1,6 +1,6 @@
 # To-Do (Manual Tasks)
 
-**Last Updated**: 2026-02-23
+**Last Updated**: 2026-06-09
 
 ---
 
@@ -9,15 +9,16 @@
 ### Immediate (Test Mode)
 
 - [ ] **Test full checkout flow in browser**: Log in to the app at `http://localhost:3000`, navigate to `/billing`, click "Upgrade to Starter", and complete checkout using test card `4242 4242 4242 4242` (any future expiry, any CVC, any zip)
-- [ ] **Verify subscription was created**: After checkout, check Supabase `subscriptions` table for a new row with `status: "active"` and correct `plan_id`
-- [ ] **Verify credits were added**: Check Supabase `credits` table to confirm the plan's credits were added (e.g., 100 for Starter)
+- [ ] **Verify subscription was created**: After checkout, check Supabase `subscriptions` table for a new row with `status: "active"`, correct `plan_id`, correct `plan_price_id`, and real Stripe period dates
+- [ ] **Verify credits were added once**: Check Supabase `credits`, `credits_history`, and `stripe_credit_grants` to confirm the interval credit grant was recorded once
 - [ ] **Test Customer Portal**: After subscribing, click "Manage Subscription" on the billing page to verify the Stripe portal opens for subscription management (cancel, upgrade, payment method changes)
 - [ ] **Test subscription cancellation**: Cancel a subscription via the Customer Portal, then verify the webhook updates the `subscriptions` table to `status: "canceled"`
 
 ### Before Production
 
 - [ ] **Switch to live Stripe keys**: Replace `sk_test_*` and `pk_test_*` in `.env.local` (or Vercel env vars) with your live keys from [Stripe Dashboard > API Keys](https://dashboard.stripe.com/apikeys)
-- [ ] **Create live products & prices**: Recreate the Starter ($19/mo), Pro ($49/mo), and Enterprise ($199/mo) products and prices in live mode, then update the Supabase `plans` table with the new live `stripe_price_id` values
+- [ ] **Create live products & prices**: Create live Starter and Pro products with monthly, 6-month, and annual recurring prices. Starter: $19/mo, $105/6 months, $194/year. Pro: $49/mo, $270/6 months, $499/year. Keep Enterprise non-public/checkout-disabled for now.
+- [ ] **Update production Supabase billing rows**: Update `plan_prices.stripe_price_id` with live `price_*` IDs, enable checkout for the live Starter/Pro intervals, and keep `plans.stripe_price_id` aligned with each plan's live monthly/default price for backward compatibility.
 - [ ] **Set up production webhook endpoint**: In [Stripe Dashboard > Webhooks](https://dashboard.stripe.com/webhooks), add your production URL: `https://yourdomain.com/api/stripe/webhook`. Select these events:
   - `checkout.session.completed`
   - `customer.subscription.updated`
@@ -46,7 +47,7 @@
 ## General
 
 - [ ] **Review RLS policies for subscriptions table**: Ensure users can only read their own subscription records and that service-role inserts/updates from the webhook are not blocked
-- [ ] **Test credit renewal on invoice.paid**: The webhook handles `invoice.paid` with `billing_reason: "subscription_cycle"` to add monthly credits. This can't be easily tested locally - use Stripe's test clock feature or wait for a real renewal cycle
+- [ ] **Test credit renewal on invoice.paid**: The webhook handles `invoice.paid` with `billing_reason: "subscription_cycle"` to add interval-scaled credits once per subscription period. Use Stripe test clocks or a controlled live smoke flow.
 - [ ] **Add error logging/monitoring**: Consider adding structured logging or an error tracking service (e.g., Sentry) for webhook failures in production
 
 ---

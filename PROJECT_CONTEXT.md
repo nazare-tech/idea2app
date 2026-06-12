@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-06-09 (Platform-specific mockup screen limits)
+**Last Updated**: 2026-06-09 (Stripe interval billing catalog)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -46,7 +46,8 @@
   - Single Page Applications (React SPAs)
   - Progressive Web Apps (PWA)
 - **Deployment**: Direct deployment capabilities for generated applications
-- **Project-based Pricing Migration**: Project creation is guarded by project allowance. Free users get a one-project lifetime allowance; paid plans use monthly/subscription-period windows, explicit plan allowance fields/features where available, and plan-name fallbacks. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
+- **Project-based Pricing Migration**: Project creation is guarded by project allowance. Free users get a one-project lifetime allowance; paid plans use monthly project allowance windows, explicit plan allowance fields/features where available, and plan-name fallbacks. Billing intervals can be monthly, 6-month, or annual, but multi-month Stripe billing periods do not expand the monthly project allowance window. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
+- **Stripe Interval Billing**: Public checkout uses `plans` for entitlement tiers and `plan_prices` for Stripe recurring Prices by billing interval. Starter and Pro are the self-serve production tiers; Enterprise is kept non-public/checkout-disabled until support and sales workflows are ready. Checkout validates selected interval prices server-side, and webhooks map actual Stripe subscription item Price IDs back to `plan_prices` so portal plan changes update entitlements.
 - **Paid-only Project Deletion**: The Projects dashboard renders `DashboardProjectCard` cards with hover/focus workspace warming and delete controls. `DELETE /api/projects/[id]` is ownership-scoped, metrics-tracked, and blocked for Free plan users; the UI shows an upgrade prompt before paid-plan-only deletion.
 - **Generate-Missing-Only Documents**: Planning documents are active singletons by default. Direct generation routes and Generate All/onboarding execution check for an existing active document before credits or external AI calls; duplicate attempts return/record a skipped existing output instead of inserting another row. Future document versioning must be a separate explicit product action.
 - **Dashboard Generation Status**: The project dashboard derives document loading states from the durable Generate All/onboarding queue, not only local browser flags. The left document rail shows compact queued/waiting/generating/ready indicators plus dark `Generate` buttons for missing idle modules and dark `Retry` buttons only for modules that actually failed. Queue items blocked by a failed/missing prerequisite show `Waiting`, not `Retry`, until the prerequisite content exists. The right document modules show queued/waiting/loading states, centered retry placeholders with a user-friendly error message and wider dark `Retry` action, or canonical saved content. Product Plan and First Version Plan no longer show partial streaming previews in the workspace; they show loading/generating states until the saved document is ready. Overview and Market Research share the same competitive-analysis generation state, so a retry from either section moves both rail items together.
@@ -1239,10 +1240,11 @@ docker run -p 3000:3000 idea2app
 - **POST /api/stripe/checkout**: Create checkout session
   - Body: `{ priceId, planId }`
   - Returns: `{ url }` (Stripe-hosted checkout page URL)
-  - Creates or reuses Stripe customer (linked via `profiles.stripe_customer_id`)
-  - Validates the requested plan server-side against an active `plans` row whose `stripe_price_id` exactly matches `priceId`
+  - Blocks users with an existing active/trialing/past-due local subscription; plan changes should go through the Stripe Customer Portal
+  - Creates or reuses Stripe customer (linked via `profiles.stripe_customer_id`), and recreates the customer when a stored test/deleted customer ID is not usable in the active Stripe mode
+  - Validates the requested plan server-side against an active, checkout-enabled `plan_prices` row whose `stripe_price_id` exactly matches `priceId`, joined to an active/public/checkout-enabled `plans` row
   - Sets `mode: "subscription"` for recurring billing
-  - Passes `supabase_user_id` and `plan_id` in session metadata
+  - Passes `supabase_user_id`, `plan_id`, and `plan_price_id` in session metadata
 
 - **POST /api/stripe/portal**: Access customer portal
   - Returns: `{ url }` (Stripe billing portal URL)
@@ -1252,10 +1254,10 @@ docker run -p 3000:3000 idea2app
   - Verifies webhook signature using `STRIPE_WEBHOOK_SECRET`
   - Uses Supabase service role client (no user context) for database operations
   - Handled events:
-    - `checkout.session.completed` — creates subscription record and adds credits via `add_credits()` RPC only for active Stripe-backed plans
-    - `customer.subscription.updated` — syncs status, cancel_at_period_end, period_end
+    - `checkout.session.completed` — retrieves the Stripe subscription, maps the actual item Price ID to `plan_prices`, and syncs real period dates
+    - `customer.subscription.updated` — syncs status, cancel_at_period_end, period dates, `plan_id`, `plan_price_id`, and `stripe_price_id` from the actual subscription item Price ID
     - `customer.subscription.deleted` — marks subscription as canceled
-    - `invoice.paid` (billing_reason = `subscription_cycle`) — monthly credit renewal via `add_credits()` RPC
+    - `invoice.paid` (billing_reason = `subscription_create` or `subscription_cycle`) — interval-scaled initial/renewal credits via `grant_subscription_credits_once()`
 
 ---
 
@@ -1286,23 +1288,25 @@ docker run -p 3000:3000 idea2app
 
 ### Subscription Plans
 
-| Plan | Credits/Month | Price | Stripe Product ID | Stripe Price ID |
-|------|--------------|-------|-------------------|-----------------|
-| **Free** | 10 | $0 | — | — |
-| **Starter** | 100 | $19/mo | `prod_Uere21C5j6LIO1` | `price_1TfXvFRZYXj2bJrBuC6JaIfj` |
-| **Pro** | 500 | $49/mo | `prod_UerevEhLASQiac` | `price_1TfXvFRZYXj2bJrB8vg41zH0` |
-| **Enterprise** | 2,500 | $199/mo | `prod_UeregY7eokD8gA` | `price_1TfXvERZYXj2bJrB2Seb3YKh` |
+| Plan | Credits/Month | Public Checkout | Monthly | 6 Months | Annual |
+|------|--------------|-----------------|---------|----------|--------|
+| **Free** | 10 | No checkout | $0 | — | — |
+| **Starter** | 100 | Yes | $19/mo | $105 every 6 months | $194/year |
+| **Pro** | 500 | Yes | $49/mo | $270 every 6 months | $499/year |
+| **Enterprise** | 2,500 | Disabled for now | Not public | Not public | Not public |
+
+`plans.stripe_price_id` remains as a legacy/default monthly field. New checkout integrations should use `plan_prices.stripe_price_id` for the selected interval. Live production Product and Price IDs are environment data stored in Supabase/Stripe, not hardcoded in source.
 
 ### Stripe Integration Details
 
-- **Account**: Makercompass (`acct_1TfXV9RZYXj2bJrB`) — Test Mode
+- **Account**: Makercompass (`acct_1TfXV9RZYXj2bJrB`); local development may use test mode, production must use live-mode keys and live `plan_prices`
 - **API Version**: `2026-01-28.clover`
 - **Singleton Client**: `src/lib/stripe.ts` — lazy-initialized Stripe instance via `getStripeClient()` with a `Proxy` export for ergonomic access
-- **Customer Linking**: Stripe customer ID stored in `profiles.stripe_customer_id`; created on first checkout and reused thereafter
-- **Checkout Flow**: Server-side redirect to Stripe-hosted checkout (no Stripe.js Elements needed)
-- **Customer Portal Configuration**: `bpc_1TfY2eRZYXj2bJrBcPHQWM7q` — test-mode portal for plan switching, payment method updates, invoice history, and cancel-at-period-end
-- **Webhook Processing**: Uses `SUPABASE_SERVICE_ROLE_KEY` (service role) to bypass RLS for subscription and credit updates
-- **Billing UI**: `src/app/(dashboard)/billing/page.tsx` — displays plan cards, current subscription, credit balance, and credit cost reference
+- **Customer Linking**: Stripe customer ID stored in `profiles.stripe_customer_id`; created on first checkout, reused thereafter, and replaced when stale test-mode/deleted IDs cannot be retrieved with the active Stripe key
+- **Checkout Flow**: Server-side redirect to Stripe-hosted checkout (no Stripe.js Elements needed); selected interval comes from `plan_prices`
+- **Customer Portal Configuration**: Use the default Stripe Customer Portal configuration for the active Stripe mode; production portal settings are configured in the Stripe Dashboard
+- **Webhook Processing**: Uses `SUPABASE_SERVICE_ROLE_KEY` (service role) to bypass RLS for subscription and credit updates; `stripe_webhook_events` deduplicates processed events while allowing failed/stale processing rows to be retried, and `stripe_credit_grants`/`grant_subscription_credits_once()` deduplicates credit grants per subscription period
+- **Billing UI**: `src/app/(dashboard)/billing/page.tsx` — displays plan cards, interval selectors, current subscription, credit balance, and credit cost reference
 
 ---
 
@@ -1521,10 +1525,11 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/waitlist.ts](src/lib/waitlist.ts) | Waitlist thresholds and email validation helpers |
 | [src/lib/supabase/client.ts](src/lib/supabase/client.ts) | Browser Supabase client |
 | [src/lib/stripe.ts](src/lib/stripe.ts) | Stripe singleton client — lazy-initialized with Proxy export |
+| [src/lib/stripe-subscription-sync.ts](src/lib/stripe-subscription-sync.ts) | Pure helpers that map Stripe subscription item Price IDs to `plan_prices`, derive real billing periods, and build period-level credit idempotency keys |
 | [src/app/api/stripe/checkout/route.ts](src/app/api/stripe/checkout/route.ts) | POST — creates Stripe checkout session for subscription upgrade |
 | [src/app/api/stripe/portal/route.ts](src/app/api/stripe/portal/route.ts) | POST — creates Stripe billing portal session for subscription management |
-| [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) | POST — handles Stripe webhook events with `stripe_webhook_events` idempotency |
-| [src/app/(dashboard)/billing/page.tsx](src/app/(dashboard)/billing/page.tsx) | Billing page — plan cards, subscription status, credit balance, upgrade flow |
+| [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) | POST — handles Stripe webhook events with event idempotency, subscription item price mapping, real period dates, and period-level credit grants |
+| [src/app/(dashboard)/billing/page.tsx](src/app/(dashboard)/billing/page.tsx) | Billing page — plan cards, billing interval selectors, subscription status, credit balance, upgrade flow |
 | [src/lib/openrouter.ts](src/lib/openrouter.ts) | OpenRouter AI integration (fallback) |
 | [src/lib/utils.ts](src/lib/utils.ts) | Utility functions & CREDIT_COSTS |
 | [src/proxy.ts](src/proxy.ts) | Next proxy entry point for Supabase session refresh |
@@ -1534,6 +1539,7 @@ export const BASE_ACTION_TOKENS = {
 | [supabase/migrations/20260425001000_create_mockups_table.sql](supabase/migrations/20260425001000_create_mockups_table.sql) | Supabase migration for mockups table |
 | [supabase/migrations/20260425004000_security_hardening_followups.sql](supabase/migrations/20260425004000_security_hardening_followups.sql) | Security follow-up migration: service-role-only `refund_credits`, Stripe event idempotency table, and project creation locks. |
 | [supabase/migrations/20260518000000_create_prompt_lab_tables.sql](supabase/migrations/20260518000000_create_prompt_lab_tables.sql) | Supabase migration for Prompt Lab drafts/runs with user-scoped RLS. |
+| [supabase/migrations/20260609000000_stripe_interval_prices.sql](supabase/migrations/20260609000000_stripe_interval_prices.sql) | Supabase migration for interval-aware Stripe `plan_prices`, subscription price tracking, disabled Enterprise checkout, and idempotent subscription credit grants. |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Deprecated setup guide for the removed Prompt tab AI chat feature |
 
 ---
