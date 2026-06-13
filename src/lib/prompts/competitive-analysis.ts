@@ -34,7 +34,7 @@ WORKSPACE SECTION OWNERSHIP
 ${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.map(
   (heading) => `  - \`${heading}\`: ${COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP[heading]}`
 ).join("\n")}
-- Executive Summary owns the market snapshot, opportunity verdict, why-now signal, and biggest risk.
+- Executive Summary owns the market snapshot, entry assessment, why-now signal, and biggest risk.
 - Market Research owns every other Market Research v2 section, including customer segments, customer reach, first-version focus, and recommended next moves.
 
 OUTPUT FORMAT (STRICT)
@@ -44,7 +44,7 @@ Use exactly these H2 headings in exactly this order, with no extra H2 sections b
 ${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.map((heading) => `## ${heading}`).join("\n")}
 
 REQUIRED SECTION SHAPES
-- \`Executive Summary\`: 2-3 sentences on the category, market pressure, and the most important conclusion, followed by one punchy standalone verdict line of 2-8 words (headline style, no label or colon), then exactly 3 concise bullets covering verdict, why now, and biggest risk
+- \`Executive Summary\`: 2-3 sentences on the category, market pressure, and the most important conclusion, followed by one punchy standalone assessment line of 2-8 words (headline style, no label or colon), then exactly 3 concise bullets covering assessment, why now, and biggest risk
 - \`Direct Competitors\`: include 3-5 competitors; format each competitor heading as \`### [Competitor Name](https://competitor-site.example)\` and include these bullets in exactly this order:
   - **Overview**
   - **Core Product/Service**

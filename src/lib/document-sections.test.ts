@@ -4,13 +4,25 @@ import test from "node:test"
 import {
   SCROLLABLE_NAV_ITEMS,
   filterNavItemsByRenderedSections,
+  getAllSectionIds,
 } from "./document-sections"
 
-test("Executive Summary nav item has no child subsections", () => {
+test("Executive Summary nav item exposes its overview anchor as a selectable child", () => {
   const executiveSummary = SCROLLABLE_NAV_ITEMS.find((item) => item.key === "executive-summary")
 
   assert.equal(executiveSummary?.label, "Executive Summary")
-  assert.deepEqual(executiveSummary?.sections, [])
+  assert.deepEqual(executiveSummary?.sections, [
+    { id: "executive-summary", label: "Overview" },
+  ])
+})
+
+test("getAllSectionIds de-duplicates parent anchors reused by child links", () => {
+  const sectionIds = getAllSectionIds()
+
+  assert.equal(
+    sectionIds.filter((sectionId) => sectionId === "executive-summary").length,
+    1
+  )
 })
 
 test("Product Plan nav labels match the current right-panel section text", () => {

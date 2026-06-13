@@ -65,6 +65,8 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
   assert.match(html, /Market Research/)
   assert.match(html, /Competitor Profiles &amp; Quick Comparison/)
   assert.match(html, /Win with a narrow wedge\./)
+  assert.match(html, /Assessment: Enter with a wedge/)
+  assert.doesNotMatch(html, /Verdict: Enter with a wedge/)
   assert.match(html, /href="https:\/\/competitor-one\.example"/)
   assert.match(html, /Key Edge/)
   assert.match(html, /Distribution engine/)
@@ -82,6 +84,9 @@ test("competitive overview renders one merged executive summary block", () => {
   )
 
   assert.match(html, /Executive Summary/)
+  assert.match(html, /Market snapshot, entry assessment, and key risk\./)
+  assert.match(html, /Assessment: Enter with a wedge/)
+  assert.doesNotMatch(html, /Verdict: Enter with a wedge/)
   assert.doesNotMatch(html, /Opportunity Verdict/)
   assert.match(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
   assert.doesNotMatch(html, /border-b border-\[#E0E0E0\]/)

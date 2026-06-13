@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import { Textarea } from "@/components/ui/textarea"
+import { useCopyFeedback } from "@/hooks/use-copy-feedback"
 import {
   PROMPT_LAB_ARTIFACT_LABELS,
   PROMPT_LAB_ARTIFACTS,
@@ -80,6 +81,12 @@ interface PromptLabContextResponse {
   upstream: Record<string, { id: string; content: string; created_at?: string | null; metadata?: Record<string, unknown> | null } | null>
 }
 
+interface ImagePromptAttachment {
+  fileName: string
+  label: string
+  path: string
+}
+
 const ARTIFACTS = PROMPT_LAB_ARTIFACTS
 const MOCKUP_OPTIONS = ["A", "B", "C"] as const
 const MOCKUP_PLATFORM_OPTIONS = [
@@ -130,24 +137,73 @@ function formatCompactMockupBrief(metadata: Record<string, unknown> | null | und
   return typeof metadata?.compactBrief === "string" ? metadata.compactBrief.trim() : ""
 }
 
+function sanitizeChatGptImageUserPrompt(value: string) {
+  const lines = value.replace(/\r\n/g, "\n").split("\n")
+  const cleaned: string[] = []
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const trimmed = lines[index].trim()
+
+    if (/^Use the image model to create the mockup from these instructions\.?$/i.test(trimmed)) {
+      continue
+    }
+
+    if (
+      /^Attach this image as the input\/base image before sending the prompt:?$/i.test(trimmed)
+      || /^Skeleton image to attach and use as the base image:?$/i.test(trimmed)
+    ) {
+      index += 1
+      while (index + 1 < lines.length && lines[index + 1].trim() === "") {
+        index += 1
+      }
+      if (cleaned.length > 0 && cleaned[cleaned.length - 1].trim() !== "") {
+        cleaned.push("")
+      }
+      continue
+    }
+
+    cleaned.push(lines[index])
+  }
+
+  return cleaned.join("\n").replace(/\n{3,}/g, "\n\n").trim()
+}
+
 function formatChatGptImagePrompt(metadata: Record<string, unknown> | null | undefined) {
   if (!metadata?.skipImageGeneration || typeof metadata.imageUserPrompt !== "string") return ""
   const systemPrompt = typeof metadata.imageSystemPrompt === "string"
     ? metadata.imageSystemPrompt.trim()
     : ""
-  const userPrompt = metadata.imageUserPrompt.trim()
+  const userPrompt = sanitizeChatGptImageUserPrompt(metadata.imageUserPrompt)
 
-  if (!systemPrompt) return userPrompt
+  if (!systemPrompt) {
+    return [
+      "User prompt:",
+      userPrompt,
+    ].join("\n")
+  }
 
   return [
-    "Use the image model to create the mockup from these instructions.",
-    "",
     "System instructions:",
     systemPrompt,
     "",
     "User prompt:",
     userPrompt,
   ].join("\n")
+}
+
+function formatImagePromptAttachment(metadata: Record<string, unknown> | null | undefined): ImagePromptAttachment | null {
+  if (!metadata?.skipImageGeneration) return null
+  const path = typeof metadata.imageSkeletonAssetPath === "string"
+    ? metadata.imageSkeletonAssetPath.trim()
+    : ""
+  if (!path) return null
+
+  const label = typeof metadata.imageSkeletonLabel === "string" && metadata.imageSkeletonLabel.trim()
+    ? metadata.imageSkeletonLabel.trim()
+    : "storyboard skeleton"
+  const fileName = path.split("/").filter(Boolean).pop() || path
+
+  return { fileName, label, path }
 }
 
 function LabPreviewDiagnostics({ content }: { content: string }) {
@@ -265,6 +321,7 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const [notes, setNotes] = useState("")
   const [output, setOutput] = useState("")
   const [finalImagePrompt, setFinalImagePrompt] = useState("")
+  const [finalImagePromptAttachment, setFinalImagePromptAttachment] = useState<ImagePromptAttachment | null>(null)
   const [skipImageGeneration, setSkipImageGeneration] = useState(PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT)
   const [drafts, setDrafts] = useState<PromptLabDraft[]>([])
   const [runs, setRuns] = useState<PromptLabRun[]>([])
@@ -274,9 +331,12 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
   const [launchBrief, setLaunchBrief] = useState(PROMPT_LAB_DEFAULT_LAUNCH_BRIEF)
   const [promptSource, setPromptSource] = useState<"default" | "custom">("default")
   const [busyAction, setBusyAction] = useState<"draft" | "run" | "planner-run" | null>(null)
+  const [copyError, setCopyError] = useState<string | null>(null)
   const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const lastLoadedArtifactRef = useRef<PromptLabArtifact>(artifact)
+  const finalImagePromptTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const { copiedId, copyText } = useCopyFeedback()
 
   const selectedProject = projects.find((project) => project.id === projectId) ?? null
   const modelOptions = useMemo(() => getPromptLabModelOptions(artifact, model), [artifact, model])
@@ -359,6 +419,8 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
         setCompactMockupBrief("")
         setHiddenDesignPlanJson("")
         setFinalImagePrompt("")
+        setFinalImagePromptAttachment(null)
+        setCopyError(null)
         setStatus(null)
         void loadHistory(data.project.id, artifact)
       })
@@ -465,6 +527,8 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
           setCompactMockupBrief(formatCompactMockupBrief(meta))
           setHiddenDesignPlanJson(formatHiddenDesignPlanJson(meta))
           setFinalImagePrompt(formatChatGptImagePrompt(meta))
+          setFinalImagePromptAttachment(formatImagePromptAttachment(meta))
+          setCopyError(null)
           setModel(data.model || model)
           setStatus(meta?.skipImageGeneration ? "Planner done — copy the ChatGPT prompt below" : "Run saved")
           await loadHistory()
@@ -521,8 +585,27 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
     setCompactMockupBrief(formatCompactMockupBrief(meta))
     setHiddenDesignPlanJson(formatHiddenDesignPlanJson(meta))
     setFinalImagePrompt(formatChatGptImagePrompt(meta))
+    setFinalImagePromptAttachment(formatImagePromptAttachment(meta))
+    setCopyError(null)
     setPromptSource("custom")
     setStatus(`Loaded run from ${formatTime(run.created_at)}`)
+  }
+
+  async function copyFinalImagePrompt() {
+    if (!finalImagePrompt) return
+    setCopyError(null)
+
+    try {
+      await copyText(finalImagePrompt, "chatgpt-image-prompt")
+    } catch (err) {
+      finalImagePromptTextareaRef.current?.focus()
+      finalImagePromptTextareaRef.current?.select()
+      setCopyError(
+        err instanceof Error
+          ? `${err.message} The prompt is selected; press Cmd+C to copy it.`
+          : "Could not copy the prompt. The prompt is selected; press Cmd+C to copy it.",
+      )
+    }
   }
 
   function updateLaunchBrief(key: keyof typeof PROMPT_LAB_DEFAULT_LAUNCH_BRIEF, value: string) {
@@ -593,7 +676,11 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
                     value={mockupPlatform}
                     onChange={(event) => {
                       setMockupPlatform(event.target.value as MockupPlatformPreference)
+                      setCompactMockupBrief("")
                       setHiddenDesignPlanJson("")
+                      setFinalImagePrompt("")
+                      setFinalImagePromptAttachment(null)
+                      setCopyError(null)
                       setOutput("")
                     }}
                     className="h-11 w-full rounded-xl border border-surface-strong bg-surface-soft px-3 text-sm text-foreground"
@@ -611,7 +698,15 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
                   <span className="text-xs font-medium text-muted-foreground">Mockup option</span>
                   <select
                     value={mockupOption}
-                    onChange={(event) => setMockupOption(event.target.value as typeof MOCKUP_OPTIONS[number])}
+                    onChange={(event) => {
+                      setMockupOption(event.target.value as typeof MOCKUP_OPTIONS[number])
+                      setCompactMockupBrief("")
+                      setHiddenDesignPlanJson("")
+                      setFinalImagePrompt("")
+                      setFinalImagePromptAttachment(null)
+                      setCopyError(null)
+                      setOutput("")
+                    }}
                     className="h-11 w-full rounded-xl border border-surface-strong bg-surface-soft px-3 text-sm text-foreground"
                   >
                     {MOCKUP_OPTIONS.map((option) => (
@@ -895,29 +990,44 @@ export function PromptLabClient({ projects }: { projects: PromptLabProjectOption
             </label>
 
             {skipImageGeneration && (
-              <label className="block space-y-2">
+              <div className="block space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  <label htmlFor="prompt-lab-chatgpt-image-prompt" className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     ChatGPT image prompt
-                  </span>
+                  </label>
                   {finalImagePrompt && (
                     <button
                       type="button"
-                      onClick={() => void navigator.clipboard.writeText(finalImagePrompt)}
+                      onClick={() => void copyFinalImagePrompt()}
                       className="rounded px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
                     >
-                      Copy prompt
+                      {copiedId === "chatgpt-image-prompt" ? "Copied" : "Copy prompt"}
                     </button>
                   )}
                 </div>
+                {copyError && (
+                  <p className="text-xs text-red-600">{copyError}</p>
+                )}
+                {finalImagePromptAttachment && (
+                  <div className="flex flex-col gap-1 rounded-md border border-border-subtle bg-muted/20 px-3 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <span className="font-semibold text-foreground">Required attachment: </span>
+                      <span>{finalImagePromptAttachment.fileName}</span>
+                      <span className="ml-1">({finalImagePromptAttachment.label})</span>
+                    </div>
+                    <span className="font-mono text-[0.6875rem]">{finalImagePromptAttachment.path}</span>
+                  </div>
+                )}
                 <Textarea
+                  id="prompt-lab-chatgpt-image-prompt"
+                  ref={finalImagePromptTextareaRef}
                   value={finalImagePrompt}
                   readOnly
                   placeholder="Build the ChatGPT prompt to see the exact image instructions here."
                   className="min-h-[280px] font-mono text-xs leading-relaxed"
                   spellCheck={false}
                 />
-              </label>
+              </div>
             )}
           </section>
         )}

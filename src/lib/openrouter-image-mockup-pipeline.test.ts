@@ -3,9 +3,11 @@ import assert from "node:assert/strict"
 
 import {
   OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+  buildOpenRouterMockupImageUserMessageContent,
   buildMockupImageProxyUrl,
   buildOpenRouterMockupImagePrompt,
   extractImageDataUrlFromOpenRouterChoice,
+  getMockupStoryboardSkeleton,
   getOpenRouterMockupImageMaxTokens,
   getOpenRouterMockupImageTimeoutMs,
   getOpenRouterMockupImageConfig,
@@ -216,7 +218,43 @@ test("getOpenRouterMockupImageMaxTokens: caps image calls by default", () => {
   }
 })
 
-test("buildOpenRouterMockupImagePrompt: adds strict mobile storyboard composition JSON", () => {
+test("getMockupStoryboardSkeleton: maps platforms to saved skeleton assets", () => {
+  assert.equal(
+    getMockupStoryboardSkeleton("mobile-web").publicPath,
+    "/mockups/skeletons/mobile-web-storyboard-skeleton.png",
+  )
+  assert.equal(
+    getMockupStoryboardSkeleton("native-mobile-app").publicPath,
+    "/mockups/skeletons/native-mobile-app-storyboard-skeleton.png",
+  )
+  assert.equal(
+    getMockupStoryboardSkeleton("native-desktop-app").publicPath,
+    "/mockups/skeletons/native-desktop-app-storyboard-skeleton.png",
+  )
+  assert.equal(
+    getMockupStoryboardSkeleton("desktop-web").publicPath,
+    "/mockups/skeletons/desktop-web-storyboard-skeleton.png",
+  )
+})
+
+test("buildOpenRouterMockupImageUserMessageContent: attaches the selected skeleton image", () => {
+  const content = buildOpenRouterMockupImageUserMessageContent({
+    prompt: "Edit the attached skeleton.",
+    platform: "mobile-web",
+  })
+
+  assert.ok(Array.isArray(content))
+  const parts = content as Exclude<typeof content, string>
+  const textPart = parts[0]
+  const imagePart = parts[1]
+
+  assert.equal(textPart?.type, "text")
+  assert.equal(textPart && "text" in textPart ? textPart.text : "", "Edit the attached skeleton.")
+  assert.equal(imagePart?.type, "image_url")
+  assert.match(imagePart && "image_url" in imagePart ? imagePart.image_url.url : "", /^data:image\/png;base64,/)
+})
+
+test("buildOpenRouterMockupImagePrompt: adds strict mobile skeleton edit contract", () => {
   const prompt = buildOpenRouterMockupImagePrompt({
     projectName: "MealMind",
     mvpPlan: "## First Version Plan\nGenerate weekly meals, review details, and swap a meal.",
@@ -261,24 +299,26 @@ test("buildOpenRouterMockupImagePrompt: adds strict mobile storyboard compositio
     },
   })
 
-  assert.match(prompt, /Mobile storyboard composition JSON:/)
-  assert.match(prompt, /"model": "iPhone 17 Pro"/)
-  assert.match(prompt, /"3 equal phone screen lanes"/)
-  assert.match(prompt, /"placement": "fixed top caption row only"/)
-  assert.match(prompt, /"format": "1\. Screen Name"/)
-  assert.match(prompt, /Fixed top label to render: 1\. Onboarding Completion/)
-  assert.match(prompt, /Caption intent, do not float elsewhere: Menu generated/)
+  assert.match(prompt, /Edit the attached native mobile app storyboard skeleton in place/)
+  assert.match(prompt, /iOS status bars, Dynamic Island cutouts/)
+  assert.match(prompt, /Replace the existing "Text here" labels with exactly:/)
+  assert.match(prompt, /"1\. Onboarding Completion"/)
+  assert.match(prompt, /"2\. Weekly Menu Generated"/)
+  assert.match(prompt, /Caption to place in the existing top label: 1\. Onboarding Completion/)
+  assert.match(prompt, /Data to show inside the existing frame: Meal cards, Prep labels, Swap action, Ingredients, Steps, Keep in plan action/)
+  assert.match(prompt, /Recipe Detail View: fold the key state "Ingredients and steps are visible" into frame 2/)
+  assert.match(prompt, /Do not move, resize, crop, redraw, duplicate, or remove either frame/)
+  assert.match(prompt, /Do not create a new storyboard layout, add a third frame/)
   assert.match(prompt, /Target user:\nHealthcare worker planning meals after long shifts/)
   assert.doesNotMatch(prompt, /First Version Plan context:/)
   assert.doesNotMatch(prompt, /Generate weekly meals, review details/)
-  assert.match(prompt, /render the planned fixed top labels verbatim/)
-  assert.match(prompt, /wide mobile devices/)
-  assert.match(prompt, /tablet-like phones/)
-  assert.match(prompt, /internal scroll\/continuation cue/)
-  assert.match(prompt, /Option C - Visual-Forward Friendly/)
+  assert.doesNotMatch(prompt, /Mobile storyboard composition JSON:/)
+  assert.doesNotMatch(prompt, /Option C - Visual-Forward Friendly/)
+  assert.doesNotMatch(prompt, /optionLabel/)
+  assert.doesNotMatch(prompt, /\/mockups\/skeletons\//)
 })
 
-test("buildOpenRouterMockupImagePrompt: adds strict desktop storyboard composition JSON", () => {
+test("buildOpenRouterMockupImagePrompt: adds strict desktop skeleton edit contract", () => {
   const prompt = buildOpenRouterMockupImagePrompt({
     projectName: "OpsDesk",
     mvpPlan: "## First Version Plan\nReview operational issues, triage the riskiest account, and assign follow-up.",
@@ -314,12 +354,17 @@ test("buildOpenRouterMockupImagePrompt: adds strict desktop storyboard compositi
     },
   })
 
-  assert.match(prompt, /Desktop storyboard composition JSON:/)
-  assert.match(prompt, /"screenLanes": "1 or 2 equal desktop screen lanes"/)
-  assert.match(prompt, /single-screen hero mode/)
-  assert.match(prompt, /Never add a third desktop screen/)
-  assert.match(prompt, /No compressed desktop thumbnails/)
+  assert.match(prompt, /Edit the attached desktop web Safari storyboard skeleton in place/)
+  assert.match(prompt, /Safari browser chrome, macOS traffic-light dots/)
+  assert.match(prompt, /"1\. Risk Dashboard"/)
+  assert.match(prompt, /"2\. Account Detail"/)
+  assert.match(prompt, /Replace only the purple placeholder areas inside each Safari desktop frame/)
+  assert.match(prompt, /Do not move, resize, crop, redraw, duplicate, or remove either frame/)
+  assert.match(prompt, /Do not create a new storyboard layout, add a third frame/)
+  assert.doesNotMatch(prompt, /Desktop storyboard composition JSON:/)
   assert.doesNotMatch(prompt, /Mobile storyboard composition JSON:/)
+  assert.doesNotMatch(prompt, /optionLabel/)
+  assert.doesNotMatch(prompt, /\/mockups\/skeletons\//)
 })
 
 test("getOpenRouterMockupPlannerModel: prefers planner model over analysis model", () => {

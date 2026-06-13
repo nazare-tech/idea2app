@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import OpenAI from "openai"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
@@ -17,10 +20,11 @@ import {
   buildMockupGenerationBrief,
   buildMockupDesignPlanUserPrompt,
   formatMockupGenerationBrief,
-  getMockupScreenLimitForPlatform,
   parseMockupDesignPlan,
   type MockupDesignDirection,
   type MockupDesignPlan,
+  type MockupDesignPlanScreen,
+  type MockupPrimaryPlatform,
 } from "@/lib/mockup-design-plan"
 import type { Database, Json } from "@/types/database"
 
@@ -31,6 +35,51 @@ const DEFAULT_IMAGE_TIMEOUT_MS = 790_000
 const DEFAULT_IMAGE_MAX_TOKENS = 16_384
 const DEFAULT_PLANNER_MODEL = "openai/gpt-5.4-mini"
 const DEFAULT_PLANNER_MAX_TOKENS = 16_384
+const MOCKUP_STORYBOARD_FRAME_COUNT = 2
+
+interface MockupStoryboardSkeleton {
+  label: string
+  publicPath: string
+  canvasDescription: string
+  preservedStructure: string
+  chromeDescription: string
+  interiorDescription: string
+}
+
+const MOCKUP_STORYBOARD_SKELETONS: Record<MockupPrimaryPlatform, MockupStoryboardSkeleton> = {
+  "desktop-web": {
+    label: "desktop web Safari storyboard skeleton",
+    publicPath: "/mockups/skeletons/desktop-web-storyboard-skeleton.png",
+    canvasDescription: "4738x2030 white 21:9-ish canvas with two side-by-side desktop browser frames",
+    preservedStructure: "the exact canvas size, white background, two desktop frame positions, frame sizes, rounded corners, black outlines, drop shadows, top caption placement, gutter spacing, and frame alignment",
+    chromeDescription: "Safari browser chrome, macOS traffic-light dots, toolbar controls, address bar, and all browser UI details",
+    interiorDescription: "the purple placeholder areas inside each Safari desktop frame",
+  },
+  "mobile-web": {
+    label: "mobile web Safari storyboard skeleton",
+    publicPath: "/mockups/skeletons/mobile-web-storyboard-skeleton.png",
+    canvasDescription: "2760x2030 white canvas with two side-by-side iPhone mobile browser frames",
+    preservedStructure: "the exact canvas size, white background, two iPhone frame positions, phone sizes, rounded corners, black outlines, drop shadows, top caption placement, gutter spacing, and frame alignment",
+    chromeDescription: "iOS status bars, Dynamic Island cutouts, signal/wifi/battery indicators, bottom Safari toolbar, figma.com address pill, and mobile browser controls",
+    interiorDescription: "the purple placeholder areas inside each mobile Safari frame",
+  },
+  "native-mobile-app": {
+    label: "native mobile app storyboard skeleton",
+    publicPath: "/mockups/skeletons/native-mobile-app-storyboard-skeleton.png",
+    canvasDescription: "2760x2030 white canvas with two side-by-side native iPhone app frames",
+    preservedStructure: "the exact canvas size, white background, two iPhone frame positions, phone sizes, rounded corners, black outlines, drop shadows, top caption placement, gutter spacing, and frame alignment",
+    chromeDescription: "iOS status bars, Dynamic Island cutouts, signal/wifi/battery indicators, and native device chrome without adding browser controls",
+    interiorDescription: "the purple placeholder areas inside each native mobile app frame",
+  },
+  "native-desktop-app": {
+    label: "native desktop app storyboard skeleton",
+    publicPath: "/mockups/skeletons/native-desktop-app-storyboard-skeleton.png",
+    canvasDescription: "4738x2030 white 21:9-ish canvas with two side-by-side native macOS app windows",
+    preservedStructure: "the exact canvas size, white background, two desktop window positions, window sizes, rounded corners, black outlines, drop shadows, top caption placement, gutter spacing, and window alignment",
+    chromeDescription: "native macOS window chrome, traffic-light dots, and all non-browser window details without adding Safari or web browser UI",
+    interiorDescription: "the purple placeholder areas inside each native desktop app window",
+  },
+}
 
 export const OPENROUTER_MOCKUP_OPTION_CONFIGS = [
   {
@@ -112,6 +161,44 @@ export function getOpenRouterMockupPlannerModel() {
   return process.env.OPENROUTER_MOCKUP_PLANNER_MODEL ||
     process.env.OPENROUTER_ANALYSIS_MODEL ||
     DEFAULT_PLANNER_MODEL
+}
+
+export function getMockupStoryboardSkeleton(platform: MockupPrimaryPlatform) {
+  return MOCKUP_STORYBOARD_SKELETONS[platform]
+}
+
+function getMockupStoryboardSkeletonFilePath(platform: MockupPrimaryPlatform) {
+  const skeleton = getMockupStoryboardSkeleton(platform)
+  return join(process.cwd(), "public", skeleton.publicPath.replace(/^\//, ""))
+}
+
+export function buildMockupStoryboardSkeletonDataUrl(platform: MockupPrimaryPlatform) {
+  const skeletonPath = getMockupStoryboardSkeletonFilePath(platform)
+  const buffer = readFileSync(skeletonPath)
+
+  return `data:image/png;base64,${buffer.toString("base64")}`
+}
+
+export function buildOpenRouterMockupImageUserMessageContent({
+  prompt,
+  platform,
+}: {
+  prompt: string
+  platform: MockupPrimaryPlatform
+}): OpenAI.Chat.Completions.ChatCompletionUserMessageParam["content"] {
+  return [
+    {
+      type: "text",
+      text: prompt,
+    },
+    {
+      type: "image_url",
+      image_url: {
+        url: buildMockupStoryboardSkeletonDataUrl(platform),
+        detail: "high",
+      },
+    },
+  ]
 }
 
 export function parseImageDataUrl(dataUrl: string) {
@@ -221,7 +308,20 @@ export async function generateOpenRouterImageMockup({
   const imagePromptCharCounts = Object.fromEntries(
     generatedOptions.map((option) => [option.label, option.imagePromptCharCount]),
   )
-  const contentOptions = generatedOptions.map(({ imagePromptCharCount: _imagePromptCharCount, ...option }) => option)
+  const imageSkeletonAssetPaths = Object.fromEntries(
+    generatedOptions.map((option) => [option.label, option.skeletonAssetPath]),
+  )
+  const contentOptions = generatedOptions.map((option) => ({
+    label: option.label,
+    title: option.title,
+    imageUrl: option.imageUrl,
+    storagePath: option.storagePath,
+    description: option.description,
+    contentType: option.contentType,
+    screens: option.screens,
+    ...(option.width ? { width: option.width } : {}),
+    ...(option.height ? { height: option.height } : {}),
+  }))
 
   send?.({ type: "stage", message: "Saving mockup images...", step: 5, totalSteps: 5 })
 
@@ -249,6 +349,7 @@ export async function generateOpenRouterImageMockup({
       compact_brief_char_count: compactBrief.length,
       planner_prompt_char_count: plannerUserPrompt.length,
       image_prompt_char_counts: imagePromptCharCounts as unknown as Json,
+      image_skeleton_asset_paths: imageSkeletonAssetPaths as unknown as Json,
     } satisfies Record<string, Json>,
   }
 }
@@ -353,6 +454,12 @@ async function generateAndStoreOption({
     label: config.label,
     designPlan,
   })
+  const skeleton = getMockupStoryboardSkeleton(designPlan.primaryPlatform)
+  const userMessageContent = buildOpenRouterMockupImageUserMessageContent({
+    prompt: storyboardPrompt,
+    platform: designPlan.primaryPlatform,
+  })
+  const frameScreens = getMockupStoryboardFrameScreens(designPlan)
 
   let response: OpenAI.Chat.Completions.ChatCompletion
   try {
@@ -366,7 +473,7 @@ async function generateAndStoreOption({
         },
         {
           role: "user",
-          content: storyboardPrompt,
+          content: userMessageContent,
         },
       ],
       modalities: ["image", "text"],
@@ -396,7 +503,7 @@ async function generateAndStoreOption({
     storagePath,
     description: extractAssistantText(choice) || formatDirectionForPrompt(direction),
     contentType: parsedImage.contentType,
-    screens: designPlan.screens.map((screen) => ({
+    screens: frameScreens.map((screen) => ({
       name: screen.name,
       caption: screen.caption,
       purpose: screen.purpose,
@@ -405,6 +512,8 @@ async function generateAndStoreOption({
     ...(parsedImage.width ? { width: parsedImage.width } : {}),
     ...(parsedImage.height ? { height: parsedImage.height } : {}),
     imagePromptCharCount: storyboardPrompt.length,
+    skeletonAssetPath: skeleton.publicPath,
+    skeletonLabel: skeleton.label,
   }
 }
 
@@ -545,147 +654,91 @@ function isAbortError(error: unknown) {
 export const OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT =
   "You generate production-quality static UI mockup images for software products. Return an image and a concise design rationale. Do not call external APIs. Do not mention implementation details."
 
-const IPHONE_PRO_STORYBOARD_DEVICE = "iPhone 17 Pro"
+function getMockupStoryboardFrameScreens(designPlan?: MockupDesignPlan): MockupDesignPlanScreen[] {
+  const fallbackScreens: MockupDesignPlanScreen[] = [
+    {
+      name: "Core Product Dashboard",
+      flowStep: 1,
+      caption: "Primary workspace",
+      purpose: "Show the main happy-path product surface",
+      happyPathState: "The product is populated with realistic user data",
+      dataToShow: ["Primary navigation", "Status summary", "Next action"],
+      priority: "P0",
+    },
+    {
+      name: "Workflow Detail",
+      flowStep: 2,
+      caption: "Focused next step",
+      purpose: "Show the most important follow-up state",
+      happyPathState: "The user is completing the core workflow",
+      dataToShow: ["Detailed content", "Decision support", "Confirmation action"],
+      priority: "P0",
+    },
+  ]
 
-function buildMobileStoryboardCompositionSpec({
-  label,
-  title,
-  screenCount,
-}: {
-  label: string
-  title: string
-  screenCount: number | "1-3"
-}) {
-  return JSON.stringify({
-    canvas: {
-      aspectRatio: "21:9",
-      background: "clean warm-white Figma canvas",
-      composition: "horizontal product user-flow strip",
-      lanes: [
-        "optional left rationale cards",
-        `${screenCount} equal phone screen lanes`,
-        "optional right rationale cards",
-      ],
-      margins: "wide outer margins with clear gutters between all lanes",
+  const screens = designPlan?.screens ?? []
+  if (screens.length === 0) return fallbackScreens
+
+  if (screens.length === 1) {
+    const first = screens[0]
+    return [
+      first,
+      {
+        ...first,
+        name: `${first.name} Detail`,
+        flowStep: 2,
+        caption: "Supporting detail",
+        purpose: `Show the highest-value detail, drill-in, or next action for ${first.name}.`,
+        dataToShow: first.dataToShow.length > 0
+          ? first.dataToShow
+          : ["Detailed product data", "Helpful status", "Next action"],
+      },
+    ]
+  }
+
+  if (screens.length === 2) return screens
+
+  const extraScreenSummary = screens
+    .slice(MOCKUP_STORYBOARD_FRAME_COUNT)
+    .map((screen) => `${screen.name}: ${screen.happyPathState}`)
+    .join("; ")
+  const extraData = screens
+    .slice(MOCKUP_STORYBOARD_FRAME_COUNT)
+    .flatMap((screen) => screen.dataToShow)
+    .slice(0, 6)
+
+  return [
+    screens[0],
+    {
+      ...screens[1],
+      purpose: `${screens[1].purpose} Also fold in the most important later-flow detail instead of adding another frame: ${extraScreenSummary}.`,
+      dataToShow: [...screens[1].dataToShow, ...extraData],
     },
-    deviceFrame: {
-      model: IPHONE_PRO_STORYBOARD_DEVICE,
-      orientation: "portrait only",
-      statusBar: "consistent iOS status bar, 9:41 time, signal, wifi, battery",
-      homeIndicator: "consistent iOS home indicator",
-      widthRule: "all phone frames use the exact same width, scale, stroke, and corner radius",
-      heightRule: "keep phone frames the same height when possible; if one screen needs more content, extend only vertically at the same width or show an internal scroll/continuation cue",
-      prohibited: [
-        "wide mobile devices",
-        "landscape phones",
-        "tablet-like phones",
-        "mixed phone sizes",
-        "browser chrome around phone screens",
-      ],
-    },
-    captions: {
-      placement: "fixed top caption row only",
-      format: "1. Screen Name",
-      source: "use the numbered fixed top labels from the Screens to show section; do not invent new screen headings",
-      alignment: "center each caption directly above its phone lane",
-      rules: [
-        "one caption per screen",
-        "render the planned fixed top labels verbatim",
-        "do not add floating captions inside the canvas",
-        "do not place captions inside side rationale cards",
-        "do not place captions under the phones except the option label",
-      ],
-    },
-    flow: {
-      direction: "left to right",
-      connectors: "simple neutral gray arrows between adjacent phone screens",
-      connectorAlignment: "vertically centered between phone frames",
-    },
-    rationaleCards: {
-      placement: "outside the phone lanes only, in the left and right side lanes",
-      cardCount: "2-3 per used side lane",
-      labels: ["Why it works", "Design rationale", "Emotional payoff"],
-      style: "small rounded white cards with subtle border, compact icon, bold label, and short rationale",
-      overlapRule: "never overlap phone frames, captions, arrows, or option label",
-    },
-    optionLabel: {
-      text: `Option ${label} - ${title}`,
-      placement: "bottom center below the phone row",
-      style: "small muted italic label",
-    },
-    inScreenUi: {
-      density: "compact but readable mobile product UI",
-      state: "populated happy path with realistic data, decisions, confirmations, and next actions",
-      hierarchy: "clear primary action, visible navigation, useful badges, and real product content",
-    },
-  }, null, 2)
+  ]
 }
 
-function buildDesktopStoryboardCompositionSpec({
-  label,
-  title,
-  screenCount,
-}: {
-  label: string
-  title: string
-  screenCount: number | "1-2"
-}) {
-  return JSON.stringify({
-    canvas: {
-      aspectRatio: "21:9",
-      background: "clean warm-white Figma canvas",
-      composition: "horizontal desktop product storyboard",
-      screenLanes: "1 or 2 equal desktop screen lanes",
-      mode: screenCount === 1 ? "single-screen hero mode" : "two-screen comparison flow",
-      margins: "wide outer margins with generous gutters so desktop UI remains inspectable",
-    },
-    desktopFrames: {
-      count: screenCount,
-      maxCount: 2,
-      proportions: "real desktop web or native desktop app aspect ratio",
-      widthRule: "use one large full-width desktop frame for complex single-screen views, or two equal-width desktop frames for simple two-step flows",
-      readabilityRule: "preserve full desktop proportions with readable navigation, tables, panels, and labels",
-      prohibited: [
-        "third desktop screen",
-        "fourth desktop screen",
-        "compressed desktop thumbnails",
-        "tiny unreadable multi-screen strips",
-        "decorative fake browser chrome",
-      ],
-    },
-    captions: {
-      placement: "fixed top caption row only",
-      format: "1. Screen Name",
-      source: "use the numbered fixed top labels from the Screens to show section; do not invent new screen headings",
-      alignment: "center each caption directly above its desktop lane",
-      rules: [
-        "one caption per screen",
-        "render the planned fixed top labels verbatim",
-        "do not add floating captions inside the canvas",
-        "do not place captions below the desktop frames except the option label",
-      ],
-    },
-    flow: {
-      direction: "left to right when two screens are present",
-      connectors: "simple neutral gray arrow between the two desktop screens only",
-      connectorRule: "omit arrows in single-screen hero mode",
-    },
-    optionLabel: {
-      text: `Option ${label} - ${title}`,
-      placement: "bottom center below the desktop row",
-      style: "small muted italic label",
-    },
-    hardRules: [
-      "Never add a third desktop screen.",
-      "No compressed desktop thumbnails.",
-      "If a third screen seems necessary, combine its most important content into one of the two allowed desktop frames.",
-    ],
-  }, null, 2)
+function formatMockupStoryboardFrameScreens(screens: MockupDesignPlanScreen[]) {
+  return screens.map((screen, index) => [
+    `${index + 1}. ${screen.name}`,
+    `Caption to place in the existing top label: ${index + 1}. ${screen.name}`,
+    `Purpose: ${screen.purpose}`,
+    `Happy-path state: ${screen.happyPathState}`,
+    `Data to show inside the existing frame: ${screen.dataToShow.join(", ") || "realistic populated product data"}`,
+  ].join("\n")).join("\n\n")
+}
+
+function formatFoldedStoryboardScreens(designPlan?: MockupDesignPlan) {
+  const foldedScreens = designPlan?.screens.slice(MOCKUP_STORYBOARD_FRAME_COUNT) ?? []
+  if (foldedScreens.length === 0) return ""
+
+  return foldedScreens
+    .map((screen) => `- ${screen.name}: fold the key state "${screen.happyPathState}" into frame 2 as supporting detail; do not create another frame.`)
+    .join("\n")
 }
 
 export function buildOpenRouterMockupImagePrompt({
   projectName,
-  mvpPlan,
+  mvpPlan: _mvpPlan,
   title,
   strategy,
   label,
@@ -698,39 +751,20 @@ export function buildOpenRouterMockupImagePrompt({
   label: string
   designPlan?: MockupDesignPlan
 }) {
-  const platform = designPlan?.primaryPlatform ?? "desktop-web"
-  const isMobilePlatform = platform.includes("mobile")
-  const screenLimit = getMockupScreenLimitForPlatform(platform)
-  const screenRange = `${screenLimit.min}-${screenLimit.max}`
-  const screenBrief = designPlan
-    ? designPlan.screens.map((screen, index) => [
-      `${index + 1}. ${screen.name} - ${screen.caption}`,
-      `Purpose: ${screen.purpose}`,
-      `Fixed top label to render: ${index + 1}. ${screen.name}`,
-      `Caption intent, do not float elsewhere: ${screen.caption}`,
-      `Happy-path state: ${screen.happyPathState}`,
-      `Data to show: ${screen.dataToShow.join(", ") || "realistic populated product data"}`,
-    ].join("\n")).join("\n\n")
-    : `Choose ${screenRange} ${isMobilePlatform ? "mobile" : "desktop"} screens from the core happy path.`
-  const canvasInstruction = isMobilePlatform
-    ? "Create a Figma-style user-flow canvas on a clean white background with phone screens shown side by side and short captions."
-    : "Create a wide horizontal storyboard on a clean white background with one or two desktop app screens shown side by side and short captions."
-  const mobileCompositionSpec = isMobilePlatform
-    ? buildMobileStoryboardCompositionSpec({
-      label,
-      title,
-      screenCount: designPlan?.screens.length ?? "1-3",
-    })
-    : null
-  const desktopCompositionSpec = !isMobilePlatform
-    ? buildDesktopStoryboardCompositionSpec({
-      label,
-      title,
-      screenCount: designPlan?.screens.length ?? "1-2",
-    })
-    : null
+  void _mvpPlan
 
-  return `Create option ${label}: ${title} for "${projectName}".
+  const platform = designPlan?.primaryPlatform ?? "desktop-web"
+  const skeleton = getMockupStoryboardSkeleton(platform)
+  const frameScreens = getMockupStoryboardFrameScreens(designPlan)
+  const foldedScreens = formatFoldedStoryboardScreens(designPlan)
+  const frameLabels = frameScreens.map((screen, index) => `"${index + 1}. ${screen.name}"`).join("\n- ")
+
+  return `Edit the attached ${skeleton.label} in place for "${projectName}".
+
+Internal direction metadata only:
+- Direction label: ${label}
+- Direction name: ${title}
+- Do not render the direction label, direction name, or labels such as "Option A" anywhere in the image.
 
 Design strategy:
 ${strategy}
@@ -744,29 +778,35 @@ ${designPlan?.happyPathScenario ?? "A returning user is fully using the product 
 Target user:
 ${designPlan?.targetUser ?? "Primary MVP user"}
 
-Screens to show in this one storyboard image:
-${screenBrief}
+Replace the existing "Text here" labels with exactly:
+- ${frameLabels}
+
+Frame content to place inside the existing purple placeholders:
+${formatMockupStoryboardFrameScreens(frameScreens)}
+${foldedScreens ? `
+Later-flow details to fold into the second frame:
+${foldedScreens}` : ""}
+
+Skeleton edit contract:
+- Treat the attached image as the source image to edit, not as loose visual inspiration.
+- Preserve ${skeleton.canvasDescription}.
+- Preserve ${skeleton.preservedStructure}.
+- Preserve ${skeleton.chromeDescription}.
+- Do not move, resize, crop, redraw, duplicate, or remove either frame.
+- Do not create a new storyboard layout, add a third frame, add a fourth frame, add arrows, or add side rationale cards.
+- Replace only ${skeleton.interiorDescription} with the requested product UI.
+- Keep the two-screen side-by-side structure exactly as shown in the attached skeleton.
+- Replace each top placeholder caption once, in the existing caption locations, using the exact labels above.
+- Keep all generated UI details inside the existing frame interiors; do not let content spill into the white canvas, frame borders, captions, shadows, or device/browser chrome.
+- Use realistic UI labels and concise product copy derived from the planned screens and data.
+- Show populated happy-path product states, not empty states.
+- Make the product UI feel like a modern software interface, not a marketing landing page.
+- Avoid unreadable filler text, watermarks, code snippets, and decorative content outside the two frame interiors.
 
 Output requirements:
-- Generate one high-fidelity static storyboard image that contains all selected screens.
-- Use a wide 21:9 composition with enough resolution for screen-level inspection.
-- ${canvasInstruction}
-- Label each screen once, using the fixed caption placement described below.
-- Show populated happy-path product states, not empty states.
-- Use realistic UI labels and concise product copy derived from the planned screens and data.
-- Make it feel like a modern SaaS/product interface, not a marketing landing page.
-- Avoid unreadable filler text, fake browser chrome, watermarks, and code snippets.
-- Include enough visual detail to evaluate layout, hierarchy, and product direction.
-${desktopCompositionSpec ? `
-Desktop storyboard composition JSON:
-${desktopCompositionSpec}
-
-Follow the JSON structure above exactly for desktop storyboards. The most important constraints are: use one or two readable desktop frames only, preserve full desktop proportions, never add a third desktop screen, and avoid compressed desktop thumbnails.` : ""}
-${mobileCompositionSpec ? `
-Mobile storyboard composition JSON:
-${mobileCompositionSpec}
-
-Follow the JSON structure above exactly for mobile storyboards. The most important constraints are: every phone uses the same ${IPHONE_PRO_STORYBOARD_DEVICE} portrait width and scale, captions stay in one top row, arrows sit between screens, and rationale cards stay outside the phone lanes.` : ""}`
+- Return one high-fidelity edited image based on the attached skeleton.
+- Preserve the skeleton composition and canvas exactly while making the two product screens detailed enough for layout and hierarchy review.
+- Return a concise rationale separately if the model includes text, but do not place that rationale in the image.`
 }
 
 /**
@@ -786,7 +826,12 @@ export function buildMockupImagePromptForOption({
   label: OpenRouterMockupOptionLabel
   systemPromptOverride?: string
   designPlan: MockupDesignPlan
-}): { systemPrompt: string; userPrompt: string } {
+}): {
+  systemPrompt: string
+  userPrompt: string
+  skeletonAssetPath: string
+  skeletonLabel: string
+} {
   const config = OPENROUTER_MOCKUP_OPTION_CONFIGS.find((c) => c.label === label)
   if (!config) throw new Error(`Unsupported mockup option label: ${label}`)
 
@@ -802,10 +847,13 @@ export function buildMockupImagePromptForOption({
     label: config.label,
     designPlan,
   })
+  const skeleton = getMockupStoryboardSkeleton(designPlan.primaryPlatform)
 
   return {
     systemPrompt: systemPromptOverride || OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
     userPrompt,
+    skeletonAssetPath: skeleton.publicPath,
+    skeletonLabel: skeleton.label,
   }
 }
 

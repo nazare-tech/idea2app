@@ -105,7 +105,7 @@ function CompetitiveOverviewFallback({
             Executive Summary
           </h1>
           <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-            Market snapshot, opportunity verdict, and key risk.
+            Market snapshot, entry assessment, and key risk.
           </p>
         </div>
       </header>
@@ -359,6 +359,8 @@ function ExecutiveSummaryCard({
   summary: CompetitiveAnalysisStructuredData["executiveSummary"]
   showHeader?: boolean
 }) {
+  const bullets = summary.bullets.map(formatExecutiveSummaryBullet)
+
   return (
     <PencilCard
       title="Market Snapshot & Entry Thesis"
@@ -366,13 +368,17 @@ function ExecutiveSummaryCard({
       showHeader={showHeader}
     >
       <ParagraphStack paragraphs={summary.paragraphs} />
-      {summary.bullets.length > 0 ? (
+      {bullets.length > 0 ? (
         <div className="pt-5">
-          <NumberedList items={summary.bullets} />
+          <NumberedList items={bullets} />
         </div>
       ) : null}
     </PencilCard>
   )
+}
+
+function formatExecutiveSummaryBullet(item: string) {
+  return item.replace(/^Verdict:/i, "Assessment:")
 }
 
 function DataTable({
@@ -426,13 +432,15 @@ function SnapshotHero({
 }: {
   structured: CompetitiveAnalysisStructuredData
 }) {
+  const bullets = structured.executiveSummary.bullets.map(formatExecutiveSummaryBullet)
+
   return (
     <div className="space-y-6">
       <PencilCard title="Market Snapshot & Entry Thesis" kicker="Category Snapshot">
         <ParagraphStack paragraphs={structured.executiveSummary.paragraphs} />
-        {structured.executiveSummary.bullets.length > 0 ? (
+        {bullets.length > 0 ? (
           <div className="pt-5">
-            <NumberedList items={structured.executiveSummary.bullets} />
+            <NumberedList items={bullets} />
           </div>
         ) : null}
         <MarketSignalStrip items={structured.competitiveLandscapeOverview} />
@@ -1149,7 +1157,7 @@ export function CompetitiveOverviewSection({
             Executive Summary
           </h1>
           <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-            Market snapshot, opportunity verdict, and key risk.
+            Market snapshot, entry assessment, and key risk.
           </p>
         </div>
       </header>

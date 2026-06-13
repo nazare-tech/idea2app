@@ -2,11 +2,12 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT } from "./prompts"
 
-test("competitive analysis prompt includes verdict guidance inside executive summary", () => {
+test("competitive analysis prompt includes assessment guidance inside executive summary", () => {
   assert.match(
     COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
-    /Executive Summary.*2-8 words.*headline style.*exactly 3 concise bullets/s
+    /Executive Summary.*assessment line.*2-8 words.*headline style.*exactly 3 concise bullets covering assessment/s
   )
+  assert.doesNotMatch(COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, /verdict line/i)
 })
 
 test("competitive analysis prompt requires direct competitor website links and key edge", () => {

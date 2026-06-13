@@ -95,30 +95,33 @@ test("parseMockupDesignPlan: normalizes a valid design plan", () => {
 })
 
 test("getMockupScreenLimitForPlatform: returns platform-specific limits", () => {
-  assert.deepEqual(getMockupScreenLimitForPlatform("desktop-web"), { min: 1, max: 2 })
-  assert.deepEqual(getMockupScreenLimitForPlatform("native-desktop-app"), { min: 1, max: 2 })
-  assert.deepEqual(getMockupScreenLimitForPlatform("mobile-web"), { min: 1, max: 3 })
-  assert.deepEqual(getMockupScreenLimitForPlatform("native-mobile-app"), { min: 1, max: 3 })
+  assert.deepEqual(getMockupScreenLimitForPlatform("desktop-web"), { min: 2, max: 2 })
+  assert.deepEqual(getMockupScreenLimitForPlatform("native-desktop-app"), { min: 2, max: 2 })
+  assert.deepEqual(getMockupScreenLimitForPlatform("mobile-web"), { min: 2, max: 2 })
+  assert.deepEqual(getMockupScreenLimitForPlatform("native-mobile-app"), { min: 2, max: 2 })
 })
 
-test("parseMockupDesignPlan: accepts one-screen plans for desktop and mobile", () => {
-  const desktopPlan = parseMockupDesignPlan(JSON.stringify({
-    primaryPlatform: "desktop-web",
-    happyPathScenario: "User finishes the main flow.",
-    targetUser: "Operator",
-    screens: [buildTestScreen(1)],
-    directions: buildTestDirections(),
-  }))
-  const mobilePlan = parseMockupDesignPlan(JSON.stringify({
-    primaryPlatform: "mobile-web",
-    happyPathScenario: "User finishes the main flow.",
-    targetUser: "Operator",
-    screens: [buildTestScreen(1)],
-    directions: buildTestDirections(),
-  }))
-
-  assert.equal(desktopPlan.screens.length, 1)
-  assert.equal(mobilePlan.screens.length, 1)
+test("parseMockupDesignPlan: rejects one-screen plans because skeletons have two frames", () => {
+  assert.throws(
+    () => parseMockupDesignPlan(JSON.stringify({
+      primaryPlatform: "desktop-web",
+      happyPathScenario: "User finishes the main flow.",
+      targetUser: "Operator",
+      screens: [buildTestScreen(1)],
+      directions: buildTestDirections(),
+    })),
+    /desktop-web mockup plans must include exactly 2 screens/,
+  )
+  assert.throws(
+    () => parseMockupDesignPlan(JSON.stringify({
+      primaryPlatform: "mobile-web",
+      happyPathScenario: "User finishes the main flow.",
+      targetUser: "Operator",
+      screens: [buildTestScreen(1)],
+      directions: buildTestDirections(),
+    })),
+    /mobile-web mockup plans must include exactly 2 screens/,
+  )
 })
 
 test("parseMockupDesignPlan: trims over-limit screens by platform", () => {
@@ -138,7 +141,7 @@ test("parseMockupDesignPlan: trims over-limit screens by platform", () => {
   }))
 
   assert.deepEqual(desktopPlan.screens.map((screen) => screen.name), ["Screen 1", "Screen 2"])
-  assert.deepEqual(mobilePlan.screens.map((screen) => screen.name), ["Screen 1", "Screen 2", "Screen 3"])
+  assert.deepEqual(mobilePlan.screens.map((screen) => screen.name), ["Screen 1", "Screen 2"])
 })
 
 test("parseMockupDesignPlan: rejects plans without any screens", () => {
@@ -150,7 +153,7 @@ test("parseMockupDesignPlan: rejects plans without any screens", () => {
       screens: [],
       directions: buildTestDirections(),
     })),
-    /desktop-web mockup plans must include 1-2 screens/,
+    /desktop-web mockup plans must include exactly 2 screens/,
   )
 })
 
@@ -249,16 +252,17 @@ test("buildMockupGenerationBrief: exposes the minimum fields needed by the plann
 })
 
 test("MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT: constrains mobile storyboard planning", () => {
-  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /iPhone 17 Pro portrait frames/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /exactly 2 screens/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /two-frame iPhone skeleton/)
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /one fixed top caption per screen/)
-  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /scroll cues rather than wider devices/)
-  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /mobile platforms, choose 1, 2, or 3 screens/)
-  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /never 4 screens/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /Never plan a third screen/)
+  assert.doesNotMatch(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /1, 2, or 3 screens/)
+  assert.doesNotMatch(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /never 4 screens/)
 })
 
 test("MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT: constrains desktop storyboard planning", () => {
-  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /desktop platforms, choose 1 or 2 screens/)
-  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /never 3 or 4 desktop screens/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /two-frame desktop skeleton/)
+  assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /additional desktop windows or compressed thumbnails/)
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /Do not invent a new persona/)
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /"targetUser"/)
 })

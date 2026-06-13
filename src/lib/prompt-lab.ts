@@ -33,6 +33,7 @@ import {
   buildMockupImagePromptForOption,
   buildOpenRouterMockupImagePrompt,
   generateOpenRouterImageMockupOption,
+  getMockupStoryboardSkeleton,
   getOpenRouterMockupImageModel,
   getOpenRouterMockupImageTimeoutMs,
   getOpenRouterMockupPlannerMaxTokens,
@@ -348,6 +349,8 @@ export async function runPromptLabArtifact({
             designPlan,
             imageSystemPrompt: imagePrompts.systemPrompt,
             imageUserPrompt: imagePrompts.userPrompt,
+            imageSkeletonAssetPath: imagePrompts.skeletonAssetPath,
+            imageSkeletonLabel: imagePrompts.skeletonLabel,
             imagePromptCharCount: imagePrompts.userPrompt.length,
           },
         }
@@ -392,6 +395,8 @@ export async function runPromptLabArtifact({
           plannerOutput,
           designPlan: result.designPlan,
           imagePromptCharCount: result.option.imagePromptCharCount,
+          imageSkeletonAssetPath: getMockupStoryboardSkeleton(result.designPlan.primaryPlatform).publicPath,
+          imageSkeletonLabel: getMockupStoryboardSkeleton(result.designPlan.primaryPlatform).label,
         },
       }
     }
@@ -427,6 +432,8 @@ export async function runPromptLabArtifact({
         storagePath: result.option.storagePath,
         runId: result.runId,
         designPlan: result.designPlan,
+        imageSkeletonAssetPath: getMockupStoryboardSkeleton(result.designPlan.primaryPlatform).publicPath,
+        imageSkeletonLabel: getMockupStoryboardSkeleton(result.designPlan.primaryPlatform).label,
       },
     }
   }

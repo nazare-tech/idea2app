@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Maker Compass | Start with direction</title>
+    <meta
+      name="description"
+      content="Maker Compass helps builders turn a rough idea into a clear first version plan before they build the wrong thing."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: oklch(98.5% 0.006 68);
+        --paper-warm: oklch(94.8% 0.018 64);
+        --surface: oklch(99.2% 0.005 68);
+        --ink: oklch(20% 0.014 48);
+        --ink-soft: oklch(36% 0.018 35);
+        --muted: oklch(57% 0.015 54);
+        --line: oklch(88.5% 0.018 62);
+        --line-strong: oklch(79% 0.024 58);
+        --red: oklch(57% 0.235 27);
+        --red-dark: oklch(47% 0.21 27);
+        --red-soft: oklch(93.5% 0.04 29);
+        --shadow: 0 18px 50px color-mix(in oklch, var(--ink) 9%, transparent);
+        --sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --mono: "Fira Mono", "SFMono-Regular", Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(90deg, color-mix(in oklch, var(--line) 48%, transparent) 1px, transparent 1px),
+          linear-gradient(180deg, color-mix(in oklch, var(--line) 38%, transparent) 1px, transparent 1px),
+          var(--paper);
+        background-size: 72px 72px;
+        color: var(--ink);
+        font-family: var(--sans);
+        line-height: 1.55;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      .page {
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        border-bottom: 1px solid color-mix(in oklch, var(--line) 76%, transparent);
+        background: color-mix(in oklch, var(--paper) 94%, transparent);
+        padding: 18px 28px;
+        backdrop-filter: blur(10px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 26px;
+        height: 26px;
+        place-items: center;
+        background: var(--red);
+        color: var(--surface);
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        color: var(--ink-soft);
+        font-size: 14px;
+        font-weight: 650;
+      }
+
+      .nav-links a:hover,
+      .nav-links a:focus-visible {
+        color: var(--ink);
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--ink);
+        padding: 13px 20px;
+        font-weight: 800;
+        line-height: 1;
+        transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+      }
+
+      .button-primary {
+        border-color: var(--red);
+        background: var(--red);
+        color: var(--surface);
+      }
+
+      .button-primary:hover,
+      .button-primary:focus-visible {
+        background: var(--red-dark);
+      }
+
+      .button-secondary {
+        background: var(--surface);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.03fr) minmax(340px, 0.97fr);
+        gap: 52px;
+        align-items: center;
+        min-height: calc(100vh - 76px);
+        padding: 70px 48px 44px;
+      }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        padding: 7px 11px;
+        color: var(--ink-soft);
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 940px;
+        margin-top: 22px;
+        font-size: 72px;
+        font-weight: 900;
+        letter-spacing: 0;
+        line-height: 0.92;
+      }
+
+      .hero-copy {
+        max-width: 660px;
+        margin-top: 26px;
+        color: var(--ink-soft);
+        font-size: 20px;
+        line-height: 1.48;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 34px;
+      }
+
+      .proof-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 720px;
+        margin-top: 52px;
+        border: 1px solid var(--line);
+        background: color-mix(in oklch, var(--surface) 76%, transparent);
+      }
+
+      .proof {
+        padding: 18px 20px;
+      }
+
+      .proof + .proof {
+        border-left: 1px solid var(--line);
+      }
+
+      .proof strong {
+        display: block;
+        font-size: 15px;
+      }
+
+      .proof span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .artifact {
+        position: relative;
+        min-height: 640px;
+      }
+
+      .artifact-panel {
+        position: absolute;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .artifact-panel.large {
+        inset: 64px 38px auto 18px;
+        min-height: 430px;
+        padding: 28px;
+      }
+
+      .artifact-panel.small {
+        right: 0;
+        bottom: 74px;
+        width: 52%;
+        padding: 18px;
+      }
+
+      .artifact-panel.paper {
+        left: 0;
+        bottom: 22px;
+        width: 46%;
+        padding: 22px;
+        background: var(--paper-warm);
+      }
+
+      .artifact-label {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .artifact-title {
+        margin-top: 16px;
+        font-size: 32px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .artifact-line {
+        height: 1px;
+        margin: 18px 0;
+        background: var(--line);
+      }
+
+      .artifact-steps {
+        display: grid;
+        gap: 11px;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        gap: 12px;
+        align-items: start;
+        color: var(--ink-soft);
+        font-size: 14px;
+      }
+
+      .step-number {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        background: var(--ink);
+        color: var(--surface);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .asset-stack {
+        position: absolute;
+        right: 18px;
+        top: 0;
+        display: grid;
+        grid-template-columns: repeat(2, 118px);
+        gap: 10px;
+        transform: rotate(2deg);
+      }
+
+      .asset-stack img {
+        aspect-ratio: 1;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        object-fit: cover;
+      }
+
+      .red-rule {
+        position: absolute;
+        left: 46px;
+        top: 36px;
+        width: 2px;
+        height: 552px;
+        background: var(--red);
+      }
+
+      .section {
+        padding: 96px 48px;
+      }
+
+      .section-grid {
+        display: grid;
+        grid-template-columns: 0.82fr 1.18fr;
+        gap: 72px;
+        align-items: start;
+      }
+
+      .section h2 {
+        max-width: 620px;
+        font-size: 50px;
+        font-weight: 900;
+        letter-spacing: 0;
+        line-height: 0.98;
+      }
+
+      .section-lede {
+        max-width: 680px;
+        color: var(--ink-soft);
+        font-size: 20px;
+        line-height: 1.5;
+      }
+
+      .copy-stack {
+        display: grid;
+        gap: 22px;
+      }
+
+      .copy-block {
+        border-top: 1px solid var(--line-strong);
+        padding-top: 18px;
+      }
+
+      .copy-block h3 {
+        font-size: 22px;
+        font-weight: 850;
+      }
+
+      .copy-block p {
+        max-width: 64ch;
+        margin-top: 9px;
+        color: var(--ink-soft);
+      }
+
+      .contrast {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-top: 1px solid var(--ink);
+        border-bottom: 1px solid var(--ink);
+      }
+
+      .contrast-column {
+        padding: 42px;
+      }
+
+      .contrast-column + .contrast-column {
+        border-left: 1px solid var(--ink);
+        background: var(--ink);
+        color: var(--surface);
+      }
+
+      .contrast h2 {
+        font-size: 42px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .contrast-list {
+        display: grid;
+        gap: 16px;
+        margin-top: 30px;
+        padding: 0;
+        list-style: none;
+      }
+
+      .contrast-list li {
+        border-top: 1px solid currentColor;
+        padding-top: 14px;
+        font-size: 20px;
+        font-weight: 800;
+      }
+
+      .process {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+      }
+
+      .process-item {
+        min-height: 260px;
+        padding: 24px;
+      }
+
+      .process-item + .process-item {
+        border-left: 1px solid var(--line);
+      }
+
+      .process-num {
+        color: var(--red);
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .process-item h3 {
+        margin-top: 68px;
+        font-size: 24px;
+        font-weight: 900;
+        line-height: 1.05;
+      }
+
+      .process-item p {
+        margin-top: 12px;
+        color: var(--ink-soft);
+        font-size: 15px;
+      }
+
+      .final {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 34px;
+        align-items: end;
+        border-top: 1px solid var(--ink);
+        padding: 90px 48px 52px;
+      }
+
+      .final h2 {
+        max-width: 900px;
+        font-size: 64px;
+        font-weight: 900;
+        line-height: 0.95;
+      }
+
+      .final p {
+        max-width: 630px;
+        margin-top: 22px;
+        color: var(--ink-soft);
+        font-size: 19px;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        border-top: 1px solid var(--line);
+        padding: 22px 48px 32px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 1000px) {
+        .hero,
+        .section-grid,
+        .final {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          padding-top: 50px;
+        }
+
+        h1 {
+          font-size: 58px;
+        }
+
+        .artifact {
+          min-height: 600px;
+        }
+
+        .process {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .process-item:nth-child(3) {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+
+        .process-item:nth-child(4) {
+          border-top: 1px solid var(--line);
+        }
+      }
+
+      @media (max-width: 720px) {
+        .nav {
+          align-items: flex-start;
+          padding: 16px 18px;
+        }
+
+        .nav-links {
+          display: none;
+        }
+
+        .hero,
+        .section,
+        .final,
+        .footer {
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+
+        h1 {
+          font-size: 42px;
+          line-height: 0.98;
+        }
+
+        .hero-copy,
+        .section-lede {
+          font-size: 18px;
+        }
+
+        .proof-row,
+        .contrast,
+        .process {
+          grid-template-columns: 1fr;
+        }
+
+        .proof + .proof,
+        .contrast-column + .contrast-column,
+        .process-item + .process-item {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+
+        .artifact {
+          min-height: 720px;
+        }
+
+        .artifact-panel.large {
+          inset: 90px 0 auto 0;
+        }
+
+        .asset-stack {
+          right: 0;
+          grid-template-columns: repeat(2, 84px);
+        }
+
+        .artifact-panel.small,
+        .artifact-panel.paper {
+          left: 0;
+          right: auto;
+          width: 100%;
+        }
+
+        .artifact-panel.small {
+          bottom: 84px;
+        }
+
+        .red-rule {
+          display: none;
+        }
+
+        .section h2,
+        .contrast h2,
+        .final h2 {
+          font-size: 38px;
+        }
+
+        .footer {
+          flex-direction: column;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="nav" aria-label="Maker Compass marketing navigation">
+        <a class="brand" href="../">
+          <span class="brand-mark">M</span>
+          <span>Maker Compass</span>
+        </a>
+        <nav class="nav-links" aria-label="Page sections">
+          <a href="#why">Why it exists</a>
+          <a href="#less-more">Less and more</a>
+          <a href="#process">Process</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="hero-title">
+          <div>
+            <span class="kicker">For the idea you keep putting off</span>
+            <h1 id="hero-title">Stop putting your life's work off.</h1>
+            <p class="hero-copy">
+              Maker Compass helps you turn a rough idea into a clear first version plan before you ask AI, a coding agent, or yourself to build the wrong thing.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="../">Start with your idea</a>
+              <a class="button button-secondary" href="#process">See the process</a>
+            </div>
+            <div class="proof-row" aria-label="Maker Compass outcomes">
+              <div class="proof">
+                <strong>Market signal</strong>
+                <span>What already exists and where the opening is.</span>
+              </div>
+              <div class="proof">
+                <strong>First version scope</strong>
+                <span>What to build now and what to ignore.</span>
+              </div>
+              <div class="proof">
+                <strong>Build-ready direction</strong>
+                <span>Plans, mockups, specs, and next steps.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="artifact" aria-label="Maker Compass planning artifacts">
+            <div class="red-rule" aria-hidden="true"></div>
+            <div class="asset-stack" aria-hidden="true">
+              <img src="../public/landing/hero/215-099_image-28.png" alt="">
+              <img src="../public/landing/hero/215-104_image-21.png" alt="">
+              <img src="../public/landing/hero/215-109_image-27.png" alt="">
+              <img src="../public/landing/hero/215-113_image-25.png" alt="">
+            </div>
+            <article class="artifact-panel large">
+              <div class="artifact-label">First version plan</div>
+              <h2 class="artifact-title">Before the build, decide what deserves to exist.</h2>
+              <div class="artifact-line"></div>
+              <div class="artifact-steps">
+                <div class="step">
+                  <span class="step-number">01</span>
+                  <span>Clarify who the product is for and why they would care now.</span>
+                </div>
+                <div class="step">
+                  <span class="step-number">02</span>
+                  <span>Map the market so the idea is not just a prettier duplicate.</span>
+                </div>
+                <div class="step">
+                  <span class="step-number">03</span>
+                  <span>Choose the smallest serious version worth building first.</span>
+                </div>
+                <div class="step">
+                  <span class="step-number">04</span>
+                  <span>Turn the direction into artifacts a coding agent can use.</span>
+                </div>
+              </div>
+            </article>
+            <article class="artifact-panel small">
+              <div class="artifact-label">Not hype</div>
+              <p>It is not here to tell you every idea is brilliant. It is here to orient the work.</p>
+            </article>
+            <article class="artifact-panel paper">
+              <div class="artifact-label">Build rule</div>
+              <p>Less guessing. Less AI slop. More confidence in the first version.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="why" aria-labelledby="why-title">
+          <div class="section-grid">
+            <div>
+              <span class="kicker">Why it exists</span>
+              <h2 id="why-title">Starting is messy, even when building is easier.</h2>
+            </div>
+            <div class="copy-stack">
+              <p class="section-lede">
+                AI made it easier than ever to make something. But easier does not always mean better.
+              </p>
+              <div class="copy-block">
+                <h3>The new risk is fake progress.</h3>
+                <p>Pretty screens, generic features, and a weekend build can feel productive while still solving no real problem for no real customer.</p>
+              </div>
+              <div class="copy-block">
+                <h3>The beginning needs sharper thinking.</h3>
+                <p>Maker Compass slows the first step down just enough to make the work clearer: what it is, who it is for, and what should be built first.</p>
+              </div>
+              <div class="copy-block">
+                <h3>The output should be usable.</h3>
+                <p>You leave with structured research, product direction, first version scope, mockup paths, and technical next steps.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="contrast" id="less-more" aria-labelledby="less-more-title">
+          <div class="contrast-column">
+            <span class="kicker">Less</span>
+            <h2 id="less-more-title">Less motion theater.</h2>
+            <ul class="contrast-list">
+              <li>Less guessing</li>
+              <li>Less AI slop</li>
+              <li>Less building to feel productive</li>
+              <li>Less time spent on the wrong first version</li>
+            </ul>
+          </div>
+          <div class="contrast-column">
+            <span class="kicker">More</span>
+            <h2>More product signal.</h2>
+            <ul class="contrast-list">
+              <li>More clarity</li>
+              <li>More focus</li>
+              <li>More confidence in what comes first</li>
+              <li>More room to build something real</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="section" id="process" aria-labelledby="process-title">
+          <span class="kicker">Process</span>
+          <h2 id="process-title">You bring the idea. Maker Compass finds the first step.</h2>
+          <div class="process" aria-label="Maker Compass process">
+            <article class="process-item">
+              <div class="process-num">01</div>
+              <h3>Capture the rough idea</h3>
+              <p>Start with the thing in your head, even if it is messy, incomplete, or too broad.</p>
+            </article>
+            <article class="process-item">
+              <div class="process-num">02</div>
+              <h3>Pressure-test the space</h3>
+              <p>Understand the market, the alternatives, and the reasons people might care.</p>
+            </article>
+            <article class="process-item">
+              <div class="process-num">03</div>
+              <h3>Choose the first version</h3>
+              <p>Define the smallest serious version, the must-have flow, and the cuts that keep it focused.</p>
+            </article>
+            <article class="process-item">
+              <div class="process-num">04</div>
+              <h3>Hand off the work</h3>
+              <p>Use the plan, mockups, and technical direction to build with a clearer prompt and a better target.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="final" aria-labelledby="final-title">
+          <div>
+            <span class="kicker">Maker Compass</span>
+            <h2 id="final-title">Not by rushing you. By pointing you toward the right first step.</h2>
+            <p>
+              If you have been carrying an idea around for months, or years, Maker Compass is here to help you finally begin with direction.
+            </p>
+          </div>
+          <a class="button button-primary" href="../">Start with your idea</a>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>Maker Compass marketing concept page</span>
+        <span>Standalone HTML, separate from the current app landing route</span>
+      </footer>
+    </div>
+  </body>
+</html>

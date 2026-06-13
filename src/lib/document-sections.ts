@@ -31,7 +31,9 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
     key: "executive-summary",
     label: "Executive Summary",
     sourceType: "competitive",
-    sections: [],
+    sections: [
+      { id: "executive-summary", label: "Overview" },
+    ],
   },
   {
     key: "market-research",
@@ -124,10 +126,10 @@ export function getNavKeyForSection(sectionId: string): string | null {
 
 /** Get all section IDs as a flat array (for IntersectionObserver registration) */
 export function getAllSectionIds(): string[] {
-  return SCROLLABLE_NAV_ITEMS.flatMap((item) => [
+  return Array.from(new Set(SCROLLABLE_NAV_ITEMS.flatMap((item) => [
     item.key, // the document-level anchor
     ...item.sections.map((s) => s.id),
-  ])
+  ])))
 }
 
 export function filterNavItemsByRenderedSections(

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { copyTextToClipboard } from "@/lib/clipboard"
+
 export function useCopyFeedback(timeoutMs = 2000) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const timeoutRef = useRef<number | null>(null)
@@ -15,7 +17,7 @@ export function useCopyFeedback(timeoutMs = 2000) {
   }, [])
 
   const copyText = useCallback(async (content: string, id: string) => {
-    await navigator.clipboard.writeText(content)
+    await copyTextToClipboard(content)
 
     if (timeoutRef.current !== null) {
       window.clearTimeout(timeoutRef.current)

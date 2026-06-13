@@ -57,6 +57,15 @@ test("applyPromptLabMockupPlatformOverride: selected platform wins over parsed p
         dataToShow: ["First item"],
         priority: "P0",
       },
+      {
+        name: "Screen 2",
+        flowStep: 2,
+        caption: "Second",
+        purpose: "Continue the flow",
+        happyPathState: "Second state",
+        dataToShow: ["Second item"],
+        priority: "P0",
+      },
     ],
     directions: [],
   }
@@ -154,7 +163,10 @@ test("buildPromptLabDefaultPrompts: builds single-option mockup prompt", () => {
   })
 
   assert.match(result.systemPrompt, /static UI mockup images/)
-  assert.match(result.userPrompt, /Create option B/)
+  assert.match(result.userPrompt, /Edit the attached desktop web Safari storyboard skeleton in place/)
+  assert.match(result.userPrompt, /Direction label: B/)
+  assert.match(result.userPrompt, /Do not render the direction label/)
+  assert.doesNotMatch(result.userPrompt, /\/mockups\/skeletons\//)
   assert.doesNotMatch(result.userPrompt, /Core scheduling workflow/)
   assert.doesNotMatch(result.userPrompt, /First Version Plan context/)
 })
