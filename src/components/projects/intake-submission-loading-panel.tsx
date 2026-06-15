@@ -26,6 +26,10 @@ interface IntakeSubmissionLoadingPanelProps {
   rows?: IntakeLoadingRow[]
 }
 
+export const INTAKE_FAKE_PROGRESS_DURATION_MS = 26000
+export const INTAKE_MAX_FAKE_PROGRESS = 90
+export const INTAKE_MIN_ANIMATED_PROGRESS = 12
+
 const DEFAULT_ROWS: IntakeLoadingRow[] = [
   {
     key: "executive-summary",
@@ -83,20 +87,12 @@ export function IntakeSubmissionLoadingPanel({
 
     function updateProgress() {
       const elapsedMs = Date.now() - startedAtRef.current
-      const timedProgress = prefersReducedMotion
-        ? 85
-        : Math.min(90, (elapsedMs / 20000) * 90)
+      const timedProgress = getTimedIntakeProgress(elapsedMs, prefersReducedMotion)
 
       setProgress((current) => {
         const next = { ...current }
         for (const row of normalizedRows) {
-          if (row.status === "done") {
-            next[row.key] = 100
-          } else if (row.status === "error" || row.status === "cancelled") {
-            next[row.key] = Math.min(current[row.key] ?? timedProgress, 90)
-          } else {
-            next[row.key] = Math.max(current[row.key] ?? 0, timedProgress)
-          }
+          next[row.key] = getNextIntakeProgressValue(row.status, current[row.key], timedProgress)
         }
         return next
       })
@@ -134,6 +130,7 @@ export function IntakeSubmissionLoadingPanel({
             {normalizedRows.map((row) => {
               const Icon = ROW_ICONS[row.key]
               const value = progress[row.key] ?? 0
+              const isAnimated = shouldAnimateIntakeProgress(row.status, value)
               return (
                 <div key={row.key} className="flex gap-4 py-[18px] sm:gap-5">
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[rgba(121,116,126,0.16)] bg-[#FAFAFA] sm:size-12">
@@ -158,9 +155,7 @@ export function IntakeSubmissionLoadingPanel({
                       <div
                         className={cn(
                           "intake-progress-fill relative h-full overflow-hidden bg-[#0D1320] transition-[width] duration-500 ease-out",
-                          (row.status === "pending" ||
-                            row.status === "generating") &&
-                            "intake-progress-fill--active",
+                          isAnimated && "intake-progress-fill--active",
                           row.status === "error" && "bg-destructive",
                           row.status === "done" && "bg-[#166534]",
                         )}
@@ -178,9 +173,39 @@ export function IntakeSubmissionLoadingPanel({
   )
 }
 
-function statusMessage(row: IntakeLoadingRow) {
+export function getTimedIntakeProgress(elapsedMs: number, prefersReducedMotion: boolean) {
+  if (prefersReducedMotion) return 85
+
+  return Math.min(
+    INTAKE_MAX_FAKE_PROGRESS,
+    (Math.max(0, elapsedMs) / INTAKE_FAKE_PROGRESS_DURATION_MS) * INTAKE_MAX_FAKE_PROGRESS,
+  )
+}
+
+export function getNextIntakeProgressValue(
+  status: OnboardingGenerationStatus,
+  currentValue: number | undefined,
+  timedProgress: number,
+) {
+  if (status === "done") return 100
+  if (status === "error" || status === "cancelled") {
+    return Math.min(currentValue ?? timedProgress, INTAKE_MAX_FAKE_PROGRESS)
+  }
+  if (status === "generating") {
+    return Math.max(currentValue ?? 0, timedProgress)
+  }
+
+  return 0
+}
+
+export function shouldAnimateIntakeProgress(status: OnboardingGenerationStatus, value: number) {
+  return status === "generating" && value >= INTAKE_MIN_ANIMATED_PROGRESS
+}
+
+export function statusMessage(row: IntakeLoadingRow) {
   if (row.status === "done") return "Ready"
   if (row.status === "error") return "Needs retry"
   if (row.status === "cancelled") return "Cancelled"
+  if (row.status === "pending" || row.status === "skipped") return "Waiting"
   return row.message
 }
