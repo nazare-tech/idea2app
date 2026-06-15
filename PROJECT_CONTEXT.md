@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-06-13 (Prompt Lab mockup skeleton edit workflow)
+**Last Updated**: 2026-06-15 (conservative dead-code cleanup)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -92,7 +92,6 @@
 | **date-fns** | 4.1.0 | Relative project timestamp formatting on dashboard cards |
 | **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
 | **jspdf** | 4.0.0 | Client-side PDF generation |
-| **html2canvas** | 1.4.1 | Legacy client-side HTML-to-canvas rendering utility |
 | **Hanken Grotesk** | (Google Font) | Primary sans-serif and display typeface |
 | **Fira Mono** | (Google Font) | Monospace typeface for labels/code |
 
@@ -301,7 +300,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 - **Auth Modal** — `src/components/auth/auth-modal.tsx` is a `"use client"` Radix UI Dialog. It reads `?modal=auth&mode=signin|signup` from the URL, opens over the landing page with a dark blurred overlay (`bg-black/65 backdrop-blur-[4px]`), and closes by clearing URL params. Sign In / Sign Up links on the landing page use `?modal=auth&mode=...` instead of navigating to `/auth`.
 - **Project allowance guard** — `src/lib/project-allowance.ts` resolves project allowance from active `subscriptions` joined to `plans`, explicit plan fields/features when present, plan-name fallbacks, and the active subscription or calendar-month window. Free users are treated as a one-project lifetime window, while paid users use the active subscription period or UTC calendar month. The guard runs during final intake project creation before any project row is inserted, then runs again under a short-lived `project_creation_locks` row immediately before insert to reduce concurrent project creation races. The private Supabase-only `Internal Dev` plan name resolves to unmetered project allowance for internal developer accounts; it is not a Stripe/customer-facing plan. Public pricing and checkout use explicit `plans.is_public` and `plans.checkout_enabled` flags instead of display-name filtering.
 - **Projects dashboard cards** — `/projects` loads owned projects and allowance status server-side, then renders `DashboardProjectCard` for last-edited labels, hover/focus prefetching of the workspace and competitive document payload, and paid-plan-only delete affordances. Free users see an upgrade prompt; paid users get a confirmation modal before calling `DELETE /api/projects/[id]`.
-- **Shared chat primitives** — the general chat and prompt chat surfaces now share composer, avatar, copy button, markdown body, load-more button, and thinking-state primitives plus reusable hooks for copy feedback, textarea autosize, and NDJSON stream consumption.
+- **Deprecated chat cleanup** — the old Prompt Chat UI and general chat component are removed from the app tree; `/api/prompt-chat` remains as a minimal `410 Gone` endpoint so external callers receive the documented deprecation response.
 - **Shared stacked tab navigation** — project document navigation and preferences navigation now use the same stacked tab-nav component so visual changes to the left-side tab pattern can be made in one place.
 - **Shared authenticated page shell** — dashboard-level pages such as Projects, Billing, and Preferences use `src/components/layout/app-page-shell.tsx` for consistent page width, responsive padding, heading hierarchy, and action placement.
 - **Shared account utilities** — credit formatting, billing portal navigation, brand wordmark rendering, and auth sign-out are centralized in shared utilities/hooks/components and reused across dashboard header/sidebar, billing, settings, and auth views.
@@ -320,7 +319,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 10. **Shared UI Registries + Hooks**: Repeated view metadata and repeated client behaviors (documents, credits, billing portal, auth sign-out, chat interactions) are centralized into typed registries and reusable hooks/components before page-level assembly
 11. **Path Aliases**: Clean imports using `@/*` aliases
 12. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Hanken Grotesk + Fira Mono typography
-13. **Fixed Default Models Per Tab**: AI model selection was removed from the UI. Direct document routes use fixed defaults in their route files, while Generate All defaults live in `src/lib/document-definitions.ts` (`GENERATE_ALL_DEFAULT_MODELS`). `src/lib/prompt-chat-config.ts` still exports `DEFAULT_MODELS` for compatibility with older imports.
+13. **Fixed Default Models Per Tab**: AI model selection was removed from the UI. Direct document routes use fixed defaults in their route files, while Generate All defaults live in `src/lib/document-definitions.ts` (`GENERATE_ALL_DEFAULT_MODELS`).
 14. **Generate-Missing-Only Documents**: The Generate button is hidden after a document is successfully generated, and server routes also enforce one active planning document per project/document type by default. Direct duplicate API requests return `200 skipped` with existing output metadata and no credit charge. Failed generations (no content saved) naturally re-expose the button for retry. Future versioning must be introduced as a separate explicit action.
 15. **PDF-Only Export**: Documents export as PDF only (markdown download removed). The header shows a single "Download PDF" button.
 16. **AI-Generated Project Name**: Wizard-created projects generate a short name during final intake submission before the workspace opens. Legacy Prompt-tab project starts are deprecated and no longer generate project names. `isNameSet` state (in `ProjectWorkspace`) gates editing — initialized as `project.name !== "Untitled" || !!project.description` so existing and wizard-created projects are never locked.
@@ -432,12 +431,9 @@ src/
 │   │   ├── markdown-renderer.tsx # Markdown with Mermaid + syntax highlighting
 │   │   └── ...
 │   ├── layout/                   # Layout components
-│   │   ├── sidebar.tsx           # Legacy dashboard sidebar (retained)
 │   │   ├── header.tsx            # Legacy dashboard header (retained)
 │   │   ├── anchor-nav.tsx        # Scroll workspace nav with durable generation status labels
 │   │   ├── scrollable-content.tsx # Scroll workspace document renderer
-│   │   ├── document-nav.tsx      # Legacy pipeline-step navigation
-│   │   └── content-editor.tsx    # Legacy active document view
 │   ├── workspace/                # Workspace orchestration
 │   │   ├── project-workspace.tsx      # Lazy-loading scroll workspace orchestrator
 │   │   └── generate-all-hydrator.tsx  # Keeps store callbacks fresh; triggers hydrate() once per project
@@ -446,11 +442,9 @@ src/
 │   │   ├── auth-modal.tsx        # Radix Dialog modal for landing page Sign In / Sign Up
 │   │   ├── auth-field.tsx        # Reusable email/text input field
 │   │   └── auth-password-field.tsx  # Password field with show/hide toggle
-│   ├── chat/                     # Chat feature
-│   │   ├── chat-interface.tsx    # General chat UI
-│   │   └── prompt-chat-interface.tsx  # Deprecated Prompt Chat UI component retained for history/cleanup only
 │   └── analysis/                 # Analysis feature
-│       └── analysis-panel.tsx    # Analysis/PRD/TechSpec UI
+│       ├── competitive-analysis-document.tsx
+│       └── planning-document-blocks.tsx
 │
 ├── lib/                          # Utilities & services
 │   ├── supabase/
@@ -469,7 +463,6 @@ src/
 │   ├── tavily.ts                 # Tavily API client (URL content extraction, with retry)
 │   ├── with-retry.ts             # Shared retry utility for external API calls (3 retries, exponential backoff on 429/5xx)
 │   ├── pdf-utils.ts              # PDF export client helper for owned server-rendered documents
-│   ├── prompt-chat-config.ts     # DEFAULT_MODELS (per-tab fixed models) + DEFAULT_MODEL fallback
 │   └── utils.ts                  # Utility functions & CREDIT_COSTS
 │
 ├── types/                        # TypeScript types
@@ -491,7 +484,7 @@ src/
 | `app/(dashboard)/` | Protected app pages | Adding new dashboard features |
 | `app/api/` | Backend API endpoints | Creating new API functionality |
 | `components/ui/` | Reusable UI components | Adding new UI primitives |
-| `components/layout/` | Layout & navigation components | Modifying sidebar, document nav, or content editor |
+| `components/layout/` | Layout & navigation components | Modifying dashboard shell, app shell, anchor nav, or scrollable content |
 | `components/workspace/` | Workspace orchestration | Changing the project workspace flow or column layout |
 | `components/chat/` | Chat feature components | Enhancing chat functionality |
 | `components/analysis/` | Analysis feature components | Adding analysis features |
@@ -517,7 +510,6 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | `mvp-plan.ts` | `MVP_PLAN_SYSTEM_PROMPT` | `analysis-pipelines.ts` |
 | `launch-plan.ts` | `LAUNCH_PLAN_SYSTEM_PROMPT`, `buildLaunchPlanUserPrompt()` | `analysis-pipelines.ts`, Prompt Lab |
 | `tech-spec.ts` | `TECH_SPEC_SYSTEM_PROMPT` | `analysis-pipelines.ts` |
-| `prompt-chat.ts` | `PROMPT_CHAT_SYSTEM`, `IDEA_SUMMARY_PROMPT`, `POST_SUMMARY_SYSTEM` | `prompt-chat-config.ts`, `api/prompt-chat/` |
 | `general-chat.ts` | `buildGeneralChatSystemPrompt()` | `openrouter.ts` |
 | ~~`document-edit.ts`~~ | *(deleted — Edit with AI feature removed)* | — |
 | `mockups.ts` | `buildMockupPrompt()` | `api/mockups/generate/` |
@@ -551,7 +543,7 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 - **Pages**: `page.tsx` (Next.js convention)
 - **Dynamic Routes**: `[id]/page.tsx`, `[type]/route.ts`
 - **API Routes**: `route.ts` in endpoint folder
-- **Components**: `kebab-case.tsx` (e.g., `chat-interface.tsx`)
+- **Components**: `kebab-case.tsx` (e.g., `dashboard-project-card.tsx`)
 - **Utilities**: `kebab-case.ts` (e.g., `openrouter.ts`)
 - **Types**: `database.ts`, lowercase
 
@@ -1317,7 +1309,7 @@ docker run -p 3000:3000 idea2app
 src/app/(dashboard)/new-page/page.tsx
 
 # 2. Add to navigation (if needed)
-src/components/layout/sidebar.tsx or src/components/layout/anchor-nav.tsx
+src/components/layout/anchor-nav.tsx
 ```
 
 ### Adding a New API Endpoint
@@ -1453,10 +1445,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Lazy-loading scroll workspace orchestrator |
 | [src/components/layout/anchor-nav.tsx](src/components/layout/anchor-nav.tsx) | Sticky/horizontal document rail for Overview, Market Research, Product Plan, First Version Plan, and Design Mockups with queued/generating/ready/needs-retry indicators |
 | [src/components/layout/scrollable-content.tsx](src/components/layout/scrollable-content.tsx) | Scrollable document body renderer with deferred sections, queue-aware placeholders, PRD/MVP completed-document block rendering, and mockup/status modules |
-| [src/components/layout/sidebar.tsx](src/components/layout/sidebar.tsx) | Legacy dashboard sidebar retained for existing layouts |
 | [src/components/layout/app-page-shell.tsx](src/components/layout/app-page-shell.tsx) | Shared authenticated page shell and header for consistent dashboard page spacing and hierarchy |
-| [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Legacy pipeline-step nav retained for older document surfaces |
-| [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Legacy active-document view retained while the main workspace uses `ScrollableContent` |
 | [src/lib/document-definitions.ts](src/lib/document-definitions.ts) | Shared typed document registry for workspace tabs, editor titles, icons, credit cost, and nav visibility |
 | [src/lib/document-sections.ts](src/lib/document-sections.ts) | Scroll workspace section registry and anchor IDs for Overview, Market Research, Product Plan, First Version Plan, and Design Mockups |
 | [src/lib/document-generation-display-status.ts](src/lib/document-generation-display-status.ts) | Pure helper that merges content existence, durable queue state, local generation flags, PRD/MVP stream previews, and optional mockup option statuses into nav/body display states |
@@ -1465,18 +1454,13 @@ export const BASE_ACTION_TOKENS = {
 | [src/components/analysis/planning-document-blocks.tsx](src/components/analysis/planning-document-blocks.tsx) | PRD and MVP block renderers that use the Pencil-style planning document parser/view-model layer with markdown fallback, PRD context/vision cards, compact labeled PRD prose rows, vertically stacked PRD requirement categories, user-story acceptance criteria cards, single-profile persona fallback labeling, and MVP overview placement |
 | [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with lazy syntax highlighting, responsive table column sizing, and beautiful-mermaid diagrams with expand/pan/zoom controls |
 | [src/components/ui/mockup-renderer.tsx](src/components/ui/mockup-renderer.tsx) | Mockup renderer for OpenRouter storyboard images with screen captions, json-render specs/patches, legacy Stitch HTML records, and legacy ASCII mockups |
-| [src/components/chat/chat-interface.tsx](src/components/chat/chat-interface.tsx) | General chat UI component |
-| [src/components/chat/prompt-chat-interface.tsx](src/components/chat/prompt-chat-interface.tsx) | Deprecated Prompt Chat UI retained for cleanup/history reference |
-| [src/components/chat/chat-primitives.tsx](src/components/chat/chat-primitives.tsx) | Shared chat presentation primitives used by both chat surfaces |
 | [src/components/auth/auth-header.tsx](src/components/auth/auth-header.tsx) | Shared auth header variants for auth, forgot-password, and reset-password views |
 | [src/components/auth/auth-field.tsx](src/components/auth/auth-field.tsx) | Shared labeled auth input field |
 | [src/components/auth/auth-password-field.tsx](src/components/auth/auth-password-field.tsx) | Shared auth password field with show/hide toggle |
 | [src/hooks/use-billing-portal.ts](src/hooks/use-billing-portal.ts) | Shared client hook to open Stripe billing portal |
 | [src/hooks/use-auth-signout.ts](src/hooks/use-auth-signout.ts) | Shared client hook for Supabase sign-out + redirect |
-| [src/hooks/use-auto-resizing-textarea.ts](src/hooks/use-auto-resizing-textarea.ts) | Shared hook for composer textarea autosizing |
 | [src/hooks/use-copy-feedback.ts](src/hooks/use-copy-feedback.ts) | Shared hook for clipboard copy feedback state |
 | [src/lib/credits.ts](src/lib/credits.ts) | Shared credit formatting and unlimited-credit helpers |
-| [src/lib/ndjson-stream.ts](src/lib/ndjson-stream.ts) | Shared NDJSON stream reader used by chat UIs |
 | [src/lib/project-allowance.ts](src/lib/project-allowance.ts) | Project allowance resolver for free lifetime limits, paid monthly/subscription windows, plan-field/features fallback, and unmetered internal plans |
 | [src/lib/project-allowance.test.ts](src/lib/project-allowance.test.ts) | Node test coverage for allowance windows, free lifetime limits, plan parsing, unlimited plans, and failure cases |
 | [src/lib/project-routing.ts](src/lib/project-routing.ts) | Slugged project URL helpers: `buildProjectRef`, `parseProjectRef`, and `getProjectUrl` |
@@ -1497,7 +1481,6 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/mockups/fixture/route.ts](src/app/api/mockups/fixture/route.ts) | POST endpoint to save no-credit storyboard fixture mockups for local display and retry testing. |
 | [src/app/api/mockups/[id]/route.ts](src/app/api/mockups/[id]/route.ts) | PATCH endpoint to update mockup content |
 | [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | PATCH endpoint to update tech spec content |
-| [src/components/analysis/analysis-panel.tsx](src/components/analysis/analysis-panel.tsx) | Analysis UI component |
 | [src/lib/competitive-analysis-v2.ts](src/lib/competitive-analysis-v2.ts) | Market Research v2 section contract, legacy/v2 view model helpers, parser utilities, and legacy heading aliases |
 | [src/lib/planning-document-parser.ts](src/lib/planning-document-parser.ts) | Shared markdown section, list, paragraph, source cleanup, and table parser utilities for PRD/MVP block rendering |
 | [src/lib/prd-document.ts](src/lib/prd-document.ts) | PRD parser/view-model helpers used by the PRD block renderer, including persona/profile grouping fallback |
@@ -1517,7 +1500,6 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/document-generation-service.ts](src/lib/document-generation-service.ts) | Shared server-side document generation service used by Generate All/onboarding; skips and returns existing output table/id references when an active document already exists. |
 | [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=540). Dependency-aware item execution with credit deduction/refund, retries, partial status, and DB state tracking. |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export client helper for `/api/generate-pdf` owned-document export |
-| [src/lib/prompt-chat-config.ts](src/lib/prompt-chat-config.ts) | Compatibility re-export for deprecated Prompt Chat prompts plus legacy `DEFAULT_MODELS` imports |
 | [src/lib/stitch/client.ts](src/lib/stitch/client.ts) | Stitch SDK wrapper and raw response parsing helpers |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
 | [src/lib/waitlist.ts](src/lib/waitlist.ts) | Waitlist thresholds and email validation helpers |
