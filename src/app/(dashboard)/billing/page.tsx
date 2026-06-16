@@ -465,10 +465,6 @@ export default function BillingPage() {
               { name: "Gap Analysis", action: "gap-analysis" },
               { name: "Product Plan", action: "prd" },
               { name: "Technical Spec", action: "tech-spec" },
-              { name: "Static Website", action: "app-static" },
-              { name: "Dynamic Website", action: "app-dynamic" },
-              { name: "Single Page App", action: "app-spa" },
-              { name: "Progressive Web App", action: "app-pwa" },
             ].map((item) => (
               <div
                 key={item.name}

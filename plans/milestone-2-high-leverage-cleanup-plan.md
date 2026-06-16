@@ -7,11 +7,12 @@ implementation_summary:
 # Plan: Milestone 2, Dead Code Removal And High-Leverage Improvements
 
 ## Goal
-Make all future work cheaper: delete the verified-dead legacy UI clusters (roughly 4,000 lines), decompose the 1,946-line `project-workspace.tsx` god component into testable hooks, make PDF export actually work on Vercel, add error monitoring with structured logging, add route-level tests for the billing money paths, and replace the stub README. After this milestone, the repo a contributor reads is the repo that runs.
+Make all future work cheaper: delete the verified-dead legacy UI clusters (roughly 4,000 lines), decompose the 1,946-line `project-workspace.tsx` god component into testable hooks, remove the retired PDF export surface, add error monitoring with structured logging, add route-level tests for the billing money paths, and replace the stub README. After this milestone, the repo a contributor reads is the repo that runs.
 
 ## Assumptions
 - Milestones 0 and 1 are complete: CI enforces tests, generate-app and stitch code are gone, `/api/chat` and `/api/prompt-chat` are 410-gated. This finalizes the dead-code inventory below.
 - Vercel is the production target (Pro plan, given the 540 second function durations already configured).
+- PDF export is no longer a product feature and should be removed rather than repaired.
 - `callOpenRouterFallback` and `src/lib/prompts/legacy-fallback.ts` are LIVE (used by the gap-analysis path in `src/app/api/analysis/[type]/route.ts:225,331`) and are explicitly excluded from deletion.
 - `src/components/layout/header.tsx` is LIVE (imported by `dashboard-shell.tsx`) and is excluded; only `sidebar.tsx` from that legacy pair is dead.
 - Behavior-preserving refactors only: the workspace decomposition changes structure, not features.
@@ -32,11 +33,11 @@ Make all future work cheaper: delete the verified-dead legacy UI clusters (rough
    - Trade-off: Lowest-risk path with reviewable steps and unit-testable hooks, but the JSX tree stays in one file until a later pass.
    - Recommendation B: Split into feature components (per-document sections own their state).
    - Trade-off: Better long-term shape but a much larger single change with higher regression risk; can follow A later.
-2. How should PDF export run on Vercel?
-   - Recommendation A: Swap `puppeteer` for `puppeteer-core` plus `@sparticuz/chromium`, with env-aware executable resolution replacing the hardcoded desktop Chrome paths in `src/app/api/generate-pdf/route.ts:26-37`.
-   - Trade-off: Keeps the existing hardened route and API contract; adds one deploy-target-specific dependency.
-   - Recommendation B: Drop server-side PDF and ship a print stylesheet (browser print to PDF).
-   - Trade-off: Removes Puppeteer entirely (size, cold starts, basic-ftp advisory chain), but changes the user-facing feature and loses the styled PDF template.
+2. What exactly should be removed for retired PDF export?
+   - Recommendation A: Delete the PDF API route, client helper, UI entry points, Puppeteer dependency path, and related docs/tests in one scoped removal commit.
+   - Trade-off: Best matches the current product direction and reduces dependency/security surface, but any future PDF return would need to be rebuilt deliberately.
+   - Recommendation B: Leave a minimal `410 Gone` route temporarily while removing UI entry points.
+   - Trade-off: Safer if unknown external clients still call the endpoint, but leaves dead API surface in the repo.
 3. Which monitoring service?
    - Recommendation A: Sentry (free tier, first-class Next.js App Router SDK, captures route errors and the existing `global-error.tsx`).
    - Trade-off: One new vendor and DSN env var; generous free quota for a pre-launch product.
@@ -55,7 +56,7 @@ Re-run the dead-code verification greps (imports and JSX usage for every file in
    - Extract the hook, move state and effects verbatim, wire it in, run typecheck plus tests.
    - Manual QA after each commit using the relevant `QA_TEST_PLAN.md` flows (load workspace, generate a document, refresh mid-generation, hash navigation, version switching).
    - Add focused unit tests for hooks with extractable pure logic.
-6. [ ] PDF on Vercel per Clarifying Question 2: implement, then validate on a Vercel preview deployment by exporting a real Product Plan PDF.
+6. [ ] Remove retired PDF export per Clarifying Question 2: delete the route/helper/UI/docs/dependencies, then confirm no PDF entry points remain and build/tests stay green.
 7. [ ] Monitoring per Clarifying Question 3:
    - Install and configure the SDK (server plus client config, `global-error.tsx` hook-in).
    - Add `src/lib/logger.ts` (level-aware, JSON in production) and migrate the highest-value `console.*` call sites first: webhook logging in `src/app/api/stripe/webhook/route.ts`, queue executor errors, credit refund failures.
@@ -70,7 +71,7 @@ Re-run the dead-code verification greps (imports and JSX usage for every file in
 ## Milestones
 - Dead Code Gone: inventory files deleted, build and tests green, lint warnings near zero.
 - Workspace Decomposed: `project-workspace.tsx` under roughly 800 lines with four extracted hooks, no behavior change observed in manual QA.
-- PDF Works In Production: a real document exports successfully from a Vercel deployment.
+- PDF Export Removed: no UI entry points, helper calls, route usage, or Puppeteer dependency path remain for the retired feature.
 - Failures Are Visible: a thrown route error appears in the monitoring dashboard with a stack trace; webhook failures alert.
 - Money Paths Tested: the three billing-path tests run in CI.
 - Onboarding Exists: README answers what, how to run, and where the real docs are.
@@ -79,7 +80,7 @@ Re-run the dead-code verification greps (imports and JSX usage for every file in
 - `npm test`, `npm run typecheck`, `npm run lint` after every commit
 - `npm run build` locally and on a Vercel preview
 - Manual QA flows from `QA_TEST_PLAN.md` after each decomposition commit
-- PDF export verified on the preview deployment, not just locally
+- Search verifies no live PDF export entry points remain; build verifies deleted imports are gone
 - Force one test error in a route on preview and confirm it reaches the monitoring dashboard
 - `git log --oneline` shows the decomposition as a sequence of small, individually green commits
 
@@ -95,7 +96,7 @@ Re-run the dead-code verification greps (imports and JSX usage for every file in
 
 ## Rollback Or Recovery
 - Deletions and refactors are ordinary commits; `git revert` restores any step, and deleted files remain in git history permanently.
-- The Puppeteer change is isolated to one route plus two package entries; reverting restores local-only behavior.
+- PDF export removal is isolated to the retired route/helper/UI/docs/dependency surface; reverting that commit restores the old feature surface if needed.
 - Monitoring is additive; removing the SDK and env var disables it cleanly.
 
 ## Open Decisions

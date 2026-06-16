@@ -6,10 +6,6 @@ export type TokenBillableAction =
   | "tech-spec"
   | "mockup"
   | "launch-plan"
-  | "app-static"
-  | "app-dynamic"
-  | "app-spa"
-  | "app-pwa"
   | "chat"
   | "document-edit"
 
@@ -34,10 +30,6 @@ export const BASE_ACTION_TOKENS: Record<TokenBillableAction, number> = {
   "tech-spec": 10,
   mockup: 0,
   "launch-plan": 5,
-  "app-static": 50,
-  "app-dynamic": 100,
-  "app-spa": 150,
-  "app-pwa": 200,
   chat: 1,            // Math.ceil(1 × mult) → 1 (budget) or 2 (premium)
   "document-edit": 2, // flat cost, no multiplier applied
 }

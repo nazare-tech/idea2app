@@ -1,19 +1,19 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-06-15 (conservative dead-code cleanup)
+**Last Updated**: 2026-06-16 (milestone 1 security cleanup)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
 
 ## 1. Project Overview
 
-**Maker Compass** is a comprehensive AI-powered SaaS platform that transforms business ideas into reality. It provides an end-to-end solution for entrepreneurs, guiding them from initial concept through to deployment.
+**Maker Compass** is a comprehensive AI-powered SaaS platform that transforms business ideas into structured planning documents and design mockups.
 
 ### Core Functionality
 
 - **Idea Intake Wizard**: Canonical new-project flow at `/projects/new`. Users enter an idea, answer 4-5 AI-generated structured questions, then the app creates the project and starts the bundled onboarding document-generation queue. The question parser always ensures a required single-select `primary-platform` question with the canonical choices Desktop web, Mobile web, Native mobile app, and Native desktop app; project creation validates that this question has exactly one supported answer so stale/bypassed clients cannot omit it. The wizard stores readable summaries in `projects.description`, structured intake JSON in `project_intakes`, and shows the Maker Compass loading state until Overview + Market Research are ready.
 - **Prompt Tab AI Chat Deprecated**: The Prompt tab is no longer reachable for any project, including legacy Prompt Chat projects. Direct project URLs with `?tab=prompt` are silently redirected to the workspace Overview, the Idea Brief nav entry is removed, and `/api/prompt-chat` returns `410 Gone`. Historical prompt chat rows are preserved unless explicitly deleted in a separate data cleanup.
-- **AI-Powered Chat**: General interactive conversation interface for ongoing project discussions
+- **General Chat Disabled**: `/api/chat` intentionally returns `410 Gone` and cannot consume credits or call AI. Historical message rows are preserved; a future chat return should re-enable the route deliberately.
 - **Competitive Analysis / Market Research**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a full-width Pencil-faithful designed page, not generic markdown. The UI is built from typed parsing of the stored markdown source and uses founder-friendly display labels including Executive Summary, Feature Comparison, Pricing Comparison, Best Customer Segments, How You'll Reach Customers, Ways to Stand Out, What Makes It Hard to Copy, Risks & Competitor Responses, First Version Focus, and Recommended Next Moves. Executive Summary is a single generated section and workspace/nav item with a selectable Overview child anchor; it includes the market snapshot, entry assessment, why-now signal, and biggest risk, while legacy Opportunity Verdict content is still folded into the summary when present. Direct competitor entries still expect linked H3 headings plus concise fields for overview, core product, positioning, strengths, key edge, limitations, pricing model, and target audience so the app can render dense competitor cards and a fast-comparison table. Legacy or malformed documents fall back to markdown with upgrade guidance.
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
 - **Product Plan Generation**: Complete Product Plans with exactly three user personas, user stories, grouped requirements, and release planning. Production Product Plan generation and Prompt Lab defaults share the same Product Plan request builder for system prompt, user prompt shape, default model, max tokens, and temperature. Product Plan generation passes the full latest Market Research document into the shared secure prompt builder rather than applying the older production-only 6,000-character downstream trim; the secure prompt builder still applies its normal per-field safety limits. Completed Product Plans render in the workspace as structured Pencil-style blocks through a parser/view-model layer, with markdown fallback for legacy or malformed content. The parser accepts both the older Product Plan H2/H3 contract and the current numbered PRD-style prompt sections for introduction/overview, goals, personas, user stories and acceptance criteria, functional requirements, technical considerations, out-of-scope items, success metrics, timeline, risks, dependencies, assumptions, and open questions. Current numbered PRD-style documents render with a design-faithful Product Plan document layout inspired by the Claude Design Product Plan right panel: a fixed `Product Plan` masthead (AI-generated names are not used as the H1), a dynamic summary metric strip, numbered editorial sections, stat-style goals, persona cards, expandable user-story cards with normalized display IDs, grouped requirements, icon-led technical cards with designed bullet rows, metric columns, compact phase-card timeline milestones with computed week ranges and deliverable-only checklists, and compact follow-through sections for risks, dependencies, and open questions. Legacy Product Plan documents continue to use the specialized legacy block layout with persona/profile grouping, compact labeled rows, vertical requirement categories, cleaned horizontal rules, and user-story acceptance criteria cards.
@@ -29,7 +29,7 @@
   - Figma-matched desktop hero artwork from layered raster assets in `public/landing/hero/*`, rendered by `HeroArtwork`
   - Authenticated visitors to `/` are redirected to `/projects`
   - Fail-open API behavior so CTA rendering does not block on Supabase errors
-- **OpenRouter Image Mockups + Legacy Stitch Compatibility**: Mockup generation now defaults to OpenRouter image storyboards and keeps Stitch rendering/proxy support for older saved mockups until those records are cleaned up separately. Features:
+- **OpenRouter Image Mockups**: Mockup generation uses OpenRouter image storyboards end to end. Legacy Stitch HTML previews have been removed; if an old Stitch-format row is encountered before production data cleanup, the renderer shows a safe "Legacy mockup format" regeneration notice instead of fetching or rendering HTML. Features:
   - `src/lib/mockup-design-plan.ts` generates and validates hidden mockup design plans with primary platform, happy-path scenario, an exact two-screen skeleton-frame limit, screen captions, and option-level design directions
   - `src/lib/openrouter-image-mockup-pipeline.ts` generates OpenRouter storyboard alternatives and uploads image bytes to Supabase Storage, with a reusable single-option helper for manual generation
   - `src/app/api/mockups/generate-option/route.ts` generates and stores one mockup option image for manual workspace generation
@@ -37,15 +37,7 @@
   - `src/app/api/mockups/finalize/route.ts` finalizes three generated options into the canonical `mockups` row
   - `src/app/api/mockups/fixture/route.ts` creates three no-credit storyboard fixture mockups for local UI/finalization testing; append `?mockupFixture=1` or set `localStorage.makercompass_mockup_fixture_mode = "true"` in local development
   - `src/app/api/mockups/image/route.ts` proxies stored mockup images after project ownership checks
-  - `@google/stitch-sdk` client wrapper in `src/lib/stitch/client.ts`
-  - Server-side HTML proxy route for safe rendering of legacy Stitch-hosted HTML
-  - Support for extracting project IDs and generated screen IDs from legacy Stitch responses
-- **App Generation**: Automated code generation for multiple app types:
-  - Static websites (HTML/CSS/JS)
-  - Dynamic websites (Next.js)
-  - Single Page Applications (React SPAs)
-  - Progressive Web Apps (PWA)
-- **Deployment**: Direct deployment capabilities for generated applications
+- **App Generation Archived**: `/api/generate-app` and app-generation prompts have been removed because generated app/deployment output is off the roadmap. Existing `deployments` rows remain historical data only.
 - **Project-based Pricing Migration**: Project creation is guarded by project allowance. Free users get a one-project lifetime allowance; paid plans use monthly project allowance windows, explicit plan allowance fields/features where available, and plan-name fallbacks. Billing intervals can be monthly, 6-month, or annual, but multi-month Stripe billing periods do not expand the monthly project allowance window. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
 - **Stripe Interval Billing**: Public checkout uses `plans` for entitlement tiers and `plan_prices` for Stripe recurring Prices by billing interval. Starter and Pro are the self-serve production tiers; Enterprise is kept non-public/checkout-disabled until support and sales workflows are ready. Checkout validates selected interval prices server-side, and webhooks map actual Stripe subscription item Price IDs back to `plan_prices` so portal plan changes update entitlements.
 - **Paid-only Project Deletion**: The Projects dashboard renders `DashboardProjectCard` cards with hover/focus workspace warming and delete controls. `DELETE /api/projects/[id]` is ownership-scoped, metrics-tracked, and blocked for Free plan users; the UI shows an upgrade prompt before paid-plan-only deletion.
@@ -91,7 +83,6 @@
 | **three** | 0.184.0 | WebGL renderer peer dependency for `img-fx` |
 | **date-fns** | 4.1.0 | Relative project timestamp formatting on dashboard cards |
 | **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
-| **jspdf** | 4.0.0 | Client-side PDF generation |
 | **Hanken Grotesk** | (Google Font) | Primary sans-serif and display typeface |
 | **Fira Mono** | (Google Font) | Monospace typeface for labels/code |
 
@@ -102,8 +93,7 @@
 | **Supabase** | - | PostgreSQL database with auth and RLS |
 | **@supabase/supabase-js** | 2.91.1 | Supabase client library |
 | **@supabase/ssr** | 0.8.0 | Server-side rendering utilities |
-| **Anthropic Claude** | 0.71.2 | AI SDK for app generation |
-| **@google/stitch-sdk** | 0.0.3 | Stitch client SDK used for mockup/design generation helpers |
+| **Anthropic Claude** | 0.71.2 | Optional local Prompt Lab mockup planner provider |
 | **OpenRouter** | 6.16.0 | API wrapper for AI analysis and OpenRouter-hosted image mockup generation |
 | **Stripe** | 20.2.0 | Payment processing and subscriptions |
 | **Puppeteer** | 24.37.1 | Server-side PDF rendering in `/api/generate-pdf` |
@@ -185,12 +175,9 @@
    - `POST /api/projects/create-from-intake` validates answers, checks `canCreateProject()`, builds `idea-intake-v1` JSON, stores the readable summary in `projects.description`, stores the structured payload in `project_intakes`, generates `projects.name`, creates a service-owned onboarding `generation_queues` run with `creditCost: 0`, claims the pending token, and returns `generationRunId`, `statusUrl`, and a canonical `#executive-summary` redirect URL
    - `IdeaIntakeWizard` shows `IntakeSubmissionLoadingPanel`, fires `/api/generate-all/execute` for the new project, polls `/api/projects/[id]/onboarding-status`, and redirects only after the v2 competitive analysis row is saved
 
-3. **Chat Flow**:
-   - Client component sends message to `/api/chat`
-   - Server validates auth, checks credits
-   - Server calls OpenRouter/Anthropic AI
-   - Server saves message to database
-   - Response streamed back to client
+3. **General Chat Flow**:
+   - `/api/chat` returns `410 Gone`
+   - The route does not authenticate, consume credits, call AI, or write messages while disabled
 
 4. **Project Name Generation**:
    - Wizard-created projects generate a short name during `/api/projects/create-from-intake` using `generateProjectName()`
@@ -238,13 +225,9 @@
    - Onboarding status is exposed by `/api/projects/[id]/onboarding-status`, which maps the backend queue to loading rows: Overview, Market research, Product Plan, First Version Plan, and Design Mockups. Overview and Market research are ready when a v2 `competitive-analysis` row exists.
    - Generation is durable — survives browser tab close, page refresh, and network interruptions
 
-8. **App Generation Flow**:
-   - Client requests app generation
-   - Server validates credits (5 credits required)
-   - Server calls Anthropic Claude with project context
-   - Claude generates complete app code
-   - Server saves deployment record
-   - Returns generated code to client
+8. **Archived App Generation**:
+   - The app-generation API and prompts are removed
+   - Existing `deployments` rows are retained only as historical records
 
 5. **Landing + Waitlist Flow**:
    - Landing page fetches the current registered-user count via Supabase service role access
@@ -252,10 +235,9 @@
    - If the cap is reached, `/` renders waitlist CTAs and posts email captures to `/api/waitlist`
    - Waitlist inserts go into the public `waitlist` table with uniqueness and email-format constraints
 
-6. **Stitch Proxy Flow**:
-   - Server receives a Stitch HTML download URL via `/api/stitch/html`
-   - Route requires auth, validates the URL host against the allowed Google Stitch CDN domains, and verifies the URL belongs to a saved mockup for a project owned by the current user
-   - Server fetches the HTML with timeout/content-size checks and returns it without frame-blocking headers so the MVP live preview can keep rendering through `srcDoc`
+6. **Retired HTML Preview Flow**:
+   - The legacy Stitch HTML proxy and `srcDoc` iframe renderers are removed
+   - Legacy Stitch-format mockup rows render as a regeneration notice until production rows are exported and deleted
 
 7. **Security Hardening Flow**:
    - `next.config.ts` sets baseline security headers: CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and Permissions-Policy.
@@ -398,10 +380,8 @@ src/
 │   │   ├── waitlist/route.ts          # GET/POST waitlist status + signup
 │   │   ├── mockups/generate/route.ts  # OpenRouter image mockup generation
 │   │   ├── mockups/image/route.ts     # Authenticated proxy for stored OpenRouter mockup images
-│   │   ├── stitch/html/route.ts       # Proxy legacy Stitch-hosted HTML for safe rendering
 │   │   ├── generate-pdf/route.ts      # PDF generation support route
 │   │   ├── launch/plan/route.ts       # Archived Launch Plan route; returns 410
-│   │   ├── generate-app/route.ts      # POST generate app code
 │   │   ├── generate-all/
 │   │   │   ├── start/route.ts         # POST create/reset generation_queues row
 │   │   │   ├── execute/route.ts       # POST server-side pipeline orchestrator (maxDuration=540)
@@ -456,8 +436,6 @@ src/
 │   ├── analysis-pipelines.ts     # In-house analysis orchestration (market research, Product Plan, First Version Plan, tech spec)
 │   ├── openrouter-image-mockup-format.ts # Client-safe OpenRouter image mockup JSON parser
 │   ├── openrouter-image-mockup-pipeline.ts # OpenRouter image mockup generation + Supabase Storage upload
-│   ├── stitch/client.ts          # Legacy Stitch SDK wrapper + response parsers
-│   ├── stitch-pipeline.ts        # Legacy Stitch mockup generation logic retained for compatibility
 │   ├── waitlist.ts               # Waitlist business rules and validation
 │   ├── perplexity.ts             # Perplexity API client (competitor search, with retry)
 │   ├── tavily.ts                 # Tavily API client (URL content extraction, with retry)
@@ -488,7 +466,7 @@ src/
 | `components/workspace/` | Workspace orchestration | Changing the project workspace flow or column layout |
 | `components/chat/` | Chat feature components | Enhancing chat functionality |
 | `components/analysis/` | Analysis feature components | Adding analysis features |
-| `lib/` | Business logic & external APIs | Integrating new services like waitlist logic, Stitch, or AI pipelines |
+| `lib/` | Business logic & external APIs | Integrating new services like waitlist logic or AI pipelines |
 | `lib/prompts/` | **All AI system prompts** — one file per document type | Editing any AI prompt or adding new document generation features |
 | `lib/supabase/` | Database & auth logic | Database operations |
 | `lib/pdf-utils.ts` | PDF export client helper | Changing PDF request shape or download handling |
@@ -514,7 +492,6 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | ~~`document-edit.ts`~~ | *(deleted — Edit with AI feature removed)* | — |
 | `mockups.ts` | `buildMockupPrompt()` | `api/mockups/generate/` |
 | `competitor-search.ts` | `COMPETITOR_SEARCH_SYSTEM_PROMPT`, `buildCompetitorSearchUserPrompt()` | `perplexity.ts` |
-| `app-generation.ts` | `APP_TYPE_PROMPTS`, `buildAppGenerationPrompt()` | `api/generate-app/` |
 | `legacy-fallback.ts` | `LEGACY_ANALYSIS_PROMPTS` | `openrouter.ts` (gap-analysis fallback) |
 | `index.ts` | Barrel re-export of all above | Everything |
 
@@ -835,7 +812,7 @@ PERPLEXITY_API_KEY=pplx-xxx...
 # Tavily (URL content extraction in competitive analysis)
 TAVILY_API_KEY=tvly-xxx...
 
-# OpenRouter image mockups and legacy Stitch design tooling
+# OpenRouter image mockups
 OPENROUTER_MOCKUP_PLANNER_MODEL=anthropic/claude-sonnet-4-6 # optional; falls back to OPENROUTER_ANALYSIS_MODEL
 OPENROUTER_MOCKUP_IMAGE_MODEL=openai/gpt-5.4-image-2
 # Optional provider-specific image_config overrides; leave unset unless the selected provider supports them.
@@ -844,7 +821,6 @@ OPENROUTER_MOCKUP_IMAGE_MODEL=openai/gpt-5.4-image-2
 OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS=16384
 OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS=16384
 SUPABASE_MOCKUP_STORAGE_BUCKET=mockups
-STITCH_API_KEY=stitch_xxx... # legacy saved Stitch mockup compatibility / tooling
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -876,9 +852,9 @@ npm install
    - `analyses` - Competitive and gap analyses
    - `prds` - Product requirement documents
    - `mvp_plans` - MVP development plans
-   - `mockups` - OpenRouter image mockup documents and legacy Stitch mockup documents
+   - `mockups` - OpenRouter image mockup documents
    - `tech_specs` - Technical specifications
-   - `deployments` - Generated app deployments
+   - `deployments` - Historical generated app deployment rows retained for legacy data only
    - `waitlist` - Public early-access waitlist email captures
    - `credits` - Credit balance tracking
    - `credits_history` - Credit transaction log
@@ -981,8 +957,7 @@ docker run -p 3000:3000 idea2app
   "lint": "eslint",                                       // Run linting
   "test": "node --import tsx --test src/**/*.test.ts src/**/*.test.tsx",
   "guard:chunky": "node ./scripts/guard-webpack-chunky.mjs",
-  "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs",
-  "stitch:fixture": "node scripts/stitch-fetch-fixture.mjs"
+  "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs"
 }
 ```
 
@@ -1021,7 +996,7 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `project_id`, `content`, `version`, `created_at`, `updated_at`
   - RLS: Users can only access First Version Plan rows from their projects
 
-- **mockups**: OpenRouter image mockup documents and legacy Stitch mockup documents
+- **mockups**: OpenRouter image mockup documents
   - Fields: `id`, `project_id`, `content`, `model_used`, `metadata`, `created_at`, `updated_at`
   - RLS: Users can only access mockups from their projects
 
@@ -1038,7 +1013,7 @@ docker run -p 3000:3000 idea2app
   - Fields: `id`, `project_id`, `content`, `created_at`
   - RLS: Users can only access tech specs from their projects
 
-- **deployments**: Generated applications
+- **deployments**: Historical generated-application records retained after app generation removal
   - Fields: `id`, `project_id`, `app_type`, `code`, `url`, `created_at`
   - RLS: Users can only access deployments from their projects
 
@@ -1085,10 +1060,9 @@ docker run -p 3000:3000 idea2app
   - No auth required
 
 ### Chat
-- **POST /api/chat**: Send chat message, get AI response (general chat)
-  - Body: `{ projectId, message }`
-  - Returns: `{ id, content, role, created_at }`
-  - Cost: 1 credit
+- **GET/POST /api/chat**: Disabled general chat endpoint
+  - Returns: `410 Gone`
+  - Cost: none
 
 - **GET /api/prompt-chat**: Deprecated; returns `410 Gone`
   - Query: `?projectId=xxx`
@@ -1195,11 +1169,6 @@ docker run -p 3000:3000 idea2app
   - Body: `{ projectId }`
   - Marks pending/generating normalized items as cancelled in DB and syncs the compatibility queue JSON
 
-- **GET /api/stitch/html**: Proxy Stitch-hosted HTML through the server
-  - Query: `?url=<encoded-url>&projectId=<id>` or `?url=<encoded-url>&mockupId=<id>`
-  - Validates the hostname against allowed Google Stitch CDN hosts and verifies the URL belongs to a saved mockup owned by the current user
-  - Returns raw HTML suitable for safe iframe/srcdoc rendering
-
 - **PATCH /api/analyses/[id]**: Update analysis content
   - Body: `{ content }`
   - Returns: `{ data: updated_analysis }`
@@ -1221,11 +1190,7 @@ docker run -p 3000:3000 idea2app
   - Returns: `{ data: updated_tech_spec }`
 
 ### App Generation
-- **POST /api/generate-app**: Generate application code
-  - Body: `{ projectId, appType }`
-  - Types: `static`, `dynamic`, `spa`, `pwa`
-  - Returns: `{ id, code, url, created_at }`
-  - Cost: 50 credits (`static`), 100 (`dynamic`), 150 (`spa`), or 200 (`pwa`)
+- App generation is archived and `/api/generate-app` has been removed.
 
 ### Stripe
 - **POST /api/stripe/checkout**: Create checkout session
@@ -1266,12 +1231,11 @@ docker run -p 3000:3000 idea2app
 | First Version Plan Generation | 15 credits with current default model |
 | Mockup Generation | Included in project generation |
 | Tech Spec Generation | 15 credits with current default model |
-| App Generation (Deploy) | 50-200 credits by app type |
 
 ### Credit Management
 
 - **Consumption**: Atomic operation via `consume_credits()` stored procedure. Non-bundled generation costs come from `src/lib/token-economics.ts` (`BASE_ACTION_TOKENS`, model multipliers, and `getTokenCost()`).
-- **Refund**: Via service-role-only `refund_credits()` through `src/lib/credits.ts` — called on generation failure in credit-billed analysis, chat, prompt chat, app generation, and billable Generate All queue paths. Mockup generation is project-bundled and does not consume/refund credits.
+- **Refund**: Via service-role-only `refund_credits()` through `src/lib/credits.ts` — called on generation failure in credit-billed analysis, prompt chat, and billable Generate All queue paths. Mockup generation is project-bundled and does not consume/refund credits.
 - **Addition**: Via `add_credits()` (subscription refill, purchases)
 - **Balance Check**: Real-time via `get_credit_balance()`
 - **History**: All transactions logged in `credits_history`
@@ -1441,7 +1405,6 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation using in-house pipelines |
 | [src/app/api/waitlist/route.ts](src/app/api/waitlist/route.ts) | Waitlist status endpoint and public waitlist signup handler |
 | [src/app/api/mockups/image/route.ts](src/app/api/mockups/image/route.ts) | Authenticated proxy for private Supabase Storage mockup images |
-| [src/app/api/stitch/html/route.ts](src/app/api/stitch/html/route.ts) | Server-side proxy for legacy Stitch HTML downloads |
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Lazy-loading scroll workspace orchestrator |
 | [src/components/layout/anchor-nav.tsx](src/components/layout/anchor-nav.tsx) | Sticky/horizontal document rail for Overview, Market Research, Product Plan, First Version Plan, and Design Mockups with queued/generating/ready/needs-retry indicators |
 | [src/components/layout/scrollable-content.tsx](src/components/layout/scrollable-content.tsx) | Scrollable document body renderer with deferred sections, queue-aware placeholders, PRD/MVP completed-document block rendering, and mockup/status modules |
@@ -1453,7 +1416,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/components/analysis/competitive-analysis-document.tsx](src/components/analysis/competitive-analysis-document.tsx) | Market Research v2 hybrid modules/markdown renderer with legacy notice and upgrade CTA |
 | [src/components/analysis/planning-document-blocks.tsx](src/components/analysis/planning-document-blocks.tsx) | PRD and MVP block renderers that use the Pencil-style planning document parser/view-model layer with markdown fallback, PRD context/vision cards, compact labeled PRD prose rows, vertically stacked PRD requirement categories, user-story acceptance criteria cards, single-profile persona fallback labeling, and MVP overview placement |
 | [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with lazy syntax highlighting, responsive table column sizing, and beautiful-mermaid diagrams with expand/pan/zoom controls |
-| [src/components/ui/mockup-renderer.tsx](src/components/ui/mockup-renderer.tsx) | Mockup renderer for OpenRouter storyboard images with screen captions, json-render specs/patches, legacy Stitch HTML records, and legacy ASCII mockups |
+| [src/components/ui/mockup-renderer.tsx](src/components/ui/mockup-renderer.tsx) | Mockup renderer for OpenRouter storyboard images with screen captions, json-render specs/patches, safe legacy-format notices, and legacy ASCII mockups |
 | [src/components/auth/auth-header.tsx](src/components/auth/auth-header.tsx) | Shared auth header variants for auth, forgot-password, and reset-password views |
 | [src/components/auth/auth-field.tsx](src/components/auth/auth-field.tsx) | Shared labeled auth input field |
 | [src/components/auth/auth-password-field.tsx](src/components/auth/auth-password-field.tsx) | Shared auth password field with show/hide toggle |
@@ -1489,7 +1452,6 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/mockup-design-plan.ts](src/lib/mockup-design-plan.ts) | Hidden mockup design-plan prompt, schema parser, and validation for platform, happy path, platform-specific screen limits, and three visual directions. |
 | [src/lib/openrouter-image-mockup-pipeline.ts](src/lib/openrouter-image-mockup-pipeline.ts) | OpenRouter-only storyboard mockup generation, image config handling, decoded dimension capture, and Supabase Storage upload. |
 | [src/lib/openrouter-image-mockup-format.ts](src/lib/openrouter-image-mockup-format.ts) | Client-safe parser/helpers for OpenRouter image/storyboard mockup JSON. |
-| [src/lib/stitch-pipeline.ts](src/lib/stitch-pipeline.ts) | Legacy Stitch mockup generation retained for compatibility. |
 | [src/lib/with-retry.ts](src/lib/with-retry.ts) | Shared retry utility — 3 retries, exponential backoff [1s/2s/4s], retries on 429/5xx/network errors |
 | [src/lib/perplexity.ts](src/lib/perplexity.ts) | Perplexity API client for competitor search (wrapped with withRetry) |
 | [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction (wrapped with withRetry) |
@@ -1500,7 +1462,6 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/document-generation-service.ts](src/lib/document-generation-service.ts) | Shared server-side document generation service used by Generate All/onboarding; skips and returns existing output table/id references when an active document already exists. |
 | [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=540). Dependency-aware item execution with credit deduction/refund, retries, partial status, and DB state tracking. |
 | [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export client helper for `/api/generate-pdf` owned-document export |
-| [src/lib/stitch/client.ts](src/lib/stitch/client.ts) | Stitch SDK wrapper and raw response parsing helpers |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
 | [src/lib/waitlist.ts](src/lib/waitlist.ts) | Waitlist thresholds and email validation helpers |
 | [src/lib/supabase/client.ts](src/lib/supabase/client.ts) | Browser Supabase client |
@@ -1515,7 +1476,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/proxy.ts](src/proxy.ts) | Next proxy entry point for Supabase session refresh |
 | [src/lib/supabase/middleware.ts](src/lib/supabase/middleware.ts) | Supabase cookie/session refresh helper used by `src/proxy.ts` |
 | [src/types/database.ts](src/types/database.ts) | Database type definitions |
-| [migrations/create_prompt_chat_messages.sql](migrations/create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
+| [supabase/migrations/20260616001400_create_prompt_chat_messages.sql](supabase/migrations/20260616001400_create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
 | [supabase/migrations/20260425001000_create_mockups_table.sql](supabase/migrations/20260425001000_create_mockups_table.sql) | Supabase migration for mockups table |
 | [supabase/migrations/20260425004000_security_hardening_followups.sql](supabase/migrations/20260425004000_security_hardening_followups.sql) | Security follow-up migration: service-role-only `refund_credits`, Stripe event idempotency table, and project creation locks. |
 | [supabase/migrations/20260518000000_create_prompt_lab_tables.sql](supabase/migrations/20260518000000_create_prompt_lab_tables.sql) | Supabase migration for Prompt Lab drafts/runs with user-scoped RLS. |

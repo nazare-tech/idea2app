@@ -7,7 +7,6 @@ export { TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt } from "./tech-spec"
 export { buildGeneralChatSystemPrompt } from "./general-chat"
 export { buildMockupPrompt } from "./mockups"
 export { COMPETITOR_SEARCH_SYSTEM_PROMPT, buildCompetitorSearchUserPrompt } from "./competitor-search"
-export { APP_TYPE_PROMPTS, buildAppGenerationPrompt } from "./app-generation"
 export { LEGACY_ANALYSIS_PROMPTS } from "./legacy-fallback"
 export {
   INTAKE_QUESTION_SYSTEM_PROMPT,

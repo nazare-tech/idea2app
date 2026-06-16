@@ -44,3 +44,4 @@ Close pre-release gaps around:
 - Structured webhook logging was added in `src/app/api/stripe/webhook/route.ts`.
 - Stripe webhook event claims now allow failed or stale processing rows to be retried; duplicate processed events remain ignored.
 - Interval billing adds `plan_prices`, `subscriptions.plan_price_id`, and `stripe_credit_grants`; include these in the production RLS audit.
+- 2026-06-16: Milestone 1 repo-side cleanup removed Stitch/app-generation/chat credit-charging surfaces and re-homed root metrics/prompt-chat SQL into `supabase/migrations`. Section 1 remains unchecked until the production Supabase RLS audit is run with project access.

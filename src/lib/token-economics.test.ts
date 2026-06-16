@@ -74,9 +74,9 @@ test("getModelTokenMultiplier: returns 1.0 for unknown model", () => {
   assert.equal(getModelTokenMultiplier("some-unknown-model-xyz"), 1.0)
 })
 
-test("getModelTokenMultiplier: returns 1.0 for legacy 'stitch' model id", () => {
+test("getModelTokenMultiplier: returns 1.0 for unknown retired model id", () => {
   // Unknown model ids use the default multiplier.
-  assert.equal(getModelTokenMultiplier("stitch"), 1.0)
+  assert.equal(getModelTokenMultiplier("retired-provider"), 1.0)
 })
 
 // --- gpt-5 family ---
@@ -177,8 +177,8 @@ test("getTokenCost: launch-plan with no model = 5", () => {
   assert.equal(getTokenCost("launch-plan"), 5)
 })
 
-test("getTokenCost: mockup with legacy stitch model id remains free", () => {
-  assert.equal(getTokenCost("mockup", "stitch"), 0)
+test("getTokenCost: mockup remains free for unknown model ids", () => {
+  assert.equal(getTokenCost("mockup", "retired-provider"), 0)
 })
 
 test("getTokenCost: rounds generation costs up to the nearest 5", () => {

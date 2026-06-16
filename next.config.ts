@@ -14,10 +14,8 @@ const connectSrc = [
   "https://*.supabase.co",
   "wss://*.supabase.co",
   "https://api.openrouter.ai",
-  "https://api.anthropic.com",
   "https://api.stripe.com",
   "https://*.stripe.com",
-  "https://contribution.usercontent.google.com",
   "https://lh3.googleusercontent.com",
 ].join(" ");
 
