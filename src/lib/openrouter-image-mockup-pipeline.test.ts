@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 
 import {
   OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+  assertMockupImageMatchesSkeletonAspect,
   buildOpenRouterMockupImageUserMessageContent,
   buildMockupImageProxyUrl,
   buildOpenRouterMockupImagePrompt,
@@ -155,14 +156,25 @@ test("parseOpenRouterImageMockupContent: returns normalized storyboard options",
   assert.equal(parsed?.options[0]?.width, 1536)
 })
 
-test("getOpenRouterMockupImageConfig: omits provider-specific config by default", () => {
+test("getOpenRouterMockupImageConfig: defaults to the selected skeleton aspect ratio", () => {
   const previousSize = process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
   const previousAspectRatio = process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
   delete process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
   delete process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
 
   try {
-    assert.equal(getOpenRouterMockupImageConfig(), undefined)
+    assert.deepEqual(getOpenRouterMockupImageConfig("desktop-web"), {
+      aspect_ratio: "21:9",
+    })
+    assert.deepEqual(getOpenRouterMockupImageConfig("native-desktop-app"), {
+      aspect_ratio: "21:9",
+    })
+    assert.deepEqual(getOpenRouterMockupImageConfig("mobile-web"), {
+      aspect_ratio: "4:3",
+    })
+    assert.deepEqual(getOpenRouterMockupImageConfig("native-mobile-app"), {
+      aspect_ratio: "4:3",
+    })
   } finally {
     if (previousSize === undefined) {
       delete process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
@@ -203,6 +215,34 @@ test("getOpenRouterMockupImageConfig: uses explicit provider-specific env overri
   }
 })
 
+test("assertMockupImageMatchesSkeletonAspect: rejects square desktop images before save", () => {
+  assert.throws(
+    () => assertMockupImageMatchesSkeletonAspect({
+      platform: "desktop-web",
+      width: 1024,
+      height: 1024,
+      optionLabel: "A",
+    }),
+    /requires a wide 21:9 landscape canvas/,
+  )
+
+  assert.doesNotThrow(() => assertMockupImageMatchesSkeletonAspect({
+    platform: "desktop-web",
+    width: 1792,
+    height: 768,
+    optionLabel: "A",
+  }))
+})
+
+test("assertMockupImageMatchesSkeletonAspect: accepts landscape mobile skeleton output", () => {
+  assert.doesNotThrow(() => assertMockupImageMatchesSkeletonAspect({
+    platform: "mobile-web",
+    width: 1365,
+    height: 1024,
+    optionLabel: "B",
+  }))
+})
+
 test("getOpenRouterMockupImageMaxTokens: caps image calls by default", () => {
   const previousMaxTokens = process.env.OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS
   delete process.env.OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS
@@ -235,6 +275,8 @@ test("getMockupStoryboardSkeleton: maps platforms to saved skeleton assets", () 
     getMockupStoryboardSkeleton("desktop-web").publicPath,
     "/mockups/skeletons/desktop-web-storyboard-skeleton.png",
   )
+  assert.equal(getMockupStoryboardSkeleton("desktop-web").aspectRatio, "21:9")
+  assert.equal(getMockupStoryboardSkeleton("mobile-web").aspectRatio, "4:3")
 })
 
 test("buildOpenRouterMockupImageUserMessageContent: attaches the selected skeleton image", () => {
@@ -309,6 +351,8 @@ test("buildOpenRouterMockupImagePrompt: adds strict mobile skeleton edit contrac
   assert.match(prompt, /Recipe Detail View: fold the key state "Ingredients and steps are visible" into frame 2/)
   assert.match(prompt, /Do not move, resize, crop, redraw, duplicate, or remove either frame/)
   assert.match(prompt, /Do not create a new storyboard layout, add a third frame/)
+  assert.match(prompt, /same near-4:3 landscape aspect ratio/)
+  assert.match(prompt, /do not return a square canvas/)
   assert.match(prompt, /Target user:\nHealthcare worker planning meals after long shifts/)
   assert.doesNotMatch(prompt, /First Version Plan context:/)
   assert.doesNotMatch(prompt, /Generate weekly meals, review details/)
@@ -361,6 +405,8 @@ test("buildOpenRouterMockupImagePrompt: adds strict desktop skeleton edit contra
   assert.match(prompt, /Replace only the purple placeholder areas inside each Safari desktop frame/)
   assert.match(prompt, /Do not move, resize, crop, redraw, duplicate, or remove either frame/)
   assert.match(prompt, /Do not create a new storyboard layout, add a third frame/)
+  assert.match(prompt, /same wide 21:9 landscape aspect ratio/)
+  assert.match(prompt, /do not return a square canvas/)
   assert.doesNotMatch(prompt, /Desktop storyboard composition JSON:/)
   assert.doesNotMatch(prompt, /Mobile storyboard composition JSON:/)
   assert.doesNotMatch(prompt, /optionLabel/)

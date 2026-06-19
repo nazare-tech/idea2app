@@ -40,6 +40,8 @@ const MOCKUP_STORYBOARD_FRAME_COUNT = 2
 interface MockupStoryboardSkeleton {
   label: string
   publicPath: string
+  aspectRatio: string
+  aspectRatioDescription: string
   canvasDescription: string
   preservedStructure: string
   chromeDescription: string
@@ -50,6 +52,8 @@ const MOCKUP_STORYBOARD_SKELETONS: Record<MockupPrimaryPlatform, MockupStoryboar
   "desktop-web": {
     label: "desktop web Safari storyboard skeleton",
     publicPath: "/mockups/skeletons/desktop-web-storyboard-skeleton.png",
+    aspectRatio: "21:9",
+    aspectRatioDescription: "wide 21:9 landscape",
     canvasDescription: "4738x2030 white 21:9-ish canvas with two side-by-side desktop browser frames",
     preservedStructure: "the exact canvas size, white background, two desktop frame positions, frame sizes, rounded corners, black outlines, drop shadows, top caption placement, gutter spacing, and frame alignment",
     chromeDescription: "Safari browser chrome, macOS traffic-light dots, toolbar controls, address bar, and all browser UI details",
@@ -58,6 +62,8 @@ const MOCKUP_STORYBOARD_SKELETONS: Record<MockupPrimaryPlatform, MockupStoryboar
   "mobile-web": {
     label: "mobile web Safari storyboard skeleton",
     publicPath: "/mockups/skeletons/mobile-web-storyboard-skeleton.png",
+    aspectRatio: "4:3",
+    aspectRatioDescription: "near-4:3 landscape",
     canvasDescription: "2760x2030 white canvas with two side-by-side iPhone mobile browser frames",
     preservedStructure: "the exact canvas size, white background, two iPhone frame positions, phone sizes, rounded corners, black outlines, drop shadows, top caption placement, gutter spacing, and frame alignment",
     chromeDescription: "iOS status bars, Dynamic Island cutouts, signal/wifi/battery indicators, bottom Safari toolbar, figma.com address pill, and mobile browser controls",
@@ -66,6 +72,8 @@ const MOCKUP_STORYBOARD_SKELETONS: Record<MockupPrimaryPlatform, MockupStoryboar
   "native-mobile-app": {
     label: "native mobile app storyboard skeleton",
     publicPath: "/mockups/skeletons/native-mobile-app-storyboard-skeleton.png",
+    aspectRatio: "4:3",
+    aspectRatioDescription: "near-4:3 landscape",
     canvasDescription: "2760x2030 white canvas with two side-by-side native iPhone app frames",
     preservedStructure: "the exact canvas size, white background, two iPhone frame positions, phone sizes, rounded corners, black outlines, drop shadows, top caption placement, gutter spacing, and frame alignment",
     chromeDescription: "iOS status bars, Dynamic Island cutouts, signal/wifi/battery indicators, and native device chrome without adding browser controls",
@@ -74,6 +82,8 @@ const MOCKUP_STORYBOARD_SKELETONS: Record<MockupPrimaryPlatform, MockupStoryboar
   "native-desktop-app": {
     label: "native desktop app storyboard skeleton",
     publicPath: "/mockups/skeletons/native-desktop-app-storyboard-skeleton.png",
+    aspectRatio: "21:9",
+    aspectRatioDescription: "wide 21:9 landscape",
     canvasDescription: "4738x2030 white 21:9-ish canvas with two side-by-side native macOS app windows",
     preservedStructure: "the exact canvas size, white background, two desktop window positions, window sizes, rounded corners, black outlines, drop shadows, top caption placement, gutter spacing, and window alignment",
     chromeDescription: "native macOS window chrome, traffic-light dots, and all non-browser window details without adding Safari or web browser UI",
@@ -344,7 +354,7 @@ export async function generateOpenRouterImageMockup({
       generated_at: generatedAt,
       design_plan: designPlan as unknown as Json,
       planner_model: plannerModel,
-      image_config: getOpenRouterMockupImageConfig() as unknown as Json,
+      image_config: getOpenRouterMockupImageConfig(designPlan.primaryPlatform) as unknown as Json,
       prompt_version: "mockup-compact-v1",
       compact_brief_char_count: compactBrief.length,
       planner_prompt_char_count: plannerUserPrompt.length,
@@ -463,7 +473,7 @@ async function generateAndStoreOption({
 
   let response: OpenAI.Chat.Completions.ChatCompletion
   try {
-    const imageConfig = getOpenRouterMockupImageConfig()
+    const imageConfig = getOpenRouterMockupImageConfig(designPlan.primaryPlatform)
     response = await openrouter.chat.completions.create({
       model,
       messages: [
@@ -492,6 +502,12 @@ async function generateAndStoreOption({
   const choice = response.choices[0]
   const dataUrl = extractImageDataUrlFromOpenRouterChoice(choice)
   const parsedImage = parseImageDataUrl(dataUrl)
+  assertMockupImageMatchesSkeletonAspect({
+    platform: designPlan.primaryPlatform,
+    width: parsedImage.width,
+    height: parsedImage.height,
+    optionLabel: config.label,
+  })
   const storagePath = `${projectId}/${runId}/option-${config.label.toLowerCase()}-storyboard.${parsedImage.extension}`
 
   await uploadMockupImageWithRetry(storageSupabase, storagePath, parsedImage.buffer, parsedImage.contentType)
@@ -538,17 +554,39 @@ export function getOpenRouterMockupPlannerMaxTokens() {
     : DEFAULT_PLANNER_MAX_TOKENS
 }
 
-export function getOpenRouterMockupImageConfig() {
-  const aspectRatio = process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO
+export function getOpenRouterMockupImageConfig(platform: MockupPrimaryPlatform = "desktop-web") {
+  const aspectRatio = process.env.OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO || getMockupStoryboardSkeleton(platform).aspectRatio
   const imageSize = process.env.OPENROUTER_MOCKUP_IMAGE_SIZE
 
-  if (!aspectRatio && !imageSize) {
-    return undefined
-  }
-
   return {
-    ...(aspectRatio && { aspect_ratio: aspectRatio }),
+    aspect_ratio: aspectRatio,
     ...(imageSize && { image_size: imageSize }),
+  }
+}
+
+export function assertMockupImageMatchesSkeletonAspect({
+  platform,
+  width,
+  height,
+  optionLabel,
+}: {
+  platform: MockupPrimaryPlatform
+  width?: number
+  height?: number
+  optionLabel: string
+}) {
+  if (!width || !height) return
+
+  const actualRatio = width / height
+  const isDesktop = platform.includes("desktop")
+  const minimumRatio = isDesktop ? 1.95 : 1.15
+  const maximumRatio = isDesktop ? 2.7 : 1.7
+
+  if (actualRatio < minimumRatio || actualRatio > maximumRatio) {
+    const skeleton = getMockupStoryboardSkeleton(platform)
+    throw new Error(
+      `OpenRouter returned a ${width}x${height} image for option ${optionLabel}, but ${skeleton.label} requires a ${skeleton.aspectRatioDescription} canvas. Regenerate the mockup so the output matches the attached skeleton aspect ratio instead of saving a compressed image.`,
+    )
   }
 }
 
@@ -790,6 +828,7 @@ ${foldedScreens}` : ""}
 Skeleton edit contract:
 - Treat the attached image as the source image to edit, not as loose visual inspiration.
 - Preserve ${skeleton.canvasDescription}.
+- Return the edited image in the same ${skeleton.aspectRatioDescription} aspect ratio as the attached skeleton; do not return a square canvas or compressed version of the two frames.
 - Preserve ${skeleton.preservedStructure}.
 - Preserve ${skeleton.chromeDescription}.
 - Do not move, resize, crop, redraw, duplicate, or remove either frame.
