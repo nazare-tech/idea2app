@@ -3,33 +3,20 @@ import { headers } from "next/headers"
 import { getStripeClient } from "@/lib/stripe"
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js"
 import type Stripe from "stripe"
+import { logger } from "@/lib/logger"
 import {
   buildSubscriptionCreditGrantKey,
   buildSubscriptionSyncSnapshot,
   type StripePlanPriceMapping,
   type SubscriptionSyncSnapshot,
 } from "@/lib/stripe-subscription-sync"
+import { claimWebhookEvent, type WebhookClaim } from "@/lib/stripe-webhook-claim"
 
 function logWebhook(level: "info" | "warn" | "error", message: string, context: Record<string, unknown> = {}) {
-  const payload = {
+  logger[level](message, {
     scope: "stripe_webhook",
-    level,
-    message,
-    ts: new Date().toISOString(),
     ...context,
-  }
-
-  if (level === "error") {
-    console.error(JSON.stringify(payload))
-    return
-  }
-
-  if (level === "warn") {
-    console.warn(JSON.stringify(payload))
-    return
-  }
-
-  console.info(JSON.stringify(payload))
+  })
 }
 
 // Use service role for webhook handling (no user context)
@@ -41,87 +28,6 @@ function getAdminClient() {
 }
 
 type AdminClient = ReturnType<typeof getAdminClient>
-
-const WEBHOOK_PROCESSING_RETRY_AFTER_MS = 5 * 60 * 1000
-
-type WebhookClaim =
-  | { shouldProcess: true; retrying: boolean }
-  | { shouldProcess: false; reason: "processed" | "processing" }
-
-async function claimWebhookEvent(
-  supabase: AdminClient,
-  event: Stripe.Event
-): Promise<WebhookClaim> {
-  const { error: insertError } = await supabase.from("stripe_webhook_events").insert({
-    event_id: event.id,
-    event_type: event.type,
-    livemode: event.livemode,
-    status: "processing",
-  })
-
-  if (!insertError) {
-    return { shouldProcess: true, retrying: false }
-  }
-
-  if (insertError.code !== "23505") {
-    throw new Error(`Failed to claim Stripe event: ${insertError.message}`)
-  }
-
-  const { data: existingEvent, error: existingError } = await supabase
-    .from("stripe_webhook_events")
-    .select("status, received_at")
-    .eq("event_id", event.id)
-    .maybeSingle()
-
-  if (existingError) {
-    throw new Error(`Failed to read existing Stripe event claim: ${existingError.message}`)
-  }
-
-  if (!existingEvent || existingEvent.status === "processed") {
-    return { shouldProcess: false, reason: "processed" }
-  }
-
-  const receivedAt = Date.parse(String(existingEvent.received_at ?? ""))
-  const isStaleProcessing =
-    existingEvent.status === "processing" &&
-    Number.isFinite(receivedAt) &&
-    Date.now() - receivedAt > WEBHOOK_PROCESSING_RETRY_AFTER_MS
-
-  if (existingEvent.status !== "failed" && !isStaleProcessing) {
-    return { shouldProcess: false, reason: "processing" }
-  }
-
-  let reclaimQuery = supabase
-    .from("stripe_webhook_events")
-    .update({
-      event_type: event.type,
-      livemode: event.livemode,
-      status: "processing",
-      error: null,
-      received_at: new Date().toISOString(),
-      processed_at: null,
-    })
-    .eq("event_id", event.id)
-    .eq("status", existingEvent.status)
-
-  if (existingEvent.status === "processing") {
-    reclaimQuery = reclaimQuery.eq("received_at", existingEvent.received_at)
-  }
-
-  const { data: reclaimedEvent, error: reclaimError } = await reclaimQuery
-    .select("event_id")
-    .maybeSingle()
-
-  if (reclaimError) {
-    throw new Error(`Failed to reclaim Stripe event: ${reclaimError.message}`)
-  }
-
-  if (!reclaimedEvent) {
-    return { shouldProcess: false, reason: "processing" }
-  }
-
-  return { shouldProcess: true, retrying: true }
-}
 
 async function getPlanPricesByStripePriceId(supabase: AdminClient) {
   const { data, error } = await supabase

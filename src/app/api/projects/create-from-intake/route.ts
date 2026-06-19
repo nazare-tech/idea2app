@@ -3,6 +3,7 @@ import OpenAI from "openai"
 
 import type { IntakeAnswer, IntakeQuestion, ProjectIntakeSource } from "@/lib/intake-types"
 import { formatProjectIntakeForAi } from "@/lib/intake-context"
+import { getProjectIntakeQuestionCountError } from "@/lib/intake-question-count"
 import { validateRequiredPlatformAnswer } from "@/lib/intake-required-questions"
 import { buildProjectIntakePayload, buildProjectSummary } from "@/lib/intake-summary"
 import {
@@ -226,8 +227,9 @@ export async function POST(request: Request) {
   }
 
   const questions = normalizeQuestions(body.questions)
-  if (questions.length < 4 || questions.length > 5) {
-    return NextResponse.json({ error: "Question set must include 4-5 questions" }, { status: 400 })
+  const questionCountError = getProjectIntakeQuestionCountError(questions)
+  if (questionCountError) {
+    return NextResponse.json({ error: questionCountError }, { status: 400 })
   }
   if (questions.some((question) => question.selectionMode === "text")) {
     return NextResponse.json(

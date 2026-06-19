@@ -86,7 +86,7 @@ Inventory every user-visible credit surface with `grep -rn "credit" src/componen
 - Risk: Populating plan fields in production mismatches what plan names currently imply, changing live allowances.
   - Mitigation: Set fields to exactly what `PLAN_NAME_PROJECT_ALLOWANCES` resolves today (`src/lib/project-allowance.ts:5-15`), verified by running the resolver against both paths in a test before the data change.
 - Risk: `beautiful-mermaid` 0.1.x to 1.x is a breaking jump.
-  - Mitigation: It is isolated to `markdown-renderer.tsx` and `generate-pdf`; the visual QA step plus PDF export check cover both consumers, and the bump reverts cleanly if rendering regresses.
+  - Mitigation: It is isolated to `markdown-renderer.tsx`; the visual QA step covers the remaining consumer, and the bump reverts cleanly if rendering regresses. PDF export is retired and should not be part of this validation path.
 - Risk: Upstash adds latency to every limited route.
   - Mitigation: Single round-trip token-bucket pattern, measured on preview; limits only guard expensive routes where one Redis call is noise.
 

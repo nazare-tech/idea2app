@@ -11,7 +11,11 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { GENERATE_ALL_DEFAULT_MODELS } from "@/lib/document-definitions"
 import { generateProjectDocument } from "@/lib/document-generation-service"
-import { refundGenerationQueueItemCredits } from "@/lib/generation-queue-billing"
+import { logger } from "@/lib/logger"
+import {
+  consumeGenerationQueueItemCredits,
+  resolveFailedGenerationCreditStatus,
+} from "@/lib/generation-queue-credit-flow"
 import {
   claimGenerationQueueItem,
   computeQueueStatus,
@@ -258,18 +262,20 @@ async function executeQueueItem({
   }
 
   if (shouldChargeCredits) {
-    const { data: consumed, error: consumeError } = await billingSupabase.rpc("consume_credits", {
-      p_user_id: claimed.user_id,
-      p_amount: creditCost,
-      p_action: action ?? claimed.doc_type,
-      p_description: `${claimed.label} for "${project.name}" (Generate All)`,
+    const creditConsumption = await consumeGenerationQueueItemCredits({
+      supabase: billingSupabase,
+      userId: claimed.user_id,
+      amount: creditCost,
+      action: action ?? claimed.doc_type,
+      label: claimed.label,
+      projectName: project.name,
     })
 
-    if (consumeError || !consumed) {
+    if (!creditConsumption.consumed) {
       return finishGeneratingItem(queueSupabase, claimed, {
         status: "error",
         stage_message: null,
-        error: consumeError ? "Credit check failed" : "Insufficient credits",
+        error: creditConsumption.errorMessage ?? "Credit check failed",
         completed_at: new Date().toISOString(),
       })
     }
@@ -336,20 +342,22 @@ async function executeQueueItem({
 
       const errorMessage = error instanceof Error ? error.message : "Generation failed"
       const wasCancelled = await isQueueCancelled(queueSupabase, claimed)
-      let creditStatus = claimed.credit_status
-      if (charged) {
-        const refund = await refundGenerationQueueItemCredits(
-          billingSupabase,
-          { ...claimed, credit_cost: creditCost },
-          wasCancelled
-            ? `${claimed.label} cancelled: credits refunded (Generate All)`
-            : `${claimed.label} failed: credits refunded (Generate All)`,
-        )
-        if (refund.error) {
-          console.error("[GenerateAll] Credit refund failed:", refund.error)
-        }
-        creditStatus = refund.refunded ? "refunded" : "refund_failed"
-      }
+      const creditStatus = await resolveFailedGenerationCreditStatus({
+        billingSupabase,
+        item: claimed,
+        creditCost,
+        charged,
+        wasCancelled,
+        logRefundError: (refundError) => {
+          logger.error("Generate All credit refund failed", {
+            scope: "generate_all",
+            queue_id: claimed.queue_id,
+            item_id: claimed.id,
+            doc_type: claimed.doc_type,
+            error: refundError,
+          })
+        },
+      })
 
       return finishGeneratingItem(queueSupabase, claimed, {
         status: wasCancelled ? "cancelled" : "error",
@@ -438,15 +446,22 @@ async function cancelClaimedItemAfterAcknowledgement({
   let creditStatus = item.credit_status
 
   if (charged) {
-    const refund = await refundGenerationQueueItemCredits(
+    creditStatus = await resolveFailedGenerationCreditStatus({
       billingSupabase,
       item,
-      `${item.label} cancelled: credits refunded (Generate All)`,
-    )
-    if (refund.error) {
-      console.error("[GenerateAll] Credit refund failed:", refund.error)
-    }
-    creditStatus = refund.refunded ? "refunded" : "refund_failed"
+      creditCost: item.credit_cost,
+      charged,
+      wasCancelled: true,
+      logRefundError: (refundError) => {
+        logger.error("Generate All credit refund failed after cancellation", {
+          scope: "generate_all",
+          queue_id: item.queue_id,
+          item_id: item.id,
+          doc_type: item.doc_type,
+          error: refundError,
+        })
+      },
+    })
   }
 
   return finishGeneratingItem(queueSupabase, item, {

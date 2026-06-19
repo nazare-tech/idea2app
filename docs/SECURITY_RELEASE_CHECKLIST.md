@@ -36,7 +36,7 @@ Close pre-release gaps around:
 
 ## 3) Webhook monitoring
 - [x] Structured webhook logs include `event_id`, `event_type`, timestamp
-- [ ] Route webhook logs to centralized sink (Datadog/Logflare/Sentry)
+- [x] Route webhook logs to centralized sink (Datadog/Logflare/Sentry)
 - [ ] Add alert for repeated signature verification failures
 - [ ] Add alert for repeated processing failures by event type
 
@@ -45,3 +45,4 @@ Close pre-release gaps around:
 - Stripe webhook event claims now allow failed or stale processing rows to be retried; duplicate processed events remain ignored.
 - Interval billing adds `plan_prices`, `subscriptions.plan_price_id`, and `stripe_credit_grants`; include these in the production RLS audit.
 - 2026-06-16: Milestone 1 repo-side cleanup removed Stitch/app-generation/chat credit-charging surfaces and re-homed root metrics/prompt-chat SQL into `supabase/migrations`. Section 1 remains unchecked until the production Supabase RLS audit is run with project access.
+- 2026-06-19: Milestone 2 added Sentry via `@sentry/nextjs` and routed Stripe webhook structured logs through `src/lib/logger.ts`. Alert rules for repeated signature/processing failures still need to be created in the Sentry dashboard.

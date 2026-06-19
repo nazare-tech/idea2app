@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { isCheckoutPlanPriceEligible } from "@/lib/stripe-checkout-plan"
 import { getStripeClient } from "@/lib/stripe"
 import type Stripe from "stripe"
 
@@ -123,19 +124,16 @@ export async function POST(request: Request) {
       )
     }
 
-    const joinedPlan = Array.isArray(planPrice?.plans) ? planPrice.plans[0] : planPrice?.plans
-    const planIsCheckoutEligible = Boolean(
-      joinedPlan?.id &&
-        joinedPlan.is_active !== false &&
-        joinedPlan.is_public === true &&
-        joinedPlan.checkout_enabled === true
-    )
-
-    if (!planPrice?.stripe_price_id || !planIsCheckoutEligible) {
+    if (!isCheckoutPlanPriceEligible(planPrice)) {
       return NextResponse.json(
         { error: "Selected plan is not available for checkout" },
         { status: 400 }
       )
+    }
+    const checkoutPlanPrice = planPrice as NonNullable<typeof planPrice> & {
+      id: string
+      plan_id: string
+      stripe_price_id: string
     }
 
     const { data: existingSubscription, error: subscriptionError } = await supabase
@@ -214,14 +212,15 @@ export async function POST(request: Request) {
         )
       }
     }
+    const activeCustomerId = customerId
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
-      customer: customerId,
+      customer: activeCustomerId,
       payment_method_types: ["card"],
       line_items: [
         {
-          price: planPrice.stripe_price_id,
+          price: checkoutPlanPrice.stripe_price_id,
           quantity: 1,
         },
       ],
@@ -230,8 +229,8 @@ export async function POST(request: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
       metadata: {
         supabase_user_id: user.id,
-        plan_id: planPrice.plan_id,
-        plan_price_id: planPrice.id,
+        plan_id: checkoutPlanPrice.plan_id,
+        plan_price_id: checkoutPlanPrice.id,
       },
     })
 

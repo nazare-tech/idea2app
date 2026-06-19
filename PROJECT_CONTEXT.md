@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-06-16 (milestone 1 security cleanup)
+**Last Updated**: 2026-06-19 (milestone 2 cleanup and monitoring)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -11,7 +11,7 @@
 
 ### Core Functionality
 
-- **Idea Intake Wizard**: Canonical new-project flow at `/projects/new`. Users enter an idea, answer 4-5 AI-generated structured questions, then the app creates the project and starts the bundled onboarding document-generation queue. The question parser always ensures a required single-select `primary-platform` question with the canonical choices Desktop web, Mobile web, Native mobile app, and Native desktop app; project creation validates that this question has exactly one supported answer so stale/bypassed clients cannot omit it. The wizard stores readable summaries in `projects.description`, structured intake JSON in `project_intakes`, and shows the Maker Compass loading state until Overview + Market Research are ready.
+- **Idea Intake Wizard**: Canonical new-project flow at `/projects/new`. Users enter an idea, answer AI-generated structured questions, then the app creates the project and starts the bundled onboarding document-generation queue. Question generation targets 4-5 questions, while project creation accepts 3-5 normalized questions so compact valid sets can proceed. The question parser always ensures a required single-select `primary-platform` question with the canonical choices Desktop web, Mobile web, Native mobile app, and Native desktop app; project creation validates that this question has exactly one supported answer so stale/bypassed clients cannot omit it. The wizard stores readable summaries in `projects.description`, structured intake JSON in `project_intakes`, and shows the Maker Compass loading state until Overview + Market Research are ready.
 - **Prompt Tab AI Chat Deprecated**: The Prompt tab is no longer reachable for any project, including legacy Prompt Chat projects. Direct project URLs with `?tab=prompt` are silently redirected to the workspace Overview, the Idea Brief nav entry is removed, and `/api/prompt-chat` returns `410 Gone`. Historical prompt chat rows are preserved unless explicitly deleted in a separate data cleanup.
 - **General Chat Disabled**: `/api/chat` intentionally returns `410 Gone` and cannot consume credits or call AI. Historical message rows are preserved; a future chat return should re-enable the route deliberately.
 - **Competitive Analysis / Market Research**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a full-width Pencil-faithful designed page, not generic markdown. The UI is built from typed parsing of the stored markdown source and uses founder-friendly display labels including Executive Summary, Feature Comparison, Pricing Comparison, Best Customer Segments, How You'll Reach Customers, Ways to Stand Out, What Makes It Hard to Copy, Risks & Competitor Responses, First Version Focus, and Recommended Next Moves. Executive Summary is a single generated section and workspace/nav item with a selectable Overview child anchor; it includes the market snapshot, entry assessment, why-now signal, and biggest risk, while legacy Opportunity Verdict content is still folded into the summary when present. Direct competitor entries still expect linked H3 headings plus concise fields for overview, core product, positioning, strengths, key edge, limitations, pricing model, and target audience so the app can render dense competitor cards and a fast-comparison table. Legacy or malformed documents fall back to markdown with upgrade guidance.
@@ -82,7 +82,6 @@
 | **img-fx** | 0.3.1 | Animated WebGL mockup image-generation loading surface |
 | **three** | 0.184.0 | WebGL renderer peer dependency for `img-fx` |
 | **date-fns** | 4.1.0 | Relative project timestamp formatting on dashboard cards |
-| **marked** | 17.0.1 | Markdown-to-HTML (used for PDF export) |
 | **Hanken Grotesk** | (Google Font) | Primary sans-serif and display typeface |
 | **Fira Mono** | (Google Font) | Monospace typeface for labels/code |
 
@@ -96,7 +95,7 @@
 | **Anthropic Claude** | 0.71.2 | Optional local Prompt Lab mockup planner provider |
 | **OpenRouter** | 6.16.0 | API wrapper for AI analysis and OpenRouter-hosted image mockup generation |
 | **Stripe** | 20.2.0 | Payment processing and subscriptions |
-| **Puppeteer** | 24.37.1 | Server-side PDF rendering in `/api/generate-pdf` |
+| **@sentry/nextjs** | 10.58.0 | App Router error monitoring and source-map upload support |
 | **Perplexity** | - | AI-powered competitor search (sonar-pro model, OpenAI-compatible API) |
 | **Tavily** | - | Web content extraction from competitor URLs |
 
@@ -243,8 +242,10 @@
    - `next.config.ts` sets baseline security headers: CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and Permissions-Policy.
    - `src/lib/rate-limit.ts` provides simple in-memory per-user/IP rate limiting for public and expensive endpoints. Distributed rate limiting remains a post-MVP item.
    - `src/lib/credits.ts` centralizes server-only refunds through the Supabase service role. The hardened `refund_credits` RPC is service-role-only.
-   - `/api/generate-pdf` requires auth and fetches owned server-side document content by `projectId`, `documentType`, and optional `documentId`; it no longer accepts arbitrary raw markdown from clients.
+   - PDF export is retired and the `/api/generate-pdf` route plus `pdf-utils.ts` client helper have been removed.
    - Stripe webhooks are claimed in `stripe_webhook_events` before processing so duplicate Stripe retries do not double-grant credits.
+   - Sentry is configured through `@sentry/nextjs`, `src/instrumentation.ts`, `src/instrumentation-client.ts`, `src/sentry.server.config.ts`, `src/sentry.edge.config.ts`, and `src/app/global-error.tsx`. Events use the `/monitoring` tunnel route, which is excluded from `src/proxy.ts`.
+   - `src/lib/logger.ts` provides structured production JSON logging and forwards warnings/errors to Sentry. High-value Stripe webhook and Generate All refund failures use this logger.
    - Intake project creation uses a short-lived service-role `project_creation_locks` row plus a second allowance check immediately before insert. A single transactional RPC remains tracked for post-MVP hardening.
 
 ### Workspace Layout
@@ -272,7 +273,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 - **`ProjectHeader`** — per-project header with editable project name and account/credit affordances.
 - **`AnchorNav`** — scroll-aware document rail. It renders `Queued`, `Generating`, `Needs retry`, or ready check marks from `DocumentGenerationDisplayState`.
 - **`ScrollableContent`** — renders Overview, Market Research, Product Plan, First Version Plan, and Design Mockups as stacked sections. It defers below-the-fold sections by one animation frame and uses generation placeholders when content is not saved yet.
-- **`ProjectWorkspace`** — orchestrator component that manages active document/hash state, lazy document loading through `/api/projects/[id]/workspace`, version selection, local/manual generation flags, durable Generate All queue hydration, and dispatches API calls.
+- **`ProjectWorkspace`** — slim orchestrator component for the workspace shell and render mapping. Hooks own the heavy behavior: `useWorkspaceDocuments` for lazy `/workspace` loading, `usePersistedGenerationState` for local generation flags, `useWorkspaceScrollSync` for hash/scroll state, `useGenerateAllHydration` for store selectors, and `useDocumentGeneration` for manual document/mockup generation.
 
 ### Shared UI Architecture
 
@@ -303,10 +304,11 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 12. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Hanken Grotesk + Fira Mono typography
 13. **Fixed Default Models Per Tab**: AI model selection was removed from the UI. Direct document routes use fixed defaults in their route files, while Generate All defaults live in `src/lib/document-definitions.ts` (`GENERATE_ALL_DEFAULT_MODELS`).
 14. **Generate-Missing-Only Documents**: The Generate button is hidden after a document is successfully generated, and server routes also enforce one active planning document per project/document type by default. Direct duplicate API requests return `200 skipped` with existing output metadata and no credit charge. Failed generations (no content saved) naturally re-expose the button for retry. Future versioning must be introduced as a separate explicit action.
-15. **PDF-Only Export**: Documents export as PDF only (markdown download removed). The header shows a single "Download PDF" button.
+15. **PDF Export Retired**: Document PDF export is no longer a supported product feature. The `/api/generate-pdf` route, client helper, Puppeteer dependency path, and PDF header action have been removed.
 16. **AI-Generated Project Name**: Wizard-created projects generate a short name during final intake submission before the workspace opens. Legacy Prompt-tab project starts are deprecated and no longer generate project names. `isNameSet` state (in `ProjectWorkspace`) gates editing — initialized as `project.name !== "Untitled" || !!project.description` so existing and wizard-created projects are never locked.
 17. **URL-Driven Auth Modal**: Landing page auth uses `?modal=auth&mode=signin|signup` URL params to drive a Radix Dialog modal, keeping users in context. The `/auth` page is unchanged and still used for email confirmation redirects. Both surfaces share `AuthFormContent`. No new dependencies — `@radix-ui/react-dialog` was already installed.
-18. **WCAG AA Contrast Compliance**: `--muted-foreground` and `--text-muted` are `#6B7280` (4.61:1 on white). Form labels use `text-text-secondary` (#666666, 5.74:1). The `✦ AI naming` badge uses `bg-violet-100 text-violet-800` (8.4:1). Never use `#999999` for text on white backgrounds — it fails at 2.85:1.
+18. **Sentry Monitoring + Structured Logging**: App Router errors are captured by Sentry when `NEXT_PUBLIC_SENTRY_DSN` is configured. Server/client instrumentation is env-gated, source-map upload is controlled by Sentry env vars, and `logger.ts` keeps production logs structured.
+19. **WCAG AA Contrast Compliance**: `--muted-foreground` and `--text-muted` are `#6B7280` (4.61:1 on white). Form labels use `text-text-secondary` (#666666, 5.74:1). The `✦ AI naming` badge uses `bg-violet-100 text-violet-800` (8.4:1). Never use `#999999` for text on white backgrounds — it fails at 2.85:1.
 
 ### Intake Data Model
 
@@ -380,7 +382,6 @@ src/
 │   │   ├── waitlist/route.ts          # GET/POST waitlist status + signup
 │   │   ├── mockups/generate/route.ts  # OpenRouter image mockup generation
 │   │   ├── mockups/image/route.ts     # Authenticated proxy for stored OpenRouter mockup images
-│   │   ├── generate-pdf/route.ts      # PDF generation support route
 │   │   ├── launch/plan/route.ts       # Archived Launch Plan route; returns 410
 │   │   ├── generate-all/
 │   │   │   ├── start/route.ts         # POST create/reset generation_queues row
@@ -416,6 +417,10 @@ src/
 │   │   ├── scrollable-content.tsx # Scroll workspace document renderer
 │   ├── workspace/                # Workspace orchestration
 │   │   ├── project-workspace.tsx      # Lazy-loading scroll workspace orchestrator
+│   │   ├── use-workspace-documents.ts # Lazy document loading hook
+│   │   ├── use-workspace-scroll-sync.ts # Workspace hash/scroll sync hook
+│   │   ├── use-persisted-generation-state.ts # Local generation persistence hook
+│   │   ├── use-document-generation.ts # Manual document/mockup generation hook
 │   │   └── generate-all-hydrator.tsx  # Keeps store callbacks fresh; triggers hydrate() once per project
 │   ├── auth/                     # Auth components
 │   │   ├── auth-form-content.tsx # Shared form logic (email, password, Google OAuth, mode-switching)
@@ -440,7 +445,7 @@ src/
 │   ├── perplexity.ts             # Perplexity API client (competitor search, with retry)
 │   ├── tavily.ts                 # Tavily API client (URL content extraction, with retry)
 │   ├── with-retry.ts             # Shared retry utility for external API calls (3 retries, exponential backoff on 429/5xx)
-│   ├── pdf-utils.ts              # PDF export client helper for owned server-rendered documents
+│   ├── logger.ts                 # Structured logger with Sentry warning/error forwarding
 │   └── utils.ts                  # Utility functions & CREDIT_COSTS
 │
 ├── types/                        # TypeScript types
@@ -463,13 +468,11 @@ src/
 | `app/api/` | Backend API endpoints | Creating new API functionality |
 | `components/ui/` | Reusable UI components | Adding new UI primitives |
 | `components/layout/` | Layout & navigation components | Modifying dashboard shell, app shell, anchor nav, or scrollable content |
-| `components/workspace/` | Workspace orchestration | Changing the project workspace flow or column layout |
-| `components/chat/` | Chat feature components | Enhancing chat functionality |
+| `components/workspace/` | Workspace orchestration hooks and shell | Changing project workspace loading, scroll sync, or generation behavior |
 | `components/analysis/` | Analysis feature components | Adding analysis features |
 | `lib/` | Business logic & external APIs | Integrating new services like waitlist logic or AI pipelines |
 | `lib/prompts/` | **All AI system prompts** — one file per document type | Editing any AI prompt or adding new document generation features |
 | `lib/supabase/` | Database & auth logic | Database operations |
-| `lib/pdf-utils.ts` | PDF export client helper | Changing PDF request shape or download handling |
 | `types/` | TypeScript definitions | Adding new type definitions |
 
 ---
@@ -1370,9 +1373,8 @@ export const BASE_ACTION_TOKENS = {
 **database.ts Corruption**
 - If `src/types/database.ts` contains a BOM or npm install prompt at the top (UTF-16 encoding artifact from `supabase gen types` with npx), restore it from git: `git checkout <clean-commit> -- src/types/database.ts`
 
-**PDF Export Issues**
-- PDF export posts `projectId`, `documentType`, and optional `documentId` to `/api/generate-pdf`; the server fetches owned content and renders through Puppeteer with JavaScript disabled.
-- `marked` parses Markdown to HTML client-side; ensure the content is valid Markdown
+**Retired PDF Export**
+- PDF export is intentionally removed. Do not re-add `/api/generate-pdf`, `pdf-utils.ts`, Puppeteer, or PDF buttons unless PDF returns as a deliberate product feature.
 
 ---
 
@@ -1405,7 +1407,11 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation using in-house pipelines |
 | [src/app/api/waitlist/route.ts](src/app/api/waitlist/route.ts) | Waitlist status endpoint and public waitlist signup handler |
 | [src/app/api/mockups/image/route.ts](src/app/api/mockups/image/route.ts) | Authenticated proxy for private Supabase Storage mockup images |
-| [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Lazy-loading scroll workspace orchestrator |
+| [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Lazy-loading scroll workspace shell and render mapper |
+| [src/components/workspace/use-workspace-documents.ts](src/components/workspace/use-workspace-documents.ts) | Lazy workspace document loading and credits state |
+| [src/components/workspace/use-workspace-scroll-sync.ts](src/components/workspace/use-workspace-scroll-sync.ts) | Workspace hash/scroll synchronization |
+| [src/components/workspace/use-persisted-generation-state.ts](src/components/workspace/use-persisted-generation-state.ts) | LocalStorage-backed generation flags and completion detection |
+| [src/components/workspace/use-document-generation.ts](src/components/workspace/use-document-generation.ts) | Manual document and mockup generation workflow |
 | [src/components/layout/anchor-nav.tsx](src/components/layout/anchor-nav.tsx) | Sticky/horizontal document rail for Overview, Market Research, Product Plan, First Version Plan, and Design Mockups with queued/generating/ready/needs-retry indicators |
 | [src/components/layout/scrollable-content.tsx](src/components/layout/scrollable-content.tsx) | Scrollable document body renderer with deferred sections, queue-aware placeholders, PRD/MVP completed-document block rendering, and mockup/status modules |
 | [src/components/layout/app-page-shell.tsx](src/components/layout/app-page-shell.tsx) | Shared authenticated page shell and header for consistent dashboard page spacing and hierarchy |
@@ -1461,7 +1467,10 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/onboarding-generation.ts](src/lib/onboarding-generation.ts) | Onboarding queue metadata, loading row mapping, run-id helpers, and canonical `#executive-summary` redirect construction. |
 | [src/lib/document-generation-service.ts](src/lib/document-generation-service.ts) | Shared server-side document generation service used by Generate All/onboarding; skips and returns existing output table/id references when an active document already exists. |
 | [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=540). Dependency-aware item execution with credit deduction/refund, retries, partial status, and DB state tracking. |
-| [src/lib/pdf-utils.ts](src/lib/pdf-utils.ts) | PDF export client helper for `/api/generate-pdf` owned-document export |
+| [src/lib/generation-queue-credit-flow.ts](src/lib/generation-queue-credit-flow.ts) | Testable Generate All credit consume/refund helpers |
+| [src/lib/logger.ts](src/lib/logger.ts) | Structured logger with Sentry warning/error forwarding |
+| [src/lib/stripe-webhook-claim.ts](src/lib/stripe-webhook-claim.ts) | Testable Stripe webhook idempotency claim/reclaim helper |
+| [src/lib/stripe-checkout-plan.ts](src/lib/stripe-checkout-plan.ts) | Checkout plan-price eligibility helper |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
 | [src/lib/waitlist.ts](src/lib/waitlist.ts) | Waitlist thresholds and email validation helpers |
 | [src/lib/supabase/client.ts](src/lib/supabase/client.ts) | Browser Supabase client |
