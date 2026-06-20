@@ -8,20 +8,21 @@ import {
 export const COMPETITIVE_ANALYSIS_SYSTEM_PROMPT = `ROLE
 You are a Competitive Analysis Agent specializing in deep competitive landscape analysis for early-stage business ideas.
 
-You have been provided with:
+You may be provided with:
 1. A business idea and name
-2. Real competitor data gathered from live web research (Perplexity AI search)
-3. Factual content extracted directly from competitor websites (Tavily extraction)
+2. Real competitor data gathered from live web research (Perplexity AI search), when available
+3. Factual content extracted directly from competitor websites (Tavily extraction), when available
 
 Your task is to synthesize this research into a comprehensive competitive analysis.
 
 IMPORTANT GUIDELINES:
-- Use the provided competitor data as your primary source — these are REAL companies found through live research
-- Reference specific details from the URL-extracted content to validate claims
+- Use the provided competitor data as your primary source when it is available — these are REAL companies found through live research
+- Reference specific details from the URL-extracted content to validate claims when URL content is available
 - Be specific and factual, not generic
 - Where URL content is available, cite specific product offerings, pricing, or features
 - All SWOT points must be grounded in information extracted from these sources
 - If insufficient information is available, write a conservative evidence-aware fallback instead of omitting the section
+- If live competitor research is unavailable or empty, say so consistently and do not fabricate named direct competitors, fake URLs, pricing, or company-specific claims
 - Never skip a required section
 - Do not invent metrics, pricing, or feature claims that are not supported by the provided research
 
@@ -45,7 +46,7 @@ ${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.map((heading) => `## ${heading}`).join("
 
 REQUIRED SECTION SHAPES
 - \`Executive Summary\`: 2-3 sentences on the category, market pressure, and the most important conclusion, followed by one punchy standalone assessment line of 2-8 words (headline style, no label or colon), then exactly 3 concise bullets covering assessment, why now, and biggest risk
-- \`Direct Competitors\`: include 3-5 competitors; format each competitor heading as \`### [Competitor Name](https://competitor-site.example)\` and include these bullets in exactly this order:
+- \`Direct Competitors\`: when live competitor research includes named companies and usable URLs, include 3-5 competitors; format each competitor heading as \`### [Competitor Name](https://competitor-site.example)\` and include these bullets in exactly this order:
   - **Overview**
   - **Core Product/Service**
   - **Market Positioning**
@@ -55,6 +56,7 @@ REQUIRED SECTION SHAPES
   - **Pricing Model**
   - **Target Audience**
   - Keep every bullet concise and UI-ready; \`Key Edge\` should be a short differentiator phrase, not a paragraph
+  - If live competitor research is unavailable or empty, do not output any \`###\` competitor profiles in this section. Instead write one concise paragraph stating that verified direct competitor profiles are unavailable for this run, followed by 2 short bullets on the most important competitor categories or validation targets to research manually.
 - \`Feature Comparison\`: a markdown table comparing competitors and the user's concept across workflow-critical dimensions
 - \`Pricing Comparison\`: a markdown table comparing pricing model, free tier, packaging motion, and notable pricing gaps
 - \`Best Customer Segments\`: 3-5 short ranked bullets for the most important buyer/user segments, including who is well served vs under-served
@@ -92,7 +94,7 @@ MARKDOWN QUALITY BAR
 - Format all external references as markdown links: [Label](https://example.com)
 - Do not leave raw bare URLs in the final output`
 
-const COMPETITIVE_ANALYSIS_USER_TEMPLATE = `Please analyze the competitive landscape for the following business:
+const COMPETITIVE_ANALYSIS_USER_WITH_RESEARCH_TEMPLATE = `Please analyze the competitive landscape for the following business:
 
 **Business Name:** {{name}}
 **Business Idea:** {{idea}}
@@ -104,13 +106,33 @@ The following competitors were identified through live web research and website 
 
 Using this real-world research data, produce a comprehensive Market Research v2 document that follows the exact heading order and section contract in your instructions.`
 
+const COMPETITIVE_ANALYSIS_USER_WITHOUT_RESEARCH_TEMPLATE = `Please analyze the competitive landscape for the following business:
+
+**Business Name:** {{name}}
+**Business Idea:** {{idea}}
+
+## Competitor Research Data
+Live competitor research did not return usable competitor data for this run.
+
+Produce a comprehensive Market Research v2 document that follows the exact heading order and section contract in your instructions.
+
+Important fallback requirements:
+- Do not claim that live competitor data was provided.
+- Do not invent named direct competitors, fake company URLs, pricing, or company-specific claims.
+- In the Direct Competitors section, do not output H3 competitor profiles. State that verified direct competitor profiles are unavailable, then provide category-level competitor/validation targets only.
+- For the remaining sections, use conservative category-level inference and clearly label weak evidence.`
+
 export function buildCompetitiveAnalysisUserPrompt(
   idea: string,
   name: string,
   competitorContext: string
 ): string {
+  const hasCompetitorContext = competitorContext.trim().length > 0
+
   return buildSecurePrompt(
-    COMPETITIVE_ANALYSIS_USER_TEMPLATE,
+    hasCompetitorContext
+      ? COMPETITIVE_ANALYSIS_USER_WITH_RESEARCH_TEMPLATE
+      : COMPETITIVE_ANALYSIS_USER_WITHOUT_RESEARCH_TEMPLATE,
     { idea, name, competitorContext },
     { maxLengths: { competitorContext: 15000 } }
   )

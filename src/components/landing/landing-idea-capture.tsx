@@ -101,7 +101,7 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
           data-testid="landing-idea-signup"
         >
           {loadingMode === "signin" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {loadingMode === "signin" ? "Validating" : "Validate idea"}
+          {loadingMode === "signin" ? "Validating" : "Get my build plan"}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

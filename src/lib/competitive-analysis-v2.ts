@@ -1,6 +1,6 @@
 export const COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION = "competitive-analysis-v2"
 export const COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION =
-  "competitive-analysis-v2-2026-05-17-founder-friendly-headings"
+  "competitive-analysis-v2-2026-06-15-live-research-fallback"
 
 export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Executive Summary",
@@ -135,6 +135,7 @@ export interface CompetitiveAnalysisSwotMatrix {
 export interface CompetitiveAnalysisStructuredData {
   executiveSummary: { paragraphs: string[]; bullets: string[] }
   directCompetitors: CompetitiveAnalysisCompetitorProfile[]
+  directCompetitorEvidenceNotice: string | null
   featureMatrix: CompetitiveAnalysisNarrativeTable
   pricingAndPackaging: CompetitiveAnalysisNarrativeTable
   audienceSegments: string[]
@@ -308,6 +309,21 @@ function normalizeFieldLabel(label: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
+}
+
+const LIVE_COMPETITOR_RESEARCH_UNAVAILABLE_PATTERNS = [
+  /\bno live competitor (?:data|research)\b/i,
+  /\blive competitor (?:data|research) (?:was|were) not provided\b/i,
+  /\blive competitor research did not return usable competitor data\b/i,
+  /\blive competitor (?:search|research) (?:was|is|were) unavailable\b/i,
+  /\bverified direct competitor profiles are unavailable\b/i,
+  /\bwithout live competitor data\b/i,
+] as const
+
+export function hasUnavailableLiveCompetitorResearch(content: string) {
+  return LIVE_COMPETITOR_RESEARCH_UNAVAILABLE_PATTERNS.some((pattern) =>
+    pattern.test(content)
+  )
 }
 
 const COMPETITIVE_ANALYSIS_SECTION_LOOKUP = new Map<
@@ -525,13 +541,25 @@ export function getCompetitiveAnalysisStructuredData(
 ): CompetitiveAnalysisStructuredData {
   const { sections, competitorEntries } = parsed
   const swotAnalysis = parseNarrativeTable(getSection(sections, "SWOT Analysis"))
+  const directCompetitorResearchUnavailable =
+    hasUnavailableLiveCompetitorResearch(
+      [
+        getSection(sections, "Executive Summary"),
+        getSection(sections, "Direct Competitors"),
+      ].join("\n\n")
+    )
 
   return {
     executiveSummary: {
       paragraphs: parseParagraphBlocks(getSection(sections, "Executive Summary")),
       bullets: parseListItems(getSection(sections, "Executive Summary")),
     },
-    directCompetitors: parseCompetitorProfiles(competitorEntries),
+    directCompetitors: directCompetitorResearchUnavailable
+      ? []
+      : parseCompetitorProfiles(competitorEntries),
+    directCompetitorEvidenceNotice: directCompetitorResearchUnavailable
+      ? "Live competitor research was unavailable for this run, so Maker Compass is not showing inferred company profiles as direct competitors. Regenerate Market Research after competitor search is configured to populate verified profiles."
+      : null,
     featureMatrix: parseNarrativeTable(
       getSection(sections, "Feature Comparison")
     ),
@@ -679,9 +707,16 @@ export function parseCompetitiveAnalysisV2(
     }
   }
 
-  const competitorEntries = sections["Direct Competitors"]
-    ? extractSectionsByHeading(sections["Direct Competitors"], 3)
-    : []
+  const directCompetitorsSection = sections["Direct Competitors"] ?? ""
+  const competitorEntries =
+    directCompetitorsSection &&
+    !hasUnavailableLiveCompetitorResearch(
+      [sections["Executive Summary"] ?? "", directCompetitorsSection].join(
+        "\n\n"
+      )
+    )
+      ? extractSectionsByHeading(directCompetitorsSection, 3)
+      : []
 
   return {
     isValid: errors.length === 0,

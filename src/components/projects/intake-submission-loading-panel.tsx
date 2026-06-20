@@ -26,7 +26,7 @@ interface IntakeSubmissionLoadingPanelProps {
   rows?: IntakeLoadingRow[]
 }
 
-export const INTAKE_FAKE_PROGRESS_DURATION_MS = 26000
+export const INTAKE_FAKE_PROGRESS_DURATION_MS = 40000
 export const INTAKE_MAX_FAKE_PROGRESS = 90
 export const INTAKE_MIN_ANIMATED_PROGRESS = 12
 

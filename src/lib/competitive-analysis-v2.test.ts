@@ -72,6 +72,26 @@ test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   assert.equal(structured.swotAnalysis.matrix?.externalNegative, "Incumbent copy risk")
 })
 
+test("parseCompetitiveAnalysisV2 does not turn no-live-data inferred profiles into direct competitors", () => {
+  const parsed = parseCompetitiveAnalysisV2(
+    buildV2Fixture({
+      "Executive Summary":
+        "The category has demand, but live competitor evidence is incomplete.\n\nEvidence is limited.\n\n- **Assessment**: Needs more research\n- **Why now**: Owners want trusted pet care\n- **Biggest risk**: No live competitor data was provided for this analysis",
+      "Direct Competitors":
+        "*Note: As no live competitor data was provided, the following profiles are conservative inferences.*\n\n### Rover\n- **Overview**: Inferred incumbent\n- **Core Product/Service**: Pet care marketplace\n- **Market Positioning**: Broad consumer platform\n- **Strengths**: Brand awareness\n- **Key Edge**: Marketplace liquidity\n- **Limitations**: Small-animal specificity\n- **Pricing Model**: Marketplace fees\n- **Target Audience**: Pet owners",
+    })
+  )
+  const structured = getCompetitiveAnalysisStructuredData(parsed)
+
+  assert.equal(parsed.isValid, true)
+  assert.equal(parsed.competitorEntries.length, 0)
+  assert.deepEqual(structured.directCompetitors, [])
+  assert.match(
+    structured.directCompetitorEvidenceNotice ?? "",
+    /Live competitor research was unavailable/
+  )
+})
+
 test("parseCompetitiveAnalysisV2 folds a redundant opportunity verdict into executive summary", () => {
   const oldShapeContent = buildV2Fixture().replace(
     "## Direct Competitors",

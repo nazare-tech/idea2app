@@ -12,7 +12,7 @@ import {
 } from "./intake-submission-loading-panel"
 
 test("getTimedIntakeProgress: reaches fake cap after the slower onboarding duration", () => {
-  assert.equal(INTAKE_FAKE_PROGRESS_DURATION_MS, 26000)
+  assert.equal(INTAKE_FAKE_PROGRESS_DURATION_MS, 40000)
   assert.equal(getTimedIntakeProgress(INTAKE_FAKE_PROGRESS_DURATION_MS / 2, false), 45)
   assert.equal(getTimedIntakeProgress(INTAKE_FAKE_PROGRESS_DURATION_MS, false), INTAKE_MAX_FAKE_PROGRESS)
   assert.equal(getTimedIntakeProgress(INTAKE_FAKE_PROGRESS_DURATION_MS * 2, false), INTAKE_MAX_FAKE_PROGRESS)

@@ -491,6 +491,26 @@ function FastComparisonTable({
 }: {
   competitors: CompetitiveAnalysisCompetitorProfile[]
 }) {
+  if (competitors.length === 0) {
+    return (
+      <div className="border border-dashed border-[#D8CEC5] bg-[#FAFAFA] px-5 py-5">
+        <p
+          className={cn(
+            displayFontClass,
+            "text-[15px] font-semibold text-[#0A0A0A]"
+          )}
+        >
+          Live competitor profiles unavailable
+        </p>
+        <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
+          Verified competitor search did not return usable company-level data
+          for this run, so inferred companies are not shown as direct
+          competitors.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-[clamp(960px,100%,1240px)] table-fixed border-collapse border border-[#E0E0E0]">
@@ -595,9 +615,11 @@ function FastComparisonTable({
 
 function CompetitorProfiles({
   competitors,
+  evidenceNotice,
   showHeader = true,
 }: {
   competitors: CompetitiveAnalysisCompetitorProfile[]
+  evidenceNotice?: string | null
   showHeader?: boolean
 }) {
   return (
@@ -608,8 +630,10 @@ function CompetitorProfiles({
         showHeader={showHeader}
       >
         <p className="mb-5 ui-type-body text-[#666666]">
-          Compare each competitor once across product scope, buying fit,
-          strengths, edges, and limitations.
+          {competitors.length > 0
+            ? "Compare each competitor once across product scope, buying fit, strengths, edges, and limitations."
+            : evidenceNotice ??
+              "Verified direct competitor profiles are unavailable for this report."}
         </p>
         <FastComparisonTable competitors={competitors} />
       </PencilCard>
@@ -1050,7 +1074,10 @@ function CompetitiveResearchPage({
 
       <SnapshotHero structured={structured} />
 
-      <CompetitorProfiles competitors={structured.directCompetitors} />
+      <CompetitorProfiles
+        competitors={structured.directCompetitors}
+        evidenceNotice={structured.directCompetitorEvidenceNotice}
+      />
 
       <CompactTableCard
         title="Feature Comparison"
@@ -1214,7 +1241,11 @@ export function CompetitiveDetailSection({
         index={1}
         total={13}
       >
-        <CompetitorProfiles competitors={structured.directCompetitors} showHeader={false} />
+        <CompetitorProfiles
+          competitors={structured.directCompetitors}
+          evidenceNotice={structured.directCompetitorEvidenceNotice}
+          showHeader={false}
+        />
       </WorkspaceDesignedSection>
 
       <WorkspaceDesignedSection

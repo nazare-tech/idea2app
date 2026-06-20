@@ -193,6 +193,27 @@ test("competitive detail consolidates competitor profile cards into one quick co
   assert.doesNotMatch(html, />PROFILE</)
 })
 
+test("competitive detail shows evidence state instead of inferred direct competitors when live research is missing", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={buildV2Fixture({
+        "Executive Summary":
+          "The market is active, but this report lacks verified live competitor evidence.\n\nEvidence needs validation.\n\n- **Assessment**: Research before positioning\n- **Why now**: Buyers want trusted pet care\n- **Biggest risk**: Because no live competitor data was provided for this analysis, company-level claims are unverified",
+        "Direct Competitors":
+          "*Note: As no live competitor data was provided, the following profiles are conservative inferences.*\n\n### Rover\n- **Overview**: Inferred pet care incumbent\n- **Core Product/Service**: Pet services marketplace\n- **Market Positioning**: Broad consumer pet care\n- **Strengths**: Brand awareness\n- **Key Edge**: Marketplace liquidity\n- **Limitations**: Less focused on small animals\n- **Pricing Model**: Marketplace fee\n- **Target Audience**: Pet owners",
+      })}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+
+  assert.match(html, /Direct Competitors/)
+  assert.match(html, /Live competitor profiles unavailable/)
+  assert.match(html, /Live competitor research was unavailable/)
+  assert.doesNotMatch(html, /Inferred pet care incumbent/)
+  assert.doesNotMatch(html, /Marketplace liquidity/)
+})
+
 test("competitive renderer normalizes redundant opportunity verdict into modules", () => {
   const oldShapeContent = `# Competitive Analysis: Fuel Kit
 

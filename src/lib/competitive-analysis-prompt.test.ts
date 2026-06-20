@@ -1,6 +1,9 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT } from "./prompts"
+import {
+  COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+  buildCompetitiveAnalysisUserPrompt,
+} from "./prompts"
 
 test("competitive analysis prompt includes assessment guidance inside executive summary", () => {
   assert.match(
@@ -10,11 +13,31 @@ test("competitive analysis prompt includes assessment guidance inside executive 
   assert.doesNotMatch(COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, /verdict line/i)
 })
 
-test("competitive analysis prompt requires direct competitor website links and key edge", () => {
+test("competitive analysis prompt requires direct competitor website links and key edge when research exists", () => {
   assert.match(
     COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
     /Direct Competitors.*### \[Competitor Name\]\(https:\/\/competitor-site\.example\).*Key Edge/s
   )
+})
+
+test("competitive analysis prompt forbids fabricated direct profiles without live research", () => {
+  const userPrompt = buildCompetitiveAnalysisUserPrompt(
+    "A marketplace for neighborhood pet sitters",
+    "Trusted Neighbors Pet Care",
+    "   "
+  )
+
+  assert.match(
+    COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+    /If live competitor research is unavailable or empty, do not output any `###` competitor profiles/
+  )
+  assert.match(
+    userPrompt,
+    /Live competitor research did not return usable competitor data/
+  )
+  assert.match(userPrompt, /Do not invent named direct competitors/)
+  assert.match(userPrompt, /do not output H3 competitor profiles/i)
+  assert.doesNotMatch(userPrompt, /identified through live web research/)
 })
 
 test("competitive analysis prompt defines workspace section ownership", () => {

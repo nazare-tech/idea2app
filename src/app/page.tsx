@@ -5,8 +5,6 @@ import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LandingIdeaCapture } from "@/components/landing/landing-idea-capture"
 import { WaitlistForm } from "@/components/landing/waitlist-form"
-import { PRICING_CARD_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
-import { formatPrice } from "@/lib/utils"
 import { createServiceClient } from "@/lib/supabase/service"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { isWaitlistMode, WAITLIST_LIMIT } from "@/lib/waitlist"
@@ -46,6 +44,24 @@ const workflowSignals = [
   "Output is written for builders, not slide decks.",
 ]
 
+const proofStats = [
+  {
+    value: "4",
+    label: "Build-ready artifacts",
+    body: "Market research, product plan, design mockups, and a first-version plan from one idea.",
+  },
+  {
+    value: "3",
+    label: "Mockup directions",
+    body: "Compare visual approaches before you spend time building the wrong interface.",
+  },
+  {
+    value: "1",
+    label: "Shared project context",
+    body: "Research, scope, UX direction, and build steps stay connected in one workspace.",
+  },
+]
+
 const steps = [
   {
     number: "01",
@@ -65,18 +81,13 @@ const steps = [
   },
 ]
 
-const tokenUsdLabel = formatPrice(TOKEN_VALUE_CENTS)
-const fullReportTokensFast = estimateFullReportTokens("openai/gpt-5.4-mini")
-const fullReportTokensBalanced = estimateFullReportTokens("anthropic/claude-sonnet-4-6")
-const fullReportTokensThinking = estimateFullReportTokens("google/gemini-3.1-pro-preview")
-
 const plans = [
   {
     name: "Free",
     price: "$0/mo",
     points: [
-      `${PRICING_CARD_TOKENS.free} tokens included`,
-      `~${Math.floor(PRICING_CARD_TOKENS.free / fullReportTokensFast)} full report (fast model)`,
+      "1 lifetime project",
+      "Bundled research, product plan, first-version plan, and mockups",
       "Community support",
     ],
     tone: "light",
@@ -87,8 +98,8 @@ const plans = [
     name: "Starter",
     price: "$19/mo",
     points: [
-      `${PRICING_CARD_TOKENS.starter} tokens monthly`,
-      `~${Math.floor(PRICING_CARD_TOKENS.starter / fullReportTokensBalanced)} full reports (balanced)`,
+      "3 projects/mo",
+      "Bundled planning docs for each new project",
       "6-month and annual savings available",
       "Product plan + tech spec export",
     ],
@@ -100,8 +111,8 @@ const plans = [
     name: "Pro",
     price: "$49/mo",
     points: [
-      `${PRICING_CARD_TOKENS.pro} tokens monthly`,
-      `~${Math.floor(PRICING_CARD_TOKENS.pro / fullReportTokensThinking)} full reports (thinking)`,
+      "10 projects/mo",
+      "Bundled planning docs for heavier build cycles",
       "6-month and annual savings available",
       "App generation + priority support",
     ],
@@ -208,10 +219,32 @@ export default async function LandingPage() {
           </div>
 
           <p className="mx-auto mt-8 max-w-[560px] text-center text-base leading-relaxed text-text-secondary sm:text-[20px]">
-            Turn one idea into research, MVP plan, and actionable mockups in minutes. No fluff. No &ldquo;where do I start?&rdquo; spiral.
+            Turn one idea into market research, a product plan, design mockups, and a first-version build plan in minutes.
+            No fluff. No &ldquo;where do I start?&rdquo; spiral.
           </p>
         </div>
       </section>
+
+      <SectionCard>
+        <section aria-label="Maker Compass proof points" className="grid border border-border-subtle bg-white md:grid-cols-3">
+          {proofStats.map((stat) => (
+            <div
+              key={stat.label}
+              className="border-b border-border-subtle p-5 last:border-b-0 sm:p-6 md:border-b-0 md:border-r md:last:border-r-0"
+            >
+              <p className="text-[2.5rem] font-semibold leading-none tracking-[-0.06em] text-primary sm:text-[3rem]">
+                {stat.value}
+              </p>
+              <p className="mt-3 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+                {stat.label}
+              </p>
+              <p className="mt-3 text-[15px] leading-relaxed text-text-secondary">
+                {stat.body}
+              </p>
+            </div>
+          ))}
+        </section>
+      </SectionCard>
 
       <SectionCard>
         <BuildMap />
@@ -289,7 +322,8 @@ export default async function LandingPage() {
             Plans For Builders At Every Stage
           </h2>
           <p className="mt-4 max-w-[760px] text-sm text-text-secondary">
-            1 token = {tokenUsdLabel}. Full report estimate: fast {fullReportTokensFast} tokens, balanced {fullReportTokensBalanced} tokens, thinking {fullReportTokensThinking} tokens.
+            Each new project starts with bundled onboarding docs, so you can compare plans by project capacity first.
+            Token details stay in billing for extra manual generation paths.
           </p>
 
           <div className="mt-8 grid gap-6 md:grid-cols-3">
@@ -339,20 +373,25 @@ export default async function LandingPage() {
       <section className="border-t border-border-subtle py-16 md:py-20">
         <div className={`${container} text-center`}>
           <h2 className="mx-auto max-w-[860px] text-[2rem] leading-[0.96] tracking-[-0.06em] font-semibold sm:text-[3rem] lg:text-[4rem]">
-            {waitlistMode ? "Secure your spot before it fills up." : "Stop waiting. Start building."}
+            {waitlistMode ? "Secure your spot before it fills up." : "Turn your next idea into a build plan."}
           </h2>
           <p className="mx-auto mt-6 max-w-[760px] text-xl text-text-secondary">
             {waitlistMode
               ? "Join the waitlist and be first to know when the next batch of spots opens."
               : "Get early access and turn your next idea into research, plans, and mockups you can actually execute."}
           </p>
+          {!waitlistMode && (
+            <p className="mx-auto mt-4 max-w-[640px] font-mono text-[0.75rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+              One intake. Four planning artifacts. Three mockup directions.
+            </p>
+          )}
           <div className="mt-8 flex justify-center">
             {waitlistMode ? (
               <WaitlistForm />
             ) : (
               <Link href="/?modal=auth&mode=signup" scroll={false} className="inline-block">
                 <Button className="h-14 px-8 rounded-none text-base font-semibold bg-primary text-white">
-                  Get Started
+                  Turn my idea into a plan
                   <ArrowRight className="ml-2 ui-icon-16" />
                 </Button>
               </Link>
