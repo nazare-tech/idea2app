@@ -8,7 +8,7 @@ import {
   Download,
   FileDown,
 } from "lucide-react"
-import { DocumentType } from "./document-nav"
+import type { DocumentType } from "@/lib/document-definitions"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import { CompetitiveAnalysisDocument } from "@/components/analysis/competitive-analysis-document"

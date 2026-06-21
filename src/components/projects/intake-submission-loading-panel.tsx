@@ -119,10 +119,10 @@ export function IntakeSubmissionLoadingPanel({
               Analyzing your inputs
             </p>
             <h1 className="mt-2 font-[family:var(--font-display)] text-4xl font-bold leading-none text-[#1C1917] sm:text-5xl">
-              Building your strategic brief
+              Creating your project plan
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-[#4A4040]">
-              We&apos;re pulling together insights, structure, and signals to build your strategic plan
+              Generating market research, product scope, and mockup directions.
             </p>
           </div>
 

@@ -246,7 +246,7 @@ function StitchConceptCard({
       {/* Two-column body */}
       <div className="flex min-h-[420px] flex-col lg:min-h-[600px] lg:flex-row">
         {/* Left: iframe */}
-        <div className="flex-1 bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
+        <div className="flex-1 bg-muted/10">
           {loading ? (
             <div className="flex h-full min-h-[420px] items-center justify-center bg-white lg:min-h-[600px]">
               <div className="flex flex-col items-center gap-3 text-zinc-400">

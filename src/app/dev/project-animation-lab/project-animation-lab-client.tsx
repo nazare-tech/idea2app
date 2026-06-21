@@ -238,13 +238,13 @@ function LoadingBlock({
       </div>
 
       <div className="mt-5 space-y-3" aria-hidden="true">
-        <div className="project-lab-shimmer h-5 w-4/5 rounded" />
-        <div className="project-lab-shimmer h-4 w-full rounded" />
-        <div className="project-lab-shimmer h-4 w-11/12 rounded" />
-        <div className="grid gap-3 pt-2 sm:grid-cols-3">
-          <div className="project-lab-shimmer h-20 rounded-lg" />
-          <div className="project-lab-shimmer h-20 rounded-lg" />
-          <div className="project-lab-shimmer h-20 rounded-lg" />
+        <div className="project-lab-skeleton h-5 w-4/5 rounded" />
+        <div className="project-lab-skeleton h-4 w-full rounded" />
+        <div className="project-lab-skeleton h-4 w-11/12 rounded" />
+        <div className="space-y-2 pt-2">
+          <div className="project-lab-skeleton h-4 w-2/3 rounded" />
+          <div className="project-lab-skeleton h-4 w-5/6 rounded" />
+          <div className="project-lab-skeleton h-4 w-3/5 rounded" />
         </div>
       </div>
 
@@ -275,7 +275,7 @@ function CreationPanel({ fixture, timeline }: { fixture: AnimationLabFixture; ti
   return (
     <section className="min-w-0 rounded-lg border border-border-subtle bg-card p-5 lg:sticky lg:top-5 lg:self-start">
       <p className="text-xs font-semibold uppercase text-muted-foreground">Creation loading</p>
-      <h2 className="mt-2 text-2xl font-bold text-foreground">Building your strategic brief</h2>
+      <h2 className="mt-2 text-2xl font-bold text-foreground">Creating your project plan</h2>
       <p className="mt-2 text-sm leading-6 text-text-secondary">{fixture.projectSummary}</p>
 
       <div className="mt-6 border-y border-border-subtle">
@@ -458,22 +458,8 @@ export function ProjectAnimationLabClient({ fixtures }: ProjectAnimationLabClien
   return (
     <main className="min-h-screen bg-background px-4 py-5 text-foreground sm:px-6 lg:px-8">
       <style>{`
-        @keyframes projectLabShimmer {
-          0% { background-position: 120% 0; }
-          100% { background-position: -120% 0; }
-        }
-
-        .project-lab-shimmer {
-          background-image: linear-gradient(90deg, #F5F0EB 0%, #FFFCF8 46%, #E8DDD5 100%);
-          background-size: 220% 100%;
-          animation: projectLabShimmer 1.45s ease-out infinite;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .project-lab-shimmer {
-            animation: none;
-            background-position: 0 0;
-          }
+        .project-lab-skeleton {
+          background: #E8DDD5;
         }
       `}</style>
 

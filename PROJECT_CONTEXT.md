@@ -437,7 +437,6 @@ src/
 │   │   ├── header.tsx            # Legacy dashboard header (retained)
 │   │   ├── anchor-nav.tsx        # Scroll workspace nav with durable generation status labels
 │   │   ├── scrollable-content.tsx # Scroll workspace document renderer
-│   │   ├── document-nav.tsx      # Legacy pipeline-step navigation
 │   │   └── content-editor.tsx    # Legacy active document view
 │   ├── workspace/                # Workspace orchestration
 │   │   ├── project-workspace.tsx      # Lazy-loading scroll workspace orchestrator
@@ -1459,7 +1458,6 @@ export const BASE_ACTION_TOKENS = {
 | [src/components/layout/scrollable-content.tsx](src/components/layout/scrollable-content.tsx) | Scrollable document body renderer with deferred sections, queue-aware placeholders, PRD/MVP completed-document block rendering, and mockup/status modules |
 | [src/components/layout/sidebar.tsx](src/components/layout/sidebar.tsx) | Legacy dashboard sidebar retained for existing layouts |
 | [src/components/layout/app-page-shell.tsx](src/components/layout/app-page-shell.tsx) | Shared authenticated page shell and header for consistent dashboard page spacing and hierarchy |
-| [src/components/layout/document-nav.tsx](src/components/layout/document-nav.tsx) | Legacy pipeline-step nav retained for older document surfaces |
 | [src/components/layout/content-editor.tsx](src/components/layout/content-editor.tsx) | Legacy active-document view retained while the main workspace uses `ScrollableContent` |
 | [src/lib/document-definitions.ts](src/lib/document-definitions.ts) | Shared typed document registry for workspace tabs, editor titles, icons, credit cost, and nav visibility |
 | [src/lib/document-sections.ts](src/lib/document-sections.ts) | Scroll workspace section registry and anchor IDs for Overview, Market Research, Product Plan, First Version Plan, and Design Mockups |

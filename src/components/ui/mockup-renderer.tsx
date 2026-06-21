@@ -925,7 +925,7 @@ function StitchMockupViewer({
         </div>
 
         <div className="overflow-hidden rounded-b-xl border-x border-b border-border bg-muted/10">
-          <div className="flex justify-center bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
+          <div className="flex justify-center bg-muted/10">
             <div className="w-full bg-white" style={{ maxWidth: vp.width }}>
               {loadingHtml && !currentHtml ? (
                 <div className="flex items-center justify-center bg-white" style={{ height: "800px" }}>
@@ -1239,7 +1239,7 @@ function SinglePageViewer({ page, selectedIndex }: { page: MockupPage; selectedI
       </div>
 
       <div className="overflow-hidden rounded-b-xl border-x border-b border-border bg-muted/10">
-        <div className="flex justify-center bg-[repeating-conic-gradient(rgb(0_0_0/0.02)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px]">
+        <div className="flex justify-center bg-muted/10">
           <div className="w-full bg-white" style={{ maxWidth: vp.width, minHeight: "500px" }}>
             <div className="p-4">
               <JsonRenderPage page={page} />

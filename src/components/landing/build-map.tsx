@@ -67,7 +67,7 @@ export function BuildMap() {
       className={`build-map-split ${active ? "build-map-split--active" : ""}`}
     >
       <p className="build-map-split__eyebrow">Before and after split</p>
-      <h3 className="build-map-split__title">From loose idea to usable stack.</h3>
+      <h3 className="build-map-split__title">Research, scope, mockups, and build steps from one idea.</h3>
       <div className="build-map-split__layout">
         <div className="build-map-split__idea">
           <p className="build-map-split__chip">Input</p>

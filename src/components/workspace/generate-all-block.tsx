@@ -142,7 +142,7 @@ export function GenerateAllBlock({
   // -------------------------------------------------------------------------
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="flex items-center gap-3 p-5">
           <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
           <span className="text-sm text-muted-foreground">Loading generation status...</span>
@@ -156,7 +156,7 @@ export function GenerateAllBlock({
   // -------------------------------------------------------------------------
   if (isIdle && allSkipped) {
     return (
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#ECFDF5]">
@@ -196,7 +196,7 @@ export function GenerateAllBlock({
   // Main render
   // -------------------------------------------------------------------------
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-5 pb-1">
         <div className="flex items-start justify-between gap-3">

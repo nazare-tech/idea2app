@@ -7,7 +7,7 @@ import { LandingIdeaCapture } from "@/components/landing/landing-idea-capture"
 import { WaitlistForm } from "@/components/landing/waitlist-form"
 import { createServiceClient } from "@/lib/supabase/service"
 import { createClient as createServerClient } from "@/lib/supabase/server"
-import { isWaitlistMode, WAITLIST_LIMIT } from "@/lib/waitlist"
+import { isWaitlistMode } from "@/lib/waitlist"
 import { ArrowRight } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
@@ -64,20 +64,20 @@ const proofStats = [
 
 const steps = [
   {
-    number: "01",
-    body: "Describe what you want to build\nShare your idea, target users, and constraints in plain language.",
+    title: "Describe the idea",
+    body: "Share your target users, constraints, and what you want the first version to do.",
   },
   {
-    number: "02",
-    body: "Generate research + product direction\nGet focused analysis, key assumptions, and where your idea can stand out.",
+    title: "Answer follow-up questions",
+    body: "Clarify the platform, user type, workflow, and scope before the project is created.",
   },
   {
-    number: "03",
-    body: "Create your first-version plan + mockups\nProduce actionable docs and compare design directions before implementation.",
+    title: "Review the plan",
+    body: "Get market research, product scope, first-version steps, and mockup directions in one workspace.",
   },
   {
-    number: "04",
-    body: "Build and iterate\nShip faster with a clear plan, then refine with feedback as you learn from users.",
+    title: "Start building",
+    body: "Use the generated docs as the handoff for your coding agent or implementation team.",
   },
 ]
 
@@ -203,12 +203,6 @@ export default async function LandingPage() {
       <section className="relative isolate overflow-hidden">
         <HeroArtwork />
         <div className={`${container} relative z-10 flex min-h-[620px] flex-col items-center justify-center py-16 md:min-h-[680px] lg:min-h-[720px] lg:py-20`}>
-          {waitlistMode && (
-            <div className="mb-10 inline-flex items-center rounded-full border border-border-subtle bg-white px-4 py-2 font-mono text-[0.6875rem] font-medium tracking-[0.18em] text-text-secondary">
-              {WAITLIST_LIMIT} early-access spots filled. Join the waitlist.
-            </div>
-          )}
-
           <h1 className="font-display mx-auto flex max-w-[980px] flex-col text-center text-[2.75rem] font-semibold leading-[0.95] tracking-[-0.06em] text-text-primary sm:text-[3.5rem] lg:text-[4.5rem]">
             <span>Build your startup idea this</span>
             <span>weekend, not &ldquo;someday.&rdquo;</span>
@@ -217,6 +211,12 @@ export default async function LandingPage() {
           <div className="mt-10 flex w-full justify-center lg:mt-12">
             {waitlistMode ? <WaitlistForm showSecondary /> : <LandingIdeaCapture isAuthenticated={isAuthenticated} />}
           </div>
+
+          {waitlistMode && (
+            <p className="mx-auto mt-5 max-w-[520px] text-center text-sm leading-6 text-text-secondary">
+              Early access is full. Leave your email for the next batch.
+            </p>
+          )}
 
           <p className="mx-auto mt-8 max-w-[560px] text-center text-base leading-relaxed text-text-secondary sm:text-[20px]">
             Turn one idea into market research, a product plan, design mockups, and a first-version build plan in minutes.
@@ -256,8 +256,7 @@ export default async function LandingPage() {
 
       <SectionCard>
         <section id="features" className="py-3">
-          <p className="ui-kicker-label">Features</p>
-          <h2 className="mt-4 text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
+          <h2 className="text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
             From idea to momentum, without the usual excuses
           </h2>
 
@@ -267,7 +266,7 @@ export default async function LandingPage() {
                 <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
                   {item.eyebrow}
                 </p>
-                  <h3 className="mt-4 max-w-[620px] text-[1.45rem] font-semibold leading-tight tracking-[-0.04em] sm:text-[1.85rem] lg:text-[2.25rem]">
+                <h3 className="mt-4 max-w-[620px] text-[1.45rem] font-semibold leading-tight tracking-[-0.04em] sm:text-[1.85rem] lg:text-[2.25rem]">
                   {item.title}
                 </h3>
                 <p className="mt-4 max-w-[680px] text-[15px] leading-relaxed text-text-secondary">
@@ -299,16 +298,17 @@ export default async function LandingPage() {
 
       <SectionCard>
         <section id="how-it-works" className="py-3">
-          <p className="ui-kicker-label">How It Works</p>
-          <h2 className="mt-4 max-w-[760px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
+          <h2 className="max-w-[760px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
             Your first version, broken into clear steps
           </h2>
 
           <div className="mt-8 space-y-4">
             {steps.map((step) => (
-              <div key={step.number} className="grid grid-cols-[auto,1fr] gap-4 border border-border-subtle p-4 sm:gap-5 md:p-6">
-                <p className="text-[30px] leading-none font-semibold tracking-[-0.06em] text-primary sm:text-[36px]">{step.number}</p>
-                <p className="whitespace-pre-line text-[16px] leading-7 text-text-primary">{step.body}</p>
+              <div key={step.title} className="border border-border-subtle p-4 md:p-6">
+                <h3 className="text-[1.2rem] font-semibold leading-tight tracking-[-0.03em] text-text-primary sm:text-[1.35rem]">
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-[15px] leading-7 text-text-secondary">{step.body}</p>
               </div>
             ))}
           </div>
@@ -317,9 +317,8 @@ export default async function LandingPage() {
 
       <SectionCard>
         <section id="pricing" className="py-3">
-          <p className="ui-kicker-label">Pricing</p>
-          <h2 className="mt-4 max-w-[840px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
-            Plans For Builders At Every Stage
+          <h2 className="max-w-[840px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
+            Choose by monthly project capacity
           </h2>
           <p className="mt-4 max-w-[760px] text-sm text-text-secondary">
             Each new project starts with bundled onboarding docs, so you can compare plans by project capacity first.

@@ -413,7 +413,7 @@ export default function SettingsPage() {
               description="Configure account and app behavior"
             >
                 <div className="rounded-xl border border-border-subtle bg-white p-4 text-sm text-text-secondary">
-                  Additional account-level settings and preferences can be added here.
+                  No additional settings are available yet.
                 </div>
                 <div className="rounded-xl border border-border-subtle bg-white p-4 space-y-3">
                   <div className="ui-row-gap-2 text-text-primary">
