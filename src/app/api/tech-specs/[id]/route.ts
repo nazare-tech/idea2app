@@ -2,10 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 
-export async function PATCH(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH() {
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -15,7 +12,6 @@ export async function PATCH(
 
   try {
     const supabase = await createClient()
-    const { id: _id } = await params
 
     // Auth check
     const {

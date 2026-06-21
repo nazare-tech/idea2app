@@ -54,7 +54,6 @@ export interface ProjectWorkspaceProps {
   project: Project
   initialDocument?: DocumentType
   initialDocuments?: Partial<Record<DocumentType, unknown[]>>
-  initialCredits?: number
   user: unknown
 }
 

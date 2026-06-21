@@ -10,13 +10,11 @@ interface DashboardShellProps {
     full_name?: string
     avatar_url?: string
   }
-  credits?: number
 }
 
 export function DashboardShell({
   children,
   user,
-  credits = 0,
 }: DashboardShellProps) {
   const pathname = usePathname()
   const shouldShowHeader = pathname
@@ -43,7 +41,6 @@ export function DashboardShell({
         {shouldShowHeader && (
           <Header
             user={user}
-            credits={credits}
             pageTitle={pageTitle}
           />
         )}

@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-06-19 (milestone 2 cleanup and monitoring)
+**Last Updated**: 2026-06-21 (milestone 3 quality polish)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -38,7 +38,7 @@
   - `src/app/api/mockups/fixture/route.ts` creates three no-credit storyboard fixture mockups for local UI/finalization testing; append `?mockupFixture=1` or set `localStorage.makercompass_mockup_fixture_mode = "true"` in local development
   - `src/app/api/mockups/image/route.ts` proxies stored mockup images after project ownership checks
 - **App Generation Archived**: `/api/generate-app` and app-generation prompts have been removed because generated app/deployment output is off the roadmap. Existing `deployments` rows remain historical data only.
-- **Project-based Pricing Migration**: Project creation is guarded by project allowance. Free users get a one-project lifetime allowance; paid plans use monthly project allowance windows, explicit plan allowance fields/features where available, and plan-name fallbacks. Billing intervals can be monthly, 6-month, or annual, but multi-month Stripe billing periods do not expand the monthly project allowance window. Legacy/manual document generation may still use credit accounting while bundled onboarding generation is included in project creation. Internal developer entitlements are private plan records and are not public checkout plans.
+- **Project-based Pricing Migration**: Project creation is guarded by project allowance. Free users get a one-project lifetime allowance; paid plans use monthly project allowance windows from explicit `plans.monthly_project_allowance` fields, with plan-name/features parsing only as fallback. Billing intervals can be monthly, 6-month, or annual, but multi-month Stripe billing periods do not expand the monthly project allowance window. Credits remain an internal ledger for legacy accounting and refunds, but public landing, dashboard, workspace, and billing surfaces use project/plan language rather than credit balances or credit-denominated failures.
 - **Stripe Interval Billing**: Public checkout uses `plans` for entitlement tiers and `plan_prices` for Stripe recurring Prices by billing interval. Starter and Pro are the self-serve production tiers; Enterprise is kept non-public/checkout-disabled until support and sales workflows are ready. Checkout validates selected interval prices server-side, and webhooks map actual Stripe subscription item Price IDs back to `plan_prices` so portal plan changes update entitlements.
 - **Paid-only Project Deletion**: The Projects dashboard renders `DashboardProjectCard` cards with hover/focus workspace warming and delete controls. `DELETE /api/projects/[id]` is ownership-scoped, metrics-tracked, and blocked for Free plan users; the UI shows an upgrade prompt before paid-plan-only deletion.
 - **Generate-Missing-Only Documents**: Planning documents are active singletons by default. Direct generation routes and Generate All/onboarding execution check for an existing active document before credits or external AI calls; duplicate attempts return/record a skipped existing output instead of inserting another row. Future document versioning must be a separate explicit product action.
@@ -240,7 +240,7 @@
 
 7. **Security Hardening Flow**:
    - `next.config.ts` sets baseline security headers: CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and Permissions-Policy.
-   - `src/lib/rate-limit.ts` provides simple in-memory per-user/IP rate limiting for public and expensive endpoints. Distributed rate limiting remains a post-MVP item.
+   - `src/lib/rate-limit.ts` provides async per-user/IP rate limiting for public and expensive endpoints. Production can use Redis REST via `RATE_LIMIT_REDIS_REST_URL`/`RATE_LIMIT_REDIS_REST_TOKEN`, `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`, or Vercel KV-compatible REST env vars; local development falls back to cadence-pruned in-memory buckets.
    - `src/lib/credits.ts` centralizes server-only refunds through the Supabase service role. The hardened `refund_credits` RPC is service-role-only.
    - PDF export is retired and the `/api/generate-pdf` route plus `pdf-utils.ts` client helper have been removed.
    - Stripe webhooks are claimed in `stripe_webhook_events` before processing so duplicate Stripe retries do not double-grant credits.
@@ -257,7 +257,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 │ ProjectHeader / DashboardShell    │
 │ - Editable project name           │
 │ - User/account affordances        │
-│ - Credit balance                  │
+│ - User profile menu               │
 ├────────────────────┬──────────────┤
 │ AnchorNav          │ ScrollableContent
 │ Overview           │ Overview module
@@ -269,8 +269,8 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
   300px rail on desktop; horizontal rail on small screens
 ```
 
-- **`DashboardShell`** — authenticated app shell rendered by `src/app/(dashboard)/layout.tsx`; receives the current user profile and credit balance server-side.
-- **`ProjectHeader`** — per-project header with editable project name and account/credit affordances.
+- **`DashboardShell`** — authenticated app shell rendered by `src/app/(dashboard)/layout.tsx`; receives the current user profile server-side and keeps credit balances out of the visible shell.
+- **`ProjectHeader`** — per-project header with editable project name and account affordances.
 - **`AnchorNav`** — scroll-aware document rail. It renders `Queued`, `Generating`, `Needs retry`, or ready check marks from `DocumentGenerationDisplayState`.
 - **`ScrollableContent`** — renders Overview, Market Research, Product Plan, First Version Plan, and Design Mockups as stacked sections. It defers below-the-fold sections by one animation frame and uses generation placeholders when content is not saved yet.
 - **`ProjectWorkspace`** — slim orchestrator component for the workspace shell and render mapping. Hooks own the heavy behavior: `useWorkspaceDocuments` for lazy `/workspace` loading, `usePersistedGenerationState` for local generation flags, `useWorkspaceScrollSync` for hash/scroll state, `useGenerateAllHydration` for store selectors, and `useDocumentGeneration` for manual document/mockup generation.
@@ -299,7 +299,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 7. **TypeScript-First**: Strict typing throughout, auto-generated database types
 8. **Component Composition**: Radix UI primitives + CVA for variants
 9. **Optimistic UI Updates**: Immediate feedback with graceful error handling
-10. **Shared UI Registries + Hooks**: Repeated view metadata and repeated client behaviors (documents, credits, billing portal, auth sign-out, chat interactions) are centralized into typed registries and reusable hooks/components before page-level assembly
+10. **Shared UI Registries + Hooks**: Repeated view metadata and repeated client behaviors (documents, billing portal, auth sign-out, chat interactions) are centralized into typed registries and reusable hooks/components before page-level assembly
 11. **Path Aliases**: Clean imports using `@/*` aliases
 12. **Pencil Design System**: Light-mode UI with dark sidebar; CSS custom properties for theming; Hanken Grotesk + Fira Mono typography
 13. **Fixed Default Models Per Tab**: AI model selection was removed from the UI. Direct document routes use fixed defaults in their route files, while Generate All defaults live in `src/lib/document-definitions.ts` (`GENERATE_ALL_DEFAULT_MODELS`).
@@ -317,7 +317,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 
 ### Mermaid Diagram Expansion Feature
 
-The `MarkdownRenderer` component includes an interactive Mermaid diagram viewer with expansion capabilities:
+The `MarkdownRenderer` component includes an interactive Mermaid diagram viewer with expansion capabilities. Rendered Mermaid SVG is sanitized through DOMPurify's SVG profile before `dangerouslySetInnerHTML`; if sanitization is unavailable or the output is not SVG, the component falls back to the source code block.
 
 **Compact View**:
 - Diagrams fit within the document width using `w-full overflow-hidden` (no horizontal scrolling)
@@ -712,7 +712,7 @@ The app uses CSS custom properties (defined in `globals.css`) rather than hard-c
 ```typescript
 // Status codes
 401 - Unauthorized (not logged in)
-402 - Payment Required (insufficient credits)
+402 - Payment Required (plan limit reached or legacy internal credit failure)
 404 - Not Found
 400 - Bad Request (validation error)
 500 - Internal Server Error
@@ -849,7 +849,7 @@ npm install
 
 1. Create a new Supabase project
 2. Run SQL migrations to create tables:
-   - `profiles` - User profiles with credit balance
+   - `profiles` - User profile and plan metadata; credit balances are not shown in the product UI
    - `projects` - Business idea projects
    - `messages` - Chat message history
    - `analyses` - Competitive and gap analyses
@@ -1086,7 +1086,7 @@ docker run -p 3000:3000 idea2app
 
 - **GET /api/projects/[id]/workspace**: Lazy-load owned workspace payloads
   - Query: `docs=competitive,prd,mvp,mockups` and optional `tab`
-  - Returns project summary, credit balance, structured-intake presence, and only the requested document collections
+  - Returns project summary, structured-intake presence, and only the requested document collections
   - Used by `ProjectWorkspace` so large documents and non-visible tabs do not have to load up front
 
 - **GET /api/projects/[id]/status**: Get lightweight generated-document counts
@@ -1226,14 +1226,14 @@ docker run -p 3000:3000 idea2app
 
 | Action | Cost |
 |--------|------|
-| Chat message (general) | 1 credit |
+| Chat message (general) | Not available |
 | Prompt chat message (deprecated) | Not available |
 | Inline document edit | Not available |
-| Competitive Analysis | 20 credits with current default model |
-| Product Plan Generation | 15 credits with current default model |
-| First Version Plan Generation | 15 credits with current default model |
+| Competitive Analysis | Included in project generation; hidden legacy ledger may still record non-bundled paths |
+| Product Plan Generation | Included in project generation; hidden legacy ledger may still record non-bundled paths |
+| First Version Plan Generation | Included in project generation; hidden legacy ledger may still record non-bundled paths |
 | Mockup Generation | Included in project generation |
-| Tech Spec Generation | 15 credits with current default model |
+| Tech Spec Generation | Hidden legacy/internal accounting only |
 
 ### Credit Management
 
@@ -1263,7 +1263,7 @@ docker run -p 3000:3000 idea2app
 - **Checkout Flow**: Server-side redirect to Stripe-hosted checkout (no Stripe.js Elements needed); selected interval comes from `plan_prices`
 - **Customer Portal Configuration**: Use the default Stripe Customer Portal configuration for the active Stripe mode; production portal settings are configured in the Stripe Dashboard
 - **Webhook Processing**: Uses `SUPABASE_SERVICE_ROLE_KEY` (service role) to bypass RLS for subscription and credit updates; `stripe_webhook_events` deduplicates processed events while allowing failed/stale processing rows to be retried, and `stripe_credit_grants`/`grant_subscription_credits_once()` deduplicates credit grants per subscription period
-- **Billing UI**: `src/app/(dashboard)/billing/page.tsx` — displays plan cards, interval selectors, current subscription, credit balance, and credit cost reference
+- **Billing UI**: `src/app/(dashboard)/billing/page.tsx` — displays plan cards, interval selectors, current subscription, project allowance usage, and upgrade/manage-subscription actions
 
 ---
 
@@ -1348,9 +1348,9 @@ export const BASE_ACTION_TOKENS = {
 - Verify database connection (Supabase URL/key)
 - Check server logs for detailed error messages
 
-**Credit System Issues**
+**Internal Credit Ledger Issues**
 - Verify `consume_credits()` function exists in database
-- Check credit balance in `profiles` table
+- Check the internal credit balance source used by the failing route
 - Review `credits_history` for transaction log
 
 **Analysis Pipeline Issues**
@@ -1384,13 +1384,13 @@ export const BASE_ACTION_TOKENS = {
 |------|---------|
 | [src/app/layout.tsx](src/app/layout.tsx) | Root layout — loads Hanken Grotesk + Fira Mono fonts |
 | [src/app/globals.css](src/app/globals.css) | Pencil design tokens (CSS custom properties), status badge styles, scrollbar styles, Mermaid diagram styles (light/dark mode with media query) |
-| [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout — verifies auth and renders `DashboardShell` with user profile and credits |
+| [src/app/(dashboard)/layout.tsx](src/app/(dashboard)/layout.tsx) | Dashboard layout — verifies auth and renders `DashboardShell` with user profile |
 | [src/components/layout/dashboard-shell.tsx](src/components/layout/dashboard-shell.tsx) | Authenticated dashboard shell for top-level dashboard, projects, billing, and preferences pages |
 | [src/app/(dashboard)/projects/page.tsx](src/app/(dashboard)/projects/page.tsx) | Projects dashboard — loads owned projects plus allowance status and renders project cards with paid-plan delete gating |
 | [src/components/projects/dashboard-project-card.tsx](src/components/projects/dashboard-project-card.tsx) | Interactive project card with relative updated time, workspace prefetch/warmup, delete confirmation, and free-plan upgrade prompt |
 | [src/app/(dashboard)/projects/[projectRef]/page.tsx](src/app/(dashboard)/projects/[projectRef]/page.tsx) | Project page — parses slugged project refs, canonicalizes stale URLs, blocks deprecated prompt tabs, and passes the project shell to `ProjectWorkspace` |
 | [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details and ownership-scoped paid-plan DELETE |
-| [src/app/api/projects/[id]/workspace/route.ts](src/app/api/projects/[id]/workspace/route.ts) | Lazy workspace payload endpoint for requested document collections, project metadata, credits, and structured-intake presence |
+| [src/app/api/projects/[id]/workspace/route.ts](src/app/api/projects/[id]/workspace/route.ts) | Lazy workspace payload endpoint for requested document collections, project metadata, and structured-intake presence |
 | [src/app/api/projects/[id]/status/route.ts](src/app/api/projects/[id]/status/route.ts) | Lightweight document-count snapshot used by generation polling |
 | [src/app/dev/prompt-lab/page.tsx](src/app/dev/prompt-lab/page.tsx) | Local-development-only Prompt Lab page for isolated prompt iteration against existing projects |
 | [src/app/dev/mockup-renderer-preview/page.tsx](src/app/dev/mockup-renderer-preview/page.tsx) | Local-development-only visual fixture page for the OpenRouter storyboard mockup renderer |
@@ -1408,7 +1408,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/waitlist/route.ts](src/app/api/waitlist/route.ts) | Waitlist status endpoint and public waitlist signup handler |
 | [src/app/api/mockups/image/route.ts](src/app/api/mockups/image/route.ts) | Authenticated proxy for private Supabase Storage mockup images |
 | [src/components/workspace/project-workspace.tsx](src/components/workspace/project-workspace.tsx) | Lazy-loading scroll workspace shell and render mapper |
-| [src/components/workspace/use-workspace-documents.ts](src/components/workspace/use-workspace-documents.ts) | Lazy workspace document loading and credits state |
+| [src/components/workspace/use-workspace-documents.ts](src/components/workspace/use-workspace-documents.ts) | Lazy workspace document loading state |
 | [src/components/workspace/use-workspace-scroll-sync.ts](src/components/workspace/use-workspace-scroll-sync.ts) | Workspace hash/scroll synchronization |
 | [src/components/workspace/use-persisted-generation-state.ts](src/components/workspace/use-persisted-generation-state.ts) | LocalStorage-backed generation flags and completion detection |
 | [src/components/workspace/use-document-generation.ts](src/components/workspace/use-document-generation.ts) | Manual document and mockup generation workflow |
@@ -1420,8 +1420,11 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/document-generation-display-status.ts](src/lib/document-generation-display-status.ts) | Pure helper that merges content existence, durable queue state, local generation flags, PRD/MVP stream previews, and optional mockup option statuses into nav/body display states |
 | [src/lib/active-document-policy.ts](src/lib/active-document-policy.ts) | Shared active-document identity and lookup helper used to prevent duplicate default document generation across direct APIs and Generate All/onboarding |
 | [src/components/analysis/competitive-analysis-document.tsx](src/components/analysis/competitive-analysis-document.tsx) | Market Research v2 hybrid modules/markdown renderer with legacy notice and upgrade CTA |
-| [src/components/analysis/planning-document-blocks.tsx](src/components/analysis/planning-document-blocks.tsx) | PRD and MVP block renderers that use the Pencil-style planning document parser/view-model layer with markdown fallback, PRD context/vision cards, compact labeled PRD prose rows, vertically stacked PRD requirement categories, user-story acceptance criteria cards, single-profile persona fallback labeling, and MVP overview placement |
-| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with lazy syntax highlighting, responsive table column sizing, and beautiful-mermaid diagrams with expand/pan/zoom controls |
+| [src/components/analysis/planning-document-blocks.tsx](src/components/analysis/planning-document-blocks.tsx) | Temporary barrel that re-exports Product Plan and First Version Plan block renderers |
+| [src/components/analysis/product-plan-blocks.tsx](src/components/analysis/product-plan-blocks.tsx) | Product Plan block renderer using the PRD parser/view-model layer, designed PRD sections, personas, user stories, requirements, timeline, and follow-through cards |
+| [src/components/analysis/first-version-plan-blocks.tsx](src/components/analysis/first-version-plan-blocks.tsx) | First Version Plan block renderer using the MVP parser/view-model layer, scope, feature, build-sequence, validation, and guardrail sections |
+| [src/components/analysis/planning-blocks-shared.tsx](src/components/analysis/planning-blocks-shared.tsx) | Shared layout primitives and markdown fallback helpers for Product Plan and First Version Plan renderers |
+| [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with lazy syntax highlighting, responsive table column sizing, and sanitized beautiful-mermaid diagrams with expand/pan/zoom controls |
 | [src/components/ui/mockup-renderer.tsx](src/components/ui/mockup-renderer.tsx) | Mockup renderer for OpenRouter storyboard images with screen captions, json-render specs/patches, safe legacy-format notices, and legacy ASCII mockups |
 | [src/components/auth/auth-header.tsx](src/components/auth/auth-header.tsx) | Shared auth header variants for auth, forgot-password, and reset-password views |
 | [src/components/auth/auth-field.tsx](src/components/auth/auth-field.tsx) | Shared labeled auth input field |
@@ -1479,7 +1482,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/stripe/checkout/route.ts](src/app/api/stripe/checkout/route.ts) | POST — creates Stripe checkout session for subscription upgrade |
 | [src/app/api/stripe/portal/route.ts](src/app/api/stripe/portal/route.ts) | POST — creates Stripe billing portal session for subscription management |
 | [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) | POST — handles Stripe webhook events with event idempotency, subscription item price mapping, real period dates, and period-level credit grants |
-| [src/app/(dashboard)/billing/page.tsx](src/app/(dashboard)/billing/page.tsx) | Billing page — plan cards, billing interval selectors, subscription status, credit balance, upgrade flow |
+| [src/app/(dashboard)/billing/page.tsx](src/app/(dashboard)/billing/page.tsx) | Billing page — plan cards, billing interval selectors, subscription status, project allowance usage, upgrade flow |
 | [src/lib/openrouter.ts](src/lib/openrouter.ts) | OpenRouter AI integration (fallback) |
 | [src/lib/utils.ts](src/lib/utils.ts) | Utility functions & CREDIT_COSTS |
 | [src/proxy.ts](src/proxy.ts) | Next proxy entry point for Supabase session refresh |
@@ -1488,6 +1491,7 @@ export const BASE_ACTION_TOKENS = {
 | [supabase/migrations/20260616001400_create_prompt_chat_messages.sql](supabase/migrations/20260616001400_create_prompt_chat_messages.sql) | Database migration for prompt_chat_messages table |
 | [supabase/migrations/20260425001000_create_mockups_table.sql](supabase/migrations/20260425001000_create_mockups_table.sql) | Supabase migration for mockups table |
 | [supabase/migrations/20260425004000_security_hardening_followups.sql](supabase/migrations/20260425004000_security_hardening_followups.sql) | Security follow-up migration: service-role-only `refund_credits`, Stripe event idempotency table, and project creation locks. |
+| [supabase/migrations/20260621000000_populate_plan_project_allowance.sql](supabase/migrations/20260621000000_populate_plan_project_allowance.sql) | Adds and backfills `plans.monthly_project_allowance` so project allowance resolves from explicit plan fields. |
 | [supabase/migrations/20260518000000_create_prompt_lab_tables.sql](supabase/migrations/20260518000000_create_prompt_lab_tables.sql) | Supabase migration for Prompt Lab drafts/runs with user-scoped RLS. |
 | [supabase/migrations/20260609000000_stripe_interval_prices.sql](supabase/migrations/20260609000000_stripe_interval_prices.sql) | Supabase migration for interval-aware Stripe `plan_prices`, subscription price tracking, disabled Enterprise checkout, and idempotent subscription credit grants. |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Deprecated setup guide for the removed Prompt tab AI chat feature |

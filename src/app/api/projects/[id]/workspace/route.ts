@@ -10,7 +10,6 @@ interface WorkspacePayload {
     description: string | null
     status: string | null
   }
-  credits: number
   hasStructuredIntake: boolean
   documents: {
     competitive: Array<{ id: string; type: string; content: string; created_at: string | null; metadata?: unknown }>
@@ -63,14 +62,13 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const [{ data: project, error: projectError }, { data: credits }, { data: projectIntake }] = await Promise.all([
+    const [{ data: project, error: projectError }, { data: projectIntake }] = await Promise.all([
       supabase
         .from("projects")
         .select("id, name, description, status")
         .eq("id", id)
         .eq("user_id", user.id)
         .single(),
-      supabase.from("credits").select("balance").eq("user_id", user.id).single(),
       supabase.from("project_intakes").select("id").eq("project_id", id).eq("user_id", user.id).maybeSingle(),
     ])
 
@@ -149,7 +147,6 @@ export async function GET(
     return NextResponse.json({
       data: {
         project,
-        credits: credits?.balance || 0,
         hasStructuredIntake: Boolean(projectIntake),
         documents,
       } satisfies WorkspacePayload,

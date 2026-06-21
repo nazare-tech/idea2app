@@ -32,6 +32,7 @@ const ANALYSIS_DEFAULT_MODELS: Record<string, string> = {
 }
 
 const encoder = new TextEncoder()
+const INCLUDED_PROJECT_OUTPUT_TYPES = new Set(["competitive-analysis", "prd", "mvp-plan"])
 
 function createStreamSender(controller: ReadableStreamDefaultController) {
   return (event: object) =>
@@ -99,7 +100,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     userId = user.id
-    const rateLimit = checkRateLimit({
+    const rateLimit = await checkRateLimit({
       key: `analysis:${type}:${user.id}:${getClientIp(request)}`,
       limit: type === "competitive-analysis" ? 6 : 12,
       windowMs: 60_000,
@@ -176,26 +177,29 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       project.description || idea
     )
 
-    // Check and deduct tokens (stored in credits balance)
-    const creditCost = getTokenCost(type as AnalysisType, model)
-    const { data: consumed } = await supabase.rpc("consume_credits", {
-      p_user_id: user.id,
-      p_amount: creditCost,
-      p_action: type,
-      p_description: `${type} for "${name}"`,
-    })
+    if (!INCLUDED_PROJECT_OUTPUT_TYPES.has(type)) {
+      // Legacy/non-included routes can still use the internal credit ledger,
+      // but users should see plan-language failures, not credit accounting.
+      const creditCost = getTokenCost(type as AnalysisType, model)
+      const { data: consumed } = await supabase.rpc("consume_credits", {
+        p_user_id: user.id,
+        p_amount: creditCost,
+        p_action: type,
+        p_description: `${type} for "${name}"`,
+      })
 
-    if (!consumed) {
-      statusCode = 402
-      errorType = "insufficient_credits"
-      errorMessage = "Insufficient credits"
-      return NextResponse.json(
-        { error: "Insufficient credits. Please upgrade your plan." },
-        { status: 402 }
-      )
+      if (!consumed) {
+        statusCode = 402
+        errorType = "plan_limit_reached"
+        errorMessage = "Plan limit reached"
+        return NextResponse.json(
+          { error: "You've reached your plan limit. Upgrade to continue." },
+          { status: 402 }
+        )
+      }
+
+      creditsConsumed = creditCost
     }
-
-    creditsConsumed = creditCost
 
     // ─── Streaming path ────────────────────────────────────────────────
     if (streamRequested === true) {

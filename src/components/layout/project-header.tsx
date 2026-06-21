@@ -19,7 +19,6 @@ interface ProjectHeaderProps {
     full_name?: string
     avatar_url?: string
   }
-  credits: number
 }
 
 export function ProjectHeader({
@@ -30,7 +29,6 @@ export function ProjectHeader({
   onFinishRename,
   isSavingName,
   user,
-  credits,
 }: ProjectHeaderProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(projectName)
@@ -112,7 +110,7 @@ export function ProjectHeader({
         )}
       </div>
 
-      <HeaderProfileMenu user={user} credits={credits} triggerId="project-user-menu-trigger" />
+      <HeaderProfileMenu user={user} triggerId="project-user-menu-trigger" />
     </header>
   )
 }

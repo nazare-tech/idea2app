@@ -5,8 +5,6 @@ import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LandingIdeaCapture } from "@/components/landing/landing-idea-capture"
 import { WaitlistForm } from "@/components/landing/waitlist-form"
-import { PRICING_CARD_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
-import { formatPrice } from "@/lib/utils"
 import { createServiceClient } from "@/lib/supabase/service"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { isWaitlistMode, WAITLIST_LIMIT } from "@/lib/waitlist"
@@ -65,18 +63,13 @@ const steps = [
   },
 ]
 
-const tokenUsdLabel = formatPrice(TOKEN_VALUE_CENTS)
-const fullReportTokensFast = estimateFullReportTokens("openai/gpt-5.4-mini")
-const fullReportTokensBalanced = estimateFullReportTokens("anthropic/claude-sonnet-4-6")
-const fullReportTokensThinking = estimateFullReportTokens("google/gemini-3.1-pro-preview")
-
 const plans = [
   {
     name: "Free",
     price: "$0/mo",
     points: [
-      `${PRICING_CARD_TOKENS.free} tokens included`,
-      `~${Math.floor(PRICING_CARD_TOKENS.free / fullReportTokensFast)} full report (fast model)`,
+      "1 project lifetime allowance",
+      "Core planning outputs included",
       "Community support",
     ],
     tone: "light",
@@ -87,10 +80,10 @@ const plans = [
     name: "Starter",
     price: "$19/mo",
     points: [
-      `${PRICING_CARD_TOKENS.starter} tokens monthly`,
-      `~${Math.floor(PRICING_CARD_TOKENS.starter / fullReportTokensBalanced)} full reports (balanced)`,
+      "3 projects per month",
+      "Market research, product plan, first-version plan, and mockups included",
       "6-month and annual savings available",
-      "Product plan + tech spec export",
+      "Best for validating a few ideas at a time",
     ],
     tone: "light",
     cta: "Start Starter",
@@ -100,10 +93,10 @@ const plans = [
     name: "Pro",
     price: "$49/mo",
     points: [
-      `${PRICING_CARD_TOKENS.pro} tokens monthly`,
-      `~${Math.floor(PRICING_CARD_TOKENS.pro / fullReportTokensThinking)} full reports (thinking)`,
+      "10 projects per month",
+      "All core planning outputs included",
       "6-month and annual savings available",
-      "App generation + priority support",
+      "Priority support",
     ],
     tone: "dark",
     cta: "Go Pro",
@@ -289,7 +282,7 @@ export default async function LandingPage() {
             Plans For Builders At Every Stage
           </h2>
           <p className="mt-4 max-w-[760px] text-sm text-text-secondary">
-            1 token = {tokenUsdLabel}. Full report estimate: fast {fullReportTokensFast} tokens, balanced {fullReportTokensBalanced} tokens, thinking {fullReportTokensThinking} tokens.
+            Each project includes the core planning outputs you need to evaluate and scope one startup idea.
           </p>
 
           <div className="mt-8 grid gap-6 md:grid-cols-3">

@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     userId = user.id
-    const rateLimit = checkRateLimit({
+    const rateLimit = await checkRateLimit({
       key: `mockups:${user.id}:${getClientIp(request)}`,
       limit: 8,
       windowMs: 60_000,

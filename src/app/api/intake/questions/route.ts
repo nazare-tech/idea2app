@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import OpenAI from "openai"
 
 import { generateIntakeQuestions } from "@/lib/intake-question-generation"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 
 const MAX_IDEA_LENGTH = 10000
@@ -25,6 +26,34 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const [userRateLimit, ipRateLimit] = await Promise.all([
+    checkRateLimit({
+      key: `intake-questions:user:${user.id}`,
+      limit: 5,
+      windowMs: 60 * 60 * 1000,
+    }),
+    checkRateLimit({
+      key: `intake-questions:ip:${getClientIp(request)}`,
+      limit: 20,
+      windowMs: 60 * 60 * 1000,
+    }),
+  ])
+
+  if (userRateLimit.limited || ipRateLimit.limited) {
+    const retryAfterSeconds = Math.max(
+      userRateLimit.retryAfterSeconds,
+      ipRateLimit.retryAfterSeconds,
+    )
+
+    return NextResponse.json(
+      { error: "Too many question generation requests. Please wait and try again." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds) },
+      },
+    )
   }
 
   let body: { idea?: unknown }

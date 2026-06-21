@@ -629,6 +629,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_public: boolean
+          monthly_project_allowance: number | null
           name: string
           price_monthly: number
           stripe_price_id: string | null
@@ -642,6 +643,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_public?: boolean
+          monthly_project_allowance?: number | null
           name: string
           price_monthly: number
           stripe_price_id?: string | null
@@ -655,6 +657,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_public?: boolean
+          monthly_project_allowance?: number | null
           name?: string
           price_monthly?: number
           stripe_price_id?: string | null

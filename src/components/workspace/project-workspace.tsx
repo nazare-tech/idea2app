@@ -45,7 +45,6 @@ export function ProjectWorkspace({
   project,
   initialDocument = DEFAULT_WORKSPACE_DOCUMENT,
   initialDocuments,
-  initialCredits = 0,
   user,
 }: ProjectWorkspaceProps) {
   const router = useRouter()
@@ -77,7 +76,6 @@ export function ProjectWorkspace({
     ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, 0])),
   } as Record<DocumentType, number>)
   const {
-    credits,
     documentCollections,
     loadedDocuments,
     isWorkspaceLoading,
@@ -85,7 +83,6 @@ export function ProjectWorkspace({
   } = useWorkspaceDocuments({
     projectId: project.id,
     activeDocument,
-    initialCredits,
     initialDocuments,
   })
 
@@ -583,7 +580,6 @@ export function ProjectWorkspace({
           }}
           isSavingName={false}
           user={user as { email?: string; full_name?: string; avatar_url?: string }}
-          credits={credits}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">

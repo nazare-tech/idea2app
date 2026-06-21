@@ -54,15 +54,12 @@ function applyWorkspaceDocuments(
 export function useWorkspaceDocuments({
   projectId,
   activeDocument,
-  initialCredits,
   initialDocuments,
 }: {
   projectId: string
   activeDocument: DocumentType
-  initialCredits: number
   initialDocuments?: Partial<Record<DocumentType, unknown[]>>
 }) {
-  const [credits, setCredits] = useState(initialCredits)
   const [documentCollections, setDocumentCollections] = useState<WorkspaceDocumentCollections>({
     ...EMPTY_DOCUMENT_COLLECTIONS,
     competitive: (initialDocuments?.competitive as Analysis[] | undefined) ?? [],
@@ -119,7 +116,6 @@ export function useWorkspaceDocuments({
       const workspaceData = payload?.data
       if (!workspaceData) return
 
-      setCredits(typeof workspaceData.credits === "number" ? workspaceData.credits : initialCredits)
       setDocumentCollections((prev) => {
         const next = { ...prev }
         const incomingDocuments = workspaceData.documents as Partial<WorkspaceDocumentCollections> | undefined
@@ -141,14 +137,12 @@ export function useWorkspaceDocuments({
       needed.forEach((type) => loadingDocumentsRef.current.delete(type))
       setIsWorkspaceLoading(false)
     }
-  }, [activeDocument, initialCredits, projectId])
+  }, [activeDocument, projectId])
 
   return {
-    credits,
     documentCollections,
     loadedDocuments,
     isWorkspaceLoading,
     loadWorkspaceDocuments,
-    setCredits,
   }
 }

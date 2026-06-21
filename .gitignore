@@ -79,3 +79,6 @@ src/lib/stitch/test-fixture.json
 /Design System/
 /assets/logos/
 
+#AI Agent artifacts
+.superpowers/
+.tmp/

@@ -35,7 +35,7 @@ export async function GET() {
  * Adds the email to the waitlist table.
  */
 export async function POST(req: NextRequest) {
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `waitlist:${getClientIp(req)}`,
     limit: 8,
     windowMs: 60_000,

@@ -44,6 +44,8 @@ export const maxDuration = 540
 
 type SB = SupabaseClient<Database>
 
+const INCLUDED_PROJECT_OUTPUT_DOC_TYPES = new Set(["competitive", "prd", "mvp", "mockups"])
+
 // This only parallelizes independent documents; getRunnableItems still requires
 // every declared dependency to be done or skipped before a document can run.
 const MAX_CONCURRENCY = 2
@@ -241,8 +243,9 @@ async function executeQueueItem({
 
   const action = GENERATE_ALL_ACTION_MAP[claimed.doc_type]
   const model = claimed.model_id ?? GENERATE_ALL_DEFAULT_MODELS[claimed.doc_type]
-  const creditCost = isBundledItem ? 0 : action ? getTokenCost(action, model) : claimed.credit_cost
-  const shouldChargeCredits = !isBundledItem && creditCost > 0 && claimed.credit_status !== "charged"
+  const isIncludedProjectOutput = INCLUDED_PROJECT_OUTPUT_DOC_TYPES.has(claimed.doc_type)
+  const creditCost = isBundledItem || isIncludedProjectOutput ? 0 : action ? getTokenCost(action, model) : claimed.credit_cost
+  const shouldChargeCredits = !isBundledItem && !isIncludedProjectOutput && creditCost > 0 && claimed.credit_status !== "charged"
   let charged = claimed.credit_status === "charged"
 
   const identity = getActiveDocumentIdentityForDocumentType(claimed.doc_type)
@@ -330,6 +333,8 @@ async function executeQueueItem({
           ? "not_charged"
           : isBundledItem
             ? "not_charged"
+            : isIncludedProjectOutput
+              ? "not_charged"
             : charged
               ? "charged"
               : claimed.credit_status,

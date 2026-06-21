@@ -35,7 +35,11 @@ export async function consumeGenerationQueueItemCredits({
 
   return {
     consumed: Boolean(consumed),
-    errorMessage: error ? "Credit check failed" : consumed ? null : "Insufficient credits",
+    errorMessage: error
+      ? "Plan access could not be verified. Please try again."
+      : consumed
+        ? null
+        : "You've reached your plan limit. Upgrade to continue.",
   }
 }
 

@@ -13,10 +13,9 @@ interface HeaderProps {
   pageTitle?: ReactNode
   children?: ReactNode
   rightContent?: ReactNode
-  credits?: number
 }
 
-export function Header({ user, pageTitle, children, rightContent, credits }: HeaderProps) {
+export function Header({ user, pageTitle, children, rightContent }: HeaderProps) {
   const brand = <HeaderBrand />
 
   return (
@@ -37,7 +36,7 @@ export function Header({ user, pageTitle, children, rightContent, credits }: Hea
 
       <div className="flex shrink-0 items-center justify-end gap-2 justify-self-end sm:gap-4">
         {rightContent}
-        <HeaderProfileMenu user={user} credits={credits} triggerId="app-user-menu-trigger" />
+        <HeaderProfileMenu user={user} triggerId="app-user-menu-trigger" />
       </div>
     </header>
   )

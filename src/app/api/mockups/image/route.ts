@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `mockups-image:${user.id}:${getClientIp(request)}`,
     limit: 120,
     windowMs: 60_000,

@@ -38,6 +38,28 @@ test("consumeGenerationQueueItemCredits records the Generate All credit consumpt
   ])
 })
 
+test("consumeGenerationQueueItemCredits returns plan-language failures", async () => {
+  const supabase = {
+    async rpc() {
+      return { data: false, error: null }
+    },
+  } as never
+
+  const result = await consumeGenerationQueueItemCredits({
+    supabase,
+    userId: "user-1",
+    amount: 12,
+    action: "tech-spec",
+    label: "Technical Spec",
+    projectName: "Acme",
+  })
+
+  assert.deepEqual(result, {
+    consumed: false,
+    errorMessage: "You've reached your plan limit. Upgrade to continue.",
+  })
+})
+
 test("resolveFailedGenerationCreditStatus refunds a charged failed generation", async () => {
   const refunds: Array<{ creditCost: number; description: string }> = []
   const status = await resolveFailedGenerationCreditStatus({
