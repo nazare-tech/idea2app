@@ -13,6 +13,7 @@ import {
   STITCH_PROMPT_ENGINEER_SYSTEM_PROMPT,
   buildStitchDesignPromptUserPrompt,
 } from "@/lib/prompts/mockups"
+import { logInfo, logWarn } from "@/lib/logger"
 
 const OPTION_LABELS = ["A", "B", "C"]
 
@@ -46,11 +47,18 @@ async function generateStitchDesignPrompt(
   const content = response.choices[0]?.message?.content?.trim()
 
   if (!content) {
-    console.warn("[Stitch] OpenRouter returned empty content — using fallback prompt")
+    logWarn("Stitch", "design_prompt_empty_using_fallback", {
+      projectNameLength: projectName.length,
+      mvpPlanLength: mvpPlan.length,
+    })
     return buildStitchDesignPromptUserPrompt(mvpPlan.slice(0, 500), projectName)
   }
 
-  console.log("[Stitch] OpenRouter prompt:\n", content)
+  logInfo("Stitch", "design_prompt_generated", {
+    projectNameLength: projectName.length,
+    mvpPlanLength: mvpPlan.length,
+    promptLength: content.length,
+  })
   return content
 }
 
@@ -95,7 +103,10 @@ async function generateOptionDescriptions(
     const parsed = JSON.parse(json) as Record<string, string>
     return parsed
   } catch (err) {
-    console.warn("[Stitch] Failed to generate option descriptions:", err)
+    logWarn("Stitch", "option_descriptions_failed", {
+      optionCount: options.length,
+      designBriefLength: designBrief.length,
+    }, err)
     return {}
   }
 }
@@ -143,13 +154,18 @@ export async function generateStitchMockup(
     send?.({ type: "stage", message: "Generating design brief...", step: 1, totalSteps: 6 })
 
     const stitchPrompt = await generateStitchDesignPrompt(mvpPlan, projectName)
+    logInfo("Stitch", "generation_started", {
+      projectNameLength: projectName.length,
+      mvpPlanLength: mvpPlan.length,
+      promptLength: stitchPrompt.length,
+    })
 
     // ── Stage 2: Create Stitch project ────────────────────────────────
     send?.({ type: "stage", message: "Creating design project...", step: 2, totalSteps: 6 })
 
     const projectRaw = await client.callTool<Raw>("create_project", { title: projectName })
-    console.log("[Stitch] create_project raw:", JSON.stringify(projectRaw))
     const stitchProjectId = extractProjectId(projectRaw)
+    logInfo("Stitch", "project_created", { stitchProjectId })
 
     // ── Stage 3: Generate initial screen ─────────────────────────────
     send?.({ type: "stage", message: "Generating initial design...", step: 3, totalSteps: 6 })
@@ -159,21 +175,23 @@ export async function generateStitchMockup(
       prompt: stitchPrompt,
       deviceType: "DESKTOP",
     })
-    console.log("[Stitch] generate_screen_from_text raw:", JSON.stringify(generateRaw))
 
     let initialScreenId: string
     try {
       initialScreenId = extractFirstScreenId(generateRaw)
     } catch {
-      console.log("[Stitch] No screen in generate response — listing screens to find it")
+      logWarn("Stitch", "initial_screen_missing_listing_screens", { stitchProjectId })
       const listRaw = await client.callTool<Raw>("list_screens", { projectId: stitchProjectId })
-      console.log("[Stitch] list_screens raw:", JSON.stringify(listRaw))
       const listed: Raw[] = listRaw?.screens || []
       if (listed.length === 0) throw new Error("[Stitch] No screens found after generate_screen_from_text")
       initialScreenId = screenIdFromItem(listed[0])
+      logInfo("Stitch", "initial_screen_found_from_list", {
+        stitchProjectId,
+        listedScreenCount: listed.length,
+      })
     }
 
-    console.log("[Stitch] initialScreenId:", initialScreenId)
+    logInfo("Stitch", "initial_screen_created", { stitchProjectId, initialScreenId })
 
     // ── Stage 4: Generate 2 variants ─────────────────────────────────
     send?.({ type: "stage", message: "Generating 2 design variations...", step: 4, totalSteps: 6 })
@@ -185,18 +203,21 @@ export async function generateStitchMockup(
       variantOptions: { variantCount: 2, creativeRange: "EXPLORE", aspects: ["COLOR_SCHEME", "LAYOUT"] },
       deviceType: "DESKTOP",
     })
-    console.log("[Stitch] generate_variants raw:", JSON.stringify(variantsRaw))
 
     let variantIds = extractVariantScreenIds(variantsRaw)
     if (variantIds.length === 0) {
-      console.log("[Stitch] No variants in response — listing screens to find them")
+      logWarn("Stitch", "variants_missing_listing_screens", { stitchProjectId, initialScreenId })
       const listRaw2 = await client.callTool<Raw>("list_screens", { projectId: stitchProjectId })
-      console.log("[Stitch] list_screens (post-variants) raw:", JSON.stringify(listRaw2))
       const allScreens: Raw[] = listRaw2?.screens || []
       variantIds = allScreens
         .map(screenIdFromItem)
         .filter((id) => id && id !== initialScreenId)
         .slice(0, 2)
+      logInfo("Stitch", "variants_found_from_list", {
+        stitchProjectId,
+        listedScreenCount: allScreens.length,
+        variantCount: variantIds.length,
+      })
     }
 
     if (variantIds.length === 0) {
@@ -208,6 +229,11 @@ export async function generateStitchMockup(
 
     // Combine: original screen first, then up to 2 variants
     const screenIds = [initialScreenId, ...variantIds.slice(0, 2)]
+    logInfo("Stitch", "variants_ready", {
+      stitchProjectId,
+      variantCount: variantIds.length,
+      fetchedScreenCount: screenIds.length,
+    })
     const titles = ["Original Design", "Variant B", "Variant C"]
 
     const options = await Promise.all(

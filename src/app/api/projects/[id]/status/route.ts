@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
+import { buildRequestLogContext, logError } from "@/lib/logger"
 
 interface DocumentCounts {
   competitive: number
@@ -12,9 +13,10 @@ interface DocumentCounts {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -104,7 +106,11 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error("Error fetching project status:", error)
+    logError("ProjectStatus", "request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+    })
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)

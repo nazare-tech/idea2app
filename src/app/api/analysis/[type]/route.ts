@@ -22,6 +22,7 @@ import {
 import type { Json } from "@/types/database"
 import { PRODUCT_PLAN_DEFAULT_MODEL } from "@/lib/product-plan-config"
 import { FIRST_VERSION_PLAN_DEFAULT_MODEL } from "@/lib/first-version-plan-config"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 // Fixed default models per analysis type — user model selection removed
 const ANALYSIS_DEFAULT_MODELS: Record<string, string> = {
@@ -70,6 +71,7 @@ interface AnalysisParams {
 }
 
 export async function POST(request: Request, { params }: AnalysisParams) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -93,18 +95,24 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("Analysis", "unauthorized", { ...requestLogContext, analysisType: type })
       statusCode = 401
       errorType = "unauthorized"
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     userId = user.id
+    const userLogContext = { ...requestLogContext, userId, analysisType: type }
     const rateLimit = checkRateLimit({
       key: `analysis:${type}:${user.id}:${getClientIp(request)}`,
       limit: type === "competitive-analysis" ? 6 : 12,
       windowMs: 60_000,
     })
     if (rateLimit.limited) {
+      logWarn("Analysis", "rate_limited", {
+        ...userLogContext,
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      })
       statusCode = 429
       errorType = "rate_limited"
       errorMessage = "Too many analysis requests"
@@ -121,8 +129,15 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     projectId = body.projectId
     const { idea, name, competitiveAnalysis, prd, stream: streamRequested } = body
     const model = ANALYSIS_DEFAULT_MODELS[type] ?? "anthropic/claude-sonnet-4-6"
+    const analysisLogContext = { ...userLogContext, projectId, model }
 
     if (!projectId || !idea || !name) {
+      logWarn("Analysis", "validation_failed", {
+        ...analysisLogContext,
+        hasProjectId: Boolean(projectId),
+        hasIdea: Boolean(idea),
+        hasName: Boolean(name),
+      })
       statusCode = 400
       errorType = "validation_error"
       errorMessage = "projectId, idea, and name are required"
@@ -135,6 +150,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     // Validate analysis type
     const validTypes = ["competitive-analysis", "prd", "mvp-plan", "tech-spec"]
     if (!validTypes.includes(type)) {
+      logWarn("Analysis", "invalid_type", analysisLogContext)
       statusCode = 400
       errorType = "validation_error"
       errorMessage = `Invalid analysis type: ${type}`
@@ -153,6 +169,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       .single()
 
     if (!project) {
+      logWarn("Analysis", "project_not_found", analysisLogContext)
       statusCode = 404
       errorType = "not_found"
       errorMessage = "Project not found"
@@ -163,6 +180,11 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     if (documentIdentity) {
       const existingDocument = await findLatestActiveDocument(supabase, projectId, documentIdentity)
       if (existingDocument) {
+        logInfo("Analysis", "skipped_existing", {
+          ...analysisLogContext,
+          outputTable: existingDocument.outputTable,
+          outputId: existingDocument.outputId,
+        })
         return NextResponse.json({
           ...createSkippedActiveDocumentPayload(existingDocument),
           type,
@@ -186,6 +208,10 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     })
 
     if (!consumed) {
+      logWarn("Analysis", "insufficient_credits", {
+        ...analysisLogContext,
+        creditCost,
+      })
       statusCode = 402
       errorType = "insufficient_credits"
       errorMessage = "Insufficient credits"
@@ -284,7 +310,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
               if (!refund.error) {
                 send({ type: "refund", credits: creditsConsumed })
               } else {
-                console.error("[Analysis] Credit refund failed:", refund.error)
+                logError("Analysis", "credit_refund_failed", refund.error, analysisLogContext)
               }
             }
 
@@ -370,7 +396,11 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       .update({ status: "active", updated_at: new Date().toISOString() })
       .eq("id", projectId)
 
-    console.log(`[Analysis] type=${type} project=${projectId} source=${result.source} model=${result.model}`)
+    logInfo("Analysis", "generation_completed", {
+      ...analysisLogContext,
+      source: result.source,
+      model: result.model,
+    })
 
     return NextResponse.json({
       content: contentWithLinks,
@@ -379,7 +409,12 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       type,
     })
   } catch (error) {
-    console.error("Analysis error:", error)
+    logError("Analysis", "request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+      analysisType,
+    })
     errorMessage = getErrorMessage(error)
     const safeTimeoutMessage = isSafeTimeoutMessage(errorMessage)
     statusCode = safeTimeoutMessage ? 504 : 500
@@ -394,9 +429,20 @@ export async function POST(request: Request, { params }: AnalysisParams) {
         description: `${analysisType} generation failed: credits refunded`,
       })
       if (!refund.error) {
-        console.log(`[Analysis] Refunded ${creditsConsumed} credits to user ${userId}`)
+        logInfo("Analysis", "credit_refunded", {
+          ...requestLogContext,
+          userId,
+          projectId,
+          analysisType,
+          creditsConsumed,
+        })
       } else {
-        console.error("[Analysis] Credit refund failed:", refund.error)
+        logError("Analysis", "credit_refund_failed", refund.error, {
+          ...requestLogContext,
+          userId,
+          projectId,
+          analysisType,
+        })
       }
     }
 

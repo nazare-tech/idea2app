@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import type { DocumentType } from "@/lib/document-definitions"
 import { isWorkspaceDocumentType, resolveWorkspaceDocumentTab } from "@/lib/workspace-tab-policy"
+import { buildRequestLogContext, logError } from "@/lib/logger"
 
 interface WorkspacePayload {
   project: {
@@ -49,6 +50,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestLogContext = buildRequestLogContext(request)
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)
@@ -155,7 +157,7 @@ export async function GET(
       } satisfies WorkspacePayload,
     })
   } catch (error) {
-    console.error("Error loading workspace payload:", error)
+    logError("ProjectWorkspace", "payload_failed", error, requestLogContext)
     return NextResponse.json({ error: "Failed to load workspace payload" }, { status: 500 })
   }
 }

@@ -6,6 +6,7 @@ import { chatCompletion } from "@/lib/openrouter"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { refundCreditsServerSide } from "@/lib/credits"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 const openrouter = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -25,6 +26,7 @@ function parseBoolean(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -43,18 +45,24 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("Chat", "unauthorized", requestLogContext)
       statusCode = 401
       errorType = "unauthorized"
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     userId = user.id
+    const userLogContext = { ...requestLogContext, userId }
     const rateLimit = checkRateLimit({
       key: `chat:${user.id}:${getClientIp(request)}`,
       limit: 40,
       windowMs: 60_000,
     })
     if (rateLimit.limited) {
+      logWarn("Chat", "rate_limited", {
+        ...userLogContext,
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      })
       statusCode = 429
       errorType = "rate_limited"
       errorMessage = "Too many chat requests"
@@ -71,8 +79,14 @@ export async function POST(request: Request) {
     projectId = body.projectId
     const message = body.message
     const streamEnabled = parseBoolean(body.stream)
+    const chatLogContext = { ...userLogContext, projectId, streamEnabled }
 
     if (!projectId || !message) {
+      logWarn("Chat", "validation_failed", {
+        ...chatLogContext,
+        hasProjectId: Boolean(projectId),
+        hasMessage: Boolean(message),
+      })
       statusCode = 400
       errorType = "validation_error"
       errorMessage = "projectId and message are required"
@@ -91,6 +105,7 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      logWarn("Chat", "project_not_found", chatLogContext)
       statusCode = 404
       errorType = "not_found"
       errorMessage = "Project not found"
@@ -106,6 +121,7 @@ export async function POST(request: Request) {
     })
 
     if (!consumed) {
+      logWarn("Chat", "insufficient_credits", chatLogContext)
       statusCode = 402
       errorType = "insufficient_credits"
       errorMessage = "Insufficient credits"
@@ -129,6 +145,7 @@ export async function POST(request: Request) {
       .single()
 
     if (userMsgError) {
+      logError("Chat", "user_message_save_failed", userMsgError, chatLogContext)
       statusCode = 500
       errorType = "server_error"
       errorMessage = userMsgError.message
@@ -216,7 +233,7 @@ export async function POST(request: Request) {
               assistantMessage,
             })
           } catch (streamError) {
-            console.error("Chat stream error:", streamError)
+            logError("Chat", "stream_failed", streamError, chatLogContext)
             statusCode = 500
             errorType = getErrorType(500, streamError)
             errorMessage = getErrorMessage(streamError)
@@ -227,7 +244,7 @@ export async function POST(request: Request) {
                 action: "chat",
                 description: "Chat stream failed: credits refunded",
               })
-              if (refund.error) console.error("[Chat] Credit refund failed:", refund.error)
+              if (refund.error) logError("Chat", "credit_refund_failed", refund.error, chatLogContext)
             }
             sendEvent({
               type: "error",
@@ -271,6 +288,7 @@ export async function POST(request: Request) {
       .single()
 
     if (assistantMsgError) {
+      logError("Chat", "assistant_message_save_failed", assistantMsgError, chatLogContext)
       statusCode = 500
       errorType = "server_error"
       errorMessage = assistantMsgError.message
@@ -294,14 +312,22 @@ export async function POST(request: Request) {
         .eq("id", projectId)
     }
 
-    console.log(`[Chat] project=${projectId} source=${aiResult.source} model=${aiResult.model}`)
+    logInfo("Chat", "message_completed", {
+      ...chatLogContext,
+      source: aiResult.source,
+      model: aiResult.model,
+    })
 
     return NextResponse.json({
       userMessage,
       assistantMessage,
     })
   } catch (error) {
-    console.error("Chat error:", error)
+    logError("Chat", "request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+    })
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
@@ -312,7 +338,11 @@ export async function POST(request: Request) {
         action: "chat",
         description: "Chat failed: credits refunded",
       })
-      if (refund.error) console.error("[Chat] Credit refund failed:", refund.error)
+      if (refund.error) logError("Chat", "credit_refund_failed", refund.error, {
+        ...requestLogContext,
+        userId,
+        projectId,
+      })
     }
     return NextResponse.json(
       { error: "Internal server error" },

@@ -13,6 +13,7 @@ import {
 import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 export const maxDuration = 800
 
@@ -28,6 +29,7 @@ function parseOptionLabel(value: unknown): OpenRouterMockupOptionLabel | null {
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   try {
     const supabase = await createClient()
     const {
@@ -35,15 +37,21 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("MockupOption", "unauthorized", requestLogContext)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userLogContext = { ...requestLogContext, userId: user.id }
     const rateLimit = checkRateLimit({
       key: `mockups-option:${user.id}:${getClientIp(request)}`,
       limit: 12,
       windowMs: 60_000,
     })
     if (rateLimit.limited) {
+      logWarn("MockupOption", "rate_limited", {
+        ...userLogContext,
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      })
       return NextResponse.json(
         { error: "Too many mockup generation requests. Please wait and try again." },
         {
@@ -66,11 +74,32 @@ export async function POST(request: Request) {
       try {
         designPlan = parseMockupDesignPlan(JSON.stringify(body.designPlan))
       } catch {
+        logWarn("MockupOption", "invalid_design_plan", userLogContext)
         return NextResponse.json({ error: "Invalid mockup design plan" }, { status: 400 })
       }
     }
 
+    const mockupLogContext = {
+      ...userLogContext,
+      projectId,
+      runId,
+      optionLabel: label,
+    }
+    logInfo("MockupOption", "request_started", {
+      ...mockupLogContext,
+      hasDesignPlan: Boolean(designPlan),
+      hasIdea: Boolean(idea),
+      hasProductPlan: Boolean(productPlan),
+    })
+
     if (!projectId || !mvpPlan || !projectName || !label) {
+      logWarn("MockupOption", "validation_failed", {
+        ...mockupLogContext,
+        hasProjectId: Boolean(projectId),
+        hasMvpPlan: Boolean(mvpPlan),
+        hasProjectName: Boolean(projectName),
+        hasLabel: Boolean(label),
+      })
       return NextResponse.json(
         { error: "projectId, mvpPlan, projectName, and label are required" },
         { status: 400 },
@@ -84,6 +113,14 @@ export async function POST(request: Request) {
       (productPlan && productPlan.length > 50_000) ||
       (runId && (runId.length > 120 || !SAFE_RUN_ID.test(runId)))
     ) {
+      logWarn("MockupOption", "input_too_large", {
+        ...mockupLogContext,
+        mvpPlanLength: mvpPlan.length,
+        projectNameLength: projectName.length,
+        ideaLength: idea?.length ?? 0,
+        productPlanLength: productPlan?.length ?? 0,
+        runIdLength: runId?.length ?? 0,
+      })
       return NextResponse.json(
         { error: "Mockup generation input is too large" },
         { status: 400 },
@@ -98,6 +135,7 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      logWarn("MockupOption", "project_not_found", mockupLogContext)
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
@@ -105,10 +143,16 @@ export async function POST(request: Request) {
     if (documentIdentity) {
       const existingDocument = await findLatestActiveDocument(supabase, projectId, documentIdentity)
       if (existingDocument) {
+        logInfo("MockupOption", "skipped_existing", {
+          ...mockupLogContext,
+          outputTable: existingDocument.outputTable,
+          outputId: existingDocument.outputId,
+        })
         return NextResponse.json(createSkippedActiveDocumentPayload(existingDocument))
       }
     }
 
+    logInfo("MockupOption", "generation_started", mockupLogContext)
     const result = await generateOpenRouterImageMockupOption({
       mvpPlan,
       projectName,
@@ -119,10 +163,17 @@ export async function POST(request: Request) {
       productPlan,
       designPlan,
     })
+    logInfo("MockupOption", "generation_succeeded", {
+      ...mockupLogContext,
+      model: result.model,
+      storagePath: result.option.storagePath,
+      width: result.option.width,
+      height: result.option.height,
+    })
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("Mockup option generation error:", error)
+    logError("MockupOption", "request_failed", error, requestLogContext)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate mockup option" },
       { status: 500 },

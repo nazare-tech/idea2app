@@ -12,6 +12,7 @@ import {
   INTAKE_QUESTION_SYSTEM_PROMPT,
   buildIntakeQuestionUserPrompt,
 } from "./prompts/intake-wizard"
+import { logError } from "@/lib/logger"
 
 const MIN_QUESTIONS = 4
 const MAX_QUESTIONS = 5
@@ -62,7 +63,9 @@ export async function generateIntakeQuestions(
       rawModelOutput,
     }
   } catch (err) {
-    console.error("[IntakeQuestions] AI generation or parse failed:", err)
+    logError("IntakeQuestions", "generation_or_parse_failed", err, {
+      ideaLength: idea.length,
+    })
     throw new Error(RETRYABLE_GENERATION_ERROR)
   }
 }

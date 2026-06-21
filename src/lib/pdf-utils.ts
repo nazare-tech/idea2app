@@ -1,3 +1,5 @@
+import { logError } from "@/lib/logger"
+
 export async function downloadMarkdownAsPDF({
   projectId,
   documentType,
@@ -37,7 +39,11 @@ export async function downloadMarkdownAsPDF({
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
   } catch (error) {
-    console.error("Error generating PDF:", error)
+    logError("PdfDownload", "download_failed", error, {
+      projectId,
+      documentType,
+      documentId,
+    })
     throw new Error("Failed to generate PDF")
   }
 }

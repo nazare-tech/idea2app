@@ -1,3 +1,5 @@
+import { logWarn } from "@/lib/logger"
+
 /**
  * Retry utility for external API calls.
  * Retries on 429 (rate limit) and 5xx errors with exponential backoff.
@@ -43,10 +45,12 @@ export async function withRetry<T>(
       lastError = error
       if (attempt < retries && isRetryableError(error)) {
         const delay = backoff[attempt] ?? backoff[backoff.length - 1]
-        console.warn(
-          `[withRetry] ${label} failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay}ms:`,
-          error instanceof Error ? error.message : error
-        )
+        logWarn("withRetry", "retry_scheduled", {
+          label,
+          attempt: attempt + 1,
+          maxAttempts: retries + 1,
+          delayMs: delay,
+        }, error)
         await new Promise((resolve) => setTimeout(resolve, delay))
       } else {
         break

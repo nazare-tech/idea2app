@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
+import { buildRequestLogContext, logError } from "@/lib/logger"
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -73,7 +75,12 @@ export async function PATCH(
       .single()
 
     if (updateError) {
-      console.error("Error updating analysis:", updateError)
+      logError("AnalysisUpdate", "update_failed", updateError, {
+        ...requestLogContext,
+        userId,
+        projectId,
+        analysisId: id,
+      })
       statusCode = 500
       errorType = "server_error"
       errorMessage = updateError.message
@@ -85,7 +92,11 @@ export async function PATCH(
 
     return NextResponse.json({ data: updated })
   } catch (error) {
-    console.error("Error in analyses PATCH:", error)
+    logError("AnalysisUpdate", "request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+    })
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)

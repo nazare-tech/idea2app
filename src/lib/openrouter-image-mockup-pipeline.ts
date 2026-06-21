@@ -27,6 +27,7 @@ import {
   type MockupPrimaryPlatform,
 } from "@/lib/mockup-design-plan"
 import type { Database, Json } from "@/types/database"
+import { logError, logInfo, logWarn } from "@/lib/logger"
 
 export const MOCKUP_STORAGE_BUCKET =
   process.env.SUPABASE_MOCKUP_STORAGE_BUCKET || "mockups"
@@ -273,6 +274,16 @@ export async function generateOpenRouterImageMockup({
   })
 
   send?.({ type: "stage", message: "Preparing image mockup prompts...", step: 1, totalSteps: 5 })
+  logInfo("OpenRouterMockup", "generation_started", {
+    projectId,
+    runId,
+    model,
+    plannerModel,
+    hasIdea: Boolean(idea),
+    hasIntakeContext: Boolean(intakeContext),
+    hasProductPlan: Boolean(productPlan),
+    mvpPlanLength: mvpPlan.length,
+  })
   const compactBrief = formatMockupGenerationBrief(buildMockupGenerationBrief({
     projectName,
     idea,
@@ -297,6 +308,14 @@ export async function generateOpenRouterImageMockup({
     intakeContext,
     productPlan,
   })
+  logInfo("OpenRouterMockup", "design_plan_ready", {
+    projectId,
+    runId,
+    plannerModel,
+    primaryPlatform: designPlan.primaryPlatform,
+    screenCount: designPlan.screens.length,
+    directionCount: designPlan.directions.length,
+  })
 
   send?.({ type: "stage", message: "Generating 3 visual directions...", step: 2, totalSteps: 5 })
 
@@ -315,6 +334,13 @@ export async function generateOpenRouterImageMockup({
       }),
     ),
   )
+  logInfo("OpenRouterMockup", "options_generated", {
+    projectId,
+    runId,
+    model,
+    optionCount: generatedOptions.length,
+    labels: generatedOptions.map((option) => option.label),
+  })
   const imagePromptCharCounts = Object.fromEntries(
     generatedOptions.map((option) => [option.label, option.imagePromptCharCount]),
   )
@@ -403,6 +429,15 @@ export async function generateOpenRouterImageMockupOption({
     intakeContext,
     productPlan,
   })
+  logInfo("OpenRouterMockup", "single_option_started", {
+    projectId,
+    runId,
+    model,
+    plannerModel,
+    optionLabel: label,
+    reusedDesignPlan: Boolean(designPlanOverride),
+    primaryPlatform: designPlan.primaryPlatform,
+  })
 
   const option = await generateAndStoreOption({
     config,
@@ -416,6 +451,15 @@ export async function generateOpenRouterImageMockupOption({
     systemPrompt,
     userPrompt,
     designPlan,
+  })
+  logInfo("OpenRouterMockup", "single_option_generated", {
+    projectId,
+    runId,
+    model,
+    optionLabel: option.label,
+    storagePath: option.storagePath,
+    width: option.width,
+    height: option.height,
   })
 
   return {
@@ -474,6 +518,16 @@ async function generateAndStoreOption({
   let response: OpenAI.Chat.Completions.ChatCompletion
   try {
     const imageConfig = getOpenRouterMockupImageConfig(designPlan.primaryPlatform)
+    logInfo("OpenRouterMockup", "option_image_request_started", {
+      projectId,
+      runId,
+      model,
+      optionLabel: config.label,
+      primaryPlatform: designPlan.primaryPlatform,
+      imageConfig,
+      promptLength: storyboardPrompt.length,
+      skeletonAssetPath: skeleton.publicPath,
+    })
     response = await openrouter.chat.completions.create({
       model,
       messages: [
@@ -493,6 +547,13 @@ async function generateAndStoreOption({
       signal: AbortSignal.timeout(getOpenRouterMockupImageTimeoutMs()),
     })
   } catch (error) {
+    logError("OpenRouterMockup", "option_image_request_failed", error, {
+      projectId,
+      runId,
+      model,
+      optionLabel: config.label,
+      primaryPlatform: designPlan.primaryPlatform,
+    })
     if (isAbortError(error)) {
       throw new Error(`OpenRouter image generation timed out for option ${config.label}`)
     }
@@ -511,6 +572,16 @@ async function generateAndStoreOption({
   const storagePath = `${projectId}/${runId}/option-${config.label.toLowerCase()}-storyboard.${parsedImage.extension}`
 
   await uploadMockupImageWithRetry(storageSupabase, storagePath, parsedImage.buffer, parsedImage.contentType)
+  logInfo("OpenRouterMockup", "option_image_uploaded", {
+    projectId,
+    runId,
+    model,
+    optionLabel: config.label,
+    storagePath,
+    contentType: parsedImage.contentType,
+    width: parsedImage.width,
+    height: parsedImage.height,
+  })
 
   return {
     label: config.label,
@@ -964,9 +1035,13 @@ async function uploadMockupImageWithRetry(
       throw new Error(`Failed to upload generated mockup image: ${fullMsg}`)
     }
 
-    console.warn(
-      `[mockup] Storage upload attempt ${attempt}/${maxAttempts} failed with "${fullMsg}" — retrying in ${attempt * 500}ms`,
-    )
+    logWarn("OpenRouterMockup", "storage_upload_retry", {
+      storagePath,
+      contentType,
+      attempt,
+      maxAttempts,
+      retryDelayMs: attempt * 500,
+    }, new Error(fullMsg))
     await new Promise((resolve) => setTimeout(resolve, attempt * 500))
     lastError = new Error(fullMsg)
   }

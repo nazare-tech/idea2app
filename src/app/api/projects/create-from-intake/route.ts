@@ -16,6 +16,7 @@ import { canCreateProject, type ProjectAllowanceClient } from "@/lib/project-all
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 const MAX_IDEA_LENGTH = 10000
 const MIN_IDEA_LENGTH = 10
@@ -198,11 +199,12 @@ async function releaseProjectCreationLock(
     .eq("user_id", userId)
 
   if (error) {
-    console.error("[create-from-intake] project creation lock release failed:", error)
+    logError("CreateFromIntake", "lock_release_failed", error, { userId })
   }
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   const supabase = await createClient()
   const queueSupabase = createServiceClient()
   const {
@@ -210,32 +212,57 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser()
 
   if (!user) {
+    logWarn("CreateFromIntake", "unauthorized", requestLogContext)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const userLogContext = { ...requestLogContext, userId: user.id }
+  logInfo("CreateFromIntake", "request_started", userLogContext)
 
   let body: CreateFromIntakeBody
   try {
     body = await request.json()
   } catch {
+    logWarn("CreateFromIntake", "invalid_json", userLogContext)
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 })
   }
 
   const idea = normalizeText(body.idea, MAX_IDEA_LENGTH)
   if (idea.length < MIN_IDEA_LENGTH) {
+    logWarn("CreateFromIntake", "validation_failed", {
+      ...userLogContext,
+      reason: "idea_too_short",
+      ideaLength: idea.length,
+    })
     return NextResponse.json({ error: "Project idea is too short" }, { status: 400 })
   }
 
   const questions = normalizeQuestions(body.questions)
   if (questions.length < 4 || questions.length > 5) {
+    logWarn("CreateFromIntake", "validation_failed", {
+      ...userLogContext,
+      reason: "invalid_question_count",
+      questionCount: questions.length,
+    })
     return NextResponse.json({ error: "Question set must include 4-5 questions" }, { status: 400 })
   }
   if (questions.some((question) => question.selectionMode === "text")) {
+    logWarn("CreateFromIntake", "validation_failed", {
+      ...userLogContext,
+      reason: "text_question_present",
+      questionCount: questions.length,
+    })
     return NextResponse.json(
       { error: "Intake questions must use single or multiple choice answers" },
       { status: 400 }
     )
   }
   if (questions.some((question) => question.selectionMode === "multiple" && question.allowOther)) {
+    logWarn("CreateFromIntake", "validation_failed", {
+      ...userLogContext,
+      reason: "multiple_choice_other_present",
+      questionCount: questions.length,
+    })
     return NextResponse.json(
       { error: "Multiple-choice questions cannot include an Other answer" },
       { status: 400 }
@@ -244,14 +271,23 @@ export async function POST(request: Request) {
 
   const answerResult = validateAnswers(questions, body.answers)
   if (answerResult.error) {
+    logWarn("CreateFromIntake", "validation_failed", {
+      ...userLogContext,
+      reason: "invalid_answers",
+    })
     return NextResponse.json({ error: answerResult.error }, { status: 400 })
   }
   const platformError = validateRequiredPlatformAnswer(questions, answerResult.answers)
   if (platformError) {
+    logWarn("CreateFromIntake", "validation_failed", {
+      ...userLogContext,
+      reason: "invalid_required_platform",
+    })
     return NextResponse.json({ error: platformError }, { status: 400 })
   }
 
   const pendingToken = normalizeText(body.pendingToken, 180)
+  const hasPendingToken = Boolean(pendingToken)
   if (pendingToken) {
     const { data: pending, error: pendingError } = await supabase
       .from("pending_intakes")
@@ -262,16 +298,27 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (pendingError) {
-      console.error("[create-from-intake] pending lookup failed:", pendingError)
+      logError("CreateFromIntake", "pending_lookup_failed", pendingError, userLogContext)
       return NextResponse.json({ error: "Failed to verify pending intake" }, { status: 500 })
     }
 
     if (!pending) {
+      logWarn("CreateFromIntake", "pending_token_invalid", userLogContext)
       return NextResponse.json({ error: "Pending intake token is expired or already used" }, { status: 400 })
     }
+
+    logInfo("CreateFromIntake", "pending_token_verified", userLogContext)
   }
 
   const allowance = await canCreateProject(supabase as unknown as ProjectAllowanceClient, user.id)
+  logInfo("CreateFromIntake", "allowance_checked", {
+    ...userLogContext,
+    canCreate: allowance.canCreate,
+    reason: allowance.reason,
+    allowance: allowance.allowance,
+    used: allowance.used,
+    remaining: allowance.remaining,
+  })
   if (!allowance.canCreate) {
     const status = allowance.reason === "limit_reached" ? 403 : 500
     return NextResponse.json(
@@ -319,19 +366,35 @@ export async function POST(request: Request) {
       },
     }
   )
+  logInfo("CreateFromIntake", "project_name_generated", {
+    ...userLogContext,
+    usedFallbackName: nameResult.usedFallback,
+    model: PROJECT_NAME_MODEL,
+  })
 
   const lock = await acquireProjectCreationLock(queueSupabase, user.id)
   if (lock.error) {
+    logError("CreateFromIntake", "lock_acquire_failed", new Error(lock.error), userLogContext)
     return NextResponse.json({ error: "Failed to verify project allowance" }, { status: 500 })
   }
   if (!lock.acquired) {
+    logWarn("CreateFromIntake", "lock_rejected", userLogContext)
     return NextResponse.json(
       { error: "A project is already being created. Please wait a moment and try again." },
       { status: 409 },
     )
   }
+  logInfo("CreateFromIntake", "lock_acquired", userLogContext)
 
   const lockedAllowance = await canCreateProject(queueSupabase as unknown as ProjectAllowanceClient, user.id)
+  logInfo("CreateFromIntake", "locked_allowance_checked", {
+    ...userLogContext,
+    canCreate: lockedAllowance.canCreate,
+    reason: lockedAllowance.reason,
+    allowance: lockedAllowance.allowance,
+    used: lockedAllowance.used,
+    remaining: lockedAllowance.remaining,
+  })
   if (!lockedAllowance.canCreate) {
     await releaseProjectCreationLock(queueSupabase, user.id)
     const status = lockedAllowance.reason === "limit_reached" ? 403 : 500
@@ -360,10 +423,12 @@ export async function POST(request: Request) {
     .single()
 
   if (projectError || !project) {
-    console.error("[create-from-intake] project insert failed:", projectError)
+    logError("CreateFromIntake", "project_insert_failed", projectError, userLogContext)
     await releaseProjectCreationLock(queueSupabase, user.id)
     return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
   }
+  const projectLogContext = { ...userLogContext, projectId: project.id }
+  logInfo("CreateFromIntake", "project_inserted", projectLogContext)
 
   const { error: intakeError } = await supabase.from("project_intakes").insert({
     project_id: project.id,
@@ -378,11 +443,12 @@ export async function POST(request: Request) {
   })
 
   if (intakeError) {
-    console.error("[create-from-intake] intake insert failed:", intakeError)
+    logError("CreateFromIntake", "intake_insert_failed", intakeError, projectLogContext)
     await supabase.from("projects").delete().eq("id", project.id).eq("user_id", user.id)
     await releaseProjectCreationLock(queueSupabase, user.id)
     return NextResponse.json({ error: "Failed to save project intake" }, { status: 500 })
   }
+  logInfo("CreateFromIntake", "intake_inserted", projectLogContext)
 
   const onboardingQueue = buildOnboardingGenerationQueue()
   const generationRunId = onboardingQueue[0].runId
@@ -410,20 +476,39 @@ export async function POST(request: Request) {
     .single()
 
   if (queueError || !queueRow) {
-    console.error("[create-from-intake] onboarding queue insert failed:", queueError)
+    logError("CreateFromIntake", "onboarding_queue_insert_failed", queueError, {
+      ...projectLogContext,
+      runId: generationRunId,
+    })
     await supabase.from("projects").delete().eq("id", project.id).eq("user_id", user.id)
     await releaseProjectCreationLock(queueSupabase, user.id)
     return NextResponse.json({ error: "Failed to start project generation" }, { status: 500 })
   }
+  logInfo("CreateFromIntake", "onboarding_queue_inserted", {
+    ...projectLogContext,
+    queueId: queueRow.id,
+    runId: generationRunId,
+  })
 
   try {
     await createGenerationQueueItems(queueSupabase, queueRow, onboardingQueue)
   } catch (itemError) {
-    console.error("[create-from-intake] onboarding queue item insert failed:", itemError)
+    logError("CreateFromIntake", "onboarding_queue_items_insert_failed", itemError, {
+      ...projectLogContext,
+      queueId: queueRow.id,
+      runId: generationRunId,
+      itemCount: onboardingQueue.length,
+    })
     await supabase.from("projects").delete().eq("id", project.id).eq("user_id", user.id)
     await releaseProjectCreationLock(queueSupabase, user.id)
     return NextResponse.json({ error: "Failed to start project generation" }, { status: 500 })
   }
+  logInfo("CreateFromIntake", "onboarding_queue_items_inserted", {
+    ...projectLogContext,
+    queueId: queueRow.id,
+    runId: generationRunId,
+    itemCount: onboardingQueue.length,
+  })
 
   if (pendingToken) {
     const { error: claimError } = await supabase
@@ -437,11 +522,20 @@ export async function POST(request: Request) {
       .gt("expires_at", new Date().toISOString())
 
     if (claimError) {
-      console.error("[create-from-intake] pending claim failed:", claimError)
+      logError("CreateFromIntake", "pending_claim_failed", claimError, projectLogContext)
+    } else {
+      logInfo("CreateFromIntake", "pending_claimed", projectLogContext)
     }
   }
 
   await releaseProjectCreationLock(queueSupabase, user.id)
+  logInfo("CreateFromIntake", "request_succeeded", {
+    ...projectLogContext,
+    queueId: queueRow.id,
+    runId: generationRunId,
+    hasPendingToken,
+    usedFallbackName: nameResult.usedFallback,
+  })
 
   return NextResponse.json({
     project,

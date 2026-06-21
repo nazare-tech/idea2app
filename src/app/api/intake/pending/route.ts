@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"
 
 const MAX_IDEA_LENGTH = 10000
 const TOKEN_BYTES = 24
@@ -24,12 +25,17 @@ function createOpaqueToken() {
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   const rateLimit = checkRateLimit({
     key: `intake-pending:${getClientIp(request)}`,
     limit: 12,
     windowMs: 60_000,
   })
   if (rateLimit.limited) {
+    logWarn("PendingIntake", "rate_limited", {
+      ...requestLogContext,
+      retryAfterSeconds: rateLimit.retryAfterSeconds,
+    })
     return NextResponse.json(
       { error: "Too many requests. Please wait and try again." },
       {
@@ -49,6 +55,7 @@ export async function POST(request: Request) {
 
   const idea = normalizeIdea(body.idea)
   if (!idea) {
+    logWarn("PendingIntake", "validation_failed", requestLogContext)
     return NextResponse.json({ error: "Idea is required" }, { status: 400 })
   }
 
@@ -64,7 +71,11 @@ export async function POST(request: Request) {
   })
 
   if (error) {
-    console.error("[intake/pending] create failed:", error)
+    logError("PendingIntake", "create_failed", error, {
+      ...requestLogContext,
+      ideaLength: idea.length,
+      source: normalizeSource(body.source),
+    })
     return NextResponse.json({ error: "Failed to save pending intake" }, { status: 500 })
   }
 
@@ -72,18 +83,21 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
+    logWarn("PendingIntake", "unauthorized", requestLogContext)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   const { searchParams } = new URL(request.url)
   const token = searchParams.get("token")?.trim()
   if (!token) {
+    logWarn("PendingIntake", "missing_token", { ...requestLogContext, userId: user.id })
     return NextResponse.json({ error: "token is required" }, { status: 400 })
   }
 
@@ -96,7 +110,7 @@ export async function GET(request: Request) {
     .maybeSingle()
 
   if (error) {
-    console.error("[intake/pending] lookup failed:", error)
+    logError("PendingIntake", "lookup_failed", error, { ...requestLogContext, userId: user.id })
     return NextResponse.json({ error: "Failed to load pending intake" }, { status: 500 })
   }
 

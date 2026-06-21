@@ -3,6 +3,7 @@ import OpenAI from "openai"
 
 import { generateIntakeQuestions } from "@/lib/intake-question-generation"
 import { createClient } from "@/lib/supabase/server"
+import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"
 
 const MAX_IDEA_LENGTH = 10000
 const MIN_IDEA_LENGTH = 10
@@ -18,12 +19,14 @@ function normalizeIdea(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
+    logWarn("IntakeQuestions", "unauthorized", requestLogContext)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -67,7 +70,12 @@ export async function POST(request: Request) {
       usedFallback: false,
     })
   } catch (error) {
-    console.error("[IntakeQuestions] Route error:", error)
+    logError("IntakeQuestions", "request_failed", error, {
+      ...requestLogContext,
+      userId: user.id,
+      ideaLength: idea.length,
+      model: INTAKE_MODEL,
+    })
     const message = error instanceof Error
       ? error.message
       : "We couldn't generate follow-up questions right now. Please retry in a moment."

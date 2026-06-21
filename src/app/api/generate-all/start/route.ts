@@ -19,8 +19,10 @@ import {
   findLatestActiveDocument,
   getActiveDocumentIdentityForDocumentType,
 } from "@/lib/active-document-policy"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   try {
     const supabase = await createClient()
     const queueSupabase = createServiceClient()
@@ -29,13 +31,21 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("GenerateAllStart", "unauthorized", requestLogContext)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userLogContext = { ...requestLogContext, userId: user.id }
     const body = await request.json()
     const { projectId, queue } = body
+    const queueLogContext = { ...userLogContext, projectId }
 
     if (!projectId || !queue) {
+      logWarn("GenerateAllStart", "validation_failed", {
+        ...queueLogContext,
+        hasProjectId: Boolean(projectId),
+        hasQueue: Boolean(queue),
+      })
       return NextResponse.json(
         { error: "projectId and queue are required" },
         { status: 400 },
@@ -44,6 +54,7 @@ export async function POST(request: Request) {
 
     const manualQueue = buildManualGenerationQueue(parseQueueJson(queue as Json))
     if (manualQueue.length === 0) {
+      logWarn("GenerateAllStart", "empty_queue", queueLogContext)
       return NextResponse.json({ error: "queue must include at least one valid document" }, { status: 400 })
     }
 
@@ -56,6 +67,7 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      logWarn("GenerateAllStart", "project_not_found", queueLogContext)
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
@@ -73,6 +85,11 @@ export async function POST(request: Request) {
       const error = isOnboardingGenerationQueue(existingQueue)
         ? "Project generation is already running"
         : "Generate All is already running"
+      logWarn("GenerateAllStart", "queue_already_running", {
+        ...queueLogContext,
+        queueId: existingQueue.id,
+        queueStatus: existingQueue.status,
+      })
       return NextResponse.json(
         { error },
         { status: 409 },
@@ -101,6 +118,11 @@ export async function POST(request: Request) {
         started_at: new Date().toISOString(),
         completed_at: null,
         error_info: null,
+      })
+      logInfo("GenerateAllStart", "onboarding_queue_resumed", {
+        ...queueLogContext,
+        queueId: existingQueue.id,
+        resetItemCount: resetItems.length,
       })
 
       const { data: resumedQueue } = await queueSupabase
@@ -158,13 +180,22 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
+      logError("GenerateAllStart", "queue_upsert_failed", error, {
+        ...queueLogContext,
+        runId,
+      })
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     try {
       await replaceGenerationQueueItems(queueSupabase, data, queueWithExistingSkipped)
     } catch (itemError) {
-      console.error("[generate-all/start] queue item insert failed:", itemError)
+      logError("GenerateAllStart", "queue_items_replace_failed", itemError, {
+        ...queueLogContext,
+        queueId: data.id,
+        runId,
+        itemCount: queueWithExistingSkipped.length,
+      })
       await queueSupabase
         .from("generation_queues")
         .update({
@@ -177,8 +208,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to start generation queue" }, { status: 500 })
     }
 
+    logInfo("GenerateAllStart", "queue_started", {
+      ...queueLogContext,
+      queueId: data.id,
+      runId,
+      itemCount: queueWithExistingSkipped.length,
+      skippedExistingCount: queueWithExistingSkipped.filter((item) => item.status === "skipped").length,
+    })
     return NextResponse.json({ queue: data })
-  } catch {
+  } catch (error) {
+    logError("GenerateAllStart", "request_failed", error, requestLogContext)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -11,8 +11,10 @@ import {
 } from "@/lib/generation-queue-service"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 export async function GET(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   try {
     const supabase = await createClient()
     const {
@@ -20,6 +22,7 @@ export async function GET(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("GenerateAllStatus", "unauthorized", requestLogContext)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -27,8 +30,10 @@ export async function GET(request: Request) {
     const projectId = searchParams.get("projectId")
 
     if (!projectId) {
+      logWarn("GenerateAllStatus", "validation_failed", { ...requestLogContext, userId: user.id })
       return NextResponse.json({ error: "projectId is required" }, { status: 400 })
     }
+    const queueLogContext = { ...requestLogContext, userId: user.id, projectId }
 
     const queueSupabase = createServiceClient()
     const { data, error } = await queueSupabase
@@ -39,6 +44,7 @@ export async function GET(request: Request) {
       .single()
 
     if (error && error.code !== "PGRST116") {
+      logError("GenerateAllStatus", "queue_lookup_failed", error, queueLogContext)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -52,6 +58,11 @@ export async function GET(request: Request) {
         ? await recoverStaleGenerationQueueItems(queueSupabase, items)
         : []
     if (recoveredItems.length > 0) {
+      logWarn("GenerateAllStatus", "stale_items_recovered", {
+        ...queueLogContext,
+        queueId: data.id,
+        recoveredCount: recoveredItems.length,
+      })
       items = items.map((item) => recoveredItems.find((updated) => updated.id === item.id) ?? item)
       await syncGenerationQueueJson(queueSupabase, data, items, {
         status: "running",
@@ -63,6 +74,11 @@ export async function GET(request: Request) {
     if (data.status === "cancelled") {
       const finalizedItems = await finalizeStaleCancelledItems(supabase, queueSupabase, items)
       if (finalizedItems.length > 0) {
+        logInfo("GenerateAllStatus", "stale_cancelled_items_finalized", {
+          ...queueLogContext,
+          queueId: data.id,
+          finalizedCount: finalizedItems.length,
+        })
         items = items.map((item) => finalizedItems.find((updated) => updated.id === item.id) ?? item)
         await syncGenerationQueueJson(queueSupabase, data, items, {
           status: "cancelled",
@@ -89,7 +105,8 @@ export async function GET(request: Request) {
         needs_execute: recoveredItems.length > 0,
       },
     })
-  } catch {
+  } catch (error) {
+    logError("GenerateAllStatus", "request_failed", error, requestLogContext)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -126,7 +143,11 @@ async function finalizeStaleCancelledItems(
           `${item.label} cancelled after stale generation: credits refunded (Generate All)`,
         )
         if (refund.error) {
-          console.error("[GenerateAll] Stale cancellation refund failed:", refund.error)
+          logError("GenerateAllStatus", "stale_cancellation_refund_failed", refund.error, {
+            itemId: item.id,
+            queueId: item.queue_id,
+            docType: item.doc_type,
+          })
         }
         creditStatus = refund.refunded ? "refunded" : "refund_failed"
       }

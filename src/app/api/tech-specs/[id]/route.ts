@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
+import { buildRequestLogContext, logError } from "@/lib/logger"
 
 export async function PATCH(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -15,7 +17,7 @@ export async function PATCH(
 
   try {
     const supabase = await createClient()
-    const { id: _id } = await params
+    await params
 
     // Auth check
     const {
@@ -32,7 +34,11 @@ export async function PATCH(
     // Tech Spec feature is currently disabled
     return NextResponse.json({ error: "Tech spec feature is currently unavailable" }, { status: 410 })
   } catch (error) {
-    console.error("Error in tech-specs PATCH:", error)
+    logError("TechSpecUpdate", "request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+    })
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)

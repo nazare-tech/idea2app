@@ -40,6 +40,7 @@
  */
 
 import { createServiceClient } from "@/lib/supabase/service"
+import { logError } from "@/lib/logger"
 
 /**
  * Feature types for categorizing API endpoints
@@ -150,19 +151,27 @@ export async function trackAPIMetrics(data: MetricsData): Promise<void> {
 
         if (error) {
           // Log error but don't throw - metrics tracking should never break the app
-          console.error("[MetricsTracker] Failed to track metrics:", error.message)
+          logError("MetricsTracker", "insert_failed", error, {
+            endpoint: data.endpoint,
+            method: data.method,
+            statusCode: data.statusCode,
+            featureType: data.featureType,
+          })
         }
       } catch (error) {
         // Catch any unexpected errors and log them
-        console.error(
-          "[MetricsTracker] Unexpected error tracking metrics:",
-          error instanceof Error ? error.message : "Unknown error"
-        )
+        logError("MetricsTracker", "unexpected_error", error, {
+          endpoint: data.endpoint,
+          method: data.method,
+        })
       }
     })
     .catch((error) => {
       // Final catch to ensure tracking errors never escape
-      console.error("[MetricsTracker] Promise rejection:", error)
+      logError("MetricsTracker", "promise_rejection", error, {
+        endpoint: data.endpoint,
+        method: data.method,
+      })
     })
 }
 

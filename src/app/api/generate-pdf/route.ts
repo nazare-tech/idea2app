@@ -6,6 +6,7 @@ import { renderMermaid } from "beautiful-mermaid"
 
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
+import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"
 
 export const maxDuration = 300
 
@@ -37,21 +38,28 @@ function resolveChromeExecutablePath() {
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
+    logWarn("GeneratePdf", "unauthorized", requestLogContext)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const userLogContext = { ...requestLogContext, userId: user.id }
   const rateLimit = checkRateLimit({
     key: `generate-pdf:${user.id}:${getClientIp(request)}`,
     limit: 10,
     windowMs: 60_000,
   })
   if (rateLimit.limited) {
+    logWarn("GeneratePdf", "rate_limited", {
+      ...userLogContext,
+      retryAfterSeconds: rateLimit.retryAfterSeconds,
+    })
     return NextResponse.json(
       { error: "Too many PDF requests. Please wait and try again." },
       {
@@ -140,7 +148,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error("Error generating PDF:", error)
+    logError("GeneratePdf", "request_failed", error, userLogContext)
     return NextResponse.json(
       { error: "Failed to generate PDF" },
       { status: 500 },
@@ -284,7 +292,9 @@ async function renderMarkdownToHTML(markdown: string): Promise<string> {
       const svg = await renderMermaid(mermaidCode, mermaidTheme)
       html = html.replace(match[0], `<div class="mermaid-diagram-wrapper">${sanitizeHtml(svg)}</div>`)
     } catch (error) {
-      console.error("Error rendering mermaid diagram:", error)
+      logError("GeneratePdf", "mermaid_render_failed", error, {
+        mermaidCodeLength: match[1].length,
+      })
     }
   }
 

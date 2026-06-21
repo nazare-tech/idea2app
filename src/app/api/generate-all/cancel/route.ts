@@ -8,8 +8,10 @@ import {
 } from "@/lib/generation-queue-service"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   try {
     const supabase = await createClient()
     const queueSupabase = createServiceClient()
@@ -18,13 +20,17 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("GenerateAllCancel", "unauthorized", requestLogContext)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userLogContext = { ...requestLogContext, userId: user.id }
     const body = await request.json()
     const { projectId } = body
+    const queueLogContext = { ...userLogContext, projectId }
 
     if (!projectId) {
+      logWarn("GenerateAllCancel", "validation_failed", queueLogContext)
       return NextResponse.json({ error: "projectId is required" }, { status: 400 })
     }
 
@@ -37,6 +43,7 @@ export async function POST(request: Request) {
       .single()
 
     if (!existing) {
+      logWarn("GenerateAllCancel", "queue_not_found", queueLogContext)
       return NextResponse.json({ error: "No active queue found" }, { status: 404 })
     }
 
@@ -60,6 +67,10 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
+      logError("GenerateAllCancel", "queue_update_failed", error, {
+        ...queueLogContext,
+        queueId: existing.id,
+      })
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -77,8 +88,14 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .single()
 
+    logInfo("GenerateAllCancel", "queue_cancelled", {
+      ...queueLogContext,
+      queueId: data.id,
+      affectedItemCount: updatedItems.length,
+    })
     return NextResponse.json({ queue: refreshed ?? data })
-  } catch {
+  } catch (error) {
+    logError("GenerateAllCancel", "request_failed", error, requestLogContext)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -108,7 +125,11 @@ async function cancelQueueItem(
       `${item.label} cancelled: credits refunded (Generate All)`,
     )
     if (refund.error) {
-      console.error("[GenerateAll] Credit refund on cancellation failed:", refund.error)
+      logError("GenerateAllCancel", "credit_refund_failed", refund.error, {
+        itemId: item.id,
+        queueId: item.queue_id,
+        docType: item.doc_type,
+      })
     }
     update.credit_status = refund.refunded ? "refunded" : "refund_failed"
   }

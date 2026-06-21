@@ -15,6 +15,7 @@ import {
 } from "@/lib/active-document-policy"
 import { createClient } from "@/lib/supabase/server"
 import type { Json } from "@/types/database"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 export const maxDuration = 60
 
@@ -77,8 +78,10 @@ function escapeXml(value: string) {
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   try {
     if (!isFixtureGenerationEnabled()) {
+      logWarn("MockupFixture", "disabled", requestLogContext)
       return NextResponse.json(
         { error: "Mockup fixture generation is disabled for this environment" },
         { status: 403 },
@@ -91,14 +94,21 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("MockupFixture", "unauthorized", requestLogContext)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userLogContext = { ...requestLogContext, userId: user.id }
     const body = await request.json()
     const projectId = typeof body.projectId === "string" ? body.projectId.trim() : ""
     const projectName = typeof body.projectName === "string" ? body.projectName.trim() : "Project"
 
     if (!projectId || projectName.length > 160) {
+      logWarn("MockupFixture", "validation_failed", {
+        ...userLogContext,
+        hasProjectId: Boolean(projectId),
+        projectNameLength: projectName.length,
+      })
       return NextResponse.json({ error: "projectId and projectName are required" }, { status: 400 })
     }
 
@@ -110,6 +120,7 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      logWarn("MockupFixture", "project_not_found", { ...userLogContext, projectId })
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
@@ -117,6 +128,12 @@ export async function POST(request: Request) {
     if (documentIdentity) {
       const existingDocument = await findLatestActiveDocument(supabase, projectId, documentIdentity)
       if (existingDocument) {
+        logInfo("MockupFixture", "skipped_existing", {
+          ...userLogContext,
+          projectId,
+          outputTable: existingDocument.outputTable,
+          outputId: existingDocument.outputId,
+        })
         return NextResponse.json(createSkippedActiveDocumentPayload(existingDocument))
       }
     }
@@ -204,6 +221,12 @@ export async function POST(request: Request) {
     if (insertError || !data?.id) {
       throw new Error(`Failed to save fixture mockups: ${insertError?.message ?? "missing output id"}`)
     }
+    logInfo("MockupFixture", "fixture_saved", {
+      ...userLogContext,
+      projectId,
+      outputId: data.id,
+      optionCount: options.length,
+    })
 
     await supabase
       .from("projects")
@@ -218,7 +241,7 @@ export async function POST(request: Request) {
       fixture: true,
     })
   } catch (error) {
-    console.error("Mockup fixture generation error:", error)
+    logError("MockupFixture", "request_failed", error, requestLogContext)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate fixture mockups" },
       { status: 500 },

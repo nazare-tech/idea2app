@@ -2,11 +2,13 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { getProjectAllowanceStatus, type ProjectAllowanceClient } from "@/lib/project-allowance"
+import { buildRequestLogContext, logError } from "@/lib/logger"
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -56,7 +58,11 @@ export async function PATCH(
       .single()
 
     if (error) {
-      console.error("Error updating project:", error)
+      logError("ProjectRoute", "update_failed", error, {
+        ...requestLogContext,
+        userId,
+        projectId,
+      })
       statusCode = 500
       errorType = "server_error"
       errorMessage = error.message
@@ -65,7 +71,11 @@ export async function PATCH(
 
     return NextResponse.json({ data })
   } catch (error) {
-    console.error("Error:", error)
+    logError("ProjectRoute", "patch_request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+    })
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
@@ -93,6 +103,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -140,7 +151,11 @@ export async function DELETE(
       .single()
 
     if (error) {
-      console.error("Error deleting project:", error)
+      logError("ProjectRoute", "delete_failed", error, {
+        ...requestLogContext,
+        userId,
+        projectId,
+      })
       statusCode = 500
       errorType = "server_error"
       errorMessage = error.message
@@ -156,7 +171,11 @@ export async function DELETE(
 
     return NextResponse.json({ data: deletedProject })
   } catch (error) {
-    console.error("Error:", error)
+    logError("ProjectRoute", "delete_request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+    })
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
@@ -183,6 +202,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -223,7 +243,11 @@ export async function GET(
 
     return NextResponse.json({ data })
   } catch (error) {
-    console.error("Error:", error)
+    logError("ProjectRoute", "get_request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+    })
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)

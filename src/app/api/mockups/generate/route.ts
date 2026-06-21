@@ -8,6 +8,7 @@ import {
   findLatestActiveDocument,
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 const encoder = new TextEncoder()
 
@@ -19,6 +20,7 @@ function createStreamSender(controller: ReadableStreamDefaultController) {
 export const maxDuration = 800
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -36,18 +38,24 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("MockupGenerate", "unauthorized", requestLogContext)
       statusCode = 401
       errorType = "unauthorized"
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     userId = user.id
+    const userLogContext = { ...requestLogContext, userId }
     const rateLimit = checkRateLimit({
       key: `mockups:${user.id}:${getClientIp(request)}`,
       limit: 8,
       windowMs: 60_000,
     })
     if (rateLimit.limited) {
+      logWarn("MockupGenerate", "rate_limited", {
+        ...userLogContext,
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      })
       statusCode = 429
       errorType = "rate_limited"
       errorMessage = "Too many mockup generation requests"
@@ -65,8 +73,20 @@ export async function POST(request: Request) {
     const mvpPlan = typeof body.mvpPlan === "string" ? body.mvpPlan : undefined
     const projectName = typeof body.projectName === "string" ? body.projectName.trim() : undefined
     const streamRequested = body.stream
+    const mockupLogContext = { ...userLogContext, projectId, streaming: streamRequested === true }
+    logInfo("MockupGenerate", "request_started", {
+      ...mockupLogContext,
+      hasMvpPlan: Boolean(mvpPlan),
+      hasProjectName: Boolean(projectName),
+    })
 
     if (!projectId || !mvpPlan || !projectName) {
+      logWarn("MockupGenerate", "validation_failed", {
+        ...mockupLogContext,
+        hasProjectId: Boolean(projectId),
+        hasMvpPlan: Boolean(mvpPlan),
+        hasProjectName: Boolean(projectName),
+      })
       statusCode = 400
       errorType = "validation_error"
       errorMessage = "projectId, mvpPlan, and projectName are required"
@@ -76,6 +96,11 @@ export async function POST(request: Request) {
       )
     }
     if (mvpPlan.length > 50_000 || projectName.length > 160) {
+      logWarn("MockupGenerate", "input_too_large", {
+        ...mockupLogContext,
+        mvpPlanLength: mvpPlan.length,
+        projectNameLength: projectName.length,
+      })
       statusCode = 400
       errorType = "validation_error"
       errorMessage = "Mockup generation input is too large"
@@ -94,6 +119,7 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      logWarn("MockupGenerate", "project_not_found", mockupLogContext)
       statusCode = 404
       errorType = "not_found"
       errorMessage = "Project not found"
@@ -104,6 +130,11 @@ export async function POST(request: Request) {
     if (documentIdentity) {
       const existingDocument = await findLatestActiveDocument(supabase, projectId, documentIdentity)
       if (existingDocument) {
+        logInfo("MockupGenerate", "skipped_existing", {
+          ...mockupLogContext,
+          outputTable: existingDocument.outputTable,
+          outputId: existingDocument.outputId,
+        })
         return NextResponse.json(createSkippedActiveDocumentPayload(existingDocument))
       }
     }
@@ -117,6 +148,7 @@ export async function POST(request: Request) {
           const send = createStreamSender(controller)
 
           try {
+            logInfo("MockupGenerate", "stream_generation_started", mockupLogContext)
             const result = await generateOpenRouterImageMockup({
               mvpPlan,
               projectName,
@@ -137,6 +169,10 @@ export async function POST(request: Request) {
             if (insertError) {
               throw new Error(`Failed to save generated mockups: ${insertError.message}`)
             }
+            logInfo("MockupGenerate", "stream_generation_saved", {
+              ...mockupLogContext,
+              model: result.model,
+            })
 
             await supabase
               .from("projects")
@@ -165,6 +201,7 @@ export async function POST(request: Request) {
             statusCode = 500
             errorType = "generation_error"
             errorMessage = msg
+            logError("MockupGenerate", "stream_generation_failed", err, mockupLogContext)
 
             trackAPIMetrics({
               endpoint: `/api/mockups/generate`,
@@ -193,6 +230,7 @@ export async function POST(request: Request) {
     // ─── End streaming path ─────────────────────────────────────────────
 
     // Non-streaming path
+    logInfo("MockupGenerate", "generation_started", mockupLogContext)
     const result = await generateOpenRouterImageMockup({
       mvpPlan,
       projectName,
@@ -216,7 +254,11 @@ export async function POST(request: Request) {
       .update({ status: "active", updated_at: new Date().toISOString() })
       .eq("id", projectId)
 
-    console.log(`[Mockup] project=${projectId} model=${result.model} source=openrouter-image`)
+    logInfo("MockupGenerate", "generation_succeeded", {
+      ...mockupLogContext,
+      model: result.model,
+      source: result.source,
+    })
 
     return NextResponse.json({
       content: result.content,
@@ -224,7 +266,11 @@ export async function POST(request: Request) {
       source: result.source,
     })
   } catch (error) {
-    console.error("Mockup generation error:", error)
+    logError("MockupGenerate", "request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+    })
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)

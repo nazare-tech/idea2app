@@ -14,6 +14,7 @@ import {
 import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 export const maxDuration = 60
 
@@ -56,6 +57,7 @@ function getScreensFromDesignPlan(value: unknown): OpenRouterImageMockupScreen[]
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   try {
     const supabase = await createClient()
     const {
@@ -63,9 +65,11 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("MockupRecover", "unauthorized", requestLogContext)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userLogContext = { ...requestLogContext, userId: user.id }
     const body = await request.json()
     const projectId = typeof body.projectId === "string" ? body.projectId.trim() : ""
     const runId = typeof body.runId === "string" ? body.runId.trim() : ""
@@ -74,11 +78,24 @@ export async function POST(request: Request) {
       try {
         screens = getScreensFromDesignPlan(parseMockupDesignPlan(JSON.stringify(body.designPlan)))
       } catch {
+        logWarn("MockupRecover", "invalid_design_plan", userLogContext)
         return NextResponse.json({ error: "Invalid mockup design plan" }, { status: 400 })
       }
     }
 
+    const mockupLogContext = { ...userLogContext, projectId, runId }
+    logInfo("MockupRecover", "request_started", {
+      ...mockupLogContext,
+      hasScreens: Boolean(screens?.length),
+    })
+
     if (!projectId || !runId || !SAFE_RUN_ID.test(runId)) {
+      logWarn("MockupRecover", "validation_failed", {
+        ...mockupLogContext,
+        hasProjectId: Boolean(projectId),
+        hasRunId: Boolean(runId),
+        runIdFormatValid: SAFE_RUN_ID.test(runId),
+      })
       return NextResponse.json({ error: "projectId and a valid runId are required" }, { status: 400 })
     }
 
@@ -90,6 +107,7 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      logWarn("MockupRecover", "project_not_found", mockupLogContext)
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
@@ -102,6 +120,10 @@ export async function POST(request: Request) {
     if (error) {
       throw new Error(`Failed to inspect saved mockup images: ${error.message}`)
     }
+    logInfo("MockupRecover", "storage_listed", {
+      ...mockupLogContext,
+      fileCount: files?.length ?? 0,
+    })
 
     const fileByName = new Map(
       (files ?? []).map((file) => [file.name.toLowerCase(), file]),
@@ -136,6 +158,11 @@ export async function POST(request: Request) {
       })
     }
 
+    logInfo("MockupRecover", "options_recovered", {
+      ...mockupLogContext,
+      optionCount: options.length,
+      labels: options.map((option) => option.label),
+    })
     return NextResponse.json({
       options,
       model: getOpenRouterMockupImageModel(),
@@ -143,7 +170,7 @@ export async function POST(request: Request) {
       runId,
     })
   } catch (error) {
-    console.error("Mockup option recovery error:", error)
+    logError("MockupRecover", "request_failed", error, requestLogContext)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to recover generated mockup options" },
       { status: 500 },

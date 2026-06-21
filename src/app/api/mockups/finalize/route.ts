@@ -18,6 +18,7 @@ import {
 import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
 import { createClient } from "@/lib/supabase/server"
 import type { Json } from "@/types/database"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 export const maxDuration = 800
 
@@ -82,6 +83,7 @@ function normalizeScreens(value: unknown): OpenRouterImageMockupScreen[] {
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   try {
     const supabase = await createClient()
     const {
@@ -89,9 +91,11 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("MockupFinalize", "unauthorized", requestLogContext)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userLogContext = { ...requestLogContext, userId: user.id }
     const body = await request.json()
     const projectId = typeof body.projectId === "string" ? body.projectId.trim() : ""
     const model = typeof body.model === "string" ? body.model.trim() : ""
@@ -102,17 +106,42 @@ export async function POST(request: Request) {
       try {
         designPlan = parseMockupDesignPlan(JSON.stringify(body.designPlan))
       } catch {
+        logWarn("MockupFinalize", "invalid_design_plan", userLogContext)
         return NextResponse.json({ error: "Invalid mockup design plan" }, { status: 400 })
       }
     }
 
+    const mockupLogContext = {
+      ...userLogContext,
+      projectId,
+      runId,
+      model,
+    }
+    logInfo("MockupFinalize", "request_started", {
+      ...mockupLogContext,
+      rawOptionCount: rawOptions.length,
+      hasDesignPlan: Boolean(designPlan),
+    })
+
     if (!projectId || !model || !runId) {
+      logWarn("MockupFinalize", "validation_failed", {
+        ...mockupLogContext,
+        hasProjectId: Boolean(projectId),
+        hasModel: Boolean(model),
+        hasRunId: Boolean(runId),
+      })
       return NextResponse.json(
         { error: "projectId, model, and runId are required" },
         { status: 400 },
       )
     }
     if (model.length > 160 || runId.length > 120 || !SAFE_RUN_ID.test(runId)) {
+      logWarn("MockupFinalize", "unsupported_values", {
+        ...mockupLogContext,
+        modelLength: model.length,
+        runIdLength: runId.length,
+        runIdFormatValid: SAFE_RUN_ID.test(runId),
+      })
       return NextResponse.json(
         { error: "model and runId must use supported values" },
         { status: 400 },
@@ -127,6 +156,7 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      logWarn("MockupFinalize", "project_not_found", mockupLogContext)
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
@@ -134,6 +164,11 @@ export async function POST(request: Request) {
     if (documentIdentity) {
       const existingDocument = await findLatestActiveDocument(supabase, projectId, documentIdentity)
       if (existingDocument) {
+        logInfo("MockupFinalize", "skipped_existing", {
+          ...mockupLogContext,
+          outputTable: existingDocument.outputTable,
+          outputId: existingDocument.outputId,
+        })
         return NextResponse.json(createSkippedActiveDocumentPayload(existingDocument))
       }
     }
@@ -147,6 +182,11 @@ export async function POST(request: Request) {
 
     const labels = new Set(options.map((option) => option.label))
     if (options.length !== EXPECTED_LABELS.length || EXPECTED_LABELS.some((label) => !labels.has(label))) {
+      logWarn("MockupFinalize", "missing_options", {
+        ...mockupLogContext,
+        optionCount: options.length,
+        labels: [...labels],
+      })
       return NextResponse.json(
         { error: "All three mockup options are required before finalizing" },
         { status: 400 },
@@ -184,6 +224,11 @@ export async function POST(request: Request) {
     if (insertError || !data?.id) {
       throw new Error(`Failed to save generated mockups: ${insertError?.message ?? "missing output id"}`)
     }
+    logInfo("MockupFinalize", "mockups_saved", {
+      ...mockupLogContext,
+      outputId: data.id,
+      optionCount: options.length,
+    })
 
     await supabase
       .from("projects")
@@ -197,7 +242,7 @@ export async function POST(request: Request) {
       source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
     })
   } catch (error) {
-    console.error("Mockup finalization error:", error)
+    logError("MockupFinalize", "request_failed", error, requestLogContext)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to save mockups" },
       { status: 500 },

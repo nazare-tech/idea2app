@@ -1,6 +1,7 @@
 import OpenAI from "openai"
 import { COMPETITOR_SEARCH_SYSTEM_PROMPT, buildCompetitorSearchUserPrompt } from "@/lib/prompts"
 import { withRetry } from "@/lib/with-retry"
+import { logWarn } from "@/lib/logger"
 
 // Perplexity uses an OpenAI-compatible interface with a different base URL
 const perplexity = new OpenAI({
@@ -50,7 +51,9 @@ export async function searchCompetitors(
   } catch {
     // If JSON parsing fails, return empty competitors but preserve raw response
     // The synthesis step will still run with whatever context is available
-    console.warn("[Perplexity] Failed to parse JSON response, using raw text")
+    logWarn("Perplexity", "competitor_json_parse_failed", {
+      rawResponseLength: rawResponse.length,
+    })
     return { competitors: [], rawResponse }
   }
 }

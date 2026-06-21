@@ -19,6 +19,7 @@ import {
   findLatestActiveDocument,
   getActiveDocumentIdentityForDocumentType,
 } from "@/lib/active-document-policy"
+import { logError, logInfo, type LogContext } from "@/lib/logger"
 
 type ServerSupabaseClient = SupabaseClient<Database>
 
@@ -36,6 +37,7 @@ export interface GenerateProjectDocumentInput {
   supabase: ServerSupabaseClient
   projectId: string
   project: DocumentGenerationProject
+  logContext?: LogContext
 }
 
 export interface GeneratedProjectDocument {
@@ -71,131 +73,193 @@ export async function generateProjectDocument({
   supabase,
   projectId,
   project,
+  logContext = {},
 }: GenerateProjectDocumentInput): Promise<GeneratedProjectDocument | null> {
-  const identity = getActiveDocumentIdentityForDocumentType(docType)
-  if (identity) {
-    const existing = await findLatestActiveDocument(supabase, projectId, identity)
-    if (existing) {
-      return {
-        outputTable: existing.outputTable,
-        outputId: existing.outputId,
-        skippedExisting: true,
+  const baseLogContext = { ...logContext, projectId, docType, modelId }
+  logInfo("DocumentGeneration", "started", baseLogContext)
+
+  try {
+    const identity = getActiveDocumentIdentityForDocumentType(docType)
+    if (identity) {
+      const existing = await findLatestActiveDocument(supabase, projectId, identity)
+      if (existing) {
+        logInfo("DocumentGeneration", "skipped_existing", {
+          ...baseLogContext,
+          outputTable: existing.outputTable,
+          outputId: existing.outputId,
+        })
+        return {
+          outputTable: existing.outputTable,
+          outputId: existing.outputId,
+          skippedExisting: true,
+        }
       }
     }
-  }
 
-  const idea = await getProjectIntakeContextForAi(
-    supabase,
-    projectId,
-    project.description,
-  )
-  const name = project.name
-
-  if (docType === "competitive") {
-    const result = await runCompetitiveAnalysis({ idea, name, model: modelId })
-    const content = linkifyBareUrls(result.content)
-    const { data, error } = await supabase
-      .from("analyses")
-      .insert({
-        project_id: projectId,
-        type: "competitive-analysis",
-        content,
-        metadata: buildAnalysisMetadata("competitive-analysis", result),
-      })
-      .select("id")
-      .single()
-    return requireGeneratedOutput(data, error, "analyses")
-  } else if (docType === "prd") {
-    const { data: analysisRow } = await supabase
-      .from("analyses")
-      .select("content")
-      .eq("project_id", projectId)
-      .eq("type", "competitive-analysis")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const result = await runPRD({
-      idea,
-      name,
-      competitiveAnalysis: analysisRow?.content,
-      model: modelId,
-    })
-    const content = linkifyBareUrls(result.content)
-    const { data, error } = await supabase
-      .from("prds")
-      .insert({ project_id: projectId, content })
-      .select("id")
-      .single()
-    return requireGeneratedOutput(data, error, "prds")
-  } else if (docType === "mvp") {
-    const { data: prdRow } = await supabase
-      .from("prds")
-      .select("content")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const result = await runMVPPlan({
-      idea,
-      name,
-      prd: prdRow?.content,
-      model: modelId,
-    })
-    const content = linkifyBareUrls(result.content)
-    const { data, error } = await supabase
-      .from("mvp_plans")
-      .insert({ project_id: projectId, content })
-      .select("id")
-      .single()
-    return requireGeneratedOutput(data, error, "mvp_plans")
-  } else if (docType === "mockups") {
-    const { data: mvpRow } = await supabase
-      .from("mvp_plans")
-      .select("content")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const result = await generateOpenRouterImageMockup({
-      mvpPlan: mvpRow?.content ?? `First Version Plan for ${name}: ${idea}`,
-      projectName: name,
+    const idea = await getProjectIntakeContextForAi(
+      supabase,
       projectId,
-    })
-    const { data, error } = await supabase
-      .from("mockups")
-      .insert({
-        project_id: projectId,
-        content: result.content,
-        model_used: result.model,
-        metadata: result.metadata,
-      })
-      .select("id")
-      .single()
-    return requireGeneratedOutput(data, error, "mockups")
-  } else if (docType === "techspec") {
-    const { data: prdRow } = await supabase
-      .from("prds")
-      .select("content")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const result = await runTechSpec({
-      idea,
-      name,
-      prd: prdRow?.content,
-      model: modelId,
-    })
-    const content = linkifyBareUrls(result.content)
-    const { data, error } = await supabase
-      .from("tech_specs")
-      .insert({ project_id: projectId, content })
-      .select("id")
-      .single()
-    return requireGeneratedOutput(data, error, "tech_specs")
-  }
+      project.description,
+    )
+    const name = project.name
 
-  return null
+    if (docType === "competitive") {
+      const result = await runCompetitiveAnalysis({ idea, name, model: modelId })
+      const content = linkifyBareUrls(result.content)
+      const { data, error } = await supabase
+        .from("analyses")
+        .insert({
+          project_id: projectId,
+          type: "competitive-analysis",
+          content,
+          metadata: buildAnalysisMetadata("competitive-analysis", result),
+        })
+        .select("id")
+        .single()
+      return logGeneratedOutput(
+        requireGeneratedOutput(data, error, "analyses"),
+        baseLogContext,
+      )
+    } else if (docType === "prd") {
+      const { data: analysisRow } = await supabase
+        .from("analyses")
+        .select("content")
+        .eq("project_id", projectId)
+        .eq("type", "competitive-analysis")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      logInfo("DocumentGeneration", "upstream_loaded", {
+        ...baseLogContext,
+        upstreamDocType: "competitive",
+        hasContent: Boolean(analysisRow?.content),
+      })
+      const result = await runPRD({
+        idea,
+        name,
+        competitiveAnalysis: analysisRow?.content,
+        model: modelId,
+      })
+      const content = linkifyBareUrls(result.content)
+      const { data, error } = await supabase
+        .from("prds")
+        .insert({ project_id: projectId, content })
+        .select("id")
+        .single()
+      return logGeneratedOutput(
+        requireGeneratedOutput(data, error, "prds"),
+        baseLogContext,
+      )
+    } else if (docType === "mvp") {
+      const { data: prdRow } = await supabase
+        .from("prds")
+        .select("content")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      logInfo("DocumentGeneration", "upstream_loaded", {
+        ...baseLogContext,
+        upstreamDocType: "prd",
+        hasContent: Boolean(prdRow?.content),
+      })
+      const result = await runMVPPlan({
+        idea,
+        name,
+        prd: prdRow?.content,
+        model: modelId,
+      })
+      const content = linkifyBareUrls(result.content)
+      const { data, error } = await supabase
+        .from("mvp_plans")
+        .insert({ project_id: projectId, content })
+        .select("id")
+        .single()
+      return logGeneratedOutput(
+        requireGeneratedOutput(data, error, "mvp_plans"),
+        baseLogContext,
+      )
+    } else if (docType === "mockups") {
+      const { data: mvpRow } = await supabase
+        .from("mvp_plans")
+        .select("content")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      logInfo("DocumentGeneration", "upstream_loaded", {
+        ...baseLogContext,
+        upstreamDocType: "mvp",
+        hasContent: Boolean(mvpRow?.content),
+      })
+      const result = await generateOpenRouterImageMockup({
+        mvpPlan: mvpRow?.content ?? `First Version Plan for ${name}: ${idea}`,
+        projectName: name,
+        projectId,
+      })
+      const { data, error } = await supabase
+        .from("mockups")
+        .insert({
+          project_id: projectId,
+          content: result.content,
+          model_used: result.model,
+          metadata: result.metadata,
+        })
+        .select("id")
+        .single()
+      return logGeneratedOutput(
+        requireGeneratedOutput(data, error, "mockups"),
+        baseLogContext,
+      )
+    } else if (docType === "techspec") {
+      const { data: prdRow } = await supabase
+        .from("prds")
+        .select("content")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      logInfo("DocumentGeneration", "upstream_loaded", {
+        ...baseLogContext,
+        upstreamDocType: "prd",
+        hasContent: Boolean(prdRow?.content),
+      })
+      const result = await runTechSpec({
+        idea,
+        name,
+        prd: prdRow?.content,
+        model: modelId,
+      })
+      const content = linkifyBareUrls(result.content)
+      const { data, error } = await supabase
+        .from("tech_specs")
+        .insert({ project_id: projectId, content })
+        .select("id")
+        .single()
+      return logGeneratedOutput(
+        requireGeneratedOutput(data, error, "tech_specs"),
+        baseLogContext,
+      )
+    }
+
+    logInfo("DocumentGeneration", "unsupported_doc_type", baseLogContext)
+    return null
+  } catch (error) {
+    logError("DocumentGeneration", "failed", error, baseLogContext)
+    throw error
+  }
+}
+
+function logGeneratedOutput(
+  output: GeneratedProjectDocument,
+  context: LogContext,
+): GeneratedProjectDocument {
+  logInfo("DocumentGeneration", "saved", {
+    ...context,
+    outputTable: output.outputTable,
+    outputId: output.outputId,
+  })
+  return output
 }
 
 function requireGeneratedOutput(

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { getStripeClient } from "@/lib/stripe"
 import type Stripe from "stripe"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 type CheckoutSupabaseClient = Awaited<ReturnType<typeof createClient>>
 
@@ -83,6 +84,7 @@ async function persistStripeCustomerId(
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   try {
     const supabase = await createClient()
     const stripe = getStripeClient()
@@ -92,14 +94,23 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("StripeCheckout", "unauthorized", requestLogContext)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userLogContext = { ...requestLogContext, userId: user.id }
     const body = await request.json().catch(() => null)
     const priceId = typeof body?.priceId === "string" ? body.priceId.trim() : ""
     const planId = typeof body?.planId === "string" ? body.planId.trim() : ""
+    const checkoutLogContext = { ...userLogContext, priceId, planId }
+    logInfo("StripeCheckout", "request_started", checkoutLogContext)
 
     if (!priceId || !planId) {
+      logWarn("StripeCheckout", "validation_failed", {
+        ...userLogContext,
+        hasPriceId: Boolean(priceId),
+        hasPlanId: Boolean(planId),
+      })
       return NextResponse.json(
         { error: "priceId and planId are required" },
         { status: 400 }
@@ -116,7 +127,7 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (planError) {
-      console.error("Stripe checkout plan lookup error:", planError.message)
+      logError("StripeCheckout", "plan_lookup_failed", planError, checkoutLogContext)
       return NextResponse.json(
         { error: "Failed to verify selected plan" },
         { status: 500 }
@@ -132,6 +143,7 @@ export async function POST(request: Request) {
     )
 
     if (!planPrice?.stripe_price_id || !planIsCheckoutEligible) {
+      logWarn("StripeCheckout", "plan_not_available", checkoutLogContext)
       return NextResponse.json(
         { error: "Selected plan is not available for checkout" },
         { status: 400 }
@@ -147,7 +159,7 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (subscriptionError) {
-      console.error("Stripe checkout subscription lookup error:", subscriptionError.message)
+      logError("StripeCheckout", "subscription_lookup_failed", subscriptionError, checkoutLogContext)
       return NextResponse.json(
         { error: "Failed to verify current subscription" },
         { status: 500 }
@@ -155,6 +167,11 @@ export async function POST(request: Request) {
     }
 
     if (existingSubscription) {
+      logWarn("StripeCheckout", "existing_subscription_found", {
+        ...checkoutLogContext,
+        subscriptionId: existingSubscription.id,
+        subscriptionStatus: existingSubscription.status,
+      })
       return NextResponse.json(
         { error: "Use the billing portal to manage your existing subscription" },
         { status: 409 }
@@ -169,7 +186,7 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (profileError) {
-      console.error("Stripe checkout profile lookup error:", profileError.message)
+      logError("StripeCheckout", "profile_lookup_failed", profileError, checkoutLogContext)
       return NextResponse.json(
         { error: "Failed to load billing profile" },
         { status: 500 }
@@ -177,6 +194,7 @@ export async function POST(request: Request) {
     }
 
     if (!profile) {
+      logWarn("StripeCheckout", "profile_missing", checkoutLogContext)
       return NextResponse.json(
         { error: "Billing profile was not found" },
         { status: 400 }
@@ -187,6 +205,7 @@ export async function POST(request: Request) {
     let customerId = await getUsableStripeCustomerId(stripe, storedCustomerId)
 
     if (!customerId) {
+      logInfo("StripeCheckout", "customer_create_started", checkoutLogContext)
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
@@ -200,7 +219,10 @@ export async function POST(request: Request) {
           await persistStripeCustomerId(supabase, user.id, storedCustomerId, customer.id)
         )
       } catch (error) {
-        console.error("Stripe checkout customer persistence error:", error)
+        logError("StripeCheckout", "customer_persist_failed", error, {
+          ...checkoutLogContext,
+          stripeCustomerId: customer.id,
+        })
         return NextResponse.json(
           { error: "Failed to prepare billing profile" },
           { status: 500 }
@@ -208,11 +230,17 @@ export async function POST(request: Request) {
       }
 
       if (!customerId) {
+        logError("StripeCheckout", "customer_prepare_failed", new Error("Missing usable Stripe customer"), checkoutLogContext)
         return NextResponse.json(
           { error: "Failed to prepare billing profile" },
           { status: 500 }
         )
       }
+    } else {
+      logInfo("StripeCheckout", "customer_reused", {
+        ...checkoutLogContext,
+        stripeCustomerId: customerId,
+      })
     }
 
     // Create checkout session
@@ -234,10 +262,15 @@ export async function POST(request: Request) {
         plan_price_id: planPrice.id,
       },
     })
+    logInfo("StripeCheckout", "session_created", {
+      ...checkoutLogContext,
+      stripeCustomerId: customerId,
+      checkoutSessionId: session.id,
+    })
 
     return NextResponse.json({ url: session.url })
   } catch (error) {
-    console.error("Stripe checkout error:", error)
+    logError("StripeCheckout", "request_failed", error, requestLogContext)
     return NextResponse.json(
       { error: "Failed to create checkout session" },
       { status: 500 }

@@ -35,6 +35,13 @@ import {
   findLatestActiveDocument,
   getActiveDocumentIdentityForDocumentType,
 } from "@/lib/active-document-policy"
+import {
+  buildRequestLogContext,
+  logError,
+  logInfo,
+  logWarn,
+  type LogContext,
+} from "@/lib/logger"
 
 export const maxDuration = 540
 
@@ -55,6 +62,7 @@ async function fetchQueueRow(supabase: SB, projectId: string, userId: string) {
 }
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   const supabase = await createClient()
   const queueSupabase = createServiceClient()
 
@@ -63,20 +71,27 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser()
 
   if (!user) {
+    logWarn("GenerateAll", "unauthorized", requestLogContext)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const userLogContext = { ...requestLogContext, userId: user.id }
 
   let body: { projectId?: string }
   try {
     body = await request.json()
   } catch {
+    logWarn("GenerateAll", "invalid_json", userLogContext)
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
   }
 
   const { projectId } = body
   if (!projectId) {
+    logWarn("GenerateAll", "missing_project_id", userLogContext)
     return NextResponse.json({ error: "projectId is required" }, { status: 400 })
   }
+
+  const baseLogContext = { ...userLogContext, projectId }
 
   const { data: project } = await supabase
     .from("projects")
@@ -86,19 +101,33 @@ export async function POST(request: Request) {
     .single()
 
   if (!project) {
+    logWarn("GenerateAll", "project_not_found", baseLogContext)
     return NextResponse.json({ error: "Project not found" }, { status: 404 })
   }
 
   const queueRow = await fetchQueueRow(queueSupabase, projectId, user.id)
   if (!queueRow) {
+    logWarn("GenerateAll", "queue_not_found", baseLogContext)
     return NextResponse.json({ error: "No queue found: call /start first" }, { status: 404 })
   }
 
+  const queueLogContext = {
+    ...baseLogContext,
+    queueId: queueRow.id,
+    runId: getQueueRunId(queueRow),
+  }
+
   if (queueRow.status === "cancelled") {
+    logInfo("GenerateAll", "queue_already_cancelled", queueLogContext)
     return NextResponse.json({ success: true, status: "cancelled" })
   }
 
   const isOnboardingQueue = isOnboardingGenerationQueue(queueRow)
+  logInfo("GenerateAll", "queue_execution_started", {
+    ...queueLogContext,
+    isOnboardingQueue,
+    previousStatus: queueRow.status,
+  })
 
   await queueSupabase
     .from("generation_queues")
@@ -111,6 +140,7 @@ export async function POST(request: Request) {
   while (true) {
     const freshQueueRow = await fetchQueueRow(queueSupabase, projectId, user.id)
     if (!freshQueueRow || freshQueueRow.status === "cancelled") {
+      logInfo("GenerateAll", "queue_cancelled", queueLogContext)
       const items = await getGenerationQueueItems(queueSupabase, activeQueueRow)
       const cancelledItems = await Promise.all(
         items
@@ -136,12 +166,22 @@ export async function POST(request: Request) {
 
     const recoveredItems = await recoverStaleGenerationQueueItems(queueSupabase, items)
     if (recoveredItems.length > 0) {
+      logWarn("GenerateAll", "stale_items_recovered", {
+        ...queueLogContext,
+        recoveredCount: recoveredItems.length,
+        itemIds: recoveredItems.map((item) => item.id),
+      })
       items = mergeUpdatedItems(items, recoveredItems)
       await syncGenerationQueueJson(queueSupabase, activeQueueRow, items)
     }
 
     const blockedItems = getBlockedItems(items)
     if (blockedItems.length > 0) {
+      logWarn("GenerateAll", "items_blocked", {
+        ...queueLogContext,
+        blockedCount: blockedItems.length,
+        docTypes: blockedItems.map((item) => item.doc_type),
+      })
       const updatedBlocked = await Promise.all(
         blockedItems.map((item) =>
           updateGenerationQueueItem(queueSupabase, item, {
@@ -171,6 +211,7 @@ export async function POST(request: Request) {
           queueRow: activeQueueRow,
           project,
           isOnboardingQueue,
+          logContext: queueLogContext,
         }),
       ),
     )
@@ -184,6 +225,11 @@ export async function POST(request: Request) {
 
   const finalItems = await getGenerationQueueItems(queueSupabase, activeQueueRow)
   const finalStatus = computeQueueStatus(finalItems)
+  logInfo("GenerateAll", "queue_execution_finished", {
+    ...queueLogContext,
+    finalStatus,
+    itemCount: finalItems.length,
+  })
   await syncGenerationQueueJson(queueSupabase, activeQueueRow, finalItems, {
     status: finalStatus,
     completed_at: finalStatus === "running" ? null : new Date().toISOString(),
@@ -207,6 +253,7 @@ async function executeQueueItem({
   queueRow,
   project,
   isOnboardingQueue,
+  logContext,
 }: {
   billingSupabase: SB
   documentSupabase: SB
@@ -215,9 +262,26 @@ async function executeQueueItem({
   queueRow: GenerationQueueRow
   project: { description: string; name: string }
   isOnboardingQueue: boolean
+  logContext: LogContext
 }) {
+  const itemLogContext = {
+    ...logContext,
+    itemId: item.id,
+    docType: item.doc_type,
+    queueId: item.queue_id,
+    runId: item.run_id,
+  }
   const claimed = await claimGenerationQueueItem(queueSupabase, item)
-  if (!claimed) return null
+  if (!claimed) {
+    logInfo("GenerateAll", "item_claim_skipped", itemLogContext)
+    return null
+  }
+
+  logInfo("GenerateAll", "item_claimed", {
+    ...itemLogContext,
+    attempt: claimed.attempt,
+    maxAttempts: claimed.max_attempts,
+  })
 
   const isBundledItem =
     isOnboardingQueue &&
@@ -225,6 +289,7 @@ async function executeQueueItem({
     claimed.source === "onboarding"
 
   if (claimed.doc_type === "launch") {
+    logInfo("GenerateAll", "item_skipped_archived_doc_type", itemLogContext)
     return finishGeneratingItem(queueSupabase, claimed, {
       status: "skipped",
       stage_message: null,
@@ -245,6 +310,11 @@ async function executeQueueItem({
   if (identity) {
     const existing = await findLatestActiveDocument(documentSupabase, claimed.project_id, identity)
     if (existing) {
+      logInfo("GenerateAll", "item_skipped_existing_output", {
+        ...itemLogContext,
+        outputTable: existing.outputTable,
+        outputId: existing.outputId,
+      })
       return finishGeneratingItem(queueSupabase, claimed, {
         status: "skipped",
         stage_message: null,
@@ -258,6 +328,11 @@ async function executeQueueItem({
   }
 
   if (shouldChargeCredits) {
+    logInfo("GenerateAll", "item_credit_charge_started", {
+      ...itemLogContext,
+      creditCost,
+      action,
+    })
     const { data: consumed, error: consumeError } = await billingSupabase.rpc("consume_credits", {
       p_user_id: claimed.user_id,
       p_amount: creditCost,
@@ -266,6 +341,11 @@ async function executeQueueItem({
     })
 
     if (consumeError || !consumed) {
+      logWarn("GenerateAll", "item_credit_charge_failed", {
+        ...itemLogContext,
+        creditCost,
+        consumed: Boolean(consumed),
+      }, consumeError)
       return finishGeneratingItem(queueSupabase, claimed, {
         status: "error",
         stage_message: null,
@@ -275,6 +355,10 @@ async function executeQueueItem({
     }
 
     charged = true
+    logInfo("GenerateAll", "item_credit_charged", {
+      ...itemLogContext,
+      creditCost,
+    })
     await updateGenerationQueueItem(queueSupabase, claimed, {
       credit_cost: creditCost,
       credit_status: "charged",
@@ -286,6 +370,14 @@ async function executeQueueItem({
 
   while (attempt < maxAttempts) {
     attempt += 1
+    logInfo("GenerateAll", "item_attempt_started", {
+      ...itemLogContext,
+      attempt,
+      maxAttempts,
+      model,
+      creditCost,
+      bundled: isBundledItem,
+    })
     await updateGenerationQueueItem(queueSupabase, claimed, {
       attempt,
       stage_message: attempt > 1 ? `Retrying (${attempt}/${maxAttempts})...` : "Generating...",
@@ -293,6 +385,7 @@ async function executeQueueItem({
 
     try {
       if (await isQueueCancelled(queueSupabase, claimed)) {
+        logInfo("GenerateAll", "item_cancelled_before_generation", itemLogContext)
         return cancelClaimedItemAfterAcknowledgement({
           billingSupabase,
           queueSupabase,
@@ -307,12 +400,20 @@ async function executeQueueItem({
         supabase: documentSupabase,
         projectId: claimed.project_id,
         project,
+        logContext: itemLogContext,
       })
 
       if (!output?.outputTable || !output.outputId) {
         throw new Error(`Generation did not return a saved output for ${claimed.doc_type}`)
       }
 
+      logInfo("GenerateAll", "item_generation_succeeded", {
+        ...itemLogContext,
+        attempt,
+        outputTable: output.outputTable,
+        outputId: output.outputId,
+        skippedExisting: Boolean(output.skippedExisting),
+      })
       return finishGeneratingItem(queueSupabase, claimed, {
         status: output.skippedExisting ? "skipped" : "done",
         stage_message: null,
@@ -330,12 +431,23 @@ async function executeQueueItem({
       })
     } catch (error) {
       if (attempt < maxAttempts) {
+        logWarn("GenerateAll", "item_attempt_failed_retrying", {
+          ...itemLogContext,
+          attempt,
+          maxAttempts,
+        }, error)
         await delay(1000 * attempt)
         continue
       }
 
       const errorMessage = error instanceof Error ? error.message : "Generation failed"
       const wasCancelled = await isQueueCancelled(queueSupabase, claimed)
+      logError("GenerateAll", "item_generation_failed", error, {
+        ...itemLogContext,
+        attempt,
+        maxAttempts,
+        wasCancelled,
+      })
       let creditStatus = claimed.credit_status
       if (charged) {
         const refund = await refundGenerationQueueItemCredits(
@@ -346,7 +458,18 @@ async function executeQueueItem({
             : `${claimed.label} failed: credits refunded (Generate All)`,
         )
         if (refund.error) {
-          console.error("[GenerateAll] Credit refund failed:", refund.error)
+          logError("GenerateAll", "item_credit_refund_failed", refund.error, {
+            ...itemLogContext,
+            creditCost,
+            wasCancelled,
+          })
+        }
+        if (refund.refunded) {
+          logInfo("GenerateAll", "item_credit_refunded", {
+            ...itemLogContext,
+            creditCost,
+            wasCancelled,
+          })
         }
         creditStatus = refund.refunded ? "refunded" : "refund_failed"
       }
@@ -444,7 +567,20 @@ async function cancelClaimedItemAfterAcknowledgement({
       `${item.label} cancelled: credits refunded (Generate All)`,
     )
     if (refund.error) {
-      console.error("[GenerateAll] Credit refund failed:", refund.error)
+      logError("GenerateAll", "item_credit_refund_failed", refund.error, {
+        itemId: item.id,
+        docType: item.doc_type,
+        queueId: item.queue_id,
+        runId: item.run_id,
+      })
+    }
+    if (refund.refunded) {
+      logInfo("GenerateAll", "item_credit_refunded", {
+        itemId: item.id,
+        docType: item.doc_type,
+        queueId: item.queue_id,
+        runId: item.run_id,
+      })
     }
     creditStatus = refund.refunded ? "refunded" : "refund_failed"
   }

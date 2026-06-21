@@ -7,6 +7,7 @@ import { buildAppGenerationPrompt } from "@/lib/prompts"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import { refundCreditsServerSide } from "@/lib/credits"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 const APP_TYPE_CREDITS: Record<string, number> = {
   static: CREDIT_COSTS["app-static"],
@@ -18,6 +19,7 @@ const APP_TYPE_CREDITS: Record<string, number> = {
 export const maxDuration = 800
 
 export async function POST(request: Request) {
+  const requestLogContext = buildRequestLogContext(request)
   const timer = new MetricsTimer()
   let statusCode = 200
   let errorType: string | undefined
@@ -36,18 +38,24 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logWarn("GenerateApp", "unauthorized", requestLogContext)
       statusCode = 401
       errorType = "unauthorized"
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     userId = user.id
+    const userLogContext = { ...requestLogContext, userId }
     const rateLimit = checkRateLimit({
       key: `generate-app:${user.id}:${getClientIp(request)}`,
       limit: 6,
       windowMs: 60_000,
     })
     if (rateLimit.limited) {
+      logWarn("GenerateApp", "rate_limited", {
+        ...userLogContext,
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      })
       statusCode = 429
       errorType = "rate_limited"
       errorMessage = "Too many app generation requests"
@@ -63,8 +71,16 @@ export async function POST(request: Request) {
     const body = await request.json()
     projectId = body.projectId
     const { appType, idea, name } = body
+    const appLogContext = { ...userLogContext, projectId, appType }
 
     if (!projectId || !appType || !idea || !name) {
+      logWarn("GenerateApp", "validation_failed", {
+        ...appLogContext,
+        hasProjectId: Boolean(projectId),
+        hasAppType: Boolean(appType),
+        hasIdea: Boolean(idea),
+        hasName: Boolean(name),
+      })
       statusCode = 400
       errorType = "validation_error"
       errorMessage = "projectId, appType, idea, and name are required"
@@ -76,6 +92,7 @@ export async function POST(request: Request) {
 
     // Validate app type
     if (!APP_TYPE_CREDITS[appType]) {
+      logWarn("GenerateApp", "invalid_app_type", appLogContext)
       statusCode = 400
       errorType = "validation_error"
       errorMessage = `Invalid app type: ${appType}`
@@ -94,6 +111,7 @@ export async function POST(request: Request) {
       .single()
 
     if (!project) {
+      logWarn("GenerateApp", "project_not_found", appLogContext)
       statusCode = 404
       errorType = "not_found"
       errorMessage = "Project not found"
@@ -116,6 +134,10 @@ export async function POST(request: Request) {
     })
 
     if (!consumed) {
+      logWarn("GenerateApp", "insufficient_credits", {
+        ...appLogContext,
+        creditCost,
+      })
       statusCode = 402
       errorType = "insufficient_credits"
       errorMessage = "Insufficient credits"
@@ -172,6 +194,7 @@ export async function POST(request: Request) {
       .single()
 
     if (deployError) {
+      logError("GenerateApp", "deployment_insert_failed", deployError, appLogContext)
       statusCode = 500
       errorType = "server_error"
       errorMessage = deployError.message
@@ -190,6 +213,11 @@ export async function POST(request: Request) {
     aiSource = "anthropic"
 
     try {
+      logInfo("GenerateApp", "generation_started", {
+        ...appLogContext,
+        model: modelUsed,
+        source: aiSource,
+      })
       if (!process.env.ANTHROPIC_API_KEY) {
         throw new Error("Anthropic API key not configured")
       }
@@ -225,13 +253,24 @@ export async function POST(request: Request) {
         })
         .eq("id", deployment.id)
 
+      logInfo("GenerateApp", "generation_completed", {
+        ...appLogContext,
+        deploymentId: deployment.id,
+        model: modelUsed,
+        source: aiSource,
+      })
       return NextResponse.json({
         deploymentId: deployment.id,
         status: "generated",
         message: "App code generated successfully. Deployment pending.",
       })
     } catch (genError) {
-      console.error("Code generation error:", genError)
+      logError("GenerateApp", "generation_failed", genError, {
+        ...appLogContext,
+        deploymentId: deployment.id,
+        model: modelUsed,
+        source: aiSource,
+      })
 
       // Update deployment as failed
       await supabase
@@ -252,14 +291,18 @@ export async function POST(request: Request) {
         action: `app-${appType}`,
         description: `${appType} app generation failed: credits refunded`,
       })
-      if (refund.error) console.error("[GenerateApp] Credit refund failed:", refund.error)
+      if (refund.error) logError("GenerateApp", "credit_refund_failed", refund.error, appLogContext)
       return NextResponse.json(
         { error: "Failed to generate app. Credits were refunded." },
         { status: 500 }
       )
     }
   } catch (error) {
-    console.error("App generation error:", error)
+    logError("GenerateApp", "request_failed", error, {
+      ...requestLogContext,
+      userId,
+      projectId,
+    })
     statusCode = 500
     errorType = getErrorType(500, error)
     errorMessage = getErrorMessage(error)
@@ -270,7 +313,11 @@ export async function POST(request: Request) {
         action: "app-generation",
         description: "App generation failed: credits refunded",
       })
-      if (refund.error) console.error("[GenerateApp] Credit refund failed:", refund.error)
+      if (refund.error) logError("GenerateApp", "credit_refund_failed", refund.error, {
+        ...requestLogContext,
+        userId,
+        projectId,
+      })
     }
     return NextResponse.json(
       { error: "Internal server error" },

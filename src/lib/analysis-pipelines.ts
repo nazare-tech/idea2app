@@ -10,6 +10,7 @@ import {
 } from "@/lib/openrouter-timeout"
 import { buildProductPlanPromptRequest } from "@/lib/product-plan-prompt-request"
 import { buildFirstVersionPlanPromptRequest } from "@/lib/first-version-plan-prompt-request"
+import { logError, logInfo, logWarn } from "@/lib/logger"
 
 // Re-use the same OpenRouter client pattern from openrouter.ts
 const openrouter = new OpenAI({
@@ -130,38 +131,34 @@ export async function runCompetitiveAnalysis(
 
   // Step 1: Perplexity — find competitors with strategic reasoning
   try {
-    console.log(
-      "[CompetitiveAnalysis] Step 1: Searching competitors with Perplexity"
-    )
+    logInfo("CompetitiveAnalysis", "perplexity_search_started", { model })
     perplexityData = await searchCompetitors(input.idea, input.name)
-    console.log(
-      `[CompetitiveAnalysis] Found ${perplexityData.competitors.length} competitors`
-    )
+    logInfo("CompetitiveAnalysis", "perplexity_search_succeeded", {
+      model,
+      competitorCount: perplexityData.competitors.length,
+    })
   } catch (err) {
     // Non-fatal: if Perplexity fails, synthesize from idea alone
-    console.warn(
-      "[CompetitiveAnalysis] Perplexity step failed, continuing without:",
-      err
-    )
+    logWarn("CompetitiveAnalysis", "perplexity_search_failed_nonfatal", { model }, err)
   }
   callbacks?.onStage?.("Extracting competitor details...", 2, 4)
 
   // Step 2: Tavily — extract factual info from competitor URLs
   if (perplexityData.competitors.length > 0) {
     try {
-      console.log(
-        "[CompetitiveAnalysis] Step 2: Extracting URL content with Tavily"
-      )
       const urls = perplexityData.competitors.map((c) => c.url).filter(Boolean)
+      logInfo("CompetitiveAnalysis", "tavily_extract_started", {
+        model,
+        urlCount: urls.length,
+      })
       tavilyData = await extractCompetitorInfo(urls)
-      console.log(
-        `[CompetitiveAnalysis] Extracted ${tavilyData.results.length} URLs`
-      )
+      logInfo("CompetitiveAnalysis", "tavily_extract_succeeded", {
+        model,
+        resultCount: tavilyData.results.length,
+        failedResultCount: tavilyData.failed_results.length,
+      })
     } catch (err) {
-      console.warn(
-        "[CompetitiveAnalysis] Tavily step failed, continuing without:",
-        err
-      )
+      logWarn("CompetitiveAnalysis", "tavily_extract_failed_nonfatal", { model }, err)
     }
   }
   callbacks?.onStage?.("Writing competitive analysis...", 3, 4)
@@ -173,7 +170,7 @@ export async function runCompetitiveAnalysis(
   )
 
   // Step 4: OpenRouter synthesis — produce the final report
-  console.log("[CompetitiveAnalysis] Step 3: Synthesizing with OpenRouter")
+  logInfo("CompetitiveAnalysis", "openrouter_synthesis_started", { model })
 
   let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
   try {
@@ -195,12 +192,17 @@ export async function runCompetitiveAnalysis(
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal() })
   } catch (error) {
+    logError("CompetitiveAnalysis", "openrouter_synthesis_failed", error, { model })
     rethrowOpenRouterTimeout(error, "Market Research")
   }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter synthesis")
+  logInfo("CompetitiveAnalysis", "openrouter_synthesis_succeeded", {
+    model,
+    contentLength: content.length,
+  })
   callbacks?.onStage?.("Finalizing analysis...", 4, 4)
 
   return { content, source: "inhouse", model }
@@ -214,6 +216,10 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
   callbacks?.onStage?.("Writing product plan...", 1, 2)
   let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
   try {
+    logInfo("ProductPlan", "openrouter_generation_started", {
+      model: request.model,
+      hasCompetitiveAnalysis: Boolean(input.competitiveAnalysis),
+    })
     completion = await openrouter.chat.completions.create({
       model: request.model,
       messages: [
@@ -225,12 +231,17 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal(OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS) })
   } catch (error) {
+    logError("ProductPlan", "openrouter_generation_failed", error, { model: request.model })
     rethrowOpenRouterTimeout(error, "Product Plan", OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS)
   }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for Product Plan")
+  logInfo("ProductPlan", "openrouter_generation_succeeded", {
+    model: request.model,
+    contentLength: content.length,
+  })
   callbacks?.onStage?.("Finalizing product plan...", 2, 2)
 
   return { content, source: "inhouse", model: request.model }
@@ -247,6 +258,10 @@ export async function runMVPPlan(
   callbacks?.onStage?.("Writing first-version plan...", 1, 2)
   let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
   try {
+    logInfo("MVPPlan", "openrouter_generation_started", {
+      model: request.model,
+      hasProductPlan: Boolean(input.prd),
+    })
     completion = await openrouter.chat.completions.create({
       model: request.model,
       messages: [
@@ -258,12 +273,17 @@ export async function runMVPPlan(
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal(OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS) })
   } catch (error) {
+    logError("MVPPlan", "openrouter_generation_failed", error, { model: request.model })
     rethrowOpenRouterTimeout(error, "First Version Plan", OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS)
   }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for First Version Plan")
+  logInfo("MVPPlan", "openrouter_generation_succeeded", {
+    model: request.model,
+    contentLength: content.length,
+  })
   callbacks?.onStage?.("Finalizing first-version plan...", 2, 2)
 
   return { content, source: "inhouse", model: request.model }
@@ -280,6 +300,10 @@ export async function runTechSpec(
   callbacks?.onStage?.("Writing technical specifications...", 1, 2)
   let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
   try {
+    logInfo("TechSpec", "openrouter_generation_started", {
+      model,
+      hasProductPlan: Boolean(input.prd),
+    })
     completion = await openrouter.chat.completions.create({
       model,
       messages: [
@@ -291,12 +315,17 @@ export async function runTechSpec(
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal() })
   } catch (error) {
+    logError("TechSpec", "openrouter_generation_failed", error, { model })
     rethrowOpenRouterTimeout(error, "Technical Specifications")
   }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for Tech Spec")
+  logInfo("TechSpec", "openrouter_generation_succeeded", {
+    model,
+    contentLength: content.length,
+  })
   callbacks?.onStage?.("Finalizing tech spec...", 2, 2)
 
   return { content, source: "inhouse", model }
@@ -313,6 +342,7 @@ export async function runLaunchPlan(
   callbacks?.onStage?.("Writing launch plan...", 1, 2)
   let completion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
   try {
+    logInfo("LaunchPlan", "openrouter_generation_started", { model })
     completion = await openrouter.chat.completions.create({
       model,
       messages: [
@@ -324,12 +354,17 @@ export async function runLaunchPlan(
       stream: callbacks?.onToken ? true : false,
     }, { signal: createOpenRouterLongTextSignal() })
   } catch (error) {
+    logError("LaunchPlan", "openrouter_generation_failed", error, { model })
     rethrowOpenRouterTimeout(error, "Launch Plan")
   }
 
   const content = await consumeStream(completion, callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for Launch Plan")
+  logInfo("LaunchPlan", "openrouter_generation_succeeded", {
+    model,
+    contentLength: content.length,
+  })
   callbacks?.onStage?.("Finalizing launch plan...", 2, 2)
 
   return { content, source: "inhouse", model }
