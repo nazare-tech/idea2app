@@ -71,6 +71,51 @@ test("logError normalizes errors without serializing raw objects", () => {
   assert.equal(payload.context.imageUrl, "[redacted]")
 })
 
+test("logError redacts sensitive values embedded in error messages", () => {
+  const messages: string[] = []
+  console.error = (message?: unknown) => {
+    messages.push(String(message))
+  }
+
+  const error = new Error(
+    [
+      "OpenRouter failed",
+      "Authorization: Bearer sk-or-v1-secret-token",
+      "api_key=or-secret-value",
+      "Cookie: sb-access-token=session-secret; session=other-secret",
+      "founder@example.com",
+      "https://storage.example/file.png?token=url-token&signature=url-signature",
+    ].join(" "),
+  )
+
+  logError("Mockup", "provider_failed", error)
+
+  assert.equal(messages.length, 1)
+  const payload = JSON.parse(messages[0])
+  assert.match(payload.error.message, /\[redacted\]/)
+  assert.doesNotMatch(payload.error.message, /sk-or-v1-secret-token/)
+  assert.doesNotMatch(payload.error.message, /or-secret-value/)
+  assert.doesNotMatch(payload.error.message, /sb-access-token=session-secret/)
+  assert.doesNotMatch(payload.error.message, /other-secret/)
+  assert.doesNotMatch(payload.error.message, /founder@example\.com/)
+  assert.doesNotMatch(payload.error.message, /url-token/)
+  assert.doesNotMatch(payload.error.message, /url-signature/)
+})
+
+test("normalizeLogError redacts provider JSON bodies embedded in messages", () => {
+  const normalized = normalizeLogError(
+    new Error(
+      'Provider 400 request body: {"idea":"private idea","prompt":"build private app","messages":[{"role":"user","content":"secret content"}],"email":"founder@example.com"}',
+    ),
+  )
+
+  assert.match(normalized.message, /\[redacted\]/)
+  assert.doesNotMatch(normalized.message, /private idea/)
+  assert.doesNotMatch(normalized.message, /build private app/)
+  assert.doesNotMatch(normalized.message, /secret content/)
+  assert.doesNotMatch(normalized.message, /founder@example\.com/)
+})
+
 test("sanitizeLogContext truncates long strings and arrays", () => {
   const sanitized = sanitizeLogContext({
     label: "a".repeat(1_500),
@@ -78,6 +123,7 @@ test("sanitizeLogContext truncates long strings and arrays", () => {
     content: "private document text",
     contentLength: 42,
     contentType: "image/png",
+    detail: "Failed for user founder@example.com with token=abc123",
   })
 
   assert.equal(typeof sanitized.label, "string")
@@ -86,6 +132,7 @@ test("sanitizeLogContext truncates long strings and arrays", () => {
   assert.equal(sanitized.content, "[redacted]")
   assert.equal(sanitized.contentLength, 42)
   assert.equal(sanitized.contentType, "image/png")
+  assert.equal(sanitized.detail, "Failed for user [redacted] with token=[redacted]")
 })
 
 test("normalizeLogError accepts unknown thrown values", () => {

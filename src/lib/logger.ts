@@ -13,6 +13,7 @@ const REDACTED = "[redacted]"
 const MAX_STRING_LENGTH = 1_000
 const MAX_ARRAY_LENGTH = 10
 const MAX_OBJECT_DEPTH = 5
+const SENSITIVE_VALUE = "[redacted]"
 
 const SENSITIVE_KEY_PARTS = [
   "password",
@@ -31,7 +32,28 @@ const SENSITIVE_KEY_PARTS = [
   "htmlurl",
   "base64",
   "rawpayload",
+  "messages",
 ]
+
+const SENSITIVE_MESSAGE_KEY_PATTERN =
+  "password|secret|access[-_ ]?token|refresh[-_ ]?token|token|x[-_ ]?api[-_ ]?key|api[-_ ]?key|apikey|authorization|cookie|signature|session|prompt|body|email|signed[-_ ]?url|image[-_ ]?url|html[-_ ]?url|base64|raw[-_ ]?payload|content|messages|idea"
+
+const SENSITIVE_KEYED_BLOCK_PATTERN = new RegExp(
+  `(["']?)(${SENSITIVE_MESSAGE_KEY_PATTERN})\\1\\s*([:=])\\s*(\\{[^{}]*\\}|\\[[^\\[\\]]*\\])`,
+  "gi",
+)
+const SENSITIVE_KEYED_DOUBLE_QUOTED_PATTERN = new RegExp(
+  `(["']?)(${SENSITIVE_MESSAGE_KEY_PATTERN})\\1\\s*([:=])\\s*"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"`,
+  "gi",
+)
+const SENSITIVE_KEYED_SINGLE_QUOTED_PATTERN = new RegExp(
+  `(["']?)(${SENSITIVE_MESSAGE_KEY_PATTERN})\\1\\s*([:=])\\s*'[^'\\\\]*(?:\\\\.[^'\\\\]*)*'`,
+  "gi",
+)
+const SENSITIVE_KEYED_BARE_PATTERN = new RegExp(
+  `(["']?)(${SENSITIVE_MESSAGE_KEY_PATTERN})\\1\\s*([:=])\\s*[^\\s,;}]+`,
+  "gi",
+)
 
 function isSensitiveKey(key: string): boolean {
   const normalized = key.replace(/[-_]/g, "").toLowerCase()
@@ -46,6 +68,36 @@ function truncateString(value: string): string {
   return value.length > MAX_STRING_LENGTH ? value.slice(0, MAX_STRING_LENGTH) : value
 }
 
+function sanitizeLogMessage(value: string): string {
+  return truncateString(
+    value
+      .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, `Bearer ${SENSITIVE_VALUE}`)
+      .replace(/\b(?:sk|pk|rk)_(?:live|test|proj)_[A-Za-z0-9._-]+/g, SENSITIVE_VALUE)
+      .replace(/\bsk-or-v1-[A-Za-z0-9._-]+/g, SENSITIVE_VALUE)
+      .replace(/\bwhsec_[A-Za-z0-9._-]+/g, SENSITIVE_VALUE)
+      .replace(
+        /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
+        SENSITIVE_VALUE,
+      )
+      .replace(
+        /https?:\/\/[^\s"'<>]*(?:token|signature|signed|X-Amz-Signature)[^\s"'<>]*/gi,
+        SENSITIVE_VALUE,
+      )
+      .replace(SENSITIVE_KEYED_BLOCK_PATTERN, (_match, quote, key, separator) =>
+        `${quote}${key}${quote}${separator}${SENSITIVE_VALUE}`,
+      )
+      .replace(SENSITIVE_KEYED_DOUBLE_QUOTED_PATTERN, (_match, quote, key, separator) =>
+        `${quote}${key}${quote}${separator}"${SENSITIVE_VALUE}"`,
+      )
+      .replace(SENSITIVE_KEYED_SINGLE_QUOTED_PATTERN, (_match, quote, key, separator) =>
+        `${quote}${key}${quote}${separator}'${SENSITIVE_VALUE}'`,
+      )
+      .replace(SENSITIVE_KEYED_BARE_PATTERN, (_match, quote, key, separator) =>
+        `${quote}${key}${quote}${separator}${SENSITIVE_VALUE}`,
+      ),
+  )
+}
+
 function sanitizeValue(key: string, value: unknown, depth: number): unknown {
   if (isSensitiveKey(key)) {
     return REDACTED
@@ -56,7 +108,7 @@ function sanitizeValue(key: string, value: unknown, depth: number): unknown {
   }
 
   if (typeof value === "string") {
-    return truncateString(value)
+    return sanitizeLogMessage(value)
   }
 
   if (
@@ -107,14 +159,14 @@ function readNumberProperty(value: object, property: string): number | undefined
 
 function readStringProperty(value: object, property: string): string | undefined {
   const raw = (value as Record<string, unknown>)[property]
-  return typeof raw === "string" ? truncateString(raw) : undefined
+  return typeof raw === "string" ? sanitizeLogMessage(raw) : undefined
 }
 
 export function normalizeLogError(error: unknown): NormalizedLogError {
   if (error instanceof Error) {
     const normalized: NormalizedLogError = {
       name: error.name,
-      message: truncateString(error.message),
+      message: sanitizeLogMessage(error.message),
     }
     const status = readNumberProperty(error, "status")
     const code = readStringProperty(error, "code")
@@ -136,7 +188,7 @@ export function normalizeLogError(error: unknown): NormalizedLogError {
   }
 
   return {
-    message: truncateString(String(error)),
+    message: sanitizeLogMessage(String(error)),
   }
 }
 
