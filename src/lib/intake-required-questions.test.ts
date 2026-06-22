@@ -67,6 +67,31 @@ test("validateRequiredPlatformAnswer: accepts one canonical platform selection",
   assert.equal(error, null)
 })
 
+test("validateRequiredPlatformAnswer: accepts legacy labels when canonical ids match", () => {
+  const questions = ensureRequiredPlatformQuestion(baseQuestions).map((question) =>
+    question.id === REQUIRED_PLATFORM_QUESTION.id
+      ? {
+          ...question,
+          question: "Where should the first version primarily live?",
+          options: [
+            { id: "desktop-web", label: "Desktop web" },
+            { id: "mobile-web", label: "Mobile web" },
+            { id: "native-mobile-app", label: "Native mobile app" },
+            { id: "native-desktop-app", label: "Native desktop app" },
+          ],
+        }
+      : question
+  )
+  const error = validateRequiredPlatformAnswer(questions, [
+    { questionId: "target-audience", selectedOptionIds: ["founders"] },
+    { questionId: "core-workflow", selectedOptionIds: ["planning"] },
+    { questionId: "business-model", selectedOptionIds: ["subscription"] },
+    { questionId: "primary-platform", selectedOptionIds: ["desktop-web"] },
+  ])
+
+  assert.equal(error, null)
+})
+
 test("validateRequiredPlatformAnswer: rejects missing and multi-selected platform answers", () => {
   const questions = ensureRequiredPlatformQuestion(baseQuestions)
 

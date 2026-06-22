@@ -21,7 +21,7 @@ The JSON must match this shape:
 
 Rules:
 - Generate exactly 4 or 5 questions.
-- One question must ask where the first version should primarily live. It must be single-select with exactly these chip labels: "Desktop web", "Mobile web", "Native mobile app", "Native desktop app". Do not include combined platform choices like "Both" or "Responsive".
+- One question must ask where people will use the first version. It must be single-select with exactly these chip labels: "Desktop website", "Mobile website", "iOS / Android app", "Mac / Windows app". Do not include combined platform choices like "Both" or "Responsive".
 - Cover target audience, problem intensity, key workflow/use case, business model, launch priority, and primary platform when relevant.
 - Use "single" when one chip should be selected and "multiple" when several chips can be selected.
 - Never use standalone text input questions.

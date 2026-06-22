@@ -14,6 +14,7 @@
 - Keep code simple and well-commented so I can learn from it
 - If something breaks, explain what went wrong in plain English
 - If you make architectural changes or add new dependencies, you must update `PROJECT_CONTEXT.md` to keep it current.
+- Before handling raw research transcripts, meeting transcripts, or pasted meeting notes, read `docs/operating-system/transcript-sanitization-protocol.md`. Ask for missing transcript metadata first: when it happened, the research participant name for research, and the meeting title/attendees for meetings.
 
 ## How I Want You To Work
 

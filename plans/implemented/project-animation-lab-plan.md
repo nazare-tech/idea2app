@@ -159,7 +159,7 @@ Design choices:
 7. Review and verification
    - Run focused tests where added, `npm run typecheck`, and a relevant lint/test subset.
    - Do browser verification at `http://localhost:3000/dev/project-animation-lab`.
-   - Record review/security notes in `plans/project-animation-lab-review.md` if implementation proceeds.
+   - Record review/security notes in `plans/implemented/project-animation-lab-review.md` if implementation proceeds.
 
 ## Milestones
 - Local-only shell: the route is accessible on localhost and inaccessible outside dev/local conditions.

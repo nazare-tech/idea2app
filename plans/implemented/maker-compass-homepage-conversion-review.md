@@ -3,7 +3,7 @@
 ## Scope
 - `src/app/page.tsx`
 - `src/components/landing/landing-idea-capture.tsx`
-- `plans/maker-compass-homepage-conversion-plan.md`
+- `plans/implemented/maker-compass-homepage-conversion-plan.md`
 
 ## Verification
 - `npm run typecheck` passed.

@@ -41,13 +41,13 @@ const questions: IntakeQuestion[] = [
   },
   {
     id: "primary-platform",
-    question: "Where should the first version primarily live?",
+    question: "Where will people use the first version?",
     selectionMode: "single",
     options: [
-      { id: "desktop-web", label: "Desktop web" },
-      { id: "mobile-web", label: "Mobile web" },
-      { id: "native-mobile-app", label: "Native mobile app" },
-      { id: "native-desktop-app", label: "Native desktop app" },
+      { id: "desktop-web", label: "Desktop website" },
+      { id: "mobile-web", label: "Mobile website" },
+      { id: "native-mobile-app", label: "iOS / Android app" },
+      { id: "native-desktop-app", label: "Mac / Windows app" },
     ],
     allowOther: false,
   },
@@ -113,7 +113,7 @@ test("buildProjectSummary: creates a human-readable dashboard description", () =
   assert.match(summary, /AI inventory planning for bakeries/)
 	  assert.match(summary, /Ideal first user: Small businesses, independent bakery owners/i)
 	  assert.match(summary, /Which workflow should the product handle first: Forecasting, holiday-aware ingredient planning/i)
-	  assert.match(summary, /Where should the first version primarily live: Desktop web/i)
+	  assert.match(summary, /Where will people use the first version: Desktop website/i)
 	})
 
 test("formatProjectIntakeForAi: creates plain-language context for downstream AI", () => {
@@ -143,5 +143,5 @@ test("formatProjectIntakeForAi: creates plain-language context for downstream AI
   assert.match(context, /Original idea: AI inventory planning for bakeries/)
 	  assert.match(context, /Who is the ideal first user\?: Small businesses/)
 	  assert.match(context, /Which business model is most likely\?: Subscription/)
-	  assert.match(context, /Where should the first version primarily live\?: Desktop web/)
+	  assert.match(context, /Where will people use the first version\?: Desktop website/)
 	})

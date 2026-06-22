@@ -1625,12 +1625,8 @@ function currentPersonaFromSection(section: PlanningDocumentSection) {
 
 function getCurrentPrdMetaItems({
   timeline,
-  userStories,
-  requirements,
 }: {
   timeline?: PlanningDocumentSection
-  userStories?: PlanningDocumentSection
-  requirements?: PlanningDocumentSection
 }) {
   const timelineText = timeline?.content ?? ""
   const timelineNested = extractSectionsByHeading(timelineText, 3)
@@ -1668,22 +1664,11 @@ function getCurrentPrdMetaItems({
   const teamCount = teamSection
     ? parseNarrativeTable(teamSection.content).items.length
     : (timelineText.match(/-\s+\*\*[^*]+\*\*:/g) ?? []).length
-  const stories = userStories
-    ? parseUserStories(parseNarrativeTable(userStories.content)).length
-    : 0
-  const requirementTotal = requirements
-    ? Array.from(getRequirementGroups(parseNarrativeTable(requirements.content)).values()).reduce(
-        (sum, items) => sum + items.length,
-        0,
-      )
-    : 0
 
   return [
     { value: size, label: "Project Size" },
     { value: duration, label: "Est. Duration" },
     ...(teamCount > 0 ? [{ value: String(teamCount), label: "Team Members" }] : []),
-    ...(stories > 0 ? [{ value: String(stories), label: "User Stories" }] : []),
-    ...(requirementTotal > 0 ? [{ value: String(requirementTotal), label: "Requirements" }] : []),
   ]
 }
 
@@ -2528,8 +2513,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   const introduction = getSectionByAlias(sections, ["Introduction/overview", "Introduction overview"])
   const goals = getSectionByAlias(sections, ["Goals"])
   const personas = getSectionByAlias(sections, ["User personas"])
-  const requirements = getSectionByAlias(sections, ["Functional requirements"])
-  const userStories = getSectionByAlias(sections, ["User stories and acceptance criteria"])
   const outOfScope = getSectionByAlias(sections, ["Non-goals / out of scope", "Out of scope"])
   const technical = getSectionByAlias(sections, ["Technical considerations"])
   const metrics = getSectionByAlias(sections, ["Success metrics"])
@@ -2555,8 +2538,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
       introduction,
       goals,
       personas,
-      userStories,
-      requirements,
       technical,
       outOfScope,
       metrics,
@@ -2570,8 +2551,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
       <ProductPlanMasthead
         metaItems={getCurrentPrdMetaItems({
           timeline,
-          userStories,
-          requirements,
         })}
       />
 
@@ -2608,30 +2587,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
           total={sectionTotal}
         >
           <PersonaShowcase section={personas} projectId={projectId} />
-        </DesignedSection>
-      ) : null}
-
-      {userStories ? (
-        <DesignedSection
-          id="prd-user-stories-acceptance-criteria"
-          kicker="Behavior"
-          title="User Stories & Acceptance Criteria"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <UserStoryShowcase section={userStories} />
-        </DesignedSection>
-      ) : null}
-
-      {requirements ? (
-        <DesignedSection
-          id="prd-functional-requirements"
-          kicker="Build Scope"
-          title="Functional Requirements"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <RequirementShowcase section={requirements} />
         </DesignedSection>
       ) : null}
 
@@ -2725,8 +2680,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   )
 }
 
-const fvpTotalSections = 12
-
 function getFirstParagraph(section?: PlanningDocumentSection) {
   if (!section?.content.trim()) return ""
   const narrative = parseNarrativeTable(section.content)
@@ -2798,12 +2751,14 @@ function FvpSection({
   id,
   title,
   index,
+  total,
   children,
 }: {
   id?: string
   kicker: string
   title: string
   index: number
+  total: number
   children: React.ReactNode
 }) {
   return (
@@ -2815,7 +2770,7 @@ function FvpSection({
           </h2>
         </div>
         <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#8A8480]">
-          {String(index).padStart(2, "0")} / {String(fvpTotalSections).padStart(2, "0")}
+          {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </p>
       </div>
       {children}
@@ -3282,94 +3237,207 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
   const scope = getSectionByAlias(sections, ["MVP Scope"])
   const features = getSectionByAlias(sections, ["Must-Have Features"])
   const buildApproach = getSectionByAlias(sections, ["Suggested Build Approach"])
-  const buildSequence = getSectionByAlias(sections, ["AI-Friendly Build Sequence"])
-  const guardrails = getSectionByAlias(sections, ["AI Build Guardrails"])
   const validation = getSectionByAlias(sections, ["Validation Plan"])
   const cutList = getSectionByAlias(sections, ["Cut List"])
-  const nextPrompt = getSectionByAlias(sections, ["Next Prompt for AI Coding Tool"])
   const assumptionRows = getFvpAssumptionRows(assumptions)
   const scopeRows = getFvpScopeRows({ scope, features })
-  const hasStandaloneGoal = Boolean(goal)
-  const assumptionIndex = hasStandaloneGoal ? 5 : 2
-  const scopeIndex = hasStandaloneGoal ? 6 : 5
-  const guardrailsIndex = hasStandaloneGoal ? 9 : 11
-  const validationIndex = hasStandaloneGoal ? 10 : 9
-  const cutListIndex = hasStandaloneGoal ? 11 : 10
+  const sectionTotal = [
+    summary,
+    goal,
+    targetProblem,
+    userFlow,
+    assumptionRows.length > 0,
+    scopeRows.length > 0,
+    buildApproach,
+    validation,
+    cutList,
+  ].filter(Boolean).length
+  let sectionIndex = 1
+  const nextSectionIndex = () => sectionIndex++
 
   return (
     <div className="flex flex-col gap-16">
       <FvpMasthead />
 
       {summary ? (
-        <FvpSection id="mvp-summary" kicker="Thesis" title="MVP Summary" index={1}>
+        <FvpSection id="mvp-summary" kicker="Thesis" title="MVP Summary" index={nextSectionIndex()} total={sectionTotal}>
           <FvpSummary section={summary} />
         </FvpSection>
       ) : null}
 
       {goal ? (
-        <FvpSection id="mvp-bet" kicker="Validation" title="The Bet" index={2}>
+        <FvpSection id="mvp-bet" kicker="Validation" title="The Bet" index={nextSectionIndex()} total={sectionTotal}>
           <FvpTechGrid section={goal} fallbackTitle="Goal" />
         </FvpSection>
       ) : null}
 
       {targetProblem ? (
-        <FvpSection id="mvp-target-user-problem" kicker="Audience" title="Target User & Problem" index={3}>
+        <FvpSection id="mvp-target-user-problem" kicker="Audience" title="Target User & Problem" index={nextSectionIndex()} total={sectionTotal}>
           <FvpTechGrid section={targetProblem} fallbackTitle="Target user" />
         </FvpSection>
       ) : null}
 
       {userFlow ? (
-        <FvpSection id="mvp-core-user-flow" kicker="Journey" title="Core User Flow" index={4}>
+        <FvpSection id="mvp-core-user-flow" kicker="Journey" title="Core User Flow" index={nextSectionIndex()} total={sectionTotal}>
           <FvpFlow section={userFlow} />
         </FvpSection>
       ) : null}
 
       {assumptionRows.length > 0 ? (
-        <FvpSection id="mvp-key-assumptions" kicker="Assumptions" title="Key Assumptions" index={assumptionIndex}>
+        <FvpSection id="mvp-key-assumptions" kicker="Assumptions" title="Key Assumptions" index={nextSectionIndex()} total={sectionTotal}>
           <FvpScopeGrid rows={assumptionRows} />
         </FvpSection>
       ) : null}
 
       {scopeRows.length > 0 ? (
-        <FvpSection id="mvp-scope" kicker="Scope Decisions" title="MVP Scope" index={scopeIndex}>
+        <FvpSection id="mvp-scope" kicker="Scope Decisions" title="MVP Scope" index={nextSectionIndex()} total={sectionTotal}>
           <FvpScopeGrid rows={scopeRows} />
         </FvpSection>
       ) : null}
 
       {buildApproach ? (
-        <FvpSection id="mvp-suggested-stack" kicker="Tooling" title="Suggested Stack" index={7}>
+        <FvpSection id="mvp-suggested-stack" kicker="Tooling" title="Suggested Stack" index={nextSectionIndex()} total={sectionTotal}>
           <FvpStack section={buildApproach} />
         </FvpSection>
       ) : null}
 
-      {buildSequence ? (
-        <FvpSection id="mvp-ai-friendly-build-sequence" kicker="Build Scope" title="AI-Friendly Build Sequence" index={8}>
-          <FvpBuildSequence section={buildSequence} />
-        </FvpSection>
-      ) : null}
-
       {validation ? (
-        <FvpSection id="mvp-validation-plan" kicker="Measurement" title="Validation Plan" index={validationIndex}>
+        <FvpSection id="mvp-validation-plan" kicker="Measurement" title="Validation Plan" index={nextSectionIndex()} total={sectionTotal}>
           <FvpValidation section={validation} />
         </FvpSection>
       ) : null}
 
       {cutList ? (
-        <FvpSection id="mvp-cut-list" kicker="Simplify If Needed" title="Cut List" index={cutListIndex}>
+        <FvpSection id="mvp-cut-list" kicker="Simplify If Needed" title="Cut List" index={nextSectionIndex()} total={sectionTotal}>
           <FvpCuts section={cutList} />
         </FvpSection>
       ) : null}
+    </div>
+  )
+}
 
-      {guardrails ? (
-        <FvpSection id="mvp-ai-build-guardrails" kicker="Discipline" title="AI Build Guardrails" index={guardrailsIndex}>
-          <FvpGuardrails section={guardrails} />
-        </FvpSection>
-      ) : null}
+function AiPromptsMasthead() {
+  return (
+    <header className="pb-10 pt-6">
+      <div className="flex items-center gap-3">
+        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
+          Builder Handoff
+        </p>
+        <span className="h-px w-7 bg-primary/50" />
+      </div>
+      <h1
+        className={cn(
+          displayFontClass,
+          "mt-3 text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]",
+        )}
+      >
+        AI Prompts
+      </h1>
+    </header>
+  )
+}
+
+function hasRenderableSection(section?: PlanningDocumentSection) {
+  return Boolean(section?.content.trim())
+}
+
+export function AiPromptsDocumentBlocks({
+  prdContent,
+  mvpContent,
+}: {
+  prdContent: string | null
+  mvpContent: string | null
+  projectId: string
+}) {
+  const prdSections = useMemo(() => extractSectionsByHeading(prdContent ?? "", 2), [prdContent])
+  const mvpSections = useMemo(() => extractSectionsByHeading(mvpContent ?? "", 2), [mvpContent])
+
+  const nextPrompt = getSectionByAlias(mvpSections, ["Next Prompt for AI Coding Tool"])
+  const guardrails = getSectionByAlias(mvpSections, ["AI Build Guardrails"])
+  const buildSequence = getSectionByAlias(mvpSections, ["AI-Friendly Build Sequence"])
+  const requirements = getSectionByAlias(prdSections, ["Functional requirements"])
+  const userStories = getSectionByAlias(prdSections, ["User stories and acceptance criteria"])
+  const sections = [
+    nextPrompt,
+    guardrails,
+    buildSequence,
+    requirements,
+    userStories,
+  ].filter(hasRenderableSection)
+  const sectionTotal = sections.length
+  let sectionIndex = 1
+  const nextSectionIndex = () => sectionIndex++
+
+  if (sectionTotal === 0) {
+    return (
+      <div className="flex items-center justify-center p-6 text-center text-sm text-muted-foreground sm:p-12">
+        AI Prompts has not been generated yet.
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-16">
+      <AiPromptsMasthead />
 
       {nextPrompt ? (
-        <FvpSection id="mvp-next-prompt" kicker="Handoff" title="Next Prompt" index={12}>
+        <DesignedSection
+          id="ai-prompts-next-prompt"
+          kicker="Handoff"
+          title="Next Prompt"
+          index={nextSectionIndex()}
+          total={sectionTotal}
+        >
           <FvpPromptBlock section={nextPrompt} />
-        </FvpSection>
+        </DesignedSection>
+      ) : null}
+
+      {guardrails ? (
+        <DesignedSection
+          id="ai-prompts-build-guardrails"
+          kicker="Discipline"
+          title="AI Build Guardrails"
+          index={nextSectionIndex()}
+          total={sectionTotal}
+        >
+          <FvpGuardrails section={guardrails} />
+        </DesignedSection>
+      ) : null}
+
+      {buildSequence ? (
+        <DesignedSection
+          id="ai-prompts-build-sequence"
+          kicker="Build Scope"
+          title="AI-Friendly Build Sequence"
+          index={nextSectionIndex()}
+          total={sectionTotal}
+        >
+          <FvpBuildSequence section={buildSequence} />
+        </DesignedSection>
+      ) : null}
+
+      {requirements ? (
+        <DesignedSection
+          id="ai-prompts-functional-requirements"
+          kicker="Product Plan"
+          title="Functional Requirements"
+          index={nextSectionIndex()}
+          total={sectionTotal}
+        >
+          <RequirementShowcase section={requirements} />
+        </DesignedSection>
+      ) : null}
+
+      {userStories ? (
+        <DesignedSection
+          id="ai-prompts-user-stories-acceptance-criteria"
+          kicker="Product Plan"
+          title="User Stories & Acceptance Criteria"
+          index={nextSectionIndex()}
+          total={sectionTotal}
+        >
+          <UserStoryShowcase section={userStories} />
+        </DesignedSection>
       ) : null}
     </div>
   )

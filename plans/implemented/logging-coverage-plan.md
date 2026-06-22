@@ -66,7 +66,7 @@ Add a small shared logger with tested serialization, context sanitization, error
    - Output: Replace raw provider/prompt logs in `src/lib/stitch-pipeline.ts` where still present, and sanitize Tavily/Perplexity retry-visible messages if needed.
    - Validation: Tests for sanitized error messages where helpers are exported.
 7. Review and document coverage.
-   - Output: `plans/logging-coverage-review.md` with code review, security review, remediation notes, and remaining follow-up coverage.
+   - Output: `plans/implemented/logging-coverage-review.md` with code review, security review, remediation notes, and remaining follow-up coverage.
    - Validation: Run focused tests, then full `npm test`, `npm run typecheck`, and lint if time permits.
 
 ## Milestones

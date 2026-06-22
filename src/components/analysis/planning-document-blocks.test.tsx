@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import { renderToStaticMarkup } from "react-dom/server"
 
 import {
+  AiPromptsDocumentBlocks,
   MvpPlanDocumentBlocks,
   PrdDocumentBlocks,
 } from "./planning-document-blocks"
@@ -290,11 +291,11 @@ As a builder, I want a product plan.
   assert.doesNotMatch(html, /grid gap-4 lg:grid-cols-3/)
 })
 
-test("PrdDocumentBlocks preserves current PRD functional requirement subsections as separate blocks", () => {
+test("AiPromptsDocumentBlocks preserves current PRD functional requirement subsections as separate blocks", () => {
   const html = renderToStaticMarkup(
-    <PrdDocumentBlocks
+    <AiPromptsDocumentBlocks
       projectId="project-1"
-      content={`# PRD: Wear It Now AI Mirror
+      prdContent={`# PRD: Wear It Now AI Mirror
 
 ## 1. Introduction/overview
 Wear It Now AI Mirror helps shoppers preview outfits before buying.
@@ -336,6 +337,7 @@ As a shopper, I want to preview an outfit.
 ## 6. Technical considerations
 - Keep image generation on the server.
 `}
+      mvpContent={null}
     />,
   )
 
@@ -372,11 +374,11 @@ As a shopper, I want to preview an outfit.
   assert.doesNotMatch(getSectionOpeningTag(constraintsIndex), /lg:col-span-2/)
 })
 
-test("PrdDocumentBlocks preserves deeper functional requirement subsections under a wrapper heading", () => {
+test("AiPromptsDocumentBlocks preserves deeper functional requirement subsections under a wrapper heading", () => {
   const html = renderToStaticMarkup(
-    <PrdDocumentBlocks
+    <AiPromptsDocumentBlocks
       projectId="project-1"
-      content={`# PRD: Wrapped Requirements
+      prdContent={`# PRD: Wrapped Requirements
 
 ## 1. Introduction/overview
 Wrapped Requirements helps validate nested planning output.
@@ -413,6 +415,7 @@ As a builder, I want readable requirements.
 ## 6. Technical considerations
 - Keep rendering deterministic.
 `}
+      mvpContent={null}
     />,
   )
 
@@ -862,8 +865,8 @@ So that I can send client-ready proposals.
   assert.match(html, /Est\. Duration/)
   assert.match(html, /8 weeks/)
   assert.match(html, /Team Members/)
-  assert.match(html, /User Stories/)
-  assert.match(html, /Requirements/)
+  assert.doesNotMatch(html, /User Stories<\/div>/)
+  assert.doesNotMatch(html, /Requirements<\/div>/)
   assert.match(html, /Business Goals/)
   assert.match(html, /User Goals/)
   assert.match(html, /Dana Designer/)
@@ -879,18 +882,18 @@ So that I can send client-ready proposals.
   assert.match(html, /id="prd-introduction-overview"/)
   assert.match(html, /id="prd-goals"/)
   assert.match(html, /id="prd-user-personas"/)
-  assert.match(html, /id="prd-user-stories-acceptance-criteria"/)
-  assert.match(html, /id="prd-functional-requirements"/)
+  assert.doesNotMatch(html, /id="prd-user-stories-acceptance-criteria"/)
+  assert.doesNotMatch(html, /id="prd-functional-requirements"/)
   assert.match(html, /id="prd-technical-considerations"/)
   assert.match(html, /id="prd-non-goals-out-of-scope"/)
   assert.match(html, /id="prd-success-metrics"/)
   assert.match(html, /id="prd-timeline-milestones"/)
   assert.match(html, /id="prd-follow-through"/)
-  assert.match(html, /Functional Requirements/)
-  assert.match(html, /User Stories &amp; Acceptance Criteria/)
-  assert.match(html, /Generated proposal includes scope, timeline, and pricing sections/)
-  assert.match(html, /US-001/)
-  assert.match(html, /US-002/)
+  assert.doesNotMatch(html, /Functional Requirements/)
+  assert.doesNotMatch(html, /User Stories &amp; Acceptance Criteria/)
+  assert.doesNotMatch(html, /Generated proposal includes scope, timeline, and pricing sections/)
+  assert.doesNotMatch(html, /US-001/)
+  assert.doesNotMatch(html, /US-002/)
   assert.match(html, /grid gap-4 lg:grid-cols-2/)
   assert.match(html, /Technical Considerations/)
   assert.match(html, /aria-label="Technical Item 1 details"/)
@@ -916,8 +919,7 @@ So that I can send client-ready proposals.
   assert.doesNotMatch(html, /Problem to Solve/)
   assert.doesNotMatch(html, /What to Build/)
 
-  assert.ok(html.indexOf("User Personas") < html.indexOf("User Stories &amp; Acceptance Criteria"))
-  assert.ok(html.indexOf("User Stories &amp; Acceptance Criteria") < html.indexOf("Functional Requirements"))
+  assert.ok(html.indexOf("User Personas") < html.indexOf("Technical Considerations"))
   assert.ok(html.indexOf("Technical Considerations") < html.indexOf("Non-goals &amp; Out of Scope"))
 
   const timelineHtml = html.slice(
@@ -1089,27 +1091,27 @@ Start with the proposal intake form and mock proposal generation.
   assert.match(html, /id="mvp-key-assumptions"/)
   assert.match(html, /id="mvp-scope"/)
   assert.match(html, /id="mvp-suggested-stack"/)
-  assert.match(html, /id="mvp-ai-friendly-build-sequence"/)
+  assert.doesNotMatch(html, /id="mvp-ai-friendly-build-sequence"/)
   assert.match(html, /id="mvp-validation-plan"/)
   assert.match(html, /id="mvp-cut-list"/)
-  assert.match(html, /id="mvp-ai-build-guardrails"/)
-  assert.match(html, /id="mvp-next-prompt"/)
+  assert.doesNotMatch(html, /id="mvp-ai-build-guardrails"/)
+  assert.doesNotMatch(html, /id="mvp-next-prompt"/)
   assert.match(html, /Target User &amp; Problem/)
   assert.match(html, /Core User Flow/)
   assert.match(html, /Key Assumptions/)
   assert.match(html, /MVP Scope/)
   assert.match(html, /Suggested Stack/)
-  assert.match(html, /AI-Friendly Build Sequence/)
-  assert.match(html, /AI Build Guardrails/)
+  assert.doesNotMatch(html, /AI-Friendly Build Sequence/)
+  assert.doesNotMatch(html, /AI Build Guardrails/)
   assert.match(html, /Validation Plan/)
   assert.match(html, /Cut List/)
-  assert.match(html, /Next Prompt/)
-  assert.match(html, /01 \/ 12/)
-  assert.match(html, /12 \/ 12/)
+  assert.doesNotMatch(html, /Next Prompt/)
+  assert.match(html, /01 \/ 08/)
+  assert.doesNotMatch(html, /12 \/ 12/)
   assert.match(html, /fvp-flow/)
-  assert.match(html, /fvp-build/)
+  assert.doesNotMatch(html, /fvp-build/)
   assert.match(html, /fvp-cuts/)
-  assert.match(html, /fvp-prompt/)
+  assert.doesNotMatch(html, /fvp-prompt/)
   assert.match(html, /pp-tech-grid/)
   assert.match(html, /pp-nongoals/)
   assert.match(html, /Proposal intake/)
@@ -1127,4 +1129,56 @@ Start with the proposal intake form and mock proposal generation.
   assert.doesNotMatch(html, /grid gap-4 xl:grid-cols-2/)
   assert.doesNotMatch(html, /What We Need to Prove/)
   assert.doesNotMatch(html, /Core Features/)
+})
+
+test("AiPromptsDocumentBlocks renders moved PRD and MVP handoff sections", () => {
+  const html = renderToStaticMarkup(
+    <AiPromptsDocumentBlocks
+      projectId="project-1"
+      prdContent={`# PRD: Proposal Pilot
+
+## 4. User stories and acceptance criteria
+### US-009: Generate proposal
+**User story**
+As a freelance designer, I want to generate a proposal from client notes.
+**Acceptance criteria**
+- Generated proposal includes scope, timeline, and pricing sections.
+
+## 5. Functional requirements
+### 5.1 Core requirements
+- **FR-001**: Proposal intake
+  - Users can create a proposal from structured intake fields.
+`}
+      mvpContent={`# MVP Plan: Proposal Pilot
+
+## 8. AI-Friendly Build Sequence
+| Step | Build Chunk | Goal | Test Before Moving On |
+|---|---|---|---|
+| 1 | Proposal intake form | Capture context | Submit valid and invalid input |
+
+## 10. AI Build Guardrails
+- Build one chunk at a time.
+- Do not add features outside MVP scope.
+
+## 13. Next Prompt for AI Coding Tool
+Start with the proposal intake form and mock proposal generation.
+`}
+    />,
+  )
+
+  assert.match(html, /AI Prompts/)
+  assert.match(html, /id="ai-prompts-next-prompt"/)
+  assert.match(html, /id="ai-prompts-build-guardrails"/)
+  assert.match(html, /id="ai-prompts-build-sequence"/)
+  assert.match(html, /id="ai-prompts-functional-requirements"/)
+  assert.match(html, /id="ai-prompts-user-stories-acceptance-criteria"/)
+  assert.match(html, /Start with the proposal intake form/)
+  assert.match(html, /Build one chunk at a time/)
+  assert.match(html, /Proposal intake form/)
+  assert.match(html, /Users can create a proposal from structured intake fields/)
+  assert.match(html, /Generated proposal includes scope, timeline, and pricing sections/)
+  assert.ok(html.indexOf("Next Prompt") < html.indexOf("AI Build Guardrails"))
+  assert.ok(html.indexOf("AI Build Guardrails") < html.indexOf("AI-Friendly Build Sequence"))
+  assert.ok(html.indexOf("AI-Friendly Build Sequence") < html.indexOf("Functional Requirements"))
+  assert.ok(html.indexOf("Functional Requirements") < html.indexOf("User Stories &amp; Acceptance Criteria"))
 })

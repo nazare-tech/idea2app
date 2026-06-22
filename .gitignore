@@ -59,6 +59,9 @@ supabase/.temp/
 /pi-session-*.json
 /pi-session-*.txt
 
+# private raw transcript inputs; sanitized summaries belong under docs/
+/.private/
+
 # Stitch test fixture (contains short-lived download URLs)
 src/lib/stitch/test-fixture.json
 
@@ -78,4 +81,3 @@ src/lib/stitch/test-fixture.json
 # Design tooling source — relocated to its own repo (kept on disk, not tracked)
 /Design System/
 /assets/logos/
-

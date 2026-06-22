@@ -2,16 +2,16 @@ import type { IntakeAnswer, IntakeQuestion } from "./intake-types"
 
 export const REQUIRED_PLATFORM_QUESTION: IntakeQuestion = {
   id: "primary-platform",
-  question: "Where should the first version primarily live?",
+  question: "Where will people use the first version?",
   selectionMode: "single",
   options: [
-    { id: "desktop-web", label: "Desktop web" },
-    { id: "mobile-web", label: "Mobile web" },
-    { id: "native-mobile-app", label: "Native mobile app" },
-    { id: "native-desktop-app", label: "Native desktop app" },
+    { id: "desktop-web", label: "Desktop website" },
+    { id: "mobile-web", label: "Mobile website" },
+    { id: "native-mobile-app", label: "iOS / Android app" },
+    { id: "native-desktop-app", label: "Mac / Windows app" },
   ],
   allowOther: false,
-  helperText: "Choose the main platform for the first usable version.",
+  helperText: "Pick where users will open the first working version. A mobile website runs in the browser; an iOS / Android app is installed.",
 }
 
 export function ensureRequiredPlatformQuestion(questions: IntakeQuestion[], maxQuestions = 5) {
@@ -53,7 +53,7 @@ export function validateRequiredPlatformAnswer(questions: IntakeQuestion[], answ
     platformQuestion.allowOther ||
     platformQuestion.options.length !== REQUIRED_PLATFORM_QUESTION.options.length ||
     !REQUIRED_PLATFORM_QUESTION.options.every((option) =>
-      platformQuestion.options.some((candidate) => candidate.id === option.id && candidate.label === option.label)
+      platformQuestion.options.some((candidate) => candidate.id === option.id)
     )
   ) {
     return "Platform question must use the supported platform choices"

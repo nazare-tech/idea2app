@@ -1,5 +1,7 @@
 # Plan: Happy-Path Multi-Screen Mockup Generation
 
+> Current revalidation, 2026-06-22: this remains useful historical context for the hidden mockup design-plan pipeline, but the "two to four screens" storyboard detail has been superseded. Current code uses fixed two-frame skeleton storyboards and exactly two planned screens for every platform.
+
 ## Goal
 Replace the current single-screen, loosely inferred mockup generation flow with a design-planning pipeline that produces three coherent visual directions, each represented by one storyboard image containing two to four populated MVP screens. The user-facing workspace should show three generated images grouped by option, while each image visually contains the selected happy-path screens. The screen map and design brief remain internal metadata used to guide generation, recovery, debugging, and future regeneration.
 

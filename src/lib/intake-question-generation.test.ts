@@ -56,7 +56,7 @@ const validModelOutput = JSON.stringify({
   ],
 })
 
-const platformOptions = ["Desktop web", "Mobile web", "Native mobile app", "Native desktop app"]
+const platformOptions = ["Desktop website", "Mobile website", "iOS / Android app", "Mac / Windows app"]
 
 test("parseIntakeQuestionSet: parses valid chip-only model JSON into typed questions", () => {
   const questionSet = parseIntakeQuestionSet(validModelOutput)

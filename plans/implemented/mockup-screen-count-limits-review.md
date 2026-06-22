@@ -1,12 +1,14 @@
 # Review: Platform-Specific Mockup Screen Limits
 
+> Current revalidation, 2026-06-22: this review describes the earlier platform-specific screen-limit implementation. The current mockup storyboard code now uses exact two-frame skeletons for every platform, so the historical 1-2 desktop / 1-3 mobile behavior should not guide new work.
+
 ## Scope
 - `src/lib/mockup-design-plan.ts`
 - `src/lib/openrouter-image-mockup-pipeline.ts`
 - `src/lib/prompt-lab.ts`
 - Focused unit tests for mockup planning, image prompt composition, and Prompt Lab overrides
 - `PROJECT_CONTEXT.md`
-- `plans/mockup-screen-count-limits-plan.md`
+- `plans/implemented/mockup-screen-count-limits-plan.md`
 
 ## Verification
 - `node --import tsx --test src/lib/mockup-design-plan.test.ts src/lib/openrouter-image-mockup-pipeline.test.ts src/lib/prompt-lab.test.ts`

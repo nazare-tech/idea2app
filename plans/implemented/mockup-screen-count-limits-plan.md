@@ -1,10 +1,12 @@
 ---
 implemented: true
 implemented_at: 2026-06-09T05:25:40Z
-implementation_summary: Platform-specific mockup screen limits are enforced through a shared helper, applied to parser normalization, Prompt Lab overrides, and image prompt composition.
+implementation_summary: "Historical implementation of platform-specific screen limits. Current code has since superseded this with an exact two-screen skeleton-frame contract for every platform."
 ---
 
 # Plan: Platform-Specific Mockup Screen Limits
+
+> Current revalidation, 2026-06-22: this plan is implemented historical context, but its 1-2 desktop / 1-3 mobile contract is no longer the current behavior. The current code in `src/lib/mockup-design-plan.ts` enforces exactly two screens for every platform, `src/lib/openrouter-image-mockup-pipeline.ts` edits fixed two-frame storyboard skeletons, and `PROJECT_CONTEXT.md` is the current architecture source of truth. Do not use the screen-count ranges below for new implementation work.
 
 ## Goal
 Update the mockup creator so desktop web and native desktop mockup prompts never place more than two desktop screens in a single text-to-image storyboard prompt, while mobile web and native mobile app prompts can use one, two, or three mobile screens. The result should protect desktop screen readability without weakening the mobile storyboard flow.
@@ -91,7 +93,7 @@ Write focused failing tests for platform-specific screen limits before changing 
 - Prompt Lab platform overrides now normalize screen counts after the final effective platform is known.
 - Desktop prompts now include a dedicated composition JSON that forbids third desktop screens and compressed desktop thumbnails.
 - Mobile prompts now use a 1-3 fallback range instead of the old 2-4 range.
-- Review artifact: `plans/mockup-screen-count-limits-review.md`.
+- Review artifact: `plans/implemented/mockup-screen-count-limits-review.md`.
 
 ## Milestones
 - Limits Defined: Platform-specific min/max rules exist in one reusable place and are covered by unit tests.
