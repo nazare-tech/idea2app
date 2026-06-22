@@ -1,7 +1,7 @@
 ---
-implemented: false
-implemented_at:
-implementation_summary:
+implemented: true
+implemented_at: 2026-06-22T07:02:27Z
+implementation_summary: Removed the Market Research risks subsection from the prompt contract, parser, renderer, nav, and glossary while keeping Product Plan risk handling intact.
 ---
 
 # Plan: Remove Market Research Risks
