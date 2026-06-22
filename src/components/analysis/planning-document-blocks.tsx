@@ -36,7 +36,9 @@ import {
   UsersRound,
 } from "lucide-react"
 
+import { ExplainableLabel, ExplainTermButton } from "@/components/analysis/explainable-term"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
+import { getExplainableTermKeyByLabel } from "@/lib/explainable-terms"
 import { getMvpPlanViewModel } from "@/lib/mvp-plan-document"
 import { getPrdDocumentViewModel } from "@/lib/prd-document"
 import type {
@@ -398,97 +400,12 @@ function getTimelinePhaseTitle(heading: string) {
   return getCurrentSectionTitle(heading).replace(/^Phase\s+\d+\s*:?\s*/i, "").trim()
 }
 
-function getTimelinePhaseDurationWeeks(phase: PlanningDocumentSection) {
-  const details = parseTimelinePhaseDetails(phase.content)
-  const duration =
-    getTimelineDetail(details, ["Estimated duration", "Duration"])?.body ??
-    phase.content.match(/Estimated duration\*\*:\s*([^\n]+)/i)?.[1] ??
-    phase.content.match(/Duration\*\*:\s*([^\n]+)/i)?.[1] ??
-    phase.content.match(/(\d+)\s*(?:weeks?|wks?)/i)?.[0]
-  const match = duration?.match(/(\d+)/)
-
-  return match ? Number(match[1]) : null
-}
-
-function getTimelinePhaseWeekRanges(phases: PlanningDocumentSection[]) {
-  let nextStart = 1
-
-  return phases.map((phase) => {
-    const duration = getTimelinePhaseDurationWeeks(phase)
-    if (!duration || Number.isNaN(duration)) {
-      return null
-    }
-
-    const start = nextStart
-    const end = nextStart + duration - 1
-    nextStart = end + 1
-
-    return `Weeks ${start}-${end}`
-  })
-}
-
-function TimelinePhaseDetails({
-  content,
-  label,
-}: {
-  content: string
-  label: string
-}) {
-  const details = parseTimelinePhaseDetails(content)
-  const narrative = parseNarrativeTable(content)
-
-  if (details.length === 0 && !narrative.table) {
-    return (
-      <p className="ui-type-body-sm text-[#999999]">
-        No structured content available.
-      </p>
-    )
-  }
-
-  return (
-    <div aria-label={label} className="space-y-4">
-      {details.map((detail, index) => (
-        <div key={`${detail.label ?? detail.body ?? "detail"}-${index}`} className="space-y-2">
-          {detail.label ? (
-            <div className="grid gap-1 sm:grid-cols-[132px_1fr]">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#8A8480]">
-                {detail.label}
-              </p>
-              {detail.body ? (
-                <p className="ui-type-body-sm text-[#4A4040]">{detail.body}</p>
-              ) : null}
-            </div>
-          ) : detail.body ? (
-            <p className="ui-type-body-sm text-[#4A4040]">{detail.body}</p>
-          ) : null}
-
-          {detail.bullets.length > 0 ? (
-            <ul aria-label={`${detail.label ?? "Phase"} items`} className="space-y-2 sm:pl-[132px]">
-              {detail.bullets.map((item, itemIndex) => (
-                <li key={`${item}-${itemIndex}`} className="flex gap-3 text-[13px] leading-5 text-[#4A4040]">
-                  <span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 bg-primary" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ))}
-      {narrative.table ? (
-        <DataTable headers={narrative.table.headers} rows={narrative.table.rows} />
-      ) : null}
-    </div>
-  )
-}
-
 function TimelinePhaseCard({
   phase,
   index,
-  weekRange,
 }: {
   phase: PlanningDocumentSection
   index: number
-  weekRange: string | null
 }) {
   const title = getTimelinePhaseTitle(phase.heading)
   const details = parseTimelinePhaseDetails(phase.content)
@@ -503,11 +420,6 @@ function TimelinePhaseCard({
         <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
           Phase {index + 1}
         </p>
-        {weekRange ? (
-          <p className="font-mono text-[10px] font-medium tracking-[0.12em] text-[#8A8480]">
-            {weekRange}
-          </p>
-        ) : null}
       </div>
 
       <h3 className={cn(displayFontClass, "mt-2 text-[20px] font-bold leading-tight tracking-[-0.03em] text-[#0A0A0A]")}>
@@ -1623,60 +1535,7 @@ function currentPersonaFromSection(section: PlanningDocumentSection) {
   }
 }
 
-function getCurrentPrdMetaItems({
-  timeline,
-}: {
-  timeline?: PlanningDocumentSection
-}) {
-  const timelineText = timeline?.content ?? ""
-  const timelineNested = extractSectionsByHeading(timelineText, 3)
-  const estimateItems = parseNarrativeTable(
-    getSectionByAlias(timelineNested, ["Project estimate"])?.content ?? "",
-  ).items
-  const estimateValue = (aliases: string[]) => {
-    for (const item of estimateItems) {
-      const labeled = splitLabeledText(stripInlineMarkdown(item))
-      if (
-        labeled &&
-        aliases.some((alias) => normalizeHeading(labeled.label) === normalizeHeading(alias))
-      ) {
-        return labeled.body
-      }
-    }
-
-    return null
-  }
-  const size =
-    estimateValue(["Size", "Project size"]) ??
-    timelineText.match(/Size:\s*([^\n]+)/i)?.[1]?.trim() ??
-    timelineText.match(/Project size:\s*([^\n]+)/i)?.[1]?.trim() ??
-    "Scoped"
-  const duration =
-    estimateValue(["Estimated total duration", "Duration"]) ??
-    timelineText.match(/Estimated total duration:\s*([^\n]+)/i)?.[1]?.trim() ??
-    timelineText.match(/Duration:\s*([^\n]+)/i)?.[1]?.trim() ??
-    timelineText.match(/(\d+\s*(?:weeks?|wks?))/i)?.[1]?.trim() ??
-    "Planned"
-  const teamSection = getSectionByAlias(
-    timelineNested,
-    ["Team composition", "Team"],
-  )
-  const teamCount = teamSection
-    ? parseNarrativeTable(teamSection.content).items.length
-    : (timelineText.match(/-\s+\*\*[^*]+\*\*:/g) ?? []).length
-
-  return [
-    { value: size, label: "Project Size" },
-    { value: duration, label: "Est. Duration" },
-    ...(teamCount > 0 ? [{ value: String(teamCount), label: "Team Members" }] : []),
-  ]
-}
-
-function ProductPlanMasthead({
-  metaItems,
-}: {
-  metaItems: Array<{ value: string; label: string }>
-}) {
+function ProductPlanMasthead() {
   return (
     <header className="pb-10 pt-6">
       <div className="flex items-center gap-3">
@@ -1693,23 +1552,6 @@ function ProductPlanMasthead({
       >
         Product Plan
       </h1>
-      {metaItems.length > 0 ? (
-        <div className="mt-9 flex flex-wrap border border-[#E8DDD5] bg-white">
-          {metaItems.map((item) => (
-            <div
-              key={item.label}
-              className="min-w-[140px] flex-1 border-b border-r border-[#E8DDD5] px-6 py-5 last:border-r-0 md:border-b-0"
-            >
-              <div className={cn(displayFontClass, "text-[28px] font-extrabold leading-none tracking-[-0.04em] text-[#0A0A0A]")}>
-                {item.value}
-              </div>
-              <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8A8480]">
-                {item.label}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
     </header>
   )
 }
@@ -1728,13 +1570,18 @@ function DesignedSection({
   total: number
   children: React.ReactNode
 }) {
+  const termKey = getExplainableTermKeyByLabel(title)
+
   return (
     <section id={id} className="pt-0">
       <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
         <div>
-          <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
-            {title}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
+              {title}
+            </h2>
+            <ExplainTermButton termKey={termKey} label={title} />
+          </div>
         </div>
         <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#8A8480]">
           {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
@@ -2166,44 +2013,24 @@ function TimelineShowcase({ section, projectId }: { section?: PlanningDocumentSe
   if (!section) return null
 
   const nested = extractSectionsByHeading(section.content, 3)
-  const estimate = getSectionByAlias(nested, ["Project estimate"])
-  const team = getSectionByAlias(nested, ["Team composition", "Team"])
+  const agents = getSectionByAlias(nested, ["Agents", "Agent roles", "Team composition", "Team"])
   const phases = nested.filter((item) => /^Phase\s+\d+/i.test(stripInlineMarkdown(item.heading)))
-  const phaseWeekRanges = getTimelinePhaseWeekRanges(phases)
 
   return (
     <div className="space-y-10">
-      <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
-        {estimate ? (
-          <div className="flex border border-[#E8DDD5] bg-[#E8DDD5]">
-            {parseNarrativeTable(estimate.content).items.slice(0, 2).map((item, index) => {
-              const labeled = splitLabeledText(stripInlineMarkdown(item))
-
-              return (
-                <div key={`${item}-${index}`} className="flex-1 bg-white px-6 py-5">
-                  <p className={cn(displayFontClass, "text-[30px] font-extrabold leading-none tracking-[-0.04em] text-[#0A0A0A]")}>
-                    {labeled?.body ?? stripInlineMarkdown(item)}
-                  </p>
-                  <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8A8480]">
-                    {labeled?.label ?? `Estimate ${index + 1}`}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-        ) : null}
-        {team ? (
+      <div className="grid gap-8">
+        {agents ? (
           <div>
             <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.16em] text-[#4A4040]">
-              Team Composition
+              <ExplainableLabel termKey="agents">Agents</ExplainableLabel>
             </p>
             <div className="space-y-2">
-              {parseNarrativeTable(team.content).items.map((item, index) => {
+              {parseNarrativeTable(agents.content).items.map((item, index) => {
                 const labeled = splitLabeledText(stripInlineMarkdown(item))
 
                 return (
                   <div key={`${item}-${index}`} className="flex gap-4 text-[13.5px] leading-6">
-                    <span className="min-w-[150px] font-semibold text-[#0A0A0A]">{labeled?.label ?? `Role ${index + 1}`}</span>
+                    <span className="min-w-[150px] font-semibold text-[#0A0A0A]">{labeled?.label ?? `Agent ${index + 1}`}</span>
                     <span className="text-[#4A4040]">{labeled?.body ?? stripInlineMarkdown(item)}</span>
                   </div>
                 )
@@ -2221,7 +2048,6 @@ function TimelineShowcase({ section, projectId }: { section?: PlanningDocumentSe
                 key={`${phase.heading}-${index}`}
                 phase={phase}
                 index={index}
-                weekRange={phaseWeekRanges[index] ?? null}
               />
             ))}
           </div>
@@ -2340,10 +2166,13 @@ function parseRiskItems(content: string): RiskItem[] {
 }
 
 function FollowThroughHeading({ children }: { children: React.ReactNode }) {
+  const label = typeof children === "string" ? children : undefined
+  const termKey = label ? getExplainableTermKeyByLabel(label) : undefined
+
   return (
     <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[#4A4040]">
       <span className="h-1.5 w-1.5 bg-primary" />
-      {children}
+      <ExplainableLabel termKey={termKey} label={label}>{children}</ExplainableLabel>
     </p>
   )
 }
@@ -2372,7 +2201,11 @@ function RiskMitigationShowcase({ section }: { section?: PlanningDocumentSection
               <section className="bg-[#F3F0EC] px-6 py-6">
                 <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#D95F3B]">
                   <AlertTriangle className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  Impact
+                  {index === 0 ? (
+                    <ExplainableLabel termKey="impact">Impact</ExplainableLabel>
+                  ) : (
+                    "Impact"
+                  )}
                 </p>
                 <p className="text-[13.5px] leading-6 text-[#4A4040]">
                   {risk.impact || "Impact details were not provided."}
@@ -2381,7 +2214,11 @@ function RiskMitigationShowcase({ section }: { section?: PlanningDocumentSection
               <section className="px-6 py-6">
                 <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#16A34A]">
                   <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  Mitigation
+                  {index === 0 ? (
+                    <ExplainableLabel termKey="mitigation">Mitigation</ExplainableLabel>
+                  ) : (
+                    "Mitigation"
+                  )}
                 </p>
                 <p className="text-[13.5px] leading-6 text-[#4A4040]">
                   {risk.mitigation || "Mitigation details were not provided."}
@@ -2458,7 +2295,7 @@ function AssumptionsShowcase({ section }: { section?: PlanningDocumentSection })
                 </p>
                 {highestRisk ? (
                   <span className="border border-primary/20 bg-white px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-primary">
-                    Highest Risk
+                    <ExplainableLabel termKey="highestRisk">Highest Risk</ExplainableLabel>
                   </span>
                 ) : null}
               </div>
@@ -2548,11 +2385,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
   return (
     <div className="flex flex-col gap-16">
-      <ProductPlanMasthead
-        metaItems={getCurrentPrdMetaItems({
-          timeline,
-        })}
-      />
+      <ProductPlanMasthead />
 
       {introduction ? (
         <DesignedSection
@@ -2761,13 +2594,18 @@ function FvpSection({
   total: number
   children: React.ReactNode
 }) {
+  const termKey = getExplainableTermKeyByLabel(title)
+
   return (
     <section id={id} className="pt-0">
       <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
         <div>
-          <h2 className={cn(displayFontClass, "text-[30px] font-extrabold leading-none tracking-[-0.045em] text-[#1C1917] sm:text-[40px]")}>
-            {title}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className={cn(displayFontClass, "text-[30px] font-extrabold leading-none tracking-[-0.045em] text-[#1C1917] sm:text-[40px]")}>
+              {title}
+            </h2>
+            <ExplainTermButton termKey={termKey} label={title} />
+          </div>
         </div>
         <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#8A8480]">
           {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
@@ -3325,14 +3163,17 @@ function AiPromptsMasthead() {
         </p>
         <span className="h-px w-7 bg-primary/50" />
       </div>
-      <h1
-        className={cn(
-          displayFontClass,
-          "mt-3 text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]",
-        )}
-      >
-        AI Prompts
-      </h1>
+      <div className="mt-3 flex items-center gap-2">
+        <h1
+          className={cn(
+            displayFontClass,
+            "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]",
+          )}
+        >
+          AI Prompts
+        </h1>
+        <ExplainTermButton termKey="aiPrompts" label="AI Prompts" />
+      </div>
     </header>
   )
 }

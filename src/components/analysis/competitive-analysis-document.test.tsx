@@ -37,9 +37,6 @@ function buildV2Fixture(
     "Gap Analysis": "- Teams want faster setup.\n- Transparent pricing is scarce.",
     "Ways to Stand Out": "- Lead with transparent pricing.",
     "What Makes It Hard to Copy": "- Integration depth is the best moat.",
-    "SWOT Analysis":
-      "| | Positive | Negative |\n|---|---|---|\n| **Internal** | Focus | Small team |\n| **External** | White space | Copy risk |",
-    "Risks & Competitor Responses": "- Incumbents can copy a visible wedge.",
     "First Version Focus":
       "Ship one workflow first.\n\n- **Target user**: SMB operator\n- **Core loop**: Weekly task automation",
     "Recommended Next Moves":
@@ -127,6 +124,18 @@ test("competitive detail owns market research and strategy modules", () => {
   assert.match(html, /How You&#x27;ll Reach Customers/)
   assert.equal(countMatches(html, /How You&#x27;ll Reach Customers/g), 1)
   assert.equal(countMatches(html, /Best Customer Segments/g), 1)
+  assert.doesNotMatch(html, /Risks &amp; Competitor Responses/)
+  assert.doesNotMatch(html, /Incumbents can copy a visible wedge/)
+  assert.doesNotMatch(html, /Competitor response/)
+  assert.doesNotMatch(html, /Internal \/ Positive/)
+  assert.doesNotMatch(html, /Internal \/ Negative/)
+  assert.doesNotMatch(html, /External \/ Positive/)
+  assert.doesNotMatch(html, /External \/ Negative/)
+  assert.match(html, /aria-label="Explain Positioning Map"/)
+  assert.match(html, /aria-label="Explain Gap Analysis"/)
+  assert.match(html, /aria-label="Explain Ways to Stand Out"/)
+  assert.match(html, /aria-label="Explain What Makes It Hard to Copy"/)
+  assert.match(html, /aria-label="Explain First Version Focus"/)
   assert.match(html, /Recommended Next Moves/)
   assert.match(html, /Validate pricing willingness/)
   assert.doesNotMatch(html, /border border-\[#E0E0E0\] bg-white px-6 py-5/)
@@ -259,15 +268,6 @@ Pricing notes
 ## What Makes It Hard to Copy
 - Embedded workflow context
 
-## SWOT Analysis
-| | Positive | Negative |
-|---|---|---|
-| **Internal** | Focus | Small team |
-| **External** | Demand | Copy risk |
-
-## Risks & Competitor Responses
-- Incumbents can copy
-
 ## First Version Focus
 Launch one workflow.
 
@@ -299,6 +299,9 @@ Launch one workflow.
   assert.match(detailHtml, /id="market-research-feature-matrix"/)
   assert.match(detailHtml, /Commercial Fit/)
   assert.match(detailHtml, /Direct Competitors/)
+  assert.doesNotMatch(detailHtml, /market-research-risks/)
+  assert.doesNotMatch(detailHtml, /Risks &amp; Competitor Responses/)
+  assert.doesNotMatch(detailHtml, /Internal \/ Positive/)
   assert.match(detailHtml, /Recommended Next Moves/)
   assert.doesNotMatch(detailHtml, /no longer matches/)
 })

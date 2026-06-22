@@ -36,10 +36,6 @@ function buildV2Fixture(
       "- Lead with transparent pricing.\n- Optimize for team workflows before feature breadth.",
     "What Makes It Hard to Copy":
       "- Workflow lock-in can become meaningful if shared context and approvals are core.\n- Defensibility is weak without retained data or embedded integrations.",
-    "SWOT Analysis":
-      "| | Positive | Negative |\n|---|---|---|\n| **Internal** | Focused scope | Smaller brand |\n| **External** | Team whitespace | Incumbent copy risk |",
-    "Risks & Competitor Responses":
-      "- Incumbents can add the wedge if demand becomes obvious.\n- Distribution will fail if the ROI story is vague.",
     "First Version Focus":
       "Launch a single workflow that proves weekly time savings.\n\n- **Target user**: SMB operator\n- **Core loop**: Shared execution workflow\n- **Upgrade trigger**: Collaboration and automation limits",
     "Recommended Next Moves":
@@ -58,9 +54,14 @@ test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   const structured = getCompetitiveAnalysisStructuredData(parsed)
 
   assert.equal(parsed.isValid, true)
-  assert.equal(parsed.headings.length, 15)
+  assert.equal(parsed.headings.length, 13)
   assert.equal(parsed.competitorEntries.length, 2)
+  assert.equal(parsed.headings[2], "Feature Comparison")
   assert.match(parsed.sections["Pricing Comparison"] ?? "", /Pricing Model/)
+  assert.equal(
+    "Risks & Competitor Responses" in parsed.sections,
+    false
+  )
   assert.equal(structured.directCompetitors[0]?.heading, "Competitor One")
   assert.equal(
     structured.directCompetitors[0]?.websiteUrl,
@@ -69,7 +70,21 @@ test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   assert.equal(structured.directCompetitors[0]?.fields["Strengths"], "Distribution and integrations")
   assert.equal(structured.directCompetitors[0]?.fields["Key Edge"], "Distribution + integrations")
   assert.equal(structured.positioningMap.points[0]?.x, 4)
-  assert.equal(structured.swotAnalysis.matrix?.externalNegative, "Incumbent copy risk")
+})
+
+test("parseCompetitiveAnalysisV2 strips removed risks and SWOT sections", () => {
+  const contentWithRemovedSection = buildV2Fixture().replace(
+    "## Feature Comparison",
+    "## Risks & Competitor Responses\n- Incumbents can copy the wedge.\n\n## SWOT Analysis\n| | Positive | Negative |\n|---|---|---|\n| **Internal** | Focus | Small team |\n\n## Feature Comparison"
+  )
+  const parsed = parseCompetitiveAnalysisV2(contentWithRemovedSection)
+
+  assert.equal(parsed.isValid, true)
+  assert.deepEqual(parsed.headings, [...COMPETITIVE_ANALYSIS_V2_SECTION_ORDER])
+  assert.equal(
+    "Risks & Competitor Responses" in parsed.sections,
+    false
+  )
 })
 
 test("parseCompetitiveAnalysisV2 does not turn no-live-data inferred profiles into direct competitors", () => {

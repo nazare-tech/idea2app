@@ -17,6 +17,52 @@ export interface PerplexityCompetitorResult {
     url: string
   }>
   rawResponse: string
+  parseFailed?: boolean
+}
+
+export function parsePerplexityCompetitorResponse(
+  rawResponse: string
+): PerplexityCompetitorResult {
+  try {
+    // Extract JSON from response (Perplexity may wrap it in markdown code blocks)
+    const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      if (rawResponse.trim().length > 0) {
+        logWarn("Perplexity", "competitor_json_missing", {
+          rawResponseLength: rawResponse.length,
+        })
+        return { competitors: [], rawResponse, parseFailed: true }
+      }
+
+      return { competitors: [], rawResponse }
+    }
+
+    const parsed = JSON.parse(jsonMatch[0])
+    if (!parsed || !Array.isArray(parsed.competitors)) {
+      logWarn("Perplexity", "competitor_json_shape_invalid", {
+        rawResponseLength: rawResponse.length,
+      })
+      return { competitors: [], rawResponse, parseFailed: true }
+    }
+
+    return {
+      competitors: parsed.competitors
+        .filter((competitor: unknown) => competitor && typeof competitor === "object")
+        .map((competitor: Record<string, unknown>) => ({
+          name: String(competitor.name || ""),
+          description: String(competitor.description || ""),
+          whyCompetes: String(competitor.whyCompetes || ""),
+          url: String(competitor.url || ""),
+        })),
+      rawResponse,
+    }
+  } catch {
+    // If JSON parsing fails, return empty competitors but preserve raw response.
+    logWarn("Perplexity", "competitor_json_parse_failed", {
+      rawResponseLength: rawResponse.length,
+    })
+    return { competitors: [], rawResponse, parseFailed: true }
+  }
 }
 
 export async function searchCompetitors(
@@ -43,17 +89,5 @@ export async function searchCompetitors(
 
   const rawResponse = response.choices[0]?.message?.content || ""
 
-  try {
-    // Extract JSON from response (Perplexity may wrap it in markdown code blocks)
-    const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
-    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { competitors: [] }
-    return { competitors: parsed.competitors || [], rawResponse }
-  } catch {
-    // If JSON parsing fails, return empty competitors but preserve raw response
-    // The synthesis step will still run with whatever context is available
-    logWarn("Perplexity", "competitor_json_parse_failed", {
-      rawResponseLength: rawResponse.length,
-    })
-    return { competitors: [], rawResponse }
-  }
+  return parsePerplexityCompetitorResponse(rawResponse)
 }

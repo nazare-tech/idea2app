@@ -50,7 +50,6 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
       { id: "market-research-gap-analysis", label: "Gap Analysis" },
       { id: "market-research-differentiation", label: "Ways to Stand Out" },
       { id: "market-research-moat", label: "What Makes It Hard to Copy" },
-      { id: "market-research-risks", label: "Risks & Competitor Responses" },
       { id: "market-research-mvp-wedge", label: "First Version Focus" },
       { id: "market-research-strategic-recommendations", label: "Recommended Next Moves" },
     ],

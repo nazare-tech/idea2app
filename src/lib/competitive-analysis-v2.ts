@@ -1,6 +1,6 @@
 export const COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION = "competitive-analysis-v2"
 export const COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION =
-  "competitive-analysis-v2-2026-06-15-live-research-fallback"
+  "competitive-analysis-v2-2026-06-22-market-research-no-risks"
 
 export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Executive Summary",
@@ -14,8 +14,6 @@ export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Gap Analysis",
   "Ways to Stand Out",
   "What Makes It Hard to Copy",
-  "SWOT Analysis",
-  "Risks & Competitor Responses",
   "First Version Focus",
   "Recommended Next Moves",
 ] as const
@@ -34,8 +32,6 @@ export const COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP = {
   "Gap Analysis": "market-research",
   "Ways to Stand Out": "market-research",
   "What Makes It Hard to Copy": "market-research",
-  "SWOT Analysis": "market-research",
-  "Risks & Competitor Responses": "market-research",
   "First Version Focus": "market-research",
   "Recommended Next Moves": "market-research",
 } as const satisfies Record<
@@ -58,10 +54,6 @@ const COMPETITIVE_ANALYSIS_V2_SECTION_ALIASES: Partial<
   "What Makes It Hard to Copy": [
     "Moat and Defensibility",
     "Moat / Defensibility",
-  ],
-  "Risks & Competitor Responses": [
-    "Risks and Countermoves",
-    "Risks / Countermoves",
   ],
   "First Version Focus": ["MVP Wedge Recommendation", "MVP Wedge"],
   "Recommended Next Moves": ["Strategic Recommendations"],
@@ -123,15 +115,6 @@ export interface CompetitiveAnalysisPositioningMap {
   points: CompetitiveAnalysisPositioningPoint[]
 }
 
-export interface CompetitiveAnalysisSwotMatrix {
-  positiveLabel: string
-  negativeLabel: string
-  internalPositive: string
-  internalNegative: string
-  externalPositive: string
-  externalNegative: string
-}
-
 export interface CompetitiveAnalysisStructuredData {
   executiveSummary: { paragraphs: string[]; bullets: string[] }
   directCompetitors: CompetitiveAnalysisCompetitorProfile[]
@@ -145,10 +128,6 @@ export interface CompetitiveAnalysisStructuredData {
   gapAnalysis: string[]
   differentiationWedges: string[]
   moatAndDefensibility: string[]
-  swotAnalysis: CompetitiveAnalysisNarrativeTable & {
-    matrix: CompetitiveAnalysisSwotMatrix | null
-  }
-  risksAndCountermoves: string[]
   mvpWedgeRecommendation: { paragraphs: string[]; bullets: string[] }
   strategicRecommendations: string[]
 }
@@ -496,39 +475,6 @@ function parsePositioningMap(content: string): CompetitiveAnalysisPositioningMap
   }
 }
 
-function findSwotRow(
-  table: CompetitiveAnalysisTable | null,
-  keyword: "internal" | "external"
-) {
-  return (
-    table?.rows.find((row) =>
-      normalizeFieldLabel(row[0] ?? "").includes(keyword)
-    ) ?? null
-  )
-}
-
-function parseSwotMatrix(table: CompetitiveAnalysisTable | null) {
-  if (!table || table.headers.length < 3 || table.rows.length < 2) {
-    return null
-  }
-
-  const internalRow = findSwotRow(table, "internal")
-  const externalRow = findSwotRow(table, "external")
-
-  if (!internalRow || !externalRow) {
-    return null
-  }
-
-  return {
-    positiveLabel: table.headers[1] ?? "Positive",
-    negativeLabel: table.headers[2] ?? "Negative",
-    internalPositive: internalRow[1] ?? "",
-    internalNegative: internalRow[2] ?? "",
-    externalPositive: externalRow[1] ?? "",
-    externalNegative: externalRow[2] ?? "",
-  }
-}
-
 function getSection(
   sections: Partial<Record<CompetitiveAnalysisV2SectionName, string>>,
   heading: CompetitiveAnalysisV2SectionName
@@ -540,7 +486,6 @@ export function getCompetitiveAnalysisStructuredData(
   parsed: CompetitiveAnalysisV2ParseResult
 ): CompetitiveAnalysisStructuredData {
   const { sections, competitorEntries } = parsed
-  const swotAnalysis = parseNarrativeTable(getSection(sections, "SWOT Analysis"))
   const directCompetitorResearchUnavailable =
     hasUnavailableLiveCompetitorResearch(
       [
@@ -578,13 +523,6 @@ export function getCompetitiveAnalysisStructuredData(
     ),
     moatAndDefensibility: parseListItems(
       getSection(sections, "What Makes It Hard to Copy")
-    ),
-    swotAnalysis: {
-      ...swotAnalysis,
-      matrix: parseSwotMatrix(swotAnalysis.table),
-    },
-    risksAndCountermoves: parseListItems(
-      getSection(sections, "Risks & Competitor Responses")
     ),
     mvpWedgeRecommendation: {
       paragraphs: parseParagraphBlocks(
@@ -637,8 +575,21 @@ function normalizeCompetitiveAnalysisV2Sections(
   const normalizedSections: CompetitiveAnalysisSection[] = []
 
   for (const section of sections) {
+    const normalizedHeading = normalizeFieldLabel(section.heading)
+
     if (
-      normalizeFieldLabel(section.heading) === "opportunity verdict" &&
+      [
+        "risks competitor responses",
+        "risks and countermoves",
+        "risks countermoves",
+        "swot analysis",
+      ].includes(normalizedHeading)
+    ) {
+      continue
+    }
+
+    if (
+      normalizedHeading === "opportunity verdict" &&
       normalizedSections.some(
         (existingSection) =>
           resolveCompetitiveAnalysisSectionName(existingSection.heading) ===

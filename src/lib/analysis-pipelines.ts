@@ -1,5 +1,5 @@
 import OpenAI from "openai"
-import { searchCompetitors } from "./perplexity"
+import { searchCompetitors, type PerplexityCompetitorResult } from "./perplexity"
 import { extractCompetitorInfo, type TavilyExtractResult } from "./tavily"
 import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt, type LaunchPlanBrief } from "@/lib/prompts"
 import {
@@ -11,6 +11,7 @@ import {
 import { buildProductPlanPromptRequest } from "@/lib/product-plan-prompt-request"
 import { buildFirstVersionPlanPromptRequest } from "@/lib/first-version-plan-prompt-request"
 import { logError, logInfo, logWarn } from "@/lib/logger"
+import type { Json } from "@/types/database"
 
 // Re-use the same OpenRouter client pattern from openrouter.ts
 const openrouter = new OpenAI({
@@ -28,6 +29,7 @@ export interface AnalysisResult {
   content: string
   source: "inhouse"
   model: string
+  metadata?: { [key: string]: Json | undefined }
 }
 
 export interface CompetitiveAnalysisInput {
@@ -68,6 +70,21 @@ export interface StreamCallbacks {
   onStage?: (message: string, step: number, totalSteps: number) => void
   onToken?: (content: string) => void
 }
+
+type CompetitorSearchStatus =
+  | "found"
+  | "unusable"
+  | "empty"
+  | "parse_failed"
+  | "not_configured"
+  | "failed"
+
+type TavilyExtractStatus =
+  | "not_attempted"
+  | "succeeded"
+  | "empty"
+  | "not_configured"
+  | "failed"
 
 // ─── Streaming Helper ────────────────────────────────────────────────
 
@@ -114,50 +131,63 @@ export async function runCompetitiveAnalysis(
   const model = input.model || DEFAULT_MODEL
   callbacks?.onStage?.("Identifying top competitors...", 1, 4)
 
-  let perplexityData: {
-    competitors: Array<{
-      name: string
-      description: string
-      whyCompetes: string
-      url: string
-    }>
-    rawResponse: string
-  } = { competitors: [], rawResponse: "" }
+  let perplexityData: PerplexityCompetitorResult = {
+    competitors: [],
+    rawResponse: "",
+  }
 
   let tavilyData: {
     results: TavilyExtractResult[]
     failed_results: Array<{ url: string; error: string }>
   } = { results: [], failed_results: [] }
+  let competitorSearchStatus: CompetitorSearchStatus = "empty"
+  let tavilyExtractStatus: TavilyExtractStatus = "not_attempted"
 
   // Step 1: Perplexity — find competitors with strategic reasoning
   try {
     logInfo("CompetitiveAnalysis", "perplexity_search_started", { model })
     perplexityData = await searchCompetitors(input.idea, input.name)
+    competitorSearchStatus = getCompetitorSearchStatus(perplexityData)
     logInfo("CompetitiveAnalysis", "perplexity_search_succeeded", {
       model,
       competitorCount: perplexityData.competitors.length,
+      parseFailed: Boolean(perplexityData.parseFailed),
     })
   } catch (err) {
     // Non-fatal: if Perplexity fails, synthesize from idea alone
+    competitorSearchStatus = isMissingProviderConfigError(err)
+      ? "not_configured"
+      : "failed"
     logWarn("CompetitiveAnalysis", "perplexity_search_failed_nonfatal", { model }, err)
   }
   callbacks?.onStage?.("Extracting competitor details...", 2, 4)
 
   // Step 2: Tavily — extract factual info from competitor URLs
-  if (perplexityData.competitors.length > 0) {
+  const usableCompetitors = getUsableCompetitors(perplexityData.competitors)
+  if (competitorSearchStatus === "found" && usableCompetitors.length === 0) {
+    competitorSearchStatus = "unusable"
+  }
+  if (usableCompetitors.length > 0) {
     try {
-      const urls = perplexityData.competitors.map((c) => c.url).filter(Boolean)
+      const urls = usableCompetitors.map((c) => c.url)
       logInfo("CompetitiveAnalysis", "tavily_extract_started", {
         model,
         urlCount: urls.length,
       })
       tavilyData = await extractCompetitorInfo(urls)
+      tavilyExtractStatus =
+        tavilyData.results.length > 0 || tavilyData.failed_results.length > 0
+          ? "succeeded"
+          : "empty"
       logInfo("CompetitiveAnalysis", "tavily_extract_succeeded", {
         model,
         resultCount: tavilyData.results.length,
         failedResultCount: tavilyData.failed_results.length,
       })
     } catch (err) {
+      tavilyExtractStatus = isMissingProviderConfigError(err)
+        ? "not_configured"
+        : "failed"
       logWarn("CompetitiveAnalysis", "tavily_extract_failed_nonfatal", { model }, err)
     }
   }
@@ -202,10 +232,28 @@ export async function runCompetitiveAnalysis(
   logInfo("CompetitiveAnalysis", "openrouter_synthesis_succeeded", {
     model,
     contentLength: content.length,
+    competitorSearchStatus,
+    usableCompetitorCount: usableCompetitors.length,
+    tavilyExtractStatus,
   })
   callbacks?.onStage?.("Finalizing analysis...", 4, 4)
 
-  return { content, source: "inhouse", model }
+  return {
+    content,
+    source: "inhouse",
+    model,
+    metadata: {
+      live_research: {
+        competitor_search_status: competitorSearchStatus,
+        competitor_count: perplexityData.competitors.length,
+        usable_competitor_count: usableCompetitors.length,
+        competitor_context_available: competitorContext.trim().length > 0,
+        tavily_extract_status: tavilyExtractStatus,
+        tavily_result_count: tavilyData.results.length,
+        tavily_failed_result_count: tavilyData.failed_results.length,
+      },
+    },
+  }
 }
 
 // ─── Product Plan Pipeline ───────────────────────────────────────────
@@ -372,7 +420,36 @@ export async function runLaunchPlan(
 
 // ─── Private Helpers ────────────────────────────────────────────────
 
-function buildCompetitorContext(
+function isMissingProviderConfigError(error: unknown) {
+  return error instanceof Error && /API key not configured/i.test(error.message)
+}
+
+function getUsableCompetitors(
+  competitors: Array<{
+    name: string
+    description: string
+    whyCompetes: string
+    url: string
+  }>
+) {
+  return competitors.filter(
+    (competitor) =>
+      competitor.name?.trim() &&
+      competitor.url?.trim().startsWith("http")
+  )
+}
+
+export function getCompetitorSearchStatus(
+  perplexityData: PerplexityCompetitorResult
+): CompetitorSearchStatus {
+  if (perplexityData.parseFailed) return "parse_failed"
+  if (perplexityData.competitors.length === 0) return "empty"
+  return getUsableCompetitors(perplexityData.competitors).length > 0
+    ? "found"
+    : "unusable"
+}
+
+export function buildCompetitorContext(
   competitors: Array<{
     name: string
     description: string
@@ -381,12 +458,12 @@ function buildCompetitorContext(
   }>,
   tavilyResults: TavilyExtractResult[]
 ): string {
-  if (competitors.length === 0)
-    return "No competitor data gathered from external search."
+  const usableCompetitors = getUsableCompetitors(competitors)
+  if (usableCompetitors.length === 0) return ""
 
   const tavilyMap = new Map(tavilyResults.map((r) => [r.url, r]))
 
-  return competitors
+  return usableCompetitors
     .map((comp) => {
       const urlData = tavilyMap.get(comp.url)
       const urlContent = urlData

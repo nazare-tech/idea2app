@@ -43,12 +43,13 @@ export const maxDuration = 540 // 9 min - PRD/MVP OpenRouter calls may run up to
 
 function buildAnalysisMetadata(
   type: string,
-  result: { source: string; model: string }
+  result: { source: string; model: string; metadata?: { [key: string]: Json | undefined } }
 ) {
   const metadata: { [key: string]: Json | undefined } = {
     source: result.source,
     model: result.model,
     generated_at: new Date().toISOString(),
+    ...(result.metadata ?? {}),
   }
 
   if (type === "competitive-analysis") {
@@ -237,7 +238,12 @@ export async function POST(request: Request, { params }: AnalysisParams) {
               onToken: (content) => send({ type: "token", content }),
             }
 
-            let streamResult: { content: string; source: string; model: string }
+            let streamResult: {
+              content: string
+              source: string
+              model: string
+              metadata?: { [key: string]: Json | undefined }
+            }
 
             if (type === "competitive-analysis") {
               streamResult = await runCompetitiveAnalysis({ idea: ideaForGeneration, name, model }, callbacks)
@@ -342,7 +348,12 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     // ─── End streaming path ─────────────────────────────────────────────
 
     // Route to the appropriate in-house pipeline
-    let result: { content: string; source: string; model: string }
+    let result: {
+      content: string
+      source: string
+      model: string
+      metadata?: { [key: string]: Json | undefined }
+    }
 
     if (type === "competitive-analysis") {
       result = await runCompetitiveAnalysis({ idea: ideaForGeneration, name, model })

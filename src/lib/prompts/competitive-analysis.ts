@@ -20,7 +20,7 @@ IMPORTANT GUIDELINES:
 - Reference specific details from the URL-extracted content to validate claims when URL content is available
 - Be specific and factual, not generic
 - Where URL content is available, cite specific product offerings, pricing, or features
-- All SWOT points must be grounded in information extracted from these sources
+- All strategic claims must be grounded in information extracted from these sources
 - If insufficient information is available, write a conservative evidence-aware fallback instead of omitting the section
 - If live competitor research is unavailable or empty, say so consistently and do not fabricate named direct competitors, fake URLs, pricing, or company-specific claims
 - Never skip a required section
@@ -36,7 +36,7 @@ ${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.map(
   (heading) => `  - \`${heading}\`: ${COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP[heading]}`
 ).join("\n")}
 - Executive Summary owns the market snapshot, entry assessment, why-now signal, and biggest risk.
-- Market Research owns every other Market Research v2 section, including customer segments, customer reach, first-version focus, and recommended next moves.
+- Market Research owns every other Market Research v2 section, including customer segments, customer reach, first-version focus, and recommended next moves. Product Plan owns risk, dependency, and open-question handling.
 
 OUTPUT FORMAT (STRICT)
 Output Markdown only.
@@ -66,8 +66,6 @@ REQUIRED SECTION SHAPES
 - \`Gap Analysis\`: 3-5 short ranked bullets for unmet needs and whitespace opportunities
 - \`Ways to Stand Out\`: 3-5 short ranked bullets describing concrete product/positioning wedges
 - \`What Makes It Hard to Copy\`: 3-5 short bullets covering switching costs, data/network effects, integrations, workflow lock-in, or why defensibility is weak
-- \`SWOT Analysis\`: a valid markdown table with Internal/External and Positive/Negative dimensions
-- \`Risks & Competitor Responses\`: 3-5 short bullets describing what could fail and how incumbents might respond
 - \`First Version Focus\`: one short paragraph followed by concise bullets for target user, core loop, and upgrade trigger
 - \`Recommended Next Moves\`: 3-5 specific, actionable recommendations in ranked order using numbered list formatting
 
@@ -122,12 +120,26 @@ Important fallback requirements:
 - In the Direct Competitors section, do not output H3 competitor profiles. State that verified direct competitor profiles are unavailable, then provide category-level competitor/validation targets only.
 - For the remaining sections, use conservative category-level inference and clearly label weak evidence.`
 
+const EMPTY_COMPETITOR_CONTEXT_PATTERNS = [
+  /^No competitor data gathered from external search\.?$/i,
+]
+
+function hasUsableCompetitorContext(competitorContext: string): boolean {
+  const normalizedContext = competitorContext.trim()
+  return (
+    normalizedContext.length > 0 &&
+    !EMPTY_COMPETITOR_CONTEXT_PATTERNS.some((pattern) =>
+      pattern.test(normalizedContext)
+    )
+  )
+}
+
 export function buildCompetitiveAnalysisUserPrompt(
   idea: string,
   name: string,
   competitorContext: string
 ): string {
-  const hasCompetitorContext = competitorContext.trim().length > 0
+  const hasCompetitorContext = hasUsableCompetitorContext(competitorContext)
 
   return buildSecurePrompt(
     hasCompetitorContext

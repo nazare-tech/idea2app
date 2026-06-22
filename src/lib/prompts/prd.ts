@@ -520,32 +520,25 @@ Use concrete targets where possible (e.g., "search results load within 2 seconds
 
 ## 10. Timeline and milestones
 
-Provide a phased rollout plan. If no timeline is provided, infer a realistic one based on feature complexity.
+Provide a phased rollout plan focused on sequence, milestones, and deliverables. Do not estimate project size, calendar duration, week counts, headcount, or people to hire unless the user explicitly provided those constraints.
 
-### Project estimate
-- Size: {Small / Medium / Large}
-- Estimated total duration: {X weeks}
-
-### Team composition
-- {Role}: {responsibilities}
+### Agents
+- {Agent role}: {expertise and responsibilities this agent should cover}
 
 ### Phase 1: {phase name}
 - **Goal**: {what this phase achieves}
-- **Estimated duration**: {X weeks}
 - **Key deliverables**:
   - {deliverable}
   - {deliverable}
 
 ### Phase 2: {phase name}
 - **Goal**: {what this phase achieves}
-- **Estimated duration**: {X weeks}
 - **Key deliverables**:
   - {deliverable}
   - {deliverable}
 
 ### Phase 3: {phase name}
 - **Goal**: {what this phase achieves}
-- **Estimated duration**: {X weeks}
 - **Key deliverables**:
   - {deliverable}
   - {deliverable}
@@ -611,7 +604,7 @@ Before finalizing the PRD, verify internally:
 - [ ] Functional requirements are testable by a junior developer
 - [ ] Every user story has specific, pass/fail acceptance criteria
 - [ ] Success metrics are measurable with concrete targets
-- [ ] Timeline is realistic
+- [ ] Phases are clear and milestone-driven without invented duration or headcount estimates
 - [ ] Risks are identified with mitigations
 - [ ] Dependencies and assumptions are explicit
 - [ ] No placeholder text ("TBD", "N/A", "To be confirmed") remains

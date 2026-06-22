@@ -48,12 +48,13 @@ export interface GeneratedProjectDocument {
 
 function buildAnalysisMetadata(
   type: string,
-  result: { source: string; model: string },
+  result: { source: string; model: string; metadata?: { [key: string]: Json | undefined } },
 ): AnalysisMetadata {
   const metadata: { [key: string]: Json | undefined } = {
     source: result.source,
     model: result.model,
     generated_at: new Date().toISOString(),
+    ...(result.metadata ?? {}),
   }
 
   if (type === "competitive-analysis") {

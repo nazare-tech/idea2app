@@ -6,7 +6,7 @@ implementation_summary:
 
 # Plan: Project Creation Document Streaming
 
-> Current revalidation, 2026-06-22: this is still a future backend streaming plan. It is separate from the implemented local-only Project Animation Lab in `src/app/dev/project-animation-lab`, which simulates block reveal with static fixtures and does not add durable partial-document streaming to onboarding or the workspace.
+> Current revalidation, 2026-06-22: this is still a future backend streaming plan. The earlier static animation prototype has been removed because it did not validate the real onboarding/workspace path.
 
 ## Goal
 Show users live generated document text while a new project is being created, without weakening the existing durable onboarding queue. The desired outcome is that the `/projects/new` loading screen can show the active document being written, and the workspace can continue showing preview text for queued documents that are still generating after the initial Market Research redirect.

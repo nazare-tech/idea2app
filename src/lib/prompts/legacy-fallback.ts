@@ -33,9 +33,6 @@ For each competitor (identify at least 5), provide:
 - Differentiation opportunities
 - Go-to-market strategy
 
-## SWOT Analysis
-- Strengths, Weaknesses, Opportunities, Threats
-
 Use markdown formatting with tables where appropriate.`
 
 const GAP_ANALYSIS_TEMPLATE = `You are an expert business strategist. Perform a comprehensive gap analysis for the following business idea.

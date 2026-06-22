@@ -40,6 +40,20 @@ test("Product Plan nav labels match the current right-panel section text", () =>
   ])
 })
 
+test("Market Research nav omits risks because Product Plan owns that section", () => {
+  const marketResearch = SCROLLABLE_NAV_ITEMS.find((item) => item.key === "market-research")
+
+  assert.deepEqual(marketResearch?.sections.slice(0, 3), [
+    { id: "market-research-direct-competitors", label: "Direct Competitors" },
+    { id: "market-research-landscape-overview", label: "Market Landscape" },
+    { id: "market-research-feature-matrix", label: "Feature Comparison" },
+  ])
+  assert.equal(
+    marketResearch?.sections.some((section) => section.id === "market-research-risks"),
+    false
+  )
+})
+
 test("First Version nav labels match the current right-panel section text", () => {
   const firstVersion = SCROLLABLE_NAV_ITEMS.find((item) => item.key === "mvp")
 

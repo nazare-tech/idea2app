@@ -40,6 +40,20 @@ test("competitive analysis prompt forbids fabricated direct profiles without liv
   assert.doesNotMatch(userPrompt, /identified through live web research/)
 })
 
+test("competitive analysis prompt treats empty-search sentinel as no live research", () => {
+  const userPrompt = buildCompetitiveAnalysisUserPrompt(
+    "AI travel planning for pet owners",
+    "Paws Away",
+    "No competitor data gathered from external search."
+  )
+
+  assert.match(
+    userPrompt,
+    /Live competitor research did not return usable competitor data/
+  )
+  assert.doesNotMatch(userPrompt, /identified through live web research/)
+})
+
 test("competitive analysis prompt defines workspace section ownership", () => {
   assert.match(
     COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
@@ -60,4 +74,11 @@ test("competitive analysis prompt requires scored positioning evidence", () => {
     COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
     /do not invent precision/i
   )
+})
+
+test("competitive analysis prompt omits market research risk sections", () => {
+  assert.doesNotMatch(COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, /Risks & Competitor Responses/)
+  assert.doesNotMatch(COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, /\*\*Risk:\*\*.*\*\*Competitor response:\*\*/s)
+  assert.doesNotMatch(COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, /SWOT Analysis/)
+  assert.doesNotMatch(COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, /Internal\/External and Positive\/Negative/)
 })

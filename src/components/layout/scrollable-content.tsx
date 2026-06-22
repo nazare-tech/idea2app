@@ -347,8 +347,19 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
     const [renderDeferred, setRenderDeferred] = useState(false)
 
     useEffect(() => {
-      const id = requestAnimationFrame(() => setRenderDeferred(true))
-      return () => cancelAnimationFrame(id)
+      let didRender = false
+      const revealDeferredSections = () => {
+        if (didRender) return
+        didRender = true
+        setRenderDeferred(true)
+      }
+      const frameId = requestAnimationFrame(revealDeferredSections)
+      const timeoutId = window.setTimeout(revealDeferredSections, 250)
+
+      return () => {
+        cancelAnimationFrame(frameId)
+        window.clearTimeout(timeoutId)
+      }
     }, [])
 
     return (

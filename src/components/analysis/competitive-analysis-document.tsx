@@ -3,14 +3,15 @@
 import { useMemo } from "react"
 import { AlertTriangle, ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ExplainTermButton } from "@/components/analysis/explainable-term"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import {
   type CompetitiveAnalysisCompetitorProfile,
   type CompetitiveAnalysisPositioningPoint,
   type CompetitiveAnalysisStructuredData,
-  type CompetitiveAnalysisSwotMatrix,
   getCompetitiveAnalysisViewModel,
 } from "@/lib/competitive-analysis-v2"
+import { getExplainableTermKeyByLabel } from "@/lib/explainable-terms"
 
 interface CompetitiveAnalysisDocumentProps {
   content: string
@@ -39,7 +40,6 @@ const fallbackMarketResearchSections = [
   { id: "market-research-gap-analysis", title: "Gap Analysis", headings: ["Gap Analysis"] },
   { id: "market-research-differentiation", title: "Ways to Stand Out", headings: ["Ways to Stand Out"] },
   { id: "market-research-moat", title: "What Makes It Hard to Copy", headings: ["What Makes It Hard to Copy"] },
-  { id: "market-research-risks", title: "Risks & Competitor Responses", headings: ["Risks & Competitor Responses"] },
   { id: "market-research-mvp-wedge", title: "First Version Focus", headings: ["First Version Focus"] },
   { id: "market-research-strategic-recommendations", title: "Recommended Next Moves", headings: ["Recommended Next Moves"] },
 ] as const
@@ -202,15 +202,21 @@ function PencilCard({
             </p>
           ) : null}
           {showTitle ? (
-            <h2
-              className={cn(
-                displayFontClass,
-                "text-[22px] font-bold tracking-[-0.03em]",
-                dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
-              )}
-            >
-              {title}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2
+                className={cn(
+                  displayFontClass,
+                  "text-[22px] font-bold tracking-[-0.03em]",
+                  dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
+                )}
+              >
+                {title}
+              </h2>
+              <ExplainTermButton
+                termKey={getExplainableTermKeyByLabel(title)}
+                label={title}
+              />
+            </div>
           ) : null}
           {description ? (
             <p className="max-w-2xl ui-type-body-sm text-[#666666]">
@@ -233,12 +239,17 @@ function WorkspaceSectionHeader({
   index: number
   total: number
 }) {
+  const termKey = getExplainableTermKeyByLabel(title)
+
   return (
     <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
       <div>
-        <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
-          {title}
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
+            {title}
+          </h2>
+          <ExplainTermButton termKey={termKey} label={title} />
+        </div>
       </div>
       <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#8A8480]">
         {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
@@ -929,81 +940,6 @@ function PositioningMap({
   )
 }
 
-function SWOTQuadrant({
-  label,
-  value,
-  tone,
-}: {
-  label: string
-  value: string
-  tone: "mint" | "rose" | "blue" | "amber"
-}) {
-  return (
-    <div
-      className={cn(
-        "border p-5",
-        tone === "mint" && "border-[#D1FAE5] bg-[#F0FDF4]",
-        tone === "rose" && "border-[#FECACA] bg-[#FEF2F2]",
-        tone === "blue" && "border-[#BFDBFE] bg-[#EFF6FF]",
-        tone === "amber" && "border-[#FED7AA] bg-[#FFF7ED]"
-      )}
-    >
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#777777]">
-        {label}
-      </p>
-      <p className="mt-2 ui-type-table text-[#0A0A0A]">{value}</p>
-    </div>
-  )
-}
-
-function SWOTCard({
-  matrix,
-  paragraphs,
-  tableHeaders,
-  rows,
-  showHeader = true,
-}: {
-  matrix: CompetitiveAnalysisSwotMatrix | null
-  paragraphs: string[]
-  tableHeaders: string[]
-  rows: string[][]
-  showHeader?: boolean
-}) {
-  return (
-    <PencilCard title="SWOT Analysis" showHeader={showHeader}>
-      <ParagraphStack paragraphs={paragraphs} />
-      {matrix ? (
-        <div className={paragraphs.length > 0 ? "grid gap-4 pt-5 md:grid-cols-2" : "grid gap-4 md:grid-cols-2"}>
-          <SWOTQuadrant
-            label={`Internal / ${matrix.positiveLabel}`}
-            value={matrix.internalPositive}
-            tone="mint"
-          />
-          <SWOTQuadrant
-            label={`Internal / ${matrix.negativeLabel}`}
-            value={matrix.internalNegative}
-            tone="rose"
-          />
-          <SWOTQuadrant
-            label={`External / ${matrix.positiveLabel}`}
-            value={matrix.externalPositive}
-            tone="blue"
-          />
-          <SWOTQuadrant
-            label={`External / ${matrix.negativeLabel}`}
-            value={matrix.externalNegative}
-            tone="amber"
-          />
-        </div>
-      ) : rows.length > 0 ? (
-        <div className={paragraphs.length > 0 ? "pt-5" : ""}>
-          <DataTable headers={tableHeaders} rows={rows} />
-        </div>
-      ) : null}
-    </PencilCard>
-  )
-}
-
 function SmallListCard({
   title,
   kicker,
@@ -1123,18 +1059,6 @@ function CompetitiveResearchPage({
         items={structured.moatAndDefensibility}
       />
 
-      <SWOTCard
-        matrix={structured.swotAnalysis.matrix}
-        paragraphs={structured.swotAnalysis.paragraphs}
-        tableHeaders={structured.swotAnalysis.table?.headers ?? []}
-        rows={structured.swotAnalysis.table?.rows ?? []}
-      />
-
-      <SmallListCard
-        title="Risks & Competitor Responses"
-        items={structured.risksAndCountermoves}
-      />
-
       <MVPCard
         paragraphs={structured.mvpWedgeRecommendation.paragraphs}
         bullets={structured.mvpWedgeRecommendation.bullets}
@@ -1198,7 +1122,7 @@ export function CompetitiveOverviewSection({
 
 /**
  * Detail portion of competitive analysis: competitors, matrices, maps, pricing,
- * gap analysis, moat, SWOT, risks. Used by ScrollableContent for "Market Research".
+ * gap analysis, moat, risks, and next moves. Used by ScrollableContent for "Market Research".
  */
 export function CompetitiveDetailSection({
   content,
@@ -1239,7 +1163,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="Direct Competitors"
         index={1}
-        total={13}
+        total={12}
       >
         <CompetitorProfiles
           competitors={structured.directCompetitors}
@@ -1253,7 +1177,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="Market Landscape"
         index={2}
-        total={13}
+        total={12}
       >
         <SmallListCard
           title="Competitive Landscape Overview"
@@ -1267,7 +1191,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="Feature Comparison"
         index={3}
-        total={13}
+        total={12}
       >
         <CompactTableCard
           title="Feature Comparison"
@@ -1283,7 +1207,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="Positioning Map"
         index={4}
-        total={13}
+        total={12}
       >
         <PositioningMap
           title="Positioning Map"
@@ -1298,7 +1222,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="Pricing Comparison"
         index={5}
-        total={13}
+        total={12}
       >
         <CompactTableCard
           title="Pricing Comparison"
@@ -1314,7 +1238,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="Best Customer Segments"
         index={6}
-        total={13}
+        total={12}
       >
         <SmallListCard
           title="Best Customer Segments"
@@ -1328,7 +1252,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="How You'll Reach Customers"
         index={7}
-        total={13}
+        total={12}
       >
         <SmallListCard
           title="How You'll Reach Customers"
@@ -1343,7 +1267,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="Gap Analysis"
         index={8}
-        total={13}
+        total={12}
       >
         <SmallListCard title="Gap Analysis" items={structured.gapAnalysis} showHeader={false} />
       </WorkspaceDesignedSection>
@@ -1353,7 +1277,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="Ways to Stand Out"
         index={9}
-        total={13}
+        total={12}
       >
         <SmallListCard
           title="Ways to Stand Out"
@@ -1368,7 +1292,7 @@ export function CompetitiveDetailSection({
         kicker="Deep Analysis"
         title="What Makes It Hard to Copy"
         index={10}
-        total={13}
+        total={12}
       >
         <SmallListCard
           title="What Makes It Hard to Copy"
@@ -1378,32 +1302,11 @@ export function CompetitiveDetailSection({
       </WorkspaceDesignedSection>
 
       <WorkspaceDesignedSection
-        id="market-research-risks"
-        kicker="Deep Analysis"
-        title="Risks & Competitor Responses"
-        index={11}
-        total={13}
-      >
-        <SWOTCard
-          matrix={structured.swotAnalysis.matrix}
-          paragraphs={structured.swotAnalysis.paragraphs}
-          tableHeaders={structured.swotAnalysis.table?.headers ?? []}
-          rows={structured.swotAnalysis.table?.rows ?? []}
-          showHeader={false}
-        />
-        <SmallListCard
-          title="Risks & Competitor Responses"
-          items={structured.risksAndCountermoves}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
         id="market-research-mvp-wedge"
         kicker="Deep Analysis"
         title="First Version Focus"
-        index={12}
-        total={13}
+        index={11}
+        total={12}
       >
         <MVPCard
           paragraphs={structured.mvpWedgeRecommendation.paragraphs}
@@ -1416,8 +1319,8 @@ export function CompetitiveDetailSection({
         id="market-research-strategic-recommendations"
         kicker="Deep Analysis"
         title="Recommended Next Moves"
-        index={13}
-        total={13}
+        index={12}
+        total={12}
       >
         <SmallListCard
           title="Recommended Next Moves"
