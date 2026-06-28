@@ -26,7 +26,7 @@ function createOpaqueToken() {
 
 export async function POST(request: Request) {
   const requestLogContext = buildRequestLogContext(request)
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `intake-pending:${getClientIp(request)}`,
     limit: 12,
     windowMs: 60_000,

@@ -108,6 +108,8 @@ const EXPLICIT_ALLOWANCE_KEYS = [
   "max_projects_per_month",
 ]
 
+const warnedFallbackPlans = new Set<string>()
+
 export async function canCreateProject(
   client: ProjectAllowanceClient,
   userId: string,
@@ -228,12 +230,29 @@ export function resolveProjectAllowance(plan: Record<string, unknown> | null): P
   }
 
   const fallback = getFallbackAllowanceForPlanName(planName)
+  warnIfProductionFallback(planName, fallback.source)
 
   return {
     allowance: fallback.allowance,
     source: fallback.source,
     planName,
   }
+}
+
+function warnIfProductionFallback(planName: string, source: ProjectAllowanceSource) {
+  if (process.env.NODE_ENV !== "production") return
+  if (source !== "plan_name" && source !== "default") return
+
+  const warningKey = `${source}:${normalizePlanName(planName)}`
+  if (warnedFallbackPlans.has(warningKey)) return
+  warnedFallbackPlans.add(warningKey)
+
+  console.warn(JSON.stringify({
+    level: "warn",
+    message: "Project allowance resolved from fallback plan metadata",
+    planName,
+    allowanceSource: source,
+  }))
 }
 
 export function getUtcCalendarMonthWindow(now = new Date()): MonthlyProjectWindow {
@@ -445,7 +464,17 @@ function getExplicitPlanAllowance(
     return undefined
   }
 
+  const planName = getPlanName(plan)
+
   for (const key of EXPLICIT_ALLOWANCE_KEYS) {
+    if (
+      Object.prototype.hasOwnProperty.call(plan, key) &&
+      plan[key] === null &&
+      getFallbackAllowanceForPlanName(planName).allowance === null
+    ) {
+      return { allowance: null, source: "plan_field" }
+    }
+
     const allowance = resolveAllowanceValue(plan[key], false)
 
     if (allowance !== undefined) {

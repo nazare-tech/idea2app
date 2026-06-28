@@ -11,6 +11,10 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { GENERATE_ALL_DEFAULT_MODELS } from "@/lib/document-definitions"
 import { generateProjectDocument } from "@/lib/document-generation-service"
+import {
+  consumeGenerationQueueItemCredits,
+  resolveFailedGenerationCreditStatus,
+} from "@/lib/generation-queue-credit-flow"
 import { refundGenerationQueueItemCredits } from "@/lib/generation-queue-billing"
 import {
   claimGenerationQueueItem,
@@ -46,6 +50,8 @@ import {
 export const maxDuration = 540
 
 type SB = SupabaseClient<Database>
+
+const INCLUDED_PROJECT_OUTPUT_DOC_TYPES = new Set(["competitive", "prd", "mvp", "mockups"])
 
 // This only parallelizes independent documents; getRunnableItems still requires
 // every declared dependency to be done or skipped before a document can run.
@@ -302,14 +308,32 @@ async function executeQueueItem({
 
   const action = GENERATE_ALL_ACTION_MAP[claimed.doc_type]
   const model = claimed.model_id ?? GENERATE_ALL_DEFAULT_MODELS[claimed.doc_type]
-  const creditCost = isBundledItem ? 0 : action ? getTokenCost(action, model) : claimed.credit_cost
-  const shouldChargeCredits = !isBundledItem && creditCost > 0 && claimed.credit_status !== "charged"
+  const isIncludedProjectOutput = INCLUDED_PROJECT_OUTPUT_DOC_TYPES.has(claimed.doc_type)
+  const creditCost = isBundledItem || isIncludedProjectOutput
+    ? 0
+    : action
+      ? getTokenCost(action, model)
+      : claimed.credit_cost
+  const shouldChargeCredits =
+    !isBundledItem &&
+    !isIncludedProjectOutput &&
+    creditCost > 0 &&
+    claimed.credit_status !== "charged"
   let charged = claimed.credit_status === "charged"
+  const refundCreditCost = charged ? Math.max(creditCost, claimed.credit_cost) : creditCost
 
   const identity = getActiveDocumentIdentityForDocumentType(claimed.doc_type)
   if (identity) {
     const existing = await findLatestActiveDocument(documentSupabase, claimed.project_id, identity)
     if (existing) {
+      const creditStatus = await resolveNoChargeCreditStatus({
+        billingSupabase,
+        item: claimed,
+        refundCreditCost,
+        charged,
+        logContext: itemLogContext,
+        description: `${claimed.label} skipped: credits refunded (Generate All)`,
+      })
       logInfo("GenerateAll", "item_skipped_existing_output", {
         ...itemLogContext,
         outputTable: existing.outputTable,
@@ -322,7 +346,7 @@ async function executeQueueItem({
         output_table: existing.outputTable,
         output_id: existing.outputId,
         completed_at: new Date().toISOString(),
-        credit_status: "not_charged",
+        credit_status: creditStatus,
       })
     }
   }
@@ -333,23 +357,25 @@ async function executeQueueItem({
       creditCost,
       action,
     })
-    const { data: consumed, error: consumeError } = await billingSupabase.rpc("consume_credits", {
-      p_user_id: claimed.user_id,
-      p_amount: creditCost,
-      p_action: action ?? claimed.doc_type,
-      p_description: `${claimed.label} for "${project.name}" (Generate All)`,
+    const creditConsumption = await consumeGenerationQueueItemCredits({
+      supabase: billingSupabase,
+      userId: claimed.user_id,
+      amount: creditCost,
+      action: action ?? claimed.doc_type,
+      label: claimed.label,
+      projectName: project.name,
     })
 
-    if (consumeError || !consumed) {
+    if (!creditConsumption.consumed) {
       logWarn("GenerateAll", "item_credit_charge_failed", {
         ...itemLogContext,
         creditCost,
-        consumed: Boolean(consumed),
-      }, consumeError)
+        consumed: false,
+      })
       return finishGeneratingItem(queueSupabase, claimed, {
         status: "error",
         stage_message: null,
-        error: consumeError ? "Credit check failed" : "Insufficient credits",
+        error: creditConsumption.errorMessage ?? "Credit check failed",
         completed_at: new Date().toISOString(),
       })
     }
@@ -391,6 +417,7 @@ async function executeQueueItem({
           queueSupabase,
           item: claimed,
           charged,
+          refundCreditCost,
         })
       }
 
@@ -414,6 +441,16 @@ async function executeQueueItem({
         outputId: output.outputId,
         skippedExisting: Boolean(output.skippedExisting),
       })
+      const successfulCreditStatus = await resolveSuccessfulGenerationCreditStatus({
+        billingSupabase,
+        item: claimed,
+        refundCreditCost,
+        charged,
+        isBundledItem,
+        isIncludedProjectOutput,
+        skippedExisting: Boolean(output.skippedExisting),
+        logContext: itemLogContext,
+      })
       return finishGeneratingItem(queueSupabase, claimed, {
         status: output.skippedExisting ? "skipped" : "done",
         stage_message: null,
@@ -421,13 +458,7 @@ async function executeQueueItem({
         output_table: output?.outputTable ?? null,
         output_id: output?.outputId ?? null,
         completed_at: new Date().toISOString(),
-        credit_status: output.skippedExisting
-          ? "not_charged"
-          : isBundledItem
-            ? "not_charged"
-            : charged
-              ? "charged"
-              : claimed.credit_status,
+        credit_status: successfulCreditStatus,
       })
     } catch (error) {
       if (attempt < maxAttempts) {
@@ -448,30 +479,26 @@ async function executeQueueItem({
         maxAttempts,
         wasCancelled,
       })
-      let creditStatus = claimed.credit_status
-      if (charged) {
-        const refund = await refundGenerationQueueItemCredits(
-          billingSupabase,
-          { ...claimed, credit_cost: creditCost },
-          wasCancelled
-            ? `${claimed.label} cancelled: credits refunded (Generate All)`
-            : `${claimed.label} failed: credits refunded (Generate All)`,
-        )
-        if (refund.error) {
-          logError("GenerateAll", "item_credit_refund_failed", refund.error, {
+      const creditStatus = await resolveFailedGenerationCreditStatus({
+        billingSupabase,
+        item: claimed,
+        creditCost: refundCreditCost,
+        charged,
+        wasCancelled,
+        logRefundError: (refundError) => {
+          logError("GenerateAll", "item_credit_refund_failed", refundError, {
             ...itemLogContext,
             creditCost,
             wasCancelled,
           })
-        }
-        if (refund.refunded) {
-          logInfo("GenerateAll", "item_credit_refunded", {
-            ...itemLogContext,
-            creditCost,
-            wasCancelled,
-          })
-        }
-        creditStatus = refund.refunded ? "refunded" : "refund_failed"
+        },
+      })
+      if (charged && creditStatus === "refunded") {
+        logInfo("GenerateAll", "item_credit_refunded", {
+          ...itemLogContext,
+          creditCost,
+          wasCancelled,
+        })
       }
 
       return finishGeneratingItem(queueSupabase, claimed, {
@@ -547,34 +574,123 @@ async function isQueueCancelled(supabase: SB, item: GenerationQueueItemRow) {
   return data?.status === "cancelled"
 }
 
+async function resolveSuccessfulGenerationCreditStatus({
+  billingSupabase,
+  item,
+  refundCreditCost,
+  charged,
+  isBundledItem,
+  isIncludedProjectOutput,
+  skippedExisting,
+  logContext,
+}: {
+  billingSupabase: SB
+  item: GenerationQueueItemRow
+  refundCreditCost: number
+  charged: boolean
+  isBundledItem: boolean
+  isIncludedProjectOutput: boolean
+  skippedExisting: boolean
+  logContext: LogContext
+}) {
+  if (skippedExisting) {
+    return resolveNoChargeCreditStatus({
+      billingSupabase,
+      item,
+      refundCreditCost,
+      charged,
+      logContext,
+      description: `${item.label} skipped: credits refunded (Generate All)`,
+    })
+  }
+
+  if (isBundledItem || isIncludedProjectOutput) {
+    return resolveNoChargeCreditStatus({
+      billingSupabase,
+      item,
+      refundCreditCost,
+      charged,
+      logContext,
+      description: `${item.label} is included in project generation: credits refunded (Generate All)`,
+    })
+  }
+
+  return charged ? "charged" : item.credit_status
+}
+
+async function resolveNoChargeCreditStatus({
+  billingSupabase,
+  item,
+  refundCreditCost,
+  charged,
+  logContext,
+  description,
+}: {
+  billingSupabase: SB
+  item: GenerationQueueItemRow
+  refundCreditCost: number
+  charged: boolean
+  logContext: LogContext
+  description: string
+}) {
+  if (!charged) return "not_charged"
+  if (refundCreditCost <= 0) return "not_charged"
+
+  const refund = await refundGenerationQueueItemCredits(
+    billingSupabase,
+    { ...item, credit_cost: refundCreditCost },
+    description,
+  )
+
+  if (refund.error) {
+    logError("GenerateAll", "item_credit_refund_failed", refund.error, {
+      ...logContext,
+      creditCost: refundCreditCost,
+    })
+  }
+
+  if (refund.refunded) {
+    logInfo("GenerateAll", "item_credit_refunded", {
+      ...logContext,
+      creditCost: refundCreditCost,
+    })
+  }
+
+  return refund.refunded ? "refunded" : "refund_failed"
+}
+
 async function cancelClaimedItemAfterAcknowledgement({
   billingSupabase,
   queueSupabase,
   item,
   charged,
+  refundCreditCost,
 }: {
   billingSupabase: SB
   queueSupabase: SB
   item: GenerationQueueItemRow
   charged: boolean
+  refundCreditCost: number
 }) {
   let creditStatus = item.credit_status
 
   if (charged) {
-    const refund = await refundGenerationQueueItemCredits(
+    creditStatus = await resolveFailedGenerationCreditStatus({
       billingSupabase,
       item,
-      `${item.label} cancelled: credits refunded (Generate All)`,
-    )
-    if (refund.error) {
-      logError("GenerateAll", "item_credit_refund_failed", refund.error, {
-        itemId: item.id,
-        docType: item.doc_type,
-        queueId: item.queue_id,
-        runId: item.run_id,
-      })
-    }
-    if (refund.refunded) {
+      creditCost: refundCreditCost,
+      charged,
+      wasCancelled: true,
+      logRefundError: (refundError) => {
+        logError("GenerateAll", "item_credit_refund_failed", refundError, {
+          itemId: item.id,
+          docType: item.doc_type,
+          queueId: item.queue_id,
+          runId: item.run_id,
+        })
+      },
+    })
+    if (creditStatus === "refunded") {
       logInfo("GenerateAll", "item_credit_refunded", {
         itemId: item.id,
         docType: item.doc_type,
@@ -582,7 +698,6 @@ async function cancelClaimedItemAfterAcknowledgement({
         runId: item.run_id,
       })
     }
-    creditStatus = refund.refunded ? "refunded" : "refund_failed"
   }
 
   return finishGeneratingItem(queueSupabase, item, {

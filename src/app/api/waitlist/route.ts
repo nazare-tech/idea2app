@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   const requestLogContext = buildRequestLogContext(req)
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `waitlist:${getClientIp(req)}`,
     limit: 8,
     windowMs: 60_000,

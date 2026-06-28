@@ -25,6 +25,15 @@ Still deferred:
 - Dependency upgrade pass for audited package advisories.
 - Atomic single-RPC project creation/intake/queue insertion beyond the current short-lived lock guard.
 
+## Addendum - 2026-06-16
+
+Closed:
+- Finding 1 is closed by removal. The legacy Stitch HTML proxy route, Stitch SDK pipeline, `srcDoc` iframe preview branches, and `allow-scripts allow-same-origin` mockup preview sandboxes were removed. Old Stitch-format mockup rows now render only a safe regeneration notice until production data cleanup exports and deletes them.
+- Finding 13 is closed for production dependencies. `@google/stitch-sdk` and `jspdf` were removed, Next was updated to the 16.2 line, a PostCSS override was added for the patched 8.5 line, and `npm audit --omit=dev` reports 0 vulnerabilities.
+
+Still external:
+- Production legacy Stitch row export/deletion and the production RLS checklist require Supabase project access.
+
 ## Executive Summary
 
 The highest-risk issue is the mockup preview flow: generated/third-party HTML is fetched through a same-origin proxy and embedded with `allow-scripts allow-same-origin`, which can turn generated HTML into first-party script execution.

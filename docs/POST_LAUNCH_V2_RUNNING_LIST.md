@@ -65,9 +65,9 @@ Current MVP decision:
 - Defer dependency upgrades until after behavioral security fixes.
 
 Future work:
-- Update direct dependencies first: `next`, `jspdf`, `mermaid`, `puppeteer`, and `@google/stitch-sdk` when patched.
+- Update direct dependencies first: `next`, `jspdf`, `mermaid`, and `@google/stitch-sdk` when patched. `puppeteer` was removed when PDF export was retired.
 - Re-run `npm audit --omit=dev`.
-- Regression-test PDF export, Mermaid rendering, mockup generation, and app build.
+- Regression-test Mermaid rendering, mockup generation, and app build. PDF export is retired and should not be part of the regression path unless it is deliberately reintroduced.
 
 Review questions:
 - Are patched versions available without breaking the app?

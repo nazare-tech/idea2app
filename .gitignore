@@ -81,3 +81,7 @@ src/lib/stitch/test-fixture.json
 # Design tooling source — relocated to its own repo (kept on disk, not tracked)
 /Design System/
 /assets/logos/
+
+# AI Agent artifacts
+.superpowers/
+.tmp/

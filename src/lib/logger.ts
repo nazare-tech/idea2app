@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs"
+
 export type LogLevel = "info" | "warn" | "error"
 
 export type LogContext = Record<string, unknown>
@@ -216,6 +218,29 @@ function writeLog(
   } else {
     console.info(message)
   }
+
+  captureSentryLog(level, scope, event, payload)
+}
+
+function captureSentryLog(
+  level: LogLevel,
+  scope: string,
+  event: string,
+  payload: {
+    ts: string
+    level: LogLevel
+    scope: string
+    event: string
+    context: LogContext
+    error?: NormalizedLogError
+  },
+): void {
+  if (level === "info") return
+
+  Sentry.captureMessage(`${scope}.${event}`, {
+    level: level === "warn" ? "warning" : "error",
+    extra: payload,
+  })
 }
 
 export function logInfo(scope: string, event: string, context: LogContext = {}): void {

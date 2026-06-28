@@ -1,5 +1,5 @@
 // NDJSON stream parser for document generation endpoints.
-// Mirrors the parseChatStream pattern in src/components/chat/chat-interface.tsx.
+// NDJSON stream parser for document generation endpoints.
 
 export interface StreamStage {
   message: string

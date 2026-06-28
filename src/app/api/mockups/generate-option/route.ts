@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     const userLogContext = { ...requestLogContext, userId: user.id }
-    const rateLimit = checkRateLimit({
+    const rateLimit = await checkRateLimit({
       key: `mockups-option:${user.id}:${getClientIp(request)}`,
       limit: 12,
       windowMs: 60_000,

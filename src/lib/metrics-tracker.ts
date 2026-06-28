@@ -23,13 +23,13 @@
  *     trackAPIMetrics({
  *       endpoint: '/api/chat',
  *       method: 'POST',
- *       featureType: 'chat',
+ *       featureType: 'analysis',
  *       userId: user.id,
  *       projectId,
  *       statusCode,
  *       responseTimeMs: timer.getElapsedMs(),
  *       creditsConsumed: 1,
- *       modelUsed: 'anthropic/claude-sonnet-4',
+ *       modelUsed: 'openai/gpt-5.4-mini',
  *       aiSource: 'openrouter',
  *       errorType,
  *       errorMessage,
@@ -50,7 +50,6 @@ export type FeatureType =
   | "prompt-chat"
   | "document-edit"
   | "analysis"
-  | "app-generation"
   | "project-management"
   | "mockup"
   | "other"
@@ -58,7 +57,7 @@ export type FeatureType =
 /**
  * AI source providers
  */
-export type AISource = "openrouter" | "openrouter-image" | "anthropic" | "inhouse" | "stitch"
+export type AISource = "openrouter" | "openrouter-image" | "anthropic" | "inhouse"
 
 /**
  * Common error types for categorization
@@ -282,7 +281,6 @@ export function getFeatureTypeFromEndpoint(endpoint: string): FeatureType {
   if (endpoint.includes("/prompt-chat")) return "prompt-chat"
   if (endpoint.includes("/document-edit")) return "document-edit"
   if (endpoint.includes("/analysis")) return "analysis"
-  if (endpoint.includes("/generate-app")) return "app-generation"
   if (endpoint.includes("/projects")) return "project-management"
   return "other"
 }

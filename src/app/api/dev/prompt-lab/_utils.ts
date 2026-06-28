@@ -33,7 +33,7 @@ export async function requirePromptLabRequest(
     }
   }
 
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `prompt-lab:${rateLimitKey}:${user.id}:${getClientIp(request)}`,
     limit,
     windowMs,

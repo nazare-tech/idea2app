@@ -17,6 +17,7 @@ const eslintConfig = defineConfig([
     // even after "Design System/" relocates, as a guard against re-adding it.
     "Design System/**",
     "tmp/**",
+    ".tmp/**",
   ]),
 ]);
 

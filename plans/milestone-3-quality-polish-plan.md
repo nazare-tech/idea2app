@@ -1,7 +1,7 @@
 ---
-implemented: false
-implemented_at:
-implementation_summary:
+implemented: true
+implemented_at: 2026-06-21
+implementation_summary: "Credits are hidden from reachable user-facing surfaces while internal accounting remains; explicit plan project allowances are backed by migration/manual SQL; planning renderers and tests are split; intake and shared rate limits are hardened with Redis REST support; Mermaid SVG is sanitized; project context and review notes are updated."
 ---
 
 # Plan: Milestone 3, Quality And Polish
@@ -27,40 +27,38 @@ Finish the remaining medium and low findings worth doing: hide credits from all 
 ## Confirmed Decisions
 - Credits stay as internal accounting; users never see credit balances, costs, or credit-denominated errors (owner, 2026-06-11).
 - The entitlement-model overhaul itself follows `plans/remove-credits-and-future-entitlements-plan.md`; this milestone does not redesign entitlements.
+- Owner approved the recommended implementation decisions on 2026-06-21.
 
-## Clarifying Questions
-1. When credit checks fail internally (insufficient credits), what do users see instead?
-   - Recommendation A: Plan-language messaging: "You've reached your plan limit, upgrade to continue", mapped from the same 402 responses, with the billing page as the call to action.
-   - Trade-off: Requires an error-message mapping layer in the workspace fetch handlers, but matches the project-based pricing story users are sold.
-   - Recommendation B: Generic retry messaging.
-   - Trade-off: Trivial to implement but hides the real cause and loses the upgrade prompt.
-2. Should durable rate limiting use Upstash Redis or stay in-memory until traffic justifies it?
-   - Recommendation A: Adopt Upstash (or Vercel KV) behind the existing `checkRateLimit` signature so call sites do not change; in-memory remains the local-dev fallback.
-   - Trade-off: One new service and env vars, but limits finally hold across serverless instances; the current limiter is advisory under real traffic.
-   - Recommendation B: Defer until post-launch metrics show abuse.
-   - Trade-off: Zero work now, but the first abuse incident is also the first time limits matter.
-3. How should the renderer split be sliced?
-   - Recommendation A: Three files along existing seams: `product-plan-blocks.tsx`, `first-version-plan-blocks.tsx`, `planning-blocks-shared.tsx` (primitives: section frames, stat rows, cards), with `planning-document-blocks.tsx` kept temporarily as a re-export barrel so imports do not churn.
-   - Trade-off: Mechanical and low-risk; the barrel adds one indirection until imports are updated.
-   - Recommendation B: Split per component into a directory of 50-plus files.
-   - Trade-off: Maximum granularity but high churn and no behavioral payoff over A.
+## Resolved Implementation Decisions
+1. Hidden credit failures use plan-language messaging, not generic retry copy and not user-visible credit language. Map old insufficient-credit/402 paths to copy such as "You've reached your plan limit. Upgrade to continue." with a billing-page call to action.
+2. Core project outputs are included inside an allowed project: Market Research, Product Plan, First Version Plan, and Design Mockups. Hidden credit balances must not block those included flows.
+3. Manual regeneration/versioning remains out of scope. Preserve active-document singleton behavior until regeneration is designed as an explicit product entitlement.
+4. Durable rate limiting should be implemented now using Upstash Redis behind the existing `checkRateLimit` helper, with Redis-compatible Vercel KV acceptable only if the deployment already has it wired. Local development keeps an in-memory fallback.
+5. Intake question generation should use conservative configurable defaults: start with 5 requests per signed-in user per hour plus 20 requests per IP per hour, then tune from logs.
+6. Split `planning-document-blocks.tsx` into three files along existing seams: `product-plan-blocks.tsx`, `first-version-plan-blocks.tsx`, and `planning-blocks-shared.tsx`, with `planning-document-blocks.tsx` kept temporarily as a re-export barrel.
+7. Delete `credit-balance.tsx` if the inventory proves no reachable user-facing or internal admin surface still needs it.
+8. Billing should replace credit display with project-allowance usage where available, for example "2 of 5 projects used this month."
+9. Plan entitlement fields should be populated through both a Supabase migration and manual production DB update notes, with resolver-equivalence tests before any data change.
+10. Include Mermaid sanitization and the Mermaid-related package update. Skip unrelated optional dependency bumps unless the full milestone is already green and the update is very low risk.
+11. Trim `PROJECT_CONTEXT.md` into a current-state architecture reference, removing long narrative history and keeping detailed history in plans/git.
 
 ## Recommended First Step
 Inventory every user-visible credit surface with `grep -rn "credit" src/components src/app --include="*.tsx"` against the post-Milestone-2 tree (the dead components that mentioned credits are already gone), and classify each hit as: display to remove, internal logic to keep, or copy to rewrite. That inventory becomes the checklist for step 1 and the review artifact for the credit-hiding work.
 
 ## Plan
-1. [ ] Hide credits from user-facing UI per the inventory:
+1. [x] Hide credits from user-facing UI per the inventory:
    - Remove or replace `CreditBalance` displays in `dashboard-shell.tsx`, `project-header.tsx`, `header-profile-menu.tsx`.
-   - Rewrite insufficient-credit error paths per Clarifying Question 1 decision (workspace generation handlers, billing page copy).
+   - Rewrite insufficient-credit error paths to plan-language messaging with billing-page calls to action.
+   - Replace billing credit display with visible project-allowance usage where available.
    - Keep all server-side `consume_credits`/refund logic untouched; this is display-layer only.
    - Cross-check against `plans/remove-credits-and-future-entitlements-plan.md` so the two efforts stay aligned, and record in that plan what this step already covered.
-2. [ ] Populate explicit entitlement fields for live plans (`monthly_project_allowance` on the plans rows) so `project-allowance.ts` resolves from `plan_field`, demoting name/feature-string parsing to a true fallback; add a logged warning when the fallback path is used in production.
-3. [ ] Split `planning-document-blocks.tsx` per Clarifying Question 3 decision; move components verbatim, keep `planning-document-blocks.test.tsx` passing throughout, split the test file along the same seams.
-4. [ ] Rate-limit `src/app/api/intake/questions/route.ts` with the same pattern as sibling AI routes (per-user plus IP key, conservative limit).
-5. [ ] Durable rate limiting per Clarifying Question 2 decision: storage-backed implementation behind `checkRateLimit`, in-memory fallback for local dev; delete `pruneRateLimitBuckets` or call it on a cadence inside the in-memory fallback.
-6. [ ] Sanitize Mermaid SVG: run renderer output through DOMPurify (in SVG profile) before `dangerouslySetInnerHTML` in `markdown-renderer.tsx`; bump `beautiful-mermaid` 0.1.3 to current 1.x and visually verify diagram rendering and the expand modal in both themes.
-7. [ ] Trim `PROJECT_CONTEXT.md`: cap feature bullets near 100 words, move narrative history into a short changelog section or delete it (git history is the changelog), verify every remaining claim against code, and confirm section 12 file references still exist.
-8. [ ] Optional, timeboxed: bump `@supabase/ssr` and `@anthropic-ai/sdk` minor/patch ranges with a full local smoke flow; skip majors unless an advisory forces them.
+2. [x] Populate explicit entitlement fields for live plans (`monthly_project_allowance` on the plans rows) so `project-allowance.ts` resolves from `plan_field`, demoting name/feature-string parsing to a true fallback; add a logged warning when the fallback path is used in production. Implement this with a Supabase migration plus manual production DB update notes, after a resolver-equivalence test proves the explicit fields match current plan-name fallback behavior.
+3. [x] Split `planning-document-blocks.tsx` into `product-plan-blocks.tsx`, `first-version-plan-blocks.tsx`, and `planning-blocks-shared.tsx`; move components verbatim, keep `planning-document-blocks.tsx` as a temporary re-export barrel, keep `planning-document-blocks.test.tsx` passing throughout, and split the test file along the same seams.
+4. [x] Rate-limit `src/app/api/intake/questions/route.ts` with the same pattern as sibling AI routes: signed-in user key plus IP key, starting at 5 requests per user per hour and 20 requests per IP per hour.
+5. [x] Durable rate limiting with Upstash Redis behind `checkRateLimit`, Redis-compatible Vercel KV acceptable if already wired, and in-memory fallback for local dev; delete `pruneRateLimitBuckets` or call it on a cadence inside the in-memory fallback.
+6. [x] Sanitize Mermaid SVG: run renderer output through DOMPurify (in SVG profile) before `dangerouslySetInnerHTML` in `markdown-renderer.tsx`; bump `beautiful-mermaid` 0.1.3 to current 1.x and visually verify diagram rendering and the expand modal in both themes.
+7. [x] Trim `PROJECT_CONTEXT.md`: cap feature bullets near 100 words, move narrative history into a short changelog section or delete it (git history is the changelog), verify every remaining claim against code, and confirm section 12 file references still exist.
+8. [x] Optional, timeboxed: skipped unrelated dependency bumps by default; only `beautiful-mermaid` and `dompurify` were changed for this milestone.
 
 ## Milestones
 - Credits Invisible: no user-facing surface renders credit balances, costs, or credit-denominated errors; internal accounting unchanged.
@@ -86,7 +84,7 @@ Inventory every user-visible credit surface with `grep -rn "credit" src/componen
 - Risk: Populating plan fields in production mismatches what plan names currently imply, changing live allowances.
   - Mitigation: Set fields to exactly what `PLAN_NAME_PROJECT_ALLOWANCES` resolves today (`src/lib/project-allowance.ts:5-15`), verified by running the resolver against both paths in a test before the data change.
 - Risk: `beautiful-mermaid` 0.1.x to 1.x is a breaking jump.
-  - Mitigation: It is isolated to `markdown-renderer.tsx` and `generate-pdf`; the visual QA step plus PDF export check cover both consumers, and the bump reverts cleanly if rendering regresses.
+  - Mitigation: It is isolated to `markdown-renderer.tsx`; the visual QA step covers the remaining consumer, and the bump reverts cleanly if rendering regresses. PDF export is retired and should not be part of this validation path.
 - Risk: Upstash adds latency to every limited route.
   - Mitigation: Single round-trip token-bucket pattern, measured on preview; limits only guard expensive routes where one Redis call is noise.
 
@@ -97,8 +95,7 @@ Inventory every user-visible credit surface with `grep -rn "credit" src/componen
 - Rate limiting and sanitization are behind small seams (`checkRateLimit`, one renderer call site) and disable cleanly.
 
 ## Open Decisions
-- Whether `credit-balance.tsx` is deleted or kept for a future internal admin view (default: delete, git remembers).
-- Whether the billing page should show project-allowance usage ("2 of 3 projects this month") as the replacement for credit display; leans yes, but copy belongs with the remove-credits plan.
+- Product decisions needed for this milestone are resolved as of 2026-06-21.
 - CSP tightening (nonce-based script-src) remains explicitly deferred; revisit when there is a second engineer or a pentest.
 
 ## Critique

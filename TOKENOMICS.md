@@ -1,32 +1,30 @@
 # Tokenomics Guide
 
-This document explains how credits are earned, spent, and calculated across the makercompass platform.
+This document explains how credits are earned, spent, and calculated across Maker Compass.
 
 ---
 
 ## Overview
 
-Credits are the in-app currency used to run AI generations. Every generation deducts credits from the user's balance. The cost depends on two things: **what** is being generated and **which AI model** is selected.
-
-New users receive **150 credits** on signup — enough for 1–2 full project runs.
+Credits are the internal accounting unit used for AI generations that are billed outside bundled project creation. New users receive signup credits, and paid plans can receive recurring allowances.
 
 ---
 
 ## The Formula
 
-All major generations use this formula:
+Most text generations use this formula:
 
+```text
+credits = ceil(base_cost * model_multiplier / 5) * 5
 ```
-credits = ceil(base_cost × model_multiplier / 5) × 5
-```
 
-This rounds every cost **up** to the nearest multiple of 5 (e.g. 12.5 → 15, 17.25 → 20).
+This rounds generation costs up to the nearest multiple of 5.
 
-Two actions are exceptions and bypass this formula entirely:
-- **Mockups** — always **30 credits** (fixed; uses Stitch SDK, not a selectable model)
-- **Edit with AI** — always **2 credits** (flat; lightweight inline edit)
+Exceptions:
+- **Mockups**: included in project generation
+- **Edit with AI**: always 2 credits when that surface is active
 
-Chat messages use a simpler formula: `ceil(1 × model_multiplier)`, giving either **1 or 2** per message.
+Chat is currently disabled. If it returns, its historical formula was `ceil(1 * model_multiplier)`.
 
 ---
 
@@ -39,9 +37,9 @@ Chat messages use a simpler formula: `ceil(1 × model_multiplier)`, giving eithe
 | MVP Plan | 10 |
 | Tech Spec | 10 |
 | Marketing / Launch Plan | 5 |
-| Mockups | 30 (fixed) |
-| Edit with AI | 2 (flat) |
-| Chat (Explain the Idea) | 1 |
+| Mockups | Included |
+| Edit with AI | 2 |
+| Chat | Disabled |
 
 ---
 
@@ -50,99 +48,77 @@ Chat messages use a simpler formula: `ceil(1 × model_multiplier)`, giving eithe
 Models are tiered by capability and cost. A higher multiplier means more credits per generation.
 
 | Model | Multiplier | Tier |
-|-------|-----------|------|
-| Gemini 3.1 Pro Preview | 1.25× | Thinking |
-| Claude Sonnet 4.6 | 1.15× | Efficient |
-| Gemini 2.5 Flash | 0.90× | Fast |
-| Kimi K2.5 | 0.90× | Fast |
-| GPT-5.4 Mini | 0.85× | Fastest |
-| Claude Haiku 4.5 | 0.85× | Fastest |
-| DeepSeek V3.2 | 0.80× | Budget |
-| Qwen 3.5 Flash | 0.80× | Budget |
+|-------|------------|------|
+| Gemini 3.1 Pro Preview | 1.25x | Thinking |
+| Claude Sonnet 4.6 | 1.15x | Efficient |
+| Gemini 2.5 Flash | 0.90x | Fast |
+| Kimi K2.5 | 0.90x | Fast |
+| GPT-5.4 Mini | 0.85x | Fastest |
+| Claude Haiku 4.5 | 0.85x | Fastest |
+| DeepSeek V3.2 | 0.80x | Budget |
+| Qwen 3.5 Flash | 0.80x | Budget |
 
 ---
 
-## Credit Costs by Generation and Model
+## Credit Costs By Generation And Model
 
-### Competitive Research (base = 15)
-
-| Model | Credits |
-|-------|---------|
-| Gemini 3.1 Pro Preview | **20** |
-| Claude Sonnet 4.6 | **20** |
-| Gemini 2.5 Flash | **15** |
-| Kimi K2.5 | **15** |
-| GPT-5.4 Mini | **15** |
-| Claude Haiku 4.5 | **15** |
-| DeepSeek V3.2 | **15** |
-| Qwen 3.5 Flash | **15** |
-
-### PRD / MVP Plan / Tech Spec (base = 10)
+### Competitive Research
 
 | Model | Credits |
 |-------|---------|
-| Gemini 3.1 Pro Preview | **15** |
-| Claude Sonnet 4.6 | **15** |
-| Gemini 2.5 Flash | **10** |
-| Kimi K2.5 | **10** |
-| GPT-5.4 Mini | **10** |
-| Claude Haiku 4.5 | **10** |
-| DeepSeek V3.2 | **10** |
-| Qwen 3.5 Flash | **10** |
+| Gemini 3.1 Pro Preview | 20 |
+| Claude Sonnet 4.6 | 20 |
+| Gemini 2.5 Flash | 15 |
+| Kimi K2.5 | 15 |
+| GPT-5.4 Mini | 15 |
+| Claude Haiku 4.5 | 15 |
+| DeepSeek V3.2 | 15 |
+| Qwen 3.5 Flash | 15 |
 
-### Marketing / Launch Plan (base = 5)
+### PRD / MVP Plan / Tech Spec
 
 | Model | Credits |
 |-------|---------|
-| Gemini 3.1 Pro Preview | **10** |
-| Claude Sonnet 4.6 | **10** |
-| Gemini 2.5 Flash | **5** |
-| Kimi K2.5 | **5** |
-| GPT-5.4 Mini | **5** |
-| Claude Haiku 4.5 | **5** |
-| DeepSeek V3.2 | **5** |
-| Qwen 3.5 Flash | **5** |
+| Gemini 3.1 Pro Preview | 15 |
+| Claude Sonnet 4.6 | 15 |
+| Gemini 2.5 Flash | 10 |
+| Kimi K2.5 | 10 |
+| GPT-5.4 Mini | 10 |
+| Claude Haiku 4.5 | 10 |
+| DeepSeek V3.2 | 10 |
+| Qwen 3.5 Flash | 10 |
 
-### Fixed / Flat Costs
+### Marketing / Launch Plan
 
-| Action | Credits |
-|--------|---------|
-| Mockups | **30** (always) |
-| Edit with AI | **2** (always) |
-| Chat message — budget/fast models | **1** |
-| Chat message — Sonnet / Gemini Pro | **2** |
+Launch Plan is archived in production, but the local Prompt Lab can still use the prompt.
+
+| Model | Credits |
+|-------|---------|
+| Gemini 3.1 Pro Preview | 10 |
+| Claude Sonnet 4.6 | 10 |
+| Gemini 2.5 Flash | 5 |
+| Kimi K2.5 | 5 |
+| GPT-5.4 Mini | 5 |
+| Claude Haiku 4.5 | 5 |
+| DeepSeek V3.2 | 5 |
+| Qwen 3.5 Flash | 5 |
 
 ---
 
 ## Generate All Totals
 
-Generate All runs Competitive Research → PRD → MVP Plan → Mockups → Marketing in sequence.
+Generate All runs Competitive Research -> PRD -> MVP Plan -> Mockups.
 
 | Models used | Total |
 |-------------|-------|
-| Gemini 3.1 Pro / Claude Sonnet | **90** (20+15+15+30+10) |
-| All other models | **70** (15+10+10+30+5) |
-
-With 150 starting credits: approximately **1.7 premium runs** or **2.1 budget runs**.
-
----
-
-## App Generation
-
-App generation costs are fixed regardless of model.
-
-| App Type | Credits |
-|----------|---------|
-| Static Website | 50 |
-| Dynamic Website (Next.js) | 100 |
-| Single Page App (React SPA) | 150 |
-| Progressive Web App (PWA) | 200 |
+| Gemini 3.1 Pro / Claude Sonnet | 50 |
+| All other models | 35 |
 
 ---
 
 ## Implementation
 
-All credit logic lives in one file: [`src/lib/token-economics.ts`](src/lib/token-economics.ts)
+All credit logic lives in [`src/lib/token-economics.ts`](src/lib/token-economics.ts).
 
 Key exports:
 
@@ -158,11 +134,10 @@ Key exports:
 The `getTokenCost` function routing:
 
 ```ts
-getTokenCost("document-edit", ...)  // → always 2
-getTokenCost("mockup", ...)         // → always 30
-getTokenCost("chat", model)         // → Math.ceil(1 × multiplier) → 1 or 2
-getTokenCost("prd", model)          // → ceilTo5(10 × multiplier)
-// etc.
+getTokenCost("document-edit", model) // always 2
+getTokenCost("mockup", model)        // always 0
+getTokenCost("chat", model)          // historical: ceil(1 * multiplier)
+getTokenCost("prd", model)           // ceilTo5(10 * multiplier)
 ```
 
-To adjust any cost, change the relevant value in `BASE_ACTION_TOKENS` or `MODEL_MULTIPLIERS`. The UI button text, Generate All estimates, and credit sufficiency checks all derive from `getTokenCost` automatically.
+To adjust any cost, change the relevant value in `BASE_ACTION_TOKENS` or `MODEL_MULTIPLIERS`.

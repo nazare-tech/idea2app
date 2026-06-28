@@ -17,12 +17,6 @@ export default async function DashboardLayout({
     redirect("/auth")
   }
 
-  const { data: creditsData } = await supabase
-    .from("credits")
-    .select("balance")
-    .eq("user_id", user.id)
-    .single()
-
   const { data: profileData } = await supabase
     .from("profiles")
     .select("full_name, avatar_url")
@@ -36,7 +30,6 @@ export default async function DashboardLayout({
         full_name: profileData?.full_name ?? undefined,
         avatar_url: profileData?.avatar_url ?? undefined,
       }}
-      credits={creditsData?.balance || 0}
     >
       {children}
     </DashboardShell>

@@ -104,7 +104,7 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
     userId = user.id
     const userLogContext = { ...requestLogContext, userId, analysisType: type }
-    const rateLimit = checkRateLimit({
+    const rateLimit = await checkRateLimit({
       key: `analysis:${type}:${user.id}:${getClientIp(request)}`,
       limit: type === "competitive-analysis" ? 6 : 12,
       windowMs: 60_000,

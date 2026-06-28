@@ -125,7 +125,6 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       project={project}
       initialDocument={initialDocument}
       initialDocuments={{}}
-      initialCredits={0}
       user={{
         email: user?.email,
         full_name: profileData?.full_name ?? undefined,

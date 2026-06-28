@@ -50,4 +50,3 @@ export function calculateDocumentEditCredits(totalTokens: number): number {
 }
 
 export type AnalysisType = 'competitive-analysis' | 'gap-analysis' | 'prd' | 'mvp-plan' | 'tech-spec' | 'mockup'
-export type AppType = 'static' | 'dynamic' | 'spa' | 'pwa'

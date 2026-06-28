@@ -1,14 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AnchorNav } from "@/components/layout/anchor-nav"
 import { ScrollableContent } from "@/components/layout/scrollable-content"
 import { ProjectHeader } from "@/components/layout/project-header"
-import { parseDocumentStream } from "@/lib/parse-document-stream"
 import {
   DOCUMENT_TYPES,
-  GENERATE_ALL_DEFAULT_MODELS,
   type DocumentType,
 } from "@/lib/document-definitions"
 import {
@@ -16,9 +14,7 @@ import {
   filterNavItemsByRenderedSections,
 } from "@/lib/document-sections"
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
-import { useGenerateAll, type GenerateDocumentFn, type QueueItem } from "@/stores/generate-all-store"
-import { createClient as createSupabaseClient } from "@/lib/supabase/client"
-import { shouldResumeQueueAfterDocumentRetry } from "@/lib/generate-all-helpers"
+import type { QueueItem } from "@/stores/generate-all-store"
 import {
   buildDocumentGenerationDisplayStates,
   type MockupOptionStatus,
@@ -30,166 +26,25 @@ import {
   isWorkspaceDocumentType,
   resolveWorkspaceDocumentTab,
 } from "@/lib/workspace-tab-policy"
-import {
-  chooseActiveScrollCandidate,
-  type ScrollSyncCandidate,
-} from "@/lib/workspace-scroll-sync"
-
-const GENERATION_REQUEST_TIMEOUT_MS = 790_000
-const GENERATION_REQUEST_TIMEOUT_SECONDS = GENERATION_REQUEST_TIMEOUT_MS / 1000
-const GENERATION_TIMEOUT_MESSAGE = `Generation timed out after ${GENERATION_REQUEST_TIMEOUT_SECONDS} seconds. Please try again.`
-const SCROLL_SYNC_HYSTERESIS_PX = 32
-
-interface Project {
-  id: string
-  name: string
-  description: string | null
-  status: string | null
-}
-
-interface Analysis {
-  id: string
-  type: string
-  content: string
-  created_at: string | null
-  metadata?: Record<string, unknown> | null
-}
-
-interface PRD {
-  id: string
-  content: string
-  created_at: string | null
-}
-
-interface TechSpec {
-  id: string
-  content: string
-  created_at: string | null
-}
-
-interface MvpPlan {
-  id: string
-  content: string
-  created_at: string | null
-}
-
-interface Mockup {
-  id: string
-  content: string
-  model_used: string | null
-  created_at: string | null
-}
-
-interface Deployment {
-  id: string
-  deployment_url: string | null
-  github_repo_url: string | null
-  status: string | null
-  build_logs: string | null
-  error_message: string | null
-  created_at: string | null
-}
-
-interface ProjectWorkspaceProps {
-  project: Project
-  initialDocument?: DocumentType
-  initialDocuments?: Partial<Record<DocumentType, unknown[]>>
-  initialCredits?: number
-  user: unknown
-}
-
-interface WorkspaceDocumentCollections {
-  competitive: Analysis[]
-  prd: PRD[]
-  mvp: MvpPlan[]
-  mockups: Mockup[]
-  techspec: TechSpec[]
-  deploy: Deployment[]
-}
-
-const EMPTY_DOCUMENT_COLLECTIONS: WorkspaceDocumentCollections = {
-  competitive: [],
-  prd: [],
-  mvp: [],
-  mockups: [],
-  techspec: [],
-  deploy: [],
-}
-
-type WorkspaceGenerationCounts = Partial<Record<DocumentType, number>>
-type LegacyDocumentStatus = "done" | "in_progress" | "pending"
-type MockupOptionGenerationResult =
-  | { skipped: true }
-  | {
-      skipped: false
-      option: OpenRouterImageMockupOption | null
-      model: string
-      designPlan?: unknown
-      error?: string
-    }
+import { useWorkspaceDocuments } from "./use-workspace-documents"
+import { usePersistedGenerationState } from "./use-persisted-generation-state"
+import { useWorkspaceScrollSync, getSourceTypeForScrollTarget } from "./use-workspace-scroll-sync"
+import { useGenerateAllHydration } from "./use-generate-all-hydration"
+import { useDocumentGeneration } from "./use-document-generation"
+import type {
+  LegacyDocumentStatus,
+  ProjectWorkspaceProps,
+  WorkspaceGenerationCounts,
+} from "./workspace-types"
 
 const VISIBLE_WORKSPACE_DOCUMENT_TYPES: DocumentType[] = Array.from(
   new Set(SCROLLABLE_NAV_ITEMS.map((item) => item.sourceType))
 )
 
-function applyWorkspaceDocuments(
-  next: WorkspaceDocumentCollections,
-  type: DocumentType,
-  documents: WorkspaceDocumentCollections[keyof WorkspaceDocumentCollections] | undefined
-) {
-  if (!documents) return
-
-  switch (type) {
-    case "competitive":
-      next.competitive = documents as Analysis[]
-      break
-    case "prd":
-      next.prd = documents as PRD[]
-      break
-    case "mvp":
-      next.mvp = documents as MvpPlan[]
-      break
-    case "mockups":
-      next.mockups = documents as Mockup[]
-      break
-    case "techspec":
-      next.techspec = documents as TechSpec[]
-      break
-    case "deploy":
-      next.deploy = documents as Deployment[]
-      break
-  }
-}
-
-function getSourceTypeForScrollTarget(targetId: string): DocumentType | null {
-  const navItem = SCROLLABLE_NAV_ITEMS.find(
-    (item) => item.key === targetId || item.sections.some((section) => section.id === targetId)
-  )
-
-  return navItem?.sourceType ?? null
-}
-
-function isScrollableSubsectionId(targetId: string) {
-  return SCROLLABLE_NAV_ITEMS.some((item) =>
-    item.sections.some((section) => section.id === targetId)
-  )
-}
-
-function areStringSetsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>) {
-  if (left.size !== right.size) return false
-
-  for (const value of left) {
-    if (!right.has(value)) return false
-  }
-
-  return true
-}
-
 export function ProjectWorkspace({
   project,
   initialDocument = DEFAULT_WORKSPACE_DOCUMENT,
   initialDocuments,
-  initialCredits = 0,
   user,
 }: ProjectWorkspaceProps) {
   const router = useRouter()
@@ -212,9 +67,6 @@ export function ProjectWorkspace({
     // Only use searchParams for initial render to avoid hydration mismatch.
     return resolveWorkspaceDocumentTab(searchParams.get("tab"))
   })
-  const [generatingDocuments, setGeneratingDocuments] = useState<Record<DocumentType, boolean>>({
-    ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, false])),
-  } as Record<DocumentType, boolean>)
   const [mockupOptionStatuses, setMockupOptionStatuses] = useState<MockupOptionStatus[]>([])
   const [mockupDraftRunId, setMockupDraftRunId] = useState<string | null>(null)
   const [mockupDraftOptions, setMockupDraftOptions] = useState<OpenRouterImageMockupOption[]>([])
@@ -223,30 +75,16 @@ export function ProjectWorkspace({
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<Record<DocumentType, number>>({
     ...Object.fromEntries(DOCUMENT_TYPES.map((type) => [type, 0])),
   } as Record<DocumentType, number>)
-  // Local content overrides for immediate UI updates after inline edits
-  // Key format: `${documentType}-${recordId}` -> updated content
-  const [credits, setCredits] = useState(initialCredits)
-  const [documentCollections, setDocumentCollections] = useState<WorkspaceDocumentCollections>({
-    ...EMPTY_DOCUMENT_COLLECTIONS,
-    competitive: (initialDocuments?.competitive as Analysis[] | undefined) ?? [],
-    prd: (initialDocuments?.prd as PRD[] | undefined) ?? [],
-    mvp: (initialDocuments?.mvp as MvpPlan[] | undefined) ?? [],
-    mockups: (initialDocuments?.mockups as Mockup[] | undefined) ?? [],
-    techspec: (initialDocuments?.techspec as TechSpec[] | undefined) ?? [],
-    deploy: (initialDocuments?.deploy as Deployment[] | undefined) ?? [],
+  const {
+    documentCollections,
+    loadedDocuments,
+    isWorkspaceLoading,
+    loadWorkspaceDocuments,
+  } = useWorkspaceDocuments({
+    projectId: project.id,
+    activeDocument,
+    initialDocuments,
   })
-  const [loadedDocuments, setLoadedDocuments] = useState<Record<DocumentType, boolean>>({
-    prompt: true,
-    competitive: Boolean(initialDocuments?.competitive),
-    prd: Boolean(initialDocuments?.prd),
-    mvp: Boolean(initialDocuments?.mvp),
-    mockups: Boolean(initialDocuments?.mockups),
-    techspec: Boolean(initialDocuments?.techspec),
-    deploy: Boolean(initialDocuments?.deploy),
-  })
-  const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(false)
-  const loadedDocumentsRef = useRef(loadedDocuments)
-  const loadingDocumentsRef = useRef(new Set<DocumentType>())
 
   useEffect(() => {
     if (typeof window === "undefined" || mockupDraftRunId) return
@@ -266,78 +104,12 @@ export function ProjectWorkspace({
     }
   }, [mockupDraftDesignPlanStorageKey, mockupDraftRunId, mockupDraftRunStorageKey])
 
-  const generateAllQueue = useGenerateAll(project.id, (s) => s.queue)
-  const generateAllStatus = useGenerateAll(project.id, (s) => s.status)
-  const resumeGenerateAll = useGenerateAll(project.id, (s) => s.startGenerateAll)
-
-  // Scroll-nav sync state
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
-  const activeSectionIdRef = useRef<string | null>(null)
-  const [renderedSectionIds, setRenderedSectionIds] = useState<ReadonlySet<string>>(() => new Set())
-  const isScrollingProgrammatically = useRef(false)
-
   const analyses = documentCollections.competitive
   const prds = documentCollections.prd
   const mvpPlans = documentCollections.mvp
   const mockups = documentCollections.mockups
   const techSpecs = documentCollections.techspec
   const deployments = documentCollections.deploy
-
-  useEffect(() => {
-    loadedDocumentsRef.current = loadedDocuments
-  }, [loadedDocuments])
-
-  const loadWorkspaceDocuments = useCallback(async (
-    docTypes: DocumentType[],
-    options?: { force?: boolean }
-  ) => {
-    const uniqueDocs = Array.from(new Set(docTypes)).filter((type) => type !== "prompt")
-    const needed = uniqueDocs.filter((type) => {
-      if (loadingDocumentsRef.current.has(type)) return false
-      return options?.force || !loadedDocumentsRef.current[type]
-    })
-    if (needed.length === 0) return
-
-    needed.forEach((type) => loadingDocumentsRef.current.add(type))
-    setIsWorkspaceLoading(true)
-    try {
-      const response = await fetch(`/api/projects/${project.id}/workspace?docs=${needed.join(",")}&tab=${activeDocument}`, {
-        credentials: "same-origin",
-        cache: "no-store",
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to load workspace documents")
-      }
-
-      const payload = await response.json()
-      const workspaceData = payload?.data
-      if (!workspaceData) return
-
-      setCredits(typeof workspaceData.credits === "number" ? workspaceData.credits : initialCredits)
-      setDocumentCollections((prev) => {
-        const next = { ...prev }
-        const incomingDocuments = workspaceData.documents as Partial<WorkspaceDocumentCollections> | undefined
-
-        for (const type of needed) {
-          applyWorkspaceDocuments(next, type, incomingDocuments?.[type as keyof WorkspaceDocumentCollections])
-        }
-
-        return next
-      })
-      setLoadedDocuments((prev) => {
-        const next = { ...prev }
-        needed.forEach((type) => {
-          next[type] = true
-        })
-        return next
-      })
-    } finally {
-      needed.forEach((type) => loadingDocumentsRef.current.delete(type))
-      setIsWorkspaceLoading(false)
-    }
-  }, [activeDocument, initialCredits, project.id])
 
   const getGenerationSnapshot = useCallback(async (): Promise<WorkspaceGenerationCounts | null> => {
     try {
@@ -353,9 +125,6 @@ export function ProjectWorkspace({
       return null
     }
   }, [project.id])
-
-  // Helper functions for localStorage persistence
-  const getStorageKey = useCallback((docType: DocumentType) => `generating_${project.id}_${docType}`, [project.id])
 
   const getInitialCount = useCallback((docType: DocumentType): number => {
     switch (docType) {
@@ -376,62 +145,27 @@ export function ProjectWorkspace({
     }
   }, [analyses, prds, mvpPlans, mockups, techSpecs, deployments])
 
-  const saveGeneratingState = useCallback((docType: DocumentType, isGenerating: boolean) => {
-    const key = getStorageKey(docType)
-    if (isGenerating) {
-      localStorage.setItem(key, JSON.stringify({
-        timestamp: Date.now(),
-        projectId: project.id,
-        initialCount: getInitialCount(docType)
-      }))
-    } else {
-      localStorage.removeItem(key)
-    }
-  }, [project.id, getInitialCount, getStorageKey])
-
-  const loadGeneratingState = useCallback((docType: DocumentType): boolean => {
-    const key = getStorageKey(docType)
-    const stored = localStorage.getItem(key)
-    if (!stored) return false
-
-    try {
-      const { timestamp } = JSON.parse(stored)
-      // Mockups can run as three separate long image calls, so keep local
-      // generation state long enough for the full sequence.
-      if (Date.now() - timestamp > 1200000) {
-        localStorage.removeItem(key)
-        return false
-      }
-      return true
-    } catch {
-      localStorage.removeItem(key)
-      return false
-    }
-  }, [getStorageKey])
-
-  const hydrateGeneratingStateFromStorage = useCallback((): Record<DocumentType, boolean> => {
-    if (typeof window === "undefined") {
-      return {
-        prompt: false,
-        competitive: false,
-        prd: false,
-        mvp: false,
-        mockups: false,
-        techspec: false,
-        deploy: false,
-      }
-    }
-
-    return {
-      prompt: false,
-      competitive: loadGeneratingState("competitive"),
-      prd: loadGeneratingState("prd"),
-      mvp: loadGeneratingState("mvp"),
-      mockups: loadGeneratingState("mockups"),
-      techspec: loadGeneratingState("techspec"),
-      deploy: loadGeneratingState("deploy"),
-    }
-  }, [loadGeneratingState])
+  const { generateAllQueue, generateAllStatus, resumeGenerateAll } = useGenerateAllHydration(project.id)
+  const {
+    generatingDocuments,
+    setGeneratingDocuments,
+    saveGeneratingState,
+    loadGeneratingState,
+    checkIfContentIncreased,
+  } = usePersistedGenerationState({
+    projectId: project.id,
+    getInitialCount,
+  })
+  const {
+    scrollContainerRef,
+    activeSectionId,
+    renderedSectionIds,
+    handleScrollNavigate,
+  } = useWorkspaceScrollSync({
+    activeDocument,
+    setActiveDocument,
+    loadWorkspaceDocuments,
+  })
 
   useEffect(() => {
     setActiveDocument(resolveWorkspaceDocumentTab(searchParams.get("tab")))
@@ -482,25 +216,6 @@ export function ProjectWorkspace({
       window.history.replaceState(null, "", `${pathname}?${nextParams.toString()}${window.location.hash}`)
     }
   }, [activeDocument, activeDocumentStorageKey, defaultActiveDocument, pathname, searchParams])
-
-  const checkIfContentIncreased = useCallback((docType: DocumentType, remoteCount?: number): boolean => {
-    const key = getStorageKey(docType)
-    const stored = localStorage.getItem(key)
-    if (!stored) return false
-
-    try {
-      const { initialCount } = JSON.parse(stored)
-      const currentCount = remoteCount ?? getInitialCount(docType)
-      return currentCount > initialCount
-    } catch {
-      return false
-    }
-  }, [getStorageKey, getInitialCount])
-
-  // Restore and sync generation flags from localStorage
-  useEffect(() => {
-    setGeneratingDocuments(hydrateGeneratingStateFromStorage())
-  }, [project.id, hydrateGeneratingStateFromStorage])
 
   // Poll for new content when documents are generating, and refresh only when versions arrive.
   useEffect(() => {
@@ -603,125 +318,8 @@ export function ProjectWorkspace({
     loadGeneratingState,
     loadWorkspaceDocuments,
     saveGeneratingState,
+    setGeneratingDocuments,
   ])
-
-  useEffect(() => {
-    activeSectionIdRef.current = activeSectionId
-  }, [activeSectionId])
-
-  useEffect(() => {
-    if (activeDocument === "prompt") return // No scroll sync in prompt mode
-
-    const container = scrollContainerRef.current
-    if (!container) return
-
-    let frameId: number | null = null
-
-    const collectCandidates = (): ScrollSyncCandidate[] => {
-      const candidates: ScrollSyncCandidate[] = []
-
-      for (const item of SCROLLABLE_NAV_ITEMS) {
-        for (const section of item.sections) {
-          const element = container.querySelector<HTMLElement>(`#${CSS.escape(section.id)}`)
-          if (!element) continue
-          candidates.push({
-            id: section.id,
-            top: element.getBoundingClientRect().top,
-          })
-        }
-      }
-
-      return candidates
-    }
-
-    const updateActiveScrollTarget = () => {
-      if (isScrollingProgrammatically.current) return
-
-      const containerRect = container.getBoundingClientRect()
-      const markerTop = containerRect.top + container.clientHeight * 0.22
-      const activeCandidate = chooseActiveScrollCandidate(collectCandidates(), markerTop, {
-        currentId: activeSectionIdRef.current,
-        hysteresisPx: SCROLL_SYNC_HYSTERESIS_PX,
-      })
-      if (!activeCandidate) return
-
-      const nextSectionId = isScrollableSubsectionId(activeCandidate.id) ? activeCandidate.id : null
-      setActiveSectionId((current) => {
-        activeSectionIdRef.current = nextSectionId
-        return current === nextSectionId ? current : nextSectionId
-      })
-
-      const currentHash = decodeURIComponent(window.location.hash.replace(/^#/, ""))
-      if (currentHash !== activeCandidate.id) {
-        window.history.replaceState(
-          null,
-          "",
-          `${window.location.pathname}${window.location.search}#${activeCandidate.id}`
-        )
-      }
-    }
-
-    const scheduleUpdate = () => {
-      if (frameId !== null) return
-      frameId = window.requestAnimationFrame(() => {
-        frameId = null
-        updateActiveScrollTarget()
-      })
-    }
-
-    scheduleUpdate()
-    container.addEventListener("scroll", scheduleUpdate, { passive: true })
-    window.addEventListener("resize", scheduleUpdate)
-
-    return () => {
-      if (frameId !== null) {
-        window.cancelAnimationFrame(frameId)
-      }
-      container.removeEventListener("scroll", scheduleUpdate)
-      window.removeEventListener("resize", scheduleUpdate)
-    }
-  }, [activeDocument])
-
-  useEffect(() => {
-    const container = scrollContainerRef.current
-    if (!container) return
-
-    const navSectionIds = SCROLLABLE_NAV_ITEMS.flatMap((item) =>
-      item.sections.map((section) => section.id)
-    )
-
-    const collectRenderedSectionIds = () => {
-      const nextRenderedIds = new Set<string>()
-
-      for (const sectionId of navSectionIds) {
-        if (container.querySelector<HTMLElement>(`#${CSS.escape(sectionId)}`)) {
-          nextRenderedIds.add(sectionId)
-        }
-      }
-
-      setRenderedSectionIds((current) =>
-        areStringSetsEqual(current, nextRenderedIds) ? current : nextRenderedIds
-      )
-    }
-
-    collectRenderedSectionIds()
-
-    const observer = new MutationObserver(collectRenderedSectionIds)
-    observer.observe(container, {
-      attributes: true,
-      attributeFilter: ["id"],
-      childList: true,
-      subtree: true,
-    })
-
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (!activeSectionId || renderedSectionIds.has(activeSectionId)) return
-    setActiveSectionId(null)
-  }, [activeSectionId, renderedSectionIds])
-
 
   const getLegacyDocumentStatus = (type: DocumentType): LegacyDocumentStatus => {
     // Check if document is currently generating
@@ -866,46 +464,6 @@ export function ProjectWorkspace({
     }
   }
 
-  const handleScrollNavigate = useCallback((targetId: string) => {
-    const container = scrollContainerRef.current
-    if (!container) return
-
-    const target = container.querySelector(`#${CSS.escape(targetId)}`)
-      || container.querySelector(`[data-section="${targetId}"]`)
-    if (!target) return
-
-    const sourceType = getSourceTypeForScrollTarget(targetId)
-    if (sourceType) {
-      setActiveDocument(sourceType)
-      void loadWorkspaceDocuments([sourceType])
-    }
-
-    isScrollingProgrammatically.current = true
-    const containerRect = container.getBoundingClientRect()
-    const targetRect = target.getBoundingClientRect()
-    const containerStyle = window.getComputedStyle(container)
-    const scrollPaddingTop = parseFloat(containerStyle.scrollPaddingTop) || parseFloat(containerStyle.paddingTop) || 0
-    container.scrollTo({
-      top: Math.max(0, container.scrollTop + targetRect.top - containerRect.top - scrollPaddingTop),
-      behavior: "auto",
-    })
-
-    // Update nav state immediately
-    if (isScrollableSubsectionId(targetId)) {
-      setActiveSectionId(targetId)
-    } else {
-      setActiveSectionId(null)
-    }
-
-    // Update URL hash for deep-linking
-    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${targetId}`)
-
-    // Re-enable observer after the instant scroll and active-state render settle.
-    setTimeout(() => {
-      isScrollingProgrammatically.current = false
-    }, 50)
-  }, [loadWorkspaceDocuments])
-
   // Reset to latest version (index 0) when switching documents
   useEffect(() => {
     setSelectedVersionIndex(prev => ({
@@ -914,577 +472,31 @@ export function ProjectWorkspace({
     }))
   }, [activeDocument])
 
-  // Check prerequisites for document generation
-  const checkPrerequisites = useCallback((type: DocumentType): { canGenerate: boolean; reason?: string } => {
-    switch (type) {
-      case "prompt":
-        return { canGenerate: true }
-      case "competitive":
-        if (!project.description) {
-          return { canGenerate: false, reason: "Please add a project description first" }
-        }
-        return { canGenerate: true }
-      case "prd":
-        const hasCompetitiveAnalysis = analyses.some(a => a.type === "competitive-analysis")
-        if (!hasCompetitiveAnalysis) {
-          return { canGenerate: false, reason: "Generate Market Research first" }
-        }
-        return { canGenerate: true }
-      case "mvp":
-        if (prds.length === 0) {
-          return { canGenerate: false, reason: "Generate Product Plan first" }
-        }
-        return { canGenerate: true }
-      case "mockups":
-        if (mvpPlans.length === 0) {
-          return { canGenerate: false, reason: "Generate First Version Plan first" }
-        }
-        return { canGenerate: true }
-      case "techspec":
-        if (prds.length === 0) {
-          return { canGenerate: false, reason: "Generate Product Plan first" }
-        }
-        return { canGenerate: true }
-      case "deploy":
-        if (techSpecs.length === 0) {
-          return { canGenerate: false, reason: "Generate Tech Spec first" }
-        }
-        return { canGenerate: true }
-      default:
-        return { canGenerate: true }
-    }
-  }, [analyses, mvpPlans.length, prds.length, project.description, techSpecs.length])
-
-  // Generate a specific document type (decoupled from activeDocument state).
-  // Used by GenerateAllContext for sequential pipeline generation.
-  const generateDocument: GenerateDocumentFn = useCallback(
-    async (docType, model, options) => {
-      setGeneratingDocuments(prev => ({ ...prev, [docType]: true }))
-      saveGeneratingState(docType, true)
-      setLocalGenerationErrors((prev) => ({ ...prev, [docType]: undefined }))
-
-      try {
-        const endpointMap: Record<string, string> = {
-          competitive: "/api/analysis/competitive-analysis",
-          prd: "/api/analysis/prd",
-          mvp: "/api/analysis/mvp-plan",
-          mockups: "/api/mockups/generate",
-        }
-        const endpoint = endpointMap[docType]
-        if (!endpoint) throw new Error(`Unsupported document type: ${docType}`)
-
-        // Fetch prerequisites fresh from Supabase, with closure values as a fallback.
-        // Supabase is preferred because router.refresh() may not have propagated into
-        // the useCallback closure yet. If the Supabase query returns null (e.g. auth
-        // hiccup or timing race), the closure value (kept fresh by _updateCallbacks
-        // on every render) is used instead.
-        let competitiveContent: string | undefined
-        let prdContent: string | undefined
-        let mvpContent: string | undefined
-
-        const supabase = createSupabaseClient()
-
-        if (docType === "prd") {
-          const { data } = await supabase
-            .from("analyses")
-            .select("content")
-            .eq("project_id", project.id)
-            .eq("type", "competitive-analysis")
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          competitiveContent =
-            data?.content ??
-            analyses.find((a) => a.type === "competitive-analysis")?.content
-        } else if (docType === "mvp") {
-          const { data } = await supabase
-            .from("prds")
-            .select("content")
-            .eq("project_id", project.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          prdContent = data?.content ?? prds[0]?.content
-        } else if (docType === "mockups") {
-          const { data } = await supabase
-            .from("mvp_plans")
-            .select("content")
-            .eq("project_id", project.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          mvpContent = data?.content ?? mvpPlans[0]?.content
-          const { data: productPlanData } = await supabase
-            .from("prds")
-            .select("content")
-            .eq("project_id", project.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          prdContent = productPlanData?.content ?? prds[0]?.content
-        }
-
-        if (docType === "mockups") {
-          if (!mvpContent) {
-            throw new Error("Generate First Version Plan first")
-          }
-
-          const optionLabels = ["A", "B", "C"] as const
-          const isMockupFixtureMode =
-            searchParams.get("mockupFixture") === "1" ||
-            (typeof window !== "undefined" &&
-              localStorage.getItem("makercompass_mockup_fixture_mode") === "true")
-          const clearMockupDraftRun = () => {
-            setMockupDraftRunId(null)
-            setMockupDraftDesignPlan(null)
-            if (typeof window !== "undefined") {
-              localStorage.removeItem(mockupDraftRunStorageKey)
-              localStorage.removeItem(mockupDraftDesignPlanStorageKey)
-            }
-          }
-
-          if (isMockupFixtureMode) {
-            setMockupOptionStatuses(optionLabels.map((label) => ({
-              label: `Option ${label}`,
-              status: "generating" as const,
-              message: "Generating fixture",
-            })))
-
-            const response = await fetch("/api/mockups/fixture", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                projectId: project.id,
-                projectName: project.name,
-              }),
-            })
-            const payload = await response.json().catch(() => null)
-            if (!response.ok) {
-              throw new Error(payload?.error || "Failed to generate fixture mockups")
-            }
-
-            setMockupOptionStatuses(optionLabels.map((label) => ({
-              label: `Option ${label}`,
-              status: "ready" as const,
-              message: "Ready",
-            })))
-            setMockupDraftOptions([])
-            clearMockupDraftRun()
-            setLocalGenerationErrors((prev) => ({ ...prev, [docType]: undefined }))
-            await loadWorkspaceDocuments([docType], { force: true })
-            return true
-          }
-
-          const runId = mockupDraftRunId ?? crypto.randomUUID()
-          if (!mockupDraftRunId) {
-            setMockupDraftRunId(runId)
-            if (typeof window !== "undefined") {
-              localStorage.setItem(mockupDraftRunStorageKey, runId)
-            }
-          }
-          const optionStatusLabels: Record<typeof optionLabels[number], string> = {
-            A: "Option A",
-            B: "Option B",
-            C: "Option C",
-          }
-          const getOptionStatusLabel = (label: typeof optionLabels[number]) => optionStatusLabels[label]
-          const updateMockupOptionStatus = (
-            label: typeof optionLabels[number],
-            status: MockupOptionStatus["status"],
-            message: string,
-          ) => {
-            setMockupOptionStatuses((prev) => {
-              const existing = new Map(prev.map((option) => [option.label, option]))
-              existing.set(getOptionStatusLabel(label), {
-                label: getOptionStatusLabel(label),
-                status,
-                message,
-              })
-              return optionLabels.map((optionLabel) =>
-                existing.get(getOptionStatusLabel(optionLabel)) ?? {
-                  label: getOptionStatusLabel(optionLabel),
-                  status: "queued" as const,
-                  message: "Queued",
-                }
-              )
-            })
-          }
-
-          const optionsByLabel = new Map(
-            mockupDraftOptions.map((option) => [option.label.toUpperCase(), option])
-          )
-          let activeMockupDesignPlan = mockupDraftDesignPlan
-          const syncDraftOptions = () => {
-            setMockupDraftOptions(
-              optionLabels
-                .map((optionLabel) => optionsByLabel.get(optionLabel))
-                .filter((option): option is OpenRouterImageMockupOption => Boolean(option))
-            )
-          }
-          const markStoredOptionsReady = (storedOptions: OpenRouterImageMockupOption[]) => {
-            for (const option of storedOptions) {
-              const label = option.label.toUpperCase() as typeof optionLabels[number]
-              if (!optionLabels.includes(label)) continue
-
-              optionsByLabel.set(label, option)
-              updateMockupOptionStatus(label, "ready", "Recovered")
-            }
-            syncDraftOptions()
-          }
-          const recoverStoredOptions = async () => {
-            const response = await fetch("/api/mockups/recover-options", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                projectId: project.id,
-                runId,
-                designPlan: activeMockupDesignPlan,
-              }),
-            })
-            const payload = await response.json().catch(() => null)
-            if (!response.ok) return
-
-            const storedOptions = Array.isArray(payload?.options)
-              ? payload.options.filter((option: unknown): option is OpenRouterImageMockupOption =>
-                Boolean(
-                  option &&
-                  typeof option === "object" &&
-                  typeof (option as OpenRouterImageMockupOption).label === "string" &&
-                  typeof (option as OpenRouterImageMockupOption).storagePath === "string",
-                )
-              )
-              : []
-            markStoredOptionsReady(storedOptions)
-          }
-
-          setMockupOptionStatuses(optionLabels.map((label) => ({
-            label: getOptionStatusLabel(label),
-            status: optionsByLabel.has(label) ? "ready" : "queued",
-            message: optionsByLabel.has(label) ? "Ready" : "Queued",
-          })))
-
-          const externalSignal = options?.signal
-          const requestWithTimeout = async (
-            url: string,
-            init: Omit<RequestInit, "signal">,
-            timeoutMs = GENERATION_REQUEST_TIMEOUT_MS,
-          ) => {
-            const requestController = new AbortController()
-            const timeoutId = setTimeout(() => requestController.abort(), timeoutMs)
-            const handleExternalAbort = () => requestController.abort()
-
-            if (externalSignal) {
-              if (externalSignal.aborted) {
-                requestController.abort()
-              } else {
-                externalSignal.addEventListener("abort", handleExternalAbort, { once: true })
-              }
-            }
-
-            try {
-              return await fetch(url, {
-                ...init,
-                signal: requestController.signal,
-              })
-            } finally {
-              clearTimeout(timeoutId)
-              externalSignal?.removeEventListener("abort", handleExternalAbort)
-            }
-          }
-
-          await recoverStoredOptions()
-
-          const optionResults: MockupOptionGenerationResult[] = []
-          for (const label of optionLabels) {
-            const existingOption = optionsByLabel.get(label)
-            if (existingOption) {
-              optionResults.push({
-                skipped: false,
-                option: existingOption,
-                model,
-                designPlan: activeMockupDesignPlan ?? undefined,
-              })
-              continue
-            }
-
-            updateMockupOptionStatus(label, "generating", "Generating")
-
-            try {
-              const response = await requestWithTimeout("/api/mockups/generate-option", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  projectId: project.id,
-                  mvpPlan: mvpContent,
-                  projectName: project.name,
-                  idea: project.description,
-                  productPlan: prdContent,
-                  label,
-                  runId,
-                  designPlan: activeMockupDesignPlan,
-                }),
-              })
-
-              const payload = await response.json().catch(() => null)
-              if (!response.ok) {
-                optionResults.push({
-                  skipped: false,
-                  option: null,
-                  model,
-                  error: payload?.error || `Failed to generate mockup option ${label}`,
-                })
-                continue
-              }
-              if (payload?.skipped) {
-                optionResults.push({ skipped: true })
-                continue
-              }
-
-              const option = payload?.option as OpenRouterImageMockupOption | undefined
-              const resultModel = typeof payload?.model === "string" ? payload.model : model
-              const returnedDesignPlan = payload?.designPlan && typeof payload.designPlan === "object"
-                ? payload.designPlan
-                : null
-              if (!option) {
-                optionResults.push({
-                  skipped: false,
-                  option: null,
-                  model: resultModel,
-                  error: `Mockup option ${label} did not return image data`,
-                })
-                continue
-              }
-              if (returnedDesignPlan && !activeMockupDesignPlan) {
-                activeMockupDesignPlan = returnedDesignPlan
-                setMockupDraftDesignPlan(returnedDesignPlan)
-                if (typeof window !== "undefined") {
-                  localStorage.setItem(mockupDraftDesignPlanStorageKey, JSON.stringify(returnedDesignPlan))
-                }
-              }
-
-              updateMockupOptionStatus(label, "ready", "Ready")
-              optionsByLabel.set(label, option)
-              syncDraftOptions()
-              optionResults.push({
-                skipped: false,
-                option,
-                model: resultModel,
-                designPlan: returnedDesignPlan ?? activeMockupDesignPlan ?? undefined,
-              })
-            } catch (error) {
-              if (externalSignal?.aborted) throw error
-
-              optionResults.push({
-                skipped: false,
-                option: null,
-                model,
-                error: error instanceof Error
-                  ? error.message
-                  : `Failed to generate mockup option ${label}`,
-              })
-            }
-          }
-
-          const firstSkipped = optionResults.find((result) => result.skipped)
-          if (firstSkipped) {
-            setMockupDraftOptions([])
-            clearMockupDraftRun()
-            await loadWorkspaceDocuments([docType], { force: true })
-            return true
-          }
-
-          await recoverStoredOptions()
-
-          const failures = optionResults.filter((result) =>
-            !result.skipped && Boolean(result.error)
-          )
-          const readyOptions = optionLabels
-            .map((label) => optionsByLabel.get(label))
-            .filter((option): option is OpenRouterImageMockupOption => Boolean(option))
-
-          if (readyOptions.length !== optionLabels.length) {
-            optionResults.forEach((result, index) => {
-              if (!result.skipped && result.error) {
-                updateMockupOptionStatus(optionLabels[index], "needs_retry", "Needs retry")
-              }
-            })
-            optionLabels.forEach((label) => {
-              if (!optionsByLabel.has(label)) {
-                updateMockupOptionStatus(label, "needs_retry", "Needs retry")
-              }
-            })
-            const message = failures[0]?.skipped === false && failures[0].error
-              ? failures[0].error
-              : "One or more mockup options are not available yet"
-            throw new Error(message)
-          }
-
-          const fulfilledModel = optionResults.find((result) =>
-            !result.skipped && result.option && typeof result.model === "string"
-          )
-          const finalizedModel = fulfilledModel?.skipped === false ? fulfilledModel.model : model
-          const finalizedDesignPlan = optionResults.find((result) =>
-            !result.skipped && result.designPlan
-          )
-          const finalizeResponse = await requestWithTimeout("/api/mockups/finalize", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              projectId: project.id,
-              runId,
-              model: finalizedModel,
-              options: readyOptions,
-              designPlan: finalizedDesignPlan?.skipped === false
-                ? finalizedDesignPlan.designPlan
-                : activeMockupDesignPlan,
-            }),
-          }, 60000)
-          const finalizePayload = await finalizeResponse.json().catch(() => null)
-          if (!finalizeResponse.ok) {
-            throw new Error(finalizePayload?.error || "Failed to save generated mockups")
-          }
-
-          setMockupDraftOptions([])
-          clearMockupDraftRun()
-          setLocalGenerationErrors((prev) => ({ ...prev, [docType]: undefined }))
-          await loadWorkspaceDocuments([docType], { force: true })
-          return true
-        }
-
-        // Use external signal (from Generate All) if provided, otherwise create our own
-        const externalSignal = options?.signal
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), GENERATION_REQUEST_TIMEOUT_MS)
-
-        // If an external signal is provided, link it to our controller
-        if (externalSignal) {
-          if (externalSignal.aborted) {
-            controller.abort()
-          } else {
-            externalSignal.addEventListener("abort", () => controller.abort(), { once: true })
-          }
-        }
-
-        let response: Response
-        try {
-          response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            signal: controller.signal,
-            body: JSON.stringify({
-              projectId: project.id,
-              idea: project.description,
-              name: projectName,
-              ...(model && { model }),
-              ...(!["prd", "mvp"].includes(docType) && { stream: true }),
-              ...(docType === "prd" && competitiveContent && {
-                competitiveAnalysis: competitiveContent,
-              }),
-              ...(docType === "mvp" && prdContent && {
-                prd: prdContent,
-              }),
-            }),
-          })
-        } finally {
-          clearTimeout(timeoutId)
-        }
-
-        if (!response.ok) {
-          let errorMsg = "Failed to generate content"
-          try {
-            const errorData = await response.json()
-            if (errorData?.error) errorMsg = errorData.error
-          } catch {
-            // ignore parse errors
-          }
-          throw new Error(errorMsg)
-        }
-
-        const contentType = response.headers.get("Content-Type") ?? ""
-        if (contentType.includes("application/x-ndjson")) {
-          let streamError: string | undefined
-          await parseDocumentStream(response, {
-            onStage: () => {},
-            onToken: () => {},
-            onDone: () => {},
-            onError: (message) => { streamError = message },
-          })
-          if (streamError) throw new Error(streamError)
-        }
-
-        // Success — refresh data
-        await loadWorkspaceDocuments([docType], { force: true })
-        setLocalGenerationErrors((prev) => ({ ...prev, [docType]: undefined }))
-        return true
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Generation failed"
-        setLocalGenerationErrors((prev) => ({ ...prev, [docType]: message }))
-        // Re-throw abort errors so the caller can distinguish cancellation from failure
-        if (error instanceof DOMException && error.name === "AbortError") {
-          throw error
-        }
-        if (error instanceof Error) throw error
-        throw new Error("Unknown generation error")
-      } finally {
-        setGeneratingDocuments(prev => ({ ...prev, [docType]: false }))
-        saveGeneratingState(docType, false)
-      }
-    },
-    [
-      analyses,
-      loadWorkspaceDocuments,
-      mockupDraftDesignPlan,
-      mockupDraftDesignPlanStorageKey,
-      mockupDraftOptions,
-      mockupDraftRunId,
-      mockupDraftRunStorageKey,
-      mvpPlans,
-      prds,
-      project,
-      projectName,
-      saveGeneratingState,
-      searchParams,
-    ],
-  )
-
-  const handleGenerateDocument = useCallback(async (docType: DocumentType) => {
-    const prerequisites = checkPrerequisites(docType)
-    if (!prerequisites.canGenerate) {
-      alert(prerequisites.reason ?? "This module is not ready to generate yet.")
-      return
-    }
-
-    try {
-      if (docType !== "mockups") {
-        setMockupOptionStatuses([])
-      }
-      const didGenerate = await generateDocument(docType, GENERATE_ALL_DEFAULT_MODELS[docType] ?? "")
-      if (
-        didGenerate &&
-        shouldResumeQueueAfterDocumentRetry({
-          queueStatus: generateAllStatus,
-          retriedDocType: docType,
-          queue: generateAllQueue,
-        })
-      ) {
-        await resumeGenerateAll()
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Generation failed. Please try again."
-      console.warn(`[WorkspaceGeneration] ${docType} failed: ${message}`)
-      if (docType === "mockups") {
-        return
-      }
-      if (error instanceof Error && error.name === "AbortError") {
-        alert(GENERATION_TIMEOUT_MESSAGE)
-      } else if (error instanceof Error) {
-        alert(error.message)
-      } else {
-        alert("Generation failed. Please try again.")
-      }
-    }
-  }, [checkPrerequisites, generateAllQueue, generateAllStatus, generateDocument, resumeGenerateAll])
-
+  const { handleGenerateDocument } = useDocumentGeneration({
+    analyses,
+    prds,
+    mvpPlans,
+    techSpecs,
+    project,
+    projectName,
+    searchParams,
+    mockupDraftDesignPlan,
+    mockupDraftDesignPlanStorageKey,
+    mockupDraftOptions,
+    mockupDraftRunId,
+    mockupDraftRunStorageKey,
+    generateAllQueue,
+    generateAllStatus,
+    loadWorkspaceDocuments,
+    resumeGenerateAll,
+    saveGeneratingState,
+    setGeneratingDocuments,
+    setLocalGenerationErrors,
+    setMockupDraftDesignPlan,
+    setMockupDraftOptions,
+    setMockupDraftRunId,
+    setMockupOptionStatuses,
+  })
   // Build document data map for ScrollableContent
   const scrollableDocuments: Record<string, {
     content: string | null
@@ -1568,7 +580,6 @@ export function ProjectWorkspace({
           }}
           isSavingName={false}
           user={user as { email?: string; full_name?: string; avatar_url?: string }}
-          credits={credits}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">

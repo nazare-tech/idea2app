@@ -7,11 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 import { formatPrice } from "@/lib/utils"
-import { BASE_ACTION_TOKENS, TOKEN_VALUE_CENTS, estimateFullReportTokens } from "@/lib/token-economics"
-import { Check, Coins, Zap, CreditCard, Crown } from "lucide-react"
+import { Check, Coins, Zap, CreditCard, Crown, FolderKanban } from "lucide-react"
 import { useBillingPortal } from "@/hooks/use-billing-portal"
-import { CreditBalance } from "@/components/ui/credit-balance"
 import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
+import {
+  getProjectAllowanceStatus,
+  type ProjectAllowanceClient,
+  type ProjectAllowanceStatus,
+} from "@/lib/project-allowance"
 
 interface Plan {
   id: string
@@ -19,6 +22,7 @@ interface Plan {
   description: string | null
   price_monthly: number
   credits_monthly: number
+  monthly_project_allowance?: number | null
   features: string[]
   stripe_price_id: string | null
   is_active: boolean | null
@@ -73,7 +77,7 @@ function isCheckoutReadyPlanPrice(price: PlanPrice) {
 export default function BillingPage() {
   const [plans, setPlans] = useState<Plan[]>([])
   const [subscription, setSubscription] = useState<Subscription | null>(null)
-  const [credits, setCredits] = useState(0)
+  const [projectAllowance, setProjectAllowance] = useState<ProjectAllowanceStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
   const [selectedPriceByPlan, setSelectedPriceByPlan] = useState<Record<string, string>>({})
@@ -130,16 +134,11 @@ export default function BillingPage() {
         setSubscription(subData)
       }
 
-      // Get credits
-      const { data: creditsData } = await supabase
-        .from("credits")
-        .select("balance")
-        .eq("user_id", user.id)
-        .single()
-
-      if (creditsData) {
-        setCredits(creditsData.balance)
-      }
+      const allowanceStatus = await getProjectAllowanceStatus(
+        supabase as unknown as ProjectAllowanceClient,
+        user.id,
+      )
+      setProjectAllowance(allowanceStatus)
 
       setLoading(false)
     }
@@ -219,14 +218,20 @@ export default function BillingPage() {
     }
   }
 
-  const tokenValueLabel = formatPrice(TOKEN_VALUE_CENTS)
-  const fullReportFast = estimateFullReportTokens("openai/gpt-5.4-mini")
-  const fullReportBalanced = estimateFullReportTokens("anthropic/claude-sonnet-4-6")
-  const fullReportThinking = estimateFullReportTokens("google/gemini-3.1-pro-preview")
   const currentPlan = subscription
     ? plans.find((plan) => plan.id === subscription.plan_id) ?? null
     : null
   const currentPlanPrice = currentPlan ? getCurrentPlanPrice(currentPlan) : null
+  const visibleProjectAllowance = projectAllowance
+    ? projectAllowance.allowance === null
+      ? "Unlimited projects"
+      : `${projectAllowance.used} of ${projectAllowance.allowance} projects used`
+    : "Project usage unavailable"
+  const projectAllowanceDetail = projectAllowance?.allowance === null
+    ? "Your current plan does not have a monthly project cap."
+    : projectAllowance?.window.source === "lifetime"
+      ? "Free plan allowance is lifetime-based."
+      : "Your project allowance resets monthly."
 
   if (loading) {
     return (
@@ -241,10 +246,10 @@ export default function BillingPage() {
       <AppPageHeader
         eyebrow="Account"
         title="Billing"
-        description="Manage your subscription and token balance."
+        description="Manage your subscription and project allowance."
       />
 
-      {/* Current Plan & Credits */}
+      {/* Current Plan & Project Allowance */}
       <div className="grid gap-5 md:grid-cols-2">
         <Card className="transition-colors duration-200 hover:border-text-primary/20">
           <CardHeader>
@@ -289,23 +294,19 @@ export default function BillingPage() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-secondary">
-                <Coins className="h-5 w-5 text-primary" />
+                <FolderKanban className="h-5 w-5 text-primary" />
               </div>
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Token Balance
+                Project Allowance
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-black tracking-tight">
-              <CreditBalance
-                credits={credits}
-                className="text-2xl font-black tracking-tight"
-                unlimitedClassName="text-primary"
-              />
+            <p className="text-2xl font-black tracking-tight text-text-primary">
+              {visibleProjectAllowance}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              Tokens are used for analyses and app generation (1 token = {tokenValueLabel})
+              {projectAllowanceDetail}
             </p>
           </CardContent>
         </Card>
@@ -409,7 +410,9 @@ export default function BillingPage() {
                     </div>
                   )}
                   <ul className="space-y-2.5">
-                    {plan.features.map((feature, i) => (
+                    {plan.features
+                      .filter((feature) => !/\b(tokens?|credits?)\b/i.test(feature))
+                      .map((feature, i) => (
                       <li key={i} className="flex items-center gap-2.5 text-sm">
                         <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border-subtle bg-secondary">
                           <Check className="h-3 w-3 text-emerald-400" />
@@ -451,46 +454,6 @@ export default function BillingPage() {
         </div>
       </section>
 
-      {/* Token Costs */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Token Usage</CardTitle>
-          <CardDescription>Base token costs by action (before model multiplier)</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              { name: "Chat Message", action: "chat" },
-              { name: "Competitive Analysis", action: "competitive-analysis" },
-              { name: "Gap Analysis", action: "gap-analysis" },
-              { name: "Product Plan", action: "prd" },
-              { name: "Technical Spec", action: "tech-spec" },
-              { name: "Static Website", action: "app-static" },
-              { name: "Dynamic Website", action: "app-dynamic" },
-              { name: "Single Page App", action: "app-spa" },
-              { name: "Progressive Web App", action: "app-pwa" },
-            ].map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between rounded-lg border border-border-subtle bg-white p-3.5 transition-colors duration-200 hover:border-text-primary/20 hover:bg-secondary/40"
-              >
-                <span className="text-sm font-medium">{item.name}</span>
-                <Badge variant="outline" className="font-mono text-xs">{BASE_ACTION_TOKENS[item.action as keyof typeof BASE_ACTION_TOKENS]} tokens</Badge>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-lg border border-border-subtle bg-white p-4 text-sm text-muted-foreground">
-            <p>Model multiplier examples (full report = Market Research + Product Plan + First Version Plan + Tech Spec):</p>
-            <ul className="mt-2 space-y-1">
-              <li>Fast model: ~{fullReportFast} tokens</li>
-              <li>Balanced model: ~{fullReportBalanced} tokens</li>
-              <li>Thinking model: ~{fullReportThinking} tokens</li>
-            </ul>
-            <p className="mt-2">Token value is configurable via <code>TOKEN_VALUE_CENTS</code> / <code>NEXT_PUBLIC_TOKEN_VALUE_CENTS</code> (current: {tokenValueLabel}).</p>
-          </div>
-        </CardContent>
-      </Card>
     </AppPageShell>
   )
 }

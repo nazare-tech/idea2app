@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 import fs from "fs";
 import path from "path";
 
@@ -14,10 +15,8 @@ const connectSrc = [
   "https://*.supabase.co",
   "wss://*.supabase.co",
   "https://api.openrouter.ai",
-  "https://api.anthropic.com",
   "https://api.stripe.com",
   "https://*.stripe.com",
-  "https://contribution.usercontent.google.com",
   "https://lh3.googleusercontent.com",
 ].join(" ");
 
@@ -60,4 +59,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  tunnelRoute: "/monitoring",
+});

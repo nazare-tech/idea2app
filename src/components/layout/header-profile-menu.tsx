@@ -9,7 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CreditBalance } from "@/components/ui/credit-balance"
 import { useAuthSignOut } from "@/hooks/use-auth-signout"
 import { uiStylePresets } from "@/lib/ui-style-presets"
 
@@ -19,7 +18,6 @@ interface HeaderProfileMenuProps {
     full_name?: string
     avatar_url?: string
   }
-  credits?: number
   triggerId?: string
 }
 
@@ -43,7 +41,6 @@ function getProfileLabel(user?: HeaderProfileMenuProps["user"]) {
 
 export function HeaderProfileMenu({
   user,
-  credits,
   triggerId = "app-user-menu-trigger",
 }: HeaderProfileMenuProps) {
   const handleSignOut = useAuthSignOut()
@@ -75,13 +72,6 @@ export function HeaderProfileMenu({
         className="w-[260px] border border-border-subtle bg-white p-2 text-text-primary"
         align="end"
       >
-        {typeof credits === "number" && (
-          <DropdownMenuItem className="cursor-default focus:bg-transparent focus:text-text-primary">
-            <span className="text-sm font-medium">
-              Credits: <CreditBalance credits={credits} compact />
-            </span>
-          </DropdownMenuItem>
-        )}
         <DropdownMenuItem asChild>
           <Link href="/preferences?tab=profile" className={uiStylePresets.headerOutlineTab}>
             <span>Profile</span>

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback, useSyncExternalStore } from "react"
 import ReactMarkdown, { type Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { renderMermaid } from "beautiful-mermaid"
+import DOMPurify, { type Config } from "dompurify"
 import { Maximize2, Minimize2, RotateCcw } from "lucide-react"
 
 interface LazySyntaxHighlighterModule {
@@ -18,6 +18,19 @@ interface LazySyntaxHighlighterModule {
 }
 
 let syntaxHighlighterLoadPromise: Promise<LazySyntaxHighlighterModule> | null = null
+let mermaidRendererLoadPromise:
+  | Promise<typeof import("beautiful-mermaid").renderMermaid>
+  | null = null
+
+function loadMermaidRenderer() {
+  if (!mermaidRendererLoadPromise) {
+    mermaidRendererLoadPromise = import("beautiful-mermaid").then(
+      (module) => module.renderMermaid
+    )
+  }
+
+  return mermaidRendererLoadPromise
+}
 
 function loadSyntaxHighlighterModule(): Promise<LazySyntaxHighlighterModule> {
   if (!syntaxHighlighterLoadPromise) {
@@ -109,6 +122,15 @@ interface MarkdownRendererProps {
 }
 
 type MarkdownTableColumnKind = "compact" | "label" | "prose" | "default"
+type DomPurifySanitizer = {
+  sanitize: (dirty: string, config?: Config) => string
+}
+
+const MERMAID_SVG_SANITIZER_CONFIG: Config = {
+  USE_PROFILES: { svg: true, svgFilters: true },
+  FORBID_TAGS: ["script", "foreignObject", "iframe", "object", "embed"],
+  FORBID_ATTR: ["href", "xlink:href"],
+}
 
 const COMPACT_TABLE_HEADERS = new Set([
   "#",
@@ -193,6 +215,35 @@ function getMarkdownTableColumnStyle(
   }
 }
 
+function getDomPurifySanitizer(): DomPurifySanitizer | null {
+  const directSanitizer = DOMPurify as unknown as Partial<DomPurifySanitizer>
+  if (typeof directSanitizer.sanitize === "function") {
+    return directSanitizer as DomPurifySanitizer
+  }
+
+  if (typeof window !== "undefined" && typeof DOMPurify === "function") {
+    const browserSanitizer = DOMPurify(window) as unknown as Partial<DomPurifySanitizer>
+    if (typeof browserSanitizer.sanitize === "function") {
+      return browserSanitizer as DomPurifySanitizer
+    }
+  }
+
+  return null
+}
+
+export function sanitizeMermaidSvg(svg: string) {
+  const sanitizer = getDomPurifySanitizer()
+  if (!sanitizer) {
+    return ""
+  }
+
+  const sanitized = sanitizer.sanitize(svg, MERMAID_SVG_SANITIZER_CONFIG)
+
+  return typeof sanitized === "string" && sanitized.includes("<svg")
+    ? sanitized
+    : ""
+}
+
 function MermaidDiagram({ code }: { code: string }) {
   const [svg, setSvg] = useState<string>("")
   const [error, setError] = useState<boolean>(false)
@@ -233,9 +284,17 @@ function MermaidDiagram({ code }: { code: string }) {
       font: "ui-monospace, 'Fira Mono', monospace",
     }
 
-    renderMermaid(code, theme)
+    loadMermaidRenderer()
+      .then((renderMermaid) => renderMermaid(code, theme))
       .then((renderedSvg) => {
-        setSvg(renderedSvg)
+        const sanitizedSvg = sanitizeMermaidSvg(renderedSvg)
+        if (!sanitizedSvg) {
+          setSvg("")
+          setError(true)
+          return
+        }
+
+        setSvg(sanitizedSvg)
         setError(false)
       })
       .catch(() => {

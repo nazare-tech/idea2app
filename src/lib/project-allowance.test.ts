@@ -2,6 +2,7 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import {
   DEFAULT_MONTHLY_PROJECT_ALLOWANCE,
+  PLAN_NAME_PROJECT_ALLOWANCES,
   canCreateProject,
   getActiveMonthlyProjectWindow,
   getProjectAllowanceStatus,
@@ -177,6 +178,24 @@ test("resolveProjectAllowance falls back conservatively by plan name", () => {
     source: "default",
     planName: "Free",
   })
+})
+
+test("explicit plan allowance fields match current plan-name fallback mapping", () => {
+  for (const [name, allowance] of Object.entries(PLAN_NAME_PROJECT_ALLOWANCES)) {
+    const displayName = name.replace(/\b\w/g, (letter) => letter.toUpperCase())
+
+    assert.deepEqual(
+      resolveProjectAllowance({
+        name: displayName,
+        monthly_project_allowance: allowance,
+      }),
+      {
+        allowance,
+        source: "plan_field",
+        planName: displayName,
+      },
+    )
+  }
 })
 
 test("getProjectAllowanceStatus allows users below an explicit plan limit", async () => {
