@@ -29,6 +29,8 @@
 ### 4. Verification Before Done
 
 * Never mark a task complete without proving it works
+* For UI, visual, user-flow, or user-visible backend changes, verify through the real local UI as a real user and capture screenshot or video evidence for the thread
+* Do not patch routes, use fixtures, mock providers, skip auth, use dummy env values, or shorten asynchronous waits just to make UI verification faster
 * Diff behavior between main and your changes when relevant
 * Ask yourself: "Would a staff engineer approve this?"
 * Run tests, check logs, demonstrate correctness
@@ -56,6 +58,7 @@
 5. **Document Results**: Add or update `docs/plans/<short-slug>-review.md`
 6. **Capture Lessons**: Update `docs/plans/recommendation-selection-rules.md` after corrections
 7. **Backend History**: For backend, Supabase, auth/RLS, persistence, webhook, or data-shape changes, update `docs/plans/backend-change-history.md`
+8. **UI Evidence**: For UI-visible work, attach screenshot/video evidence in the task thread and record artifact paths in the review
 
 ## Core Principles
 
@@ -76,6 +79,7 @@ For any frontend/UI work in this repo, use the vendored Impeccable design guidan
    - `.codex/impeccable/skills/polish/SKILL.md`
    - `.codex/impeccable/skills/audit/SKILL.md`
 5. If changes are visual, capture a screenshot as part of validation
+6. If the interaction includes motion, loading, generation progress, or multiple steps, capture a short video instead of only a static screenshot when the browser workflow supports it
 
 ### Anti-slop defaults
 
