@@ -12,6 +12,7 @@ import {
   COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
 } from "@/lib/competitive-analysis-v2"
 import { linkifyBareUrls } from "@/lib/markdown-links"
+import { deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
 import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import type { Database, Json } from "@/types/database"
@@ -37,6 +38,8 @@ export interface GenerateProjectDocumentInput {
   supabase: ServerSupabaseClient
   projectId: string
   project: DocumentGenerationProject
+  userId?: string | null
+  runId?: string | null
   logContext?: LogContext
 }
 
@@ -74,6 +77,8 @@ export async function generateProjectDocument({
   supabase,
   projectId,
   project,
+  userId,
+  runId,
   logContext = {},
 }: GenerateProjectDocumentInput): Promise<GeneratedProjectDocument | null> {
   const baseLogContext = { ...logContext, projectId, docType, modelId }
@@ -197,6 +202,19 @@ export async function generateProjectDocument({
         mvpPlan: mvpRow?.content ?? `First Version Plan for ${name}: ${idea}`,
         projectName: name,
         projectId,
+        runId: runId ?? undefined,
+        onOptionGenerated: userId
+          ? (payload) =>
+              upsertMockupOptionDraft({
+                supabase,
+                projectId,
+                userId,
+                runId: payload.runId,
+                option: payload.option,
+                model: payload.model,
+                designPlan: payload.designPlan,
+              })
+          : undefined,
       })
       const { data, error } = await supabase
         .from("mockups")
@@ -208,6 +226,18 @@ export async function generateProjectDocument({
         })
         .select("id")
         .single()
+      if (!error && data?.id && userId) {
+        try {
+          await deleteMockupOptionDrafts({
+            supabase,
+            projectId,
+            userId,
+            runId: result.runId,
+          })
+        } catch (cleanupError) {
+          logError("DocumentGeneration", "mockup_draft_cleanup_failed", cleanupError, baseLogContext)
+        }
+      }
       return logGeneratedOutput(
         requireGeneratedOutput(data, error, "mockups"),
         baseLogContext,

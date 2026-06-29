@@ -7,6 +7,7 @@
 
 ## Verification
 - `node --import tsx --test src/lib/mockup-option-drafts.test.ts`
+- `node --import tsx --test src/lib/mockup-option-recovery.test.ts src/lib/mockup-option-drafts.test.ts src/lib/openrouter-image-mockup-pipeline.test.ts src/components/ui/mockup-renderer.test.tsx`
 - `node --import tsx --test src/lib/openrouter-image-mockup-pipeline.test.ts`
 - `node --import tsx --test src/components/ui/mockup-renderer.test.tsx`
 - `npm run typecheck`
@@ -22,6 +23,9 @@
 ## Code Review Findings
 - No blocking findings.
 - Cleanup failures after canonical mockup save are logged but non-blocking; this is intentional because the canonical document is already saved and draft rows are disposable after finalization.
+- Follow-up code review found that partial draft rows could hide additional uploaded Storage-only images during recovery. Fixed by merging DB draft options with Storage fallback for missing labels and adding a regression test.
+- Follow-up code review found the new `updated_at` trigger function lacked a fixed search path. Fixed the original draft-table migration for fresh databases and added `20260629192000_harden_mockup_option_drafts_trigger.sql` for databases where the earlier migration was already applied.
+- Real UI verification found that canonical full mockup saves could persist draft image proxy URLs with `draftRunId` after all three images completed. Fixed by rebuilding saved canonical option URLs from `storagePath` without `draftRunId` while keeping draft URLs for in-progress progressive display.
 
 ## Security Review Findings
 - Draft image proxying now requires authenticated ownership plus an exact `mockup_option_drafts` row match for the requested project/run/path.
@@ -32,4 +36,7 @@
 ## Remediation Checklist
 - [x] Strip undefined fields before JSONB draft writes.
 - [x] Keep draft cleanup non-blocking after canonical save.
+- [x] Merge partial DB draft recovery with Storage-discovered missing labels.
+- [x] Harden the draft table timestamp trigger function search path.
+- [x] Strip `draftRunId` from future canonical full-generation mockup content.
 - [x] Verify focused tests, full tests, lint, typecheck, and UI preview.

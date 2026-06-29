@@ -77,6 +77,29 @@ Never paste raw transcript excerpts into Linear. Linear issues should contain:
 - Acceptance criteria.
 - Non-goals when useful.
 
+## Linear Coverage Audit
+
+Before calling the research processing complete, create a line-item coverage audit from the user's notes and the sanitized transcript insights.
+
+For each distinct product-relevant note or insight, record one disposition:
+
+- `existing issue`: the specific Linear issue already covers it.
+- `new issue`: a new Linear issue was created for it.
+- `updated issue`: an existing Linear issue was updated because it only partially covered the point.
+- `synthesis only`: the point is useful context but not actionable enough for Linear yet.
+- `not product-relevant`: the point was intentionally excluded after sanitization.
+
+Do not treat a broad theme as covered unless the issue title or acceptance criteria would clearly remind a future implementer of that specific point. If the point is only implied, either update the issue or create a smaller follow-up ticket.
+
+When the task is medium or larger and subagents are available, run a second-pass coverage audit with a subagent before finalizing Linear work. The second pass should look specifically for:
+
+- Notes that were compressed into themes too early.
+- Open questions that deserve investigation tickets.
+- Positive signals that should become guardrails for future design or prompt changes.
+- Product ideas that should be marked as exploration rather than implementation.
+
+Add a `Linear Coverage` section to the sanitized artifact when useful. It should list the created or matched issue IDs and any `synthesis only` decisions that might otherwise look like omissions.
+
 ## Slack Rule
 
 Slack is not the backlog. If a Slack update is needed, post a short sanitized summary and link to Linear or sanitized docs. Do not post raw transcript excerpts.
@@ -90,6 +113,8 @@ Before writing a sanitized artifact or creating Linear issues, check:
 - Is every included detail relevant to Maker Compass?
 - Are action items tracked in Linear instead of duplicated in docs?
 - Does the sanitized artifact link to Linear issue IDs after issue creation?
+- Has every distinct product-relevant note or insight received a Linear coverage disposition?
+- Did a second-pass audit run for medium or larger research tasks when subagents were available?
 
 Add this note to sanitized artifacts:
 

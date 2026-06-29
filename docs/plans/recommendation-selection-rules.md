@@ -25,7 +25,11 @@ When the user says a different recommendation should have been chosen:
 
 ## Learned Rules
 
-No learned recommendation overrides have been recorded yet.
+### 2026-06-29: Do Not Migrate Historical Backend Data By Default
+
+- Prefer: Recommendation A when the safe current-path fix is to update new writes, current readers, or forward behavior without migrating older backend rows.
+- Reason: Keep scope controlled and avoid unnecessary historical data migration risk. Older backend data should be migrated to a new schema or data shape only when the user explicitly asks for that migration.
+- Example: When fixing future canonical mockup image URLs, update the save path for new `mockups.content` rows without automatically rewriting existing saved rows that used the older URL shape.
 
 Use this format for future entries:
 

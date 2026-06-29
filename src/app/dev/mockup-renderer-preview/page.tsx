@@ -105,6 +105,25 @@ const content = JSON.stringify({
   ],
 })
 
+const partialContent = JSON.stringify({
+  type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+  model: "draft",
+  generatedAt: "",
+  options: [
+    {
+      label: "A",
+      title: "Focused dashboard",
+      imageUrl: buildStoryboardSvg("A", "Focused dashboard"),
+      storagePath: "fixture/preview/option-a-storyboard.svg",
+      description: "Dense but calm workflow with fast scanning and obvious next actions.",
+      contentType: "image/svg+xml",
+      screens,
+      width: 1536,
+      height: 672,
+    },
+  ],
+})
+
 export default function MockupRendererPreviewPage() {
   if (process.env.NODE_ENV === "production") {
     notFound()
@@ -136,7 +155,17 @@ export default function MockupRendererPreviewPage() {
             </p>
             <h2 className="mt-1 text-xl font-semibold tracking-tight">First generated image available</h2>
           </div>
-          <MockupGenerationLoader images={[buildStoryboardSvg("A", "Focused dashboard")]} />
+          <MockupRenderer
+            content={partialContent}
+            projectId="preview"
+            projectName="Preview"
+            expectedOptionLabels={["A", "B", "C"]}
+            optionStatuses={[
+              { label: "Option A", status: "ready", message: "Ready" },
+              { label: "Option B", status: "generating", message: "Generating" },
+              { label: "Option C", status: "generating", message: "Generating" },
+            ]}
+          />
         </section>
 
         <MockupRenderer content={content} projectId="preview" projectName="Preview" />

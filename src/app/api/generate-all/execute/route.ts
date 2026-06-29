@@ -400,6 +400,8 @@ async function executeQueueItem({
         supabase: documentSupabase,
         projectId: claimed.project_id,
         project,
+        userId: claimed.user_id,
+        runId: claimed.run_id,
         logContext: itemLogContext,
       })
 

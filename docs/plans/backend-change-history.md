@@ -23,4 +23,15 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
-No backend change entries have been recorded under this workflow yet.
+## 2026-06-29: Durable mockup option draft recovery hardening
+
+- Plan: [docs/plans/durable-mockup-option-drafts-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/durable-mockup-option-drafts-plan.md)
+- Review: [docs/plans/durable-mockup-option-drafts-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/durable-mockup-option-drafts-review.md)
+- Durable source of truth: `mockup_option_drafts` rows store completed mockup option drafts before canonical `mockups` finalization; Supabase Storage remains the image blob store.
+- Schema or data-shape changes: Hardened the new draft table timestamp trigger function to use `public.update_mockup_option_drafts_updated_at()` with `SET search_path = public`. Future canonical `mockups.content` rows from full OpenRouter generation now save image proxy URLs without `draftRunId`; draft rows and in-progress previews can still use `draftRunId` until canonical finalization. Table shapes are unchanged.
+- Auth, RLS, or permission changes: No RLS policy changes in this follow-up. Existing draft policies remain owner-scoped by `user_id` and project ownership.
+- Runtime/API behavior changes: `/api/mockups/recover-options` now treats DB draft rows as authoritative but scans Storage when fewer than three draft labels exist, backfills missing Storage-only labels into `mockup_option_drafts`, and returns the merged A/B/C-ordered option set. Full mockup generation now emits progressive draft URLs through the option callback, then rebuilds canonical saved option URLs from Storage paths after all three options complete.
+- Migration or deployment steps: Apply `supabase/migrations/20260628000000_create_mockup_option_drafts.sql` in environments that do not already have the draft table. Apply `supabase/migrations/20260629192000_harden_mockup_option_drafts_trigger.sql` in environments where the prior draft migration was already applied.
+- Verification: `node --import tsx --test src/lib/mockup-option-recovery.test.ts src/lib/mockup-option-drafts.test.ts src/lib/openrouter-image-mockup-pipeline.test.ts src/components/ui/mockup-renderer.test.tsx`; `npm run typecheck`; `npm run lint`; `npm test`; `git diff --check`.
+- Rollback or recovery: Revert the route/helper/test changes to return only DB drafts or Storage fallback. If needed, replace the trigger function with the previous unqualified definition, though the hardened version is safer and table-compatible.
+- Follow-ups: None required from this remediation pass.

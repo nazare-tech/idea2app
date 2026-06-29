@@ -383,6 +383,63 @@ export type Database = {
           },
         ]
       }
+      mockup_option_drafts: {
+        Row: {
+          created_at: string
+          design_plan: Json | null
+          id: string
+          model_used: string | null
+          option_json: Json
+          option_label: string
+          project_id: string
+          run_id: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          design_plan?: Json | null
+          id?: string
+          model_used?: string | null
+          option_json: Json
+          option_label: string
+          project_id: string
+          run_id: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          design_plan?: Json | null
+          id?: string
+          model_used?: string | null
+          option_json?: Json
+          option_label?: string
+          project_id?: string
+          run_id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mockup_option_drafts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mockup_option_drafts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompt_lab_experiments: {
         Row: {
           artifact_type: string

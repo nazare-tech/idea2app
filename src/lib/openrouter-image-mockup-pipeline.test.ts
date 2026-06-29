@@ -4,6 +4,7 @@ import assert from "node:assert/strict"
 import {
   OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
   assertMockupImageMatchesSkeletonAspect,
+  buildCanonicalMockupContentOption,
   buildOpenRouterMockupImageUserMessageContent,
   buildMockupImageProxyUrl,
   buildOpenRouterMockupImagePrompt,
@@ -14,6 +15,7 @@ import {
   getOpenRouterMockupImageConfig,
   getOpenRouterMockupPlannerMaxTokens,
   getOpenRouterMockupPlannerModel,
+  isValidDraftMockupImagePath,
   parseImageDataUrl,
   parseOpenRouterImageMockupContent,
 } from "./openrouter-image-mockup-pipeline"
@@ -84,6 +86,77 @@ test("buildMockupImageProxyUrl: encodes project and storage path", () => {
     url,
     "/api/mockups/image?projectId=project+1&path=project+1%2Frun%2Foption-a.png",
   )
+})
+
+test("buildMockupImageProxyUrl: includes draft run id for in-progress options", () => {
+  const url = buildMockupImageProxyUrl({
+    projectId: "project-1",
+    storagePath: "project-1/123e4567-e89b-12d3-a456-426614174000/option-a-storyboard.png",
+    draftRunId: "123e4567-e89b-12d3-a456-426614174000",
+  })
+
+  assert.equal(
+    url,
+    "/api/mockups/image?projectId=project-1&path=project-1%2F123e4567-e89b-12d3-a456-426614174000%2Foption-a-storyboard.png&draftRunId=123e4567-e89b-12d3-a456-426614174000",
+  )
+})
+
+test("buildCanonicalMockupContentOption: strips draft run id from saved mockup URLs", () => {
+  const draftRunId = "123e4567-e89b-12d3-a456-426614174000"
+  const storagePath = `project-1/${draftRunId}/option-b-storyboard.png`
+  const option = buildCanonicalMockupContentOption({
+    projectId: "project-1",
+    option: {
+      label: "B",
+      title: "Focused flow",
+      imageUrl: buildMockupImageProxyUrl({
+        projectId: "project-1",
+        storagePath,
+        draftRunId,
+      }),
+      storagePath,
+      description: "Draft option",
+      contentType: "image/png",
+      width: 1568,
+      height: 672,
+    },
+  })
+
+  assert.equal(
+    option.imageUrl,
+    "/api/mockups/image?projectId=project-1&path=project-1%2F123e4567-e89b-12d3-a456-426614174000%2Foption-b-storyboard.png",
+  )
+  assert.equal(option.imageUrl.includes("draftRunId"), false)
+  assert.equal(option.width, 1568)
+  assert.equal(option.height, 672)
+})
+
+test("isValidDraftMockupImagePath: accepts only expected option storyboard paths", () => {
+  const draftRunId = "123e4567-e89b-12d3-a456-426614174000"
+
+  assert.equal(isValidDraftMockupImagePath({
+    projectId: "project-1",
+    storagePath: `project-1/${draftRunId}/option-b-storyboard.webp`,
+    draftRunId,
+  }), true)
+
+  assert.equal(isValidDraftMockupImagePath({
+    projectId: "project-1",
+    storagePath: `project-1/${draftRunId}/option-d-storyboard.webp`,
+    draftRunId,
+  }), false)
+
+  assert.equal(isValidDraftMockupImagePath({
+    projectId: "project-1",
+    storagePath: "project-1/other-run/option-a-storyboard.png",
+    draftRunId,
+  }), false)
+
+  assert.equal(isValidDraftMockupImagePath({
+    projectId: "project-1",
+    storagePath: `project-1/${draftRunId}/../secret.png`,
+    draftRunId,
+  }), false)
 })
 
 test("parseOpenRouterImageMockupContent: returns normalized options", () => {

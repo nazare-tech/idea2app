@@ -36,3 +36,41 @@ test("MockupRenderer: renders storyboard images with screen captions", () => {
   assert.match(markup, /Export Image/)
   assert.doesNotMatch(markup, /max-height/)
 })
+
+test("MockupRenderer: renders draft storyboard placeholders for missing options", () => {
+  const content = JSON.stringify({
+    type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+    model: "draft",
+    generatedAt: "",
+    options: [
+      {
+        label: "A",
+        title: "Focused dashboard",
+        imageUrl: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%3E%3C/svg%3E",
+        storagePath: "project/run/option-a-storyboard.svg",
+        description: "Dense but calm workflow.",
+        contentType: "image/svg+xml",
+      },
+    ],
+  })
+
+  const markup = renderToStaticMarkup(
+    <MockupRenderer
+      content={content}
+      expectedOptionLabels={["A", "B", "C"]}
+      optionStatuses={[
+        { label: "Option A", status: "ready", message: "Ready" },
+        { label: "Option B", status: "generating", message: "Generating" },
+        { label: "Option C", status: "generating", message: "Generating" },
+      ]}
+    />,
+  )
+
+  assert.match(markup, /Concept 1/)
+  assert.match(markup, /Focused dashboard/)
+  assert.match(markup, /Concept 2/)
+  assert.match(markup, /Option B/)
+  assert.match(markup, /Concept 3/)
+  assert.match(markup, /Option C/)
+  assert.match(markup, /Generating/)
+})

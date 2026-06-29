@@ -32,6 +32,7 @@ export interface QueueItem {
   stageMessage?: string
   error?: string
   dependsOn?: DocumentType[]
+  runId?: string
 }
 
 export type QueueResumeStatus =

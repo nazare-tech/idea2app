@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
+import { deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
 import {
   createSkippedActiveDocumentPayload,
   findLatestActiveDocument,
@@ -154,6 +155,16 @@ export async function POST(request: Request) {
               projectName,
               projectId: projectId!,
               send,
+              onOptionGenerated: (payload) =>
+                upsertMockupOptionDraft({
+                  supabase,
+                  projectId: projectId!,
+                  userId: userId!,
+                  runId: payload.runId,
+                  option: payload.option,
+                  model: payload.model,
+                  designPlan: payload.designPlan,
+                }),
             })
             modelUsed = result.model
 
@@ -168,6 +179,19 @@ export async function POST(request: Request) {
 
             if (insertError) {
               throw new Error(`Failed to save generated mockups: ${insertError.message}`)
+            }
+            try {
+              await deleteMockupOptionDrafts({
+                supabase,
+                projectId: projectId!,
+                userId: userId!,
+                runId: result.runId,
+              })
+            } catch (cleanupError) {
+              logWarn("MockupGenerate", "stream_draft_cleanup_failed", {
+                ...mockupLogContext,
+                error: cleanupError instanceof Error ? cleanupError.message : "Unknown cleanup error",
+              })
             }
             logInfo("MockupGenerate", "stream_generation_saved", {
               ...mockupLogContext,
@@ -235,6 +259,16 @@ export async function POST(request: Request) {
       mvpPlan,
       projectName,
       projectId,
+      onOptionGenerated: (payload) =>
+        upsertMockupOptionDraft({
+          supabase,
+          projectId: projectId!,
+          userId: userId!,
+          runId: payload.runId,
+          option: payload.option,
+          model: payload.model,
+          designPlan: payload.designPlan,
+        }),
     })
     modelUsed = result.model
 
@@ -247,6 +281,20 @@ export async function POST(request: Request) {
 
     if (insertError) {
       throw new Error(`Failed to save generated mockups: ${insertError.message}`)
+    }
+
+    try {
+      await deleteMockupOptionDrafts({
+        supabase,
+        projectId,
+        userId: userId!,
+        runId: result.runId,
+      })
+    } catch (cleanupError) {
+      logWarn("MockupGenerate", "draft_cleanup_failed", {
+        ...mockupLogContext,
+        error: cleanupError instanceof Error ? cleanupError.message : "Unknown cleanup error",
+      })
     }
 
     await supabase
