@@ -2,11 +2,13 @@
 
 ## Workflow Orchestration
 
-### 1. Plan Mode Default
+### 1. Autonomous Plan Default
 
-* Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+* For any non-trivial task (3+ steps or architectural decisions), create or update a markdown plan in `docs/plans/`
+* Include clarifying questions with Recommendation A/B options and trade-offs
+* Pick Recommendation A by default and proceed without waiting unless repo/user instructions, safety constraints, or `docs/plans/recommendation-selection-rules.md` point elsewhere
 * If something goes sideways, STOP and re-plan immediately – don't keep pushing
-* Use plan mode for verification steps, not just building
+* Include verification steps, not just building
 * Write detailed specs upfront to reduce ambiguity
 
 ### 2. Subagent Strategy
@@ -18,7 +20,8 @@
 
 ### 3. Self-Improvement Loop
 
-* After ANY correction from the user: update `tasks/lessons.md` with the pattern
+* After ANY correction from the user: update `docs/plans/recommendation-selection-rules.md` with the generalized decision rule once the root reason is clear
+* When the correction involves a previous Recommendation A/B choice, ask why the corrected option better matched the user's intent before recording the rule
 * Write rules for yourself that prevent the same mistake
 * Ruthlessly iterate on these lessons until mistake rate drops
 * Review lessons at session start for relevant project
@@ -46,12 +49,13 @@
 
 ## Task Management
 
-1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
-2. **Verify Plan**: Check in before starting implementation
+1. **Plan First**: Write plan to `docs/plans/<short-slug>-plan.md` with checkable items
+2. **Select Defaults**: Record clarifying questions, choose Recommendation A by default, and continue without waiting unless blocked by safety or explicit user direction
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `tasks/todo.md`
-6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
+5. **Document Results**: Add or update `docs/plans/<short-slug>-review.md`
+6. **Capture Lessons**: Update `docs/plans/recommendation-selection-rules.md` after corrections
+7. **Backend History**: For backend, Supabase, auth/RLS, persistence, webhook, or data-shape changes, update `docs/plans/backend-change-history.md`
 
 ## Core Principles
 
