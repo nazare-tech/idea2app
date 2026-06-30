@@ -22,7 +22,8 @@
 - Keep working on the current branch unless I explicitly ask for a new branch.
 - Create a markdown plan in `docs/plans/` before implementation. Include the goal, assumptions, clarifying questions, Recommendation A/B choices with trade-offs, the selected recommendation, implementation phases, test strategy, rollback or recovery notes, and a candid critique from architecture, product, customer, engineering, and risk/security perspectives.
 - Do not wait for me to answer clarifying questions by default. Pick Recommendation A for each open question and continue through implementation, verification, review, and remediation unless an existing rule in `docs/plans/recommendation-selection-rules.md`, my prompt, or a hard safety constraint clearly points to another option.
-- If Recommendation A would delete data, overwrite existing files, spend money, expose secrets, weaken auth/RLS, make irreversible production changes, or require credentials I have not provided, stop and ask before taking that step.
+- If Recommendation A would delete data, overwrite existing files, expose secrets, weaken auth/RLS, make irreversible production changes, require credentials I have not provided, or incur open-ended/production spend, stop and ask before taking that step.
+- Do not avoid small expected local QA spend from configured AI/API services when real-flow verification or durable test artifacts depend on it; avoiding that spend usually creates more future work.
 - Update the plan as decisions become facts. When implementation is complete, mark the plan metadata with `implemented: true`, `implemented_at: <ISO 8601 timestamp>`, and a concise implementation summary. If work is intentionally partial, keep `implemented: false` and document what remains.
 - For code or behavior changes, create or update a review artifact in `docs/plans/` with verification run, code-review findings, security-review findings when relevant, and remediation status.
 - When I later correct a recommendation choice, first adjust the implementation to match the corrected direction when practical, then ask what underlying preference, constraint, or product principle made the other recommendation better. Do not treat the correction as a one-off preference. Update `docs/plans/recommendation-selection-rules.md` with the generalized rule after the root reason is clear.
@@ -36,7 +37,7 @@
 - When I ask for a change, do your best to test that change before returning control to me
 - If I ask for a visual/UI change, add it to your test plan and visually confirm the change actually happened before returning control to me
 - For any UI, visual, user-flow, or user-visible backend change, test through the real local UI as a real user would. Do not patch routes, stub providers, switch to fixtures, shorten waits, use dummy environment values, or bypass auth/database/image-generation flows just to make verification faster. If the real dependency is unavailable, blocked, unsafe, or would spend money unexpectedly, report that blocker instead of faking the UI path.
-- For UI-visible changes, capture and share screenshot or video evidence in the same thread where I gave the task. Prefer screenshots for static states and short video when motion, loading, generation progress, or multi-step flows matter. Include the exact route/viewport/state tested and save the artifact path in the plan or review.
+- For UI-visible changes, capture and share screenshot or video evidence in the same thread where I gave the task. Prefer screenshots for static states and short video when motion, loading, generation progress, or multi-step flows matter. Save verification screenshots/videos under `ui-evidence/` using a date/task subfolder; this directory lives inside the repo working tree but is ignored by Git. Include the exact route/viewport/state tested and the saved artifact path in the plan or review.
 - For backend changes, still look for the real user-facing UI path that proves the backend behavior when one exists, and include screenshots/video of that path when useful. If only API/log/database verification is possible, explain why there is no meaningful UI evidence.
 - For UI verification in this repo, use the Codex in-app browser/browser workflow by default when available. Arc is allowed when debugging is materially easier there or when the Codex browser blocks effective inspection. Avoid Chrome, Puppeteer, or headless browsers for routine UI checks unless the Codex browser and Arc are unavailable or the user explicitly asks for a different browser.
 - For local UI verification, use this actual workspace and its real local environment. Do not create copied project workspaces or use dummy environment values to bypass env, auth, database, or dev-server problems. If a dev-server lock blocks startup, first verify whether a server is actually reachable; if it is not reachable, fix the stale generated lock or run the real workspace on another available port.
@@ -46,6 +47,12 @@
 - Look for opportunities to break large functions into smaller functions when that will improve clarity, reuse, or testability
 - Look for similar logic duplicated across files and centralize it when that makes the codebase simpler and easier to maintain
 - Prefer reusing existing UI components and patterns rather than creating one-off components for a single screen or change
+
+## Standardized Intake Test Cases
+
+- For repeatable Maker Compass intake/UI/report-generation tests, use `docs/guides/idea-intake-test-cases.md`.
+- Use Idea 1.1 from that file by default unless I explicitly ask you to use another variant, or unless generating multiple projects would materially help compare outputs.
+- When the intake wizard asks a new follow-up question, answer it using the closest matching policy in that file, then append the exact question and answer to the observed question log.
 
 ## Available Skills
 

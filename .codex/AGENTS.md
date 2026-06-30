@@ -30,6 +30,7 @@
 
 * Never mark a task complete without proving it works
 * For UI, visual, user-flow, or user-visible backend changes, verify through the real local UI as a real user and capture screenshot or video evidence for the thread
+* Save verification screenshots/videos under `ui-evidence/` using a date/task subfolder; this directory lives inside the repo working tree but is ignored by Git. Include the exact path in the task thread and plan/review
 * Do not patch routes, use fixtures, mock providers, skip auth, use dummy env values, or shorten asynchronous waits just to make UI verification faster
 * Diff behavior between main and your changes when relevant
 * Ask yourself: "Would a staff engineer approve this?"
@@ -58,7 +59,7 @@
 5. **Document Results**: Add or update `docs/plans/<short-slug>-review.md`
 6. **Capture Lessons**: Update `docs/plans/recommendation-selection-rules.md` after corrections
 7. **Backend History**: For backend, Supabase, auth/RLS, persistence, webhook, or data-shape changes, update `docs/plans/backend-change-history.md`
-8. **UI Evidence**: For UI-visible work, attach screenshot/video evidence in the task thread and record artifact paths in the review
+8. **UI Evidence**: For UI-visible work, attach screenshot/video evidence in the task thread and record artifact paths in the review. Store those files under `ui-evidence/`, which lives inside the repo working tree but is ignored by Git
 
 ## Core Principles
 
