@@ -2837,30 +2837,88 @@ function getFvpScopeRows({
 
 const stackIcons = [Monitor, Server, Database, KeyRound, Cpu, HardDrive, CreditCard, BarChart3, Rocket]
 
+function getFvpShortcutSections(section?: PlanningDocumentSection) {
+  if (!section?.content.trim()) return []
+
+  return extractSectionsByHeading(section.content, 3).filter((child) => {
+    const heading = stripInlineMarkdown(child.heading).toLowerCase()
+    return /tactical shortcuts|manual shortcuts|speed to market|ops over code/.test(heading)
+  })
+}
+
+function FvpShortcutList({ sections }: { sections: PlanningDocumentSection[] }) {
+  if (sections.length === 0) return null
+
+  return (
+    <div className="border border-[#EAE0D8] bg-white">
+      {sections.map((section, sectionIndex) => {
+        const rows = getDesignListRows(section.content)
+        const title = stripInlineMarkdown(section.heading)
+          .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
+          .trim()
+
+        return (
+          <section key={`${section.heading}-${sectionIndex}`} className={cn(sectionIndex > 0 && "border-t border-[#EAE0D8]")}>
+            <div className="flex items-center gap-2 border-b border-[#EAE0D8] px-5 py-4">
+              <Rocket className="h-3.5 w-3.5 text-primary" />
+              <h3 className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-primary">
+                {title}
+              </h3>
+            </div>
+            <div className="divide-y divide-[#EAE0D8]">
+              {rows.map((row, index) => (
+                <div key={`${row.title}-${index}`} className="grid grid-cols-[34px_minmax(0,1fr)] gap-4 px-5 py-4">
+                  <div className="grid h-7 w-7 place-items-center border border-primary/20 bg-primary/[0.03] font-mono text-[10px] font-medium text-primary">
+                    {String(index + 1).padStart(2, "0")}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={cn(displayFontClass, "text-[15px] font-bold leading-tight tracking-[-0.02em] text-[#1C1917]")}>
+                      {row.title}
+                    </p>
+                    {row.body ? (
+                      <p className="mt-1 text-[13.5px] leading-[1.5] text-[#4A4040]">
+                        {row.body}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
 function FvpStack({ section }: { section?: PlanningDocumentSection }) {
   const rows = getDesignListRows(section?.content ?? "")
-  if (rows.length === 0) return null
+  const shortcutSections = getFvpShortcutSections(section)
+  if (rows.length === 0 && shortcutSections.length === 0) return null
 
   return (
     <div className="space-y-4">
-      <div className="fvp-stack grid gap-px border border-[#EAE0D8] bg-[#EAE0D8] sm:grid-cols-2 lg:grid-cols-3">
-        {rows.map((row, index) => {
-          const Icon = stackIcons[index % stackIcons.length]
-          return (
-            <article key={`${row.title}-${index}`} className="fvp-sc bg-white px-5 py-5">
-              <div className="layer flex items-center gap-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#8A8480]">
-                <Icon className="h-3.5 w-3.5 text-primary" />
-                {row.title}
-              </div>
-              {row.body ? (
-                <div className={cn(displayFontClass, "rec mt-3 text-[15.5px] font-bold leading-tight tracking-[-0.02em] text-[#1C1917]")}>
-                  {row.body}
+      {rows.length > 0 ? (
+        <div className="fvp-stack grid gap-px border border-[#EAE0D8] bg-[#EAE0D8] sm:grid-cols-2 lg:grid-cols-3">
+          {rows.map((row, index) => {
+            const Icon = stackIcons[index % stackIcons.length]
+            return (
+              <article key={`${row.title}-${index}`} className="fvp-sc bg-white px-5 py-5">
+                <div className="layer flex items-center gap-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#8A8480]">
+                  <Icon className="h-3.5 w-3.5 text-primary" />
+                  {row.title}
                 </div>
-              ) : null}
-            </article>
-          )
-        })}
-      </div>
+                {row.body ? (
+                  <div className={cn(displayFontClass, "rec mt-3 text-[15.5px] font-bold leading-tight tracking-[-0.02em] text-[#1C1917]")}>
+                    {row.body}
+                  </div>
+                ) : null}
+              </article>
+            )
+          })}
+        </div>
+      ) : null}
+      <FvpShortcutList sections={shortcutSections} />
     </div>
   )
 }

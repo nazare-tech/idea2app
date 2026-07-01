@@ -400,6 +400,66 @@ test("generateIntakeQuestions: uses the injected generator and parses the model 
   assert.equal(result.questionSet.source, "ai")
 })
 
+test("generateIntakeQuestions: retries once when platform normalization leaves too few questions", async () => {
+  const duplicatePlatformOutput = JSON.stringify({
+    questions: [
+      {
+        id: "target-company-size",
+        question: "What size of company is your primary target customer?",
+        selectionMode: "single",
+        options: [
+          { id: "startup", label: "Startup" },
+          { id: "mid-market", label: "Mid-market" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "primary-data-sources",
+        question: "Which data sources are most critical to ingest first?",
+        selectionMode: "multiple",
+        options: [
+          { id: "support-tickets", label: "Support tickets" },
+          { id: "sales-calls", label: "Sales calls" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "platform",
+        question: "Where should this live?",
+        selectionMode: "single",
+        options: [
+          { id: "desktop-web", label: "Desktop website" },
+          { id: "mobile-web", label: "Mobile website" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "primary-device",
+        question: "What primary device should users start on?",
+        selectionMode: "single",
+        options: [
+          { id: "desktop", label: "Desktop" },
+          { id: "phone", label: "Phone" },
+        ],
+        allowOther: false,
+      },
+    ],
+  })
+  const prompts: string[] = []
+
+  const result = await generateIntakeQuestions("AI software for support ticket triage", {
+    generateText: async (request) => {
+      prompts.push(request.userPrompt)
+      return prompts.length === 1 ? duplicatePlatformOutput : validModelOutput
+    },
+  })
+
+  assert.equal(prompts.length, 2)
+  assert.match(prompts[1], /previous JSON was rejected/i)
+  assert.match(prompts[1], /normalized questions must include 4-5 items/i)
+  assert.equal(result.questionSet.questions.length, 5)
+})
+
 test("generateIntakeQuestions: throws a retryable error when no generator is provided", async () => {
   await assert.rejects(
     () => generateIntakeQuestions("Marketplace for local classes"),

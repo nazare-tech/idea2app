@@ -1073,6 +1073,10 @@ Designers will trust the generated draft enough to edit it.
 |---|---|---|
 | Frontend | Next.js + Tailwind | Fast workspace UI |
 
+### Tactical shortcuts for speed to market
+- **Manual onboarding:** Walk the first users through setup on a video call.
+- **CSV fallback:** Accept uploads before building integrations.
+
 ## 8. AI-Friendly Build Sequence
 | Step | Build Chunk | Goal | Test Before Moving On |
 |---|---|---|---|
@@ -1119,6 +1123,10 @@ Start with the proposal intake form and mock proposal generation.
   assert.match(html, /MVP Scope/)
   assert.match(html, /aria-label="Explain MVP Scope"/)
   assert.match(html, /Suggested Build Approach/)
+  assert.match(html, /Tactical shortcuts for speed to market/)
+  assert.match(html, /Manual onboarding/)
+  assert.match(html, /Walk the first users through setup on a video call/)
+  assert.match(html, /CSV fallback/)
   assert.doesNotMatch(html, /AI-Friendly Build Sequence/)
   assert.doesNotMatch(html, /AI Build Guardrails/)
   assert.match(html, /Validation Plan/)

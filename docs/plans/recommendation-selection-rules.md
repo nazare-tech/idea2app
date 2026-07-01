@@ -56,12 +56,6 @@ When the user says a different recommendation should have been chosen:
 - Reason: Stopping the server can look like browser/controller failure and can invalidate real-user UI verification. The server process is part of the test environment, so preserving it keeps screenshots, navigation, auth, and long-running generation flows inspectable.
 - Example: If a UI test cannot navigate to `localhost:3000`, first check that the dev server is still listening and serving the route before switching tools or using API/server-side shortcuts.
 
-### 2026-07-01: Match Planning Section Labels To Actual Content
-
-- Prefer: Section names that describe what the artifact actually shows, and one consolidated research-plan section when validation tasks, questions, and evidence thresholds overlap.
-- Reason: A label like "Timeline" creates false expectations when the section is really about team shape and milestones. Splitting validation into separate feedback-question and suggested-metric blocks can duplicate content and make the plan feel less actionable than one research plan.
-- Example: Product Plan section 3 should be "Team and Milestones" when it does not present a textual timeline. First Version Plan validation should use a single Research Plan table rather than separate Key Feedback Questions and Suggested Metrics subsections.
-
 Use this format for future entries:
 
 ```markdown

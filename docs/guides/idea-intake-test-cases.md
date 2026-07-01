@@ -375,3 +375,14 @@ Evidence:
 | 2.2 | No | Painting/admin contrast: typed notes/customer messages, pricing uncertainty, per-quote pricing, desktop web. |
 | 3.1 | No | Native mobile accountability loop for busy professionals. |
 | 3.2 | No | Retiree scheduling/community contrast with free mobile-web positioning. |
+
+### 2026-07-01 Live Project Creation: Idea 1.1
+
+Captured during real `/projects/new` UI project creation for Idea 1.1. The first model response normalized below four questions, the retry path produced the following Step 2 set, and the project was created as `Signal To Roadmap`.
+
+| Idea variant | Question text | Answer used | Option ID when stable |
+| --- | --- | --- | --- |
+| 1.1 | What size of company is the primary target customer? | Mid-market (501-2k) | `mid-market` |
+| 1.1 | Which data sources will the first version prioritize ingesting? | Support tickets; Chat transcripts; Sales call recordings; Internal docs | `support-tickets`, `chat-transcripts`, `sales-calls`, `internal-docs` |
+| 1.1 | What is the most valuable output for users in v1? | Roadmap suggestions | `roadmap-recs` |
+| 1.1 | Where will people use the first version? | Desktop website | `desktop-web` |

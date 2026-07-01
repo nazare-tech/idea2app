@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-01: Intake question parser-failure retry
+
+- Plan: [docs/plans/intake-question-retry-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/intake-question-retry-plan.md)
+- Review: [docs/plans/intake-question-retry-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/intake-question-retry-review.md)
+- Durable source of truth: `src/lib/intake-question-generation.ts` owns intake-question generation, parsing, and retry behavior; `/api/intake/questions` remains the authenticated route entrypoint.
+- Schema or data-shape changes: None.
+- Auth, RLS, or permission changes: None.
+- Runtime/API behavior changes: `generateIntakeQuestions()` now retries once with a stricter repair prompt when `parseIntakeQuestionSet()` rejects model output, including cases where platform-question normalization leaves fewer than four questions. Provider/runtime failures still return the existing retryable error without a parser retry.
+- Migration or deployment steps: None.
+- Verification: `node --import tsx --test src/lib/intake-question-generation.test.ts`; `npm run typecheck`; `npm run lint` with one unrelated existing warning in `output/playwright/prod-full-flow.mjs`; real `/projects/new` UI creation for Idea 1.1 produced `Signal To Roadmap`.
+- Rollback or recovery: Revert the retry helper/test changes to return to one-shot intake-question generation. Existing created projects are unaffected.
+- Follow-ups: None required.
+
 ## 2026-06-29: Durable mockup option draft recovery hardening
 
 - Plan: [docs/plans/durable-mockup-option-drafts-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/durable-mockup-option-drafts-plan.md)
