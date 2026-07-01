@@ -40,12 +40,12 @@ const H3_ALIASES = {
 
 const H2_ALIASES = {
   overview: ["MVP Summary", "Product Vision", "First Version Overview"],
-  assumptions: ["Key Assumptions and Scope Decisions", "Assumptions"],
+  assumptions: ["Key Risks, Assumptions, and Scope Decisions", "Key Assumptions and Scope Decisions", "Assumptions"],
   targetProblem: ["Target User and Problem"],
   hypothesis: ["MVP Goal, Definition of Done, and Riskiest Assumptions", "MVP Goal"],
-  userFlow: ["Core User Flow", "User Flow", "Key User Flow"],
-  scope: ["MVP Scope", "Scope Boundaries"],
-  features: ["Must-Have Features", "Core Features", "Core MVP Features"],
+  userFlow: ["Core User Flows", "Core User Flow", "User Flow", "Key User Flow"],
+  scope: ["Core User Flows", "MVP Scope", "Scope Boundaries"],
+  features: ["Core User Flows", "Must-Have Features", "Core Features", "Core MVP Features"],
   techStack: ["Suggested Build Approach", "Tech Stack", "Tool Recommendations"],
   buildSequence: ["AI-Friendly Build Sequence", "Build Sequence", "Timeline", "Timeline & Risks", "Milestones"],
   validation: ["Validation Plan", "Success Signals", "Success Metrics", "Validation"],

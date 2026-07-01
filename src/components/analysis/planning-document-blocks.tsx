@@ -1035,9 +1035,11 @@ const currentPrdSectionAliases = [
 
 const currentMvpSectionAliases = [
   "MVP Summary",
+  "Key Risks, Assumptions, and Scope Decisions",
   "Key Assumptions and Scope Decisions",
   "Target User and Problem",
   "MVP Goal, Definition of Done, and Riskiest Assumptions",
+  "Core User Flows",
   "Core User Flow",
   "MVP Scope",
   "Must-Have Features",
@@ -2353,7 +2355,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   const outOfScope = getSectionByAlias(sections, ["Non-goals / out of scope", "Out of scope"])
   const technical = getSectionByAlias(sections, ["Technical considerations"])
   const metrics = getSectionByAlias(sections, ["Success metrics"])
-  const timeline = getSectionByAlias(sections, ["Timeline and milestones"])
+  const timeline = getSectionByAlias(sections, ["Team and Milestones", "Team & Milestones", "Timeline, milestones, and team shape", "Timeline and milestones"])
   const risks = getSectionByAlias(sections, ["Risks and mitigation"])
   const dependenciesAndAssumptions = getSectionByAlias(sections, ["Dependencies and assumptions"])
   const dependencyAssumptionSections = dependenciesAndAssumptions
@@ -2374,11 +2376,11 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
     [
       introduction,
       goals,
+      timeline,
+      metrics,
       personas,
       technical,
       outOfScope,
-      metrics,
-      timeline,
     ].filter(Boolean).length + (hasFollowThroughSections ? 1 : 0)
   let sectionIndex = 1
   const nextSectionIndex = () => sectionIndex++
@@ -2408,6 +2410,30 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
           total={sectionTotal}
         >
           <GoalsShowcase section={goals} />
+        </DesignedSection>
+      ) : null}
+
+      {timeline ? (
+        <DesignedSection
+          id="prd-team-milestones"
+          kicker="Delivery"
+          title="Team & Milestones"
+          index={nextSectionIndex()}
+          total={sectionTotal}
+        >
+          <TimelineShowcase section={timeline} projectId={projectId} />
+        </DesignedSection>
+      ) : null}
+
+      {metrics ? (
+        <DesignedSection
+          id="prd-success-metrics"
+          kicker="Measurement"
+          title="Success Metrics"
+          index={nextSectionIndex()}
+          total={sectionTotal}
+        >
+          <MetricsShowcase section={metrics} projectId={projectId} />
         </DesignedSection>
       ) : null}
 
@@ -2469,30 +2495,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
         </DesignedSection>
       ) : null}
 
-      {metrics ? (
-        <DesignedSection
-          id="prd-success-metrics"
-          kicker="Measurement"
-          title="Success Metrics"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <MetricsShowcase section={metrics} projectId={projectId} />
-        </DesignedSection>
-      ) : null}
-
-      {timeline ? (
-        <DesignedSection
-          id="prd-timeline-milestones"
-          kicker="Delivery"
-          title="Timeline & Milestones"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <TimelineShowcase section={timeline} projectId={projectId} />
-        </DesignedSection>
-      ) : null}
-
       {hasFollowThroughSections ? (
         <DesignedSection
           id="prd-follow-through"
@@ -2542,9 +2544,40 @@ function getDesignListRows(content: string) {
 
   if (narrative.table) {
     const { headers, rows } = narrative.table
+    const hasCoreFlowShape = headers.some((header) =>
+      /flow|capability/i.test(header),
+    )
+
+    if (hasCoreFlowShape) {
+      return rows.map((row, index) => {
+        const title =
+          getTableCell(row, headers, ["flow", "capability"]) ||
+          row[0] ||
+          `Flow ${index + 1}`
+        const details = [
+          ["User action", getTableCell(row, headers, ["user action"])],
+          ["Value", getTableCell(row, headers, ["value", "why"])],
+          ["Include", getTableCell(row, headers, ["include"])],
+          ["Exclude", getTableCell(row, headers, ["exclude"])],
+          ["Validation", getTableCell(row, headers, ["validation"])],
+        ]
+          .filter(([, value]) => value)
+          .map(([label, value]) => `${label}: ${value}`)
+          .join(" ")
+
+        return {
+          title: stripMarkdownMarker(title),
+          body: stripMarkdownMarker(details),
+          row,
+          headers,
+        }
+      })
+    }
+
     return rows.map((row, index) => {
       const title =
         getTableCell(row, headers, ["step"]) ||
+        getTableCell(row, headers, ["flow", "capability"]) ||
         getTableCell(row, headers, ["feature"]) ||
         getTableCell(row, headers, ["category"]) ||
         getTableCell(row, headers, ["layer"]) ||
@@ -2934,7 +2967,9 @@ function FvpValidation({ section }: { section?: PlanningDocumentSection }) {
   const nested = extractSectionsByHeading(section.content, 3)
   const audience = getSectionByAlias(nested, ["First Test Audience", "First test audience"])
   const findUsers = getSectionByAlias(nested, ["How to find them", "Recruiting"])
-  const metrics = getSectionByAlias(nested, ["Suggested Metrics", "Metrics", "Success Metrics"])
+  const researchPlan = getSectionByAlias(nested, ["Research Plan", "Validation Research Plan"])
+  const tasks = getSectionByAlias(nested, ["Test Tasks", "Tasks"])
+  const metrics = getSectionByAlias(nested, ["Suggested Metrics", "Metrics", "Success Metrics", "Success Criteria"])
   const questions = getSectionByAlias(nested, ["Key Feedback Questions", "Feedback Questions"])
   const fallback = parseNarrativeTable(section.content)
 
@@ -2946,27 +2981,12 @@ function FvpValidation({ section }: { section?: PlanningDocumentSection }) {
           {findUsers ? <FvpSmallIconCard title="How to find them" body={getFirstParagraph(findUsers)} icon={Search} /> : null}
         </div>
       ) : null}
-      {metrics ? (
-        <FvpMetricGrid section={metrics} />
+      {researchPlan ? (
+        <FvpResearchPlan section={researchPlan} />
+      ) : (tasks || questions || metrics) ? (
+        <FvpResearchPlan section={{ heading: "Research plan", content: [tasks?.content, questions?.content, metrics?.content].filter(Boolean).join("\n\n") }} />
       ) : fallback.items.length > 0 ? (
-        <FvpMetricGrid section={{ heading: "Suggested Metrics", content: fallback.items.map((item) => `- ${item}`).join("\n") }} />
-      ) : null}
-      {questions ? (
-        <div>
-          <h3 className="pp-subhead mb-4 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-[#4A4040]">
-            <span className="dot h-1.5 w-1.5 rounded-full bg-primary" />
-            Key feedback questions
-          </h3>
-          <div className="pp-req border border-[#EAE0D8] bg-white px-6 py-6">
-            <ol className="pp-req-list flex flex-col gap-0 [counter-reset:r]">
-              {parseNarrativeTable(questions.content).items.map((item, index) => (
-                <li key={`${item}-${index}`} className="border-t border-[#EAE0D8] py-3 text-[13.5px] leading-[1.5] text-[#4A4040] first:border-t-0">
-                  {item}
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
+        <FvpResearchPlan section={{ heading: "Research plan", content: fallback.items.map((item) => `- ${item}`).join("\n") }} />
       ) : null}
     </div>
   )
@@ -2992,32 +3012,69 @@ function FvpSmallIconCard({
   )
 }
 
-function FvpMetricGrid({ section }: { section: PlanningDocumentSection }) {
-  const items = parseNarrativeTable(section.content).items
+function getResearchPlanItems(section: PlanningDocumentSection): FollowThroughItem[] {
+  const narrative = parseNarrativeTable(section.content)
+
+  if (narrative.table?.rows.length) {
+    const headers = narrative.table.headers.map(normalizeHeading)
+    const activityIndex = Math.max(
+      headers.findIndex((header) => /research activity|activity|task/.test(header)),
+      0,
+    )
+    const questionIndex = headers.findIndex((header) => /question/.test(header))
+    const signalIndex = headers.findIndex((header) => /signal|threshold|criteria|criterion/.test(header))
+    const decisionIndex = headers.findIndex((header) => /decision/.test(header))
+
+    return narrative.table.rows
+      .map((row) => {
+        const title = row[activityIndex] || row.find(Boolean) || ""
+        const details = [
+          questionIndex >= 0 && row[questionIndex] ? `Question: ${row[questionIndex]}` : "",
+          signalIndex >= 0 && row[signalIndex] ? `Signal: ${row[signalIndex]}` : "",
+          decisionIndex >= 0 && row[decisionIndex] ? `Decision: ${row[decisionIndex]}` : "",
+        ].filter(Boolean)
+
+        return {
+          title,
+          body: details.join(" "),
+        }
+      })
+      .filter((item) => item.title || item.body)
+  }
+
+  return parseFollowThroughItems(section.content)
+}
+
+function FvpResearchPlan({ section }: { section: PlanningDocumentSection }) {
+  const items = getResearchPlanItems(section)
   if (items.length === 0) return null
 
   return (
-    <div>
+    <section className="space-y-4">
       <h3 className="pp-subhead mb-4 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-[#4A4040]">
         <span className="dot h-1.5 w-1.5 rounded-full bg-primary" />
-        Suggested metrics
+        Research plan
       </h3>
-      <div className="pp-stat-grid grid gap-px border border-[#EAE0D8] bg-[#EAE0D8] sm:grid-cols-2 lg:grid-cols-5">
-        {items.map((item, index) => {
-          const value = getStatValue(item, index)
-          const desc = stripMarkdownMarker(item).replace(value, "").replace(/^[:\s-]+/, "")
-          return (
-            <article key={`${item}-${index}`} className="pp-stat flex flex-col gap-2.5 bg-white px-6 py-6">
-              <div className={cn(displayFontClass, "num text-[40px] font-extrabold leading-none tracking-[-0.05em] text-[#1C1917]")}>
-                {value}
-              </div>
-              <div className="desc text-[14px] leading-[1.45] text-[#4A4040]">{desc || item}</div>
-              <div className="win mt-auto font-mono text-[10px] uppercase tracking-[0.14em] text-[#8A8480]">Signal</div>
-            </article>
-          )
-        })}
+      <div className="divide-y divide-[#E8DDD5] border border-[#E8DDD5] bg-white">
+        {items.map((item, index) => (
+          <article key={`${item.title}-${index}`} className="grid gap-4 px-6 py-6 sm:grid-cols-[48px_1fr]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#8A8480]">
+              R{String(index + 1).padStart(2, "0")}
+            </p>
+            <div>
+              <h4 className="text-[15px] font-bold leading-5 text-[#0A0A0A]">
+                {item.title}
+              </h4>
+              {item.body ? (
+                <p className="mt-2 max-w-3xl text-[13.5px] leading-6 text-[#4A4040]">
+                  {item.body}
+                </p>
+              ) : null}
+            </div>
+          </article>
+        ))}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -3068,9 +3125,10 @@ function FvpPromptBlock({ section }: { section?: PlanningDocumentSection }) {
 function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
   const sections = extractSectionsByHeading(content, 2)
   const summary = getSectionByAlias(sections, ["MVP Summary"])
-  const assumptions = getSectionByAlias(sections, ["Key Assumptions and Scope Decisions"])
+  const assumptions = getSectionByAlias(sections, ["Key Risks, Assumptions, and Scope Decisions", "Key Assumptions and Scope Decisions"])
   const targetProblem = getSectionByAlias(sections, ["Target User and Problem"])
   const goal = getSectionByAlias(sections, ["MVP Goal, Definition of Done, and Riskiest Assumptions"])
+  const coreUserFlows = getSectionByAlias(sections, ["Core User Flows"])
   const userFlow = getSectionByAlias(sections, ["Core User Flow"])
   const scope = getSectionByAlias(sections, ["MVP Scope"])
   const features = getSectionByAlias(sections, ["Must-Have Features"])
@@ -3078,14 +3136,19 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
   const validation = getSectionByAlias(sections, ["Validation Plan"])
   const cutList = getSectionByAlias(sections, ["Cut List"])
   const assumptionRows = getFvpAssumptionRows(assumptions)
+  const coreFlowRows = coreUserFlows ? getDesignListRows(coreUserFlows.content).map((row) => ({
+    tag: "Flow",
+    title: row.title,
+    body: row.body,
+  })) : []
   const scopeRows = getFvpScopeRows({ scope, features })
   const sectionTotal = [
     summary,
     goal,
     targetProblem,
-    userFlow,
+    coreFlowRows.length > 0 || userFlow,
     assumptionRows.length > 0,
-    scopeRows.length > 0,
+    coreFlowRows.length === 0 && scopeRows.length > 0,
     buildApproach,
     validation,
     cutList,
@@ -3115,26 +3178,30 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
         </FvpSection>
       ) : null}
 
-      {userFlow ? (
+      {coreFlowRows.length > 0 ? (
+        <FvpSection id="mvp-core-user-flow" kicker="Journey" title="Core User Flows" index={nextSectionIndex()} total={sectionTotal}>
+          <FvpScopeGrid rows={coreFlowRows} />
+        </FvpSection>
+      ) : userFlow ? (
         <FvpSection id="mvp-core-user-flow" kicker="Journey" title="Core User Flow" index={nextSectionIndex()} total={sectionTotal}>
           <FvpFlow section={userFlow} />
         </FvpSection>
       ) : null}
 
       {assumptionRows.length > 0 ? (
-        <FvpSection id="mvp-key-assumptions" kicker="Assumptions" title="Key Assumptions" index={nextSectionIndex()} total={sectionTotal}>
+        <FvpSection id="mvp-key-assumptions" kicker="Assumptions" title="Key Risks & Assumptions" index={nextSectionIndex()} total={sectionTotal}>
           <FvpScopeGrid rows={assumptionRows} />
         </FvpSection>
       ) : null}
 
-      {scopeRows.length > 0 ? (
+      {coreFlowRows.length === 0 && scopeRows.length > 0 ? (
         <FvpSection id="mvp-scope" kicker="Scope Decisions" title="MVP Scope" index={nextSectionIndex()} total={sectionTotal}>
           <FvpScopeGrid rows={scopeRows} />
         </FvpSection>
       ) : null}
 
       {buildApproach ? (
-        <FvpSection id="mvp-suggested-stack" kicker="Tooling" title="Suggested Stack" index={nextSectionIndex()} total={sectionTotal}>
+        <FvpSection id="mvp-suggested-stack" kicker="Tooling" title="Suggested Build Approach" index={nextSectionIndex()} total={sectionTotal}>
           <FvpStack section={buildApproach} />
         </FvpSection>
       ) : null}

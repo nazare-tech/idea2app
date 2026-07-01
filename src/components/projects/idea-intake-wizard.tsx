@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils"
 
 const SESSION_IDEA_KEY = "makercompass:intake:draft"
 const MIN_IDEA_LENGTH = 10
+const MIN_INTAKE_QUESTIONS = 4
+const MAX_INTAKE_QUESTIONS = 5
 const WIZARD_TOTAL_STEPS = 2
 
 type WizardStep = "idea" | "questions"
@@ -227,6 +229,15 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
 
       if (!response.ok) {
         throw new Error(data?.error || "Failed to generate questions")
+      }
+
+      const generatedQuestions = data?.questionSet?.questions
+      if (
+        !Array.isArray(generatedQuestions) ||
+        generatedQuestions.length < MIN_INTAKE_QUESTIONS ||
+        generatedQuestions.length > MAX_INTAKE_QUESTIONS
+      ) {
+        throw new Error("We couldn't generate a complete question set. Please retry in a moment.")
       }
 
       setQuestionSet(data.questionSet)

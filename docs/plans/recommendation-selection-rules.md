@@ -38,6 +38,30 @@ When the user says a different recommendation should have been chosen:
 - Reason: Avoiding small expected verification spend can create more future work than it saves. For Maker Compass, realistic intake/report QA depends on the actual AI-backed flow, so local verification should use configured real services unless the spend is open-ended, production-impacting, credential-blocked, destructive, or explicitly unsafe.
 - Example: `docs/plans/standardized-intake-test-cases-plan.md` should have selected the live authenticated intake flow for capturing current follow-up questions instead of avoiding OpenRouter-backed generation only to save API budget.
 
+### 2026-06-30: Fix Real UI Flow Bugs Before Using Lower-Level Bypasses
+
+- Prefer: The real local UI path when a normal user would complete the task through the UI, even if an API/database shortcut is available.
+- Reason: API access is useful for inspection and artifact capture, but it must not hide user-flow bugs. If the UI path exposes a blocker, fix that blocker first, then continue through the UI unless the user explicitly requests an API-only workflow or the UI is genuinely unavailable.
+- Example: During `docs/plans/actionable-document-structure-plan.md`, `/projects/new` rendered a 3-question intake set that `create-from-intake` later rejected. The correct workflow is to fix the intake UI/generation mismatch before creating baseline projects, not bypass project creation through direct API calls.
+
+### 2026-06-30: Stop Instead Of Replacing Required UI Verification With Server/API Fallbacks
+
+- Prefer: Stopping and reporting a blocker when the task specifically requires a normal-user UI flow and the in-app browser or browser controller cannot be recovered.
+- Reason: A server/API fallback can produce data but does not verify the user-visible workflow, screenshots, loading states, auth/session behavior, or browser-only failures the task is meant to test. If the browser tool fails, verify that the local dev server is still running and reachable before blaming the browser controller; then try to reconnect, restart/reopen the browser route, and recover the UI session. If that does not restore the UI path, stop rather than substituting lower-level generation.
+- Example: During `docs/plans/actionable-document-structure-plan.md`, after-project artifacts were generated through the server-side onboarding pipeline after UI navigation failed. The likely root cause was that the local dev server had stopped. Future runs should keep any started dev server running, verify server reachability first, recover the browser workflow, or stop and ask/report the blocker.
+
+### 2026-06-30: Keep Started Dev Servers Running During UI Work
+
+- Prefer: Leaving a local dev server running once started for UI verification, unless the user asks to stop it or it is clearly unsafe.
+- Reason: Stopping the server can look like browser/controller failure and can invalidate real-user UI verification. The server process is part of the test environment, so preserving it keeps screenshots, navigation, auth, and long-running generation flows inspectable.
+- Example: If a UI test cannot navigate to `localhost:3000`, first check that the dev server is still listening and serving the route before switching tools or using API/server-side shortcuts.
+
+### 2026-07-01: Match Planning Section Labels To Actual Content
+
+- Prefer: Section names that describe what the artifact actually shows, and one consolidated research-plan section when validation tasks, questions, and evidence thresholds overlap.
+- Reason: A label like "Timeline" creates false expectations when the section is really about team shape and milestones. Splitting validation into separate feedback-question and suggested-metric blocks can duplicate content and make the plan feel less actionable than one research plan.
+- Example: Product Plan section 3 should be "Team and Milestones" when it does not present a textual timeline. First Version Plan validation should use a single Research Plan table rather than separate Key Feedback Questions and Suggested Metrics subsections.
+
 Use this format for future entries:
 
 ```markdown

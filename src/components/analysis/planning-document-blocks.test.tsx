@@ -889,7 +889,7 @@ So that I can send client-ready proposals.
   assert.match(html, /id="prd-technical-considerations"/)
   assert.match(html, /id="prd-non-goals-out-of-scope"/)
   assert.match(html, /id="prd-success-metrics"/)
-  assert.match(html, /id="prd-timeline-milestones"/)
+  assert.match(html, /id="prd-team-milestones"/)
   assert.match(html, /id="prd-follow-through"/)
   assert.doesNotMatch(html, /Functional Requirements/)
   assert.doesNotMatch(html, /User Stories &amp; Acceptance Criteria/)
@@ -905,8 +905,7 @@ So that I can send client-ready proposals.
   assert.match(html, /Success Metrics/)
   assert.match(html, /aria-label="Explain Success Metrics"/)
   assert.match(html, /Technical \/ Performance Metrics/)
-  assert.match(html, /Timeline &amp; Milestones/)
-  assert.match(html, /aria-label="Explain Timeline &amp; Milestones"/)
+  assert.match(html, /Team &amp; Milestones/)
   assert.match(html, /Agents/)
   assert.match(html, /aria-label="Explain Agents"/)
   assert.doesNotMatch(html, /Team Composition/)
@@ -933,7 +932,7 @@ So that I can send client-ready proposals.
   assert.ok(html.indexOf("Technical Considerations") < html.indexOf("Non-goals &amp; Out of Scope"))
 
   const timelineHtml = html.slice(
-    html.indexOf("Timeline &amp; Milestones"),
+    html.indexOf("Team &amp; Milestones"),
     html.indexOf("Risks, Dependencies &amp; Open Questions"),
   )
   assert.doesNotMatch(timelineHtml, /lucide-check h-3\.5 w-3\.5/)
@@ -1116,16 +1115,16 @@ Start with the proposal intake form and mock proposal generation.
   assert.doesNotMatch(html, /id="mvp-next-prompt"/)
   assert.match(html, /Target User &amp; Problem/)
   assert.match(html, /Core User Flow/)
-  assert.match(html, /Key Assumptions/)
-  assert.match(html, /aria-label="Explain Key Assumptions"/)
+  assert.match(html, /Key Risks &amp; Assumptions/)
   assert.match(html, /MVP Scope/)
   assert.match(html, /aria-label="Explain MVP Scope"/)
-  assert.match(html, /Suggested Stack/)
-  assert.match(html, /aria-label="Explain Suggested Stack"/)
+  assert.match(html, /Suggested Build Approach/)
   assert.doesNotMatch(html, /AI-Friendly Build Sequence/)
   assert.doesNotMatch(html, /AI Build Guardrails/)
   assert.match(html, /Validation Plan/)
   assert.match(html, /aria-label="Explain Validation Plan"/)
+  assert.match(html, /Research plan/)
+  assert.doesNotMatch(html, /Suggested metrics/)
   assert.match(html, /Cut List/)
   assert.doesNotMatch(html, /Next Prompt/)
   assert.match(html, /01 \/ 08/)

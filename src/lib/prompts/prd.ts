@@ -338,8 +338,9 @@ Briefly describe:
 - Who it is for
 - Why it matters now
 - The main goal of the feature
+- Plain-language plan map: likely project size, suggested team shape, and first milestone
 
-Use 2–3 short paragraphs. If the feature name is not provided, infer a simple and descriptive name from the idea.
+Use 2–3 short paragraphs. The final paragraph must orient the reader before dense detail by summarizing project size, team shape, and the first meaningful milestone in plain language. If the feature name is not provided, infer a simple and descriptive name from the idea.
 
 ---
 
@@ -356,13 +357,91 @@ Bullet list of things the MVP will intentionally not do. Use this to prevent sco
 
 ---
 
-## 3. User personas
+## 3. Team and Milestones
+
+Surface execution framing before detailed personas and requirements.
+
+### 3.1 Project size and team shape
+- **Project size**: one of Small / Medium / Large, with a one-sentence reason.
+- **Suggested team shape**: concise list of roles or agent responsibilities needed for the first version. Include only roles that materially affect delivery.
+- **Delivery shape**: one sentence on whether this is best handled as a prototype, concierge test, internal pilot, or production MVP.
+
+### 3.2 30-day checkpoint
+- What should be true by day 30.
+- The most important deliverable.
+- The riskiest assumption to validate by then.
+
+### 3.3 60-day checkpoint
+- What should be true by day 60.
+- The most important deliverable or learning.
+- The decision this checkpoint enables.
+
+### 3.4 Milestones
+Provide a phased rollout plan focused on sequence and deliverables.
+
+### Agents
+- {Agent role}: {expertise and responsibilities this agent should cover}
+
+### Phase 1: {phase name}
+- **Goal**: {what this phase achieves}
+- **Key deliverables**:
+  - {deliverable}
+  - {deliverable}
+
+### Phase 2: {phase name}
+- **Goal**: {what this phase achieves}
+- **Key deliverables**:
+  - {deliverable}
+  - {deliverable}
+
+### Phase 3: {phase name}
+- **Goal**: {what this phase achieves}
+- **Key deliverables**:
+  - {deliverable}
+  - {deliverable}
+
+---
+
+## 4. Success metrics
+
+Describe how the success of the product will be measured across three dimensions. Include early checkpoints, not only long-range metrics.
+
+### 4.1 30-day success threshold
+- Activation, pilot, workflow-completion, or learning target that shows the first version is worth continuing.
+
+### 4.2 60-day success threshold
+- Retention, repeat-use, willingness-to-pay, or quality threshold that shows the product direction is working.
+
+### 4.3 User metrics
+- Activation rate
+- Time to complete key task
+- Feature engagement rate
+- Retention (Day 7, Day 30)
+- User satisfaction score
+
+### 4.4 Business metrics
+- Registered user growth
+- Conversion rate (visitor to signup, free to paid)
+- Revenue or sponsorship targets
+- Organic traffic from shareable content
+
+### 4.5 Technical/performance metrics
+- Page load time
+- Error rate
+- API uptime
+- Search response time
+
+Use concrete targets where possible (e.g., "search results load within 2 seconds"). Avoid fake precision; if the input is weak, label targets as starting thresholds.
+
+---
+
+## 5. User personas
 
 Exactly 3 personas. No more. Infer personas from the product idea, target audience,
 and any provided research. Each persona maps directly to a persona card with the
 following fields — all are required.
 
-### 3.1 Persona details
+### 5.1 Persona details
 
 For each persona, use this exact format:
 
@@ -396,18 +475,18 @@ adopt this product — make it feel personal and specific, not generic.
 
 ---
 
-5. Functional requirements
+## 6. Functional requirements
 
 Requirements are split into three focused subsections. Every requirement must be specific enough for a junior developer to implement and a QA engineer to write a pass/fail test against. Use stable IDs — never renumber existing IDs if requirements are added later.
 
-5.1 Core requirements
+### 6.1 Core requirements
 What the system must do: primary user actions, inputs, outputs, validation rules, save/edit behavior, auth/authorization, notifications, and analytics tracking. Limit to 8–12 requirements. Only include what is essential for the MVP.
 
 Format:
 - FR-001: {Short title}
    - {Specific, testable description of what the system must do or prevent}
 
-5.2 States and errors
+### 6.2 States and errors
 Every non-happy-path state the product must handle. This section is required — do not skip or merge into 5.1. QA uses this subsection as a standalone checklist. Limit to 4–6 requirements.
 
 Format:
@@ -420,8 +499,8 @@ Must cover:
 - Each distinct error condition, its trigger, its message, and recovery path
 - Duplicate or conflict detection, if relevant to the product
 
-5.3 Constraints
-Cross-cutting rules that apply across the whole product and cannot be deferred. Limit to 3–5 requirements. Do not include third-party integration details here — those belong in §6.
+### 6.3 Constraints
+Cross-cutting rules that apply across the whole product and cannot be deferred. Limit to 3–5 requirements. Do not include third-party integration details here — those belong in §9.
 
 Format:
 - CR-001: {Short title}
@@ -435,7 +514,7 @@ Cover only what applies to this product:
 
 ---
 
-## 6. User stories and acceptance criteria
+## 7. User stories and acceptance criteria
 
 For each major requirement or workflow, create a user story using this format:
 
@@ -465,7 +544,7 @@ User stories must:
 
 ---
 
-## 7. Non-goals / out of scope
+## 8. Non-goals / out of scope
 
 Clearly state what this product will not include in the first version.
 
@@ -473,7 +552,7 @@ Use bullet points. Explain briefly why each item is deferred. This section preve
 
 ---
 
-## 8. Technical considerations
+## 9. Technical considerations
 
 Mention:
 - Existing systems or modules this feature connects to
@@ -491,61 +570,7 @@ Do not over-specify implementation. Focus on what affects product behavior, feas
 
 ---
 
-## 9. Success metrics
-
-Describe how the success of the product will be measured across three dimensions:
-
-### 9.1 User metrics
-- Activation rate
-- Time to complete key task
-- Feature engagement rate
-- Retention (Day 7, Day 30)
-- User satisfaction score
-
-### 9.2 Business metrics
-- Registered user growth
-- Conversion rate (visitor to signup, free to paid)
-- Revenue or sponsorship targets
-- Organic traffic from shareable content
-
-### 9.3 Technical/performance metrics
-- Page load time
-- Error rate
-- API uptime
-- Search response time
-
-Use concrete targets where possible (e.g., "search results load within 2 seconds").
-
----
-
-## 10. Timeline and milestones
-
-Provide a phased rollout plan focused on sequence, milestones, and deliverables. Do not estimate project size, calendar duration, week counts, headcount, or people to hire unless the user explicitly provided those constraints.
-
-### Agents
-- {Agent role}: {expertise and responsibilities this agent should cover}
-
-### Phase 1: {phase name}
-- **Goal**: {what this phase achieves}
-- **Key deliverables**:
-  - {deliverable}
-  - {deliverable}
-
-### Phase 2: {phase name}
-- **Goal**: {what this phase achieves}
-- **Key deliverables**:
-  - {deliverable}
-  - {deliverable}
-
-### Phase 3: {phase name}
-- **Goal**: {what this phase achieves}
-- **Key deliverables**:
-  - {deliverable}
-  - {deliverable}
-
----
-
-## 11. Risks and mitigation
+## 10. Risks and mitigation
 
 List potential risks and how to address them. Write only 5-6 core risks.
 
@@ -558,19 +583,19 @@ Include risks related to: adoption, trust, technical feasibility, data privacy, 
 
 ---
 
-## 12. Dependencies and assumptions
+## 11. Dependencies and assumptions
 
-### 12.1 Dependencies
+### 11.1 Dependencies
 List what the work depends on: engineering resources, design resources, APIs, legal review, third-party systems, existing infrastructure.
 
-### 12.2 Assumptions
+### 11.2 Assumptions
 List all assumptions made while generating the PRD. These replace follow-up questions.
 
 Include assumptions about: target users, MVP scope, platform, authentication, integrations, business model, success metrics.
 
 ---
 
-## 13. Open questions
+## 12. Open questions
 
 List unresolved questions that may need stakeholder input for future versions.
 

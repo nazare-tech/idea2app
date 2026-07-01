@@ -111,6 +111,58 @@ test("parseIntakeQuestionSet: replaces model platform choices with canonical pla
   )
 })
 
+test("parseIntakeQuestionSet: rejects when platform normalization leaves too few questions", () => {
+  const duplicatePlatformOutput = JSON.stringify({
+    questions: [
+      {
+        id: "target-company-size",
+        question: "What size of company is your primary target customer?",
+        selectionMode: "single",
+        options: [
+          { id: "startup", label: "Startup" },
+          { id: "mid-market", label: "Mid-market" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "primary-data-sources",
+        question: "Which data sources are most critical to ingest first?",
+        selectionMode: "multiple",
+        options: [
+          { id: "support-tickets", label: "Support tickets" },
+          { id: "sales-calls", label: "Sales calls" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "platform",
+        question: "Where should this live?",
+        selectionMode: "single",
+        options: [
+          { id: "desktop-web", label: "Desktop website" },
+          { id: "mobile-web", label: "Mobile website" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "primary-device",
+        question: "What primary device should users start on?",
+        selectionMode: "single",
+        options: [
+          { id: "desktop", label: "Desktop" },
+          { id: "phone", label: "Phone" },
+        ],
+        allowOther: false,
+      },
+    ],
+  })
+
+  assert.throws(
+    () => parseIntakeQuestionSet(duplicatePlatformOutput),
+    /normalized questions must include 4-5 items/
+  )
+})
+
 test("parseIntakeQuestionSet: accepts JSON wrapped in a markdown fence", () => {
   const questionSet = parseIntakeQuestionSet(`\`\`\`json\n${validModelOutput}\n\`\`\``)
 

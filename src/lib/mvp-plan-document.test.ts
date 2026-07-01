@@ -255,6 +255,93 @@ Build the proposal intake form first.
   assert.match(viewModel.structured.successMetrics[0].content, /freelance designers/)
 })
 
+test("getMvpPlanViewModel parses risk-first consolidated First Version Plan headings", () => {
+  const viewModel = getMvpPlanViewModel(`# MVP Plan: Proposal Pilot
+
+> **Product type detected:** B2B SaaS, AI-first Product
+> **Recommended first version:** Functional software MVP
+
+## 1. MVP Summary
+
+Proposal Pilot validates whether designers will trust an AI-assisted proposal draft.
+
+## 2. Key Risks, Assumptions, and Scope Decisions
+
+| Risk to Retire | Impact | Uncertainty | Validation Action |
+|---|---|---|---|
+| Output trust | High | High | Ask five designers to edit and rate a generated proposal |
+
+- [SCOPE DECISION] CRM import is excluded from the first version.
+
+## 3. Target User and Problem
+
+### Primary User
+Freelance designers who manage proposals manually.
+
+### Problem
+They spend too much time rewriting scope, timeline, and pricing language.
+
+## 4. MVP Goal, Definition of Done, and Riskiest Assumptions
+
+- **Goal:** Validate whether designers will use generated proposal drafts.
+- **Riskiest Product Assumption:** Designers trust the draft enough to edit it.
+
+## 5. Core User Flows
+
+| Flow / Capability | User Action | Value / Why It Matters | Include in MVP | Exclude for Now | Validation Action |
+|---|---|---|---|---|---|
+| Proposal intake | Enter client notes | Captures context for a useful draft | Required fields and validation | CRM import | 5 users submit real notes |
+| Draft review | Edit generated copy | Shows whether output is trusted | Editable generated proposal | E-signature | Users edit instead of starting over |
+
+## 6. Suggested Build Approach
+
+| Layer | Recommendation | Reason |
+|---|---|---|
+| Frontend | Next.js | Fast web MVP |
+
+### Tactical shortcuts for speed to market
+- Manually review first drafts with pilot users.
+
+## 7. AI-Friendly Build Sequence
+
+| Step | Build Chunk | Goal | Test Before Moving On |
+|---|---|---|---|
+| 1 | Intake form | Capture required context | Submit valid and invalid input |
+
+## 8. Validation Plan
+
+### First test audience
+Five freelance designers.
+
+### Research plan
+| Research Activity | Question It Answers | Observable Signal / Threshold | Decision It Informs |
+|---|---|---|---|
+| Generate a proposal from real notes | Is the draft useful enough to edit? | 4 of 5 users would edit the draft | Continue to pilot |
+
+### Phase thresholds
+| Phase | Audience / Task | Minimum Exit Criterion | Decision |
+|---|---|---|---|
+| Smoke test | 2 friendly users | Both complete intake | Continue to pilot |
+
+## 9. Next Prompt for AI Coding Tool
+
+\`\`\`text
+Build the proposal intake form first.
+\`\`\`
+`)
+
+  assert.equal(viewModel.canRenderModules, true)
+  assert.match(viewModel.structured.assumptions[0].content, /Output trust/)
+  assert.equal(viewModel.structured.scope.table?.headers[0], "Flow / Capability")
+  assert.equal(viewModel.structured.featureSummary.table?.rows[0][0], "Proposal intake")
+  assert.match(viewModel.structured.timeline[0].content, /Build Chunk/)
+  assert.ok(
+    viewModel.structured.successMetrics.some((section) =>
+      /Observable Signal/.test(section.content),
+    ),
+  )
+})
+
 test("getMvpPlanViewModel preserves direct feature details and direct H2 content", () => {
   const viewModel = getMvpPlanViewModel(`# MVP Plan: ADR Helper
 

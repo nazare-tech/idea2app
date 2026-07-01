@@ -100,10 +100,17 @@ export function parseIntakeQuestionSet(rawModelOutput: string): IntakeQuestionSe
     ])
   }
 
+  const normalizedQuestions = ensureRequiredPlatformQuestion(questions)
+  if (normalizedQuestions.length < MIN_QUESTIONS || normalizedQuestions.length > MAX_QUESTIONS) {
+    throw new IntakeQuestionParseError([
+      `normalized questions must include ${MIN_QUESTIONS}-${MAX_QUESTIONS} items`,
+    ])
+  }
+
   return {
     schemaVersion: INTAKE_QUESTION_SCHEMA_VERSION,
     source: "ai",
-    questions: ensureRequiredPlatformQuestion(questions),
+    questions: normalizedQuestions,
   }
 }
 
