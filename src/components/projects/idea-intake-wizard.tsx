@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
 const SESSION_IDEA_KEY = "makercompass:intake:draft"
 const MIN_IDEA_LENGTH = 10
 const MIN_INTAKE_QUESTIONS = 4
-const MAX_INTAKE_QUESTIONS = 5
+const MAX_INTAKE_QUESTIONS = 7
 const WIZARD_TOTAL_STEPS = 2
 
 type WizardStep = "idea" | "questions"

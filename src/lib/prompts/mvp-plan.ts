@@ -245,7 +245,41 @@ Rules:
 
 Concrete, product-specific things to do by hand instead of building, e.g. approve early users via a form; manage data in a Supabase table; send Stripe Payment Links by email; review AI outputs manually before display; use email for support; CSV export instead of a dashboard. Prefer "ops over code" when it retires risk faster than software.
 
-## 7. AI-Friendly Build Sequence
+## 7. Recommended AI Build Tool
+
+Choose exactly **one** primary tool for the builder to use next. Do not output a comparison table or backup list.
+
+Allowed tools only:
+- Cursor — best for technical builders working in an existing repo, especially full-stack web apps, backend-heavy work, auth, databases, tests, and maintainability.
+- Claude Code — best for terminal-first technical builders, complex repo changes, refactors, backend logic, and test-driven implementation.
+- Codex — best for repo/PR-style implementation where sandboxed tasks, reviewable diffs, and parallel agent work matter.
+- GitHub Copilot — best for teams already centered on GitHub issues, pull requests, and GitHub administration.
+- Devin — best for delegated agentic engineering tasks when the user wants a larger coding agent workflow and accepts higher cost/review needs.
+- Cline — best for technical users who want open-source VS Code agent control, bring-your-own-key usage, and low vendor lock-in.
+- Warp — best for shell-heavy developers who want terminal-native agent orchestration rather than a visual app builder.
+- Lovable — best for nontechnical founders building a hosted web app prototype quickly.
+- v0 — best for UI-first React/Next.js/Vercel apps where the next step is polished interface generation.
+- Bolt — best for fast browser-based web prototypes with hosting/database support.
+- Replit — best for beginner-friendly browser IDE workflows, simple hosted apps, demos, and collaboration.
+- Gemini Code Assist — best for low-cost Google Cloud-aligned code assistance, especially when the user already uses Google Cloud.
+
+Decision rules:
+- If the first version is a native desktop app, native mobile app, backend-heavy app, regulated/private-data workflow, or needs durable tests, prefer Cursor, Claude Code, Codex, Cline, GitHub Copilot, or Gemini Code Assist over browser app builders.
+- If the user is likely nontechnical and the first version is a web app prototype with ordinary backend needs, prefer Lovable or Bolt.
+- If the main risk is UI clarity or a Next.js/Vercel front end, prefer v0.
+- If the first version is a simple learning/demo app in a browser workspace, prefer Replit.
+- If the project has auth, payments, sensitive customer data, file ingestion, AI APIs, or database permissions, explicitly warn that the selected tool should be used with reviewable code, environment variables, and targeted tests.
+
+Use this exact format:
+
+### [Tool Name](https://official-tool-url.example)
+- **Why this tool**: One sentence tied to the selected platform, backend complexity, and user skill level.
+- **Best fit for this project**: One sentence explaining what this tool should build first.
+- **Expected starting cost**: A dated public-price estimate or "Free tier first, paid plan likely once iteration starts" if exact pricing is usage-based.
+- **Watch out**: One concrete limitation or safety concern.
+- **Handoff instruction**: One sentence telling the user how to paste/import the Next Prompt into this tool.
+
+## 8. AI-Friendly Build Sequence
 
 Small chunks, each given to an AI tool one at a time, each testable before moving on.
 
@@ -259,7 +293,7 @@ Small chunks, each given to an AI tool one at a time, each testable before movin
 - **Data-first:** schema → seed data → API layer → UI shell → input → output display → save/export → error states → deploy
 - **UI-first:** UI shell → mock data → input flow → backend connection → real data → output display → save/export → error states → deploy
 
-## 8. Validation Plan
+## 9. Validation Plan
 
 Frame this as a practical research plan, not a metrics dashboard. Separate audience, recruiting, research-plan steps, and phase thresholds. Numeric labels must explain what they count; do not output standalone unexplained numbers.
 
@@ -283,7 +317,7 @@ Use one table that combines research activities, the user question each activity
 
 Include at least three phases: smoke test, pilot validation, and continue / pivot decision. Each phase must include a minimum success threshold or clear exit criterion.
 
-## 9. Next Prompt for AI Coding Tool
+## 10. Next Prompt for AI Coding Tool
 
 A ready-to-paste prompt:
 
@@ -310,8 +344,11 @@ Tech stack:
 - AI/API: [X if relevant]
 - Deployment: [X]
 
+Recommended AI build tool:
+[Tool name and why from §7]
+
 Build only this first chunk:
-[Step 1 from §7]
+[Step 1 from §8]
 
 Out of scope for now:
 [top 3-5 exclusions from §5]

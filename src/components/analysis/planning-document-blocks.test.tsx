@@ -1180,6 +1180,14 @@ As a freelance designer, I want to generate a proposal from client notes.
 `}
       mvpContent={`# MVP Plan: Proposal Pilot
 
+## 7. Recommended AI Build Tool
+### [v0](https://v0.dev)
+- **Why this tool**: This is a UI-first web workflow for a founder who needs a polished React prototype before deeper backend work.
+- **Best fit for this project**: Use v0 to build the proposal intake and generated proposal review screens first.
+- **Expected starting cost**: Free tier first, paid plan likely once iteration starts.
+- **Watch out**: Backend persistence and payment flows still need review in a real repo.
+- **Handoff instruction**: Paste the Next Prompt into v0 and ask it to build only the first screen.
+
 ## 8. AI-Friendly Build Sequence
 | Step | Build Chunk | Goal | Test Before Moving On |
 |---|---|---|---|
@@ -1197,6 +1205,7 @@ Start with the proposal intake form and mock proposal generation.
 
   assert.match(html, /AI Prompts/)
   assert.match(html, /aria-label="Explain AI Prompts"/)
+  assert.match(html, /id="ai-prompts-recommended-build-tool"/)
   assert.match(html, /id="ai-prompts-next-prompt"/)
   assert.match(html, /id="ai-prompts-build-guardrails"/)
   assert.match(html, /id="ai-prompts-build-sequence"/)
@@ -1207,11 +1216,17 @@ Start with the proposal intake form and mock proposal generation.
   assert.match(html, /aria-label="Explain AI-Friendly Build Sequence"/)
   assert.match(html, /aria-label="Explain Functional Requirements"/)
   assert.match(html, /aria-label="Explain User Stories &amp; Acceptance Criteria"/)
+  assert.match(html, /Recommended AI Build Tool/)
+  assert.match(html, /href="https:\/\/v0\.dev"/)
+  assert.match(html, /target="_blank"/)
+  assert.match(html, /rel="noreferrer"/)
+  assert.match(html, /This is a UI-first web workflow/)
   assert.match(html, /Start with the proposal intake form/)
   assert.match(html, /Build one chunk at a time/)
   assert.match(html, /Proposal intake form/)
   assert.match(html, /Users can create a proposal from structured intake fields/)
   assert.match(html, /Generated proposal includes scope, timeline, and pricing sections/)
+  assert.ok(html.indexOf("Recommended AI Build Tool") < html.indexOf("Next Prompt"))
   assert.ok(html.indexOf("Next Prompt") < html.indexOf("AI Build Guardrails"))
   assert.ok(html.indexOf("AI Build Guardrails") < html.indexOf("AI-Friendly Build Sequence"))
   assert.ok(html.indexOf("AI-Friendly Build Sequence") < html.indexOf("Functional Requirements"))

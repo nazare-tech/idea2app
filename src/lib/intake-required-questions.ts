@@ -14,7 +14,7 @@ export const REQUIRED_PLATFORM_QUESTION: IntakeQuestion = {
   helperText: "Pick where users will open the first working version. A mobile website runs in the browser; an iOS / Android app is installed.",
 }
 
-export function ensureRequiredPlatformQuestion(questions: IntakeQuestion[], maxQuestions = 5) {
+export function ensureRequiredPlatformQuestion(questions: IntakeQuestion[], maxQuestions = 7) {
   const normalizedQuestions: IntakeQuestion[] = []
   let insertedPlatformQuestion = false
 

@@ -4,7 +4,7 @@ import React from "react"
 import { Renderer, JSONUIProvider } from "@json-render/react"
 import { mockupRegistry } from "@/lib/json-render/registry"
 import type { Spec } from "@json-render/core"
-import { Monitor, Smartphone, Tablet, Layers, Download, ChevronDown, FileDown } from "lucide-react"
+import { Monitor, Smartphone, Tablet, Layers, Download, ChevronDown, FileDown, X } from "lucide-react"
 import { extractMockupOptions } from "@/lib/mockup-format-contract"
 import { parseOpenRouterImageMockupContent, type OpenRouterImageMockupContent } from "@/lib/openrouter-image-mockup-format"
 import type { MockupOptionStatus } from "@/lib/document-generation-display-status"
@@ -705,6 +705,10 @@ function parseDraftOpenRouterImageContent(content: string): OpenRouterImageMocku
   }
 }
 
+function getConceptLabel(index: number): string {
+  return `Concept ${index + 1}`
+}
+
 function OpenRouterImageMockupViewer({
   data,
   projectName,
@@ -717,6 +721,11 @@ function OpenRouterImageMockupViewer({
   optionStatuses?: MockupOptionStatus[]
 }) {
   const [downloadingLabel, setDownloadingLabel] = React.useState<string | null>(null)
+  const [lightboxOption, setLightboxOption] = React.useState<{
+    imageUrl: string
+    title: string
+    conceptLabel: string
+  } | null>(null)
 
   const handleDownload = React.useCallback(async (option: OpenRouterImageMockupContent["options"][number]) => {
     if (!option) return
@@ -741,6 +750,25 @@ function OpenRouterImageMockupViewer({
     }
   }, [projectName])
 
+  React.useEffect(() => {
+    if (!lightboxOption) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setLightboxOption(null)
+      }
+    }
+    const previousOverflow = document.body.style.overflow
+
+    document.body.style.overflow = "hidden"
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [lightboxOption])
+
   const optionsByLabel = React.useMemo(
     () => new Map(data.options.map((option) => [option.label.toUpperCase(), option])),
     [data.options],
@@ -757,13 +785,13 @@ function OpenRouterImageMockupViewer({
   const slotLabels = expectedOptionLabels?.length
     ? expectedOptionLabels.map((label) => label.toUpperCase())
     : data.options.map((option) => option.label.toUpperCase())
-  const isDraftPreview = Boolean(expectedOptionLabels?.length)
 
   return (
     <div className="space-y-8 w-full">
       {slotLabels.map((label, index) => {
         const option = optionsByLabel.get(label)
         const status = statusByLabel.get(label)
+        const conceptLabel = getConceptLabel(index)
         if (!option) {
           return (
             <div
@@ -771,14 +799,16 @@ function OpenRouterImageMockupViewer({
               id={`mockups-concept-${index + 1}`}
               className="overflow-hidden rounded-xl border border-border bg-white"
             >
-              <div className="flex items-center gap-3 border-b border-border px-5 py-3">
-                <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  Concept {index + 1}
-                </span>
-                <span className="text-sm font-medium text-foreground">Option {label}</span>
-              </div>
-              <div className="flex min-h-[420px] flex-col">
-                <div className="flex flex-1 items-center justify-center bg-[#f4f4f4] p-5">
+              <div className="flex min-h-[420px] flex-col gap-5 p-5 sm:p-6">
+                <div>
+                  <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    {conceptLabel}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-foreground">
+                    {status?.message || "Waiting for image"}
+                  </p>
+                </div>
+                <div className="flex flex-1 items-center justify-center rounded-lg bg-[#f4f4f4] p-5">
                   <div className="w-full max-w-4xl space-y-4">
                     <div className="aspect-[21/9] w-full animate-pulse rounded-lg border border-border bg-white shadow-sm" />
                     <div className="space-y-2">
@@ -786,14 +816,6 @@ function OpenRouterImageMockupViewer({
                       <div className="h-3 w-2/3 animate-pulse rounded bg-gray-100" />
                     </div>
                   </div>
-                </div>
-                <div className="border-t border-border p-5">
-                  <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                    Option {label}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-foreground">
-                    {status?.message || "Waiting for image"}
-                  </p>
                 </div>
               </div>
             </div>
@@ -808,48 +830,13 @@ function OpenRouterImageMockupViewer({
             id={`mockups-concept-${index + 1}`}
             className="overflow-hidden rounded-xl border border-border bg-white"
           >
-              <div className="flex items-center gap-3 border-b border-border px-5 py-3">
-                <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  {isDraftPreview ? `Concept ${index + 1}` : `Option ${option.label}`}
-                </span>
-                <span className="text-sm font-medium text-foreground">{option.title}</span>
-              </div>
-
-            <div className="flex min-h-[420px] flex-col">
-              <div className="overflow-x-auto bg-white p-3 sm:p-5">
-                <div className="min-w-[960px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={option.imageUrl}
-                    alt={`${option.title} mockup option ${option.label}`}
-                    className="h-auto w-full rounded-lg border border-border bg-white object-contain shadow-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="flex w-full flex-col gap-5 border-t border-border p-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="space-y-4">
-                  <div>
-                    <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                      Option {option.label}
-                    </p>
-                    <p className="mt-1 text-sm font-medium text-foreground">{option.title}</p>
-                  </div>
-                  {option.description && (
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {option.description}
-                    </p>
-                  )}
-                  {option.screens && option.screens.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                      {option.screens.map((screen, screenIndex) => (
-                        <div key={`${option.label}-${screen.name}-${screenIndex}`} className="rounded-md border border-border bg-muted/20 p-3">
-                          <p className="text-xs font-medium text-foreground">{screen.name}</p>
-                          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{screen.caption}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+            <div className="flex min-h-[420px] flex-col gap-5 p-5 sm:p-6">
+              <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    {conceptLabel}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-foreground">{option.title}</p>
                 </div>
 
                 <button
@@ -862,10 +849,76 @@ function OpenRouterImageMockupViewer({
                   <span>{isDownloading ? "Downloading..." : "Export Image"}</span>
                 </button>
               </div>
+
+              <div className="rounded-lg bg-white">
+                <div className="p-3 sm:p-5">
+                  <button
+                    type="button"
+                    aria-label={`Open ${conceptLabel} mockup in lightbox`}
+                    className="block w-full cursor-zoom-in rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    onClick={() => {
+                      setLightboxOption({
+                        imageUrl: option.imageUrl,
+                        title: option.title,
+                        conceptLabel,
+                      })
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={option.imageUrl}
+                      alt={`${conceptLabel}: ${option.title}`}
+                      className="h-auto w-full rounded-lg border border-border bg-white object-contain shadow-sm"
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {option.description && (
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {option.description}
+                </p>
+              )}
+              {option.screens && option.screens.length > 0 && (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {option.screens.map((screen, screenIndex) => (
+                    <div key={`${option.label}-${screen.name}-${screenIndex}`} className="rounded-md border border-border bg-muted/20 p-3">
+                      <p className="text-xs font-medium text-foreground">{screen.name}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{screen.caption}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )
       })}
+      {lightboxOption && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${lightboxOption.conceptLabel} mockup preview`}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLightboxOption(null)}
+        >
+          <div className="relative flex max-h-full w-full max-w-7xl items-center justify-center" onClick={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              aria-label="Close lightbox"
+              className="absolute right-0 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white text-foreground shadow-lg transition-colors hover:bg-muted"
+              onClick={() => setLightboxOption(null)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightboxOption.imageUrl}
+              alt={`${lightboxOption.conceptLabel}: ${lightboxOption.title}`}
+              className="max-h-[calc(100vh-4rem)] w-auto max-w-full rounded-lg bg-white object-contain shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

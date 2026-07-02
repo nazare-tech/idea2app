@@ -238,13 +238,13 @@ export async function POST(request: Request) {
   }
 
   const questions = normalizeQuestions(body.questions)
-  if (questions.length < 4 || questions.length > 5) {
+  if (questions.length < 4 || questions.length > 7) {
     logWarn("CreateFromIntake", "validation_failed", {
       ...userLogContext,
       reason: "invalid_question_count",
       questionCount: questions.length,
     })
-    return NextResponse.json({ error: "Question set must include 4-5 questions" }, { status: 400 })
+    return NextResponse.json({ error: "Question set must include 4-7 questions" }, { status: 400 })
   }
   if (questions.some((question) => question.selectionMode === "text")) {
     logWarn("CreateFromIntake", "validation_failed", {

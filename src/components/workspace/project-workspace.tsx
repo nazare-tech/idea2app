@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { AnchorNav } from "@/components/layout/anchor-nav"
 import { ScrollableContent } from "@/components/layout/scrollable-content"
 import { ProjectHeader } from "@/components/layout/project-header"
@@ -192,7 +192,6 @@ export function ProjectWorkspace({
   initialCredits = 0,
   user,
 }: ProjectWorkspaceProps) {
-  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [projectName, setProjectName] = useState(project.name)
@@ -1736,8 +1735,7 @@ export function ProjectWorkspace({
       : VISIBLE_WORKSPACE_DOCUMENT_TYPES
 
     void loadWorkspaceDocuments(docTypes, { force: true })
-    router.refresh()
-  }, [loadWorkspaceDocuments, router])
+  }, [loadWorkspaceDocuments])
 
   return (
     <>

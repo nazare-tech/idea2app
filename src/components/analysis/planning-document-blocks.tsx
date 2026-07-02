@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import {
   AlertTriangle,
   ArrowRight,
+  ArrowUpRight,
   BarChart3,
   Check,
   ChevronDown,
@@ -3180,6 +3181,107 @@ function FvpPromptBlock({ section }: { section?: PlanningDocumentSection }) {
   )
 }
 
+type AiBuildToolRecommendation = {
+  name: string
+  url: string | null
+  why: string
+  bestFit: string
+  cost: string
+  watchOut: string
+  handoff: string
+}
+
+function getRecommendedTool(section?: PlanningDocumentSection): AiBuildToolRecommendation | null {
+  if (!section?.content.trim()) return null
+
+  const headingLink = section.content.match(/^###\s+\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/m)
+  const headingText = section.content.match(/^###\s+(.+)$/m)
+  const name = stripInlineMarkdown(headingLink?.[1] ?? headingText?.[1] ?? section.heading).trim()
+  const url = headingLink?.[2]?.trim() ?? null
+
+  const field = (label: string) => {
+    const pattern = new RegExp(`^-\\s*\\*\\*${label}\\*\\*:\\s*(.+)$`, "im")
+    return stripInlineMarkdown(section.content.match(pattern)?.[1] ?? "").trim()
+  }
+
+  const why = field("Why this tool")
+  const bestFit = field("Best fit for this project")
+  const cost = field("Expected starting cost")
+  const watchOut = field("Watch out")
+  const handoff = field("Handoff instruction")
+
+  if (!name || !why) {
+    const fallback = stripHorizontalRulesFromMarkdown(section.content)
+    return fallback ? {
+      name: name || "Recommended tool",
+      url,
+      why: fallback,
+      bestFit: "",
+      cost: "",
+      watchOut: "",
+      handoff: "",
+    } : null
+  }
+
+  return { name, url, why, bestFit, cost, watchOut, handoff }
+}
+
+function AiPromptRecommendedToolCard({ section }: { section?: PlanningDocumentSection }) {
+  const recommendation = getRecommendedTool(section)
+
+  if (!recommendation) return null
+
+  const details = [
+    { label: "Why", value: recommendation.why },
+    { label: "Best Fit", value: recommendation.bestFit },
+    { label: "Cost", value: recommendation.cost },
+    { label: "Watch Out", value: recommendation.watchOut },
+    { label: "Handoff", value: recommendation.handoff },
+  ].filter((detail) => detail.value)
+
+  const title = (
+    <span className={cn(displayFontClass, "text-[22px] font-bold leading-tight tracking-[-0.03em] text-[#0A0A0A]")}>
+      {recommendation.name}
+    </span>
+  )
+
+  return (
+    <section id="ai-prompts-recommended-build-tool" className="border border-[#E8DDD5] bg-white px-6 py-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-primary">
+            Recommended AI Build Tool
+          </p>
+          <div className="mt-2">
+            {recommendation.url ? (
+              <a
+                href={recommendation.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-start gap-1.5 transition-opacity hover:opacity-80"
+              >
+                {title}
+                <ArrowUpRight className="mt-1 h-3.5 w-3.5 shrink-0 text-[#0A0A0A]" />
+              </a>
+            ) : title}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        {details.map((detail) => (
+          <div key={detail.label} className="border-t border-[#E8DDD5] pt-3">
+            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A8480]">
+              {detail.label}
+            </p>
+            <p className="mt-1 text-[13px] leading-5 text-[#4A4040]">{detail.value}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
   const sections = extractSectionsByHeading(content, 2)
   const summary = getSectionByAlias(sections, ["MVP Summary"])
@@ -3318,6 +3420,7 @@ export function AiPromptsDocumentBlocks({
   const prdSections = useMemo(() => extractSectionsByHeading(prdContent ?? "", 2), [prdContent])
   const mvpSections = useMemo(() => extractSectionsByHeading(mvpContent ?? "", 2), [mvpContent])
 
+  const recommendedTool = getSectionByAlias(mvpSections, ["Recommended AI Build Tool", "AI Build Tool", "Recommended Build Tool"])
   const nextPrompt = getSectionByAlias(mvpSections, ["Next Prompt for AI Coding Tool"])
   const guardrails = getSectionByAlias(mvpSections, ["AI Build Guardrails"])
   const buildSequence = getSectionByAlias(mvpSections, ["AI-Friendly Build Sequence"])
@@ -3334,7 +3437,7 @@ export function AiPromptsDocumentBlocks({
   let sectionIndex = 1
   const nextSectionIndex = () => sectionIndex++
 
-  if (sectionTotal === 0) {
+  if (sectionTotal === 0 && !recommendedTool) {
     return (
       <div className="flex items-center justify-center p-6 text-center text-sm text-muted-foreground sm:p-12">
         AI Prompts has not been generated yet.
@@ -3345,6 +3448,8 @@ export function AiPromptsDocumentBlocks({
   return (
     <div className="flex flex-col gap-16">
       <AiPromptsMasthead />
+
+      <AiPromptRecommendedToolCard section={recommendedTool} />
 
       {nextPrompt ? (
         <DesignedSection

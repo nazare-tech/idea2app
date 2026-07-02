@@ -90,30 +90,6 @@ const featureSections = [
   },
 ]
 
-const workflowSignals = [
-  "One intake becomes every core artifact.",
-  "Docs stay tied to the same project context.",
-  "Output is written for builders, not slide decks.",
-]
-
-const proofStats = [
-  {
-    value: "4",
-    label: "Build-ready artifacts",
-    body: "Market research, product plan, design mockups, and a first-version plan from one idea.",
-  },
-  {
-    value: "3",
-    label: "Mockup directions",
-    body: "Compare visual approaches before you spend time building the wrong interface.",
-  },
-  {
-    value: "1",
-    label: "Shared project context",
-    body: "Research, scope, UX direction, and build steps stay connected in one workspace.",
-  },
-]
-
 const plans = [
   {
     name: "Free",
@@ -359,35 +335,6 @@ export default async function LandingPage() {
               )
             })}
           </div>
-
-          <div className="mt-8 grid gap-0 border border-border-subtle bg-text-primary text-white md:grid-cols-3">
-            {workflowSignals.map((signal) => (
-              <div key={signal} className="border-b border-white/15 p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
-                <p className="text-[15px] font-medium leading-relaxed">{signal}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </SectionCard>
-
-      <SectionCard>
-        <section aria-label="Maker Compass proof points" className="grid border border-border-subtle bg-white md:grid-cols-3">
-          {proofStats.map((stat) => (
-            <div
-              key={stat.label}
-              className="border-b border-border-subtle p-5 last:border-b-0 sm:p-6 md:border-b-0 md:border-r md:last:border-r-0"
-            >
-              <p className="text-[2.5rem] font-semibold leading-none tracking-[-0.06em] text-primary sm:text-[3rem]">
-                {stat.value}
-              </p>
-              <p className="mt-3 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-                {stat.label}
-              </p>
-              <p className="mt-3 text-[15px] leading-relaxed text-text-secondary">
-                {stat.body}
-              </p>
-            </div>
-          ))}
         </section>
       </SectionCard>
 

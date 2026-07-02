@@ -15,7 +15,7 @@ import {
 import { logError } from "@/lib/logger"
 
 const MIN_QUESTIONS = 4
-const MAX_QUESTIONS = 5
+const MAX_QUESTIONS = 7
 const MIN_SELECTION_OPTIONS = 2
 const MAX_SELECTION_OPTIONS = 6
 const MAX_QUESTION_LENGTH = 180
@@ -63,7 +63,7 @@ export async function generateIntakeQuestions(
         userPrompt: attempt === 0
           ? buildIntakeQuestionUserPrompt(idea)
           : buildIntakeQuestionRepairPrompt(idea, retryIssues),
-        maxTokens: 1200,
+        maxTokens: 2000,
       })
     } catch (err) {
       lastError = err
@@ -98,7 +98,7 @@ function buildIntakeQuestionRepairPrompt(idea: string, issues: string[]) {
 
 The previous JSON was rejected: ${issues.join("; ")}.
 
-Return a fresh JSON object only. Make sure the final normalized question set includes exactly 4 or 5 questions after the required platform question is enforced. Include no more than one platform, device, form-factor, or where-users-will-use-it question.`
+Return a fresh JSON object only. Make sure the final normalized question set includes 4 to 7 questions after the required platform question is enforced. Include no more than one platform, device, form-factor, or where-users-will-use-it question.`
 }
 
 export function parseIntakeQuestionSet(rawModelOutput: string): IntakeQuestionSet {
@@ -131,7 +131,7 @@ export function parseIntakeQuestionSet(rawModelOutput: string): IntakeQuestionSe
     ])
   }
 
-  const normalizedQuestions = ensureRequiredPlatformQuestion(questions)
+  const normalizedQuestions = ensureRequiredPlatformQuestion(questions, MAX_QUESTIONS)
   if (normalizedQuestions.length < MIN_QUESTIONS || normalizedQuestions.length > MAX_QUESTIONS) {
     throw new IntakeQuestionParseError([
       `normalized questions must include ${MIN_QUESTIONS}-${MAX_QUESTIONS} items`,

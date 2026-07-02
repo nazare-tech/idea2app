@@ -62,9 +62,10 @@ test("First Version Plan prompt preserves the renderer heading contract", () => 
     "## 4. MVP Goal, Definition of Done, and Riskiest Assumptions",
     "## 5. Core User Flows",
     "## 6. Suggested Build Approach",
-    "## 7. AI-Friendly Build Sequence",
-    "## 8. Validation Plan",
-    "## 9. Next Prompt for AI Coding Tool",
+    "## 7. Recommended AI Build Tool",
+    "## 8. AI-Friendly Build Sequence",
+    "## 9. Validation Plan",
+    "## 10. Next Prompt for AI Coding Tool",
   ]
 
   let previousIndex = -1
@@ -85,6 +86,8 @@ test("First Version Plan prompt names required nested labels for visual cards", 
     "Riskiest Technical Assumption",
     "KEY RISK",
     "Tactical shortcuts for speed to market",
+    "Allowed tools only",
+    "Handoff instruction",
     "First test audience",
     "How to find them",
     "Research plan",
