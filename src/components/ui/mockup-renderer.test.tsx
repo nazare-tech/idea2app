@@ -79,3 +79,28 @@ test("MockupRenderer: renders draft storyboard placeholders for missing options"
   assert.doesNotMatch(markup, /Option B/)
   assert.doesNotMatch(markup, /Option C/)
 })
+
+test("MockupRenderer: renders retry messages for failed missing options", () => {
+  const content = JSON.stringify({
+    type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+    model: "draft",
+    generatedAt: "",
+    options: [],
+  })
+
+  const markup = renderToStaticMarkup(
+    <MockupRenderer
+      content={content}
+      expectedOptionLabels={["A", "B", "C"]}
+      optionStatuses={[
+        { label: "Option A", status: "needs_retry", message: "Needs retry" },
+        { label: "Option B", status: "needs_retry", message: "Needs retry" },
+        { label: "Option C", status: "needs_retry", message: "Needs retry" },
+      ]}
+    />,
+  )
+
+  assert.match(markup, /Concept 1/)
+  assert.match(markup, /Needs retry/)
+  assert.doesNotMatch(markup, /Waiting for image/)
+})

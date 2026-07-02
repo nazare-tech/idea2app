@@ -2018,6 +2018,7 @@ function TimelineShowcase({ section, projectId }: { section?: PlanningDocumentSe
   const nested = extractSectionsByHeading(section.content, 3)
   const agents = getSectionByAlias(nested, ["Agents", "Agent roles", "Team composition", "Team"])
   const phases = nested.filter((item) => /^Phase\s+\d+/i.test(stripInlineMarkdown(item.heading)))
+  const supportingSections = nested.filter((item) => item !== agents && !phases.includes(item))
 
   return (
     <div className="space-y-10">
@@ -2042,6 +2043,21 @@ function TimelineShowcase({ section, projectId }: { section?: PlanningDocumentSe
           </div>
         ) : null}
       </div>
+
+      {supportingSections.length > 0 ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {supportingSections.map((supportingSection, index) => (
+            <article key={`${supportingSection.heading}-${index}`} className="border border-[#E8DDD5] bg-white px-5 py-5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8A8480]">
+                {getCurrentSectionTitle(supportingSection.heading)}
+              </p>
+              <div className="mt-3">
+                <PlanningMarkdownRenderer content={supportingSection.content} projectId={projectId} />
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
 
       {phases.length > 0 ? (
         <div>
@@ -2849,11 +2865,18 @@ function getFvpShortcutSections(section?: PlanningDocumentSection) {
 
 function FvpShortcutList({ sections }: { sections: PlanningDocumentSection[] }) {
   if (sections.length === 0) return null
+  const visibleSections = sections
+    .map((section) => ({
+      section,
+      rows: getDesignListRows(section.content),
+    }))
+    .filter(({ rows }) => rows.length > 0)
+
+  if (visibleSections.length === 0) return null
 
   return (
     <div className="border border-[#EAE0D8] bg-white">
-      {sections.map((section, sectionIndex) => {
-        const rows = getDesignListRows(section.content)
+      {visibleSections.map(({ section, rows }, sectionIndex) => {
         const title = stripInlineMarkdown(section.heading)
           .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
           .trim()
@@ -3649,6 +3672,10 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
     return <CurrentMvpPlanDocumentBlocks content={content} projectId={projectId} />
   }
 
+  const primaryUserFlowContent = structured.userFlow[0]?.content.trim() ?? ""
+  const scopeDuplicatesUserFlow = Boolean(primaryUserFlowContent && structured.scope.source.trim() === primaryUserFlowContent)
+  const featureSummaryDuplicatesUserFlow = Boolean(primaryUserFlowContent && structured.featureSummary.source.trim() === primaryUserFlowContent)
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -3674,15 +3701,19 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
             <NarrativeContent narrative={structured.targetUser} />
           </PencilCard>
         </div>
-        <PencilCard title="What's In / Out" kicker="Scope">
-          <NarrativeContent narrative={structured.scope} />
-        </PencilCard>
+        {hasNarrativeContent(structured.scope) && !scopeDuplicatesUserFlow ? (
+          <PencilCard title="What's In / Out" kicker="Scope">
+            <NarrativeContent narrative={structured.scope} />
+          </PencilCard>
+        ) : null}
       </div>
 
       <div id="mvp-core-features" className="flex flex-col gap-6">
-        <PencilCard title="Core Features" kicker="Feature Set">
-          <NarrativeContent narrative={structured.featureSummary} />
-        </PencilCard>
+        {hasNarrativeContent(structured.featureSummary) && !featureSummaryDuplicatesUserFlow ? (
+          <PencilCard title="Core Features" kicker="Feature Set">
+            <NarrativeContent narrative={structured.featureSummary} />
+          </PencilCard>
+        ) : null}
         <div className="grid gap-6 xl:grid-cols-2">
           {structured.featureDetails.map((feature, index) => (
             <MarkdownSectionCard

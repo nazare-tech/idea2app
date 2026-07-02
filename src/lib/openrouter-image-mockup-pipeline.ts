@@ -636,12 +636,21 @@ async function generateAndStoreOption({
     skeletonLabel: skeleton.label,
   }
 
-  await onOptionGenerated?.({
-    option: generatedOption,
-    model,
-    runId,
-    designPlan,
-  })
+  try {
+    await onOptionGenerated?.({
+      option: generatedOption,
+      model,
+      runId,
+      designPlan,
+    })
+  } catch (error) {
+    logError("OpenRouterImageMockup", "option_progress_callback_failed", error, {
+      projectId,
+      runId,
+      optionLabel: generatedOption.label,
+      storagePath,
+    })
+  }
 
   return generatedOption
 }

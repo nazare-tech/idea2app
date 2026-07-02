@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
-import { deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
+import { cleanupAbandonedMockupOptionDrafts, deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
 import {
   createSkippedActiveDocumentPayload,
   findLatestActiveDocument,
@@ -138,6 +139,26 @@ export async function POST(request: Request) {
         })
         return NextResponse.json(createSkippedActiveDocumentPayload(existingDocument))
       }
+    }
+
+    try {
+      const cleanupSummary = await cleanupAbandonedMockupOptionDrafts({
+        supabase,
+        storageSupabase: createServiceClient(),
+        projectId,
+        userId: userId!,
+      })
+      if (cleanupSummary.rowCount > 0) {
+        logInfo("MockupGenerate", "abandoned_drafts_cleaned", {
+          ...mockupLogContext,
+          ...cleanupSummary,
+        })
+      }
+    } catch (cleanupError) {
+      logWarn("MockupGenerate", "abandoned_draft_cleanup_failed", {
+        ...mockupLogContext,
+        error: cleanupError instanceof Error ? cleanupError.message : "Unknown cleanup error",
+      })
     }
 
     // ─── Streaming path ─────────────────────────────────────────────────

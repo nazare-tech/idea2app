@@ -10,7 +10,7 @@ import {
   type OpenRouterImageMockupScreen,
 } from "@/lib/openrouter-image-mockup-format"
 import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
-import { getMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
+import { getMockupOptionDrafts, insertMockupOptionDraftIfMissing } from "@/lib/mockup-option-drafts"
 import { buildStorageRecoveredMockupOptions, mergeRecoveredMockupOptions } from "@/lib/mockup-option-recovery"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
     )
 
     for (const option of storageOptionsToBackfill) {
-      await upsertMockupOptionDraft({
+      await insertMockupOptionDraftIfMissing({
         supabase,
         projectId,
         userId: user.id,

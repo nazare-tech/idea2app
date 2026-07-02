@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-02: Architecture review mockup draft remediation
+
+- Plan: [docs/plans/architecture-review-remediation-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/architecture-review-remediation-plan.md)
+- Review: [docs/plans/architecture-review-remediation-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/architecture-review-remediation-review.md)
+- Durable source of truth: `src/lib/openrouter-image-mockup-pipeline.ts`, `src/lib/mockup-option-drafts.ts`, `/api/mockups/recover-options`, `/api/mockups/generate`, and `src/lib/document-generation-service.ts`.
+- Schema or data-shape changes: None. `mockup_option_drafts` and canonical `mockups` rows keep their existing shapes.
+- Auth, RLS, or permission changes: None. Cleanup and recovery continue to scope draft rows by `project_id`, `user_id`, and `run_id`; Storage path validation still requires the exact draft storyboard path shape.
+- Runtime/API behavior changes: Option-progress draft callbacks are best-effort after Storage upload, Storage recovery uses insert-only draft backfill so placeholders cannot overwrite richer live rows, and new manual/queue mockup generation opportunistically removes stale abandoned draft rows plus unreferenced draft Storage objects while preserving finalized canonical mockup images.
+- Migration or deployment steps: None.
+- Verification: Focused tests passed with `node --import tsx --test src/components/analysis/planning-document-blocks.test.tsx src/lib/document-generation-display-status.test.ts src/components/ui/mockup-renderer.test.tsx src/lib/mockup-option-drafts.test.ts`; full verification is recorded in the review artifact.
+- Rollback or recovery: Revert the remediation changes to return to prior draft behavior. No migration rollback is needed. If cleanup were suspected of removing a still-needed draft object, canonical finalized mockup rows are unaffected because referenced runs and paths are skipped.
+- Follow-ups: Consider a dedicated scheduled cleanup job or retention setting if abandoned mockup drafts need a guaranteed cleanup SLA independent of future generation requests.
+
 ## 2026-07-01: Intake question parser-failure retry
 
 - Plan: [docs/plans/intake-question-retry-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/intake-question-retry-plan.md)

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { Suspense } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -150,13 +151,18 @@ function FeatureVisualPlaceholder({ label }: { label: string }) {
 }
 
 /** Purely informational, not interactive: grayscale at rest and stays that way, no hover state. */
-function ToolLogo({ name, src }: { name: string; src: string }) {
+function ToolLogo({ name, src, ariaHidden = false }: { name: string; src: string; ariaHidden?: boolean }) {
   return (
-    <div className="flex h-[92px] w-[152px] shrink-0 flex-col items-center justify-center gap-3 border border-border-subtle bg-white px-4">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+    <div
+      className="flex h-[92px] w-[152px] shrink-0 flex-col items-center justify-center gap-3 border border-border-subtle bg-white px-4"
+      aria-hidden={ariaHidden ? "true" : undefined}
+    >
+      <Image
         src={src}
-        alt={`${name} logo`}
+        alt=""
+        aria-hidden="true"
+        width={96}
+        height={32}
         className="h-8 w-auto max-w-[96px] object-contain grayscale opacity-60"
       />
       <span className="font-mono text-[0.625rem] uppercase tracking-[0.18em] text-text-muted">{name}</span>
@@ -170,7 +176,12 @@ function ToolLogoMarquee({ tools }: { tools: { name: string; src: string }[] }) 
     <div className="landing-logo-marquee mt-4">
       <div className="landing-logo-marquee__track">
         {[...tools, ...tools].map((tool, index) => (
-          <ToolLogo key={`${tool.name}-${index}`} name={tool.name} src={tool.src} />
+          <ToolLogo
+            key={`${tool.name}-${index}`}
+            name={tool.name}
+            src={tool.src}
+            ariaHidden={index >= tools.length}
+          />
         ))}
       </div>
     </div>

@@ -182,6 +182,8 @@ export function buildDocumentGenerationDisplayStates({
           detail: errorDetail ?? GENERIC_RETRY_DETAIL,
           queueStatus,
           error: errorDetail,
+          mockupOptionStatuses: docType === "mockups" ? mockupOptionStatuses : undefined,
+          mockupPreviewImages: docType === "mockups" ? mockupPreviewImages : undefined,
         }]
       }
 

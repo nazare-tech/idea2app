@@ -12,7 +12,7 @@ import {
   COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
 } from "@/lib/competitive-analysis-v2"
 import { linkifyBareUrls } from "@/lib/markdown-links"
-import { deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
+import { cleanupAbandonedMockupOptionDrafts, deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
 import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import type { Database, Json } from "@/types/database"
@@ -198,6 +198,24 @@ export async function generateProjectDocument({
         upstreamDocType: "mvp",
         hasContent: Boolean(mvpRow?.content),
       })
+      if (userId) {
+        try {
+          const cleanupSummary = await cleanupAbandonedMockupOptionDrafts({
+            supabase,
+            projectId,
+            userId,
+            excludeRunId: runId ?? undefined,
+          })
+          if (cleanupSummary.rowCount > 0) {
+            logInfo("DocumentGeneration", "abandoned_mockup_drafts_cleaned", {
+              ...baseLogContext,
+              ...cleanupSummary,
+            })
+          }
+        } catch (cleanupError) {
+          logError("DocumentGeneration", "abandoned_mockup_draft_cleanup_failed", cleanupError, baseLogContext)
+        }
+      }
       const result = await generateOpenRouterImageMockup({
         mvpPlan: mvpRow?.content ?? `First Version Plan for ${name}: ${idea}`,
         projectName: name,

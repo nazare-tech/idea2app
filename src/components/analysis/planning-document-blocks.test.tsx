@@ -823,6 +823,16 @@ So that I can send client-ready proposals.
 - **Full-stack engineer**: Product UI and backend routes
 - **Designer**: Proposal review workflow
 
+### 30-day checkpoint
+- Intake form is live for friendly users.
+
+### 60-day checkpoint
+- Proposal generation and review are tested with pilot users.
+
+### Milestones
+- Pilot launch
+- Paid conversion test
+
 ### Phase 1: Foundation
 - **Goal**: Create the intake and draft shell.
 - **Estimated duration**: 3 weeks
@@ -860,11 +870,11 @@ So that I can send client-ready proposals.
   assert.match(html, /text-\[22px\] font-bold tracking-\[-0\.03em\] text-\[#0A0A0A\]/)
   assert.doesNotMatch(html, />Proposal Pilot<\/h1>/)
   assert.match(html, /Proposal Pilot helps freelance designers turn discovery notes into client-ready proposals/)
-  assert.doesNotMatch(html, /Project Size/)
+  assert.match(html, /Project Estimate/)
   assert.doesNotMatch(html, /aria-label="Explain Project Size"/)
-  assert.doesNotMatch(html, /Medium/)
-  assert.doesNotMatch(html, /Est\. Duration/)
-  assert.doesNotMatch(html, /8 weeks/)
+  assert.match(html, /Medium/)
+  assert.match(html, /Estimated total duration/)
+  assert.match(html, /8 weeks/)
   assert.doesNotMatch(html, /Team Members/)
   assert.doesNotMatch(html, /aria-label="Explain Team Members"/)
   assert.doesNotMatch(html, /User Stories<\/div>/)
@@ -911,6 +921,13 @@ So that I can send client-ready proposals.
   assert.doesNotMatch(html, /Team Composition/)
   assert.match(html, /Product manager/)
   assert.match(html, /Full-stack engineer/)
+  assert.match(html, /Project Estimate/)
+  assert.match(html, /30-day Checkpoint/)
+  assert.match(html, /Intake form is live for friendly users/)
+  assert.match(html, /60-day Checkpoint/)
+  assert.match(html, /Proposal generation and review are tested with pilot users/)
+  assert.match(html, /Milestones/)
+  assert.match(html, /Paid conversion test/)
   assert.match(html, /Phase 1/)
   assert.doesNotMatch(html, /Weeks 1-3/)
   assert.doesNotMatch(html, /Weeks 4-8/)
@@ -1158,6 +1175,98 @@ Start with the proposal intake form and mock proposal generation.
   assert.doesNotMatch(html, /grid gap-4 xl:grid-cols-2/)
   assert.doesNotMatch(html, /What We Need to Prove/)
   assert.doesNotMatch(html, /Core Features/)
+})
+
+test("MvpPlanDocumentBlocks skips empty tactical shortcut cards for prose-only shortcut sections", () => {
+  const html = renderToStaticMarkup(
+    <MvpPlanDocumentBlocks
+      projectId="project-1"
+      content={`# MVP Plan: Proposal Pilot
+
+## 1. MVP Summary
+Proposal Pilot helps designers create proposals faster.
+
+## 2. Key Assumptions and Scope Decisions
+- [HIGH CONFIDENCE] Designers want faster proposal drafting.
+
+## 3. Target User and Problem
+### Primary User
+Freelance designers.
+### Problem
+They rewrite proposal sections manually.
+
+## 4. Core User Flow
+1. User enters client notes.
+2. User reviews the generated proposal.
+
+## 5. MVP Scope
+| Category | Include in MVP | Exclude for Now |
+|---|---|---|
+| Core | Proposal generation | CRM sync |
+
+## 6. Suggested Build Approach
+| Layer | Recommendation | Why |
+|---|---|---|
+| Frontend | Next.js | Fast workspace UI |
+
+### Tactical shortcuts for speed to market
+Approve early users manually through email before building self-serve onboarding.
+
+## 7. Validation Plan
+### First test audience
+Five freelance designers.
+`}
+    />,
+  )
+
+  assert.match(html, /Suggested Build Approach/)
+  assert.doesNotMatch(html, /Tactical shortcuts for speed to market/)
+  assert.doesNotMatch(html, /Approve early users manually/)
+})
+
+test("MvpPlanDocumentBlocks does not duplicate consolidated Core User Flows in legacy fallback", () => {
+  const html = renderToStaticMarkup(
+    <MvpPlanDocumentBlocks
+      projectId="project-1"
+      content={`# MVP Plan: Proposal Pilot
+
+## MVP Summary
+Proposal Pilot validates proposal draft trust.
+
+## MVP Goal
+Designers trust an AI proposal draft enough to edit it.
+
+## Target User and Problem
+### Primary User
+Freelance designers.
+### Problem
+They rewrite proposals manually.
+
+## Core User Flows
+| Flow / Capability | User Action | Value / Why It Matters |
+|---|---|---|
+| Proposal intake | Enter client notes | Captures context for a useful draft |
+
+## Suggested Build Approach
+| Layer | Recommendation | Reason |
+|---|---|---|
+| Frontend | Next.js | Fast web MVP |
+
+## Build Sequence
+| Step | Build Chunk | Goal |
+|---|---|---|
+| 1 | Intake form | Capture required context |
+
+## Validation Plan
+### Research plan
+Test whether users edit the generated draft.
+`}
+    />,
+  )
+
+  assert.doesNotMatch(html, /Block view unavailable/)
+  assert.equal((html.match(/Proposal intake/g) ?? []).length, 1)
+  assert.equal((html.match(/Captures context for a useful draft/g) ?? []).length, 1)
 })
 
 test("AiPromptsDocumentBlocks renders moved PRD and MVP handoff sections", () => {
