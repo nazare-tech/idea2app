@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-07-02 (architecture review remediation)
+**Last Updated**: 2026-07-02 (architectural improvement planning defaults)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -136,6 +136,19 @@
 ---
 
 ## 3. Architecture
+
+### Cross-Cutting Architecture Defaults
+
+Substantial implementation plans should actively look for scoped architecture improvements before coding and confirm them again during review. Prefer patterns already proven in this codebase:
+
+- Durable and idempotent intermediate state for expensive or failure-prone flows, especially AI generation, Storage uploads, queues, and resumable browser workflows.
+- Defense-in-depth ownership validation at UI, API, service, database/RLS, and Storage/proxy boundaries instead of relying on a single layer.
+- Prompt, parser, renderer, navigation, and test-contract changes kept in sync whenever AI-generated artifact structure changes.
+- Typed validators, strict shape checks, compatibility aliases, and dynamic UI safety nets for evolving AI/document contracts.
+- Bounded structured-output repair that uses precise parser rejection reasons, skips retries for provider/network failures where appropriate, and fails clearly when repair is exhausted.
+- Shared helpers and module boundaries for repeated auth, validation, proxying, rendering, queue, retry, recovery, and logging logic.
+- Progressive or lazy loading for large documents and expensive generated assets.
+- Observable metadata, rollback notes, and recovery paths for external-service, persistence, and data-shape changes.
 
 ### High-Level Design Pattern
 

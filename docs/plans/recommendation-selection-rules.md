@@ -13,6 +13,7 @@ Choose Recommendation A for open clarifying questions and proceed without waitin
 - Do not treat small, expected local QA spend from configured AI/API services as a blocker when that spend is necessary to verify the real user flow or capture durable test artifacts.
 - If an existing repo pattern clearly favors Recommendation B, choose the repo pattern and record why.
 - If Recommendation A optimizes implementation speed but Recommendation B better preserves user trust, data durability, security, or future maintainability, choose Recommendation B.
+- If Recommendation A is the fastest local patch but Recommendation B adds a reusable durability, idempotency, ownership-validation, prompt/parser/render contract-sync, typed-validation, bounded-repair, recovery, observability, or modularity pattern that fits the existing architecture, prefer Recommendation B unless it creates disproportionate scope, risk, cost, or delay.
 - If a correction reveals a durable preference, add a new rule below with the root reason, not just the surface-level choice.
 
 ## Feedback Capture Process

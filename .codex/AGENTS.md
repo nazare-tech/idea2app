@@ -6,6 +6,7 @@
 
 * For any non-trivial task (3+ steps or architectural decisions), create or update a markdown plan in `docs/plans/`
 * Include clarifying questions with Recommendation A/B options and trade-offs
+* Include an Architecture Improvement Opportunities section that looks for scoped durability, idempotency, ownership validation, contract-sync, parser/validator, recovery, observability, modularity, reuse, progressive-loading, or rollback improvements. Record the benefit, trade-off, boundaries/files, and selected/deferred/rejected status for each opportunity.
 * Pick Recommendation A by default and proceed without waiting unless repo/user instructions, safety constraints, or `docs/plans/recommendation-selection-rules.md` point elsewhere
 * If something goes sideways, STOP and re-plan immediately – don't keep pushing
 * Include verification steps, not just building
@@ -39,6 +40,7 @@
 ### 5. Demand Elegance (Balanced)
 
 * For non-trivial changes: pause and ask "is there a more elegant way?"
+* Treat "more elegant" as architecture-aware, not just cleaner syntax: prefer reusable helpers over one-off logic, typed contracts over parser drift, durable state over fragile client memory, idempotent operations over replay risk, and defense-in-depth checks over single-layer trust
 * If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
 * Skip this for simple, obvious fixes – don't over-engineer
 * Challenge your own work before presenting it
