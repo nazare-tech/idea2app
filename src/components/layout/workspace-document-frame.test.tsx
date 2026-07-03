@@ -14,5 +14,5 @@ test("WorkspaceDocumentFrame matches the workspace document shell dimensions and
   assert.match(html, /id="prd"/)
   assert.match(html, /data-section="prd"/)
   assert.match(html, /max-w-\[1020px\]/)
-  assert.match(html, /px-5 py-6 sm:px-8 lg:px-10 lg:py-8/)
+  assert.match(html, /px-5 py-6 sm:px-8 sm:py-7 lg:px-10 lg:py-8/)
 })

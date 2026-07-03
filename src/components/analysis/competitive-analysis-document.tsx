@@ -22,6 +22,30 @@ interface CompetitiveAnalysisDocumentProps {
 
 const displayFontClass = "font-[family:var(--font-display)]"
 
+function TopLevelDocumentHeader({
+  title,
+  description,
+}: {
+  title: string
+  description: string
+}) {
+  return (
+    <header className="pb-5">
+      <h1
+        className={cn(
+          displayFontClass,
+          "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]"
+        )}
+      >
+        {title}
+      </h1>
+      <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
+        {description}
+      </p>
+    </header>
+  )
+}
+
 const fastComparisonColumns = [
   { label: "Competitor", className: "min-w-[170px] max-w-[310px]" },
   { label: "Profile", className: "min-w-[260px] max-w-[310px]" },
@@ -91,24 +115,10 @@ function CompetitiveOverviewFallback({
 
   return (
     <section id="executive-summary" className="flex flex-col gap-y-3 gap-x-0">
-      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
-          Market Intelligence
-        </p>
-        <div className="mt-3">
-          <h1
-            className={cn(
-              displayFontClass,
-              "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
-            )}
-          >
-            Executive Summary
-          </h1>
-          <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-            Market snapshot, entry assessment, and key risk.
-          </p>
-        </div>
-      </header>
+      <TopLevelDocumentHeader
+        title="Executive Summary"
+        description="Market snapshot, entry assessment, and key risk."
+      />
 
       <MarkdownRenderer content={fallbackContent || content} projectId={projectId} />
     </section>
@@ -134,21 +144,10 @@ function CompetitiveDetailFallback({
 
   return (
     <section className="flex flex-col gap-y-3 gap-x-0">
-      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
-          Deep Analysis
-        </p>
-        <div className="mt-3">
-          <h1
-            className={cn(
-              displayFontClass,
-              "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
-            )}
-          >
-            Market Research
-          </h1>
-        </div>
-      </header>
+      <TopLevelDocumentHeader
+        title="Market Research"
+        description="Competitive landscape, customer segments, positioning, and recommended next moves."
+      />
 
       {fallbackSections.map((section, index) => (
         <WorkspaceDesignedSection
@@ -288,10 +287,12 @@ function ParagraphStack({
   paragraphs,
   dark = false,
   className,
+  leadFirst = false,
 }: {
   paragraphs: string[]
   dark?: boolean
   className?: string
+  leadFirst?: boolean
 }) {
   return (
     <div className={cn("space-y-3", className)}>
@@ -299,7 +300,9 @@ function ParagraphStack({
         <p
           key={`${paragraph}-${index}`}
           className={cn(
-            "ui-type-body",
+            leadFirst && index === 0
+              ? "text-[22px] font-medium leading-[33px] tracking-[-0.01em]"
+              : "ui-type-body",
             dark ? "text-[#4A4040]" : "text-[#666666]"
           )}
         >
@@ -378,7 +381,7 @@ function ExecutiveSummaryCard({
       kicker="Executive Summary"
       showHeader={showHeader}
     >
-      <ParagraphStack paragraphs={summary.paragraphs} />
+      <ParagraphStack paragraphs={summary.paragraphs} leadFirst />
       {bullets.length > 0 ? (
         <div className="pt-5">
           <NumberedList items={bullets} />
@@ -986,27 +989,10 @@ function CompetitiveResearchPage({
 }) {
   return (
     <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
-      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
-          Market Intelligence
-        </p>
-        <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <h1
-              className={cn(
-                displayFontClass,
-                "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
-              )}
-            >
-              Market Research
-            </h1>
-            <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-              Compare positioning, pricing, workflow depth, distribution signals,
-              and whitespace opportunities without falling back to raw markdown.
-            </p>
-          </div>
-        </div>
-      </header>
+      <TopLevelDocumentHeader
+        title="Market Research"
+        description="Competitive landscape, customer segments, positioning, and recommended next moves."
+      />
 
       <SnapshotHero structured={structured} />
 
@@ -1094,24 +1080,10 @@ export function CompetitiveOverviewSection({
 
   return (
     <section id="executive-summary" className="flex flex-col gap-y-3 gap-x-0">
-      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
-          Market Intelligence
-        </p>
-        <div className="mt-3">
-          <h1
-            className={cn(
-              displayFontClass,
-              "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
-            )}
-          >
-            Executive Summary
-          </h1>
-          <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-            Market snapshot, entry assessment, and key risk.
-          </p>
-        </div>
-      </header>
+      <TopLevelDocumentHeader
+        title="Executive Summary"
+        description="Market snapshot, entry assessment, and key risk."
+      />
 
       <div className="flex flex-col gap-y-3 gap-x-0">
         <ExecutiveSummaryCard summary={structured.executiveSummary} showHeader={false} />
@@ -1142,21 +1114,10 @@ export function CompetitiveDetailSection({
 
   return (
     <section className="flex flex-col gap-y-3 gap-x-0">
-      <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
-          Deep Analysis
-        </p>
-        <div className="mt-3">
-          <h1
-            className={cn(
-              displayFontClass,
-              "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]"
-            )}
-          >
-            Market Research
-          </h1>
-        </div>
-      </header>
+      <TopLevelDocumentHeader
+        title="Market Research"
+        description="Competitive landscape, customer segments, positioning, and recommended next moves."
+      />
 
       <WorkspaceDesignedSection
         id="market-research-direct-competitors"

@@ -126,32 +126,25 @@ function PencilCard({
 }
 
 function PageHeader({
-  eyebrow,
   title,
   description,
 }: {
-  eyebrow: string
   title: string
   description: string
 }) {
   return (
-    <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
-      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
-        {eyebrow}
+    <header className="pb-5">
+      <h1
+        className={cn(
+          displayFontClass,
+          "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]",
+        )}
+      >
+        {title}
+      </h1>
+      <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
+        {description}
       </p>
-      <div className="mt-3">
-        <h1
-          className={cn(
-            displayFontClass,
-            "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]",
-          )}
-        >
-          {title}
-        </h1>
-        <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-          {description}
-        </p>
-      </div>
     </header>
   )
 }
@@ -1540,21 +1533,18 @@ function currentPersonaFromSection(section: PlanningDocumentSection) {
 
 function ProductPlanMasthead() {
   return (
-    <header className="pb-10 pt-6">
-      <div className="flex items-center gap-3">
-        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
-          Product Plan
-        </p>
-        <span className="h-px w-7 bg-primary/50" />
-      </div>
+    <header className="pb-10">
       <h1
         className={cn(
           displayFontClass,
-          "mt-3 text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]",
+          "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]",
         )}
       >
         Product Plan
       </h1>
+      <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
+        A clear brief covering user needs, value, personas, scope, and implementation constraints.
+      </p>
     </header>
   )
 }
@@ -2540,14 +2530,13 @@ function getFirstParagraph(section?: PlanningDocumentSection) {
 
 function FvpMasthead() {
   return (
-    <header className="pb-10 pt-10">
-      <div className="flex items-center gap-3 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
-        <span>Planning Document</span>
-        <span className="h-px w-7 bg-primary/50" />
-      </div>
-      <h1 className={cn(displayFontClass, "mt-4 text-[42px] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#1C1917] sm:text-[56px] lg:text-[68px]")}>
+    <header className="pb-10">
+      <h1 className={cn(displayFontClass, "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]")}>
         First Version Plan
       </h1>
+      <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
+        A launchable scope plan focused on what to prove, the core workflow, feature boundaries, and success signals.
+      </p>
     </header>
   )
 }
@@ -3425,24 +3414,21 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
 
 function AiPromptsMasthead() {
   return (
-    <header className="pb-10 pt-6">
-      <div className="flex items-center gap-3">
-        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
-          Builder Handoff
-        </p>
-        <span className="h-px w-7 bg-primary/50" />
-      </div>
-      <div className="mt-3 flex items-center gap-2">
+    <header className="pb-10">
+      <div className="flex items-center gap-2">
         <h1
           className={cn(
             displayFontClass,
-            "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]",
+            "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]",
           )}
         >
           AI Prompts
         </h1>
         <ExplainTermButton termKey="aiPrompts" label="AI Prompts" />
       </div>
+      <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
+        Recommended build tool, guardrails, sequence, requirements, and handoff prompt.
+      </p>
     </header>
   )
 }
@@ -3577,7 +3563,6 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        eyebrow="Product Plan"
         title="Product Plan"
         description="A clear brief covering user needs, value, personas, scope, and implementation constraints."
       />
@@ -3698,7 +3683,6 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        eyebrow="First Version"
         title="First Version Plan"
         description="A launchable scope plan focused on what to prove, the core workflow, feature boundaries, and success signals."
       />

@@ -8,12 +8,13 @@ import { WaitlistForm } from "@/components/landing/waitlist-form"
 import { createServiceClient } from "@/lib/supabase/service"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { isWaitlistMode } from "@/lib/waitlist"
-import { ArrowRight, Check, ImageIcon } from "lucide-react"
+import { ArrowRight, Check } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { HeroArtwork } from "@/components/landing/hero-artwork"
 import { TestimonialBand } from "@/components/landing/testimonial-band"
 import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
+import { FeatureProductPreview } from "@/components/landing/feature-product-preview"
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -40,7 +41,18 @@ const handoffTools = [
   { name: "JetBrains", src: "/logos/jetbrains.svg" },
 ]
 
-const featureSections = [
+interface FeatureSection {
+  eyebrow: string
+  title: string
+  description: string
+  bullets: { label: string; body: string }[]
+  /** Workspace nav item rendered as the section's live UI visual */
+  navKey: string
+  /** Subsection shown in its active state */
+  activeSectionId: string
+}
+
+const featureSections: FeatureSection[] = [
   {
     eyebrow: "01 / Market Research",
     title: "Know the market before you commit a sprint.",
@@ -51,7 +63,12 @@ const featureSections = [
       { label: "Audience segments", body: "Who to build for first, and how they talk about the problem." },
       { label: "Differentiation wedges", body: "Where the open lane is for your specific idea." },
     ],
-    visualLabel: "Market research screenshot",
+    // Live workspace nav + real content shown instead of a screenshot.
+    // Feature Comparison is the showcase section until live competitor search
+    // is fixed; switch activeSectionId to "market-research-direct-competitors"
+    // and re-export the sample data once competitor profiles generate again.
+    navKey: "market-research",
+    activeSectionId: "market-research-feature-matrix",
   },
   {
     eyebrow: "02 / Product Plan",
@@ -63,7 +80,8 @@ const featureSections = [
       { label: "User stories and requirements", body: "Grouped and ready for a coding agent to scope." },
       { label: "Release plan", body: "What ships first, and what waits for later." },
     ],
-    visualLabel: "Product plan screenshot",
+    navKey: "prd",
+    activeSectionId: "prd-user-personas",
   },
   {
     eyebrow: "03 / First Version Plan",
@@ -75,7 +93,8 @@ const featureSections = [
       { label: "Validation plan", body: "How you will know the first version actually works." },
       { label: "Scope guardrails", body: "What is explicitly out, so scope creep does not sneak back in." },
     ],
-    visualLabel: "First version plan screenshot",
+    navKey: "mvp",
+    activeSectionId: "mvp-validation-plan",
   },
   {
     eyebrow: "04 / Design Mockups",
@@ -87,9 +106,32 @@ const featureSections = [
       { label: "Side by side comparison", body: "Pick a direction without re-briefing a designer." },
       { label: "Ready to hand off", body: "The chosen direction becomes the build reference." },
     ],
-    visualLabel: "Design mockups screenshot",
+    navKey: "mockups",
+    activeSectionId: "mockups-concept-1",
+  },
+  {
+    eyebrow: "05 / AI Prompts",
+    title: "Hand your coding agent a brief it can run with.",
+    description:
+      "Maker Compass turns the plans into a recommended build tool, guardrails, and a ready-to-paste first prompt, so the handoff is copy, paste, build.",
+    bullets: [
+      { label: "Recommended build tool", body: "A concrete pick with the reasoning and starting cost." },
+      { label: "Next prompt", body: "A first prompt built from your plans, ready to paste." },
+      { label: "Guardrails and build sequence", body: "Constraints and an order of work that keep the agent on track." },
+    ],
+    navKey: "ai-prompts",
+    activeSectionId: "ai-prompts-recommended-build-tool",
   },
 ]
+
+/**
+ * The visual half of each feature card: a live screenshot of the workspace UI
+ * rendering the exported sample project, embedded via /landing-preview/[navKey].
+ * See FeatureProductPreview for how the desktop-width iframe crop/scale works.
+ */
+function renderFeatureVisual(section: FeatureSection) {
+  return <FeatureProductPreview navKey={section.navKey} activeSectionId={section.activeSectionId} />
+}
 
 const plans = [
   {
@@ -136,18 +178,6 @@ const container = "mx-auto w-full max-w-[1320px] px-4 sm:px-8 lg:px-14"
 
 function SectionCard({ children }: { children: ReactNode }) {
   return <section className={`${container} py-8 md:py-10`}>{children}</section>
-}
-
-/** Awaiting a real screenshot/video from the user; keeps layout proportions stable until then. */
-function FeatureVisualPlaceholder({ label }: { label: string }) {
-  return (
-    <div className="flex aspect-[4/3] w-full items-center justify-center border border-dashed border-border-strong bg-[#F5F0EB] md:aspect-auto md:h-full md:min-h-[280px]">
-      <div className="flex flex-col items-center gap-2 px-6 text-center">
-        <ImageIcon className="h-6 w-6 text-text-muted" aria-hidden="true" />
-        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-text-muted">{label}</p>
-      </div>
-    </div>
-  )
 }
 
 /** Fetches the current registered user count from the profiles table. */
@@ -302,7 +332,7 @@ export default async function LandingPage() {
                     </ul>
                   </div>
                   <div className={imageOnRight ? "md:order-2" : "md:order-1"}>
-                    <FeatureVisualPlaceholder label={section.visualLabel} />
+                    {renderFeatureVisual(section)}
                   </div>
                 </article>
               )

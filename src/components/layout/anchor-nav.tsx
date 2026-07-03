@@ -88,13 +88,19 @@ function StatusText({
   return null
 }
 
-function NavTab({
+/**
+ * A single document tab with its sub-section links. Exported so the landing
+ * page can render a live excerpt of the real workspace nav (FeatureNavPreview)
+ * instead of a static screenshot.
+ */
+export function AnchorNavTab({
   item,
   status,
   activeSectionId,
   displayState,
   onNavigate,
   onGenerateDocument,
+  expandSubTabs = false,
 }: {
   item: DocumentNavItem
   status: NavStatus
@@ -102,6 +108,8 @@ function NavTab({
   displayState?: DocumentGenerationDisplayState
   onNavigate: (id: string) => void
   onGenerateDocument?: (docType: DocumentType) => void
+  /** Show sub-tabs at every viewport width (workspace hides them below lg) */
+  expandSubTabs?: boolean
 }) {
   const isInProgress = status === "in_progress"
   const isPending = status === "pending"
@@ -192,7 +200,7 @@ function NavTab({
       </div>
 
       {/* Sub-tabs */}
-      <div className={cn("mt-1 ml-[11px] hidden border-l pl-2 lg:block", connectorColor)}>
+      <div className={cn("mt-1 ml-[11px] border-l pl-2", expandSubTabs ? "block" : "hidden lg:block", connectorColor)}>
         {item.sections.map((section, idx) => {
           const isActiveSub = activeSectionId === section.id
           // In-progress items: vary opacity by position
@@ -242,7 +250,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
     >
       {/* Document tabs */}
       {navItems.map((item) => (
-        <NavTab
+        <AnchorNavTab
           key={item.key}
           item={item}
           status={getStatus(item)}

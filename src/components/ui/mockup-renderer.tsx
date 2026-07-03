@@ -709,6 +709,14 @@ function getConceptLabel(index: number): string {
   return `Concept ${index + 1}`
 }
 
+function getDesignRationaleText(description: string): string {
+  const trimmed = description.trim()
+  if (!trimmed) return ""
+  return /^design rationale:/i.test(trimmed)
+    ? trimmed
+    : `Design rationale: ${trimmed}`
+}
+
 function OpenRouterImageMockupViewer({
   data,
   projectName,
@@ -797,20 +805,20 @@ function OpenRouterImageMockupViewer({
             <div
               key={label}
               id={`mockups-concept-${index + 1}`}
-              className="overflow-hidden rounded-xl border border-border bg-white"
+              className="overflow-hidden rounded-[12px] border border-[#e8ddd5] bg-white"
             >
-              <div className="flex min-h-[420px] flex-col gap-5 p-5 sm:p-6">
+              <div className="flex min-h-[420px] flex-col gap-5 p-6">
                 <div>
-                  <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  <p className="font-mono text-[11px] font-medium uppercase leading-[16.5px] tracking-[0.18em] text-[#6b7280]">
                     {conceptLabel}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-foreground">
+                  <p className="mt-1 text-sm font-medium leading-5 text-[#1c1917]">
                     {status?.message || "Waiting for image"}
                   </p>
                 </div>
-                <div className="flex flex-1 items-center justify-center rounded-lg bg-[#f4f4f4] p-5">
+                <div className="flex flex-1 items-center justify-center rounded-lg bg-[#f8f8f7]">
                   <div className="w-full max-w-4xl space-y-4">
-                    <div className="aspect-[21/9] w-full animate-pulse rounded-lg border border-border bg-white shadow-sm" />
+                    <div className="aspect-[21/9] w-full animate-pulse rounded-lg bg-white" />
                     <div className="space-y-2">
                       <div className="h-3 w-32 animate-pulse rounded bg-gray-200" />
                       <div className="h-3 w-2/3 animate-pulse rounded bg-gray-100" />
@@ -823,25 +831,26 @@ function OpenRouterImageMockupViewer({
         }
 
         const isDownloading = downloadingLabel === option.label
+        const rationaleText = getDesignRationaleText(option.description)
 
         return (
           <div
             key={option.label}
             id={`mockups-concept-${index + 1}`}
-            className="overflow-hidden rounded-xl border border-border bg-white"
+            className="overflow-hidden rounded-[12px] border border-[#e8ddd5] bg-white"
           >
-            <div className="flex min-h-[420px] flex-col gap-5 p-5 sm:p-6">
-              <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex min-h-[420px] flex-col gap-5 p-6">
+              <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  <p className="font-mono text-[11px] font-medium uppercase leading-[16.5px] tracking-[0.18em] text-[#6b7280]">
                     {conceptLabel}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-foreground">{option.title}</p>
+                  <p className="mt-1 text-sm font-medium leading-5 text-[#1c1917]">{option.title}</p>
                 </div>
 
                 <button
                   type="button"
-                  className="flex w-full shrink-0 items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-xs font-medium transition-colors hover:bg-muted/50 disabled:opacity-50 lg:w-auto"
+                  className="flex w-full shrink-0 items-center justify-center gap-2 rounded-[6px] border border-[#e8ddd5] px-[16.909px] py-[8.909px] text-xs font-medium leading-4 text-[#1c1917] transition-colors hover:bg-[#f8f4f1] disabled:opacity-50 sm:w-auto"
                   disabled={downloadingLabel !== null}
                   onClick={() => handleDownload(option)}
                 >
@@ -850,44 +859,30 @@ function OpenRouterImageMockupViewer({
                 </button>
               </div>
 
-              <div className="rounded-lg bg-white">
-                <div className="p-3 sm:p-5">
-                  <button
-                    type="button"
-                    aria-label={`Open ${conceptLabel} mockup in lightbox`}
-                    className="block w-full cursor-zoom-in rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                    onClick={() => {
-                      setLightboxOption({
-                        imageUrl: option.imageUrl,
-                        title: option.title,
-                        conceptLabel,
-                      })
-                    }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={option.imageUrl}
-                      alt={`${conceptLabel}: ${option.title}`}
-                      className="h-auto w-full rounded-lg border border-border bg-white object-contain shadow-sm"
-                    />
-                  </button>
-                </div>
-              </div>
+              <button
+                type="button"
+                aria-label={`Open ${conceptLabel} mockup in lightbox`}
+                className="block w-full cursor-zoom-in rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                onClick={() => {
+                  setLightboxOption({
+                    imageUrl: option.imageUrl,
+                    title: option.title,
+                    conceptLabel,
+                  })
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={option.imageUrl}
+                  alt={`${conceptLabel}: ${option.title}`}
+                  className="h-auto w-full rounded-lg bg-white object-contain"
+                />
+              </button>
 
-              {option.description && (
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {option.description}
+              {rationaleText && (
+                <p className="text-sm leading-[22.75px] text-[#6b7280]">
+                  {rationaleText}
                 </p>
-              )}
-              {option.screens && option.screens.length > 0 && (
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  {option.screens.map((screen, screenIndex) => (
-                    <div key={`${option.label}-${screen.name}-${screenIndex}`} className="rounded-md border border-border bg-muted/20 p-3">
-                      <p className="text-xs font-medium text-foreground">{screen.name}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{screen.caption}</p>
-                    </div>
-                  ))}
-                </div>
               )}
             </div>
           </div>

@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-07-02 (architectural improvement planning defaults)
+**Last Updated**: 2026-07-03 (landing feature sections render live product UI with exported sample content)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -29,6 +29,8 @@
   - Public `waitlist` table for email capture
   - Shared `WaitlistForm` component on the landing page
   - Figma-matched desktop hero artwork from layered raster assets in `public/landing/hero/*`, rendered by `HeroArtwork`
+  - Five feature sections (Market Research, Product Plan, First Version Plan, Design Mockups, AI Prompts) render live product UI instead of static screenshots. `FeatureProductPreview` (`src/components/landing/feature-product-preview.tsx`) composes the exported `AnchorNavTab` (fed by `SCROLLABLE_NAV_ITEMS`, filtered via `filterNavItemsByRenderedSections`) beside a scaled, anchor-cropped window that renders the real document renderers (`CompetitiveDetailSection`, `PrdDocumentBlocks`, `MvpPlanDocumentBlocks`, `AiPromptsDocumentBlocks`, and `MockupRenderer` fed landing-ready content JSON whose image URLs point at exported public storyboard images). Each visual embeds the noindexed `/landing-preview/[navKey]` route (`WorkspaceScreenshot` + `SamplePreviewDocument`) in an iframe fixed at 1280 CSS px wide, so media queries always resolve to the desktop layout even on phones; `FeatureProductPreview` scales the iframe uniformly so a 768x576 (4:3) crop region fills the frame identically at every viewport width. Crop boxes use `overflow-clip` so they can never be scrolled. Rail subsections are DOM-derived from what the renderer actually emits (same `filterNavItemsByRenderedSections` rule as the workspace), so retired sections drop out automatically
+  - Landing sample data is exported from a real project by `scripts/export-landing-sample.mjs` (survey mode lists candidates; `--project <id>` writes `src/lib/landing-sample-content.ts` and copies storyboard images to `public/landing/samples/`). The script strips "data unavailable" caveat notes for marketing use. Market Research currently showcases Feature Comparison because live competitor search is failing; switch to Direct Competitors and re-export once fixed
   - Authenticated visitors to `/` are redirected to `/projects`
   - Fail-open API behavior so CTA rendering does not block on Supabase errors
 - **OpenRouter Image Mockups + Legacy Stitch Compatibility**: Mockup generation now defaults to OpenRouter image storyboards and keeps Stitch rendering/proxy support for older saved mockups until those records are cleaned up separately. Features:

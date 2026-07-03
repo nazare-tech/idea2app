@@ -108,7 +108,8 @@ test("PrdDocumentBlocks renders organized module anchors", () => {
   )
 
   assert.match(html, /Product Plan/)
-  assert.match(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.match(html, /A clear brief covering user needs, value, personas, scope, and implementation constraints\./)
+  assert.doesNotMatch(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
   assert.doesNotMatch(html, /border-b border-\[#E0E0E0\]/)
   assert.match(html, /id="prd-user-needs"/)
   assert.match(html, /Problem to Solve/)
@@ -507,7 +508,8 @@ test("MvpPlanDocumentBlocks renders organized module anchors", () => {
   )
 
   assert.match(html, /First Version Plan/)
-  assert.match(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
+  assert.match(html, /A launchable scope plan focused on what to prove, the core workflow, feature boundaries, and success signals\./)
+  assert.doesNotMatch(html, /-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10/)
   assert.doesNotMatch(html, /border-b border-\[#E0E0E0\]/)
   assert.match(html, /id="mvp-wedge"/)
   assert.match(html, /What We Need to Prove/)
@@ -865,7 +867,8 @@ So that I can send client-ready proposals.
 
   assert.doesNotMatch(html, /Block view unavailable/)
   assert.match(html, />Product Plan<\/h1>/)
-  assert.match(html, /text-\[36px\] font-bold tracking-\[-0\.05em\] text-\[#0A0A0A\] md:text-\[44px\]/)
+  assert.match(html, /text-\[36px\] font-bold leading-\[1\.12\] tracking-\[-0\.05em\] text-\[#0A0A0A\] md:text-\[44px\] md:leading-\[66px\]/)
+  assert.match(html, /A clear brief covering user needs, value, personas, scope, and implementation constraints\./)
   assert.doesNotMatch(html, /mt-2 max-w-3xl ui-type-body text-\[#666666\]/)
   assert.match(html, /text-\[22px\] font-bold tracking-\[-0\.03em\] text-\[#0A0A0A\]/)
   assert.doesNotMatch(html, />Proposal Pilot<\/h1>/)
@@ -1121,6 +1124,8 @@ Start with the proposal intake form and mock proposal generation.
 
   assert.doesNotMatch(html, /Block view unavailable/)
   assert.match(html, /First Version Plan/)
+  assert.match(html, /A launchable scope plan focused on what to prove, the core workflow, feature boundaries, and success signals\./)
+  assert.doesNotMatch(html, /Planning Document/)
   assert.match(html, /MVP Summary/)
   assert.match(html, /id="mvp-summary"/)
   assert.doesNotMatch(html, /id="mvp-bet"/)
@@ -1313,6 +1318,8 @@ Start with the proposal intake form and mock proposal generation.
   )
 
   assert.match(html, /AI Prompts/)
+  assert.match(html, /Recommended build tool, guardrails, sequence, requirements, and handoff prompt\./)
+  assert.doesNotMatch(html, /Builder Handoff/)
   assert.match(html, /aria-label="Explain AI Prompts"/)
   assert.match(html, /id="ai-prompts-recommended-build-tool"/)
   assert.match(html, /id="ai-prompts-next-prompt"/)

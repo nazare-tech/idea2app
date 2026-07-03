@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE } from "@/lib/openrouter-image-mockup-format"
 import { MockupRenderer } from "./mockup-renderer"
 
-test("MockupRenderer: renders storyboard images with screen captions", () => {
+test("MockupRenderer: renders simplified storyboard concept cards", () => {
   const content = JSON.stringify({
     type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
     model: "fixture/mockup-no-credit",
@@ -32,11 +32,12 @@ test("MockupRenderer: renders storyboard images with screen captions", () => {
   assert.match(markup, /mockups-concept-1/)
   assert.match(markup, /Concept 1/)
   assert.match(markup, /Focused dashboard/)
-  assert.match(markup, /Intake complete/)
-  assert.match(markup, /Capture context/)
+  assert.match(markup, /Dense but calm workflow/)
   assert.match(markup, /Export Image/)
   assert.match(markup, /Open Concept 1 mockup in lightbox/)
   assert.match(markup, /cursor-zoom-in/)
+  assert.doesNotMatch(markup, /Intake complete/)
+  assert.doesNotMatch(markup, /Capture context/)
   assert.doesNotMatch(markup, /Option A/)
   assert.doesNotMatch(markup, /min-w-\[960px\]/)
   assert.doesNotMatch(markup, /max-height/)
