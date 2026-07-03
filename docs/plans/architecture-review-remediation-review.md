@@ -32,7 +32,7 @@
 - Fixed: Terminal mockup error/cancelled states preserve option statuses and previews so missing options can show retry state.
 - Fixed: Stale abandoned draft cleanup is opportunistic and skips canonical saved mockup runs/paths.
 - Fixed: Landing marquee duplicate items are hidden from assistive tech and logo images are decorative.
-- Deferred with reason: Deleting dead `BuildMap` files/CSS was not done because repo instructions require asking before deleting existing files.
+- Completed after explicit approval: deleted the dead `BuildMap` component and dedicated CSS after confirming no active `src` usage.
 
 ## Security Review Findings
 - No auth/RLS weakening introduced.

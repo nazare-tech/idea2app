@@ -204,9 +204,11 @@ export async function POST(request: Request) {
             try {
               await deleteMockupOptionDrafts({
                 supabase,
+                storageSupabase: createServiceClient(),
                 projectId: projectId!,
                 userId: userId!,
                 runId: result.runId,
+                deleteStorageObjects: true,
               })
             } catch (cleanupError) {
               logWarn("MockupGenerate", "stream_draft_cleanup_failed", {
@@ -307,9 +309,11 @@ export async function POST(request: Request) {
     try {
       await deleteMockupOptionDrafts({
         supabase,
+        storageSupabase: createServiceClient(),
         projectId,
         userId: userId!,
         runId: result.runId,
+        deleteStorageObjects: true,
       })
     } catch (cleanupError) {
       logWarn("MockupGenerate", "draft_cleanup_failed", {

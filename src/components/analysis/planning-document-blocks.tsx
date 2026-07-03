@@ -3214,13 +3214,32 @@ type AiBuildToolRecommendation = {
   handoff: string
 }
 
+const AI_BUILD_TOOL_URLS: Record<string, string> = {
+  "bolt": "https://bolt.new",
+  "claude code": "https://www.anthropic.com/claude-code",
+  "cline": "https://cline.bot",
+  "codex": "https://openai.com/codex",
+  "cursor": "https://cursor.com",
+  "devin": "https://devin.ai",
+  "gemini code assist": "https://codeassist.google",
+  "github copilot": "https://github.com/features/copilot",
+  "lovable": "https://lovable.dev",
+  "replit": "https://replit.com",
+  "v0": "https://v0.dev",
+  "warp": "https://www.warp.dev",
+}
+
+function getAiBuildToolUrl(name: string) {
+  return AI_BUILD_TOOL_URLS[stripInlineMarkdown(name).trim().toLowerCase()] ?? null
+}
+
 function getRecommendedTool(section?: PlanningDocumentSection): AiBuildToolRecommendation | null {
   if (!section?.content.trim()) return null
 
   const headingLink = section.content.match(/^###\s+\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/m)
   const headingText = section.content.match(/^###\s+(.+)$/m)
   const name = stripInlineMarkdown(headingLink?.[1] ?? headingText?.[1] ?? section.heading).trim()
-  const url = headingLink?.[2]?.trim() ?? null
+  const url = headingLink?.[2]?.trim() ?? getAiBuildToolUrl(name)
 
   const field = (label: string) => {
     const pattern = new RegExp(`^-\\s*\\*\\*${label}\\*\\*:\\s*(.+)$`, "im")

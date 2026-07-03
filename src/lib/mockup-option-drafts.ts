@@ -252,15 +252,66 @@ export async function isMockupDraftImagePathOwned({
 
 export async function deleteMockupOptionDrafts({
   supabase,
+  storageSupabase = supabase,
   projectId,
   userId,
   runId,
+  deleteStorageObjects = false,
 }: {
   supabase: ServerSupabaseClient
+  storageSupabase?: ServerSupabaseClient
   projectId: string
   userId: string
   runId: string
+  deleteStorageObjects?: boolean
 }) {
+  let rows: MockupOptionDraftRow[] = []
+  if (deleteStorageObjects) {
+    const { data, error: loadError } = await supabase
+      .from("mockup_option_drafts")
+      .select("*")
+      .eq("project_id", projectId)
+      .eq("user_id", userId)
+      .eq("run_id", runId)
+      .limit(200)
+
+    if (loadError) {
+      throw new Error(`Failed to load mockup option drafts for cleanup: ${loadError.message}`)
+    }
+    rows = data ?? []
+  }
+
+  let deletedStorageObjects = 0
+  if (rows.length > 0) {
+    const { data: canonicalRows, error: canonicalError } = await supabase
+      .from("mockups")
+      .select("content, metadata")
+      .eq("project_id", projectId)
+
+    if (canonicalError) {
+      throw new Error(`Failed to inspect canonical mockups before draft cleanup: ${canonicalError.message}`)
+    }
+
+    const referenced = getCanonicalMockupReferences(canonicalRows ?? [])
+    const storagePaths = referenced.runIds.has(runId)
+      ? []
+      : rows
+          .map((row) => normalizeMockupDraftOptionRow({ row, projectId, runId })?.storagePath)
+          .filter((path): path is string => Boolean(path))
+          .filter((path) => !referenced.storagePaths.has(path))
+
+    if (storagePaths.length > 0) {
+      const { error: storageError } = await storageSupabase.storage
+        .from(process.env.SUPABASE_MOCKUP_STORAGE_BUCKET || "mockups")
+        .remove(storagePaths)
+
+      if (storageError) {
+        throw new Error(`Failed to remove mockup draft images: ${storageError.message}`)
+      }
+      deletedStorageObjects = storagePaths.length
+    }
+  }
+
   const { error } = await supabase
     .from("mockup_option_drafts")
     .delete()
@@ -270,6 +321,11 @@ export async function deleteMockupOptionDrafts({
 
   if (error) {
     throw new Error(`Failed to clean up mockup option drafts: ${error.message}`)
+  }
+
+  return {
+    rowCount: deleteStorageObjects ? rows.length : 0,
+    storageObjectCount: deletedStorageObjects,
   }
 }
 

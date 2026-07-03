@@ -1,7 +1,7 @@
 ---
-implemented: false
-implemented_at:
-implementation_summary: Code fixes are implemented and validated locally; fresh project UI QA is blocked because the in-app browser controller times out after the successful intake question response.
+implemented: true
+implemented_at: 2026-07-02T23:27:52Z
+implementation_summary: Removed workspace route refresh during generation, fixed intake 4-7 question handling, completed fresh Idea 1.1 browser QA, and verified the AI Prompts recommendation card renders with a Cursor external link.
 ---
 
 # Plan: Workspace Refresh Loop And Fresh Project QA
@@ -36,9 +36,9 @@ Remove the route-level `router.refresh()` in `ProjectWorkspace` generation-step 
 1. [x] Patch `ProjectWorkspace` so Generate All step completion force-loads completed documents without refreshing the route.
 2. [x] Run focused TypeScript/test verification for the changed workspace and prompt rendering paths.
 3. [x] Fix the intake client/server question-count mismatch discovered during fresh-project QA.
-4. [ ] Use the in-app browser at `localhost:3000` to create a fresh project through `/projects/new`.
-5. [ ] Watch for unexpected page refreshes during intake/onboarding and capture evidence under `ui-evidence/2026-07-01-ai-tool-recommendation-qa/`.
-6. [ ] Inspect AI Prompts on the fresh project and confirm the recommended tool card renders above Next Prompt when the First Version Plan is available.
+4. [x] Use the in-app browser at `localhost:3000` to create a fresh project through `/projects/new`.
+5. [x] Watch for unexpected page refreshes during intake/onboarding and capture evidence under `ui-evidence/2026-07-02-intake-retry-qa/`.
+6. [x] Inspect AI Prompts on the fresh project and confirm the recommended tool card renders above Next Prompt when the First Version Plan is available.
 
 ## Milestones
 - Refresh fix: Generate All step completion no longer calls a full route refresh.
@@ -62,7 +62,7 @@ Remove the route-level `router.refresh()` in `ProjectWorkspace` generation-step 
 Re-add a guarded refresh only on terminal queue completion if client document loading proves insufficient.
 
 ## Open Decisions
-- Browser QA remains blocked until the in-app browser controller can reconnect consistently after the successful intake question response.
+- None for the intake/recommendation QA goal. Design Mockups were still generating at final recommendation verification and can be revisited separately if needed.
 
 ## Implementation Notes
 - Removed `router.refresh()` from Generate All step completion in `src/components/workspace/project-workspace.tsx`; the callback now only force-loads changed workspace documents.
@@ -70,7 +70,9 @@ Re-add a guarded refresh only on terminal queue completion if client document lo
 - Aligned `src/components/projects/idea-intake-wizard.tsx` with the backend 4-7 question contract.
 - Increased intake question generation response budget in `src/lib/intake-question-generation.ts` from 1200 to 2000 tokens and tightened `src/lib/prompts/intake-wizard.ts` to prefer compact question sets.
 - Restarted the broken Turbopack dev server on port 3000 as Webpack. This recovered the client-manifest error.
-- Real `/api/intake/questions` QA returned `200` after the fix, but browser control timed out before Step 2 could be completed.
+- Real `/api/intake/questions` QA returned `200` after the fix.
+- 2026-07-02 real browser retry created project `33c50a38-b5a0-4ed3-9750-238dd4757ad9`, generated Market Research, Product Plan, First Version Plan, and AI Prompts, and verified the Recommended AI Build Tool card recommends Cursor.
+- Added a renderer URL fallback after QA found the generated heading omitted the markdown link for Cursor.
 
 ## Critique
 

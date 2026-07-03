@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-02: Mockup backend bugfixes
+
+- Plan: [docs/plans/mockup-backend-bugfixes-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/mockup-backend-bugfixes-plan.md)
+- Review: [docs/plans/mockup-backend-bugfixes-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/mockup-backend-bugfixes-review.md)
+- Durable source of truth: `src/lib/mockup-option-drafts.ts`, `src/app/api/mockups/recover-options/route.ts`, `src/lib/mockup-design-plan.ts`, `src/lib/openrouter-image-mockup-pipeline.ts`, `src/lib/document-generation-display-status.ts`, and the mockup generation/finalize call sites.
+- Schema or data-shape changes: None. Draft rows, canonical mockup rows, and Storage paths keep their existing shapes.
+- Auth, RLS, or permission changes: None. Draft reads/deletes remain scoped by project, user, and run; Storage deletion uses service access only after validating draft row paths and excluding canonical references.
+- Runtime/API behavior changes: Successful generation/finalize paths now request Storage-aware draft cleanup that preserves canonical mockup objects; recovery re-reads drafts after insert-only Storage backfill so live richer rows win; the planner brief no longer uses Core User Flows as the fallback source for workflow, capabilities, and screen candidates.
+- Migration or deployment steps: None.
+- Verification: `npm test -- src/lib/mockup-option-drafts.test.ts src/lib/mockup-design-plan.test.ts src/lib/document-generation-display-status.test.ts src/lib/openrouter-image-mockup-pipeline.test.ts` passed and ran 345 tests via the repo script. Follow-up verification in [docs/plans/nine-bug-remediation-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/nine-bug-remediation-review.md) also passed focused renderer/landing tests, `npm run typecheck`, `npm run lint`, `git diff --check`, and a real local landing-page browser check.
+- Rollback or recovery: Revert the scoped helper, route, and test changes. No database rollback is needed.
+- Follow-ups: Consider scheduled stale-draft cleanup if cleanup needs a guaranteed retention SLA independent of future generation requests.
+
 ## 2026-07-02: Architecture review mockup draft remediation
 
 - Plan: [docs/plans/architecture-review-remediation-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/architecture-review-remediation-plan.md)

@@ -160,12 +160,20 @@ export async function POST(request: Request) {
         model,
       })
     }
-    const options = mergeRecoveredMockupOptions({ draftOptions, storageOptions })
+    const latestDraftOptions = storageOptionsToBackfill.length > 0
+      ? await getMockupOptionDrafts({
+          supabase,
+          projectId,
+          userId: user.id,
+          runId,
+        })
+      : draftOptions
+    const options = mergeRecoveredMockupOptions({ draftOptions: latestDraftOptions, storageOptions })
 
     logInfo("MockupRecover", "options_recovered", {
       ...mockupLogContext,
       optionCount: options.length,
-      draftOptionCount: draftOptions.length,
+      draftOptionCount: latestDraftOptions.length,
       storageOptionCount: storageOptions.length,
       storageBackfillCount: storageOptionsToBackfill.length,
       labels: options.map((option) => option.label),

@@ -166,12 +166,12 @@ export function buildMockupGenerationBrief(input: BuildMockupDesignPlanPromptInp
       extractSectionSnippet(mvpPlan, ["MVP Summary", "First Version Overview"]),
     ], "The user completes the core happy-path workflow."),
     mvpCapabilities: firstUsefulSnippet([
-      extractSectionSnippet(mvpPlan, ["Core User Flows", "Must-Have Features", "Core Features", "Core MVP Features", "MVP Scope"]),
+      extractSectionSnippet(mvpPlan, ["Must-Have Features", "Core Features", "Core MVP Features", "MVP Scope", "MVP Goal and Definition of Done"]),
       extractSectionSnippet(productPlan, ["Functional Requirements", "Goals", "Product Goals"]),
     ], "Core MVP capabilities from the first version plan."),
     candidateScreens: firstUsefulSnippet([
-      extractSectionSnippet(mvpPlan, ["Core User Flows", "Core User Flow", "Must-Have Features", "AI-Friendly Build Sequence"]),
       extractLineByLabel(mvpPlan, ["Core screens", "Screens", "Key screens"]),
+      extractSectionSnippet(mvpPlan, ["Candidate Screens", "Key Screens", "AI-Friendly Build Sequence", "Suggested Build Approach"]),
     ], "Choose the minimum readable screens needed to show the MVP happy path."),
     uiConstraints: firstUsefulSnippet([
       extractSectionSnippet(mvpPlan, ["Technical Considerations", "Suggested Build Approach", "AI Build Guardrails"]),

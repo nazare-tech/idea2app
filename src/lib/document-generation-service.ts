@@ -15,6 +15,7 @@ import { linkifyBareUrls } from "@/lib/markdown-links"
 import { cleanupAbandonedMockupOptionDrafts, deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
 import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
+import { createServiceClient } from "@/lib/supabase/service"
 import type { Database, Json } from "@/types/database"
 import {
   findLatestActiveDocument,
@@ -248,9 +249,11 @@ export async function generateProjectDocument({
         try {
           await deleteMockupOptionDrafts({
             supabase,
+            storageSupabase: createServiceClient(),
             projectId,
             userId,
             runId: result.runId,
+            deleteStorageObjects: true,
           })
         } catch (cleanupError) {
           logError("DocumentGeneration", "mockup_draft_cleanup_failed", cleanupError, baseLogContext)

@@ -1341,3 +1341,34 @@ Start with the proposal intake form and mock proposal generation.
   assert.ok(html.indexOf("AI-Friendly Build Sequence") < html.indexOf("Functional Requirements"))
   assert.ok(html.indexOf("Functional Requirements") < html.indexOf("User Stories &amp; Acceptance Criteria"))
 })
+
+test("AiPromptsDocumentBlocks links known recommended tools when model omits heading URL", () => {
+  const html = renderToStaticMarkup(
+    <AiPromptsDocumentBlocks
+      projectId="project-1"
+      prdContent={`# PRD
+
+## 5. Functional requirements
+- **FR-001**: Build the first workflow.
+`}
+      mvpContent={`# MVP Plan
+
+## 7. Recommended AI Build Tool
+### Cursor
+- **Why this tool**: Full-stack Next.js/Supabase project in an existing GitHub repo.
+- **Best fit for this project**: Build the data upload, analysis pipeline, and dashboard together.
+- **Expected starting cost**: Free tier first; $20/month Pro once iteration starts.
+- **Watch out**: Verify Supabase RLS policy syntax manually.
+- **Handoff instruction**: Clone your repo, open it in Cursor, and paste the Next Prompt.
+
+## 13. Next Prompt for AI Coding Tool
+Start with the ingestion workflow.
+`}
+    />,
+  )
+
+  assert.match(html, /Recommended AI Build Tool/)
+  assert.match(html, /href="https:\/\/cursor\.com"/)
+  assert.match(html, /target="_blank"/)
+  assert.match(html, /Full-stack Next.js\/Supabase project/)
+})

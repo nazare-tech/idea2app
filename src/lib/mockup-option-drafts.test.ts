@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 
 import {
   cleanupAbandonedMockupOptionDrafts,
+  deleteMockupOptionDrafts,
   insertMockupOptionDraftIfMissing,
   normalizeMockupDraftOptionRows,
   type MockupDraftOptionLabel,
@@ -202,6 +203,75 @@ test("cleanupAbandonedMockupOptionDrafts: protects a whole run when any storage 
 
   assert.deepEqual(result, { runCount: 0, rowCount: 0, storageObjectCount: 0 })
   assert.deepEqual(deletedRunIds, [])
+  assert.deepEqual(removedPaths, [])
+})
+
+test("deleteMockupOptionDrafts: removes current-run draft rows and unreferenced storage objects after finalize", async () => {
+  const runId = "123e4567-e89b-12d3-a456-426614174000"
+  const removedPaths: string[][] = []
+  const deletedRunIds: string[] = []
+  const supabase = makeCleanupSupabase({
+    draftRows: [
+      makeDraftRow({ label: "A", runId }),
+      makeDraftRow({ label: "B", runId }),
+    ],
+    canonicalRows: [],
+    deletedRunIds,
+  })
+  const storageSupabase = makeStorageSupabase(removedPaths)
+
+  const result = await deleteMockupOptionDrafts({
+    supabase: supabase as never,
+    storageSupabase: storageSupabase as never,
+    projectId: "project-1",
+    userId: "user-1",
+    runId,
+    deleteStorageObjects: true,
+  })
+
+  assert.deepEqual(result, { rowCount: 2, storageObjectCount: 2 })
+  assert.deepEqual(deletedRunIds, [runId])
+  assert.deepEqual(removedPaths[0], [
+    `project-1/${runId}/option-a-storyboard.png`,
+    `project-1/${runId}/option-b-storyboard.png`,
+  ])
+})
+
+test("deleteMockupOptionDrafts: keeps storage objects that are already referenced canonically", async () => {
+  const runId = "123e4567-e89b-12d3-a456-426614174000"
+  const removedPaths: string[][] = []
+  const deletedRunIds: string[] = []
+  const supabase = makeCleanupSupabase({
+    draftRows: [
+      makeDraftRow({ label: "A", runId }),
+      makeDraftRow({ label: "B", runId }),
+    ],
+    canonicalRows: [
+      {
+        content: JSON.stringify({
+          type: "openrouter-image-v2",
+          model: "openai/gpt-5.4-image-2",
+          generatedAt: "2026-07-02T00:00:00.000Z",
+          options: [],
+        }),
+        metadata: { storage_run_id: runId },
+      },
+    ],
+    deletedRunIds,
+  })
+  const storageSupabase = makeStorageSupabase(removedPaths)
+
+  const result = await deleteMockupOptionDrafts({
+    supabase: supabase as never,
+    storageSupabase: storageSupabase as never,
+    projectId: "project-1",
+    userId: "user-1",
+    runId,
+    deleteStorageObjects: true,
+  })
+
+  assert.deepEqual(result, { rowCount: 2, storageObjectCount: 0 })
+  assert.deepEqual(deletedRunIds, [runId])
   assert.deepEqual(removedPaths, [])
 })
 

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 import { Suspense } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -14,6 +13,7 @@ import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { HeroArtwork } from "@/components/landing/hero-artwork"
 import { TestimonialBand } from "@/components/landing/testimonial-band"
+import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -145,44 +145,6 @@ function FeatureVisualPlaceholder({ label }: { label: string }) {
       <div className="flex flex-col items-center gap-2 px-6 text-center">
         <ImageIcon className="h-6 w-6 text-text-muted" aria-hidden="true" />
         <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-text-muted">{label}</p>
-      </div>
-    </div>
-  )
-}
-
-/** Purely informational, not interactive: grayscale at rest and stays that way, no hover state. */
-function ToolLogo({ name, src, ariaHidden = false }: { name: string; src: string; ariaHidden?: boolean }) {
-  return (
-    <div
-      className="flex h-[92px] w-[152px] shrink-0 flex-col items-center justify-center gap-3 border border-border-subtle bg-white px-4"
-      aria-hidden={ariaHidden ? "true" : undefined}
-    >
-      <Image
-        src={src}
-        alt=""
-        aria-hidden="true"
-        width={96}
-        height={32}
-        className="h-8 w-auto max-w-[96px] object-contain grayscale opacity-60"
-      />
-      <span className="font-mono text-[0.625rem] uppercase tracking-[0.18em] text-text-muted">{name}</span>
-    </div>
-  )
-}
-
-/** Duplicates the row once so a -50% translate loops seamlessly. Runs continuously; honors prefers-reduced-motion only. */
-function ToolLogoMarquee({ tools }: { tools: { name: string; src: string }[] }) {
-  return (
-    <div className="landing-logo-marquee mt-4">
-      <div className="landing-logo-marquee__track">
-        {[...tools, ...tools].map((tool, index) => (
-          <ToolLogo
-            key={`${tool.name}-${index}`}
-            name={tool.name}
-            src={tool.src}
-            ariaHidden={index >= tools.length}
-          />
-        ))}
       </div>
     </div>
   )

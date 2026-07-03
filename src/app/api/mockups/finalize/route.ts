@@ -19,6 +19,7 @@ import {
 import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
 import { deleteMockupOptionDrafts } from "@/lib/mockup-option-drafts"
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
@@ -240,9 +241,11 @@ export async function POST(request: Request) {
     try {
       await deleteMockupOptionDrafts({
         supabase,
+        storageSupabase: createServiceClient(),
         projectId,
         userId: user.id,
         runId,
+        deleteStorageObjects: true,
       })
     } catch (cleanupError) {
       logWarn("MockupFinalize", "draft_cleanup_failed", {
