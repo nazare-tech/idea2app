@@ -17,6 +17,7 @@ test("empty competitor search results produce no live-research prompt context", 
 
   assert.equal(competitorContext, "")
   assert.match(prompt, /Live competitor research did not return usable competitor data/)
+  assert.match(prompt, /output 3-5 conservative H3 competitor candidate profiles/)
   assert.doesNotMatch(prompt, /identified through live web research/)
 })
 

@@ -1,6 +1,6 @@
 export const COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION = "competitive-analysis-v2"
 export const COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION =
-  "competitive-analysis-v2-2026-06-22-market-research-no-risks"
+  "competitive-analysis-v2-2026-07-05-evidence-limited-competitors"
 
 export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Executive Summary",
@@ -499,11 +499,9 @@ export function getCompetitiveAnalysisStructuredData(
       paragraphs: parseParagraphBlocks(getSection(sections, "Executive Summary")),
       bullets: parseListItems(getSection(sections, "Executive Summary")),
     },
-    directCompetitors: directCompetitorResearchUnavailable
-      ? []
-      : parseCompetitorProfiles(competitorEntries),
+    directCompetitors: parseCompetitorProfiles(competitorEntries),
     directCompetitorEvidenceNotice: directCompetitorResearchUnavailable
-      ? "Live competitor research was unavailable for this run, so Maker Compass is not showing inferred company profiles as direct competitors. Regenerate Market Research after competitor search is configured to populate verified profiles."
+      ? "Live competitor research was unavailable for this run, so these direct competitor profiles are evidence-limited candidates. Verify company fit, URLs, pricing, and positioning before relying on them."
       : null,
     featureMatrix: parseNarrativeTable(
       getSection(sections, "Feature Comparison")
@@ -659,15 +657,9 @@ export function parseCompetitiveAnalysisV2(
   }
 
   const directCompetitorsSection = sections["Direct Competitors"] ?? ""
-  const competitorEntries =
-    directCompetitorsSection &&
-    !hasUnavailableLiveCompetitorResearch(
-      [sections["Executive Summary"] ?? "", directCompetitorsSection].join(
-        "\n\n"
-      )
-    )
-      ? extractSectionsByHeading(directCompetitorsSection, 3)
-      : []
+  const competitorEntries = directCompetitorsSection
+    ? extractSectionsByHeading(directCompetitorsSection, 3)
+    : []
 
   return {
     isValid: errors.length === 0,

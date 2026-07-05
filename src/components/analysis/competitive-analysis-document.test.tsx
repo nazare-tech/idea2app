@@ -206,7 +206,7 @@ test("competitive detail consolidates competitor profile cards into one quick co
   assert.doesNotMatch(html, />PROFILE</)
 })
 
-test("competitive detail shows evidence state instead of inferred direct competitors when live research is missing", () => {
+test("competitive detail shows evidence-limited fallback direct competitors when live research is missing", () => {
   const html = renderToStaticMarkup(
     <CompetitiveDetailSection
       content={buildV2Fixture({
@@ -221,10 +221,9 @@ test("competitive detail shows evidence state instead of inferred direct competi
   )
 
   assert.match(html, /Direct Competitors/)
-  assert.match(html, /Live competitor profiles unavailable/)
-  assert.match(html, /Live competitor research was unavailable/)
-  assert.doesNotMatch(html, /Inferred pet care incumbent/)
-  assert.doesNotMatch(html, /Marketplace liquidity/)
+  assert.match(html, /evidence-limited candidates/)
+  assert.match(html, /Inferred pet care incumbent/)
+  assert.match(html, /Marketplace liquidity/)
 })
 
 test("competitive renderer normalizes redundant opportunity verdict into modules", () => {

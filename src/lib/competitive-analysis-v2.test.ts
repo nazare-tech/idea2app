@@ -87,7 +87,7 @@ test("parseCompetitiveAnalysisV2 strips removed risks and SWOT sections", () => 
   )
 })
 
-test("parseCompetitiveAnalysisV2 does not turn no-live-data inferred profiles into direct competitors", () => {
+test("parseCompetitiveAnalysisV2 keeps evidence-limited fallback profiles visible", () => {
   const parsed = parseCompetitiveAnalysisV2(
     buildV2Fixture({
       "Executive Summary":
@@ -99,11 +99,15 @@ test("parseCompetitiveAnalysisV2 does not turn no-live-data inferred profiles in
   const structured = getCompetitiveAnalysisStructuredData(parsed)
 
   assert.equal(parsed.isValid, true)
-  assert.equal(parsed.competitorEntries.length, 0)
-  assert.deepEqual(structured.directCompetitors, [])
+  assert.equal(parsed.competitorEntries.length, 1)
+  assert.equal(structured.directCompetitors[0]?.heading, "Rover")
+  assert.equal(
+    structured.directCompetitors[0]?.fields["Overview"],
+    "Inferred incumbent"
+  )
   assert.match(
     structured.directCompetitorEvidenceNotice ?? "",
-    /Live competitor research was unavailable/
+    /evidence-limited candidates/
   )
 })
 

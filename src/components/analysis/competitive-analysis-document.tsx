@@ -649,6 +649,11 @@ function CompetitorProfiles({
             : evidenceNotice ??
               "Verified direct competitor profiles are unavailable for this report."}
         </p>
+        {competitors.length > 0 && evidenceNotice ? (
+          <p className="mb-5 border border-dashed border-[#D8CEC5] bg-[#FAFAFA] px-4 py-3 ui-type-body text-[#666666]">
+            {evidenceNotice}
+          </p>
+        ) : null}
         <FastComparisonTable competitors={competitors} />
       </PencilCard>
     </div>
