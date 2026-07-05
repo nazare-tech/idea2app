@@ -20,6 +20,7 @@ import type {
   DocumentGenerationDisplayState,
   MockupOptionStatus,
 } from "@/lib/document-generation-display-status"
+import type { OpenRouterImageMockupOption } from "@/lib/openrouter-image-mockup-format"
 import { cn } from "@/lib/utils"
 
 interface DocumentData {
@@ -31,6 +32,7 @@ interface DocumentData {
   streamCurrentStep?: number
   streamContent?: string
   displayState?: DocumentGenerationDisplayState
+  mockupDraftOptions?: OpenRouterImageMockupOption[]
 }
 
 interface ScrollableContentProps {
@@ -82,10 +84,12 @@ function GenerationStatusModule({
   label,
   state,
   onGenerateDocument,
+  showMockupLoader = true,
 }: {
   label: string
   state?: DocumentGenerationDisplayState
   onGenerateDocument?: (docType: DocumentType) => void
+  showMockupLoader?: boolean
 }) {
   if (!state || state.displayStatus === "idle") {
     return <EmptyState label={label} />
@@ -152,7 +156,7 @@ function GenerationStatusModule({
 
       {isGenerating && (
         state.docType === "mockups" ? (
-          <MockupGenerationLoader images={state.mockupPreviewImages} />
+          showMockupLoader ? <MockupGenerationLoader images={state.mockupPreviewImages} /> : null
         ) : (
           <div className="space-y-3">
             <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
@@ -177,6 +181,41 @@ function GenerationStatusModule({
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function MockupProgressModule({
+  state,
+  draftOptions = [],
+  onGenerateDocument,
+}: {
+  state?: DocumentGenerationDisplayState
+  draftOptions?: OpenRouterImageMockupOption[]
+  onGenerateDocument?: (docType: DocumentType) => void
+}) {
+  const draftContent = JSON.stringify({
+    type: "openrouter-image-v2",
+    model: "draft",
+    generatedAt: "",
+    options: draftOptions,
+  })
+
+  return (
+    <div className="space-y-6">
+      <GenerationStatusModule
+        label="Design Mockups"
+        state={state}
+        onGenerateDocument={onGenerateDocument}
+        showMockupLoader={false}
+      />
+      <div className="px-5 pb-6 sm:px-8">
+        <MockupRenderer
+          content={draftContent}
+          expectedOptionLabels={["A", "B", "C"]}
+          optionStatuses={state?.mockupOptionStatuses}
+        />
+      </div>
     </div>
   )
 }
@@ -300,9 +339,9 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           ) : mockupsData?.content ? (
             <MockupsSection content={mockupsData.content} projectId={projectId} />
           ) : mockupsData?.displayState && mockupsData.displayState.displayStatus !== "idle" ? (
-            <GenerationStatusModule
-              label="Design Mockups"
+            <MockupProgressModule
               state={mockupsData.displayState}
+              draftOptions={mockupsData.mockupDraftOptions}
               onGenerateDocument={onGenerateDocument}
             />
           ) : mockupsData?.isGenerating || mockupsData?.isLoading ? (

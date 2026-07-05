@@ -40,10 +40,10 @@ const H3_ALIASES = {
 
 const H2_ALIASES = {
   overview: ["MVP Summary", "Product Vision", "First Version Overview"],
-  assumptions: ["Key Assumptions and Scope Decisions", "Assumptions"],
+  assumptions: ["Key Risks, Assumptions, and Scope Decisions", "Key Assumptions and Scope Decisions", "Assumptions"],
   targetProblem: ["Target User and Problem"],
   hypothesis: ["MVP Goal, Definition of Done, and Riskiest Assumptions", "MVP Goal"],
-  userFlow: ["Core User Flow", "User Flow", "Key User Flow"],
+  userFlow: ["Core User Flows", "Core User Flow", "User Flow", "Key User Flow"],
   scope: ["MVP Scope", "Scope Boundaries"],
   features: ["Must-Have Features", "Core Features", "Core MVP Features"],
   techStack: ["Suggested Build Approach", "Tech Stack", "Tool Recommendations"],
@@ -115,6 +115,7 @@ export function getMvpPlanViewModel(content: string): MvpPlanViewModel {
   const h3Sections = extractSectionsByHeading(content, 3)
   const featureDetails = getFeatureDetails(h2Sections, h3Sections)
   const targetProblemContent = getSection(h2Sections, H2_ALIASES.targetProblem)
+  const coreUserFlowsContent = getSection(h2Sections, H2_ALIASES.userFlow)
   const validationContent = getSection(h2Sections, H2_ALIASES.validation)
 
   const structured: MvpPlanStructuredData = {
@@ -149,7 +150,7 @@ export function getMvpPlanViewModel(content: string): MvpPlanViewModel {
         H3_ALIASES.scope,
         h2Sections,
         H2_ALIASES.scope,
-      ),
+      ) || coreUserFlowsContent,
     ),
     featureSummary: parseNarrativeTable(
       getSectionByPreference(
@@ -157,10 +158,10 @@ export function getMvpPlanViewModel(content: string): MvpPlanViewModel {
         H3_ALIASES.featureSummary,
         h2Sections,
         H2_ALIASES.features,
-      ),
+      ) || coreUserFlowsContent,
     ),
     featureDetails,
-    userFlow: sectionsOrFallback(findH2Content(h2Sections, H2_ALIASES.userFlow), "User Flow"),
+    userFlow: sectionsOrFallback(coreUserFlowsContent, "User Flow"),
     techStack: sectionsOrFallback(
       findH2Content(h2Sections, H2_ALIASES.techStack),
       "Tech Stack",

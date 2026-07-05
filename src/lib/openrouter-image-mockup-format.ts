@@ -33,12 +33,42 @@ export interface OpenRouterImageMockupContent {
 export function buildMockupImageProxyUrl({
   projectId,
   storagePath,
+  draftRunId,
 }: {
   projectId: string
   storagePath: string
+  draftRunId?: string
 }) {
   const params = new URLSearchParams({ projectId, path: storagePath })
+  if (draftRunId) params.set("draftRunId", draftRunId)
   return `/api/mockups/image?${params.toString()}`
+}
+
+const MOCKUP_RUN_ID_PATTERN = /^[A-Za-z0-9_-]{8,96}$/
+const DRAFT_MOCKUP_OPTION_FILE_PATTERN = /^option-[abc]-storyboard\.(?:png|jpe?g|webp)$/i
+
+export function isValidDraftMockupImagePath({
+  projectId,
+  storagePath,
+  draftRunId,
+}: {
+  projectId: string
+  storagePath: string
+  draftRunId: string
+}) {
+  if (!projectId || projectId.includes("/") || projectId.includes("..")) return false
+  if (!MOCKUP_RUN_ID_PATTERN.test(draftRunId)) return false
+  if (storagePath.includes("..")) return false
+
+  const parts = storagePath.split("/")
+  if (parts.length !== 3) return false
+
+  const [pathProjectId, pathRunId, fileName] = parts
+  return (
+    pathProjectId === projectId &&
+    pathRunId === draftRunId &&
+    DRAFT_MOCKUP_OPTION_FILE_PATTERN.test(fileName)
+  )
 }
 
 export function parseOpenRouterImageMockupContent(content: string): OpenRouterImageMockupContent | null {

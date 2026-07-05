@@ -111,11 +111,106 @@ test("parseIntakeQuestionSet: replaces model platform choices with canonical pla
   )
 })
 
+test("parseIntakeQuestionSet: rejects when platform normalization leaves too few questions", () => {
+  const duplicatePlatformOutput = JSON.stringify({
+    questions: [
+      {
+        id: "target-company-size",
+        question: "What size of company is your primary target customer?",
+        selectionMode: "single",
+        options: [
+          { id: "startup", label: "Startup" },
+          { id: "mid-market", label: "Mid-market" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "primary-data-sources",
+        question: "Which data sources are most critical to ingest first?",
+        selectionMode: "multiple",
+        options: [
+          { id: "support-tickets", label: "Support tickets" },
+          { id: "sales-calls", label: "Sales calls" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "platform",
+        question: "Where should this live?",
+        selectionMode: "single",
+        options: [
+          { id: "desktop-web", label: "Desktop website" },
+          { id: "mobile-web", label: "Mobile website" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "primary-device",
+        question: "What primary device should users start on?",
+        selectionMode: "single",
+        options: [
+          { id: "desktop", label: "Desktop" },
+          { id: "phone", label: "Phone" },
+        ],
+        allowOther: false,
+      },
+    ],
+  })
+
+  assert.throws(
+    () => parseIntakeQuestionSet(duplicatePlatformOutput),
+    /normalized questions must include 4-7 items/
+  )
+})
+
 test("parseIntakeQuestionSet: accepts JSON wrapped in a markdown fence", () => {
   const questionSet = parseIntakeQuestionSet(`\`\`\`json\n${validModelOutput}\n\`\`\``)
 
   assert.equal(questionSet.source, "ai")
   assert.equal(questionSet.questions[3].id, "business-model")
+})
+
+test("parseIntakeQuestionSet: accepts up to seven questions after platform normalization", () => {
+  const output = JSON.stringify({
+    questions: [
+      ...JSON.parse(validModelOutput).questions,
+      {
+        id: "technical-comfort",
+        question: "How comfortable are you editing code?",
+        selectionMode: "single",
+        options: [
+          { id: "nontechnical", label: "No-code preferred" },
+          { id: "technical", label: "Comfortable with code" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "backend-risk",
+        question: "How serious is the backend for launch?",
+        selectionMode: "single",
+        options: [
+          { id: "simple", label: "Simple prototype" },
+          { id: "serious", label: "Auth, payments, or private data" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "primary-platform",
+        question: "Where will people use the first version?",
+        selectionMode: "single",
+        options: [
+          { id: "desktop-web", label: "Desktop website" },
+          { id: "mobile-web", label: "Mobile website" },
+          { id: "native-mobile-app", label: "iOS / Android app" },
+          { id: "native-desktop-app", label: "Mac / Windows app" },
+        ],
+        allowOther: false,
+      },
+    ],
+  })
+  const questionSet = parseIntakeQuestionSet(output)
+
+  assert.equal(questionSet.questions.length, 7)
 })
 
 test("parseIntakeQuestionSet: rejects malformed model output", () => {
@@ -340,12 +435,73 @@ test("generateIntakeQuestions: uses the injected generator and parses the model 
     generateText: async (request) => {
       assert.match(request.systemPrompt, /structured onboarding questions/i)
       assert.match(request.userPrompt, /<user_input name="idea">/)
+      assert.equal(request.maxTokens, 2000)
       return validModelOutput
     },
   })
 
   assert.equal(result.usedFallback, false)
   assert.equal(result.questionSet.source, "ai")
+})
+
+test("generateIntakeQuestions: retries once when platform normalization leaves too few questions", async () => {
+  const duplicatePlatformOutput = JSON.stringify({
+    questions: [
+      {
+        id: "target-company-size",
+        question: "What size of company is your primary target customer?",
+        selectionMode: "single",
+        options: [
+          { id: "startup", label: "Startup" },
+          { id: "mid-market", label: "Mid-market" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "primary-data-sources",
+        question: "Which data sources are most critical to ingest first?",
+        selectionMode: "multiple",
+        options: [
+          { id: "support-tickets", label: "Support tickets" },
+          { id: "sales-calls", label: "Sales calls" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "platform",
+        question: "Where should this live?",
+        selectionMode: "single",
+        options: [
+          { id: "desktop-web", label: "Desktop website" },
+          { id: "mobile-web", label: "Mobile website" },
+        ],
+        allowOther: false,
+      },
+      {
+        id: "primary-device",
+        question: "What primary device should users start on?",
+        selectionMode: "single",
+        options: [
+          { id: "desktop", label: "Desktop" },
+          { id: "phone", label: "Phone" },
+        ],
+        allowOther: false,
+      },
+    ],
+  })
+  const prompts: string[] = []
+
+  const result = await generateIntakeQuestions("AI software for support ticket triage", {
+    generateText: async (request) => {
+      prompts.push(request.userPrompt)
+      return prompts.length === 1 ? duplicatePlatformOutput : validModelOutput
+    },
+  })
+
+  assert.equal(prompts.length, 2)
+  assert.match(prompts[1], /previous JSON was rejected/i)
+  assert.match(prompts[1], /normalized questions must include 4-7 items/i)
+  assert.equal(result.questionSet.questions.length, 5)
 })
 
 test("generateIntakeQuestions: throws a retryable error when no generator is provided", async () => {

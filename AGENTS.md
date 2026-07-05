@@ -18,7 +18,18 @@
 
 ## How I Want You To Work
 
-- For substantial feature, refactor, bug-fix, architecture, product, or implementation requests, use `/holistic-implementation`: keep working on the current branch unless I explicitly ask for a new branch, create a holistic plan first, critique and update the plan after my answers, implement in phases with red-green TDD, verify behavior, then do code review, security review, markdown remediation notes, and final fixes before calling the work complete.
+- For substantial feature, refactor, bug-fix, architecture, product, or implementation requests, use `/holistic-implementation`. The global skill owns the full plan, critique, implementation, verification, review, security review, and remediation loop; this file owns the repo-specific defaults below.
+- Keep working on the current branch unless I explicitly ask for a new branch.
+- Create a markdown plan in `docs/plans/` before implementation. Include the goal, assumptions, clarifying questions, Recommendation A/B choices with trade-offs, the selected recommendation, implementation phases, test strategy, rollback or recovery notes, and a candid critique from architecture, product, customer, engineering, and risk/security perspectives.
+- Include an Architecture Improvement Opportunities section in every substantial plan. It should actively look for scoped improvements that make the implementation more reusable, scalable, modular, durable, secure, observable, or recoverable, including patterns such as durable/idempotent intermediate state, ownership checks at trust boundaries, prompt/parser/render contract sync, dynamic compatibility safety nets, bounded AI JSON repair, shared helpers, progressive loading, and rollback hooks. For each opportunity, record the benefit, trade-off, likely files or boundaries, and whether it is selected, deferred, or rejected as over-engineering for the current task.
+- Do not wait for me to answer clarifying questions by default. Pick Recommendation A for each open question and continue through implementation, verification, review, and remediation unless an existing rule in `docs/plans/recommendation-selection-rules.md`, my prompt, or a hard safety constraint clearly points to another option.
+- If Recommendation A would delete data, overwrite existing files, expose secrets, weaken auth/RLS, make irreversible production changes, require credentials I have not provided, or incur open-ended/production spend, stop and ask before taking that step.
+- Do not avoid small expected local QA spend from configured AI/API services when real-flow verification or durable test artifacts depend on it; avoiding that spend usually creates more future work.
+- Update the plan as decisions become facts. When implementation is complete, mark the plan metadata with `implemented: true`, `implemented_at: <ISO 8601 timestamp>`, and a concise implementation summary. If work is intentionally partial, keep `implemented: false` and document what remains.
+- For code or behavior changes, create or update a review artifact in `docs/plans/` with verification run, code-review findings, security-review findings when relevant, and remediation status.
+- In review artifacts, include an architecture improvement review that confirms selected opportunities landed, records why deferred opportunities remain deferred, and calls out any new duplication, brittle contracts, non-idempotent paths, authorization gaps, or recovery blind spots found during review.
+- When I later correct a recommendation choice, first adjust the implementation to match the corrected direction when practical, then ask what underlying preference, constraint, or product principle made the other recommendation better. Do not treat the correction as a one-off preference. Update `docs/plans/recommendation-selection-rules.md` with the generalized rule after the root reason is clear.
+- For backend, database, Supabase, auth/RLS, webhook, persistence, or data-shape changes, also update `docs/plans/backend-change-history.md` with what changed, where the durable source of truth lives, how it was verified, and how to roll it back or recover.
 - Think step by step before writing code
 - Build one feature at a time and confirm it works before moving on, don't jump ahead
 - After making changes, give me suggestions on what to do next (what to run, where to look, etc.)
@@ -27,14 +38,35 @@
 - Prefer lazy loading, streaming, pagination, and progressive rendering where appropriate rather than making the user wait for large content loads up front
 - When I ask for a change, do your best to test that change before returning control to me
 - If I ask for a visual/UI change, add it to your test plan and visually confirm the change actually happened before returning control to me
-- For UI verification in this repo, use the Codex in-app browser/browser workflow by default when available. Arc is allowed when debugging is materially easier there or when the Codex browser blocks effective inspection. Avoid Chrome, Puppeteer, or headless browsers for routine UI checks unless the Codex browser and Arc are unavailable or the user explicitly asks for a different browser.
+- For any UI, visual, user-flow, or user-visible backend change, test through the real local UI as a real user would. Do not patch routes, stub providers, switch to fixtures, shorten waits, use dummy environment values, or bypass auth/database/image-generation flows just to make verification faster. If the real dependency is unavailable, blocked, unsafe, or would spend money unexpectedly, report that blocker instead of faking the UI path.
+- When a normal human would complete the task through the UI and the UI path exposes a bug, fix that UI/user-flow bug before continuing. Do not bypass the broken path with direct API/database calls just because lower-level access is available, unless the user explicitly asks for an API-only workflow.
+- If Google Chrome or the browser controller becomes unavailable during a required real-UI verification or artifact-generation flow, first try to recover the Chrome workflow: reconnect to the existing tab, target the correct Chrome profile/extension instance, refresh/reopen the local route, and verify the dev server/session state. If the UI workflow still cannot be restored, stop and report the blocker instead of continuing through direct API, database, or server-side generation as a substitute for the user-visible flow.
+- For UI-visible changes, capture and share screenshot or video evidence in the same thread where I gave the task. Prefer screenshots for static states and short video when motion, loading, generation progress, or multi-step flows matter. Save verification screenshots/videos under `ui-evidence/` using a date/task subfolder; this directory lives inside the repo working tree but is ignored by Git. Include the exact route/viewport/state tested and the saved artifact path in the plan or review.
+- For backend changes, still look for the real user-facing UI path that proves the backend behavior when one exists, and include screenshots/video of that path when useful. If only API/log/database verification is possible, explain why there is no meaningful UI evidence.
+- For UI verification in this repo, use Google Chrome through the Codex Chrome plugin by default, not the Codex in-app browser. Prefer Chrome because screenshots should match the user's real browser/profile behavior. Use the in-app browser only for quick unauthenticated inspection when Chrome is genuinely unavailable and screenshot evidence is not required.
+- Chrome screenshot workflow for this repo:
+  - Start or reuse the real local dev server for this workspace. If the port appears occupied but the route is not reachable, inspect the listener and recover stale Next dev processes or `.next/dev` cache before blaming browser tooling.
+  - Use Chrome Profile 1 / profile name `Plasma` when available. The Codex Chrome runtime can expose multiple Chrome extension instances; do not blindly use `agent.browsers.get("extension")` when more than one Chrome instance is listed.
+  - First call `agent.browsers.list()` and pick the Chrome entry whose metadata includes `profileName: "Plasma"` or `profileIsLastUsed: "true"`. In the known working setup from 2026-07-03, the correct browser id was `-d543-40af-b093-f0c18fc336f8`; treat this as a useful hint, not a permanent guarantee.
+  - If Chrome communication is flaky, run the plugin health checks before giving up: `scripts/chrome-is-running.js --json`, `scripts/installed-browsers.js --json`, `scripts/check-extension-installed.js --json`, and `scripts/check-native-host-manifest.js --json` from the bundled Chrome plugin directory. The expected selected profile is `Profile 1`, with the Codex Chrome Extension installed and enabled, and a correct native messaging host manifest.
+  - If tab navigation through the Chrome API hangs, open Chrome directly to the local URL with the selected profile, then claim the already-loaded tab through the correct Chrome browser instance. This can avoid navigation-time hangs.
+  - If `tab.playwright.domSnapshot()` fails with `incrementalAriaSnapshot is not a function`, do not treat that as fatal. Use stable Playwright locators, read-only `evaluate(...)`, and `tab.screenshot(...)` instead.
+  - When local UI verification requires signing in, read `.env.e2e.local` inside the automation script and use `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` through Chrome. Never print, paste, screenshot, or commit credential values.
+  - Save screenshots/videos under `ui-evidence/<date>/<task-slug>/` and include the exact route, viewport, visible state, and artifact paths in the plan or review.
 - For local UI verification, use this actual workspace and its real local environment. Do not create copied project workspaces or use dummy environment values to bypass env, auth, database, or dev-server problems. If a dev-server lock blocks startup, first verify whether a server is actually reachable; if it is not reachable, fix the stale generated lock or run the real workspace on another available port.
-- When local UI verification requires signing in, use the e2e credentials stored in `.env.e2e.local` (`E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD`) with the Codex in-app browser. Never print, paste, or commit the credential values.
+- Once you start a local dev server for UI verification, keep it running for the rest of the thread unless I explicitly ask you to stop it or it is clearly unsafe to leave it running. If UI navigation fails, times out, or the browser appears unavailable, first verify that the dev server is still running and reachable at the expected local URL before diagnosing browser tooling or falling back to other workflows.
+- When local UI verification requires signing in, use the e2e credentials stored in `.env.e2e.local` (`E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD`) with Google Chrome. Never print, paste, screenshot, or commit the credential values.
 - For backend or non-visual changes, still do your best to verify behavior with the best available tests, logs, requests, or local validation before returning control to me
 - Before making a medium or large change, think about whether the work should be re-architected across multiple files instead of patched in one place
 - Look for opportunities to break large functions into smaller functions when that will improve clarity, reuse, or testability
 - Look for similar logic duplicated across files and centralize it when that makes the codebase simpler and easier to maintain
 - Prefer reusing existing UI components and patterns rather than creating one-off components for a single screen or change
+
+## Standardized Intake Test Cases
+
+- For repeatable Maker Compass intake/UI/report-generation tests, use `docs/guides/idea-intake-test-cases.md`.
+- Use Idea 1.1 from that file by default unless I explicitly ask you to use another variant, or unless generating multiple projects would materially help compare outputs.
+- When the intake wizard asks a new follow-up question, answer it using the closest matching policy in that file, then append the exact question and answer to the observed question log.
 
 ## Available Skills
 
@@ -59,7 +91,7 @@ Implement Stripe payment processing including checkout, subscriptions, and webho
 - Example: "Add Stripe checkout" or "Implement subscription billing"
 
 #### `/holistic-implementation` - Plan, Implement, Review, Secure
-Use the current branch and create a holistic plan before substantial implementation work, unless I explicitly ask for a new branch. Then implement the approved plan in phases with red-green TDD, verification, architecture/bug review, security review, markdown review notes, and remediation.
+Use this skill by default for substantial work. In this repo, follow the defaults above: save plans/reviews in `docs/plans/`, choose Recommendation A unless local rules or safety constraints point elsewhere, implement without waiting, verify, review, and capture feedback.
 - Example: "Use holistic implementation for this feature" or "Plan and build this end to end"
 
 #### `/frontend-design` - UI Design

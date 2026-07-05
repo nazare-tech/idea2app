@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
+import { cleanupAbandonedMockupOptionDrafts, deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
 import {
   createSkippedActiveDocumentPayload,
   findLatestActiveDocument,
@@ -139,6 +141,26 @@ export async function POST(request: Request) {
       }
     }
 
+    try {
+      const cleanupSummary = await cleanupAbandonedMockupOptionDrafts({
+        supabase,
+        storageSupabase: createServiceClient(),
+        projectId,
+        userId: userId!,
+      })
+      if (cleanupSummary.rowCount > 0) {
+        logInfo("MockupGenerate", "abandoned_drafts_cleaned", {
+          ...mockupLogContext,
+          ...cleanupSummary,
+        })
+      }
+    } catch (cleanupError) {
+      logWarn("MockupGenerate", "abandoned_draft_cleanup_failed", {
+        ...mockupLogContext,
+        error: cleanupError instanceof Error ? cleanupError.message : "Unknown cleanup error",
+      })
+    }
+
     // ─── Streaming path ─────────────────────────────────────────────────
     if (streamRequested === true) {
       isStreaming = true
@@ -154,6 +176,16 @@ export async function POST(request: Request) {
               projectName,
               projectId: projectId!,
               send,
+              onOptionGenerated: (payload) =>
+                upsertMockupOptionDraft({
+                  supabase,
+                  projectId: projectId!,
+                  userId: userId!,
+                  runId: payload.runId,
+                  option: payload.option,
+                  model: payload.model,
+                  designPlan: payload.designPlan,
+                }),
             })
             modelUsed = result.model
 
@@ -168,6 +200,21 @@ export async function POST(request: Request) {
 
             if (insertError) {
               throw new Error(`Failed to save generated mockups: ${insertError.message}`)
+            }
+            try {
+              await deleteMockupOptionDrafts({
+                supabase,
+                storageSupabase: createServiceClient(),
+                projectId: projectId!,
+                userId: userId!,
+                runId: result.runId,
+                deleteStorageObjects: true,
+              })
+            } catch (cleanupError) {
+              logWarn("MockupGenerate", "stream_draft_cleanup_failed", {
+                ...mockupLogContext,
+                error: cleanupError instanceof Error ? cleanupError.message : "Unknown cleanup error",
+              })
             }
             logInfo("MockupGenerate", "stream_generation_saved", {
               ...mockupLogContext,
@@ -235,6 +282,16 @@ export async function POST(request: Request) {
       mvpPlan,
       projectName,
       projectId,
+      onOptionGenerated: (payload) =>
+        upsertMockupOptionDraft({
+          supabase,
+          projectId: projectId!,
+          userId: userId!,
+          runId: payload.runId,
+          option: payload.option,
+          model: payload.model,
+          designPlan: payload.designPlan,
+        }),
     })
     modelUsed = result.model
 
@@ -247,6 +304,22 @@ export async function POST(request: Request) {
 
     if (insertError) {
       throw new Error(`Failed to save generated mockups: ${insertError.message}`)
+    }
+
+    try {
+      await deleteMockupOptionDrafts({
+        supabase,
+        storageSupabase: createServiceClient(),
+        projectId,
+        userId: userId!,
+        runId: result.runId,
+        deleteStorageObjects: true,
+      })
+    } catch (cleanupError) {
+      logWarn("MockupGenerate", "draft_cleanup_failed", {
+        ...mockupLogContext,
+        error: cleanupError instanceof Error ? cleanupError.message : "Unknown cleanup error",
+      })
     }
 
     await supabase

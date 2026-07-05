@@ -8,78 +8,130 @@ import { WaitlistForm } from "@/components/landing/waitlist-form"
 import { createServiceClient } from "@/lib/supabase/service"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { isWaitlistMode } from "@/lib/waitlist"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Check } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
-import { BuildMap } from "@/components/landing/build-map"
 import { HeroArtwork } from "@/components/landing/hero-artwork"
 import { TestimonialBand } from "@/components/landing/testimonial-band"
+import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
+import { FeatureProductPreview } from "@/components/landing/feature-product-preview"
 
 const navLinks = [
   { label: "Features", href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
   { label: "Pricing", href: "#pricing" },
 ]
 
-const productOutputs = [
+const handoffTools = [
+  { name: "Cursor", src: "/logos/cursor.svg" },
+  { name: "Claude Code", src: "/logos/claudecode.svg" },
+  { name: "Codex", src: "/logos/openai.png" },
+  { name: "GitHub Copilot", src: "/logos/githubcopilot.svg" },
+  { name: "Windsurf", src: "/logos/windsurf.svg" },
+  { name: "Cline", src: "/logos/cline.svg" },
+  { name: "Zed", src: "/logos/zedindustries.svg" },
+  { name: "Warp", src: "/logos/warp.svg" },
+  { name: "Devin", src: "/logos/devin.png" },
+  { name: "Lovable", src: "/logos/lovable.svg" },
+  { name: "v0", src: "/logos/v0.svg" },
+  { name: "Bolt", src: "/logos/bolt.png" },
+  { name: "Replit", src: "/logos/replit.svg" },
+  { name: "Sourcegraph", src: "/logos/sourcegraph.png" },
+  { name: "Tabnine", src: "/logos/tabnine.png" },
+  { name: "Gemini", src: "/logos/googlegemini.svg" },
+  { name: "JetBrains", src: "/logos/jetbrains.svg" },
+]
+
+interface FeatureSection {
+  eyebrow: string
+  title: string
+  description: string
+  bullets: { label: string; body: string }[]
+  /** Workspace nav item rendered as the section's live UI visual */
+  navKey: string
+  /** Subsection shown in its active state */
+  activeSectionId: string
+}
+
+const featureSections: FeatureSection[] = [
   {
-    eyebrow: "Research",
+    eyebrow: "01 / Market Research",
     title: "Know the market before you commit a sprint.",
     description:
       "Maker Compass maps competitors, pricing, positioning, gaps, and first wedges so your idea starts with context instead of guesswork.",
-    artifacts: ["Competitive scan", "Audience segments", "Differentiation wedges"],
+    bullets: [
+      { label: "Competitive scan", body: "Direct and indirect competitors, mapped with pricing and positioning." },
+      { label: "Audience segments", body: "Who to build for first, and how they talk about the problem." },
+      { label: "Differentiation wedges", body: "Where the open lane is for your specific idea." },
+    ],
+    // Live workspace nav + real content shown instead of a screenshot.
+    // Feature Comparison is the showcase section until live competitor search
+    // is fixed; switch activeSectionId to "market-research-direct-competitors"
+    // and re-export the sample data once competitor profiles generate again.
+    navKey: "market-research",
+    activeSectionId: "market-research-feature-matrix",
   },
   {
-    eyebrow: "Product",
+    eyebrow: "02 / Product Plan",
     title: "Turn the idea into a buildable plan.",
     description:
-      "Generate the product plan, first-version scope, acceptance criteria, mockup directions, and technical blueprint your coding agent needs to start cleanly.",
-    artifacts: ["Product plan", "First version plan", "Design mockups", "Technical spec"],
+      "Get exactly three user personas, user stories, grouped requirements, and a release plan your coding agent can build from without a translation step.",
+    bullets: [
+      { label: "Three user personas", body: "Grounded in the research, not guessed at." },
+      { label: "User stories and requirements", body: "Grouped and ready for a coding agent to scope." },
+      { label: "Release plan", body: "What ships first, and what waits for later." },
+    ],
+    navKey: "prd",
+    activeSectionId: "prd-user-personas",
+  },
+  {
+    eyebrow: "03 / First Version Plan",
+    title: "Scope the first release like a builder, not a committee.",
+    description:
+      "Narrow the first release into a realistic build sequence with must-have features, validation steps, and guardrails, so scope creep never gets a foothold.",
+    bullets: [
+      { label: "Build sequence", body: "A realistic order of operations for the first release." },
+      { label: "Validation plan", body: "How you will know the first version actually works." },
+      { label: "Scope guardrails", body: "What is explicitly out, so scope creep does not sneak back in." },
+    ],
+    navKey: "mvp",
+    activeSectionId: "mvp-validation-plan",
+  },
+  {
+    eyebrow: "04 / Design Mockups",
+    title: "See three directions before you write UI code.",
+    description:
+      "Compare three UI directions for the same core screens side by side, then hand off the one you pick instead of guessing at layout mid-build.",
+    bullets: [
+      { label: "Three UI directions", body: "Same core screens, three different visual takes." },
+      { label: "Side by side comparison", body: "Pick a direction without re-briefing a designer." },
+      { label: "Ready to hand off", body: "The chosen direction becomes the build reference." },
+    ],
+    navKey: "mockups",
+    activeSectionId: "mockups-concept-1",
+  },
+  {
+    eyebrow: "05 / AI Prompts",
+    title: "Hand your coding agent a brief it can run with.",
+    description:
+      "Maker Compass turns the plans into a recommended build tool, guardrails, and a ready-to-paste first prompt, so the handoff is copy, paste, build.",
+    bullets: [
+      { label: "Recommended build tool", body: "A concrete pick with the reasoning and starting cost." },
+      { label: "Next prompt", body: "A first prompt built from your plans, ready to paste." },
+      { label: "Guardrails and build sequence", body: "Constraints and an order of work that keep the agent on track." },
+    ],
+    navKey: "ai-prompts",
+    activeSectionId: "ai-prompts-recommended-build-tool",
   },
 ]
 
-const workflowSignals = [
-  "One intake becomes every core artifact.",
-  "Docs stay tied to the same project context.",
-  "Output is written for builders, not slide decks.",
-]
-
-const proofStats = [
-  {
-    value: "4",
-    label: "Build-ready artifacts",
-    body: "Market research, product plan, design mockups, and a first-version plan from one idea.",
-  },
-  {
-    value: "3",
-    label: "Mockup directions",
-    body: "Compare visual approaches before you spend time building the wrong interface.",
-  },
-  {
-    value: "1",
-    label: "Shared project context",
-    body: "Research, scope, UX direction, and build steps stay connected in one workspace.",
-  },
-]
-
-const steps = [
-  {
-    title: "Describe the idea",
-    body: "Share your target users, constraints, and what you want the first version to do.",
-  },
-  {
-    title: "Answer follow-up questions",
-    body: "Clarify the platform, user type, workflow, and scope before the project is created.",
-  },
-  {
-    title: "Review the plan",
-    body: "Get market research, product scope, first-version steps, and mockup directions in one workspace.",
-  },
-  {
-    title: "Start building",
-    body: "Use the generated docs as the handoff for your coding agent or implementation team.",
-  },
-]
+/**
+ * The visual half of each feature card: a live screenshot of the workspace UI
+ * rendering the exported sample project, embedded via /landing-preview/[navKey].
+ * See FeatureProductPreview for how the desktop-width iframe crop/scale works.
+ */
+function renderFeatureVisual(section: FeatureSection) {
+  return <FeatureProductPreview navKey={section.navKey} activeSectionId={section.activeSectionId} />
+}
 
 const plans = [
   {
@@ -225,94 +277,72 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* Trust bar: what Maker Compass hands off to, since there's no customer logo wall yet */}
       <SectionCard>
-        <section aria-label="Maker Compass proof points" className="grid border border-border-subtle bg-white md:grid-cols-3">
-          {proofStats.map((stat) => (
-            <div
-              key={stat.label}
-              className="border-b border-border-subtle p-5 last:border-b-0 sm:p-6 md:border-b-0 md:border-r md:last:border-r-0"
-            >
-              <p className="text-[2.5rem] font-semibold leading-none tracking-[-0.06em] text-primary sm:text-[3rem]">
-                {stat.value}
-              </p>
-              <p className="mt-3 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-                {stat.label}
-              </p>
-              <p className="mt-3 text-[15px] leading-relaxed text-text-secondary">
-                {stat.body}
-              </p>
-            </div>
-          ))}
+        <section aria-label="Where Maker Compass hands off" className="py-3 text-center">
+          <h2 className="mx-auto max-w-[760px] text-[1.75rem] leading-[1.05] tracking-[-0.05em] font-semibold sm:text-[2.25rem]">
+            Built to hand off clean, not create more busywork.
+          </h2>
+          <p className="mx-auto mt-4 max-w-[620px] text-[15px] leading-relaxed text-text-secondary">
+            Maker Compass front-loads the research and planning. When a project is ready, the output is structured
+            for the coding agent you already reach for, not another tool to learn.
+          </p>
+          <p className="mt-8 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+            Hands off to
+          </p>
+          <ToolLogoMarquee tools={handoffTools} />
         </section>
-      </SectionCard>
-
-      <SectionCard>
-        <BuildMap />
-      </SectionCard>
-
-      <SectionCard>
-        <TestimonialBand />
       </SectionCard>
 
       <SectionCard>
         <section id="features" className="py-3">
-          <h2 className="text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
+          <h2 className="max-w-[760px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
             From idea to momentum, without the usual excuses
           </h2>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
-            {productOutputs.map((item) => (
-              <article key={item.eyebrow} className="rounded-none border border-border-subtle bg-white p-6 md:p-8">
-                <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-                  {item.eyebrow}
-                </p>
-                <h3 className="mt-4 max-w-[620px] text-[1.45rem] font-semibold leading-tight tracking-[-0.04em] sm:text-[1.85rem] lg:text-[2.25rem]">
-                  {item.title}
-                </h3>
-                <p className="mt-4 max-w-[680px] text-[15px] leading-relaxed text-text-secondary">
-                  {item.description}
-                </p>
-                <div className="mt-7 flex flex-wrap gap-2">
-                  {item.artifacts.map((artifact) => (
-                    <span
-                      key={artifact}
-                      className="border border-border-subtle bg-[#F5F0EB] px-3 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-text-secondary"
-                    >
-                      {artifact}
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-5 grid gap-0 border border-border-subtle bg-text-primary text-white md:grid-cols-3">
-            {workflowSignals.map((signal) => (
-              <div key={signal} className="border-b border-white/15 p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
-                <p className="text-[15px] font-medium leading-relaxed">{signal}</p>
-              </div>
-            ))}
+          <div className="mt-10 space-y-10">
+            {featureSections.map((section, index) => {
+              const imageOnRight = index % 2 === 0
+              return (
+                <article
+                  key={section.eyebrow}
+                  className="grid items-stretch gap-6 border border-border-subtle bg-white md:grid-cols-2 md:gap-0"
+                >
+                  <div
+                    className={`p-6 md:p-10 ${imageOnRight ? "md:order-1" : "md:order-2"}`}
+                  >
+                    <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+                      {section.eyebrow}
+                    </p>
+                    <h3 className="mt-4 text-[1.45rem] font-semibold leading-tight tracking-[-0.04em] sm:text-[1.85rem]">
+                      {section.title}
+                    </h3>
+                    <p className="mt-4 max-w-[520px] text-[15px] leading-relaxed text-text-secondary">
+                      {section.description}
+                    </p>
+                    <ul className="mt-7 space-y-3">
+                      {section.bullets.map((bullet) => (
+                        <li key={bullet.label} className="flex items-start gap-3">
+                          <Check className="mt-1 h-4 w-4 shrink-0 text-text-primary" aria-hidden="true" />
+                          <p className="text-[15px] leading-relaxed text-text-secondary">
+                            <span className="font-semibold text-text-primary">{bullet.label}.</span> {bullet.body}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className={imageOnRight ? "md:order-2" : "md:order-1"}>
+                    {renderFeatureVisual(section)}
+                  </div>
+                </article>
+              )
+            })}
           </div>
         </section>
       </SectionCard>
 
       <SectionCard>
-        <section id="how-it-works" className="py-3">
-          <h2 className="max-w-[760px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
-            Your first version, broken into clear steps
-          </h2>
-
-          <div className="mt-8 space-y-4">
-            {steps.map((step) => (
-              <div key={step.title} className="border border-border-subtle p-4 md:p-6">
-                <h3 className="text-[1.2rem] font-semibold leading-tight tracking-[-0.03em] text-text-primary sm:text-[1.35rem]">
-                  {step.title}
-                </h3>
-                <p className="mt-2 text-[15px] leading-7 text-text-secondary">{step.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        <TestimonialBand />
       </SectionCard>
 
       <SectionCard>
@@ -400,7 +430,50 @@ export default async function LandingPage() {
       </section>
 
       <footer className="border-t border-border-subtle bg-[#F5F0EB]">
-        <div className={`${container} flex min-h-[88px] items-center text-sm`}>
+        <div className={`${container} grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr]`}>
+          <div>
+            <BrandWordmark href="/" logoSize={32} logoClassName="rounded-sm" labelClassName="text-base font-semibold tracking-[0.01em]" />
+            <p className="mt-4 max-w-[320px] text-sm leading-relaxed text-text-secondary">
+              Turn a one-line idea into research, a product plan, mockups, and a first-version build plan you can hand to a coding agent.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">Product</p>
+            <ul className="mt-4 space-y-3 text-sm">
+              {navLinks.map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} className="text-text-secondary hover:text-text-primary">
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">Account</p>
+            <ul className="mt-4 space-y-3 text-sm">
+              <li>
+                <Link href="/?modal=auth&mode=signin" scroll={false} className="text-text-secondary hover:text-text-primary">
+                  Sign In
+                </Link>
+              </li>
+              <li>
+                {waitlistMode ? (
+                  <a href="#waitlist" className="text-text-secondary hover:text-text-primary">
+                    Join Waitlist
+                  </a>
+                ) : (
+                  <Link href="/?modal=auth&mode=signup" scroll={false} className="text-text-secondary hover:text-text-primary">
+                    Get Started
+                  </Link>
+                )}
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className={`${container} flex min-h-[64px] items-center border-t border-border-subtle text-sm`}>
           <span className="font-mono text-[0.6875rem] tracking-[0.18em] text-text-muted">© 2026 Maker Compass. All rights reserved.</span>
         </div>
       </footer>

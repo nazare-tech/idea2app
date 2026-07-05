@@ -226,6 +226,29 @@ test("buildDocumentGenerationDisplayStates: mockup option statuses are only atta
   assert.equal(withoutOptions.mockups.mockupOptionStatuses, undefined)
 })
 
+test("buildDocumentGenerationDisplayStates: mockup option statuses survive terminal retry states", () => {
+  const options: MockupOptionStatus[] = [
+    { label: "Concept 1", status: "ready", message: "Ready" },
+    { label: "Concept 2", status: "needs_retry", message: "Needs retry" },
+    { label: "Concept 3", status: "queued", message: "Not started" },
+  ]
+  const previewImages = ["/api/mockups/image?projectId=p&path=p%2Fr%2Foption-a-storyboard.png"]
+
+  const states = buildDocumentGenerationDisplayStates({
+    documentTypes: docTypes,
+    labels,
+    hasContent: {},
+    queueItems: [item("mockups", "error", { error: "Mockups timed out" })],
+    mockupOptionStatuses: options,
+    mockupPreviewImages: previewImages,
+  })
+
+  assert.equal(states.mockups.displayStatus, "needs_retry")
+  assert.deepEqual(states.mockups.mockupOptionStatuses, options)
+  assert.deepEqual(states.mockups.mockupPreviewImages, previewImages)
+  assert.equal(states.prd.mockupOptionStatuses, undefined)
+})
+
 test("buildDocumentGenerationDisplayStates: mockup preview images attach only while generating mockups", () => {
   const previewImages = ["/api/mockups/image?projectId=p&path=p%2Fr%2Foption-a-storyboard.png"]
   const states = buildDocumentGenerationDisplayStates({

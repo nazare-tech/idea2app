@@ -31,11 +31,11 @@ test("Product Plan nav labels match the current right-panel section text", () =>
   assert.deepEqual(productPlan?.sections.slice(0, 8), [
     { id: "prd-introduction-overview", label: "Introduction & Overview" },
     { id: "prd-goals", label: "Goals" },
+    { id: "prd-team-milestones", label: "Team & Milestones" },
+    { id: "prd-success-metrics", label: "Success Metrics" },
     { id: "prd-user-personas", label: "User Personas" },
     { id: "prd-technical-considerations", label: "Technical Considerations" },
     { id: "prd-non-goals-out-of-scope", label: "Non-goals & Out of Scope" },
-    { id: "prd-success-metrics", label: "Success Metrics" },
-    { id: "prd-timeline-milestones", label: "Timeline & Milestones" },
     { id: "prd-follow-through", label: "Risks, Dependencies & Open Questions" },
   ])
 })
@@ -61,10 +61,10 @@ test("First Version nav labels match the current right-panel section text", () =
     { id: "mvp-summary", label: "MVP Summary" },
     { id: "mvp-bet", label: "The Bet" },
     { id: "mvp-target-user-problem", label: "Target User & Problem" },
-    { id: "mvp-core-user-flow", label: "Core User Flow" },
-    { id: "mvp-key-assumptions", label: "Key Assumptions" },
+    { id: "mvp-core-user-flow", label: "Core User Flows" },
+    { id: "mvp-key-assumptions", label: "Key Risks & Assumptions" },
     { id: "mvp-scope", label: "MVP Scope" },
-    { id: "mvp-suggested-stack", label: "Suggested Stack" },
+    { id: "mvp-suggested-stack", label: "Suggested Build Approach" },
     { id: "mvp-validation-plan", label: "Validation Plan" },
     { id: "mvp-cut-list", label: "Cut List" },
   ])
@@ -77,6 +77,7 @@ test("AI Prompts nav appears after Design Mockups with moved build handoff secti
   assert.ok(labels.indexOf("Design Mockups") < labels.indexOf("AI Prompts"))
   assert.equal(aiPrompts?.sourceType, "mvp")
   assert.deepEqual(aiPrompts?.sections, [
+    { id: "ai-prompts-recommended-build-tool", label: "Recommended Tool" },
     { id: "ai-prompts-next-prompt", label: "Next Prompt" },
     { id: "ai-prompts-build-guardrails", label: "AI Build Guardrails" },
     { id: "ai-prompts-build-sequence", label: "AI-Friendly Build Sequence" },

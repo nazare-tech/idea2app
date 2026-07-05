@@ -1421,7 +1421,7 @@ function PersonaShowcase({ section, projectId }: { section?: PlanningDocumentSec
   )
 }
 
-function UserStoryShowcase({ section }: { section?: PlanningDocumentSection }) {
+export function UserStoryShowcase({ section }: { section?: PlanningDocumentSection }) {
   if (!section) return null
 
   const stories = parseUserStories(parseNarrativeTable(section.content))
@@ -1585,7 +1585,7 @@ function getRequirementDisplayGroups(sectionContent: string): RequirementDisplay
     }))
 }
 
-function RequirementShowcase({ section }: { section?: PlanningDocumentSection }) {
+export function RequirementShowcase({ section }: { section?: PlanningDocumentSection }) {
   if (!section) return null
 
   const groups = getRequirementDisplayGroups(section.content)

@@ -2,7 +2,10 @@ import { NextResponse } from "next/server"
 
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { MOCKUP_STORAGE_BUCKET } from "@/lib/openrouter-image-mockup-pipeline"
-import { getStoragePathsFromOpenRouterImageMockupContent } from "@/lib/openrouter-image-mockup-format"
+import {
+  getStoragePathsFromOpenRouterImageMockupContent,
+} from "@/lib/openrouter-image-mockup-format"
+import { isMockupDraftImagePathOwned } from "@/lib/mockup-option-drafts"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"
@@ -43,6 +46,8 @@ export async function GET(request: Request) {
   const projectId = searchParams.get("projectId")
   const path = searchParams.get("path")
   const mockupId = searchParams.get("mockupId")
+  const draftRunId = searchParams.get("draftRunId")
+  let isDraftImagePath = false
 
   if (!projectId || !path) {
     logWarn("MockupImage", "validation_failed", {
@@ -80,8 +85,27 @@ export async function GET(request: Request) {
     getStoragePathsFromOpenRouterImageMockupContent(mockup.content).has(path),
   )
   if (!isOwnedSavedPath) {
-    logWarn("MockupImage", "path_not_owned", { ...userLogContext, projectId, mockupId })
-    return NextResponse.json({ error: "Image is not associated with this project" }, { status: 403 })
+    let isOwnedDraftPath = false
+    try {
+      isOwnedDraftPath = draftRunId
+        ? await isMockupDraftImagePathOwned({
+            supabase,
+            projectId,
+            userId: user.id,
+            runId: draftRunId,
+            storagePath: path,
+          })
+        : false
+    } catch (error) {
+      logError("MockupImage", "draft_ownership_lookup_failed", error, { ...userLogContext, projectId })
+      return NextResponse.json({ error: "Failed to verify mockup ownership" }, { status: 500 })
+    }
+
+    if (!isOwnedDraftPath) {
+      logWarn("MockupImage", "path_not_owned", { ...userLogContext, projectId, mockupId })
+      return NextResponse.json({ error: "Image is not associated with this project" }, { status: 403 })
+    }
+    isDraftImagePath = true
   }
 
   const storageSupabase = createServiceClient()
@@ -98,6 +122,10 @@ export async function GET(request: Request) {
   if (!contentType.startsWith("image/")) {
     logWarn("MockupImage", "invalid_content_type", { ...userLogContext, projectId, mockupId, contentType })
     return NextResponse.json({ error: "Stored object is not an image" }, { status: 415 })
+  }
+  if (isDraftImagePath && contentType === "image/svg+xml") {
+    logWarn("MockupImage", "invalid_draft_content_type", { ...userLogContext, projectId, contentType })
+    return NextResponse.json({ error: "Stored object is not a supported draft image" }, { status: 415 })
   }
 
   return new Response(await blob.arrayBuffer(), {

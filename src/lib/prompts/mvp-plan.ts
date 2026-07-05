@@ -174,16 +174,24 @@ Use the structure below, applying the compression rule for simple products.
 
 4–6 sentences: what it does, who it's for, the problem, and what this MVP will validate.
 
-## 2. Key Assumptions and Scope Decisions
+## 2. Key Risks, Assumptions, and Scope Decisions
 
-Only important assumptions, contradictions, scope cuts, validation decisions, and compliance flags. Skip the obvious. Labels:
+Start with the risks that must be retired before the builder cares about mockups or code. Prioritize risks by likely impact and uncertainty, and attach at least one concrete validation action or experiment to each risk. Then include only important assumptions, contradictions, scope cuts, validation decisions, and compliance flags. Skip the obvious. Labels:
 
+- \`[KEY RISK]\` — a risk to retire before or during the MVP
 - \`[HIGH CONFIDENCE]\` — strong signal from input
 - \`[ASSUMPTION]\` — reasonable inference from missing info
 - \`[CONFLICT RESOLVED]\` — contradiction found and resolved
 - \`[SCOPE DECISION]\` — feature cut / PRD reduction
 - \`[VALIDATION DECISION]\` — lighter format recommended before full build
 - \`[COMPLIANCE FLAG]\` — regulatory or sensitive-data concern
+
+Use this table first:
+
+| Risk to Retire | Impact | Uncertainty | Validation Action |
+|---|---|---|---|
+
+Then add concise labeled bullets for assumptions and decisions.
 
 ## 3. Target User and Problem
 
@@ -201,44 +209,23 @@ One primary user only. If two roles exist (buyer/seller, admin/member), name the
 - **Riskiest Product Assumption:** the key user-behavior or demand assumption to test.
 - **Riskiest Technical Assumption:** the key technical risk (API latency, approval timeline, data quality, AI accuracy). If none: "No major technical risk identified for the MVP."
 
-## 5. Core User Flow
+## 5. Core User Flows
 
-Shortest path from problem to value. Numbered, no branches.
+Consolidate the user flow, MVP scope, and must-have capabilities into one cohesive table. This section replaces separate "Core User Flow", "MVP Scope", and "Must-Have Features" sections.
 
-1. Entry point
-2. Access / signup
-3. Input / upload / configure
-4. Core processing or action
-5. Result / output / value delivered
-6. Save / export / share / pay / give feedback
+Use 5-8 rows. Each row should describe a required step or capability in the shortest path from problem to value. Do not include columns named \`Feature\` or \`Acceptance Criteria\`.
 
-Add 3–5 clarifying bullets only if needed.
+| Flow / Capability | User Action | Value / Why It Matters | Include in MVP | Exclude for Now | Validation Action |
+|---|---|---|---|---|---|
 
-## 6. MVP Scope
+Rules:
+- Every row must be part of the core workflow or required to validate the riskiest assumption.
+- \`Include in MVP\` must be explicit and implementation-oriented.
+- \`Exclude for Now\` should feel uncomfortable; if nothing is excluded for a row, write the closest adjacent capability that is deferred.
+- \`Validation Action\` must be a concrete observable test, not a generic acceptance criterion.
+- Keep broader product-plan material out of this section; this is first-version scope only.
 
-| Category | Include in MVP | Exclude for Now |
-|---|---|---|
-| User access | | |
-| Core input | | |
-| Core processing | | |
-| Core output | | |
-| Feedback / validation | | |
-| Payments (if relevant) | | |
-
-Be explicit. "Exclude for Now" should feel uncomfortable — that's the point.
-
-**Consistency check:** Every item in the Core User Flow (§5) or Must-Have Features (§7) must be marked **Include** here. Never label a core-flow step "Exclude for Now." Before finalizing, confirm these labels match the rest of the plan.
-
-## 7. Must-Have Features
-
-Only essential features. If it isn't part of the core workflow, it doesn't belong here.
-
-| Feature | Why It Matters | Acceptance Criteria |
-|---|---|---|
-
-Acceptance criteria must be specific and testable, e.g. "User can complete the core workflow without admin help"; "System shows a loading state during processing"; "User sees a descriptive error if the API call fails"; "Result is retrievable on page refresh."
-
-## 8. Suggested Build Approach
+## 6. Suggested Build Approach
 
 **Stack** — Use the PRD's stack if provided; otherwise apply product-type defaults. List only relevant layers; skip rows that don't apply; don't over-explain obvious choices.
 
@@ -254,9 +241,45 @@ Acceptance criteria must be specific and testable, e.g. "User can complete the c
 | Analytics (if needed) | | |
 | Deployment | | |
 
-**Manual Shortcuts** (required unless genuinely N/A) — concrete, product-specific things to do by hand instead of building, e.g. approve early users via a form; manage data in a Supabase table; send Stripe Payment Links by email; review AI outputs manually before display; use email for support; CSV export instead of a dashboard.
+### Tactical shortcuts for speed to market
 
-## 9. AI-Friendly Build Sequence
+Concrete, product-specific things to do by hand instead of building, e.g. approve early users via a form; manage data in a Supabase table; send Stripe Payment Links by email; review AI outputs manually before display; use email for support; CSV export instead of a dashboard. Prefer "ops over code" when it retires risk faster than software.
+
+## 7. Recommended AI Build Tool
+
+Choose exactly **one** primary tool for the builder to use next. Do not output a comparison table or backup list.
+
+Allowed tools only:
+- Cursor — best for technical builders working in an existing repo, especially full-stack web apps, backend-heavy work, auth, databases, tests, and maintainability.
+- Claude Code — best for terminal-first technical builders, complex repo changes, refactors, backend logic, and test-driven implementation.
+- Codex — best for repo/PR-style implementation where sandboxed tasks, reviewable diffs, and parallel agent work matter.
+- GitHub Copilot — best for teams already centered on GitHub issues, pull requests, and GitHub administration.
+- Devin — best for delegated agentic engineering tasks when the user wants a larger coding agent workflow and accepts higher cost/review needs.
+- Cline — best for technical users who want open-source VS Code agent control, bring-your-own-key usage, and low vendor lock-in.
+- Warp — best for shell-heavy developers who want terminal-native agent orchestration rather than a visual app builder.
+- Lovable — best for nontechnical founders building a hosted web app prototype quickly.
+- v0 — best for UI-first React/Next.js/Vercel apps where the next step is polished interface generation.
+- Bolt — best for fast browser-based web prototypes with hosting/database support.
+- Replit — best for beginner-friendly browser IDE workflows, simple hosted apps, demos, and collaboration.
+- Gemini Code Assist — best for low-cost Google Cloud-aligned code assistance, especially when the user already uses Google Cloud.
+
+Decision rules:
+- If the first version is a native desktop app, native mobile app, backend-heavy app, regulated/private-data workflow, or needs durable tests, prefer Cursor, Claude Code, Codex, Cline, GitHub Copilot, or Gemini Code Assist over browser app builders.
+- If the user is likely nontechnical and the first version is a web app prototype with ordinary backend needs, prefer Lovable or Bolt.
+- If the main risk is UI clarity or a Next.js/Vercel front end, prefer v0.
+- If the first version is a simple learning/demo app in a browser workspace, prefer Replit.
+- If the project has auth, payments, sensitive customer data, file ingestion, AI APIs, or database permissions, explicitly warn that the selected tool should be used with reviewable code, environment variables, and targeted tests.
+
+Use this exact format:
+
+### [Tool Name](https://official-tool-url.example)
+- **Why this tool**: One sentence tied to the selected platform, backend complexity, and user skill level.
+- **Best fit for this project**: One sentence explaining what this tool should build first.
+- **Expected starting cost**: A dated public-price estimate or "Free tier first, paid plan likely once iteration starts" if exact pricing is usage-based.
+- **Watch out**: One concrete limitation or safety concern.
+- **Handoff instruction**: One sentence telling the user how to paste/import the Next Prompt into this tool.
+
+## 8. AI-Friendly Build Sequence
 
 Small chunks, each given to an AI tool one at a time, each testable before moving on.
 
@@ -270,53 +293,31 @@ Small chunks, each given to an AI tool one at a time, each testable before movin
 - **Data-first:** schema → seed data → API layer → UI shell → input → output display → save/export → error states → deploy
 - **UI-first:** UI shell → mock data → input flow → backend connection → real data → output display → save/export → error states → deploy
 
-## 10. AI Build Guardrails
+## 9. Validation Plan
 
-Default guardrails (customize as needed):
+Frame this as a practical research plan, not a metrics dashboard. Separate audience, recruiting, research-plan steps, and phase thresholds. Numeric labels must explain what they count; do not output standalone unexplained numbers.
 
-- Build one chunk at a time; do not skip ahead or build anything under "Exclude for Now."
-- Before changes, inspect the existing codebase and summarize current architecture.
-- Don't add features outside MVP scope; don't add libraries without asking.
-- Use mock data before connecting complex backend logic; stub core third-party APIs first.
-- Add loading, error, empty, and success states for every core flow — not just the happy path.
-- Reuse components; keep files under ~200 lines; don't refactor unrelated files.
-- All sensitive API calls go through backend/server routes, never the client.
-- After each chunk: list files changed and explain how to test locally.
+### First test audience
+Specific ("5 freelance designers who manage proposals manually," not "potential users").
 
-Add product-specific constraints below as needed (e.g. "never store raw user files, only processed results"; "keep buyer/seller data separated"; "no admin functionality unless required").
+### How to find them
+The most realistic channel for this product type (B2B: cold LinkedIn DM / relevant Slack; B2C: targeted subreddit or group; internal: recruit the team directly; dev tool: Show HN / dev.to / GitHub discussions; marketplace: recruit 5-10 suppliers before opening demand).
 
-## 11. Validation Plan
+### Research plan
 
-- **First Test Audience:** specific ("5 freelance designers who manage proposals manually," not "potential users").
-- **How to Find Them:** the most realistic channel for this product type (B2B: cold LinkedIn DM / relevant Slack; B2C: targeted subreddit or group; internal: recruit the team directly; dev tool: Show HN / dev.to / GitHub discussions; marketplace: recruit 5–10 suppliers before opening demand).
+Use one table that combines research activities, the user question each activity answers, and the evidence needed to proceed. Do not create separate task, feedback-question, or suggested-metric subsections. Each row should describe one research activity, the question it answers, the observed signal or threshold, and the decision it informs.
 
-**Success Signals** (directional unless input supports exact targets):
-
-| Signal | What to Look For |
-|---|---|
-| Strong | Users complete the workflow and ask to use it again, or will pay / join a pilot |
-| Weak | Users find it interesting but don't complete it, or only engage when prompted |
-| Pivot | Users understand the product but don't care about the problem |
-
-**Suggested Metrics** (only those relevant; targets are starting points, not benchmarks):
-
-| Metric | Suggested Target | Why It Matters |
+| Research Activity | Question It Answers | Observable Signal / Threshold | Decision It Informs |
 |---|---|---|
 
-Possible metrics: completion rate, time to first value, repeat usage, output usefulness, manual correction rate (if AI), willingness to pay, pilot customers, successful transactions, time saved, activation, retention.
+### Phase thresholds
 
-**Key Feedback Questions** (4–6), e.g.: What did you expect this to do? Did you understand each step? Where did you get stuck? Was the output useful enough to act on? Would you use it again unprompted? Would you pay for or recommend it?
+| Phase | Audience / Task | Minimum Exit Criterion | Decision |
+|---|---|---|---|
 
-## 12. Cut List
+Include at least three phases: smoke test, pilot validation, and continue / pivot decision. Each phase must include a minimum success threshold or clear exit criterion.
 
-3–5 product-specific options for simplifying if the build grows too large.
-
-| If This Gets Complicated | Simplify By |
-|---|---|
-
-Examples: auth too slow → invite-only magic links; billing too complex → Payment Link sent manually; AI accuracy too low → add a manual review/edit step; admin dashboard too much → manage data in Supabase; onboarding too complex → do first 5 onboardings manually; real-time too complex → refresh on demand.
-
-## 13. Next Prompt for AI Coding Tool
+## 10. Next Prompt for AI Coding Tool
 
 A ready-to-paste prompt:
 
@@ -332,8 +333,8 @@ and the riskiest assumption has been testably exposed.
 
 Target user: [from §3]
 
-Core user flow:
-[numbered flow from §5]
+Core user flows:
+[table summary from §5]
 
 Tech stack:
 - Frontend: [X]
@@ -343,13 +344,16 @@ Tech stack:
 - AI/API: [X if relevant]
 - Deployment: [X]
 
+Recommended AI build tool:
+[Tool name and why from §7]
+
 Build only this first chunk:
-[Step 1 from §9]
+[Step 1 from §8]
 
 Out of scope for now:
-[top 3–5 exclusions from §6]
+[top 3-5 exclusions from §5]
 
-Rules (see full guardrails in the plan; key ones):
+Rules:
 - Inspect the codebase and summarize architecture before changing anything.
 - Build only this chunk; build nothing out of scope; don't refactor unrelated files.
 - Use mock data before real backend; add loading/error/empty states everywhere.
@@ -362,11 +366,11 @@ Rules (see full guardrails in the plan; key ones):
 
 # Output Prioritization
 
-Prioritize, in order: the riskiest assumption, the recommended validation format, the core workflow, the must-have scope, the AI-friendly build sequence, the validation method. Everything else stays brief unless it directly affects a build or validation decision.
+Prioritize, in order: the key risks to retire, the recommended validation format, the core user flows, the first-version scope, the AI-friendly build sequence, and the validation thresholds. Everything else stays brief unless it directly affects a build or validation decision.
 
 # Quality Bar
 
-Before finalizing, confirm: product types are reasonable; the first version is the lightest useful format; one primary user; the core flow is simple and branch-free; scope is narrow and exclusions are specific; must-have features are truly essential; the build sequence matches the validation format and each chunk is testable; manual shortcuts are practical; compliance-sensitive areas are flagged and handled safely; scope-table labels match the rest of the plan; metrics avoid fake precision; the final prompt is immediately usable; the output suits a solo developer, not a corporate team.
+Before finalizing, confirm: product types are reasonable; the first version is the lightest useful format; one primary user; key risks are prioritized by impact and uncertainty; core user flows are simple and branch-free; first-version scope is narrow and exclusions are specific; the build sequence matches the validation format and each chunk is testable; tactical shortcuts are practical; compliance-sensitive areas are flagged and handled safely; validation thresholds are clear; metrics avoid fake precision; the final prompt is immediately usable; the output suits a solo developer, not a corporate team.
 
 # Tone
 

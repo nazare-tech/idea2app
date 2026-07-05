@@ -4,9 +4,10 @@ import React from "react"
 import { Renderer, JSONUIProvider } from "@json-render/react"
 import { mockupRegistry } from "@/lib/json-render/registry"
 import type { Spec } from "@json-render/core"
-import { Monitor, Smartphone, Tablet, Layers, Download, ChevronDown, FileDown } from "lucide-react"
+import { Monitor, Smartphone, Tablet, Layers, Download, ChevronDown, FileDown, X } from "lucide-react"
 import { extractMockupOptions } from "@/lib/mockup-format-contract"
 import { parseOpenRouterImageMockupContent, type OpenRouterImageMockupContent } from "@/lib/openrouter-image-mockup-format"
+import type { MockupOptionStatus } from "@/lib/document-generation-display-status"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,8 @@ interface MockupRendererProps {
   className?: string
   projectName?: string
   projectId?: string
+  expectedOptionLabels?: string[]
+  optionStatuses?: MockupOptionStatus[]
 }
 
 // ---- JSON-render mockup types and parsing ----
@@ -680,17 +683,59 @@ function parseOpenRouterImageContent(content: string): OpenRouterImageMockupCont
   return parseOpenRouterImageMockupContent(content)
 }
 
+function parseDraftOpenRouterImageContent(content: string): OpenRouterImageMockupContent | null {
+  try {
+    const parsed = JSON.parse(content) as Partial<OpenRouterImageMockupContent>
+    if (
+      (parsed?.type !== "openrouter-image" && parsed?.type !== "openrouter-image-v2") ||
+      typeof parsed.model !== "string" ||
+      !Array.isArray(parsed.options)
+    ) {
+      return null
+    }
+
+    return {
+      type: parsed.type,
+      model: parsed.model,
+      generatedAt: typeof parsed.generatedAt === "string" ? parsed.generatedAt : "",
+      options: parsed.options,
+    }
+  } catch {
+    return null
+  }
+}
+
+function getConceptLabel(index: number): string {
+  return `Concept ${index + 1}`
+}
+
+function getDesignRationaleText(description: string): string {
+  const trimmed = description.trim()
+  if (!trimmed) return ""
+  return /^design rationale:/i.test(trimmed)
+    ? trimmed
+    : `Design rationale: ${trimmed}`
+}
+
 function OpenRouterImageMockupViewer({
   data,
   projectName,
+  expectedOptionLabels,
+  optionStatuses,
 }: {
   data: OpenRouterImageMockupContent
   projectName?: string
+  expectedOptionLabels?: string[]
+  optionStatuses?: MockupOptionStatus[]
 }) {
   const [downloadingLabel, setDownloadingLabel] = React.useState<string | null>(null)
+  const [lightboxOption, setLightboxOption] = React.useState<{
+    imageUrl: string
+    title: string
+    conceptLabel: string
+  } | null>(null)
 
-  const handleDownload = React.useCallback(async (index: number) => {
-    const option = data.options[index]
+  const handleDownload = React.useCallback(async (option: OpenRouterImageMockupContent["options"][number]) => {
     if (!option) return
 
     setDownloadingLabel(option.label)
@@ -711,77 +756,164 @@ function OpenRouterImageMockupViewer({
     } finally {
       setDownloadingLabel(null)
     }
-  }, [data.options, projectName])
+  }, [projectName])
+
+  React.useEffect(() => {
+    if (!lightboxOption) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setLightboxOption(null)
+      }
+    }
+    const previousOverflow = document.body.style.overflow
+
+    document.body.style.overflow = "hidden"
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [lightboxOption])
+
+  const optionsByLabel = React.useMemo(
+    () => new Map(data.options.map((option) => [option.label.toUpperCase(), option])),
+    [data.options],
+  )
+  const statusByLabel = React.useMemo(
+    () => new Map(
+      (optionStatuses ?? []).map((status) => {
+        const match = status.label.match(/[ABC]/i)
+        return [match?.[0]?.toUpperCase() ?? status.label.toUpperCase(), status]
+      }),
+    ),
+    [optionStatuses],
+  )
+  const slotLabels = expectedOptionLabels?.length
+    ? expectedOptionLabels.map((label) => label.toUpperCase())
+    : data.options.map((option) => option.label.toUpperCase())
 
   return (
     <div className="space-y-8 w-full">
-      {data.options.map((option, index) => {
+      {slotLabels.map((label, index) => {
+        const option = optionsByLabel.get(label)
+        const status = statusByLabel.get(label)
+        const conceptLabel = getConceptLabel(index)
+        if (!option) {
+          return (
+            <div
+              key={label}
+              id={`mockups-concept-${index + 1}`}
+              className="overflow-hidden rounded-[12px] border border-[#e8ddd5] bg-white"
+            >
+              <div className="flex min-h-[420px] flex-col gap-5 p-6">
+                <div>
+                  <p className="font-mono text-[11px] font-medium uppercase leading-[16.5px] tracking-[0.18em] text-[#6b7280]">
+                    {conceptLabel}
+                  </p>
+                  <p className="mt-1 text-sm font-medium leading-5 text-[#1c1917]">
+                    {status?.message || "Waiting for image"}
+                  </p>
+                </div>
+                <div className="flex flex-1 items-center justify-center rounded-lg bg-[#f8f8f7]">
+                  <div className="w-full max-w-4xl space-y-4">
+                    <div className="aspect-[21/9] w-full animate-pulse rounded-lg bg-white" />
+                    <div className="space-y-2">
+                      <div className="h-3 w-32 animate-pulse rounded bg-gray-200" />
+                      <div className="h-3 w-2/3 animate-pulse rounded bg-gray-100" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
         const isDownloading = downloadingLabel === option.label
+        const rationaleText = getDesignRationaleText(option.description)
 
         return (
           <div
             key={option.label}
             id={`mockups-concept-${index + 1}`}
-            className="overflow-hidden rounded-xl border border-border bg-white"
+            className="overflow-hidden rounded-[12px] border border-[#e8ddd5] bg-white"
           >
-            <div className="flex items-center gap-3 border-b border-border px-5 py-3">
-              <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                Option {option.label}
-              </span>
-              <span className="text-sm font-medium text-foreground">{option.title}</span>
-            </div>
-
-            <div className="flex min-h-[420px] flex-col">
-              <div className="overflow-x-auto bg-white p-3 sm:p-5">
-                <div className="min-w-[960px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={option.imageUrl}
-                    alt={`${option.title} mockup option ${option.label}`}
-                    className="h-auto w-full rounded-lg border border-border bg-white object-contain shadow-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="flex w-full flex-col gap-5 border-t border-border p-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="space-y-4">
-                  <div>
-                    <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                      Option {option.label}
-                    </p>
-                    <p className="mt-1 text-sm font-medium text-foreground">{option.title}</p>
-                  </div>
-                  {option.description && (
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {option.description}
-                    </p>
-                  )}
-                  {option.screens && option.screens.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                      {option.screens.map((screen, screenIndex) => (
-                        <div key={`${option.label}-${screen.name}-${screenIndex}`} className="rounded-md border border-border bg-muted/20 p-3">
-                          <p className="text-xs font-medium text-foreground">{screen.name}</p>
-                          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{screen.caption}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+            <div className="flex min-h-[420px] flex-col gap-5 p-6">
+              <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="font-mono text-[11px] font-medium uppercase leading-[16.5px] tracking-[0.18em] text-[#6b7280]">
+                    {conceptLabel}
+                  </p>
+                  <p className="mt-1 text-sm font-medium leading-5 text-[#1c1917]">{option.title}</p>
                 </div>
 
                 <button
                   type="button"
-                  className="flex w-full shrink-0 items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-xs font-medium transition-colors hover:bg-muted/50 disabled:opacity-50 lg:w-auto"
+                  className="flex w-full shrink-0 items-center justify-center gap-2 rounded-[6px] border border-[#e8ddd5] px-[16.909px] py-[8.909px] text-xs font-medium leading-4 text-[#1c1917] transition-colors hover:bg-[#f8f4f1] disabled:opacity-50 sm:w-auto"
                   disabled={downloadingLabel !== null}
-                  onClick={() => handleDownload(index)}
+                  onClick={() => handleDownload(option)}
                 >
                   <Download className="h-3.5 w-3.5" />
                   <span>{isDownloading ? "Downloading..." : "Export Image"}</span>
                 </button>
               </div>
+
+              <button
+                type="button"
+                aria-label={`Open ${conceptLabel} mockup in lightbox`}
+                className="block w-full cursor-zoom-in rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                onClick={() => {
+                  setLightboxOption({
+                    imageUrl: option.imageUrl,
+                    title: option.title,
+                    conceptLabel,
+                  })
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={option.imageUrl}
+                  alt={`${conceptLabel}: ${option.title}`}
+                  className="h-auto w-full rounded-lg bg-white object-contain"
+                />
+              </button>
+
+              {rationaleText && (
+                <p className="text-sm leading-[22.75px] text-[#6b7280]">
+                  {rationaleText}
+                </p>
+              )}
             </div>
           </div>
         )
       })}
+      {lightboxOption && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${lightboxOption.conceptLabel} mockup preview`}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLightboxOption(null)}
+        >
+          <div className="relative flex max-h-full w-full max-w-7xl items-center justify-center" onClick={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              aria-label="Close lightbox"
+              className="absolute right-0 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white text-foreground shadow-lg transition-colors hover:bg-muted"
+              onClick={() => setLightboxOption(null)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightboxOption.imageUrl}
+              alt={`${lightboxOption.conceptLabel}: ${lightboxOption.title}`}
+              className="max-h-[calc(100vh-4rem)] w-auto max-w-full rounded-lg bg-white object-contain shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1225,11 +1357,21 @@ function splitSpecIntoPages(spec: Spec): MockupPage[] {
  * Renders mockup content — either as interactive json-render components (new)
  * or as ASCII art wireframes (legacy). Auto-detects the format.
  */
-export function MockupRenderer({ content, className = "", projectName, projectId }: MockupRendererProps) {
+export function MockupRenderer({
+  content,
+  className = "",
+  projectName,
+  projectId,
+  expectedOptionLabels,
+  optionStatuses,
+}: MockupRendererProps) {
   void projectId
   // All hooks must be called unconditionally before any early return (Rules of Hooks)
   const retiredHtmlData = React.useMemo(() => parseRetiredHtmlContent(content), [content])
-  const openRouterImageData = React.useMemo(() => parseOpenRouterImageContent(content), [content])
+  const openRouterImageData = React.useMemo(
+    () => parseOpenRouterImageContent(content) ?? (expectedOptionLabels?.length ? parseDraftOpenRouterImageContent(content) : null),
+    [content, expectedOptionLabels],
+  )
 
   const patchSpec = React.useMemo(() => {
     if (retiredHtmlData || openRouterImageData) return null // skip when typed mockup format detected
@@ -1254,7 +1396,12 @@ export function MockupRenderer({ content, className = "", projectName, projectId
   if (openRouterImageData) {
     return (
       <div className={className}>
-        <OpenRouterImageMockupViewer data={openRouterImageData} projectName={projectName} />
+        <OpenRouterImageMockupViewer
+          data={openRouterImageData}
+          projectName={projectName}
+          expectedOptionLabels={expectedOptionLabels}
+          optionStatuses={optionStatuses}
+        />
       </div>
     )
   }

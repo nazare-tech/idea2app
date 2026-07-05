@@ -6,7 +6,7 @@ import type { DocumentType } from "@/lib/document-definitions"
 
 interface GenerateAllHydratorProps {
   projectId: string
-  /** Called whenever a generation step completes — typically `router.refresh()` */
+  /** Called whenever a generation step completes so the workspace can reload changed documents. */
   onStepComplete: OnStepCompleteFn
   /** Live document status reader from the workspace */
   getDocumentStatus: (type: DocumentType) => "done" | "in_progress" | "pending"

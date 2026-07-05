@@ -1,5 +1,3 @@
-"use client"
-
 import Image from "next/image"
 import Link from "next/link"
 import { APP_BRAND_LOGO_ALT, APP_BRAND_LOGO_SRC } from "@/lib/app-brand"

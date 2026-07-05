@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { AnchorNav } from "@/components/layout/anchor-nav"
 import { ScrollableContent } from "@/components/layout/scrollable-content"
 import { ProjectHeader } from "@/components/layout/project-header"
@@ -47,7 +47,6 @@ export function ProjectWorkspace({
   initialDocuments,
   user,
 }: ProjectWorkspaceProps) {
-  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [projectName, setProjectName] = useState(project.name)
@@ -369,6 +368,194 @@ export function ProjectWorkspace({
     )
   ), [mockupDraftOptions])
 
+  useEffect(() => {
+    if (mockups.length > 0) {
+      setMockupDraftOptions([])
+      setMockupOptionStatuses([])
+    }
+  }, [mockups.length])
+
+  useEffect(() => {
+    if (mockups.length > 0 || !mockupDraftRunId) return
+
+    const optionLabels = ["A", "B", "C"] as const
+    const getOptionStatusLabel = (label: typeof optionLabels[number]) => `Option ${label}`
+    let isCanceled = false
+
+    const recoverLocalDraftOptions = async () => {
+      try {
+        const response = await fetch("/api/mockups/recover-options", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId: project.id,
+            runId: mockupDraftRunId,
+            designPlan: mockupDraftDesignPlan,
+          }),
+        })
+        const payload = await response.json().catch(() => null)
+        if (!response.ok || isCanceled) return
+
+        const storedOptions = Array.isArray(payload?.options)
+          ? payload.options.filter((option: unknown): option is OpenRouterImageMockupOption =>
+            Boolean(
+              option &&
+              typeof option === "object" &&
+              typeof (option as OpenRouterImageMockupOption).label === "string" &&
+              typeof (option as OpenRouterImageMockupOption).storagePath === "string",
+            )
+          )
+          : []
+
+        if (storedOptions.length === 0) return
+
+        setMockupDraftOptions((prev) => {
+          const optionsByLabel = new Map(prev.map((option) => [option.label.toUpperCase(), option]))
+          for (const option of storedOptions) {
+            const label = option.label.toUpperCase()
+            if (optionLabels.includes(label as typeof optionLabels[number])) {
+              optionsByLabel.set(label, option)
+            }
+          }
+          return optionLabels
+            .map((label) => optionsByLabel.get(label))
+            .filter((option): option is OpenRouterImageMockupOption => Boolean(option))
+        })
+
+        setMockupOptionStatuses((prev) => {
+          const existing = new Map(prev.map((option) => [option.label, option]))
+          for (const option of storedOptions) {
+            const label = option.label.toUpperCase() as typeof optionLabels[number]
+            if (!optionLabels.includes(label)) continue
+            existing.set(getOptionStatusLabel(label), {
+              label: getOptionStatusLabel(label),
+              status: "ready",
+              message: "Recovered",
+            })
+          }
+
+          return optionLabels.map((label) =>
+            existing.get(getOptionStatusLabel(label)) ?? {
+              label: getOptionStatusLabel(label),
+              status: "needs_retry" as const,
+              message: "Needs retry",
+            }
+          )
+        })
+      } catch {
+        // Draft recovery is opportunistic; manual generation can still retry missing options.
+      }
+    }
+
+    void recoverLocalDraftOptions()
+
+    return () => {
+      isCanceled = true
+    }
+  }, [mockupDraftDesignPlan, mockupDraftRunId, mockups.length, project.id])
+
+  useEffect(() => {
+    if (mockups.length > 0) return
+
+    const mockupQueueItem = generateAllQueue.find((item) =>
+      item.docType === "mockups" &&
+      item.status === "generating" &&
+      typeof item.runId === "string" &&
+      item.runId.trim().length > 0
+    )
+    const runId = mockupQueueItem?.runId?.trim()
+    if (!runId) return
+
+    const optionLabels = ["A", "B", "C"] as const
+    const getOptionStatusLabel = (label: typeof optionLabels[number]) => `Option ${label}`
+    let isCanceled = false
+
+    const markRecoveredOptions = (storedOptions: OpenRouterImageMockupOption[]) => {
+      if (storedOptions.length === 0) return
+
+      setMockupDraftRunId(runId)
+      setMockupDraftOptions((prev) => {
+        const optionsByLabel = new Map(prev.map((option) => [option.label.toUpperCase(), option]))
+        for (const option of storedOptions) {
+          const label = option.label.toUpperCase()
+          if (optionLabels.includes(label as typeof optionLabels[number])) {
+            optionsByLabel.set(label, option)
+          }
+        }
+        return optionLabels
+          .map((label) => optionsByLabel.get(label))
+          .filter((option): option is OpenRouterImageMockupOption => Boolean(option))
+      })
+      setMockupOptionStatuses((prev) => {
+        const existing = new Map(prev.map((option) => [option.label, option]))
+        for (const option of storedOptions) {
+          const label = option.label.toUpperCase() as typeof optionLabels[number]
+          if (!optionLabels.includes(label)) continue
+          existing.set(getOptionStatusLabel(label), {
+            label: getOptionStatusLabel(label),
+            status: "ready",
+            message: "Ready",
+          })
+        }
+
+        return optionLabels.map((label) =>
+          existing.get(getOptionStatusLabel(label)) ?? {
+            label: getOptionStatusLabel(label),
+            status: "generating" as const,
+            message: "Generating",
+          }
+        )
+      })
+    }
+
+    const recoverQueueOptions = async () => {
+      try {
+        const response = await fetch("/api/mockups/recover-options", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId: project.id,
+            runId,
+          }),
+        })
+        const payload = await response.json().catch(() => null)
+        if (!response.ok || isCanceled) return
+
+        const storedOptions = Array.isArray(payload?.options)
+          ? payload.options.filter((option: unknown): option is OpenRouterImageMockupOption =>
+            Boolean(
+              option &&
+              typeof option === "object" &&
+              typeof (option as OpenRouterImageMockupOption).label === "string" &&
+              typeof (option as OpenRouterImageMockupOption).storagePath === "string",
+            )
+          )
+          : []
+        markRecoveredOptions(storedOptions)
+      } catch {
+        // Recovery is opportunistic; the queue status remains the source of truth.
+      }
+    }
+
+    setMockupOptionStatuses((prev) => {
+      if (prev.length > 0) return prev
+      return optionLabels.map((label) => ({
+        label: getOptionStatusLabel(label),
+        status: "generating" as const,
+        message: "Generating",
+      }))
+    })
+    void recoverQueueOptions()
+    const interval = window.setInterval(() => {
+      void recoverQueueOptions()
+    }, 5000)
+
+    return () => {
+      isCanceled = true
+      window.clearInterval(interval)
+    }
+  }, [generateAllQueue, mockups.length, project.id])
+
   const displayStates = buildDocumentGenerationDisplayStates({
     documentTypes: ["competitive", "prd", "mvp", "mockups"],
     labels: {
@@ -504,6 +691,7 @@ export function ProjectWorkspace({
     isGenerating: boolean
     isLoading?: boolean
     displayState?: DocumentGenerationDisplayState
+    mockupDraftOptions?: OpenRouterImageMockupOption[]
   }> = {
     competitive: {
       content: getDocumentContent("competitive"),
@@ -532,6 +720,7 @@ export function ProjectWorkspace({
       isGenerating: generatingDocuments["mockups"] || displayStates.mockups?.displayStatus === "generating",
       isLoading: !loadedDocuments.mockups,
       displayState: displayStates.mockups,
+      mockupDraftOptions,
     },
   }
 
@@ -558,8 +747,7 @@ export function ProjectWorkspace({
       : VISIBLE_WORKSPACE_DOCUMENT_TYPES
 
     void loadWorkspaceDocuments(docTypes, { force: true })
-    router.refresh()
-  }, [loadWorkspaceDocuments, router])
+  }, [loadWorkspaceDocuments])
 
   return (
     <>

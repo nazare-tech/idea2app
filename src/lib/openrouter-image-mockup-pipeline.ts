@@ -12,6 +12,7 @@ import {
   buildMockupImageProxyUrl,
   parseOpenRouterImageMockupContent,
   getStoragePathsFromOpenRouterImageMockupContent,
+  isValidDraftMockupImagePath,
   type OpenRouterImageMockupContent,
   type OpenRouterImageMockupOption,
 } from "@/lib/openrouter-image-mockup-format"
@@ -120,6 +121,7 @@ export {
   OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
   buildMockupImageProxyUrl,
   getStoragePathsFromOpenRouterImageMockupContent,
+  isValidDraftMockupImagePath,
   parseOpenRouterImageMockupContent,
 }
 export type { OpenRouterImageMockupContent, OpenRouterImageMockupOption }
@@ -128,15 +130,18 @@ export interface GenerateOpenRouterImageMockupInput {
   mvpPlan: string
   projectName: string
   projectId: string
+  runId?: string
   idea?: string
   intakeContext?: string
   productPlan?: string
   send?: (event: object) => void
+  onOptionGenerated?: (payload: OpenRouterImageMockupOptionGeneratedPayload) => Promise<void>
 }
 
 export interface GenerateOpenRouterImageMockupResult {
   content: string
   model: string
+  runId: string
   source: typeof OPENROUTER_IMAGE_MOCKUP_SOURCE | typeof OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE
   metadata: Database["public"]["Tables"]["mockups"]["Insert"]["metadata"]
 }
@@ -154,12 +159,20 @@ export interface GenerateOpenRouterImageMockupOptionInput {
   intakeContext?: string
   productPlan?: string
   designPlan?: MockupDesignPlan
+  onOptionGenerated?: (payload: OpenRouterImageMockupOptionGeneratedPayload) => Promise<void>
 }
 
 export interface GenerateOpenRouterImageMockupOptionResult {
   option: OpenRouterImageMockupOption
   model: string
   source: typeof OPENROUTER_IMAGE_MOCKUP_SOURCE | typeof OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE
+  runId: string
+  designPlan: MockupDesignPlan
+}
+
+export interface OpenRouterImageMockupOptionGeneratedPayload {
+  option: OpenRouterImageMockupOption
+  model: string
   runId: string
   designPlan: MockupDesignPlan
 }
@@ -254,10 +267,12 @@ export async function generateOpenRouterImageMockup({
   mvpPlan,
   projectName,
   projectId,
+  runId: providedRunId,
   idea,
   intakeContext,
   productPlan,
   send,
+  onOptionGenerated,
 }: GenerateOpenRouterImageMockupInput): Promise<GenerateOpenRouterImageMockupResult> {
   if (!process.env.OPENROUTER_API_KEY) {
     throw new Error("OPENROUTER_API_KEY environment variable is not configured")
@@ -265,7 +280,7 @@ export async function generateOpenRouterImageMockup({
 
   const model = getOpenRouterMockupImageModel()
   const plannerModel = getOpenRouterMockupPlannerModel()
-  const runId = crypto.randomUUID()
+  const runId = providedRunId || crypto.randomUUID()
   const generatedAt = new Date().toISOString()
   const storageSupabase = createServiceClient() as ServerSupabaseClient
   const openrouter = new OpenAI({
@@ -331,6 +346,7 @@ export async function generateOpenRouterImageMockup({
         projectId,
         runId,
         designPlan,
+        onOptionGenerated,
       }),
     ),
   )
@@ -347,17 +363,9 @@ export async function generateOpenRouterImageMockup({
   const imageSkeletonAssetPaths = Object.fromEntries(
     generatedOptions.map((option) => [option.label, option.skeletonAssetPath]),
   )
-  const contentOptions = generatedOptions.map((option) => ({
-    label: option.label,
-    title: option.title,
-    imageUrl: option.imageUrl,
-    storagePath: option.storagePath,
-    description: option.description,
-    contentType: option.contentType,
-    screens: option.screens,
-    ...(option.width ? { width: option.width } : {}),
-    ...(option.height ? { height: option.height } : {}),
-  }))
+  const contentOptions = generatedOptions.map((option) =>
+    buildCanonicalMockupContentOption({ projectId, option })
+  )
 
   send?.({ type: "stage", message: "Saving mockup images...", step: 5, totalSteps: 5 })
 
@@ -371,6 +379,7 @@ export async function generateOpenRouterImageMockup({
   return {
     content: JSON.stringify(content),
     model,
+    runId,
     source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
     metadata: {
       source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
@@ -390,6 +399,26 @@ export async function generateOpenRouterImageMockup({
   }
 }
 
+export function buildCanonicalMockupContentOption({
+  projectId,
+  option,
+}: {
+  projectId: string
+  option: OpenRouterImageMockupOption
+}): OpenRouterImageMockupOption {
+  return {
+    label: option.label,
+    title: option.title,
+    imageUrl: buildMockupImageProxyUrl({ projectId, storagePath: option.storagePath }),
+    storagePath: option.storagePath,
+    description: option.description,
+    contentType: option.contentType,
+    ...(option.screens ? { screens: option.screens } : {}),
+    ...(option.width ? { width: option.width } : {}),
+    ...(option.height ? { height: option.height } : {}),
+  }
+}
+
 export async function generateOpenRouterImageMockupOption({
   mvpPlan,
   projectName,
@@ -403,6 +432,7 @@ export async function generateOpenRouterImageMockupOption({
   intakeContext,
   productPlan,
   designPlan: designPlanOverride,
+  onOptionGenerated,
 }: GenerateOpenRouterImageMockupOptionInput): Promise<GenerateOpenRouterImageMockupOptionResult> {
   if (!process.env.OPENROUTER_API_KEY) {
     throw new Error("OPENROUTER_API_KEY environment variable is not configured")
@@ -451,6 +481,7 @@ export async function generateOpenRouterImageMockupOption({
     systemPrompt,
     userPrompt,
     designPlan,
+    onOptionGenerated,
   })
   logInfo("OpenRouterMockup", "single_option_generated", {
     projectId,
@@ -483,6 +514,7 @@ async function generateAndStoreOption({
   systemPrompt,
   userPrompt,
   designPlan,
+  onOptionGenerated,
 }: {
   config: typeof OPENROUTER_MOCKUP_OPTION_CONFIGS[number]
   model: string
@@ -495,6 +527,7 @@ async function generateAndStoreOption({
   systemPrompt?: string
   userPrompt?: string
   designPlan: MockupDesignPlan
+  onOptionGenerated?: (payload: OpenRouterImageMockupOptionGeneratedPayload) => Promise<void>
 }) {
   const direction = designPlan.directions.find((item) => item.label === config.label)
   if (!direction) {
@@ -583,10 +616,10 @@ async function generateAndStoreOption({
     height: parsedImage.height,
   })
 
-  return {
+  const generatedOption = {
     label: config.label,
     title: direction.name,
-    imageUrl: buildMockupImageProxyUrl({ projectId, storagePath }),
+    imageUrl: buildMockupImageProxyUrl({ projectId, storagePath, draftRunId: runId }),
     storagePath,
     description: extractAssistantText(choice) || formatDirectionForPrompt(direction),
     contentType: parsedImage.contentType,
@@ -602,6 +635,24 @@ async function generateAndStoreOption({
     skeletonAssetPath: skeleton.publicPath,
     skeletonLabel: skeleton.label,
   }
+
+  try {
+    await onOptionGenerated?.({
+      option: generatedOption,
+      model,
+      runId,
+      designPlan,
+    })
+  } catch (error) {
+    logError("OpenRouterImageMockup", "option_progress_callback_failed", error, {
+      projectId,
+      runId,
+      optionLabel: generatedOption.label,
+      storagePath,
+    })
+  }
+
+  return generatedOption
 }
 
 export function getOpenRouterMockupImageTimeoutMs() {

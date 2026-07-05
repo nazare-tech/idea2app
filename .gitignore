@@ -69,6 +69,7 @@ src/lib/stitch/test-fixture.json
 /*.png
 /design/*.png
 /tmp/
+/ui-evidence/
 
 # build, lint, and tooling artifacts (regenerable; do not track)
 /build.log

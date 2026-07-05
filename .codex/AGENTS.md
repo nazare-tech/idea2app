@@ -2,11 +2,14 @@
 
 ## Workflow Orchestration
 
-### 1. Plan Mode Default
+### 1. Autonomous Plan Default
 
-* Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+* For any non-trivial task (3+ steps or architectural decisions), create or update a markdown plan in `docs/plans/`
+* Include clarifying questions with Recommendation A/B options and trade-offs
+* Include an Architecture Improvement Opportunities section that looks for scoped durability, idempotency, ownership validation, contract-sync, parser/validator, recovery, observability, modularity, reuse, progressive-loading, or rollback improvements. Record the benefit, trade-off, boundaries/files, and selected/deferred/rejected status for each opportunity.
+* Pick Recommendation A by default and proceed without waiting unless repo/user instructions, safety constraints, or `docs/plans/recommendation-selection-rules.md` point elsewhere
 * If something goes sideways, STOP and re-plan immediately – don't keep pushing
-* Use plan mode for verification steps, not just building
+* Include verification steps, not just building
 * Write detailed specs upfront to reduce ambiguity
 
 ### 2. Subagent Strategy
@@ -18,7 +21,8 @@
 
 ### 3. Self-Improvement Loop
 
-* After ANY correction from the user: update `tasks/lessons.md` with the pattern
+* After ANY correction from the user: update `docs/plans/recommendation-selection-rules.md` with the generalized decision rule once the root reason is clear
+* When the correction involves a previous Recommendation A/B choice, ask why the corrected option better matched the user's intent before recording the rule
 * Write rules for yourself that prevent the same mistake
 * Ruthlessly iterate on these lessons until mistake rate drops
 * Review lessons at session start for relevant project
@@ -26,6 +30,9 @@
 ### 4. Verification Before Done
 
 * Never mark a task complete without proving it works
+* For UI, visual, user-flow, or user-visible backend changes, verify through the real local UI as a real user and capture screenshot or video evidence for the thread
+* Save verification screenshots/videos under `ui-evidence/` using a date/task subfolder; this directory lives inside the repo working tree but is ignored by Git. Include the exact path in the task thread and plan/review
+* Do not patch routes, use fixtures, mock providers, skip auth, use dummy env values, or shorten asynchronous waits just to make UI verification faster
 * Diff behavior between main and your changes when relevant
 * Ask yourself: "Would a staff engineer approve this?"
 * Run tests, check logs, demonstrate correctness
@@ -33,6 +40,7 @@
 ### 5. Demand Elegance (Balanced)
 
 * For non-trivial changes: pause and ask "is there a more elegant way?"
+* Treat "more elegant" as architecture-aware, not just cleaner syntax: prefer reusable helpers over one-off logic, typed contracts over parser drift, durable state over fragile client memory, idempotent operations over replay risk, and defense-in-depth checks over single-layer trust
 * If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
 * Skip this for simple, obvious fixes – don't over-engineer
 * Challenge your own work before presenting it
@@ -46,12 +54,14 @@
 
 ## Task Management
 
-1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
-2. **Verify Plan**: Check in before starting implementation
+1. **Plan First**: Write plan to `docs/plans/<short-slug>-plan.md` with checkable items
+2. **Select Defaults**: Record clarifying questions, choose Recommendation A by default, and continue without waiting unless blocked by safety or explicit user direction
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `tasks/todo.md`
-6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
+5. **Document Results**: Add or update `docs/plans/<short-slug>-review.md`
+6. **Capture Lessons**: Update `docs/plans/recommendation-selection-rules.md` after corrections
+7. **Backend History**: For backend, Supabase, auth/RLS, persistence, webhook, or data-shape changes, update `docs/plans/backend-change-history.md`
+8. **UI Evidence**: For UI-visible work, attach screenshot/video evidence in the task thread and record artifact paths in the review. Store those files under `ui-evidence/`, which lives inside the repo working tree but is ignored by Git
 
 ## Core Principles
 
@@ -72,6 +82,7 @@ For any frontend/UI work in this repo, use the vendored Impeccable design guidan
    - `.codex/impeccable/skills/polish/SKILL.md`
    - `.codex/impeccable/skills/audit/SKILL.md`
 5. If changes are visual, capture a screenshot as part of validation
+6. If the interaction includes motion, loading, generation progress, or multiple steps, capture a short video instead of only a static screenshot when the browser workflow supports it
 
 ### Anti-slop defaults
 

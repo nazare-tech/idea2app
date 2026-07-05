@@ -55,6 +55,29 @@ test("ensureRequiredPlatformQuestion: does not replace non-platform mobile wordi
   assert.equal(questions.at(-1)?.id, REQUIRED_PLATFORM_QUESTION.id)
 })
 
+test("ensureRequiredPlatformQuestion: duplicate platform-like questions collapse to one canonical platform question", () => {
+  const questions = ensureRequiredPlatformQuestion([
+    ...baseQuestions.slice(0, 2),
+    {
+      id: "platform",
+      question: "Where should this live?",
+      selectionMode: "single",
+      options: [{ id: "desktop-web", label: "Desktop website" }, { id: "mobile-web", label: "Mobile website" }],
+      allowOther: false,
+    },
+    {
+      id: "primary-device",
+      question: "What primary device should users start on?",
+      selectionMode: "single",
+      options: [{ id: "desktop", label: "Desktop" }, { id: "phone", label: "Phone" }],
+      allowOther: false,
+    },
+  ])
+
+  assert.equal(questions.length, 3)
+  assert.equal(questions.filter((question) => question.id === REQUIRED_PLATFORM_QUESTION.id).length, 1)
+})
+
 test("validateRequiredPlatformAnswer: accepts one canonical platform selection", () => {
   const questions = ensureRequiredPlatformQuestion(baseQuestions)
   const error = validateRequiredPlatformAnswer(questions, [

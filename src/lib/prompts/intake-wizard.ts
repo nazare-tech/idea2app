@@ -20,9 +20,12 @@ The JSON must match this shape:
 }
 
 Rules:
-- Generate exactly 4 or 5 questions.
+- Generate 4 to 7 questions, and prefer 5 concise questions unless the idea truly needs more.
 - One question must ask where people will use the first version. It must be single-select with exactly these chip labels: "Desktop website", "Mobile website", "iOS / Android app", "Mac / Windows app". Do not include combined platform choices like "Both" or "Responsive".
 - Cover target audience, problem intensity, key workflow/use case, business model, launch priority, and primary platform when relevant.
+- If it would materially improve the final AI build-tool recommendation, include 1 or 2 concise tool-fit questions after the idea is captured. Useful tool-fit topics include the creator's technical comfort, whether they prefer a no-code web builder or repo-based coding agent, existing GitHub/local repo setup, and whether the first version needs a serious backend, auth, payments, private data, or tests.
+- Do not ask tool-fit questions when the platform/backend needs already make the build-tool choice obvious.
+- Combine related topics instead of expanding the question count; never exceed 7 total questions.
 - Use "single" when one chip should be selected and "multiple" when several chips can be selected.
 - Never use standalone text input questions.
 - Include 3-6 concise chip options for every question.

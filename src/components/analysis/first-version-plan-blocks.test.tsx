@@ -1,7 +1,10 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { renderToStaticMarkup } from "react-dom/server"
-import { MvpPlanDocumentBlocks } from "./first-version-plan-blocks"
+import {
+  AiPromptsDocumentBlocks,
+  MvpPlanDocumentBlocks,
+} from "./first-version-plan-blocks"
 
 const mvpFixture = `# MVP Plan: Maker Compass
 
@@ -156,27 +159,19 @@ Start with the proposal intake form and mock proposal generation.
   assert.match(html, /id="mvp-key-assumptions"/)
   assert.match(html, /id="mvp-scope"/)
   assert.match(html, /id="mvp-suggested-stack"/)
-  assert.match(html, /id="mvp-ai-friendly-build-sequence"/)
   assert.match(html, /id="mvp-validation-plan"/)
   assert.match(html, /id="mvp-cut-list"/)
-  assert.match(html, /id="mvp-ai-build-guardrails"/)
-  assert.match(html, /id="mvp-next-prompt"/)
   assert.match(html, /Target User &amp; Problem/)
   assert.match(html, /Core User Flow/)
-  assert.match(html, /Key Assumptions/)
+  assert.match(html, /Key Risks &amp; Assumptions/)
   assert.match(html, /MVP Scope/)
-  assert.match(html, /Suggested Stack/)
-  assert.match(html, /AI-Friendly Build Sequence/)
-  assert.match(html, /AI Build Guardrails/)
+  assert.match(html, /Suggested Build Approach/)
   assert.match(html, /Validation Plan/)
   assert.match(html, /Cut List/)
-  assert.match(html, /Next Prompt/)
-  assert.match(html, /01 \/ 12/)
-  assert.match(html, /12 \/ 12/)
+  assert.match(html, /01 \/ 08/)
+  assert.match(html, /08 \/ 08/)
   assert.match(html, /fvp-flow/)
-  assert.match(html, /fvp-build/)
   assert.match(html, /fvp-cuts/)
-  assert.match(html, /fvp-prompt/)
   assert.match(html, /pp-tech-grid/)
   assert.match(html, /pp-nongoals/)
   assert.match(html, /Proposal intake/)
@@ -194,4 +189,60 @@ Start with the proposal intake form and mock proposal generation.
   assert.doesNotMatch(html, /grid gap-4 xl:grid-cols-2/)
   assert.doesNotMatch(html, /What We Need to Prove/)
   assert.doesNotMatch(html, /Core Features/)
+  assert.doesNotMatch(html, /id="mvp-ai-friendly-build-sequence"/)
+  assert.doesNotMatch(html, /id="mvp-ai-build-guardrails"/)
+  assert.doesNotMatch(html, /id="mvp-next-prompt"/)
+  assert.doesNotMatch(html, /AI-Friendly Build Sequence/)
+  assert.doesNotMatch(html, /AI Build Guardrails/)
+  assert.doesNotMatch(html, /Next Prompt/)
+})
+
+test("AiPromptsDocumentBlocks renders recommended tool before handoff sections", () => {
+  const html = renderToStaticMarkup(
+    <AiPromptsDocumentBlocks
+      projectId="project-1"
+      prdContent={`# PRD
+
+## Functional requirements
+- Users can create a proposal from structured intake fields.
+
+## User stories and acceptance criteria
+- As a designer, I can generate a proposal draft.
+`}
+      mvpContent={`# MVP Plan
+
+## Recommended AI Build Tool
+### Cursor
+- **Why this tool**: Full-stack Next.js/Supabase project in an existing GitHub repo.
+- **Best fit for this project**: Build the proposal intake and generated proposal review screens first.
+- **Expected starting cost**: Free tier first; $20/month Pro once iteration starts.
+- **Watch out**: Verify Supabase RLS policy syntax manually.
+- **Handoff instruction**: Clone your repo, open it in Cursor, and paste the Next Prompt.
+
+## Next Prompt for AI Coding Tool
+Start with the proposal intake form.
+
+## AI Build Guardrails
+- Build one chunk at a time.
+
+## AI-Friendly Build Sequence
+| Step | Build Chunk | Goal | Test Before Moving On |
+|---|---|---|---|
+| 1 | Proposal intake form | Capture context | Submit valid and invalid input |
+`}
+    />,
+  )
+
+  assert.match(html, /AI Prompts/)
+  assert.match(html, /Recommended AI Build Tool/)
+  assert.match(html, /href="https:\/\/cursor\.com"/)
+  assert.match(html, /id="ai-prompts-recommended-build-tool"/)
+  assert.match(html, /id="ai-prompts-next-prompt"/)
+  assert.match(html, /id="ai-prompts-build-guardrails"/)
+  assert.match(html, /id="ai-prompts-build-sequence"/)
+  assert.match(html, /id="ai-prompts-functional-requirements"/)
+  assert.match(html, /id="ai-prompts-user-stories-acceptance-criteria"/)
+  assert.ok(html.indexOf("Recommended AI Build Tool") < html.indexOf("Next Prompt"))
+  assert.ok(html.indexOf("Next Prompt") < html.indexOf("AI Build Guardrails"))
+  assert.ok(html.indexOf("AI Build Guardrails") < html.indexOf("AI-Friendly Build Sequence"))
 })

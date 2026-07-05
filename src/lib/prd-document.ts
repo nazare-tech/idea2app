@@ -56,7 +56,7 @@ const H2_ALIASES = {
   outOfScope: ["Non-goals / out of scope", "Non-goals", "Out of scope"],
   technical: ["Technical considerations"],
   successMetrics: ["Success metrics"],
-  timeline: ["Timeline and milestones"],
+  timeline: ["Team and Milestones", "Team & Milestones", "Timeline, milestones, and team shape", "Timeline and milestones"],
 }
 
 function getTitle(content: string) {

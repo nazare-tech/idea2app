@@ -7,11 +7,11 @@ import {
 } from "@/lib/openrouter-image-mockup-pipeline"
 import {
   OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
-  buildMockupImageProxyUrl,
   type OpenRouterImageMockupScreen,
-  type OpenRouterImageMockupOption,
 } from "@/lib/openrouter-image-mockup-format"
 import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
+import { getMockupOptionDrafts, insertMockupOptionDraftIfMissing } from "@/lib/mockup-option-drafts"
+import { buildStorageRecoveredMockupOptions, mergeRecoveredMockupOptions } from "@/lib/mockup-option-recovery"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
@@ -19,14 +19,6 @@ import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger
 export const maxDuration = 60
 
 const SAFE_RUN_ID = /^[A-Za-z0-9_-]+$/
-
-function getContentTypeFromName(name: string) {
-  const lowerName = name.toLowerCase()
-  if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) return "image/jpeg"
-  if (lowerName.endsWith(".webp")) return "image/webp"
-  if (lowerName.endsWith(".png")) return "image/png"
-  return null
-}
 
 function getScreensFromDesignPlan(value: unknown): OpenRouterImageMockupScreen[] | undefined {
   if (!value || typeof value !== "object") return undefined
@@ -111,6 +103,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
+    const draftOptions = await getMockupOptionDrafts({
+      supabase,
+      projectId,
+      userId: user.id,
+      runId,
+    })
+    const model = getOpenRouterMockupImageModel()
+
+    if (draftOptions.length === OPENROUTER_MOCKUP_OPTION_CONFIGS.length) {
+      logInfo("MockupRecover", "draft_options_recovered", {
+        ...mockupLogContext,
+        optionCount: draftOptions.length,
+        labels: draftOptions.map((option) => option.label),
+      })
+      return NextResponse.json({
+        options: draftOptions,
+        model,
+        source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+        runId,
+      })
+    }
+
     const storageSupabase = createServiceClient()
     const prefix = `${projectId}/${runId}`
     const { data: files, error } = await storageSupabase.storage
@@ -125,47 +139,48 @@ export async function POST(request: Request) {
       fileCount: files?.length ?? 0,
     })
 
-    const fileByName = new Map(
-      (files ?? []).map((file) => [file.name.toLowerCase(), file]),
+    const storageOptions = buildStorageRecoveredMockupOptions({
+      files: files ?? [],
+      projectId,
+      runId,
+      screens,
+    })
+    const draftLabels = new Set(draftOptions.map((option) => option.label.toUpperCase()))
+    const storageOptionsToBackfill = storageOptions.filter(
+      (option) => !draftLabels.has(option.label.toUpperCase()),
     )
-    const options: OpenRouterImageMockupOption[] = []
 
-    for (const config of OPENROUTER_MOCKUP_OPTION_CONFIGS) {
-      const lowerLabel = config.label.toLowerCase()
-      const file = [
-        `option-${lowerLabel}-storyboard.png`,
-        `option-${lowerLabel}-storyboard.jpg`,
-        `option-${lowerLabel}-storyboard.jpeg`,
-        `option-${lowerLabel}-storyboard.webp`,
-      ]
-        .map((name) => fileByName.get(name))
-        .find(Boolean)
-
-      if (!file) continue
-
-      const contentType = getContentTypeFromName(file.name)
-      if (!contentType) continue
-
-      const storagePath = `${prefix}/${file.name}`
-      options.push({
-        label: config.label,
-        title: config.title,
-        imageUrl: buildMockupImageProxyUrl({ projectId, storagePath }),
-        storagePath,
-        description: config.strategy,
-        contentType,
-        ...(screens ? { screens } : {}),
+    for (const option of storageOptionsToBackfill) {
+      await insertMockupOptionDraftIfMissing({
+        supabase,
+        projectId,
+        userId: user.id,
+        runId,
+        option,
+        model,
       })
     }
+    const latestDraftOptions = storageOptionsToBackfill.length > 0
+      ? await getMockupOptionDrafts({
+          supabase,
+          projectId,
+          userId: user.id,
+          runId,
+        })
+      : draftOptions
+    const options = mergeRecoveredMockupOptions({ draftOptions: latestDraftOptions, storageOptions })
 
     logInfo("MockupRecover", "options_recovered", {
       ...mockupLogContext,
       optionCount: options.length,
+      draftOptionCount: latestDraftOptions.length,
+      storageOptionCount: storageOptions.length,
+      storageBackfillCount: storageOptionsToBackfill.length,
       labels: options.map((option) => option.label),
     })
     return NextResponse.json({
       options,
-      model: getOpenRouterMockupImageModel(),
+      model,
       source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
       runId,
     })

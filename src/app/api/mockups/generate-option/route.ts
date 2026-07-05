@@ -11,6 +11,7 @@ import {
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
 import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
+import { upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
@@ -162,6 +163,15 @@ export async function POST(request: Request) {
       idea,
       productPlan,
       designPlan,
+    })
+    await upsertMockupOptionDraft({
+      supabase,
+      projectId,
+      userId: user.id,
+      runId: result.runId,
+      option: result.option,
+      model: result.model,
+      designPlan: result.designPlan,
     })
     logInfo("MockupOption", "generation_succeeded", {
       ...mockupLogContext,

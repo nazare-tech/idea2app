@@ -251,6 +251,17 @@ test("buildMockupGenerationBrief: exposes the minimum fields needed by the plann
   assert.ok(formatted.length < 4_000)
 })
 
+test("buildMockupGenerationBrief: does not reuse Core User Flows for every fallback field", () => {
+  const brief = buildMockupGenerationBrief({
+    projectName: "ClinicFlow",
+    mvpPlan: "## Core User Flows\nReview queue, confirm slot, notify patient.",
+  })
+
+  assert.match(brief.mvpWorkflow, /Review queue/)
+  assert.equal(brief.mvpCapabilities, "Core MVP capabilities from the first version plan.")
+  assert.equal(brief.candidateScreens, "Choose the minimum readable screens needed to show the MVP happy path.")
+})
+
 test("MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT: constrains mobile storyboard planning", () => {
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /exactly 2 screens/)
   assert.match(MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT, /two-frame iPhone skeleton/)

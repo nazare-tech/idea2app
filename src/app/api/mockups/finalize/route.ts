@@ -6,6 +6,7 @@ import {
 } from "@/lib/openrouter-image-mockup-pipeline"
 import {
   buildMockupImageProxyUrl,
+  isValidDraftMockupImagePath,
   type OpenRouterImageMockupScreen,
   type OpenRouterImageMockupContent,
   type OpenRouterImageMockupOption,
@@ -16,7 +17,9 @@ import {
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
 import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
+import { deleteMockupOptionDrafts } from "@/lib/mockup-option-drafts"
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
@@ -25,7 +28,7 @@ export const maxDuration = 800
 const EXPECTED_LABELS = ["A", "B", "C"]
 const SAFE_RUN_ID = /^[A-Za-z0-9_-]+$/
 
-function normalizeOption(value: unknown, projectId: string): OpenRouterImageMockupOption | null {
+function normalizeOption(value: unknown, projectId: string, runId: string): OpenRouterImageMockupOption | null {
   if (!value || typeof value !== "object") return null
 
   const record = value as Record<string, unknown>
@@ -43,8 +46,8 @@ function normalizeOption(value: unknown, projectId: string): OpenRouterImageMock
     : undefined
 
   if (!EXPECTED_LABELS.includes(label) || !title || !storagePath) return null
-  if (!storagePath.startsWith(`${projectId}/`)) return null
-  if (!contentType.startsWith("image/")) return null
+  if (!isValidDraftMockupImagePath({ projectId, storagePath, draftRunId: runId })) return null
+  if (!contentType.startsWith("image/") || contentType === "image/svg+xml") return null
 
   return {
     label,
@@ -174,7 +177,7 @@ export async function POST(request: Request) {
     }
 
     const options = rawOptions
-      .map((option: unknown) => normalizeOption(option, projectId))
+      .map((option: unknown) => normalizeOption(option, projectId, runId))
       .filter((option: OpenRouterImageMockupOption | null): option is OpenRouterImageMockupOption => Boolean(option))
       .sort((left: OpenRouterImageMockupOption, right: OpenRouterImageMockupOption) =>
         EXPECTED_LABELS.indexOf(left.label) - EXPECTED_LABELS.indexOf(right.label)
@@ -234,6 +237,22 @@ export async function POST(request: Request) {
       .from("projects")
       .update({ status: "active", updated_at: new Date().toISOString() })
       .eq("id", projectId)
+
+    try {
+      await deleteMockupOptionDrafts({
+        supabase,
+        storageSupabase: createServiceClient(),
+        projectId,
+        userId: user.id,
+        runId,
+        deleteStorageObjects: true,
+      })
+    } catch (cleanupError) {
+      logWarn("MockupFinalize", "draft_cleanup_failed", {
+        ...mockupLogContext,
+        error: cleanupError instanceof Error ? cleanupError.message : "Unknown cleanup error",
+      })
+    }
 
     return NextResponse.json({
       id: data.id,

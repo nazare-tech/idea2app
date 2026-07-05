@@ -218,6 +218,75 @@ So that I can respond to leads faster.
   assert.match(viewModel.structured.technical.items.join(" "), /server/)
 })
 
+test("getPrdDocumentViewModel parses orientation-first Product Plan headings", () => {
+  const viewModel = getPrdDocumentViewModel(`# PRD: Proposal Pilot
+
+## 1. Introduction/overview
+
+Proposal Pilot helps freelance designers turn discovery notes into client-ready proposals. This is a medium project with a 4-6 week first-version range and a product/design/engineering team shape.
+
+## 2. Goals
+- Convert 10% of visitors into registered users.
+
+## 3. Team and Milestones
+
+### 3.1 Project size and team shape
+- **Project size**: Medium because AI drafting and export both matter.
+- **Suggested team shape**: Product strategist, UX designer, full-stack builder.
+
+### 3.2 30-day checkpoint
+- First pilot user can generate and edit a proposal.
+
+## 4. Success metrics
+
+### 4.1 30-day success threshold
+- 5 pilot users complete the first proposal workflow.
+
+## 5. User personas
+
+### 5.1 Persona details
+
+**Dana Designer**
+- **Description**: Freelance designer managing active client leads.
+- **Needs**: Faster proposal creation.
+- **Pain points**: Rewrites scope from scratch.
+- **Motivation**: Win more work without extra admin.
+
+## 6. Functional requirements
+
+### 6.1 Core requirements
+- FR-001: Create proposal from intake fields.
+
+## 7. User stories and acceptance criteria
+
+### US-001: Generate proposal
+As a freelance designer, I want to generate a proposal from client notes.
+
+## 8. Non-goals / out of scope
+- Team approvals are deferred.
+
+## 9. Technical considerations
+- Keep AI calls on the server.
+
+## 10. Risks and mitigation
+- **Risk**: Proposal quality is generic.
+  - **Mitigation**: Add editable sections.
+
+## 11. Dependencies and assumptions
+- Assumes users can edit AI drafts.
+
+## 12. Open questions
+- Which template should be default?
+`)
+
+  assert.equal(viewModel.canRenderModules, true)
+  assert.match(viewModel.structured.prioritization.source, /Project size/)
+  assert.match(viewModel.structured.objectives.source, /Convert 10%/)
+  assert.match(viewModel.structured.positioning.source, /30-day success/)
+  assert.equal(viewModel.structured.personas[0].heading, "Dana Designer")
+  assert.match(viewModel.structured.requirements.items.join(" "), /FR-001/)
+})
+
 test("getPrdDocumentViewModel keeps unlabeled persona fields in one profile block", () => {
   const viewModel = getPrdDocumentViewModel(`# PRD: ADR Helper
 

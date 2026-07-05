@@ -15,12 +15,13 @@ import {
 import { logError } from "@/lib/logger"
 
 const MIN_QUESTIONS = 4
-const MAX_QUESTIONS = 5
+const MAX_QUESTIONS = 7
 const MIN_SELECTION_OPTIONS = 2
 const MAX_SELECTION_OPTIONS = 6
 const MAX_QUESTION_LENGTH = 180
 const MAX_OPTION_LABEL_LENGTH = 48
 const MAX_HELPER_TEXT_LENGTH = 140
+const MAX_GENERATION_ATTEMPTS = 2
 
 const SELECTION_MODE_SET = new Set<string>(INTAKE_SELECTION_MODES)
 const RETRYABLE_GENERATION_ERROR =
@@ -51,23 +52,53 @@ export async function generateIntakeQuestions(
     throw new Error(RETRYABLE_GENERATION_ERROR)
   }
 
-  try {
-    const rawModelOutput = await options.generateText({
-      systemPrompt: INTAKE_QUESTION_SYSTEM_PROMPT,
-      userPrompt: buildIntakeQuestionUserPrompt(idea),
-      maxTokens: 1200,
-    })
-    return {
-      questionSet: parseIntakeQuestionSet(rawModelOutput),
-      usedFallback: false,
-      rawModelOutput,
+  let lastError: unknown
+  let retryIssues: string[] = []
+
+  for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt += 1) {
+    let rawModelOutput: string
+    try {
+      rawModelOutput = await options.generateText({
+        systemPrompt: INTAKE_QUESTION_SYSTEM_PROMPT,
+        userPrompt: attempt === 0
+          ? buildIntakeQuestionUserPrompt(idea)
+          : buildIntakeQuestionRepairPrompt(idea, retryIssues),
+        maxTokens: 2000,
+      })
+    } catch (err) {
+      lastError = err
+      break
     }
-  } catch (err) {
-    logError("IntakeQuestions", "generation_or_parse_failed", err, {
-      ideaLength: idea.length,
-    })
-    throw new Error(RETRYABLE_GENERATION_ERROR)
+
+    try {
+      return {
+        questionSet: parseIntakeQuestionSet(rawModelOutput),
+        usedFallback: false,
+        rawModelOutput,
+      }
+    } catch (err) {
+      lastError = err
+      if (err instanceof IntakeQuestionParseError && attempt < MAX_GENERATION_ATTEMPTS - 1) {
+        retryIssues = err.issues
+        continue
+      }
+
+      break
+    }
   }
+
+  logError("IntakeQuestions", "generation_or_parse_failed", lastError, {
+    ideaLength: idea.length,
+  })
+  throw new Error(RETRYABLE_GENERATION_ERROR)
+}
+
+function buildIntakeQuestionRepairPrompt(idea: string, issues: string[]) {
+  return `${buildIntakeQuestionUserPrompt(idea)}
+
+The previous JSON was rejected: ${issues.join("; ")}.
+
+Return a fresh JSON object only. Make sure the final normalized question set includes 4 to 7 questions after the required platform question is enforced. Include no more than one platform, device, form-factor, or where-users-will-use-it question.`
 }
 
 export function parseIntakeQuestionSet(rawModelOutput: string): IntakeQuestionSet {
@@ -100,10 +131,17 @@ export function parseIntakeQuestionSet(rawModelOutput: string): IntakeQuestionSe
     ])
   }
 
+  const normalizedQuestions = ensureRequiredPlatformQuestion(questions, MAX_QUESTIONS)
+  if (normalizedQuestions.length < MIN_QUESTIONS || normalizedQuestions.length > MAX_QUESTIONS) {
+    throw new IntakeQuestionParseError([
+      `normalized questions must include ${MIN_QUESTIONS}-${MAX_QUESTIONS} items`,
+    ])
+  }
+
   return {
     schemaVersion: INTAKE_QUESTION_SCHEMA_VERSION,
     source: "ai",
-    questions: ensureRequiredPlatformQuestion(questions),
+    questions: normalizedQuestions,
   }
 }
 
