@@ -10,6 +10,7 @@ import {
   CompetitiveDetailSection,
 } from "@/components/analysis/competitive-analysis-document"
 import {
+  AiPromptsDocumentBlocks,
   MvpPlanDocumentBlocks,
   PrdDocumentBlocks,
 } from "@/components/analysis/planning-document-blocks"
@@ -348,6 +349,28 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             <DocumentSkeleton label="Design Mockups" mode={getSkeletonMode(mockupsData)} />
           ) : (
             <EmptyState label="Design Mockups" />
+          )}
+        </DocumentWrapper>
+
+        <DocumentWrapper navKey="ai-prompts">
+          {!renderDeferred ? (
+            <DocumentSkeleton label="AI Prompts" />
+          ) : prdData?.content || mvpData?.content ? (
+            <AiPromptsDocumentBlocks
+              prdContent={prdData?.content ?? null}
+              mvpContent={mvpData?.content ?? null}
+              projectId={projectId}
+            />
+          ) : mvpData?.displayState && mvpData.displayState.displayStatus !== "idle" ? (
+            <GenerationStatusModule
+              label="AI Prompts"
+              state={mvpData.displayState}
+              onGenerateDocument={onGenerateDocument}
+            />
+          ) : mvpData?.isGenerating || mvpData?.isLoading || prdData?.isLoading ? (
+            <DocumentSkeleton label="AI Prompts" mode={getSkeletonMode(mvpData ?? prdData)} />
+          ) : (
+            <EmptyState label="AI Prompts" />
           )}
         </DocumentWrapper>
 

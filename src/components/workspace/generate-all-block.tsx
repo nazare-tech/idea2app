@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useGenerateAllStore, type QueueItemStatus } from "@/stores/generate-all-store"
 import { Button } from "@/components/ui/button"
+import type { QueueItem } from "@/lib/generate-all-helpers"
 
 // ---------------------------------------------------------------------------
 // Tab navigation map — each docType maps to its URL search param value
@@ -24,6 +25,50 @@ const TAB_MAP: Record<string, string> = {
   prd: "prd",
   mvp: "mvp",
   mockups: "mockups",
+}
+
+const HASH_MAP: Record<string, string> = {
+  "ai-prompts": "ai-prompts",
+}
+
+type DisplayQueueItem = Omit<QueueItem, "docType"> & {
+  docType: QueueItem["docType"] | "ai-prompts"
+}
+
+function deriveAiPromptsDisplayStatus(queue: QueueItem[]): QueueItemStatus {
+  const prd = queue.find((item) => item.docType === "prd")
+  const mvp = queue.find((item) => item.docType === "mvp")
+
+  if (
+    (prd?.status === "done" || prd?.status === "skipped") &&
+    (mvp?.status === "done" || mvp?.status === "skipped")
+  ) {
+    return "done"
+  }
+
+  if (prd?.status === "cancelled" || mvp?.status === "cancelled") {
+    return "cancelled"
+  }
+
+  return "pending"
+}
+
+export function buildGenerateAllDisplayQueue(queue: QueueItem[]): DisplayQueueItem[] {
+  const aiPromptsRow: DisplayQueueItem = {
+    docType: "ai-prompts",
+    label: "AI Prompts",
+    status: deriveAiPromptsDisplayStatus(queue),
+    creditCost: 0,
+    stageMessage: "Assembling AI handoff",
+  }
+
+  return [...queue, aiPromptsRow]
+}
+
+function getQueueItemHref(item: DisplayQueueItem) {
+  if (TAB_MAP[item.docType]) return `?tab=${TAB_MAP[item.docType]}`
+  if (HASH_MAP[item.docType]) return `#${HASH_MAP[item.docType]}`
+  return null
 }
 
 // ---------------------------------------------------------------------------
@@ -128,10 +173,11 @@ export function GenerateAllBlock({
   const isLoading     = status === "loading"
 
   const elapsedTime = useElapsedTime(startedAt, isRunning)
+  const displayQueue = buildGenerateAllDisplayQueue(queue)
 
-  const completedCount  = queue.filter((item) => item.status === "done").length
-  const totalActionable = queue.filter((item) => item.status !== "skipped").length
-  const allSkipped      = queue.length > 0 && queue.every((item) => item.status === "skipped")
+  const completedCount  = displayQueue.filter((item) => item.status === "done").length
+  const totalActionable = displayQueue.filter((item) => item.status !== "skipped").length
+  const allSkipped      = displayQueue.length > 0 && displayQueue.every((item) => item.status === "skipped" || item.status === "done")
 
   const progressPercent = totalActionable > 0
     ? Math.round((completedCount / totalActionable) * 100)
@@ -170,7 +216,9 @@ export function GenerateAllBlock({
             </div>
           </div>
           <div className="divide-y divide-border/40">
-            {queue.map((item, i) => (
+            {displayQueue.map((item, i) => {
+              const itemHref = getQueueItemHref(item)
+              return (
               <div key={item.docType} className="flex items-center gap-3 py-3">
                 <StepIndicator index={i} status={item.status} />
                 <span className="flex-1 text-[13px] font-semibold font-heading text-muted-foreground">
@@ -178,14 +226,15 @@ export function GenerateAllBlock({
                 </span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] text-[#22C55E]">Done</span>
-                  {TAB_MAP[item.docType] && (
-                    <Link href={`?tab=${TAB_MAP[item.docType]}`}>
+                  {itemHref && (
+                    <Link href={itemHref}>
                       <ArrowUpRight className="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
                     </Link>
                   )}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>
@@ -282,11 +331,11 @@ export function GenerateAllBlock({
 
       {/* Queue list */}
       <div className="px-5 pt-3 pb-2 divide-y divide-border/40">
-        {queue.map((item, i) => {
+        {displayQueue.map((item, i) => {
           const isGenerating = item.status === "generating"
           const isDone       = item.status === "done" || item.status === "skipped"
-          const showNavLink  =
-            isDone && TAB_MAP[item.docType]
+          const itemHref     = getQueueItemHref(item)
+          const showNavLink  = isDone && itemHref
 
           return (
             <div
@@ -333,7 +382,7 @@ export function GenerateAllBlock({
 
               {/* Right: optional nav link */}
               {showNavLink && (
-                <Link href={`?tab=${TAB_MAP[item.docType]}`}>
+                <Link href={itemHref}>
                   <ArrowUpRight className="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
                 </Link>
               )}

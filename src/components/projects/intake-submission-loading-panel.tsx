@@ -7,6 +7,7 @@ import {
   FileText,
   LayoutGrid,
   Rocket,
+  Sparkles,
 } from "lucide-react"
 
 import type {
@@ -61,6 +62,12 @@ const DEFAULT_ROWS: IntakeLoadingRow[] = [
     message: "Generating visual directions",
     status: "pending",
   },
+  {
+    key: "ai-prompts",
+    label: "AI Prompts",
+    message: "Assembling AI handoff",
+    status: "pending",
+  },
 ]
 
 const ROW_ICONS: Record<OnboardingLoadingRowKey, ElementType> = {
@@ -69,6 +76,7 @@ const ROW_ICONS: Record<OnboardingLoadingRowKey, ElementType> = {
   prd: ClipboardList,
   mvp: Rocket,
   mockups: LayoutGrid,
+  "ai-prompts": Sparkles,
 }
 
 export function IntakeSubmissionLoadingPanel({

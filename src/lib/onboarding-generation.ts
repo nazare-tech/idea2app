@@ -21,6 +21,7 @@ export type OnboardingLoadingRowKey =
   | "prd"
   | "mvp"
   | "mockups"
+  | "ai-prompts"
 
 export interface OnboardingQueueItem {
   docType: DocumentType
@@ -126,6 +127,12 @@ const LOADING_ROW_DEFINITIONS: Array<{
     phrase: "Generating visual directions",
     docType: "mockups",
   },
+  {
+    key: "ai-prompts",
+    label: "AI Prompts",
+    phrase: "Assembling AI handoff",
+    docType: "mvp",
+  },
 ]
 
 export function createOnboardingGenerationRunId() {
@@ -184,6 +191,13 @@ export function mapOnboardingLoadingRows(params: {
   const queue = parseQueue(params.queueRow?.queue)
 
   return LOADING_ROW_DEFINITIONS.map((row) => {
+    if (row.key === "ai-prompts") {
+      return {
+        ...row,
+        status: getDerivedAiPromptsStatus(queue, params.completedDocs),
+      }
+    }
+
     const matchingItem = queue.find((item) => item.docType === row.docType)
     const isDone = params.completedDocs[row.docType] === true
 
@@ -193,6 +207,21 @@ export function mapOnboardingLoadingRows(params: {
       error: matchingItem?.error,
     }
   })
+}
+
+function getDerivedAiPromptsStatus(
+  queue: OnboardingQueueItem[],
+  completedDocs: Partial<Record<DocumentType, boolean>>,
+): OnboardingGenerationStatus {
+  if (completedDocs.prd && completedDocs.mvp) return "done"
+
+  const prd = queue.find((item) => item.docType === "prd")
+  const mvp = queue.find((item) => item.docType === "mvp")
+  const upstreamStatuses = [prd?.status, mvp?.status]
+
+  if (upstreamStatuses.some((status) => status === "cancelled")) return "cancelled"
+
+  return "pending"
 }
 
 export function parseQueue(value: Json | null | undefined): OnboardingQueueItem[] {

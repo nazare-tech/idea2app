@@ -1,5 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
+import { renderToStaticMarkup } from "react-dom/server"
 
 import {
   INTAKE_FAKE_PROGRESS_DURATION_MS,
@@ -8,6 +9,7 @@ import {
   getTimedIntakeProgress,
   shouldAnimateIntakeProgress,
   statusMessage,
+  IntakeSubmissionLoadingPanel,
   type IntakeLoadingRow,
 } from "./intake-submission-loading-panel"
 
@@ -44,4 +46,11 @@ test("statusMessage: pending rows do not imply downstream work has started", () 
   }
 
   assert.equal(statusMessage(row), "Waiting")
+})
+
+test("IntakeSubmissionLoadingPanel: default rows include the derived AI Prompts handoff", () => {
+  const html = renderToStaticMarkup(<IntakeSubmissionLoadingPanel />)
+
+  assert.match(html, /AI Prompts/)
+  assert.match(html, /Waiting/)
 })
