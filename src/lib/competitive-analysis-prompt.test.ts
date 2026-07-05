@@ -20,7 +20,7 @@ test("competitive analysis prompt requires direct competitor website links and k
   )
 })
 
-test("competitive analysis prompt requests evidence-limited competitor candidates without live research", () => {
+test("competitive analysis prompt requests fallback competitor candidates without direct competitor disclaimer", () => {
   const userPrompt = buildCompetitiveAnalysisUserPrompt(
     "A marketplace for neighborhood pet sitters",
     "Trusted Neighbors Pet Care",
@@ -29,14 +29,16 @@ test("competitive analysis prompt requests evidence-limited competitor candidate
 
   assert.match(
     COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
-    /still output 3-5 evidence-limited competitor candidates as `### Competitor Name` headings/
+    /still output 3-5 conservative competitor candidates as `### Competitor Name` headings/
   )
   assert.match(
     userPrompt,
-    /Live competitor research did not return usable competitor data/
+    /No company-level live competitor research inputs are available/
   )
   assert.match(userPrompt, /output 3-5 conservative H3 competitor candidate profiles/)
   assert.match(userPrompt, /Do not add fake URLs/)
+  assert.match(userPrompt, /Start that section directly with the first `### Competitor Name` profile/)
+  assert.doesNotMatch(userPrompt, /Make the first paragraph in Direct Competitors/)
   assert.doesNotMatch(userPrompt, /identified through live web research/)
 })
 
@@ -49,7 +51,7 @@ test("competitive analysis prompt treats empty-search sentinel as no live resear
 
   assert.match(
     userPrompt,
-    /Live competitor research did not return usable competitor data/
+    /No company-level live competitor research inputs are available/
   )
   assert.doesNotMatch(userPrompt, /identified through live web research/)
 })

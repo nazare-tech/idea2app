@@ -10,6 +10,8 @@ import {
   type CompetitiveAnalysisPositioningPoint,
   type CompetitiveAnalysisStructuredData,
   getCompetitiveAnalysisViewModel,
+  sanitizeCompetitiveAnalysisDisplayMarkdown,
+  sanitizeDirectCompetitorDisplayContent,
 } from "@/lib/competitive-analysis-v2"
 import { getExplainableTermKeyByLabel } from "@/lib/explainable-terms"
 
@@ -136,7 +138,12 @@ function CompetitiveDetailFallback({
   const fallbackSections = fallbackMarketResearchSections
     .map((section) => ({
       ...section,
-      content: getFallbackSectionContent(sections, section.headings),
+      content:
+        section.id === "market-research-direct-competitors"
+          ? sanitizeDirectCompetitorDisplayContent(
+              getFallbackSectionContent(sections, section.headings)
+            )
+          : getFallbackSectionContent(sections, section.headings),
     }))
     .filter((section) => section.content.trim().length > 0)
 
@@ -514,12 +521,11 @@ function FastComparisonTable({
             "text-[15px] font-semibold text-[#0A0A0A]"
           )}
         >
-          Live competitor profiles unavailable
+          Competitor profiles not found
         </p>
         <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
-          Verified competitor search did not return usable company-level data
-          for this run, so inferred companies are not shown as direct
-          competitors.
+          This report does not include enough competitor profile detail to
+          build the comparison table.
         </p>
       </div>
     )
@@ -629,11 +635,9 @@ function FastComparisonTable({
 
 function CompetitorProfiles({
   competitors,
-  evidenceNotice,
   showHeader = true,
 }: {
   competitors: CompetitiveAnalysisCompetitorProfile[]
-  evidenceNotice?: string | null
   showHeader?: boolean
 }) {
   return (
@@ -646,14 +650,8 @@ function CompetitorProfiles({
         <p className="mb-5 ui-type-body text-[#666666]">
           {competitors.length > 0
             ? "Compare each competitor once across product scope, buying fit, strengths, edges, and limitations."
-            : evidenceNotice ??
-              "Verified direct competitor profiles are unavailable for this report."}
+            : "This report does not include direct competitor profiles."}
         </p>
-        {competitors.length > 0 && evidenceNotice ? (
-          <p className="mb-5 border border-dashed border-[#D8CEC5] bg-[#FAFAFA] px-4 py-3 ui-type-body text-[#666666]">
-            {evidenceNotice}
-          </p>
-        ) : null}
         <FastComparisonTable competitors={competitors} />
       </PencilCard>
     </div>
@@ -1003,7 +1001,6 @@ function CompetitiveResearchPage({
 
       <CompetitorProfiles
         competitors={structured.directCompetitors}
-        evidenceNotice={structured.directCompetitorEvidenceNotice}
       />
 
       <CompactTableCard
@@ -1133,7 +1130,6 @@ export function CompetitiveDetailSection({
       >
         <CompetitorProfiles
           competitors={structured.directCompetitors}
-          evidenceNotice={structured.directCompetitorEvidenceNotice}
           showHeader={false}
         />
       </WorkspaceDesignedSection>
@@ -1326,7 +1322,7 @@ export function CompetitiveAnalysisDocument({
         <CompetitiveResearchPage structured={viewModel.structured} />
       ) : (
         <MarkdownRenderer
-          content={content}
+          content={sanitizeCompetitiveAnalysisDisplayMarkdown(content)}
           projectId={projectId}
         />
       )}

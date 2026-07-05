@@ -22,7 +22,7 @@ IMPORTANT GUIDELINES:
 - Where URL content is available, cite specific product offerings, pricing, or features
 - All strategic claims must be grounded in information extracted from these sources
 - If insufficient information is available, write a conservative evidence-aware fallback instead of omitting the section
-- If live competitor research is unavailable or empty, say so consistently and clearly label Direct Competitors as evidence-limited candidates that need manual verification
+- If live competitor research is unavailable or empty, still provide conservative Direct Competitors candidates, but do not add a Direct Competitors preface/disclaimer about missing live research
 - Never skip a required section
 - Do not invent metrics, pricing, or feature claims that are not supported by the provided research
 
@@ -46,7 +46,7 @@ ${COMPETITIVE_ANALYSIS_V2_SECTION_ORDER.map((heading) => `## ${heading}`).join("
 
 REQUIRED SECTION SHAPES
 - \`Executive Summary\`: 2-3 sentences on the category, market pressure, and the most important conclusion, followed by one punchy standalone assessment line of 2-8 words (headline style, no label or colon), then exactly 3 concise bullets covering assessment, why now, and biggest risk
-- \`Direct Competitors\`: include 3-5 competitors or competitor candidates. When live competitor research includes named companies and usable URLs, format each competitor heading as \`### [Competitor Name](https://competitor-site.example)\`. When live competitor research is unavailable or empty, still output 3-5 evidence-limited competitor candidates as \`### Competitor Name\` headings without links, and make each profile conservative and explicitly verification-needed.
+- \`Direct Competitors\`: include 3-5 competitors or competitor candidates. When live competitor research includes named companies and usable URLs, format each competitor heading as \`### [Competitor Name](https://competitor-site.example)\`. When live competitor research is unavailable or empty, still output 3-5 conservative competitor candidates as \`### Competitor Name\` headings without links, start immediately with the first H3 profile, and make each profile conservative about uncertain details.
   - **Overview**
   - **Core Product/Service**
   - **Market Positioning**
@@ -56,7 +56,8 @@ REQUIRED SECTION SHAPES
   - **Pricing Model**
   - **Target Audience**
   - Keep every bullet concise and UI-ready; \`Key Edge\` should be a short differentiator phrase, not a paragraph
-  - If live competitor research is unavailable or empty, do not invent fake URLs, exact pricing, or company-specific claims. Use "Verification needed" or "Evidence insufficient" where details are not known.
+  - If live competitor research is unavailable or empty, do not invent fake URLs, exact pricing, or company-specific claims. Use "Verification needed" or "Evidence insufficient" only inside specific fields where details are not known.
+  - Do not add a paragraph, note, banner, or disclaimer before the first Direct Competitors H3 profile.
 - \`Feature Comparison\`: a markdown table comparing competitors and the user's concept across workflow-critical dimensions
 - \`Pricing Comparison\`: a markdown table comparing pricing model, free tier, packaging motion, and notable pricing gaps
 - \`Best Customer Segments\`: 3-5 short ranked bullets for the most important buyer/user segments, including who is well served vs under-served
@@ -110,7 +111,7 @@ const COMPETITIVE_ANALYSIS_USER_WITHOUT_RESEARCH_TEMPLATE = `Please analyze the 
 **Business Idea:** {{idea}}
 
 ## Competitor Research Data
-Live competitor research did not return usable competitor data for this run.
+No company-level live competitor research inputs are available for this run.
 
 Produce a comprehensive Market Research v2 document that follows the exact heading order and section contract in your instructions.
 
@@ -119,7 +120,7 @@ Important fallback requirements:
 - In the Direct Competitors section, output 3-5 conservative H3 competitor candidate profiles so the workspace can render the comparison table.
 - Do not add fake URLs. Use plain H3 headings without links unless the official website is part of your general knowledge.
 - Do not invent exact pricing, usage metrics, or unsupported company-specific claims. Use "Verification needed" or "Evidence insufficient" for uncertain details.
-- Make the first paragraph in Direct Competitors state that live competitor research was unavailable and these are evidence-limited candidates for manual verification.
+- Do not add an intro paragraph, note, banner, or disclaimer in Direct Competitors. Start that section directly with the first \`### Competitor Name\` profile.
 - For the remaining sections, use conservative category-level inference and clearly label weak evidence.`
 
 const EMPTY_COMPETITOR_CONTEXT_PATTERNS = [

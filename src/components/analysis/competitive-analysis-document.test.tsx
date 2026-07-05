@@ -206,7 +206,7 @@ test("competitive detail consolidates competitor profile cards into one quick co
   assert.doesNotMatch(html, />PROFILE</)
 })
 
-test("competitive detail shows evidence-limited fallback direct competitors when live research is missing", () => {
+test("competitive detail shows fallback direct competitors without the fallback notice", () => {
   const html = renderToStaticMarkup(
     <CompetitiveDetailSection
       content={buildV2Fixture({
@@ -221,9 +221,34 @@ test("competitive detail shows evidence-limited fallback direct competitors when
   )
 
   assert.match(html, /Direct Competitors/)
-  assert.match(html, /evidence-limited candidates/)
+  assert.doesNotMatch(html, /evidence-limited candidates/)
+  assert.doesNotMatch(html, /no live competitor data was provided/)
   assert.match(html, /Inferred pet care incumbent/)
   assert.match(html, /Marketplace liquidity/)
+})
+
+test("competitive markdown fallback hides saved direct competitor fallback notice", () => {
+  const malformedContent = buildV2Fixture({
+    "Direct Competitors":
+      "Live competitor research was unavailable for this run, so these direct competitor profiles are evidence-limited candidates. Verify company fit, URLs, pricing, and positioning before relying on them.\n\n### Rover\n- **Overview**: Inferred pet care incumbent\n- **Pricing Model**: Verification needed",
+  }).replace("## How You'll Reach Customers", "## Sales Plan")
+
+  const html = renderToStaticMarkup(
+    <CompetitiveAnalysisDocument
+      content={malformedContent}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+
+  assert.match(html, /Designed modules view unavailable/)
+  assert.match(html, /Direct Competitors/)
+  assert.match(html, /Rover/)
+  assert.match(html, /Inferred pet care incumbent/)
+  assert.match(html, /Verification needed/)
+  assert.doesNotMatch(html, /Live competitor research was unavailable/)
+  assert.doesNotMatch(html, /evidence-limited candidates/)
+  assert.doesNotMatch(html, /Verify company fit/)
 })
 
 test("competitive renderer normalizes redundant opportunity verdict into modules", () => {

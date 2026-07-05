@@ -1,6 +1,6 @@
 export const COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION = "competitive-analysis-v2"
 export const COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION =
-  "competitive-analysis-v2-2026-07-05-evidence-limited-competitors"
+  "competitive-analysis-v2-2026-07-05-no-direct-competitor-notice"
 
 export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Executive Summary",
@@ -299,9 +299,64 @@ const LIVE_COMPETITOR_RESEARCH_UNAVAILABLE_PATTERNS = [
   /\bwithout live competitor data\b/i,
 ] as const
 
+const DIRECT_COMPETITOR_NOTICE_PATTERNS = [
+  /\bevidence-limited (?:direct )?competitor (?:profiles|candidates)\b/i,
+  /\bthese direct competitor profiles are evidence-limited candidates\b/i,
+  /\bverify company fit\b/i,
+  /\bverify .*urls?.*pricing.*positioning\b/i,
+  /\bmanual verification\b/i,
+  /\bverified direct competitor profiles are unavailable\b/i,
+] as const
+
 export function hasUnavailableLiveCompetitorResearch(content: string) {
   return LIVE_COMPETITOR_RESEARCH_UNAVAILABLE_PATTERNS.some((pattern) =>
     pattern.test(content)
+  )
+}
+
+function isDirectCompetitorNoticeBlock(block: string) {
+  if (/^###\s+/m.test(block)) return false
+
+  const normalizedBlock = stripInlineMarkdown(
+    block
+      .replace(/^>\s?/gm, "")
+      .replace(/^_*note:?\s*/i, "")
+      .replace(/_*$/g, "")
+  )
+
+  const mentionsUnavailableResearch =
+    hasUnavailableLiveCompetitorResearch(normalizedBlock)
+  const mentionsNoticeLanguage = DIRECT_COMPETITOR_NOTICE_PATTERNS.some((pattern) =>
+    pattern.test(normalizedBlock)
+  )
+
+  return (
+    mentionsUnavailableResearch ||
+    (mentionsNoticeLanguage &&
+      /\b(?:direct competitor|competitor profiles?|manual verification|company fit|evidence-limited)\b/i.test(
+        normalizedBlock
+      ))
+  )
+}
+
+export function sanitizeDirectCompetitorDisplayContent(content: string) {
+  return splitBlocks(content)
+    .filter((block) => !isDirectCompetitorNoticeBlock(block))
+    .join("\n\n")
+}
+
+export function sanitizeCompetitiveAnalysisDisplayMarkdown(content: string) {
+  return content.replace(
+    /^##\s+Direct Competitors[^\n]*\n([\s\S]*?)(?=^##\s+|(?![\s\S]))/gim,
+    (section) => {
+      const headingEnd = section.indexOf("\n")
+      if (headingEnd < 0) return section
+
+      const heading = section.slice(0, headingEnd)
+      const body = section.slice(headingEnd + 1)
+
+      return `${heading}\n${sanitizeDirectCompetitorDisplayContent(body).trimStart()}`
+    }
   )
 }
 
@@ -486,13 +541,6 @@ export function getCompetitiveAnalysisStructuredData(
   parsed: CompetitiveAnalysisV2ParseResult
 ): CompetitiveAnalysisStructuredData {
   const { sections, competitorEntries } = parsed
-  const directCompetitorResearchUnavailable =
-    hasUnavailableLiveCompetitorResearch(
-      [
-        getSection(sections, "Executive Summary"),
-        getSection(sections, "Direct Competitors"),
-      ].join("\n\n")
-    )
 
   return {
     executiveSummary: {
@@ -500,9 +548,7 @@ export function getCompetitiveAnalysisStructuredData(
       bullets: parseListItems(getSection(sections, "Executive Summary")),
     },
     directCompetitors: parseCompetitorProfiles(competitorEntries),
-    directCompetitorEvidenceNotice: directCompetitorResearchUnavailable
-      ? "Live competitor research was unavailable for this run, so these direct competitor profiles are evidence-limited candidates. Verify company fit, URLs, pricing, and positioning before relying on them."
-      : null,
+    directCompetitorEvidenceNotice: null,
     featureMatrix: parseNarrativeTable(
       getSection(sections, "Feature Comparison")
     ),

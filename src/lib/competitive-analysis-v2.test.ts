@@ -7,6 +7,8 @@ import {
   getCompetitiveAnalysisStructuredData,
   getCompetitiveAnalysisViewModel,
   parseCompetitiveAnalysisV2,
+  sanitizeCompetitiveAnalysisDisplayMarkdown,
+  sanitizeDirectCompetitorDisplayContent,
   type CompetitiveAnalysisV2SectionName,
 } from "./competitive-analysis-v2"
 
@@ -87,7 +89,7 @@ test("parseCompetitiveAnalysisV2 strips removed risks and SWOT sections", () => 
   )
 })
 
-test("parseCompetitiveAnalysisV2 keeps evidence-limited fallback profiles visible", () => {
+test("parseCompetitiveAnalysisV2 keeps fallback profiles visible without a display notice", () => {
   const parsed = parseCompetitiveAnalysisV2(
     buildV2Fixture({
       "Executive Summary":
@@ -105,10 +107,26 @@ test("parseCompetitiveAnalysisV2 keeps evidence-limited fallback profiles visibl
     structured.directCompetitors[0]?.fields["Overview"],
     "Inferred incumbent"
   )
-  assert.match(
-    structured.directCompetitorEvidenceNotice ?? "",
-    /evidence-limited candidates/
+  assert.equal(structured.directCompetitorEvidenceNotice, null)
+  assert.equal(
+    sanitizeDirectCompetitorDisplayContent(
+      parsed.sections["Direct Competitors"] ?? ""
+    ),
+    "### Rover\n- **Overview**: Inferred incumbent\n- **Core Product/Service**: Pet care marketplace\n- **Market Positioning**: Broad consumer platform\n- **Strengths**: Brand awareness\n- **Key Edge**: Marketplace liquidity\n- **Limitations**: Small-animal specificity\n- **Pricing Model**: Marketplace fees\n- **Target Audience**: Pet owners"
   )
+})
+
+test("sanitizeCompetitiveAnalysisDisplayMarkdown removes existing direct competitor fallback notices", () => {
+  const content = buildV2Fixture({
+    "Direct Competitors":
+      "Live competitor research was unavailable for this run, so these direct competitor profiles are evidence-limited candidates. Verify company fit, URLs, pricing, and positioning before relying on them.\n\n### Rover\n- **Overview**: Inferred incumbent\n- **Pricing Model**: Verification needed",
+  })
+  const sanitized = sanitizeCompetitiveAnalysisDisplayMarkdown(content)
+
+  assert.doesNotMatch(sanitized, /Live competitor research was unavailable/)
+  assert.doesNotMatch(sanitized, /evidence-limited candidates/)
+  assert.match(sanitized, /### Rover/)
+  assert.match(sanitized, /Pricing Model\*\*: Verification needed/)
 })
 
 test("parseCompetitiveAnalysisV2 folds a redundant opportunity verdict into executive summary", () => {
