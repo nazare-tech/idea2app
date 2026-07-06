@@ -28,8 +28,11 @@
   - Dynamic CTA mode based on current `profiles` count
   - Public `waitlist` table for email capture
   - Shared `WaitlistForm` component on the landing page
-  - Figma-matched desktop hero artwork from layered raster assets in `public/landing/hero/*`, rendered by `HeroArtwork`
-  - Five feature sections render live product UI previews via `FeatureProductPreview`, `/landing-preview/[navKey]`, `WorkspaceScreenshot`, `SamplePreviewDocument`, and exported sample content in `src/lib/landing-sample-content.ts`
+  - Figma-matched desktop hero artwork from layered raster assets in `public/landing/hero/*`, rendered by `HeroArtwork` with pointer parallax and scroll scatter/fade motion (reduced-motion guarded); the hero section uses `overflow-x-clip` so the sticky notes stay visible below the hero boundary without a horizontal scrollbar
+  - Landing pricing grid is the client `PricingSection` component with a marketing-only Monthly/Yearly toggle (15% yearly discount math, borderless pill container) and detailed per-plan feature rows; card CTAs open the signup modal (waitlist anchor in waitlist mode)
+  - Five feature sections render through the client `FeatureCard` component (scroll-triggered reveal: staggered bottom-up text fade-in, visual fades in scaling 80%→100%, reduced-motion guarded) with live product UI previews via `FeatureProductPreview`, `/landing-preview/[navKey]`, `WorkspaceScreenshot`, `SamplePreviewDocument`, and exported sample content in `src/lib/landing-sample-content.ts`
+  - Testimonial band dot animation elongates and directionally blurs the traveling dot by speed (SVG ellipse + per-frame `feGaussianBlur`), settling round at rest
+  - Public `/contact`, `/privacy`, and `/terms` pages share `InfoPageShell` (`src/components/landing/info-page-shell.tsx`); the support address lives in `src/lib/support.ts` (`SUPPORT_EMAIL`, placeholder until the real inbox exists) and the landing footer links a Help column (Contact) plus Privacy/Terms in the bottom bar
   - `scripts/export-landing-sample.mjs` exports sample document/mockup content from a real project and copies storyboard images to `public/landing/samples/`
   - Authenticated visitors to `/` are redirected to `/projects`
   - Fail-open API behavior so CTA rendering does not block on Supabase errors
