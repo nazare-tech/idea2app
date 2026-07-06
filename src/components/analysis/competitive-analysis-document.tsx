@@ -683,13 +683,7 @@ function CompactTableCard({
   )
 }
 
-const POSITIONING_SCORE_MIN = 0
-const POSITIONING_SCORE_MID = 5
 const POSITIONING_SCORE_MAX = 10
-const POSITIONING_PLOT_MIN_PERCENT = 14
-const POSITIONING_PLOT_MAX_PERCENT = 86
-const POSITIONING_PLOT_RANGE_PERCENT =
-  POSITIONING_PLOT_MAX_PERCENT - POSITIONING_PLOT_MIN_PERCENT
 
 function hasPositioningScores(
   point: CompetitiveAnalysisPositioningPoint
@@ -697,51 +691,69 @@ function hasPositioningScores(
   return point.x !== null && point.y !== null
 }
 
-function scoreToPlotPercent(score: number) {
-  return (
-    POSITIONING_PLOT_MIN_PERCENT +
-    (score / POSITIONING_SCORE_MAX) * POSITIONING_PLOT_RANGE_PERCENT
-  )
-}
-
 function formatAxisEndpointLabel(value: string) {
-  const trimmed = value.replace(/[.。]+$/g, "").trim()
+  const trimmed = value.replace(/[.\u3002]+$/g, "").trim()
   if (!trimmed) return value
   return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`
 }
 
-function positioningAxisLabels(axis: string | null, fallback: string) {
-  if (!axis) {
-    return {
-      low: `Low ${fallback}`,
-      high: `High ${fallback}`,
-    }
-  }
+/**
+ * Turn an axis description into a short bar label. Axis text is either a
+ * plain dimension name ("Ease of setup") or the generated endpoint form
+ * ("... where 0 means manual and 10 means automated"), which becomes
+ * "Manual \u2192 Automated".
+ */
+function positioningBarLabel(axis: string | null, fallback: string) {
+  if (!axis) return fallback
 
   const endpointMatch = axis.match(
     /where\s+0\s+means\s+(.+?)\s+and\s+10\s+means\s+(.+)$/i
   )
 
   if (endpointMatch) {
-    return {
-      low: formatAxisEndpointLabel(endpointMatch[1] ?? ""),
-      high: formatAxisEndpointLabel(endpointMatch[2] ?? ""),
-    }
+    const low = formatAxisEndpointLabel(endpointMatch[1] ?? "")
+    const high = formatAxisEndpointLabel(endpointMatch[2] ?? "")
+    return `${low} \u2192 ${high}`
   }
 
-  return {
-    low: `Low ${axis}`,
-    high: `High ${axis}`,
-  }
+  return axis
 }
 
-function pointTone(point: CompetitiveAnalysisPositioningPoint, index: number) {
-  if (/your|our|concept|idea|product/i.test(point.competitor)) {
-    return "accent"
-  }
-  if (index === 0) return "dark"
-  if (index === 1) return "muted"
-  return "light"
+function isOwnProductPoint(point: CompetitiveAnalysisPositioningPoint) {
+  return /your|our|concept|idea|product/i.test(point.competitor)
+}
+
+function PositioningScoreBar({
+  label,
+  score,
+  accent,
+}: {
+  label: string
+  score: number
+  accent: boolean
+}) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="min-w-0 font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+          {label}
+        </p>
+        <p className="shrink-0 font-mono text-[11px] tracking-[0.08em] text-[#4A4040]">
+          {score}/10
+        </p>
+      </div>
+      <div
+        className="mt-1.5 h-1.5 w-full bg-[#EFE7E0]"
+        role="img"
+        aria-label={`${label}: ${score} out of 10`}
+      >
+        <div
+          className={cn("h-full", accent ? "bg-primary" : "bg-[#4A4040]")}
+          style={{ width: `${(score / POSITIONING_SCORE_MAX) * 100}%` }}
+        />
+      </div>
+    </div>
+  )
 }
 
 function PositioningMap({
@@ -759,163 +771,57 @@ function PositioningMap({
   const unscoredPoints = positioningMap.points.filter(
     (point) => !hasPositioningScores(point)
   )
-  const xAxisLabels = positioningAxisLabels(positioningMap.xAxis, "X")
-  const yAxisLabels = positioningAxisLabels(positioningMap.yAxis, "Y")
+  const xBarLabel = positioningBarLabel(positioningMap.xAxis, "Positioning score 1")
+  const yBarLabel = positioningBarLabel(positioningMap.yAxis, "Positioning score 2")
 
   return (
     <PencilCard title={title} description={description} showHeader={showHeader}>
       <div className="space-y-4">
-        {(positioningMap.xAxis || positioningMap.yAxis) && (
-          <div className="grid gap-2 md:grid-cols-2">
-            <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
-                X Axis / 0-10 score
-              </p>
-              <p className="mt-1 ui-type-table text-[#0A0A0A]">
-                {positioningMap.xAxis ?? "Not specified"}
-              </p>
-            </div>
-            <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
-                Y Axis / 0-10 score
-              </p>
-              <p className="mt-1 ui-type-table text-[#0A0A0A]">
-                {positioningMap.yAxis ?? "Not specified"}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div
-          className="relative h-[340px] border border-[#E0E0E0] bg-[#FAFAFA]"
-          aria-label="Positioning map with 0 to 10 X and Y score axes"
-        >
-          <div
-            className="absolute h-px bg-[#D8D8D8]"
-            style={{
-              left: `${POSITIONING_PLOT_MIN_PERCENT}%`,
-              right: `${100 - POSITIONING_PLOT_MAX_PERCENT}%`,
-              top: "50%",
-            }}
-          />
-          <div
-            className="absolute w-px bg-[#D8D8D8]"
-            style={{
-              top: `${POSITIONING_PLOT_MIN_PERCENT}%`,
-              bottom: `${100 - POSITIONING_PLOT_MAX_PERCENT}%`,
-              left: "50%",
-            }}
-          />
-
-          {[POSITIONING_SCORE_MIN, POSITIONING_SCORE_MID, POSITIONING_SCORE_MAX].map(
-            (score) => (
-              <span
-                key={`x-${score}`}
-                className="absolute bottom-4 -translate-x-1/2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]"
-                style={{ left: `${scoreToPlotPercent(score)}%` }}
-              >
-                {score}/10
-              </span>
-            )
-          )}
-          {[POSITIONING_SCORE_MIN, POSITIONING_SCORE_MID, POSITIONING_SCORE_MAX].map(
-            (score) => (
-              <span
-                key={`y-${score}`}
-                className="absolute left-4 -translate-y-1/2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]"
-                style={{ top: `${100 - scoreToPlotPercent(score)}%` }}
-              >
-                {score}/10
-              </span>
-            )
-          )}
-          <p className="absolute bottom-8 left-4 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
-            {xAxisLabels.low}
-          </p>
-          <p className="absolute bottom-8 right-4 max-w-[24%] whitespace-normal text-right font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
-            {xAxisLabels.high}
-          </p>
-          <p className="absolute left-4 top-4 max-w-[24%] whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
-            {yAxisLabels.high}
-          </p>
-          <p className="absolute bottom-8 left-4 max-w-[24%] -translate-y-5 whitespace-normal font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
-            {yAxisLabels.low}
-          </p>
-
-          {scoredPoints.map((point, index) => {
-            const tone = pointTone(point, index)
-            const xPosition = scoreToPlotPercent(point.x)
-            const yPosition = 100 - scoreToPlotPercent(point.y)
-            const labelOnLeft = point.x >= 7
-            const labelAbove = point.y <= 2
-            const pointSummary = `${point.competitor}: X ${point.x}/10, Y ${point.y}/10. ${point.rationale}${point.evidence ? ` Evidence: ${point.evidence}` : ""}`
-
-            return (
-              <div
-                key={`${point.competitor}-${index}`}
-                className="absolute"
-                data-positioning-state="scored"
-                data-positioning-point={point.competitor}
-                aria-label={pointSummary}
-                title={pointSummary}
-                style={{
-                  left: `${xPosition}%`,
-                  top: `${yPosition}%`,
-                }}
-              >
-                <span
-                  className={cn(
-                    "block h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2",
-                    tone === "accent"
-                      ? "border-primary bg-primary"
-                      : tone === "dark"
-                        ? "border-[#4A4040] bg-[#4A4040]"
-                        : tone === "muted"
-                          ? "border-[#B9A99C] bg-[#E8DDD5]"
-                          : "border-[#0A0A0A] bg-white"
-                  )}
-                />
-                <span
-                  className={cn(
-                    "absolute w-max max-w-[140px] font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#0A0A0A]",
-                    labelOnLeft ? "right-3 text-right" : "left-3",
-                    labelAbove ? "bottom-3" : "top-3"
-                  )}
-                >
-                  {point.competitor}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-
         {scoredPoints.length > 0 ? (
-          <div className="space-y-3">
-            {scoredPoints.map((point) => (
-              <div
-                key={`${point.competitor}-rationale`}
-                className="border border-[#E0E0E0] px-4 py-3"
-              >
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#999999]">
-                    {point.competitor}
-                  </p>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#777777]">
-                    {hasPositioningScores(point)
-                      ? `X ${point.x}/10 / Y ${point.y}/10`
-                      : "Score unavailable"}
-                  </p>
-                </div>
-                <p className="mt-1 ui-type-table text-[#0A0A0A]">
-                  {point.rationale}
-                </p>
-                {point.evidence ? (
-                  <p className="mt-2 ui-type-caption text-[#777777]">
-                    {point.evidence}
-                  </p>
-                ) : null}
-              </div>
-            ))}
+          <div className="grid gap-px border border-[#EAE0D8] bg-[#EAE0D8]">
+            {scoredPoints.map((point, index) => {
+              const accent = isOwnProductPoint(point)
+              const pointSummary = `${point.competitor}: X ${point.x}/10, Y ${point.y}/10. ${point.rationale}${point.evidence ? ` Evidence: ${point.evidence}` : ""}`
+
+              return (
+                <article
+                  key={`${point.competitor}-${index}`}
+                  data-positioning-state="scored"
+                  data-positioning-point={point.competitor}
+                  aria-label={pointSummary}
+                  className="bg-white px-5 py-5"
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p
+                      className={cn(
+                        displayFontClass,
+                        "text-[15px] font-bold tracking-[-0.02em]",
+                        accent ? "text-primary" : "text-[#1C1917]"
+                      )}
+                    >
+                      {point.competitor}
+                    </p>
+                    {accent ? (
+                      <span className="border border-primary/20 bg-primary/[0.03] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-primary">
+                        Your product
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <PositioningScoreBar label={xBarLabel} score={point.x} accent={accent} />
+                    <PositioningScoreBar label={yBarLabel} score={point.y} accent={accent} />
+                  </div>
+
+                  {point.rationale ? (
+                    <p className="mt-4 ui-type-table text-[#0A0A0A]">{point.rationale}</p>
+                  ) : null}
+                  {point.evidence ? (
+                    <p className="mt-2 ui-type-caption text-[#777777]">{point.evidence}</p>
+                  ) : null}
+                </article>
+              )
+            })}
           </div>
         ) : null}
 

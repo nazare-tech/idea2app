@@ -161,15 +161,21 @@ test("competitive detail renders positioning scale and does not plot invalid sco
     />
   )
 
-  assert.match(html, /0\/10/)
+  // Score-bar profiles replaced the scatter plot: axis labels, per-axis
+  // scores, and no absolute-positioned plot points.
+  assert.match(html, /Ease of setup/)
+  assert.match(html, /Collaboration depth/)
   assert.match(html, /5\/10/)
-  assert.match(html, /10\/10/)
+  assert.match(html, /8\/10/)
+  assert.match(html, /width:50%/)
+  assert.match(html, /width:80%/)
   assert.match(html, /data-positioning-state="scored"/)
   assert.match(html, /aria-label="Competitor One: X 5\/10, Y 8\/10/)
   assert.match(html, /Unscored placements/)
   assert.match(html, /Missing Score/)
   assert.equal(countMatches(html, /data-positioning-state="scored"/g), 1)
   assert.equal(countMatches(html, /data-positioning-state="unscored"/g), 1)
+  assert.doesNotMatch(html, /Positioning map with 0 to 10 X and Y score axes/)
 })
 
 test("competitive detail consolidates competitor profile cards into one quick comparison table", () => {
