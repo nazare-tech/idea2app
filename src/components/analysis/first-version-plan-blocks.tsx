@@ -169,7 +169,7 @@ function FvpSummary({ section }: { section?: PlanningDocumentSection }) {
   return (
     <div className="space-y-4">
       {narrative.paragraphs.map((paragraph, index) => (
-        <p key={`${paragraph}-${index}`} className="max-w-[70ch] text-[16px] leading-[1.65] text-[#4A4040]">
+        <p key={`${paragraph}-${index}`} className="text-[16px] leading-[1.65] text-[#4A4040]">
           {paragraph}
         </p>
       ))}
@@ -284,9 +284,11 @@ function FvpScopeGrid({
   if (visibleRows.length === 0) return null
 
   return (
-    <div className="pp-nongoals grid gap-px border border-[#EAE0D8] bg-[#EAE0D8] md:grid-cols-2">
+    // Cells carry their own top/left hairlines (offset by -1px) so empty space
+    // in a partial last row stays white instead of showing a container background.
+    <div className="pp-nongoals grid border border-[#EAE0D8] bg-white md:grid-cols-2">
       {visibleRows.map((row, index) => (
-        <article key={`${row.title}-${index}`} className="pp-ng flex items-start gap-4 bg-white px-5 py-5">
+        <article key={`${row.title}-${index}`} className="pp-ng -ml-px -mt-px flex items-start gap-4 border-l border-t border-[#EAE0D8] bg-white px-5 py-5">
           <span className={cn(
             "ngt mt-0.5 shrink-0 border px-2 py-1 font-mono text-[9px] uppercase tracking-[0.12em]",
             /validation|compliance|risk/i.test(row.tag) ? "border-primary/30 bg-primary/[0.02] text-primary" : "border-[#E8DDD5] text-[#8A8480]",
@@ -299,7 +301,6 @@ function FvpScopeGrid({
           </span>
         </article>
       ))}
-      {visibleRows.length % 2 === 1 ? <article aria-hidden="true" className="pp-ng-spacer bg-white" /> : null}
     </div>
   )
 }
@@ -420,11 +421,11 @@ function FvpStack({ section }: { section?: PlanningDocumentSection }) {
   return (
     <div className="space-y-4">
       {rows.length > 0 ? (
-        <div className="fvp-stack grid gap-px border border-[#EAE0D8] bg-[#EAE0D8] sm:grid-cols-2 lg:grid-cols-3">
+        <div className="fvp-stack grid border border-[#EAE0D8] bg-white sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((row, index) => {
             const Icon = stackIcons[index % stackIcons.length]
             return (
-              <article key={`${row.title}-${index}`} className="fvp-sc bg-white px-5 py-5">
+              <article key={`${row.title}-${index}`} className="fvp-sc -ml-px -mt-px border-l border-t border-[#EAE0D8] bg-white px-5 py-5">
                 <div className="layer flex items-center gap-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#8A8480]">
                   <Icon className="h-3.5 w-3.5 text-primary" />
                   {row.title}
@@ -517,12 +518,12 @@ function FvpMetricGrid({ section }: { section: PlanningDocumentSection }) {
         <span className="dot h-1.5 w-1.5 rounded-full bg-primary" />
         Suggested metrics
       </h3>
-      <div className="pp-stat-grid grid gap-px border border-[#EAE0D8] bg-[#EAE0D8] sm:grid-cols-2 lg:grid-cols-5">
+      <div className="pp-stat-grid grid border border-[#EAE0D8] bg-white sm:grid-cols-2 lg:grid-cols-5">
         {items.map((item, index) => {
           const value = getStatValue(item, index)
           const desc = stripMarkdownMarker(item).replace(value, "").replace(/^[:\s-]+/, "")
           return (
-            <article key={`${item}-${index}`} className="pp-stat flex flex-col gap-2.5 bg-white px-6 py-6">
+            <article key={`${item}-${index}`} className="pp-stat -ml-px -mt-px flex flex-col gap-2.5 border-l border-t border-[#EAE0D8] bg-white px-6 py-6">
               <div className={cn(displayFontClass, "num text-[40px] font-extrabold leading-none tracking-[-0.05em] text-[#1C1917]")}>
                 {value}
               </div>
