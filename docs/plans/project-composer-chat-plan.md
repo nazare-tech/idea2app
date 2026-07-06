@@ -12,6 +12,11 @@ implementation_summary: >
   Prompt added at src/lib/prompts/project-composer.ts. Verified in the browser
   against a real project: grounded doc summary answer and a live web-search
   answer (2026 competitor tools) both streamed correctly; tsc/lint clean.
+  Follow-up round (2026-07-06, merged to main): extracted the shared
+  OpenRouter client singleton (src/lib/openrouter.ts) now used by every
+  server-side OpenRouter call site, and gated the composer to paid plans,
+  the workspace page resolves the plan server-side so free users see an
+  upgrade bar linking to /billing while the API returns 403 upgradeRequired.
 ---
 
 # Project Composer ("Ask this project") Chat
