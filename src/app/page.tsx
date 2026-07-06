@@ -8,17 +8,22 @@ import { WaitlistForm } from "@/components/landing/waitlist-form"
 import { createServiceClient } from "@/lib/supabase/service"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { isWaitlistMode } from "@/lib/waitlist"
-import { ArrowRight, Check } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { HeroArtwork } from "@/components/landing/hero-artwork"
 import { TestimonialBand } from "@/components/landing/testimonial-band"
 import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
 import { FeatureProductPreview } from "@/components/landing/feature-product-preview"
+import { FeatureCard } from "@/components/landing/feature-card"
+import { PricingSection } from "@/components/landing/pricing-section"
+import { FaqSection } from "@/components/landing/faq-section"
+import { SiteFooter } from "@/components/landing/site-footer"
 
 const navLinks = [
   { label: "Features", href: "#features" },
   { label: "Pricing", href: "#pricing" },
+  { label: "FAQ", href: "#faq" },
 ]
 
 const handoffTools = [
@@ -55,9 +60,8 @@ interface FeatureSection {
 const featureSections: FeatureSection[] = [
   {
     eyebrow: "01 / Market Research",
-    title: "Know the market before you commit a sprint.",
-    description:
-      "Maker Compass maps competitors, pricing, positioning, gaps, and first wedges so your idea starts with context instead of guesswork.",
+    title: "Know the market before you build.",
+    description: "Competitors, pricing, positioning, and open gaps, mapped before you commit a sprint.",
     bullets: [
       { label: "Competitive scan", body: "Direct and indirect competitors, mapped with pricing and positioning." },
       { label: "Audience segments", body: "Who to build for first, and how they talk about the problem." },
@@ -73,8 +77,7 @@ const featureSections: FeatureSection[] = [
   {
     eyebrow: "02 / Product Plan",
     title: "Turn the idea into a buildable plan.",
-    description:
-      "Get exactly three user personas, user stories, grouped requirements, and a release plan your coding agent can build from without a translation step.",
+    description: "Personas, user stories, and grouped requirements your coding agent can build from.",
     bullets: [
       { label: "Three user personas", body: "Grounded in the research, not guessed at." },
       { label: "User stories and requirements", body: "Grouped and ready for a coding agent to scope." },
@@ -85,9 +88,8 @@ const featureSections: FeatureSection[] = [
   },
   {
     eyebrow: "03 / First Version Plan",
-    title: "Scope the first release like a builder, not a committee.",
-    description:
-      "Narrow the first release into a realistic build sequence with must-have features, validation steps, and guardrails, so scope creep never gets a foothold.",
+    title: "Scope the first release like a builder.",
+    description: "A realistic build sequence with validation steps and guardrails against scope creep.",
     bullets: [
       { label: "Build sequence", body: "A realistic order of operations for the first release." },
       { label: "Validation plan", body: "How you will know the first version actually works." },
@@ -98,9 +100,8 @@ const featureSections: FeatureSection[] = [
   },
   {
     eyebrow: "04 / Design Mockups",
-    title: "See three directions before you write UI code.",
-    description:
-      "Compare three UI directions for the same core screens side by side, then hand off the one you pick instead of guessing at layout mid-build.",
+    title: "Three UI directions, side by side.",
+    description: "Compare three takes on the same core screens, then hand off the one you pick.",
     bullets: [
       { label: "Three UI directions", body: "Same core screens, three different visual takes." },
       { label: "Side by side comparison", body: "Pick a direction without re-briefing a designer." },
@@ -111,9 +112,8 @@ const featureSections: FeatureSection[] = [
   },
   {
     eyebrow: "05 / AI Prompts",
-    title: "Hand your coding agent a brief it can run with.",
-    description:
-      "Maker Compass turns the plans into a recommended build tool, guardrails, and a ready-to-paste first prompt, so the handoff is copy, paste, build.",
+    title: "A brief your coding agent can run with.",
+    description: "A recommended build tool, guardrails, and a ready-to-paste first prompt.",
     bullets: [
       { label: "Recommended build tool", body: "A concrete pick with the reasoning and starting cost." },
       { label: "Next prompt", body: "A first prompt built from your plans, ready to paste." },
@@ -121,56 +121,6 @@ const featureSections: FeatureSection[] = [
     ],
     navKey: "ai-prompts",
     activeSectionId: "ai-prompts-recommended-build-tool",
-  },
-]
-
-/**
- * The visual half of each feature card: a live screenshot of the workspace UI
- * rendering the exported sample project, embedded via /landing-preview/[navKey].
- * See FeatureProductPreview for how the desktop-width iframe crop/scale works.
- */
-function renderFeatureVisual(section: FeatureSection) {
-  return <FeatureProductPreview navKey={section.navKey} activeSectionId={section.activeSectionId} />
-}
-
-const plans = [
-  {
-    name: "Free",
-    price: "$0/mo",
-    points: [
-      "1 lifetime project",
-      "Bundled research, product plan, first-version plan, and mockups",
-      "Community support",
-    ],
-    tone: "light",
-    cta: "Choose Free",
-    ctaClasses: "h-11 border border-text-primary bg-white text-text-primary hover:bg-muted",
-  },
-  {
-    name: "Starter",
-    price: "$19/mo",
-    points: [
-      "3 projects/mo",
-      "Bundled planning docs for each new project",
-      "6-month and annual savings available",
-      "Product plan + tech spec export",
-    ],
-    tone: "light",
-    cta: "Start Starter",
-    ctaClasses: "h-11 border border-text-primary bg-white text-text-primary hover:bg-muted",
-  },
-  {
-    name: "Pro",
-    price: "$49/mo",
-    points: [
-      "10 projects/mo",
-      "Bundled planning docs for heavier build cycles",
-      "6-month and annual savings available",
-      "App generation + priority support",
-    ],
-    tone: "dark",
-    cta: "Go Pro",
-    ctaClasses: "h-11 bg-primary text-primary-foreground hover:bg-primary/90",
   },
 ]
 
@@ -252,7 +202,9 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      <section className="relative isolate overflow-hidden">
+      {/* overflow-x-clip keeps the 1920px artwork from causing a horizontal scrollbar
+          while letting the sticky notes stay visible below the hero boundary */}
+      <section className="relative isolate overflow-x-clip">
         <HeroArtwork />
         <div className={`${container} relative z-10 flex min-h-[620px] flex-col items-center justify-center py-16 md:min-h-[680px] lg:min-h-[720px] lg:py-20`}>
           <h1 className="font-display mx-auto flex max-w-[980px] flex-col text-center text-[2.75rem] font-semibold leading-[0.95] tracking-[-0.06em] text-text-primary sm:text-[3.5rem] lg:text-[4.5rem]">
@@ -301,42 +253,20 @@ export default async function LandingPage() {
           </h2>
 
           <div className="mt-10 space-y-10">
-            {featureSections.map((section, index) => {
-              const imageOnRight = index % 2 === 0
-              return (
-                <article
-                  key={section.eyebrow}
-                  className="grid items-stretch gap-6 border border-border-subtle bg-white md:grid-cols-2 md:gap-0"
-                >
-                  <div
-                    className={`p-6 md:p-10 ${imageOnRight ? "md:order-1" : "md:order-2"}`}
-                  >
-                    <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-                      {section.eyebrow}
-                    </p>
-                    <h3 className="mt-4 text-[1.45rem] font-semibold leading-tight tracking-[-0.04em] sm:text-[1.85rem]">
-                      {section.title}
-                    </h3>
-                    <p className="mt-4 max-w-[520px] text-[15px] leading-relaxed text-text-secondary">
-                      {section.description}
-                    </p>
-                    <ul className="mt-7 space-y-3">
-                      {section.bullets.map((bullet) => (
-                        <li key={bullet.label} className="flex items-start gap-3">
-                          <Check className="mt-1 h-4 w-4 shrink-0 text-text-primary" aria-hidden="true" />
-                          <p className="text-[15px] leading-relaxed text-text-secondary">
-                            <span className="font-semibold text-text-primary">{bullet.label}.</span> {bullet.body}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className={imageOnRight ? "md:order-2" : "md:order-1"}>
-                    {renderFeatureVisual(section)}
-                  </div>
-                </article>
-              )
-            })}
+            {featureSections.map((section, index) => (
+              <FeatureCard
+                key={section.eyebrow}
+                eyebrow={section.eyebrow}
+                title={section.title}
+                description={section.description}
+                bullets={section.bullets}
+                imageOnRight={index % 2 === 0}
+              >
+                {/* Live workspace screenshot of the exported sample project,
+                    embedded via /landing-preview/[navKey] */}
+                <FeatureProductPreview navKey={section.navKey} activeSectionId={section.activeSectionId} />
+              </FeatureCard>
+            ))}
           </div>
         </section>
       </SectionCard>
@@ -346,56 +276,11 @@ export default async function LandingPage() {
       </SectionCard>
 
       <SectionCard>
-        <section id="pricing" className="py-3">
-          <h2 className="max-w-[840px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
-            Choose by monthly project capacity
-          </h2>
-          <p className="mt-4 max-w-[760px] text-sm text-text-secondary">
-            Each new project starts with bundled onboarding docs, so you can compare plans by project capacity first.
-            Token details stay in billing for extra manual generation paths.
-          </p>
+        <PricingSection waitlistMode={waitlistMode} />
+      </SectionCard>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {plans.map((plan) => {
-              const isDark = plan.tone === "dark"
-              return (
-                <article
-                  key={plan.name}
-                  className={`flex min-h-full flex-col rounded-none border p-7 ${
-                    isDark
-                      ? "border-text-primary bg-text-primary text-white"
-                      : "border-border-subtle bg-white text-text-primary"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <h3 className="text-[26px] font-semibold tracking-[-0.02em]">{plan.name}</h3>
-                    {isDark && (
-                      <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-white">
-                        Best Value
-                      </span>
-                    )}
-                  </div>
-
-                  <p className={`mt-2 text-4xl font-semibold tracking-[-0.05em] ${isDark ? "text-primary" : "text-text-primary"}`}>
-                    {plan.price}
-                  </p>
-
-                  <div className="mt-8 mb-6 space-y-3 border-b border-border-subtle pb-6 dark:border-white/20">
-                    {plan.points.map((point) => (
-                      <p key={point} className={`text-sm ${isDark ? "text-text-muted" : "text-text-secondary"}`}>
-                        {point}
-                      </p>
-                    ))}
-                  </div>
-
-                  <div className="mt-auto">
-                    <Button className={`w-full ${plan.ctaClasses}`}>{plan.cta}</Button>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-        </section>
+      <SectionCard>
+        <FaqSection />
       </SectionCard>
 
       {/* Bottom CTA */}
@@ -419,7 +304,7 @@ export default async function LandingPage() {
               <WaitlistForm />
             ) : (
               <Link href="/?modal=auth&mode=signup" scroll={false} className="inline-block">
-                <Button className="h-14 px-8 rounded-none text-base font-semibold bg-primary text-white">
+                <Button className="h-14 px-8 rounded-md text-base font-semibold bg-primary text-white">
                   Turn my idea into a plan
                   <ArrowRight className="ml-2 ui-icon-16" />
                 </Button>
@@ -429,54 +314,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-border-subtle bg-[#F5F0EB]">
-        <div className={`${container} grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr]`}>
-          <div>
-            <BrandWordmark href="/" logoSize={32} logoClassName="rounded-sm" labelClassName="text-base font-semibold tracking-[0.01em]" />
-            <p className="mt-4 max-w-[320px] text-sm leading-relaxed text-text-secondary">
-              Turn a one-line idea into research, a product plan, mockups, and a first-version build plan you can hand to a coding agent.
-            </p>
-          </div>
-
-          <div>
-            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">Product</p>
-            <ul className="mt-4 space-y-3 text-sm">
-              {navLinks.map((item) => (
-                <li key={item.label}>
-                  <a href={item.href} className="text-text-secondary hover:text-text-primary">
-                    {item.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">Account</p>
-            <ul className="mt-4 space-y-3 text-sm">
-              <li>
-                <Link href="/?modal=auth&mode=signin" scroll={false} className="text-text-secondary hover:text-text-primary">
-                  Sign In
-                </Link>
-              </li>
-              <li>
-                {waitlistMode ? (
-                  <a href="#waitlist" className="text-text-secondary hover:text-text-primary">
-                    Join Waitlist
-                  </a>
-                ) : (
-                  <Link href="/?modal=auth&mode=signup" scroll={false} className="text-text-secondary hover:text-text-primary">
-                    Get Started
-                  </Link>
-                )}
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className={`${container} flex min-h-[64px] items-center border-t border-border-subtle text-sm`}>
-          <span className="font-mono text-[0.6875rem] tracking-[0.18em] text-text-muted">© 2026 Maker Compass. All rights reserved.</span>
-        </div>
-      </footer>
+      <SiteFooter />
 
       <Suspense>
         <AuthModal />

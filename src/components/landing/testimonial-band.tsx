@@ -9,6 +9,10 @@ const START_DOT_POSITION = { x: 0, y: 220 }
 const FINAL_DOT_POSITION = { x: 255, y: 80 }
 const MOTION_DURATION_MS = 2600
 const ENTRANCE_EASING = "cubic-bezier(0.16, 1, 0.3, 1)"
+const DOT_RADIUS = 3.5
+/** Caps so the fast early frames of the ease-out curve stay tasteful. */
+const MAX_STRETCH = 1.2
+const MAX_BLUR = 2.5
 
 function easeOutQuart(progress: number) {
   return 1 - (1 - progress) ** 4
@@ -38,7 +42,8 @@ export function TestimonialBand() {
   const profileRef = useRef<HTMLDivElement>(null)
   const sparkRef = useRef<SVGSVGElement>(null)
   const pathRef = useRef<SVGPathElement>(null)
-  const dotRef = useRef<SVGCircleElement>(null)
+  const dotRef = useRef<SVGEllipseElement>(null)
+  const blurRef = useRef<SVGFEGaussianBlurElement>(null)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -83,20 +88,44 @@ export function TestimonialBand() {
     spark.style.opacity = "0"
     spark.style.transform = "translate3d(26px, -10px, 0)"
 
+    const blur = blurRef.current
+    let previousPoint: { x: number; y: number } = START_DOT_POSITION
+
+    const setDotRadius = (rx: number, ry: number) => {
+      dot.setAttribute("rx", String(rx))
+      dot.setAttribute("ry", String(ry))
+    }
+
     const animateDot = (timestamp: number) => {
       if (!startTime) startTime = timestamp
       const elapsed = timestamp - startTime
       const progress = Math.min(elapsed / MOTION_DURATION_MS, 1)
       const point = path.getPointAtLength(targetLength * easeOutQuart(progress))
 
+      // Elongate the dot along its direction of travel and blur it by speed,
+      // so fast frames read as motion and the dot settles round at rest.
+      const deltaX = point.x - previousPoint.x
+      const deltaY = point.y - previousPoint.y
+      const speed = Math.hypot(deltaX, deltaY)
+      previousPoint = point
+
       setDotPosition(point)
+      if (speed > 0.1) {
+        const angle = (Math.atan2(deltaY, deltaX) * 180) / Math.PI
+        const stretch = 1 + Math.min(speed * 0.18, MAX_STRETCH)
+        setDotRadius(DOT_RADIUS * stretch, DOT_RADIUS / Math.sqrt(stretch))
+        dot.setAttribute("transform", `rotate(${angle} ${point.x} ${point.y})`)
+        blur?.setAttribute("stdDeviation", `${Math.min(speed * 0.35, MAX_BLUR)} 0.15`)
+      }
 
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animateDot)
       } else {
         setDotPosition(FINAL_DOT_POSITION)
-        dot.setAttribute("r", "4.75")
-        settleTimeout = window.setTimeout(() => dot.setAttribute("r", "3.5"), 180)
+        dot.removeAttribute("transform")
+        blur?.setAttribute("stdDeviation", "0 0")
+        setDotRadius(4.75, 4.75)
+        settleTimeout = window.setTimeout(() => setDotRadius(DOT_RADIUS, DOT_RADIUS), 180)
       }
     }
 
@@ -209,6 +238,12 @@ export function TestimonialBand() {
         fill="none"
         aria-hidden="true"
       >
+        <defs>
+          {/* Directional blur driven per-frame from the dot's speed */}
+          <filter id="testimonial-dot-blur" x="-150%" y="-150%" width="400%" height="400%">
+            <feGaussianBlur ref={blurRef} stdDeviation="0 0" />
+          </filter>
+        </defs>
         <path
           ref={pathRef}
           d={SPARK_PATH}
@@ -217,11 +252,13 @@ export function TestimonialBand() {
           strokeDasharray="7 8"
           strokeLinecap="round"
         />
-        <circle
+        <ellipse
           ref={dotRef}
           cx={FINAL_DOT_POSITION.x}
           cy={FINAL_DOT_POSITION.y}
-          r="3.5"
+          rx={DOT_RADIUS}
+          ry={DOT_RADIUS}
+          filter="url(#testimonial-dot-blur)"
           className="drop-shadow-[0_0_10px_rgba(220,38,38,0.55)]"
           fill="var(--primary)"
         />
