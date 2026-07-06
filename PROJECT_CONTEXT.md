@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-07-05 (latest main merged into cleanup audit test branch)
+**Last Updated**: 2026-07-05 (component consolidation and architecture simplification pass)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -17,7 +17,7 @@
 - **Competitive Analysis / Market Research**: AI-generated competitive landscape analysis with a strict v2 module contract. New documents render as a full-width Pencil-faithful designed page, not generic markdown. The UI is built from typed parsing of the stored markdown source and uses founder-friendly display labels including Executive Summary, Direct Competitors, Feature Comparison, Pricing Comparison, Best Customer Segments, How You'll Reach Customers, Ways to Stand Out, What Makes It Hard to Copy, First Version Focus, and Recommended Next Moves. Executive Summary is a single generated section and workspace/nav item with a selectable Overview child anchor; it includes the market snapshot, entry assessment, why-now signal, and biggest risk, while legacy Opportunity Verdict content is still folded into the summary when present. Direct competitor entries expect H3 headings plus concise fields for overview, core product, positioning, strengths, key edge, limitations, pricing model, and target audience so the app can render dense competitor cards and a fast-comparison table. When live Perplexity/Tavily research returns usable company URLs, competitor headings should be linked verified profiles; when live research is unavailable or empty, the prompt still generates conservative competitor candidates without fake URLs or exact unsupported pricing, starts Direct Competitors directly with H3 profiles, and the renderer filters old saved unavailable-research disclaimer paragraphs from Direct Competitors display. Product Plan owns risk, dependency, and open-question handling; Market Research no longer generates or displays a separate Risks & Competitor Responses subsection. Legacy or malformed documents fall back to markdown with upgrade guidance.
 - **Explainable Artifact Terms**: Structured Market Research, Product Plan, First Version Plan, and AI Prompts renderers include a static glossary-backed explanation system for high-confusion strategy terms. Section headers use icon-only tooltip controls, while controlled labels such as Agents, Impact, Mitigation, and Highest Risk use a dotted defined-term treatment. The first pass intentionally avoids rewriting arbitrary markdown fallback content.
 - **Gap Analysis**: Identifies market opportunities and unmet customer needs
-- **Product Plan Generation**: Complete Product Plans use the shared production/Prompt Lab request builder and render through the split Product Plan block renderer. The current numbered PRD-style contract is orientation-first: introduction/overview, goals, team and milestones, and success metrics appear before personas and implementation detail. Functional Requirements and User Stories & Acceptance Criteria remain generated in Product Plan markdown but are visually moved into the derived AI Prompts workspace section after Design Mockups; legacy/malformed plans fall back to markdown or the legacy block layout.
+- **Product Plan Generation**: Complete Product Plans use the shared production/Prompt Lab request builder and render through the split Product Plan block renderer. The current numbered PRD-style contract is orientation-first: introduction/overview, goals, team and milestones, and success metrics appear before personas and implementation detail. Functional Requirements and User Stories & Acceptance Criteria remain generated in Product Plan markdown but are visually moved into the derived AI Prompts workspace section after Design Mockups; legacy/malformed plans fall back to markdown (the intermediate legacy block layout was removed 2026-07-05).
 - **First Version Plan Generation**: First Version Plans use the shared production/Prompt Lab request builder and render through the split First Version Plan block renderer. The current risk-first contract covers summary, key risks/assumptions/scope decisions, target user/problem, MVP goal/definition of done, consolidated core user flows, suggested build approach with tactical shortcuts, recommended AI build tool, AI-friendly build sequence, validation plan, and next prompt. Recommended AI Build Tool, AI-Friendly Build Sequence, and Next Prompt are visually moved into the derived AI Prompts workspace section.
 - **Mockup Generation**: Three OpenRouter image storyboard alternatives are generated from First Version Plans, stored in private Supabase Storage, and rendered through the authenticated image proxy. Manual and Generate All/onboarding runs persist option-level draft progress with a run id, durable `mockup_option_drafts` rows, and `/api/mockups/recover-options` before retrying failed/missing options, so already-uploaded images can be recovered after browser refreshes or route timeouts. Legacy Stitch HTML execution/proxy rendering is removed; old Stitch-format rows show a regeneration notice.
 - **AI Prompts Workspace Section**: A derived workspace section rendered after Design Mockups. It does not create a database table, generation queue item, PDF export type, or its own system prompt; all content is parsed from the saved Product Plan and First Version Plan markdown. It renders two numbered subsections: a Recommended AI Build Tool section (card populated from the First Version Plan tool recommendation, with detail fields rendered as inline markdown) and a Prompt Files section. Prompt Files renders markdown file cards instead of full document UIs: `next-prompt.md`, `ai-build-guardrails.md` (legacy docs only), `ai-friendly-build-sequence.md`, `functional-requirements.md`, and `user-stories-and-acceptance-criteria.md` come straight from plan sections, while `sub-agents.md` (one ready-to-paste prompt per agent role from the Product Plan Team and Milestones → Agents list) and `project-context.md` (starter CLAUDE.md-style repo context file) are assembled client-side in `src/components/analysis/ai-prompt-files.tsx`. Each card has copy and download icon actions and opens a lightbox preview with the same actions; cards keep their `ai-prompts-*` anchors for nav. Markdown file previews and design mockup concepts share the `ArtifactLightbox` shell (`src/components/ui/artifact-lightbox.tsx`), which renders a filename header bar with copy/download/close actions; the mockup lightbox copies the image itself to the clipboard as PNG. The Recommended Tool card parses labeled bullet fields with the colon inside or outside the bold marker. Market Research's Positioning Map section renders per-competitor labeled 0-10 score bars with rationale and evidence instead of a scatter plot. Mockup option parsing treats `storagePath` as optional for display; workspace retry/recovery flows still validate it themselves. Workspace document mastheads are title-only (no eyebrow kickers), and Design Mockups now has its own section heading. Post-submit onboarding and manual Generate All progress UIs may show AI Prompts as a display-only derived row once the Product Plan and First Version Plan handoff content is ready, but it is never executed as its own queue item.
@@ -34,8 +34,8 @@
   - Authenticated visitors to `/` are redirected to `/projects`
   - Fail-open API behavior so CTA rendering does not block on Supabase errors
 - **OpenRouter Image Mockups**: Mockup generation uses OpenRouter image storyboards end to end. Legacy Stitch HTML previews have been removed; if an old Stitch-format row is encountered before production data cleanup, the renderer shows a safe "Legacy mockup format" regeneration notice instead of fetching or rendering HTML. Features:
-  - `src/lib/mockup-design-plan.ts` generates and validates hidden mockup design plans with primary platform, happy-path scenario, an exact two-screen skeleton-frame limit, screen captions, and option-level design directions
-  - `src/lib/openrouter-image-mockup-pipeline.ts` generates OpenRouter storyboard alternatives and uploads image bytes to Supabase Storage, with a reusable single-option helper for manual generation
+  - `src/lib/mockups/design-plan.ts` generates and validates hidden mockup design plans with primary platform, happy-path scenario, an exact two-screen skeleton-frame limit, screen captions, and option-level design directions
+  - `src/lib/mockups/openrouter-image-pipeline.ts` generates OpenRouter storyboard alternatives and uploads image bytes to Supabase Storage, with a reusable single-option helper for manual generation
   - `src/app/api/mockups/generate-option/route.ts` generates and stores one mockup option image for manual workspace generation
   - `src/app/api/mockups/recover-options/route.ts` reconstructs saved storyboard option metadata from Supabase Storage for the current run before retrying failed/missing options
   - `src/app/api/mockups/finalize/route.ts` finalizes three generated options into the canonical `mockups` row
@@ -48,7 +48,7 @@
 - **Generate-Missing-Only Documents**: Planning documents are active singletons by default. Direct generation routes and Generate All/onboarding execution check for an existing active document before credits or external AI calls; duplicate attempts return/record a skipped existing output instead of inserting another row. Future document versioning must be a separate explicit product action.
 - **Dashboard Generation Status**: The project dashboard derives document loading states from the durable Generate All/onboarding queue, not only local browser flags. The left document rail shows compact queued/waiting/generating/ready indicators plus dark `Generate` buttons for missing idle modules and dark `Retry` buttons only for modules that actually failed. Queue items blocked by a failed/missing prerequisite show `Waiting`, not `Retry`, until the prerequisite content exists. The right document modules show queued/waiting/loading states, centered retry placeholders with a user-friendly error message and wider dark `Retry` action, or canonical saved content. Product Plan and First Version Plan no longer show partial streaming previews in the workspace; they show loading/generating states until the saved document is ready. Overview and Market Research share the same competitive-analysis generation state, so a retry from either section moves both rail items together.
 - **Lazy Workspace Loading**: Project workspaces use slugged project refs at `/projects/[projectRef]` and lazy-load owned document collections through `/api/projects/[id]/workspace`. The workspace requests only the document types it needs, keeps section hash navigation in sync, and defers below-the-fold rendering to avoid freezing large generated documents.
-- **Prompt/Inline Edit Cleanup**: The Prompt tab remains deprecated and `/api/prompt-chat` returns `410 Gone`. The old inline "Edit with AI" client surface and `/api/document-edit` route are not present in the current app; document PATCH routes still exist for direct content updates.
+- **Prompt/Inline Edit Cleanup**: The Prompt tab remains deprecated and `/api/prompt-chat` returns `410 Gone`. The old inline "Edit with AI" client surface and `/api/document-edit` route are not present in the current app. The per-document PATCH routes (`/api/analyses/[id]`, `/api/prds/[id]`, `/api/mvp-plans/[id]`, `/api/tech-specs/[id]`) had no remaining callers and were removed on 2026-07-05.
 
 ### User Workflow
 
@@ -282,13 +282,13 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 ### Shared UI Architecture
 
 - **Document registry** — document labels, titles, icons, credit cost, nav visibility, Generate All order, and default models come from `src/lib/document-definitions.ts`; scroll-section anchors live in `src/lib/document-sections.ts`.
-- **Idea intake contracts** — typed question, answer, summary, context, and project-name helpers live in `src/lib/intake-*.ts`, `src/lib/project-name-generation.ts`, and `src/lib/prompts/intake-wizard.ts`. `src/lib/intake-examples.ts` owns the configurable example ideas shown in Step 1.
+- **Idea intake contracts** — typed question, answer, summary, context, and project-name helpers live in `src/lib/intake/`, `src/lib/project-name-generation.ts`, and `src/lib/prompts/intake-wizard.ts`. `src/lib/intake/examples.ts` owns the configurable example ideas shown in Step 1.
 - **Shared auth building blocks** — `AuthFormContent` is the single source of form logic (email/password/Google, validation, success state). It is used by both the `/auth` page and the `AuthModal` overlay. `AuthField` and `AuthPasswordField` are reusable field primitives. `AuthMode` type is exported from `auth-form-content.tsx`.
 - **Auth Modal** — `src/components/auth/auth-modal.tsx` is a `"use client"` Radix UI Dialog. It reads `?modal=auth&mode=signin|signup` from the URL, opens over the landing page with a dark blurred overlay (`bg-black/65 backdrop-blur-[4px]`), and closes by clearing URL params. Sign In / Sign Up links on the landing page use `?modal=auth&mode=...` instead of navigating to `/auth`.
 - **Project allowance guard** — `src/lib/project-allowance.ts` resolves project allowance from active `subscriptions` joined to `plans`, explicit plan fields/features when present, plan-name fallbacks, and the active subscription or calendar-month window. Free users are treated as a one-project lifetime window, while paid users use the active subscription period or UTC calendar month. The guard runs during final intake project creation before any project row is inserted, then runs again under a short-lived `project_creation_locks` row immediately before insert to reduce concurrent project creation races. The private Supabase-only `Internal Dev` plan name resolves to unmetered project allowance for internal developer accounts; it is not a Stripe/customer-facing plan. Public pricing and checkout use explicit `plans.is_public` and `plans.checkout_enabled` flags instead of display-name filtering.
 - **Projects dashboard cards** — `/projects` loads owned projects and allowance status server-side, then renders `DashboardProjectCard` for last-edited labels, hover/focus prefetching of the workspace and competitive document payload, and paid-plan-only delete affordances. Free users see an upgrade prompt; paid users get a confirmation modal before calling `DELETE /api/projects/[id]`.
 - **Deprecated chat cleanup** — the old Prompt Chat UI and general chat component are removed from the app tree; `/api/prompt-chat` remains as a minimal `410 Gone` endpoint so external callers receive the documented deprecation response.
-- **Shared stacked tab navigation** — project document navigation and preferences navigation now use the same stacked tab-nav component so visual changes to the left-side tab pattern can be made in one place.
+- **Stacked tab navigation** — `src/components/layout/stacked-tab-nav.tsx` renders the left-side stacked tab pattern; it is currently used by the Preferences page (project document navigation uses the scroll-aware `AnchorNav` instead).
 - **Shared authenticated page shell** — dashboard-level pages such as Projects, Billing, and Preferences use `src/components/layout/app-page-shell.tsx` for consistent page width, responsive padding, heading hierarchy, and action placement.
 - **Shared account utilities** — credit formatting, billing portal navigation, brand wordmark rendering, and auth sign-out are centralized in shared utilities/hooks/components and reused across dashboard header/sidebar, billing, settings, and auth views.
 
@@ -330,11 +330,10 @@ The `MarkdownRenderer` component includes an interactive Mermaid diagram viewer 
 
 **Expanded Modal View**:
 - Triggered by clicking the expand button
-- Full-screen modal with `calc(100vw-4rem)` × `calc(100vh-4rem)` sizing (2rem margins on all sides)
-- Dark backdrop with blur (`bg-black/50 backdrop-blur-sm`)
-- Close button (top-right) with `Minimize2` icon
-- Click outside or press `Escape` to close
-- Body scroll prevention when modal is open
+- Rendered through the shared `ArtifactLightbox` shell (`src/components/ui/artifact-lightbox.tsx`), the single overlay implementation also used by mockup previews and AI prompt file previews
+- Near-full-width panel (`max-w-[calc(100vw-4rem)]`) with the standard lightbox header bar and close action
+- Click outside or press `Escape` to close; body scroll lock is handled by the lightbox shell
+- Zoom/pan controls and the pan hint render inside the lightbox body
 - Larger font size (20px vs 14px) for better readability
 
 **Styling Implementation**:
@@ -379,10 +378,6 @@ src/
 │   │   ├── intake/pending/route.ts     # Pending intake token create/read
 │   │   ├── intake/questions/route.ts   # AI-generated structured intake questions
 │   │   ├── analysis/[type]/route.ts   # POST run analysis (in-house pipelines, fixed model per type)
-│   │   ├── analyses/[id]/route.ts     # PATCH update analysis content
-│   │   ├── prds/[id]/route.ts         # PATCH update PRD content
-│   │   ├── mvp-plans/[id]/route.ts    # PATCH update First Version Plan content
-│   │   ├── tech-specs/[id]/route.ts   # PATCH update tech spec content
 │   │   ├── waitlist/route.ts          # GET/POST waitlist status + signup
 │   │   ├── mockups/generate/route.ts  # OpenRouter image mockup generation
 │   │   ├── mockups/image/route.ts     # Authenticated proxy for stored OpenRouter mockup images
@@ -412,7 +407,7 @@ src/
 │   │   ├── card.tsx              # Card layouts
 │   │   ├── input.tsx, textarea.tsx, label.tsx
 │   │   ├── badge.tsx, avatar.tsx, spinner.tsx
-│   │   ├── dropdown-menu.tsx, tabs.tsx  # Radix UI
+│   │   ├── dropdown-menu.tsx      # Radix UI
 │   │   ├── markdown-renderer.tsx # Markdown with Mermaid + syntax highlighting
 │   │   └── ...
 │   ├── layout/                   # Layout components
@@ -441,16 +436,18 @@ src/
 │   │   ├── server.ts             # Server-side client
 │   │   └── middleware.ts         # Auth middleware logic
 │   ├── stripe.ts                 # Stripe singleton
-│   ├── openrouter.ts             # OpenRouter AI API (chat, gap-analysis fallback)
 │   ├── analysis-pipelines.ts     # In-house analysis orchestration (market research, Product Plan, First Version Plan, tech spec)
-│   ├── openrouter-image-mockup-format.ts # Client-safe OpenRouter image mockup JSON parser
-│   ├── openrouter-image-mockup-pipeline.ts # OpenRouter image mockup generation + Supabase Storage upload
+│   ├── intake/                   # Idea intake types, context, questions, summaries
+│   ├── mockups/                  # Mockup design plans, drafts, recovery, OpenRouter image pipeline/format
+│   ├── generation/               # Generate All / generation queue services, billing, onboarding rows
+│   ├── stripe/                   # Stripe singleton (index.ts) + checkout/webhook/subscription helpers
+│   ├── prompt-lab/               # Dev Prompt Lab composition (index.ts), shared labels, default state
 │   ├── waitlist.ts               # Waitlist business rules and validation
 │   ├── perplexity.ts             # Perplexity API client (competitor search, with retry)
 │   ├── tavily.ts                 # Tavily API client (URL content extraction, with retry)
 │   ├── with-retry.ts             # Shared retry utility for external API calls (3 retries, exponential backoff on 429/5xx)
 │   ├── logger.ts                 # Structured logger with Sentry warning/error forwarding
-│   └── utils.ts                  # Utility functions & CREDIT_COSTS
+│   └── utils.ts                  # cn() class merging and shared formatting utilities
 │
 ├── types/                        # TypeScript types
 │   └── database.ts               # Supabase DB types (auto-generated)
@@ -495,11 +492,9 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | `mvp-plan.ts` | `MVP_PLAN_SYSTEM_PROMPT` | `analysis-pipelines.ts` |
 | `launch-plan.ts` | `LAUNCH_PLAN_SYSTEM_PROMPT`, `buildLaunchPlanUserPrompt()` | `analysis-pipelines.ts`, Prompt Lab |
 | `tech-spec.ts` | `TECH_SPEC_SYSTEM_PROMPT` | `analysis-pipelines.ts` |
-| `general-chat.ts` | `buildGeneralChatSystemPrompt()` | `openrouter.ts` |
 | ~~`document-edit.ts`~~ | *(deleted — Edit with AI feature removed)* | — |
 | `mockups.ts` | `buildMockupPrompt()` | `api/mockups/generate/` |
 | `competitor-search.ts` | `COMPETITOR_SEARCH_SYSTEM_PROMPT`, `buildCompetitorSearchUserPrompt()` | `perplexity.ts` |
-| `legacy-fallback.ts` | `LEGACY_ANALYSIS_PROMPTS` | `openrouter.ts` (gap-analysis fallback) |
 | `index.ts` | Barrel re-export of all above | Everything |
 
 ### Market Research V2 Contract
@@ -544,7 +539,7 @@ const [loading, setLoading] = useState(false)
 async function handleSubmit() {}
 
 // Constants: UPPER_SNAKE_CASE
-const CREDIT_COSTS = { ... }
+const BASE_ACTION_TOKENS = { ... }
 const ANALYSIS_PROMPTS = { ... }
 
 // Props interfaces: {ComponentName}Props
@@ -1116,7 +1111,7 @@ docker run -p 3000:3000 idea2app
   - Cost: project-bundled, no credits consumed
   - Uses a hidden design plan plus OpenRouter image generation for 3 static storyboard alternatives
   - Route `maxDuration`: 800s
-  - Generation logic lives in `src/lib/openrouter-image-mockup-pipeline.ts` and is shared with server-side document generation
+  - Generation logic lives in `src/lib/mockups/openrouter-image-pipeline.ts` and is shared with server-side document generation
 
 - **GET /api/mockups/image**: Proxy stored OpenRouter mockup images through the server
   - Query: `projectId`, `path`, optional `mockupId`
@@ -1176,25 +1171,11 @@ docker run -p 3000:3000 idea2app
   - Body: `{ projectId }`
   - Marks pending/generating normalized items as cancelled in DB and syncs the compatibility queue JSON
 
-- **PATCH /api/analyses/[id]**: Update analysis content
-  - Body: `{ content }`
-  - Returns: `{ data: updated_analysis }`
-
-- **PATCH /api/prds/[id]**: Update PRD content
-  - Body: `{ content }`
-  - Returns: `{ data: updated_prd }`
-
-- **PATCH /api/mvp-plans/[id]**: Update First Version Plan content
-  - Body: `{ content }`
-  - Returns: `{ data: updated_mvp_plan }`
-
 - **PATCH /api/mockups/[id]**: Update mockup content
   - Body: `{ content }`
   - Returns: `{ data: updated_mockup }`
 
-- **PATCH /api/tech-specs/[id]**: Update tech spec content
-  - Body: `{ content }`
-  - Returns: `{ data: updated_tech_spec }`
+- The former per-document PATCH routes (`/api/analyses/[id]`, `/api/prds/[id]`, `/api/mvp-plans/[id]`, `/api/tech-specs/[id]`) were removed on 2026-07-05; no client code called them after the Edit-with-AI removal.
 
 ### App Generation
 - App generation is archived and `/api/generate-app` has been removed.
@@ -1443,53 +1424,47 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/workspace-tab-policy.ts](src/lib/workspace-tab-policy.ts) | Workspace tab resolution and deprecated prompt-tab redirect policy |
 | [src/lib/json-render/catalog.ts](src/lib/json-render/catalog.ts) | Allowed json-render component catalog and mockup system prompt context |
 | [src/lib/json-render/registry.tsx](src/lib/json-render/registry.tsx) | json-render registry backed by `@json-render/shadcn` components |
-| [src/lib/prompt-lab.ts](src/lib/prompt-lab.ts) | Server-side Prompt Lab prompt composition, local-dev guard, isolated text generation with shared long-text timeout, and single-option mockup run helper |
-| [src/lib/prompt-lab-shared.ts](src/lib/prompt-lab-shared.ts) | Client-safe Prompt Lab artifact labels and default launch brief constants |
+| [src/lib/prompt-lab/index.ts](src/lib/prompt-lab/index.ts) | Server-side Prompt Lab prompt composition, local-dev guard, isolated text generation with shared long-text timeout, and single-option mockup run helper |
+| [src/lib/prompt-lab/shared.ts](src/lib/prompt-lab/shared.ts) | Client-safe Prompt Lab artifact labels and default launch brief constants |
 | [src/lib/openrouter-timeout.ts](src/lib/openrouter-timeout.ts) | Shared OpenRouter long-text timeout constants, abort detection, and user-facing timeout message helpers |
 | [src/lib/prompts/launch-plan.ts](src/lib/prompts/launch-plan.ts) | AI Launch Plan system prompt and secure user prompt builder |
-| [src/app/api/analyses/[id]/route.ts](src/app/api/analyses/[id]/route.ts) | PATCH endpoint to update analysis content |
-| [src/app/api/prds/[id]/route.ts](src/app/api/prds/[id]/route.ts) | PATCH endpoint to update PRD content |
-| [src/app/api/mvp-plans/[id]/route.ts](src/app/api/mvp-plans/[id]/route.ts) | PATCH endpoint to update First Version Plan content |
 | [src/app/api/mockups/generate/route.ts](src/app/api/mockups/generate/route.ts) | POST endpoint to generate OpenRouter storyboard mockup alternatives without credit consumption. |
 | [src/app/api/mockups/generate-option/route.ts](src/app/api/mockups/generate-option/route.ts) | POST endpoint to generate one OpenRouter storyboard option for manual workspace generation. |
 | [src/app/api/mockups/finalize/route.ts](src/app/api/mockups/finalize/route.ts) | POST endpoint to validate and finalize three saved OpenRouter storyboard options into the canonical mockups document row. |
 | [src/app/api/mockups/recover-options/route.ts](src/app/api/mockups/recover-options/route.ts) | POST endpoint to recover already-uploaded storyboard option images for a mockup run before retrying OpenRouter generation. |
 | [src/app/api/mockups/fixture/route.ts](src/app/api/mockups/fixture/route.ts) | POST endpoint to save no-credit storyboard fixture mockups for local display and retry testing. |
 | [src/app/api/mockups/[id]/route.ts](src/app/api/mockups/[id]/route.ts) | PATCH endpoint to update mockup content |
-| [src/app/api/tech-specs/[id]/route.ts](src/app/api/tech-specs/[id]/route.ts) | PATCH endpoint to update tech spec content |
 | [src/lib/competitive-analysis-v2.ts](src/lib/competitive-analysis-v2.ts) | Market Research v2 section contract, legacy/v2 view model helpers, parser utilities, and legacy heading aliases |
 | [src/lib/planning-document-parser.ts](src/lib/planning-document-parser.ts) | Shared markdown section, list, paragraph, source cleanup, and table parser utilities for PRD/MVP block rendering |
-| [src/lib/prd-document.ts](src/lib/prd-document.ts) | PRD parser/view-model helpers used by the PRD block renderer, including persona/profile grouping fallback |
-| [src/lib/mvp-plan-document.ts](src/lib/mvp-plan-document.ts) | First Version Plan parser/view-model helpers used by the First Version Plan block renderer, including direct-content fallback sections |
+| [src/lib/planning-document-requests.ts](src/lib/planning-document-requests.ts) | Shared Product Plan / First Version Plan OpenRouter request builders, default models, token limits, and temperatures (used by production pipelines and Prompt Lab) |
 | [src/lib/analysis-pipelines.ts](src/lib/analysis-pipelines.ts) | In-house analysis orchestration (market research, Product Plan, First Version Plan, tech spec). Most OpenRouter long-form text calls use the shared 240s AbortSignal timeout; Product Plan and First Version Plan use the 480s planning-document timeout. |
-| [src/lib/mockup-design-plan.ts](src/lib/mockup-design-plan.ts) | Hidden mockup design-plan prompt, schema parser, and validation for platform, happy path, platform-specific screen limits, and three visual directions. |
-| [src/lib/openrouter-image-mockup-pipeline.ts](src/lib/openrouter-image-mockup-pipeline.ts) | OpenRouter-only storyboard mockup generation, image config handling, decoded dimension capture, and Supabase Storage upload. |
-| [src/lib/openrouter-image-mockup-format.ts](src/lib/openrouter-image-mockup-format.ts) | Client-safe parser/helpers for OpenRouter image/storyboard mockup JSON. |
-| [src/lib/mockup-option-drafts.ts](src/lib/mockup-option-drafts.ts) | Server helper for durable partial mockup option draft persistence, recovery normalization, authorization checks, and cleanup. |
+| [src/lib/mockups/design-plan.ts](src/lib/mockups/design-plan.ts) | Hidden mockup design-plan prompt, schema parser, and validation for platform, happy path, platform-specific screen limits, and three visual directions. |
+| [src/lib/mockups/openrouter-image-pipeline.ts](src/lib/mockups/openrouter-image-pipeline.ts) | OpenRouter-only storyboard mockup generation, image config handling, decoded dimension capture, and Supabase Storage upload. |
+| [src/lib/mockups/openrouter-image-format.ts](src/lib/mockups/openrouter-image-format.ts) | Client-safe parser/helpers for OpenRouter image/storyboard mockup JSON. |
+| [src/lib/mockups/option-drafts.ts](src/lib/mockups/option-drafts.ts) | Server helper for durable partial mockup option draft persistence, recovery normalization, authorization checks, and cleanup. |
 | [src/lib/with-retry.ts](src/lib/with-retry.ts) | Shared retry utility — 3 retries, exponential backoff [1s/2s/4s], retries on 429/5xx/network errors |
 | [src/lib/perplexity.ts](src/lib/perplexity.ts) | Perplexity API client for competitor search (wrapped with withRetry) |
 | [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction (wrapped with withRetry) |
 | [src/stores/generate-all-store.ts](src/stores/generate-all-store.ts) | Zustand store for Generate All UI state. Fires execute route fire-and-forget; polls status every 3s. |
 | [src/components/workspace/generate-all-hydrator.tsx](src/components/workspace/generate-all-hydrator.tsx) | Thin bridge: keeps store callbacks fresh each render; runs one-time DB hydration per project |
-| [src/lib/generation-queue-service.ts](src/lib/generation-queue-service.ts) | Normalized queue item helpers for dependency checks, status computation, item claims, and legacy queue JSON sync. |
-| [src/lib/onboarding-generation.ts](src/lib/onboarding-generation.ts) | Onboarding queue metadata, loading row mapping, run-id helpers, and canonical `#executive-summary` redirect construction. |
+| [src/lib/generation/queue-service.ts](src/lib/generation/queue-service.ts) | Normalized queue item helpers for dependency checks, status computation, item claims, and legacy queue JSON sync. |
+| [src/lib/generation/onboarding.ts](src/lib/generation/onboarding.ts) | Onboarding queue metadata, loading row mapping, run-id helpers, and canonical `#executive-summary` redirect construction. |
 | [src/lib/document-generation-service.ts](src/lib/document-generation-service.ts) | Shared server-side document generation service used by Generate All/onboarding; skips and returns existing output table/id references when an active document already exists. |
 | [src/app/api/generate-all/execute/route.ts](src/app/api/generate-all/execute/route.ts) | Server-side Generate All pipeline (maxDuration=540). Dependency-aware item execution with credit deduction/refund, retries, partial status, and DB state tracking. |
-| [src/lib/generation-queue-credit-flow.ts](src/lib/generation-queue-credit-flow.ts) | Testable Generate All credit consume/refund helpers |
+| [src/lib/generation/queue-credit-flow.ts](src/lib/generation/queue-credit-flow.ts) | Testable Generate All credit consume/refund helpers |
 | [src/lib/logger.ts](src/lib/logger.ts) | Structured logger with Sentry warning/error forwarding |
-| [src/lib/stripe-webhook-claim.ts](src/lib/stripe-webhook-claim.ts) | Testable Stripe webhook idempotency claim/reclaim helper |
-| [src/lib/stripe-checkout-plan.ts](src/lib/stripe-checkout-plan.ts) | Checkout plan-price eligibility helper |
+| [src/lib/stripe/webhook-claim.ts](src/lib/stripe/webhook-claim.ts) | Testable Stripe webhook idempotency claim/reclaim helper |
+| [src/lib/stripe/checkout-plan.ts](src/lib/stripe/checkout-plan.ts) | Checkout plan-price eligibility helper |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
 | [src/lib/waitlist.ts](src/lib/waitlist.ts) | Waitlist thresholds and email validation helpers |
 | [src/lib/supabase/client.ts](src/lib/supabase/client.ts) | Browser Supabase client |
-| [src/lib/stripe.ts](src/lib/stripe.ts) | Stripe singleton client — lazy-initialized with Proxy export |
-| [src/lib/stripe-subscription-sync.ts](src/lib/stripe-subscription-sync.ts) | Pure helpers that map Stripe subscription item Price IDs to `plan_prices`, derive real billing periods, and build period-level credit idempotency keys |
+| [src/lib/stripe/index.ts](src/lib/stripe/index.ts) | Stripe singleton client — lazy-initialized with Proxy export |
+| [src/lib/stripe/subscription-sync.ts](src/lib/stripe/subscription-sync.ts) | Pure helpers that map Stripe subscription item Price IDs to `plan_prices`, derive real billing periods, and build period-level credit idempotency keys |
 | [src/app/api/stripe/checkout/route.ts](src/app/api/stripe/checkout/route.ts) | POST — creates Stripe checkout session for subscription upgrade |
 | [src/app/api/stripe/portal/route.ts](src/app/api/stripe/portal/route.ts) | POST — creates Stripe billing portal session for subscription management |
 | [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) | POST — handles Stripe webhook events with event idempotency, subscription item price mapping, real period dates, and period-level credit grants |
 | [src/app/(dashboard)/billing/page.tsx](src/app/(dashboard)/billing/page.tsx) | Billing page — plan cards, billing interval selectors, subscription status, project allowance usage, upgrade flow |
-| [src/lib/openrouter.ts](src/lib/openrouter.ts) | OpenRouter AI integration (fallback) |
-| [src/lib/utils.ts](src/lib/utils.ts) | Utility functions & CREDIT_COSTS |
+| [src/lib/utils.ts](src/lib/utils.ts) | cn() class merging and shared formatting utilities |
 | [src/proxy.ts](src/proxy.ts) | Next proxy entry point for Supabase session refresh |
 | [src/lib/supabase/middleware.ts](src/lib/supabase/middleware.ts) | Supabase cookie/session refresh helper used by `src/proxy.ts` |
 | [src/types/database.ts](src/types/database.ts) | Database type definitions |
