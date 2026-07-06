@@ -38,6 +38,8 @@ interface DocumentData {
 
 interface ScrollableContentProps {
   projectId: string
+  /** Current project name, shown as the proposed name in the Executive Summary */
+  projectName?: string
   documents: Record<string, DocumentData>
   onGenerateDocument?: (docType: DocumentType) => void
 }
@@ -238,7 +240,7 @@ function MockupsSection({ content, projectId }: { content: string; projectId: st
 }
 
 export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentProps>(
-  function ScrollableContent({ projectId, documents, onGenerateDocument }, ref) {
+  function ScrollableContent({ projectId, projectName, documents, onGenerateDocument }, ref) {
     const competitiveData = documents["competitive"]
     const prdData = documents["prd"]
     const mvpData = documents["mvp"]
@@ -266,6 +268,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
               content={competitiveData.content}
               metadata={competitiveData.metadata}
               projectId={projectId}
+              projectName={projectName}
             />
           ) : competitiveData?.displayState && competitiveData.displayState.displayStatus !== "idle" ? (
             <GenerationStatusModule

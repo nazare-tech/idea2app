@@ -7,6 +7,7 @@ import {
   getCompetitiveAnalysisStructuredData,
   getCompetitiveAnalysisViewModel,
   parseCompetitiveAnalysisV2,
+  parsePositioningAxis,
   sanitizeCompetitiveAnalysisDisplayMarkdown,
   sanitizeDirectCompetitorDisplayContent,
   type CompetitiveAnalysisV2SectionName,
@@ -248,4 +249,38 @@ test("evidence-light fallback text still yields a valid v2 document", () => {
   assert.equal(parsed.isValid, true)
   assert.match(parsed.sections["Pricing Comparison"] ?? "", /Evidence was insufficient/)
   assert.match(parsed.sections["What Makes It Hard to Copy"] ?? "", /Available competitor research suggests/)
+})
+
+test("parsePositioningAxis splits the parenthesized 0/10 endpoint format", () => {
+  const axis = parsePositioningAxis(
+    "Workflow Automation (0 = Fully manual editing and research, 10 = Fully autonomous AI generation and iteration)"
+  )
+
+  assert.deepEqual(axis, {
+    name: "Workflow Automation",
+    lowLabel: "Fully manual editing and research",
+    highLabel: "Fully autonomous AI generation and iteration",
+  })
+})
+
+test("parsePositioningAxis splits the older where-means endpoint format", () => {
+  const axis = parsePositioningAxis(
+    "Speed where 0 means manual and 10 means automated"
+  )
+
+  assert.deepEqual(axis, {
+    name: "Speed",
+    lowLabel: "Manual",
+    highLabel: "Automated",
+  })
+})
+
+test("parsePositioningAxis passes plain dimension names through without endpoints", () => {
+  assert.deepEqual(parsePositioningAxis("Ease of setup"), {
+    name: "Ease of setup",
+    lowLabel: null,
+    highLabel: null,
+  })
+  assert.equal(parsePositioningAxis(null), null)
+  assert.equal(parsePositioningAxis("   "), null)
 })

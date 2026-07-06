@@ -115,6 +115,15 @@ export interface CompetitiveAnalysisPositioningMap {
   points: CompetitiveAnalysisPositioningPoint[]
 }
 
+export interface CompetitiveAnalysisPositioningAxis {
+  /** Short dimension name shown on score bars (e.g. "Workflow Automation") */
+  name: string
+  /** What a 0 score means, when the document defines it */
+  lowLabel: string | null
+  /** What a 10 score means, when the document defines it */
+  highLabel: string | null
+}
+
 export interface CompetitiveAnalysisStructuredData {
   executiveSummary: { paragraphs: string[]; bullets: string[] }
   directCompetitors: CompetitiveAnalysisCompetitorProfile[]
@@ -476,6 +485,50 @@ function parsePositioningScore(value: string | undefined) {
     return null
   }
   return score
+}
+
+function cleanAxisEndpointLabel(value: string) {
+  const trimmed = value.replace(/[.。]+\s*$/g, "").trim()
+  if (!trimmed) return null
+  return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`
+}
+
+/**
+ * Split an axis description into a short dimension name plus 0/10 endpoint
+ * labels. Generated documents write either
+ * "Workflow Automation (0 = fully manual, 10 = fully autonomous)" or the
+ * older "Speed where 0 means manual and 10 means automated" phrasing;
+ * plain names ("Ease of setup") come back with null endpoints.
+ */
+export function parsePositioningAxis(
+  axis: string | null
+): CompetitiveAnalysisPositioningAxis | null {
+  const trimmed = axis?.trim()
+  if (!trimmed) return null
+
+  const parenMatch = trimmed.match(
+    /^(.*?)\s*\(\s*0\s*=\s*(.+?)\s*[,;]\s*10\s*=\s*(.+?)\s*\)\s*$/
+  )
+  if (parenMatch) {
+    return {
+      name: parenMatch[1].trim() || trimmed,
+      lowLabel: cleanAxisEndpointLabel(parenMatch[2]),
+      highLabel: cleanAxisEndpointLabel(parenMatch[3]),
+    }
+  }
+
+  const whereMatch = trimmed.match(
+    /^(.*?)[,;]?\s*(?:\bwhere\s+)?0\s+means\s+(.+?)\s+and\s+10\s+means\s+(.+)$/i
+  )
+  if (whereMatch) {
+    return {
+      name: whereMatch[1].trim() || trimmed,
+      lowLabel: cleanAxisEndpointLabel(whereMatch[2]),
+      highLabel: cleanAxisEndpointLabel(whereMatch[3]),
+    }
+  }
+
+  return { name: trimmed, lowLabel: null, highLabel: null }
 }
 
 function parsePositioningMap(content: string): CompetitiveAnalysisPositioningMap {

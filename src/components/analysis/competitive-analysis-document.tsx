@@ -21,6 +21,7 @@ import {
   type CompetitiveAnalysisPositioningPoint,
   type CompetitiveAnalysisStructuredData,
   getCompetitiveAnalysisViewModel,
+  parsePositioningAxis,
   sanitizeCompetitiveAnalysisDisplayMarkdown,
   sanitizeDirectCompetitorDisplayContent,
 } from "@/lib/competitive-analysis-v2"
@@ -31,6 +32,29 @@ interface CompetitiveAnalysisDocumentProps {
   metadata?: Record<string, unknown> | null
   currentVersion?: number
   projectId: string
+  /** AI-generated project name, surfaced as the proposed name in the Executive Summary */
+  projectName?: string
+}
+
+function ProposedNameCard({ projectName }: { projectName?: string }) {
+  const name = projectName?.trim()
+  if (!name || name === "Untitled") return null
+
+  return (
+    <div className="border border-[#E8DDD5] bg-white px-5 py-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A8480]">
+        Proposed Name
+      </p>
+      <p
+        className={cn(
+          displayFontClass,
+          "mt-1 text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]"
+        )}
+      >
+        {name}
+      </p>
+    </div>
+  )
 }
 
 function TopLevelDocumentHeader({
@@ -401,33 +425,26 @@ function FastComparisonTable({
               className={index % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"}
             >
               <td className={cn("border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[0].className)}>
-                {competitor.websiteUrl ? (
-                  <a
-                    href={competitor.websiteUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-start gap-1.5 transition-opacity hover:opacity-80"
-                  >
-                    <span
-                      className={cn(
-                        displayFontClass,
-                        "text-[14px] font-semibold leading-5 text-[#0A0A0A]"
-                      )}
-                    >
-                      {competitor.heading}
-                    </span>
-                    <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0A0A0A]" />
-                  </a>
-                ) : (
-                  <p
+                {/* Fall back to a web search when the document has no verified URL, so every competitor stays reachable without fabricating an official link. */}
+                <a
+                  href={
+                    competitor.websiteUrl ??
+                    `https://www.google.com/search?q=${encodeURIComponent(competitor.heading)}`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-start gap-1.5 transition-opacity hover:opacity-80"
+                >
+                  <span
                     className={cn(
                       displayFontClass,
                       "text-[14px] font-semibold leading-5 text-[#0A0A0A]"
                     )}
                   >
                     {competitor.heading}
-                  </p>
-                )}
+                  </span>
+                  <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0A0A0A]" />
+                </a>
               </td>
               <td className={cn("space-y-3 border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[1].className)}>
                 <CompetitorTableDetail
@@ -534,32 +551,60 @@ function hasPositioningScores(
   return point.x !== null && point.y !== null
 }
 
-function formatAxisEndpointLabel(value: string) {
-  const trimmed = value.replace(/[.\u3002]+$/g, "").trim()
-  if (!trimmed) return value
-  return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`
+/**
+ * Turn an axis description into a short bar label. The full 0/10 endpoint
+ * legend renders once at the top of the Positioning Map, so bars only show
+ * the dimension name (or "Low \u2192 High" when the axis has no name).
+ */
+function positioningBarLabel(axis: string | null, fallback: string) {
+  const parsed = parsePositioningAxis(axis)
+  if (!parsed) return fallback
+
+  const isFullAxisText = parsed.name === axis?.trim()
+  if (isFullAxisText && parsed.lowLabel && parsed.highLabel) {
+    return `${parsed.lowLabel} \u2192 ${parsed.highLabel}`
+  }
+
+  return parsed.name || fallback
 }
 
 /**
- * Turn an axis description into a short bar label. Axis text is either a
- * plain dimension name ("Ease of setup") or the generated endpoint form
- * ("... where 0 means manual and 10 means automated"), which becomes
- * "Manual \u2192 Automated".
+ * One-time score legend shown above the competitor rows so each bar does not
+ * repeat the "0 = ..., 10 = ..." endpoint definitions.
  */
-function positioningBarLabel(axis: string | null, fallback: string) {
-  if (!axis) return fallback
-
-  const endpointMatch = axis.match(
-    /where\s+0\s+means\s+(.+?)\s+and\s+10\s+means\s+(.+)$/i
+function PositioningLegend({
+  xAxis,
+  yAxis,
+}: {
+  xAxis: string | null
+  yAxis: string | null
+}) {
+  const axes = [parsePositioningAxis(xAxis), parsePositioningAxis(yAxis)].filter(
+    (axis): axis is NonNullable<typeof axis> =>
+      Boolean(axis && axis.lowLabel && axis.highLabel)
   )
 
-  if (endpointMatch) {
-    const low = formatAxisEndpointLabel(endpointMatch[1] ?? "")
-    const high = formatAxisEndpointLabel(endpointMatch[2] ?? "")
-    return `${low} \u2192 ${high}`
-  }
+  if (axes.length === 0) return null
 
-  return axis
+  return (
+    <div className="border border-[#EAE0D8] bg-[#FAFAFA] px-5 py-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#777777]">
+        How to read the scores
+      </p>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {axes.map((axis) => (
+          <div key={axis.name}>
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#4A4040]">
+              {axis.name}
+            </p>
+            <p className="mt-1 ui-type-caption text-[#777777]">
+              0 = {axis.lowLabel} &middot; 10 = {axis.highLabel}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function isOwnProductPoint(point: CompetitiveAnalysisPositioningPoint) {
@@ -620,6 +665,10 @@ function PositioningMap({
   return (
     <PencilCard title={title} description={description} showHeader={showHeader}>
       <div className="space-y-4">
+        <PositioningLegend
+          xAxis={positioningMap.xAxis}
+          yAxis={positioningMap.yAxis}
+        />
         {scoredPoints.length > 0 ? (
           <div className="grid gap-px border border-[#EAE0D8] bg-[#EAE0D8]">
             {scoredPoints.map((point, index) => {
@@ -817,6 +866,7 @@ export function CompetitiveOverviewSection({
   content,
   metadata,
   projectId,
+  projectName,
 }: CompetitiveAnalysisDocumentProps) {
   const viewModel = useMemo(
     () => getCompetitiveAnalysisViewModel(content, metadata),
@@ -837,6 +887,7 @@ export function CompetitiveOverviewSection({
       />
 
       <div className="flex flex-col gap-y-3 gap-x-0">
+        <ProposedNameCard projectName={projectName} />
         <ExecutiveSummaryCard summary={structured.executiveSummary} showHeader={false} />
       </div>
     </section>

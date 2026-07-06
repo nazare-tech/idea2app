@@ -359,3 +359,67 @@ test("legacy competitive document falls back to markdown renderer", () => {
   assert.match(html, /Competitive Analysis: Legacy/i)
   assert.doesNotMatch(html, /Regenerate as V2/)
 })
+
+test("positioning map shows the 0/10 legend once and short axis names on bars", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={buildV2Fixture({
+        "Positioning Map":
+          "- **X-Axis: Workflow Automation** (0 = Fully manual editing and research, 10 = Fully autonomous AI generation and iteration)\n- **Y-Axis: Strategic Intelligence** (0 = Basic historical analytics, 10 = Predictive closed-loop testing)\n\n| Competitor | X Score | Y Score | Placement Rationale |\n|---|---:|---:|---|\n| Competitor One | 4 | 8 | Strong teamwork, slower setup |\n| Competitor Two | 8 | 3 | Fast setup, weaker collaboration |",
+      })}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+
+  assert.equal(countMatches(html, /How to read the scores/g), 1)
+  // Endpoint definitions render once in the legend, not on every competitor bar.
+  assert.equal(countMatches(html, /Fully manual editing and research/g), 1)
+  assert.equal(countMatches(html, /Basic historical analytics/g), 1)
+  // Bars repeat only the short axis name: legend (1) plus visible label and
+  // aria-label per scored competitor (2 x 2).
+  assert.equal(countMatches(html, /Workflow Automation/g), 5)
+  assert.equal(countMatches(html, /data-positioning-state="scored"/g), 2)
+})
+
+test("competitor without a verified URL falls back to a web search link", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={buildV2Fixture()}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+
+  // Competitor One keeps its verified URL; Competitor Two has none in the
+  // document, so its name links to a search instead of rendering unlinked.
+  assert.match(html, /href="https:\/\/competitor-one\.example"/)
+  assert.match(
+    html,
+    /href="https:\/\/www\.google\.com\/search\?q=Competitor(?:%20|\+)Two"/
+  )
+})
+
+test("executive summary surfaces the proposed project name when provided", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveOverviewSection
+      content={buildV2Fixture()}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+      projectName="Influencer Growth Loop AI"
+    />
+  )
+
+  assert.match(html, /Proposed Name/)
+  assert.match(html, /Influencer Growth Loop AI/)
+
+  const withoutName = renderToStaticMarkup(
+    <CompetitiveOverviewSection
+      content={buildV2Fixture()}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+      projectName="Untitled"
+    />
+  )
+  assert.doesNotMatch(withoutName, /Proposed Name/)
+})
