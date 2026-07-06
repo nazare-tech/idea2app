@@ -8,8 +8,10 @@ import {
   Search,
   Target,
 } from "lucide-react"
-import { PRODUCT_PLAN_DEFAULT_MODEL } from "@/lib/product-plan-config"
-import { FIRST_VERSION_PLAN_DEFAULT_MODEL } from "@/lib/first-version-plan-config"
+import {
+  FIRST_VERSION_PLAN_DEFAULT_MODEL,
+  PRODUCT_PLAN_DEFAULT_MODEL,
+} from "@/lib/planning-document-requests"
 
 export const DOCUMENT_TYPES = [
   "prompt",

@@ -8,8 +8,10 @@ import {
   isOpenRouterAbortError,
   OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS,
 } from "@/lib/openrouter-timeout"
-import { buildProductPlanPromptRequest } from "@/lib/product-plan-prompt-request"
-import { buildFirstVersionPlanPromptRequest } from "@/lib/first-version-plan-prompt-request"
+import {
+  buildFirstVersionPlanPromptRequest,
+  buildProductPlanPromptRequest,
+} from "@/lib/planning-document-requests"
 import { logError, logInfo, logWarn } from "@/lib/logger"
 import type { Json } from "@/types/database"
 

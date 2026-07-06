@@ -19,8 +19,10 @@ import {
   getActiveDocumentIdentityForAnalysisType,
 } from "@/lib/active-document-policy"
 import type { Json } from "@/types/database"
-import { PRODUCT_PLAN_DEFAULT_MODEL } from "@/lib/product-plan-config"
-import { FIRST_VERSION_PLAN_DEFAULT_MODEL } from "@/lib/first-version-plan-config"
+import {
+  FIRST_VERSION_PLAN_DEFAULT_MODEL,
+  PRODUCT_PLAN_DEFAULT_MODEL,
+} from "@/lib/planning-document-requests"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
 // Fixed default models per analysis type — user model selection removed
