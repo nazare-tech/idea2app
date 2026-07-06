@@ -14,7 +14,7 @@ import {
   LOCAL_STORAGE_KEY,
   type QueueItem,
   type QueueItemStatus,
-} from "@/lib/generate-all-helpers"
+} from "@/lib/generation/generate-all-helpers"
 
 // Re-export types so consumers keep working
 export type { QueueItem, QueueItemStatus }

@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useGenerateAllStore, type QueueItemStatus } from "@/stores/generate-all-store"
 import { Button } from "@/components/ui/button"
-import type { QueueItem } from "@/lib/generate-all-helpers"
+import type { QueueItem } from "@/lib/generation/generate-all-helpers"
 
 // ---------------------------------------------------------------------------
 // Tab navigation map — each docType maps to its URL search param value

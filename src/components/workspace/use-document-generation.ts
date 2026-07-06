@@ -9,10 +9,10 @@ import {
   type DocumentType,
 } from "@/lib/document-definitions"
 import { createClient as createSupabaseClient } from "@/lib/supabase/client"
-import { shouldResumeQueueAfterDocumentRetry } from "@/lib/generate-all-helpers"
+import { shouldResumeQueueAfterDocumentRetry } from "@/lib/generation/generate-all-helpers"
 import type { GenerateAllStatus, GenerateDocumentFn, QueueItem } from "@/stores/generate-all-store"
 import type { MockupOptionStatus } from "@/lib/document-generation-display-status"
-import type { OpenRouterImageMockupOption } from "@/lib/openrouter-image-mockup-format"
+import type { OpenRouterImageMockupOption } from "@/lib/mockups/openrouter-image-format"
 import type {
   Analysis,
   MvpPlan,

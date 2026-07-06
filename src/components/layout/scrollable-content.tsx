@@ -21,7 +21,7 @@ import type {
   DocumentGenerationDisplayState,
   MockupOptionStatus,
 } from "@/lib/document-generation-display-status"
-import type { OpenRouterImageMockupOption } from "@/lib/openrouter-image-mockup-format"
+import type { OpenRouterImageMockupOption } from "@/lib/mockups/openrouter-image-format"
 import { cn } from "@/lib/utils"
 
 interface DocumentData {

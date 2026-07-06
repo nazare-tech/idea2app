@@ -9,8 +9,8 @@ import {
   buildSubscriptionSyncSnapshot,
   type StripePlanPriceMapping,
   type SubscriptionSyncSnapshot,
-} from "@/lib/stripe-subscription-sync"
-import { claimWebhookEvent, type WebhookClaim } from "@/lib/stripe-webhook-claim"
+} from "@/lib/stripe/subscription-sync"
+import { claimWebhookEvent, type WebhookClaim } from "@/lib/stripe/webhook-claim"
 
 function logWebhook(level: "info" | "warn" | "error", message: string, context: Record<string, unknown> = {}) {
   const event = message

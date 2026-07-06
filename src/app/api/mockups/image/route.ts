@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
 
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
-import { MOCKUP_STORAGE_BUCKET } from "@/lib/openrouter-image-mockup-pipeline"
+import { MOCKUP_STORAGE_BUCKET } from "@/lib/mockups/openrouter-image-pipeline"
 import {
   getStoragePathsFromOpenRouterImageMockupContent,
-} from "@/lib/openrouter-image-mockup-format"
-import { isMockupDraftImagePathOwned } from "@/lib/mockup-option-drafts"
+} from "@/lib/mockups/openrouter-image-format"
+import { isMockupDraftImagePathOwned } from "@/lib/mockups/option-drafts"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"

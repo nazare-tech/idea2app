@@ -12,8 +12,8 @@ import {
   COMPETITIVE_ANALYSIS_V2_WORKSPACE_SECTION_MAP,
 } from "@/lib/competitive-analysis-v2"
 import { linkifyBareUrls } from "@/lib/markdown-links"
-import { cleanupAbandonedMockupOptionDrafts, deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
-import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
+import { cleanupAbandonedMockupOptionDrafts, deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockups/option-drafts"
+import { generateOpenRouterImageMockup } from "@/lib/mockups/openrouter-image-pipeline"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Database, Json } from "@/types/database"

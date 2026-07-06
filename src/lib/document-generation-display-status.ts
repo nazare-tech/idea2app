@@ -1,5 +1,5 @@
 import type { DocumentType } from "@/lib/document-definitions"
-import type { QueueItem, QueueItemStatus } from "@/lib/generate-all-helpers"
+import type { QueueItem, QueueItemStatus } from "@/lib/generation/generate-all-helpers"
 
 export type DocumentDisplayStatus =
   | "idle"

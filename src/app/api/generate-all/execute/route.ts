@@ -14,8 +14,8 @@ import { generateProjectDocument } from "@/lib/document-generation-service"
 import {
   consumeGenerationQueueItemCredits,
   resolveFailedGenerationCreditStatus,
-} from "@/lib/generation-queue-credit-flow"
-import { refundGenerationQueueItemCredits } from "@/lib/generation-queue-billing"
+} from "@/lib/generation/queue-credit-flow"
+import { refundGenerationQueueItemCredits } from "@/lib/generation/queue-billing"
 import {
   claimGenerationQueueItem,
   computeQueueStatus,
@@ -29,8 +29,8 @@ import {
   updateGenerationQueueItemIfStatus,
   type GenerationQueueItemRow,
   type GenerationQueueRow,
-} from "@/lib/generation-queue-service"
-import { isOnboardingGenerationQueue } from "@/lib/onboarding-generation"
+} from "@/lib/generation/queue-service"
+import { isOnboardingGenerationQueue } from "@/lib/generation/onboarding"
 import { GENERATE_ALL_ACTION_MAP, getTokenCost } from "@/lib/token-economics"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"

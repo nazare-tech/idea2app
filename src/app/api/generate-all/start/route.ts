@@ -6,12 +6,12 @@ import {
   replaceGenerationQueueItems,
   resetGenerationQueueItemsForRetry,
   syncGenerationQueueJson,
-} from "@/lib/generation-queue-service"
+} from "@/lib/generation/queue-service"
 import {
   ONBOARDING_GENERATION_SOURCE,
   isOnboardingGenerationQueue,
-} from "@/lib/onboarding-generation"
-import { createGenerationRunId } from "@/lib/queue-run-id"
+} from "@/lib/generation/onboarding"
+import { createGenerationRunId } from "@/lib/generation/queue-run-id"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"

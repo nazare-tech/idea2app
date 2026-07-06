@@ -1,5 +1,5 @@
-import { formatProjectIntakeForAi } from "@/lib/intake-context"
-import type { IntakeAnswer, IntakeQuestion, ProjectIntakePayload } from "@/lib/intake-types"
+import { formatProjectIntakeForAi } from "@/lib/intake/context"
+import type { IntakeAnswer, IntakeQuestion, ProjectIntakePayload } from "@/lib/intake/types"
 
 type IntakeContextQuery = {
   select(columns: string): {

@@ -1,5 +1,5 @@
 import { buildSecurePrompt } from "./sanitize"
-import type { ProjectNameGenerationInput } from "../intake-types"
+import type { ProjectNameGenerationInput } from "@/lib/intake/types"
 
 export const INTAKE_QUESTION_SYSTEM_PROMPT = `You create structured onboarding questions for a business-idea intake wizard.
 

@@ -8,7 +8,7 @@ import {
   syncGenerationQueueJson,
   type GenerationQueueItemRow,
   type GenerationQueueStatus,
-} from "@/lib/generation-queue-service"
+} from "@/lib/generation/queue-service"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"

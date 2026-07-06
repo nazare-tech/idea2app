@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 
-import type { IntakeAnswer, IntakeQuestion, ProjectIntakeSource } from "@/lib/intake-types"
-import { formatProjectIntakeForAi } from "@/lib/intake-context"
-import { validateRequiredPlatformAnswer } from "@/lib/intake-required-questions"
-import { buildProjectIntakePayload, buildProjectSummary } from "@/lib/intake-summary"
+import type { IntakeAnswer, IntakeQuestion, ProjectIntakeSource } from "@/lib/intake/types"
+import { formatProjectIntakeForAi } from "@/lib/intake/context"
+import { validateRequiredPlatformAnswer } from "@/lib/intake/required-questions"
+import { buildProjectIntakePayload, buildProjectSummary } from "@/lib/intake/summary"
 import {
   buildOnboardingGenerationQueue,
   buildOnboardingQueueMetadata,
   buildOnboardingRedirectUrl,
-} from "@/lib/onboarding-generation"
-import { createGenerationQueueItems } from "@/lib/generation-queue-service"
+} from "@/lib/generation/onboarding"
+import { createGenerationQueueItems } from "@/lib/generation/queue-service"
 import { generateProjectName } from "@/lib/project-name-generation"
 import { canCreateProject, type ProjectAllowanceClient } from "@/lib/project-allowance"
 import { createClient } from "@/lib/supabase/server"

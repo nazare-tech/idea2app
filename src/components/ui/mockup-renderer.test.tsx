@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 
-import { OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE } from "@/lib/openrouter-image-mockup-format"
+import { OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE } from "@/lib/mockups/openrouter-image-format"
 import { MockupRenderer } from "./mockup-renderer"
 
 test("MockupRenderer: renders simplified storyboard concept cards", () => {

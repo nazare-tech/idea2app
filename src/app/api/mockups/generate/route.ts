@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
-import { generateOpenRouterImageMockup } from "@/lib/openrouter-image-mockup-pipeline"
-import { cleanupAbandonedMockupOptionDrafts, deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
+import { generateOpenRouterImageMockup } from "@/lib/mockups/openrouter-image-pipeline"
+import { cleanupAbandonedMockupOptionDrafts, deleteMockupOptionDrafts, upsertMockupOptionDraft } from "@/lib/mockups/option-drafts"
 import {
   createSkippedActiveDocumentPayload,
   findLatestActiveDocument,

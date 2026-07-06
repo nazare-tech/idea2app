@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 
-import { generateIntakeQuestions } from "@/lib/intake-question-generation"
+import { generateIntakeQuestions } from "@/lib/intake/question-generation"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"

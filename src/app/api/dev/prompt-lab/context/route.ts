@@ -12,7 +12,7 @@ import {
   MOCKUP_PRIMARY_PLATFORMS,
   buildMockupDesignPlanUserPrompt,
   type MockupPrimaryPlatform,
-} from "@/lib/mockup-design-plan"
+} from "@/lib/mockups/design-plan"
 import { getProjectIntakeContextForAi } from "@/lib/project-intake-context"
 
 function readMockupPlatformPreference(value: string | null): MockupPrimaryPlatform | null {

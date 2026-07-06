@@ -4,14 +4,14 @@ import {
   MOCKUP_STORAGE_BUCKET,
   OPENROUTER_MOCKUP_OPTION_CONFIGS,
   getOpenRouterMockupImageModel,
-} from "@/lib/openrouter-image-mockup-pipeline"
+} from "@/lib/mockups/openrouter-image-pipeline"
 import {
   OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
   type OpenRouterImageMockupScreen,
-} from "@/lib/openrouter-image-mockup-format"
-import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
-import { getMockupOptionDrafts, insertMockupOptionDraftIfMissing } from "@/lib/mockup-option-drafts"
-import { buildStorageRecoveredMockupOptions, mergeRecoveredMockupOptions } from "@/lib/mockup-option-recovery"
+} from "@/lib/mockups/openrouter-image-format"
+import { parseMockupDesignPlan } from "@/lib/mockups/design-plan"
+import { getMockupOptionDrafts, insertMockupOptionDraftIfMissing } from "@/lib/mockups/option-drafts"
+import { buildStorageRecoveredMockupOptions, mergeRecoveredMockupOptions } from "@/lib/mockups/option-recovery"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"

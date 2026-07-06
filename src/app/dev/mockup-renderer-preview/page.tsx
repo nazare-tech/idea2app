@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 
 import { MockupGenerationLoader } from "@/components/ui/mockup-generation-loader"
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
-import { OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE } from "@/lib/openrouter-image-mockup-format"
+import { OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE } from "@/lib/mockups/openrouter-image-format"
 
 export const dynamic = "force-static"
 

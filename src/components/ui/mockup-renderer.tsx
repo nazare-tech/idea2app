@@ -6,8 +6,8 @@ import { mockupRegistry } from "@/lib/json-render/registry"
 import type { Spec } from "@json-render/core"
 import { Monitor, Smartphone, Tablet, Layers, Download, ChevronDown, FileDown } from "lucide-react"
 import { ArtifactLightbox } from "@/components/ui/artifact-lightbox"
-import { extractMockupOptions } from "@/lib/mockup-format-contract"
-import { parseOpenRouterImageMockupContent, type OpenRouterImageMockupContent } from "@/lib/openrouter-image-mockup-format"
+import { extractMockupOptions } from "@/lib/mockups/format-contract"
+import { parseOpenRouterImageMockupContent, type OpenRouterImageMockupContent } from "@/lib/mockups/openrouter-image-format"
 import type { MockupOptionStatus } from "@/lib/document-generation-display-status"
 import {
   DropdownMenu,

@@ -1,0 +1,147 @@
+/**
+ * Pure helper functions for the Generate All feature.
+ * Kept outside the Zustand store so queue construction can be tested in Node.js
+ * without pulling in React hooks/JSX.
+ */
+
+import {
+  GENERATE_ALL_QUEUE_ORDER,
+  DOCUMENT_DEFINITION_MAP,
+  type DocumentType,
+} from "@/lib/document-definitions"
+import { GENERATE_ALL_ACTION_MAP, getTokenCost } from "@/lib/token-economics"
+
+// ---------------------------------------------------------------------------
+// Types (re-exported so consumers can import from either this file or context)
+// ---------------------------------------------------------------------------
+
+export type QueueItemStatus =
+  | "pending"
+  | "generating"
+  | "done"
+  | "skipped"
+  | "cancelled"
+  | "error"
+  | "blocked"
+
+export interface QueueItem {
+  docType: DocumentType
+  label: string
+  status: QueueItemStatus
+  creditCost: number
+  stageMessage?: string
+  error?: string
+  dependsOn?: DocumentType[]
+  runId?: string
+}
+
+export type QueueResumeStatus =
+  | "idle"
+  | "loading"
+  | "running"
+  | "partial"
+  | "completed"
+  | "cancelled"
+  | "error"
+  | "interrupted"
+
+// ---------------------------------------------------------------------------
+// localStorage key for the active-generation flag
+// ---------------------------------------------------------------------------
+
+export const LOCAL_STORAGE_KEY = (projectId: string) =>
+  `generate_all_active_${projectId}`
+
+// ---------------------------------------------------------------------------
+// Build the idle-state queue from current model selections + document statuses
+// ---------------------------------------------------------------------------
+
+export function buildQueue(
+  modelSelections: Record<string, string>,
+  getDocumentStatus: (type: DocumentType) => "done" | "in_progress" | "pending",
+): QueueItem[] {
+  return GENERATE_ALL_QUEUE_ORDER.map((docType) => {
+    const isDone = getDocumentStatus(docType) === "done"
+    const action = GENERATE_ALL_ACTION_MAP[docType]
+    const cost = isDone ? 0 : getTokenCost(action, modelSelections[docType])
+    return {
+      docType,
+      label: DOCUMENT_DEFINITION_MAP[docType].label,
+      status: isDone ? ("skipped" as const) : ("pending" as const),
+      creditCost: cost,
+    }
+  })
+}
+
+export function shouldResumeQueueAfterDocumentRetry({
+  queueStatus,
+  retriedDocType,
+  queue,
+}: {
+  queueStatus: QueueResumeStatus
+  retriedDocType: DocumentType
+  queue: readonly QueueItem[]
+}) {
+  if (
+    queueStatus !== "partial" &&
+    queueStatus !== "error" &&
+    queueStatus !== "interrupted"
+  ) {
+    return false
+  }
+
+  const retriedItem = queue.find((item) => item.docType === retriedDocType)
+  if (
+    !retriedItem ||
+    retriedItem.status === "done" ||
+    retriedItem.status === "skipped" ||
+    retriedItem.status === "generating"
+  ) {
+    return false
+  }
+
+  return queue.some((item) =>
+    item.docType !== retriedDocType &&
+    isResettableQueueItem(item) &&
+    isDownstreamOf(item.docType, retriedDocType, queue)
+  )
+}
+
+function isResettableQueueItem(item: QueueItem) {
+  return (
+    item.status === "pending" ||
+    item.status === "error" ||
+    item.status === "blocked" ||
+    item.status === "cancelled"
+  )
+}
+
+function isDownstreamOf(
+  candidateDocType: DocumentType,
+  dependencyDocType: DocumentType,
+  queue: readonly QueueItem[],
+  seen = new Set<DocumentType>(),
+): boolean {
+  if (seen.has(candidateDocType)) return false
+  seen.add(candidateDocType)
+
+  const item = queue.find((queueItem) => queueItem.docType === candidateDocType)
+  const dependsOn = item?.dependsOn ?? getDefaultDependsOn(candidateDocType)
+  if (dependsOn.includes(dependencyDocType)) return true
+
+  return dependsOn.some((docType) => isDownstreamOf(docType, dependencyDocType, queue, seen))
+}
+
+function getDefaultDependsOn(docType: DocumentType): DocumentType[] {
+  switch (docType) {
+    case "prd":
+      return ["competitive"]
+    case "mvp":
+    case "techspec":
+      return ["prd"]
+    case "mockups":
+      return ["mvp"]
+    default:
+      return []
+  }
+}

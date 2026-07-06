@@ -2,7 +2,7 @@ import test from "node:test"
 import assert from "node:assert/strict"
 
 import { GENERATE_ALL_QUEUE_ORDER } from "@/lib/document-definitions"
-import type { QueueItem } from "@/lib/generate-all-helpers"
+import type { QueueItem } from "@/lib/generation/generate-all-helpers"
 import { buildGenerateAllDisplayQueue } from "./generate-all-block"
 
 test("buildGenerateAllDisplayQueue adds AI Prompts without changing the real Generate All order", () => {

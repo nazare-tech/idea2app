@@ -20,7 +20,7 @@ import {
   type MockupOptionStatus,
   type DocumentGenerationDisplayState,
 } from "@/lib/document-generation-display-status"
-import type { OpenRouterImageMockupOption } from "@/lib/openrouter-image-mockup-format"
+import type { OpenRouterImageMockupOption } from "@/lib/mockups/openrouter-image-format"
 import {
   DEFAULT_WORKSPACE_DOCUMENT,
   isWorkspaceDocumentType,

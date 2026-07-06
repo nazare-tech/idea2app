@@ -26,8 +26,8 @@ import {
   PROMPT_LAB_MOCKUP_SKIP_IMAGE_GENERATION_DEFAULT,
   getPromptLabModelOptions,
   type PromptLabArtifact,
-} from "@/lib/prompt-lab-shared"
-import { isPromptLabDefaultProductionState } from "@/lib/prompt-lab-default-state"
+} from "@/lib/prompt-lab/shared"
+import { isPromptLabDefaultProductionState } from "@/lib/prompt-lab/default-state"
 import { cn } from "@/lib/utils"
 
 export interface PromptLabProjectOption {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { refundGenerationQueueItemCredits } from "@/lib/generation-queue-billing"
+import { refundGenerationQueueItemCredits } from "@/lib/generation/queue-billing"
 import {
   computeQueueStatus,
   getGenerationQueueItems,
@@ -8,7 +8,7 @@ import {
   syncGenerationQueueJson,
   updateGenerationQueueItemIfStatus,
   type GenerationQueueItemRow,
-} from "@/lib/generation-queue-service"
+} from "@/lib/generation/queue-service"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"

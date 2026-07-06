@@ -3,21 +3,21 @@ import { NextResponse } from "next/server"
 import {
   MOCKUP_STORAGE_BUCKET,
   OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
-} from "@/lib/openrouter-image-mockup-pipeline"
+} from "@/lib/mockups/openrouter-image-pipeline"
 import {
   buildMockupImageProxyUrl,
   isValidDraftMockupImagePath,
   type OpenRouterImageMockupScreen,
   type OpenRouterImageMockupContent,
   type OpenRouterImageMockupOption,
-} from "@/lib/openrouter-image-mockup-format"
+} from "@/lib/mockups/openrouter-image-format"
 import {
   createSkippedActiveDocumentPayload,
   findLatestActiveDocument,
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
-import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
-import { deleteMockupOptionDrafts } from "@/lib/mockup-option-drafts"
+import { parseMockupDesignPlan } from "@/lib/mockups/design-plan"
+import { deleteMockupOptionDrafts } from "@/lib/mockups/option-drafts"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"

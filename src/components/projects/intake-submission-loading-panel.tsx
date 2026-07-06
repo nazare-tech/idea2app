@@ -13,7 +13,7 @@ import {
 import type {
   OnboardingGenerationStatus,
   OnboardingLoadingRowKey,
-} from "@/lib/onboarding-generation"
+} from "@/lib/generation/onboarding"
 import { cn } from "@/lib/utils"
 
 export interface IntakeLoadingRow {

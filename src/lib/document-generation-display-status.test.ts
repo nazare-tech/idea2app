@@ -6,7 +6,7 @@ import {
   type MockupOptionStatus,
 } from "./document-generation-display-status"
 import type { DocumentType } from "./document-definitions"
-import type { QueueItem } from "./generate-all-helpers"
+import type { QueueItem } from "@/lib/generation/generate-all-helpers"
 
 const docTypes: DocumentType[] = ["competitive", "prd", "mvp", "mockups"]
 const labels: Partial<Record<DocumentType, string>> = {

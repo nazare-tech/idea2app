@@ -3,7 +3,7 @@ import {
   PROJECT_NAME_SYSTEM_PROMPT,
   buildProjectNameUserPrompt,
 } from "./prompts/intake-wizard"
-import type { ProjectNameGenerationInput } from "./intake-types"
+import type { ProjectNameGenerationInput } from "@/lib/intake/types"
 
 const MAX_PROJECT_NAME_WORDS = 6
 const MAX_PROJECT_NAME_LENGTH = 80

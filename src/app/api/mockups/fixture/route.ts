@@ -3,11 +3,11 @@ import { NextResponse } from "next/server"
 import {
   OPENROUTER_MOCKUP_OPTION_CONFIGS,
   OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
-} from "@/lib/openrouter-image-mockup-pipeline"
+} from "@/lib/mockups/openrouter-image-pipeline"
 import type {
   OpenRouterImageMockupContent,
   OpenRouterImageMockupOption,
-} from "@/lib/openrouter-image-mockup-format"
+} from "@/lib/mockups/openrouter-image-format"
 import {
   createSkippedActiveDocumentPayload,
   findLatestActiveDocument,

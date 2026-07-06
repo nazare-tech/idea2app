@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { requirePromptLabRequest, getOwnedProject } from "../_utils"
-import { MOCKUP_STORAGE_BUCKET } from "@/lib/openrouter-image-mockup-pipeline"
+import { MOCKUP_STORAGE_BUCKET } from "@/lib/mockups/openrouter-image-pipeline"
 import { createServiceClient } from "@/lib/supabase/service"
 
 export async function GET(request: Request) {

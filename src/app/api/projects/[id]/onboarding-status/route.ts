@@ -5,13 +5,13 @@ import {
   getOnboardingRunId,
   isOnboardingGenerationQueue,
   mapOnboardingLoadingRows,
-} from "@/lib/onboarding-generation"
+} from "@/lib/generation/onboarding"
 import {
   getGenerationQueueItems,
   queueItemRowToJson,
   recoverStaleGenerationQueueItems,
   syncGenerationQueueJson,
-} from "@/lib/generation-queue-service"
+} from "@/lib/generation/queue-service"
 import {
   COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
 } from "@/lib/competitive-analysis-v2"

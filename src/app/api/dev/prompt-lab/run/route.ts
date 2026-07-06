@@ -9,7 +9,7 @@ import {
   runPromptLabArtifact,
 } from "@/lib/prompt-lab"
 import { linkifyBareUrls } from "@/lib/markdown-links"
-import { MOCKUP_PRIMARY_PLATFORMS, type MockupPrimaryPlatform } from "@/lib/mockup-design-plan"
+import { MOCKUP_PRIMARY_PLATFORMS, type MockupPrimaryPlatform } from "@/lib/mockups/design-plan"
 import type { Json } from "@/types/database"
 
 function asString(value: unknown, fallback = "") {

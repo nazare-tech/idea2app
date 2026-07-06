@@ -4,14 +4,14 @@ import {
   OPENROUTER_MOCKUP_OPTION_CONFIGS,
   generateOpenRouterImageMockupOption,
   type OpenRouterMockupOptionLabel,
-} from "@/lib/openrouter-image-mockup-pipeline"
+} from "@/lib/mockups/openrouter-image-pipeline"
 import {
   createSkippedActiveDocumentPayload,
   findLatestActiveDocument,
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
-import { parseMockupDesignPlan } from "@/lib/mockup-design-plan"
-import { upsertMockupOptionDraft } from "@/lib/mockup-option-drafts"
+import { parseMockupDesignPlan } from "@/lib/mockups/design-plan"
+import { upsertMockupOptionDraft } from "@/lib/mockups/option-drafts"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
