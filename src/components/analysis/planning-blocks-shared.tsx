@@ -94,20 +94,15 @@ export function PencilCard({
 }
 
 export function PageHeader({
-  eyebrow,
   title,
   description,
 }: {
-  eyebrow: string
   title: string
   description: string
 }) {
   return (
     <header className="-mx-5 bg-transparent px-5 pb-5 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
-      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#999999]">
-        {eyebrow}
-      </p>
-      <div className="mt-3">
+      <div>
         <h1
           className={cn(
             displayFontClass,

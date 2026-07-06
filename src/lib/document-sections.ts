@@ -112,11 +112,7 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
     sourceType: "mvp",
     sections: [
       { id: "ai-prompts-recommended-build-tool", label: "Recommended Tool" },
-      { id: "ai-prompts-next-prompt", label: "Next Prompt" },
-      { id: "ai-prompts-build-guardrails", label: "AI Build Guardrails" },
-      { id: "ai-prompts-build-sequence", label: "AI-Friendly Build Sequence" },
-      { id: "ai-prompts-functional-requirements", label: "Functional Requirements" },
-      { id: "ai-prompts-user-stories-acceptance-criteria", label: "User Stories & Acceptance Criteria" },
+      { id: "ai-prompts-files", label: "Prompt Files" },
     ],
   },
 ]

@@ -1,10 +1,12 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { renderToStaticMarkup } from "react-dom/server"
+import { buildAiPromptFiles } from "./ai-prompt-files"
 import {
   AiPromptsDocumentBlocks,
   MvpPlanDocumentBlocks,
 } from "./first-version-plan-blocks"
+import { extractSectionsByHeading } from "@/lib/planning-document-parser"
 
 const mvpFixture = `# MVP Plan: Maker Compass
 
@@ -197,11 +199,17 @@ Start with the proposal intake form and mock proposal generation.
   assert.doesNotMatch(html, /Next Prompt/)
 })
 
-test("AiPromptsDocumentBlocks renders recommended tool before handoff sections", () => {
+test("AiPromptsDocumentBlocks renders recommended tool section and prompt file cards", () => {
   const html = renderToStaticMarkup(
     <AiPromptsDocumentBlocks
       projectId="project-1"
       prdContent={`# PRD
+
+## Team and milestones
+
+### Agents
+- Frontend agent: Builds the proposal intake and review screens.
+- Backend agent: Owns the Supabase schema and API routes.
 
 ## Functional requirements
 - Users can create a proposal from structured intake fields.
@@ -211,13 +219,16 @@ test("AiPromptsDocumentBlocks renders recommended tool before handoff sections",
 `}
       mvpContent={`# MVP Plan
 
+## MVP Summary
+A proposal drafting tool for freelance designers.
+
 ## Recommended AI Build Tool
 ### Cursor
-- **Why this tool**: Full-stack Next.js/Supabase project in an existing GitHub repo.
-- **Best fit for this project**: Build the proposal intake and generated proposal review screens first.
+- **Why this tool:** Full-stack **Next.js/Supabase** project in an existing GitHub repo.
+- **Best fit for this project:** Build the proposal intake and generated proposal review screens first.
 - **Expected starting cost**: Free tier first; $20/month Pro once iteration starts.
-- **Watch out**: Verify Supabase RLS policy syntax manually.
-- **Handoff instruction**: Clone your repo, open it in Cursor, and paste the Next Prompt.
+- **Watch out:** Verify Supabase RLS policy syntax manually.
+- **Handoff instruction:** Clone your repo, open it in Cursor, and paste the Next Prompt.
 
 ## Next Prompt for AI Coding Tool
 Start with the proposal intake form.
@@ -237,12 +248,69 @@ Start with the proposal intake form.
   assert.match(html, /Recommended AI Build Tool/)
   assert.match(html, /href="https:\/\/cursor\.com"/)
   assert.match(html, /id="ai-prompts-recommended-build-tool"/)
+  assert.match(html, /Prompt Files/)
+  assert.match(html, /id="ai-prompts-files"/)
   assert.match(html, /id="ai-prompts-next-prompt"/)
   assert.match(html, /id="ai-prompts-build-guardrails"/)
   assert.match(html, /id="ai-prompts-build-sequence"/)
   assert.match(html, /id="ai-prompts-functional-requirements"/)
   assert.match(html, /id="ai-prompts-user-stories-acceptance-criteria"/)
-  assert.ok(html.indexOf("Recommended AI Build Tool") < html.indexOf("Next Prompt"))
-  assert.ok(html.indexOf("Next Prompt") < html.indexOf("AI Build Guardrails"))
-  assert.ok(html.indexOf("AI Build Guardrails") < html.indexOf("AI-Friendly Build Sequence"))
+  assert.match(html, /id="ai-prompts-sub-agents"/)
+  assert.match(html, /id="ai-prompts-project-context"/)
+  assert.match(html, /next-prompt\.md/)
+  assert.match(html, /ai-build-guardrails\.md/)
+  assert.match(html, /ai-friendly-build-sequence\.md/)
+  assert.match(html, /functional-requirements\.md/)
+  assert.match(html, /user-stories-and-acceptance-criteria\.md/)
+  assert.match(html, /sub-agents\.md/)
+  assert.match(html, /project-context\.md/)
+  assert.match(html, /aria-label="Copy next-prompt\.md"/)
+  assert.match(html, /aria-label="Download next-prompt\.md"/)
+  assert.match(html, /aria-label="Open next-prompt\.md preview"/)
+  // Tool fields parse with the colon either inside or outside the bold marker,
+  // so the raw section (including "### Cursor") must not leak into the card.
+  assert.match(html, /Build the proposal intake and generated proposal review screens first\./)
+  assert.match(html, /Free tier first; \$20\/month Pro once iteration starts\./)
+  assert.match(html, /Verify Supabase RLS policy syntax manually\./)
+  assert.doesNotMatch(html, /### Cursor/)
+  // Recommended tool detail values render inline markdown instead of raw asterisks
+  assert.match(html, /<strong[^>]*>Next\.js\/Supabase<\/strong>/)
+  assert.doesNotMatch(html, /\*\*Next\.js\/Supabase\*\*/)
+  assert.ok(html.indexOf("Recommended AI Build Tool") < html.indexOf("Prompt Files"))
+  assert.ok(html.indexOf("next-prompt.md") < html.indexOf("ai-build-guardrails.md"))
+  assert.ok(html.indexOf("ai-build-guardrails.md") < html.indexOf("ai-friendly-build-sequence.md"))
+})
+
+test("buildAiPromptFiles emits paste-ready file content without injected headings", () => {
+  const mvpSections = extractSectionsByHeading(
+    [
+      "# MVP Plan",
+      "",
+      "## Next Prompt for AI Coding Tool",
+      "```text",
+      "You are helping me build X.",
+      "Build only the first chunk.",
+      "```",
+      "",
+      "## AI-Friendly Build Sequence",
+      "| Step | Build Chunk | Goal | Test Before Moving On |",
+      "|---|---|---|---|",
+      "| 1 | Intake form | Capture context | Submit valid input |",
+    ].join("\n"),
+    2,
+  )
+  const files = buildAiPromptFiles({ prdSections: [], mvpSections })
+
+  const nextPrompt = files.find((file) => file.fileName === "next-prompt.md")
+  assert.ok(nextPrompt)
+  // Fence markers are stripped so the copied file is directly paste-ready.
+  assert.doesNotMatch(nextPrompt.content, /```/)
+  assert.match(nextPrompt.content, /^You are helping me build X\./)
+  // No injected H1 title; the file name identifies the file.
+  assert.doesNotMatch(nextPrompt.content, /^# /m)
+
+  const buildSequence = files.find((file) => file.fileName === "ai-friendly-build-sequence.md")
+  assert.ok(buildSequence)
+  assert.doesNotMatch(buildSequence.content, /^# /m)
+  assert.match(buildSequence.content, /\| Intake form \|/)
 })

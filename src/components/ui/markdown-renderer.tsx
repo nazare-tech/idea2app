@@ -81,18 +81,18 @@ function LazySyntaxHighlighter({
     }
   }, [])
 
-  if (loadFailed) {
+  // The vscDarkPlus theme uses light text, so the block always needs a solid
+  // dark background. A translucent background inherits the white document
+  // surface and makes the code unreadable.
+  if (loadFailed || !module) {
+    // Inline styles so the prose wrapper's [&_pre]/[&_pre_code] utilities
+    // cannot override the dark block during loading.
     return (
-      <pre className="ui-overflow-x-auto ui-p-4 ui-bg-[#0F172A] ui-rounded-lg">
-        <code>{code}</code>
-      </pre>
-    )
-  }
-
-  if (!module) {
-    return (
-      <pre className="ui-overflow-x-auto ui-p-4 ui-bg-[#0F172A] ui-rounded-lg">
-        <code>{code}</code>
+      <pre
+        className="overflow-x-auto rounded-lg p-4"
+        style={{ backgroundColor: "#1C1917" }}
+      >
+        <code style={{ color: "#D9D3CE" }}>{code}</code>
       </pre>
     )
   }
@@ -105,7 +105,7 @@ function LazySyntaxHighlighter({
       customStyle={{
         margin: 0,
         borderRadius: "0.5rem",
-        background: "rgba(255,255,255,0.05)",
+        background: "#1C1917",
       } as React.CSSProperties}
     >
       {code}

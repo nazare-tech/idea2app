@@ -5,7 +5,6 @@ import {
   ArrowUpRight,
   ArrowRight,
   BarChart3,
-  Check,
   CircleAlert,
   CircleCheck,
   Clock,
@@ -20,7 +19,6 @@ import {
   Rocket,
   Search,
   Server,
-  ShieldAlert,
   Sparkles,
   Target,
   TriangleAlert,
@@ -28,6 +26,11 @@ import {
   UsersRound,
 } from "lucide-react"
 
+import {
+  AiPromptFileGrid,
+  InlineMarkdown,
+  buildAiPromptFiles,
+} from "@/components/analysis/ai-prompt-files"
 import { ExplainTermButton } from "@/components/analysis/explainable-term"
 import { getMvpPlanViewModel } from "@/lib/mvp-plan-document"
 import type { PlanningDocumentSection } from "@/lib/planning-document-parser"
@@ -57,10 +60,6 @@ import {
   stripHorizontalRulesFromMarkdown,
   type PlanningDocumentProps,
 } from "./planning-blocks-shared"
-import {
-  RequirementShowcase,
-  UserStoryShowcase,
-} from "./product-plan-blocks"
 
 const currentMvpSectionAliases = [
   "MVP Summary",
@@ -85,11 +84,7 @@ function getFirstParagraph(section?: PlanningDocumentSection) {
 function FvpMasthead() {
   return (
     <header className="pb-10 pt-10">
-      <div className="flex items-center gap-3 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
-        <span>Planning Document</span>
-        <span className="h-px w-7 bg-primary/50" />
-      </div>
-      <h1 className={cn(displayFontClass, "mt-4 text-[42px] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#1C1917] sm:text-[56px] lg:text-[68px]")}>
+      <h1 className={cn(displayFontClass, "text-[42px] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#1C1917] sm:text-[56px] lg:text-[68px]")}>
         First Version Plan
       </h1>
     </header>
@@ -456,103 +451,6 @@ function FvpStack({ section }: { section?: PlanningDocumentSection }) {
   )
 }
 
-function getDesignBuildRows(content: string) {
-  const narrative = parseNarrativeTable(content)
-  if (narrative.table) {
-    const { headers, rows } = narrative.table
-    return rows.map((row, index) => ({
-      chunk: getTableCell(row, headers, ["build chunk"]) || getTableCell(row, headers, ["step"]) || row[1] || row[0] || `Build chunk ${index + 1}`,
-      goal: getTableCell(row, headers, ["goal"]) || "",
-      gate: getTableCell(row, headers, ["test", "moving"]) || getTableCell(row, headers, ["criteria"]) || "",
-    }))
-  }
-
-  return narrative.items.map((item) => {
-    const labeled = splitLabeledText(item)
-    return {
-      chunk: labeled?.label || stripMarkdownMarker(item),
-      goal: labeled?.body || "",
-      gate: "",
-    }
-  })
-}
-
-function FvpBuildSequence({ section }: { section?: PlanningDocumentSection }) {
-  const rows = getDesignBuildRows(section?.content ?? "")
-  if (rows.length === 0) return null
-
-  return (
-    <div className="fvp-build flex flex-col gap-3.5">
-      {rows.map((row, index) => (
-        <article key={`${row.chunk}-${index}`} className="fvp-bstep grid grid-cols-[44px_minmax(0,1fr)] gap-[18px]">
-          <div className={cn("fvp-bn grid h-10 w-10 place-items-center font-mono text-[15px] font-medium text-white", index === 0 ? "bg-primary" : "bg-[#1C1917]")}>
-            {index + 1}
-          </div>
-          <div className="fvp-bcard border border-[#EAE0D8] bg-white px-5 py-5">
-            <div className={cn(displayFontClass, "chunk text-[15.5px] font-bold leading-[1.4] tracking-[-0.02em] text-[#1C1917]")}>
-              {row.chunk}
-            </div>
-            {row.goal || row.gate ? (
-              <div className="fvp-bmeta mt-4 grid gap-4 border-t border-[#EAE0D8] pt-4 md:grid-cols-2">
-                {row.goal ? (
-                  <div className="m goal">
-                    <div className="lb mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-primary">Goal</div>
-                    <div className="tx text-[13px] leading-[1.5] text-[#4A4040]">{row.goal}</div>
-                  </div>
-                ) : null}
-                {row.gate ? (
-                  <div className="m gate">
-                    <div className="lb mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-[#8A8480]">Test before moving on</div>
-                    <div className="tx flex gap-2 text-[13px] leading-[1.5] text-[#4A4040]">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#22C55E]" />
-                      {row.gate}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </article>
-      ))}
-    </div>
-  )
-}
-
-function FvpGuardrails({ section }: { section?: PlanningDocumentSection }) {
-  const items = parseNarrativeTable(section?.content ?? "").items
-  if (items.length === 0) return null
-  const splitAt = Math.ceil(items.length / 2)
-  const groups = [
-    { title: "Process", items: items.slice(0, splitAt) },
-    { title: "Quality & Safety", items: items.slice(splitAt) },
-  ].filter((group) => group.items.length > 0)
-
-  return (
-    <div className="pp-two grid gap-10 md:grid-cols-2">
-      {groups.map((group) => (
-        <div key={group.title}>
-          <h3 className="pp-subhead mb-4 flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-[#4A4040]">
-            <span className="dot h-1.5 w-1.5 rounded-full bg-primary" />
-            {group.title}
-          </h3>
-          <ul className="pp-checklist flex flex-col gap-3">
-            {group.items.map((item, index) => (
-              <li key={`${item}-${index}`} className="flex gap-3 text-[15px] leading-[1.5] text-[#4A4040]">
-                {/key|secret|privacy|photo|train|consent/i.test(item) ? (
-                  <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                ) : (
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                )}
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function FvpValidation({ section }: { section?: PlanningDocumentSection }) {
   if (!section?.content.trim()) return null
   const nested = extractSectionsByHeading(section.content, 3)
@@ -671,24 +569,6 @@ function FvpCuts({ section }: { section?: PlanningDocumentSection }) {
   )
 }
 
-function FvpPromptBlock({ section }: { section?: PlanningDocumentSection }) {
-  if (!section?.content.trim()) return null
-
-  return (
-    <div className="fvp-prompt border border-[#2C2520] bg-[#1C1917]">
-      <div className="bar flex items-center gap-2 border-b border-[#2C2520] px-4 py-3">
-        <span className="d h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-        <span className="d h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
-        <span className="d h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-        <span className="t ml-2 font-mono text-[10.5px] uppercase tracking-[0.12em] text-[#8A8480]">first-version-prompt.txt</span>
-      </div>
-      <pre className="m-0 whitespace-pre-wrap px-6 py-5 font-mono text-[12px] leading-[1.7] text-[#D9D3CE]">
-        {stripHorizontalRulesFromMarkdown(section.content)}
-      </pre>
-    </div>
-  )
-}
-
 type AiBuildToolRecommendation = {
   name: string
   url: string | null
@@ -726,9 +606,13 @@ function getRecommendedTool(section?: PlanningDocumentSection): AiBuildToolRecom
   const name = stripInlineMarkdown(headingLink?.[1] ?? headingText?.[1] ?? section.heading).trim()
   const url = headingLink?.[2]?.trim() ?? getAiBuildToolUrl(name)
 
+  // Keep the raw markdown in field values so the card can render bold text,
+  // inline code, and links instead of showing stripped plain text.
+  // Generated documents write the colon either inside the bold marker
+  // ("**Why this tool:**") or outside it ("**Why this tool**:"), so accept both.
   const field = (label: string) => {
-    const pattern = new RegExp(`^-\\s*\\*\\*${label}\\*\\*:\\s*(.+)$`, "im")
-    return stripInlineMarkdown(section.content.match(pattern)?.[1] ?? "").trim()
+    const pattern = new RegExp(`^-\\s*\\*\\*${label}\\s*:?\\*\\*\\s*:?\\s*(.+)$`, "im")
+    return (section.content.match(pattern)?.[1] ?? "").trim()
   }
 
   const why = field("Why this tool")
@@ -738,7 +622,11 @@ function getRecommendedTool(section?: PlanningDocumentSection): AiBuildToolRecom
   const handoff = field("Handoff instruction")
 
   if (!name || !why) {
-    const fallback = stripHorizontalRulesFromMarkdown(section.content)
+    // Drop the "### Tool Name" heading line so the fallback text does not
+    // repeat the card title as raw markdown.
+    const fallback = stripHorizontalRulesFromMarkdown(
+      section.content.replace(/^###\s+.+$/m, ""),
+    ).trim()
     return fallback
       ? {
           name: name || "Recommended tool",
@@ -761,53 +649,53 @@ function AiPromptRecommendedToolCard({ section }: { section?: PlanningDocumentSe
   if (!recommendation) return null
 
   const details = [
-    { label: "Why", value: recommendation.why },
-    { label: "Best Fit", value: recommendation.bestFit },
-    { label: "Cost", value: recommendation.cost },
+    { label: "Best Fit For This Project", value: recommendation.bestFit },
+    { label: "Expected Starting Cost", value: recommendation.cost },
     { label: "Watch Out", value: recommendation.watchOut },
     { label: "Handoff", value: recommendation.handoff },
   ].filter((detail) => detail.value)
 
   const title = (
-    <span className={cn(displayFontClass, "text-[22px] font-bold leading-tight tracking-[-0.03em] text-[#0A0A0A]")}>
+    <span className={cn(displayFontClass, "text-[26px] font-bold leading-tight tracking-[-0.03em] text-[#0A0A0A]")}>
       {recommendation.name}
     </span>
   )
 
   return (
-    <section id="ai-prompts-recommended-build-tool" className="border border-[#E8DDD5] bg-white px-6 py-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-primary">
-            Recommended AI Build Tool
-          </p>
-          <div className="mt-2">
-            {recommendation.url ? (
-              <a
-                href={recommendation.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-start gap-1.5 transition-opacity hover:opacity-80"
-              >
-                {title}
-                <ArrowUpRight className="mt-1 h-3.5 w-3.5 shrink-0 text-[#0A0A0A]" />
-              </a>
-            ) : title}
-          </div>
-        </div>
-      </div>
+    <div className="border border-[#E8DDD5] bg-white px-6 py-6">
+      {recommendation.url ? (
+        <a
+          href={recommendation.url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-start gap-1.5 transition-opacity hover:opacity-80"
+        >
+          {title}
+          <ArrowUpRight className="mt-1.5 h-4 w-4 shrink-0 text-[#0A0A0A]" />
+        </a>
+      ) : title}
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        {details.map((detail) => (
-          <div key={detail.label} className="border-t border-[#E8DDD5] pt-3">
-            <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A8480]">
-              {detail.label}
-            </p>
-            <p className="mt-1 text-[13px] leading-5 text-[#4A4040]">{detail.value}</p>
-          </div>
-        ))}
-      </div>
-    </section>
+      {recommendation.why ? (
+        <p className="mt-3 max-w-[70ch] text-[15px] leading-[1.65] text-[#4A4040]">
+          <InlineMarkdown value={recommendation.why} />
+        </p>
+      ) : null}
+
+      {details.length > 0 ? (
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          {details.map((detail) => (
+            <div key={detail.label} className="border-t border-[#E8DDD5] pt-3">
+              <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A8480]">
+                {detail.label}
+              </p>
+              <p className="mt-1 text-[13.5px] leading-[1.55] text-[#4A4040]">
+                <InlineMarkdown value={detail.value} />
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
   )
 }
 
@@ -826,7 +714,7 @@ function AiPromptsMasthead() {
         <ExplainTermButton termKey="aiPrompts" label="AI Prompts" />
       </div>
       <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
-        Recommended build tool, guardrails, sequence, requirements, and handoff prompt.
+        Your recommended build tool plus ready-to-use prompt files for your AI coding tool.
       </p>
     </header>
   )
@@ -840,7 +728,6 @@ function AiPromptsSection({
   children,
 }: {
   id?: string
-  kicker: string
   title: string
   index: number
   total: number
@@ -863,10 +750,6 @@ function AiPromptsSection({
   )
 }
 
-function hasRenderableSection(section?: PlanningDocumentSection) {
-  return Boolean(section?.content.trim())
-}
-
 export function AiPromptsDocumentBlocks({
   prdContent,
   mvpContent,
@@ -879,23 +762,14 @@ export function AiPromptsDocumentBlocks({
   const mvpSections = useMemo(() => extractSectionsByHeading(mvpContent ?? "", 2), [mvpContent])
 
   const recommendedTool = getSectionByAlias(mvpSections, ["Recommended AI Build Tool", "AI Build Tool", "Recommended Build Tool"])
-  const nextPrompt = getSectionByAlias(mvpSections, ["Next Prompt for AI Coding Tool"])
-  const guardrails = getSectionByAlias(mvpSections, ["AI Build Guardrails"])
-  const buildSequence = getSectionByAlias(mvpSections, ["AI-Friendly Build Sequence"])
-  const requirements = getSectionByAlias(prdSections, ["Functional requirements"])
-  const userStories = getSectionByAlias(prdSections, ["User stories and acceptance criteria"])
-  const sections = [
-    nextPrompt,
-    guardrails,
-    buildSequence,
-    requirements,
-    userStories,
-  ].filter(hasRenderableSection)
-  const sectionTotal = sections.length
-  let sectionIndex = 1
-  const nextSectionIndex = () => sectionIndex++
+  const promptFiles = useMemo(
+    () => buildAiPromptFiles({ prdSections, mvpSections }),
+    [prdSections, mvpSections],
+  )
 
-  if (sectionTotal === 0 && !recommendedTool) {
+  const hasRecommendedTool = Boolean(recommendedTool?.content.trim())
+
+  if (promptFiles.length === 0 && !hasRecommendedTool) {
     return (
       <div className="flex items-center justify-center p-6 text-center text-sm text-muted-foreground sm:p-12">
         AI Prompts has not been generated yet.
@@ -903,69 +777,37 @@ export function AiPromptsDocumentBlocks({
     )
   }
 
+  const sectionTotal = (hasRecommendedTool ? 1 : 0) + (promptFiles.length > 0 ? 1 : 0)
+  let sectionIndex = 1
+  const nextSectionIndex = () => sectionIndex++
+
   return (
     <div className="flex flex-col gap-16">
       <AiPromptsMasthead />
 
-      <AiPromptRecommendedToolCard section={recommendedTool} />
-
-      {nextPrompt ? (
+      {hasRecommendedTool ? (
         <AiPromptsSection
-          id="ai-prompts-next-prompt"
-          kicker="Handoff"
-          title="Next Prompt"
+          id="ai-prompts-recommended-build-tool"
+          title="Recommended AI Build Tool"
           index={nextSectionIndex()}
           total={sectionTotal}
         >
-          <FvpPromptBlock section={nextPrompt} />
+          <AiPromptRecommendedToolCard section={recommendedTool} />
         </AiPromptsSection>
       ) : null}
 
-      {guardrails ? (
+      {promptFiles.length > 0 ? (
         <AiPromptsSection
-          id="ai-prompts-build-guardrails"
-          kicker="Discipline"
-          title="AI Build Guardrails"
+          id="ai-prompts-files"
+          title="Prompt Files"
           index={nextSectionIndex()}
           total={sectionTotal}
         >
-          <FvpGuardrails section={guardrails} />
-        </AiPromptsSection>
-      ) : null}
-
-      {buildSequence ? (
-        <AiPromptsSection
-          id="ai-prompts-build-sequence"
-          kicker="Build Scope"
-          title="AI-Friendly Build Sequence"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <FvpBuildSequence section={buildSequence} />
-        </AiPromptsSection>
-      ) : null}
-
-      {requirements ? (
-        <AiPromptsSection
-          id="ai-prompts-functional-requirements"
-          kicker="Product Plan"
-          title="Functional Requirements"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <RequirementShowcase section={requirements} />
-        </AiPromptsSection>
-      ) : null}
-
-      {userStories ? (
-        <AiPromptsSection
-          id="ai-prompts-user-stories-acceptance-criteria"
-          kicker="Product Plan"
-          title="User Stories & Acceptance Criteria"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <UserStoryShowcase section={userStories} />
+          <p className="mb-6 max-w-3xl text-[14px] leading-[1.6] text-[#4A4040]">
+            Each file is ready to copy or download into your AI build tool. Click a card to
+            preview the full markdown.
+          </p>
+          <AiPromptFileGrid files={promptFiles} />
         </AiPromptsSection>
       ) : null}
     </div>
@@ -1092,7 +934,6 @@ export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentPr
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        eyebrow="First Version"
         title="First Version Plan"
         description="A launchable scope plan focused on what to prove, the core workflow, feature boundaries, and success signals."
       />
