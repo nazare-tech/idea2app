@@ -50,17 +50,24 @@ export function PlanningMarkdownRenderer({
 export function PencilCard({
   title,
   kicker,
+  description,
   dark = false,
+  showHeader = true,
+  showTitle = true,
   className,
   children,
 }: {
   title: string
   kicker?: string
+  description?: string
   dark?: boolean
+  showHeader?: boolean
+  showTitle?: boolean
   className?: string
   children: React.ReactNode
 }) {
   const termKey = getExplainableTermKeyByLabel(title)
+  const hasHeader = showHeader && (kicker || showTitle || description)
 
   return (
     <section
@@ -69,25 +76,34 @@ export function PencilCard({
         className,
       )}
     >
-      <div className="space-y-2 py-5">
-        {kicker ? (
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
-            {kicker}
-          </p>
-        ) : null}
-        <div className="flex items-center gap-2">
-          <h2
-            className={cn(
-              displayFontClass,
-              "text-[22px] font-bold tracking-[-0.03em]",
-              dark ? "text-[#1C1917]" : "text-[#0A0A0A]",
-            )}
-          >
-            {title}
-          </h2>
-          <ExplainTermButton termKey={termKey} label={title} />
+      {hasHeader ? (
+        <div className="space-y-2 py-5">
+          {kicker ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
+              {kicker}
+            </p>
+          ) : null}
+          {showTitle ? (
+            <div className="flex items-center gap-2">
+              <h2
+                className={cn(
+                  displayFontClass,
+                  "text-[22px] font-bold tracking-[-0.03em]",
+                  dark ? "text-[#1C1917]" : "text-[#0A0A0A]",
+                )}
+              >
+                {title}
+              </h2>
+              <ExplainTermButton termKey={termKey} label={title} />
+            </div>
+          ) : null}
+          {description ? (
+            <p className="max-w-2xl ui-type-body-sm text-[#666666]">
+              {description}
+            </p>
+          ) : null}
         </div>
-      </div>
+      ) : null}
       <div className="pb-6">{children}</div>
     </section>
   )
@@ -122,18 +138,27 @@ export function PageHeader({
 export function ParagraphStack({
   paragraphs,
   dark = false,
+  className,
+  leadFirst = false,
 }: {
   paragraphs: string[]
   dark?: boolean
+  className?: string
+  leadFirst?: boolean
 }) {
   if (paragraphs.length === 0) return null
 
   return (
-    <div className="space-y-2">
+    <div className={cn("space-y-2", className)}>
       {paragraphs.map((paragraph, index) => (
         <p
           key={`${paragraph}-${index}`}
-          className={cn("ui-type-body", dark ? "text-[#4A4040]" : "text-[#666666]")}
+          className={cn(
+            leadFirst && index === 0
+              ? "text-[22px] font-medium leading-[33px] tracking-[-0.01em]"
+              : "ui-type-body",
+            dark ? "text-[#4A4040]" : "text-[#666666]",
+          )}
         >
           {paragraph}
         </p>

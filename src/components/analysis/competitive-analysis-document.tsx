@@ -6,6 +6,17 @@ import { cn } from "@/lib/utils"
 import { ExplainTermButton } from "@/components/analysis/explainable-term"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import {
+  DataTable,
+  ParagraphStack,
+  PencilCard,
+  displayFontClass,
+} from "@/components/analysis/planning-blocks-shared"
+import {
+  extractSectionsByHeading,
+  findSectionByAliases,
+  type PlanningDocumentSection,
+} from "@/lib/planning-document-parser"
+import {
   type CompetitiveAnalysisCompetitorProfile,
   type CompetitiveAnalysisPositioningPoint,
   type CompetitiveAnalysisStructuredData,
@@ -21,8 +32,6 @@ interface CompetitiveAnalysisDocumentProps {
   currentVersion?: number
   projectId: string
 }
-
-const displayFontClass = "font-[family:var(--font-display)]"
 
 function TopLevelDocumentHeader({
   title,
@@ -70,37 +79,11 @@ const fallbackMarketResearchSections = [
   { id: "market-research-strategic-recommendations", title: "Recommended Next Moves", headings: ["Recommended Next Moves"] },
 ] as const
 
-function normalizeMarkdownHeading(heading: string) {
-  return heading.trim().toLowerCase()
-}
-
-function extractH2Sections(content: string) {
-  const matches = Array.from(content.matchAll(/^##\s+(.+)$/gm))
-  const sections = new Map<string, string>()
-
-  matches.forEach((match, index) => {
-    const heading = match[1]?.trim()
-    if (!heading || match.index === undefined) return
-
-    const bodyStart = match.index + match[0].length
-    const nextMatch = matches[index + 1]
-    const bodyEnd = nextMatch?.index ?? content.length
-    sections.set(normalizeMarkdownHeading(heading), content.slice(bodyStart, bodyEnd).trim())
-  })
-
-  return sections
-}
-
 function getFallbackSectionContent(
-  sections: Map<string, string>,
+  sections: PlanningDocumentSection[],
   headings: readonly string[]
 ) {
-  for (const heading of headings) {
-    const content = sections.get(normalizeMarkdownHeading(heading))
-    if (content) return content
-  }
-
-  return ""
+  return findSectionByAliases(sections, [...headings])?.content ?? ""
 }
 
 function CompetitiveOverviewFallback({
@@ -110,7 +93,7 @@ function CompetitiveOverviewFallback({
   content: string
   projectId: string
 }) {
-  const sections = extractH2Sections(content)
+  const sections = extractSectionsByHeading(content, 2)
   const summary = getFallbackSectionContent(sections, ["Executive Summary"])
   const verdict = getFallbackSectionContent(sections, ["Opportunity Verdict"])
   const fallbackContent = [summary, verdict].filter(Boolean).join("\n\n")
@@ -134,7 +117,7 @@ function CompetitiveDetailFallback({
   content: string
   projectId: string
 }) {
-  const sections = extractH2Sections(content)
+  const sections = extractSectionsByHeading(content, 2)
   const fallbackSections = fallbackMarketResearchSections
     .map((section) => ({
       ...section,
@@ -168,70 +151,6 @@ function CompetitiveDetailFallback({
           <MarkdownRenderer content={section.content} projectId={projectId} />
         </WorkspaceDesignedSection>
       ))}
-    </section>
-  )
-}
-
-function PencilCard({
-  title,
-  kicker,
-  description,
-  dark = false,
-  showHeader = true,
-  showTitle = true,
-  className,
-  children,
-}: {
-  title: string
-  kicker?: string
-  description?: string
-  dark?: boolean
-  showHeader?: boolean
-  showTitle?: boolean
-  className?: string
-  children: React.ReactNode
-}) {
-  const hasHeader = showHeader && (kicker || showTitle || description)
-
-  return (
-    <section
-      className={cn(
-        "rounded-none bg-transparent",
-        className
-      )}
-    >
-      {hasHeader ? (
-        <div className="space-y-2 py-5">
-          {kicker ? (
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-primary">
-              {kicker}
-            </p>
-          ) : null}
-          {showTitle ? (
-            <div className="flex items-center gap-2">
-              <h2
-                className={cn(
-                  displayFontClass,
-                  "text-[22px] font-bold tracking-[-0.03em]",
-                  dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
-                )}
-              >
-                {title}
-              </h2>
-              <ExplainTermButton
-                termKey={getExplainableTermKeyByLabel(title)}
-                label={title}
-              />
-            </div>
-          ) : null}
-          {description ? (
-            <p className="max-w-2xl ui-type-body-sm text-[#666666]">
-              {description}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-      <div className="pb-6">{children}</div>
     </section>
   )
 }
@@ -287,36 +206,6 @@ function WorkspaceDesignedSection({
       />
       {children}
     </section>
-  )
-}
-
-function ParagraphStack({
-  paragraphs,
-  dark = false,
-  className,
-  leadFirst = false,
-}: {
-  paragraphs: string[]
-  dark?: boolean
-  className?: string
-  leadFirst?: boolean
-}) {
-  return (
-    <div className={cn("space-y-3", className)}>
-      {paragraphs.map((paragraph, index) => (
-        <p
-          key={`${paragraph}-${index}`}
-          className={cn(
-            leadFirst && index === 0
-              ? "text-[22px] font-medium leading-[33px] tracking-[-0.01em]"
-              : "ui-type-body",
-            dark ? "text-[#4A4040]" : "text-[#666666]"
-          )}
-        >
-          {paragraph}
-        </p>
-      ))}
-    </div>
   )
 }
 
@@ -388,7 +277,7 @@ function ExecutiveSummaryCard({
       kicker="Executive Summary"
       showHeader={showHeader}
     >
-      <ParagraphStack paragraphs={summary.paragraphs} leadFirst />
+      <ParagraphStack paragraphs={summary.paragraphs} className="space-y-3" leadFirst />
       {bullets.length > 0 ? (
         <div className="pt-5">
           <NumberedList items={bullets} />
@@ -402,52 +291,6 @@ function formatExecutiveSummaryBullet(item: string) {
   return item.replace(/^Verdict:/i, "Assessment:")
 }
 
-function DataTable({
-  headers,
-  rows,
-}: {
-  headers: string[]
-  rows: string[][]
-}) {
-  if (headers.length === 0) return null
-
-  return (
-    <div className="overflow-x-auto border border-[#E0E0E0]">
-      <table className="min-w-full border-collapse">
-        <thead>
-          <tr className="bg-[#F5F0EB]">
-            {headers.map((header) => (
-              <th
-                key={header}
-                className="border border-[#D8CEC5] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]"
-              >
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, rowIndex) => (
-            <tr
-              key={`row-${rowIndex}`}
-              className={rowIndex % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"}
-            >
-              {headers.map((header, cellIndex) => (
-                <td
-                  key={`${header}-${cellIndex}`}
-                  className="border border-[#E0E0E0] px-4 py-3 ui-type-table text-[#0A0A0A] align-top"
-                >
-                  {row[cellIndex] ?? ""}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
 function SnapshotHero({
   structured,
 }: {
@@ -458,7 +301,7 @@ function SnapshotHero({
   return (
     <div className="space-y-6">
       <PencilCard title="Market Snapshot & Entry Thesis" kicker="Category Snapshot">
-        <ParagraphStack paragraphs={structured.executiveSummary.paragraphs} />
+        <ParagraphStack paragraphs={structured.executiveSummary.paragraphs} className="space-y-3" />
         {bullets.length > 0 ? (
           <div className="pt-5">
             <NumberedList items={bullets} />
@@ -675,7 +518,7 @@ function CompactTableCard({
 }) {
   return (
     <PencilCard title={title} kicker={kicker} showHeader={showHeader}>
-      <ParagraphStack paragraphs={paragraphs} />
+      <ParagraphStack paragraphs={paragraphs} className="space-y-3" />
       <div className={paragraphs.length > 0 ? "pt-5" : ""}>
         <DataTable headers={headers} rows={rows} />
       </div>
@@ -883,7 +726,7 @@ function MVPCard({
 }) {
   return (
     <PencilCard title="First Version Focus" kicker="Build Scope" dark showHeader={showHeader}>
-      <ParagraphStack paragraphs={paragraphs} dark={true} />
+      <ParagraphStack paragraphs={paragraphs} className="space-y-3" dark={true} />
       <div className="pt-5">
         <NumberedList items={bullets} dark={true} />
       </div>
