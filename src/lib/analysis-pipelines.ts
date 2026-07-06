@@ -1,4 +1,4 @@
-import OpenAI from "openai"
+import { getOpenRouterClient } from "@/lib/openrouter"
 import { searchCompetitors, type PerplexityCompetitorResult } from "./perplexity"
 import { extractCompetitorInfo, type TavilyExtractResult } from "./tavily"
 import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt, type LaunchPlanBrief } from "@/lib/prompts"
@@ -15,11 +15,7 @@ import {
 import { logError, logInfo, logWarn } from "@/lib/logger"
 import type { Json } from "@/types/database"
 
-// Re-use the same OpenRouter client pattern from openrouter.ts
-const openrouter = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY || "",
-})
+const openrouter = getOpenRouterClient()
 
 const DEFAULT_MODEL =
   process.env.OPENROUTER_ANALYSIS_MODEL || "anthropic/claude-sonnet-4-6"

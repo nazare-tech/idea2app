@@ -4,6 +4,8 @@ import { join } from "node:path"
 import OpenAI from "openai"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import { getOpenRouterClient } from "@/lib/openrouter"
+
 import { createServiceClient } from "@/lib/supabase/service"
 import {
   DEFAULT_OPENROUTER_MOCKUP_IMAGE_MODEL,
@@ -283,10 +285,7 @@ export async function generateOpenRouterImageMockup({
   const runId = providedRunId || crypto.randomUUID()
   const generatedAt = new Date().toISOString()
   const storageSupabase = createServiceClient() as ServerSupabaseClient
-  const openrouter = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-  })
+  const openrouter = getOpenRouterClient()
 
   send?.({ type: "stage", message: "Preparing image mockup prompts...", step: 1, totalSteps: 5 })
   logInfo("OpenRouterMockup", "generation_started", {
@@ -446,10 +445,7 @@ export async function generateOpenRouterImageMockupOption({
   const model = modelOverride || getOpenRouterMockupImageModel()
   const plannerModel = getOpenRouterMockupPlannerModel()
   const storageSupabase = createServiceClient() as ServerSupabaseClient
-  const openrouter = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-  })
+  const openrouter = getOpenRouterClient()
   const designPlan = designPlanOverride ?? await generateMockupDesignPlan({
     openrouter,
     model: plannerModel,

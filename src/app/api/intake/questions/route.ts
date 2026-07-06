@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import OpenAI from "openai"
 
+import { getOpenRouterClient } from "@/lib/openrouter"
 import { generateIntakeQuestions } from "@/lib/intake/question-generation"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
@@ -10,10 +10,7 @@ const MAX_IDEA_LENGTH = 10000
 const MIN_IDEA_LENGTH = 10
 const INTAKE_MODEL = process.env.OPENROUTER_INTAKE_MODEL || process.env.OPENROUTER_CHAT_MODEL || "anthropic/claude-sonnet-4-6"
 
-const openrouter = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY || "",
-})
+const openrouter = getOpenRouterClient()
 
 function normalizeIdea(value: unknown) {
   return typeof value === "string" ? value.trim().slice(0, MAX_IDEA_LENGTH) : ""
