@@ -222,7 +222,19 @@ function MockupProgressModule({
 }
 
 function MockupsSection({ content, projectId }: { content: string; projectId: string }) {
-  return <MockupRenderer content={content} projectId={projectId} />
+  return (
+    <div>
+      <header className="pb-8">
+        <h1 className="font-[family:var(--font-display)] text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]">
+          Design Mockups
+        </h1>
+        <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
+          Three visual concepts for the first version. Click a concept to view it full size.
+        </p>
+      </header>
+      <MockupRenderer content={content} projectId={projectId} />
+    </div>
+  )
 }
 
 export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentProps>(

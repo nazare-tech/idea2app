@@ -1229,16 +1229,10 @@ function ProductPlanMasthead({
 }) {
   return (
     <header className="pb-10 pt-6">
-      <div className="flex items-center gap-3">
-        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
-          Product Plan
-        </p>
-        <span className="h-px w-7 bg-primary/50" />
-      </div>
       <h1
         className={cn(
           displayFontClass,
-          "mt-3 text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]",
+          "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]",
         )}
       >
         Product Plan
@@ -2281,7 +2275,6 @@ export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        eyebrow="Product Plan"
         title="Product Plan"
         description="A clear brief covering user needs, value, personas, scope, and implementation constraints."
       />
