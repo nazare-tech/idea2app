@@ -112,7 +112,10 @@ function normalizeOpenRouterImageMockupOption(option: unknown): OpenRouterImageM
   const width = readPositiveNumber(record.width)
   const height = readPositiveNumber(record.height)
 
-  if (!label || !title || !imageUrl || !storagePath) return null
+  // storagePath is only needed by workspace retry/recovery flows, which
+  // validate it themselves; display only needs imageUrl. Legacy and exported
+  // sample rows without storagePath should still render.
+  if (!label || !title || !imageUrl) return null
 
   return {
     label,

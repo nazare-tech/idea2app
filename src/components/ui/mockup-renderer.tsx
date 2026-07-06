@@ -4,7 +4,8 @@ import React from "react"
 import { Renderer, JSONUIProvider } from "@json-render/react"
 import { mockupRegistry } from "@/lib/json-render/registry"
 import type { Spec } from "@json-render/core"
-import { Monitor, Smartphone, Tablet, Layers, Download, ChevronDown, FileDown, X } from "lucide-react"
+import { Monitor, Smartphone, Tablet, Layers, Download, ChevronDown, FileDown } from "lucide-react"
+import { ArtifactLightbox } from "@/components/ui/artifact-lightbox"
 import { extractMockupOptions } from "@/lib/mockup-format-contract"
 import { parseOpenRouterImageMockupContent, type OpenRouterImageMockupContent } from "@/lib/openrouter-image-mockup-format"
 import type { MockupOptionStatus } from "@/lib/document-generation-display-status"
@@ -729,15 +730,26 @@ function OpenRouterImageMockupViewer({
   optionStatuses?: MockupOptionStatus[]
 }) {
   const [downloadingLabel, setDownloadingLabel] = React.useState<string | null>(null)
+  const [copiedLabel, setCopiedLabel] = React.useState<string | null>(null)
+  const copyResetRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const [lightboxOption, setLightboxOption] = React.useState<{
     imageUrl: string
     title: string
     conceptLabel: string
+    label: string
+    contentType: string
   } | null>(null)
 
-  const handleDownload = React.useCallback(async (option: OpenRouterImageMockupContent["options"][number]) => {
-    if (!option) return
+  const buildImageFileName = React.useCallback(
+    (label: string, mimeType: string) => {
+      const extension = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1] || "png"
+      const prefix = projectName ? `${projectName.toLowerCase().replace(/\s+/g, "-")}-` : ""
+      return `${prefix}mockup-option-${label.toLowerCase()}.${extension}`
+    },
+    [projectName],
+  )
 
+  const handleDownload = React.useCallback(async (option: { label: string; imageUrl: string }) => {
     setDownloadingLabel(option.label)
     try {
       const response = await fetch(option.imageUrl)
@@ -745,10 +757,8 @@ function OpenRouterImageMockupViewer({
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
-      const extension = blob.type === "image/jpeg" ? "jpg" : blob.type.split("/")[1] || "png"
-      const prefix = projectName ? `${projectName.toLowerCase().replace(/\s+/g, "-")}-` : ""
       a.href = url
-      a.download = `${prefix}mockup-option-${option.label.toLowerCase()}.${extension}`
+      a.download = buildImageFileName(option.label, blob.type)
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -756,26 +766,43 @@ function OpenRouterImageMockupViewer({
     } finally {
       setDownloadingLabel(null)
     }
-  }, [projectName])
+  }, [buildImageFileName])
+
+  // Copy the mockup image itself to the clipboard. The clipboard only accepts
+  // PNG, so JPEG/WebP sources are converted through a canvas first.
+  const handleCopyImage = React.useCallback(async (option: { label: string; imageUrl: string }) => {
+    try {
+      const response = await fetch(option.imageUrl)
+      if (!response.ok) throw new Error("Failed to load mockup image")
+      let blob = await response.blob()
+
+      if (blob.type !== "image/png") {
+        const bitmap = await createImageBitmap(blob)
+        const canvas = document.createElement("canvas")
+        canvas.width = bitmap.width
+        canvas.height = bitmap.height
+        canvas.getContext("2d")?.drawImage(bitmap, 0, 0)
+        const pngBlob = await new Promise<Blob | null>((resolve) =>
+          canvas.toBlob(resolve, "image/png"),
+        )
+        if (!pngBlob) throw new Error("Failed to convert mockup image")
+        blob = pngBlob
+      }
+
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
+      setCopiedLabel(option.label)
+      if (copyResetRef.current) clearTimeout(copyResetRef.current)
+      copyResetRef.current = setTimeout(() => setCopiedLabel(null), 2000)
+    } catch {
+      // Clipboard image support is browser-dependent; Download remains available.
+    }
+  }, [])
 
   React.useEffect(() => {
-    if (!lightboxOption) return
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setLightboxOption(null)
-      }
-    }
-    const previousOverflow = document.body.style.overflow
-
-    document.body.style.overflow = "hidden"
-    document.addEventListener("keydown", handleKeyDown)
-
     return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener("keydown", handleKeyDown)
+      if (copyResetRef.current) clearTimeout(copyResetRef.current)
     }
-  }, [lightboxOption])
+  }, [])
 
   const optionsByLabel = React.useMemo(
     () => new Map(data.options.map((option) => [option.label.toUpperCase(), option])),
@@ -868,6 +895,8 @@ function OpenRouterImageMockupViewer({
                     imageUrl: option.imageUrl,
                     title: option.title,
                     conceptLabel,
+                    label: option.label,
+                    contentType: option.contentType || "image/png",
                   })
                 }}
               >
@@ -889,30 +918,23 @@ function OpenRouterImageMockupViewer({
         )
       })}
       {lightboxOption && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${lightboxOption.conceptLabel} mockup preview`}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setLightboxOption(null)}
+        <ArtifactLightbox
+          fileName={buildImageFileName(lightboxOption.label, lightboxOption.contentType)}
+          copied={copiedLabel === lightboxOption.label}
+          onCopy={() => void handleCopyImage(lightboxOption)}
+          onDownload={() => void handleDownload(lightboxOption)}
+          onClose={() => setLightboxOption(null)}
+          maxWidthClassName="max-w-6xl"
         >
-          <div className="relative flex max-h-full w-full max-w-7xl items-center justify-center" onClick={(event) => event.stopPropagation()}>
-            <button
-              type="button"
-              aria-label="Close lightbox"
-              className="absolute right-0 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white text-foreground shadow-lg transition-colors hover:bg-muted"
-              onClick={() => setLightboxOption(null)}
-            >
-              <X className="h-4 w-4" />
-            </button>
+          <div className="bg-[#F8F4F1] p-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={lightboxOption.imageUrl}
               alt={`${lightboxOption.conceptLabel}: ${lightboxOption.title}`}
-              className="max-h-[calc(100vh-4rem)] w-auto max-w-full rounded-lg bg-white object-contain shadow-2xl"
+              className="mx-auto h-auto max-h-[calc(100vh-12rem)] w-auto max-w-full rounded-lg bg-white object-contain"
             />
           </div>
-        </div>
+        </ArtifactLightbox>
       )}
     </div>
   )
