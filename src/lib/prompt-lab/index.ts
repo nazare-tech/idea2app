@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
-import OpenAI from "openai"
 
+import { getOpenRouterClient } from "@/lib/openrouter"
 import { isDevOnlyFeatureEnabled, type DevOnlyFeatureEnv } from "@/lib/dev-only"
 import {
   COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
@@ -278,10 +278,7 @@ export async function runPromptLabArtifact({
           throw new Error("Claude did not return a mockup design plan")
         }
       } else {
-        const openrouter = new OpenAI({
-          baseURL: "https://openrouter.ai/api/v1",
-          apiKey: process.env.OPENROUTER_API_KEY,
-        })
+        const openrouter = getOpenRouterClient()
         let plannerCompletion: Awaited<ReturnType<typeof openrouter.chat.completions.create>>
 
         try {
@@ -432,10 +429,7 @@ export async function runPromptLabArtifact({
     }
   }
 
-  const openrouter = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-  })
+  const openrouter = getOpenRouterClient()
 
   const maxTokens =
     artifact === "prd"

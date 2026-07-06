@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import OpenAI from "openai"
 
+import { getOpenRouterClient } from "@/lib/openrouter"
 import type { IntakeAnswer, IntakeQuestion, ProjectIntakeSource } from "@/lib/intake/types"
 import { formatProjectIntakeForAi } from "@/lib/intake/context"
 import { validateRequiredPlatformAnswer } from "@/lib/intake/required-questions"
@@ -27,10 +27,7 @@ const PROJECT_NAME_MODEL =
   process.env.OPENROUTER_CHAT_MODEL ||
   "anthropic/claude-sonnet-4-6"
 
-const openrouter = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY || "",
-})
+const openrouter = getOpenRouterClient()
 
 const PROJECT_CREATION_LOCK_MS = 30_000
 

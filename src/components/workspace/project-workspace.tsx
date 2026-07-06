@@ -14,6 +14,7 @@ import {
   filterNavItemsByRenderedSections,
 } from "@/lib/document-sections"
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
+import { ProjectComposer } from "@/components/workspace/project-composer"
 import type { QueueItem } from "@/stores/generate-all-store"
 import {
   buildDocumentGenerationDisplayStates,
@@ -46,6 +47,7 @@ export function ProjectWorkspace({
   initialDocument = DEFAULT_WORKSPACE_DOCUMENT,
   initialDocuments,
   user,
+  composerEnabled = true,
 }: ProjectWorkspaceProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -741,6 +743,14 @@ export function ProjectWorkspace({
     renderedSectionIds,
   )
 
+  // Document currently in view, used as the composer's section scope.
+  const activeComposerNavItem =
+    SCROLLABLE_NAV_ITEMS.find(
+      (item) =>
+        item.key === activeSectionId ||
+        item.sections.some((section) => section.id === activeSectionId)
+    ) ?? SCROLLABLE_NAV_ITEMS[0]
+
   const handleGenerationStepComplete = useCallback((completedDocTypes: DocumentType[]) => {
     const docTypes = completedDocTypes.length > 0
       ? completedDocTypes
@@ -784,13 +794,22 @@ export function ProjectWorkspace({
             onNavigate={handleScrollNavigate}
             onGenerateDocument={handleGenerateDocument}
           />
-          <ScrollableContent
-            ref={scrollContainerRef}
-            projectId={project.id}
-            projectName={projectName}
-            documents={scrollableDocuments}
-            onGenerateDocument={handleGenerateDocument}
-          />
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <ScrollableContent
+              ref={scrollContainerRef}
+              projectId={project.id}
+              projectName={projectName}
+              documents={scrollableDocuments}
+              onGenerateDocument={handleGenerateDocument}
+            />
+            <ProjectComposer
+              projectId={project.id}
+              projectName={projectName}
+              activeDocKey={activeComposerNavItem.key}
+              activeDocLabel={activeComposerNavItem.label}
+              upgradeRequired={!composerEnabled}
+            />
+          </div>
         </div>
       </div>
     </>

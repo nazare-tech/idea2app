@@ -55,6 +55,8 @@ export interface ProjectWorkspaceProps {
   initialDocument?: DocumentType
   initialDocuments?: Partial<Record<DocumentType, unknown[]>>
   user: unknown
+  /** Paid-plan gate for the "Ask this project" composer (resolved server-side). */
+  composerEnabled?: boolean
 }
 
 export interface WorkspaceDocumentCollections {
