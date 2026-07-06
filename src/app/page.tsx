@@ -17,10 +17,13 @@ import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
 import { FeatureProductPreview } from "@/components/landing/feature-product-preview"
 import { FeatureCard } from "@/components/landing/feature-card"
 import { PricingSection } from "@/components/landing/pricing-section"
+import { FaqSection } from "@/components/landing/faq-section"
+import { SiteFooter } from "@/components/landing/site-footer"
 
 const navLinks = [
   { label: "Features", href: "#features" },
   { label: "Pricing", href: "#pricing" },
+  { label: "FAQ", href: "#faq" },
 ]
 
 const handoffTools = [
@@ -276,6 +279,10 @@ export default async function LandingPage() {
         <PricingSection waitlistMode={waitlistMode} />
       </SectionCard>
 
+      <SectionCard>
+        <FaqSection />
+      </SectionCard>
+
       {/* Bottom CTA */}
       <section className="border-t border-border-subtle py-16 md:py-20">
         <div className={`${container} text-center`}>
@@ -297,7 +304,7 @@ export default async function LandingPage() {
               <WaitlistForm />
             ) : (
               <Link href="/?modal=auth&mode=signup" scroll={false} className="inline-block">
-                <Button className="h-14 px-8 rounded-none text-base font-semibold bg-primary text-white">
+                <Button className="h-14 px-8 rounded-md text-base font-semibold bg-primary text-white">
                   Turn my idea into a plan
                   <ArrowRight className="ml-2 ui-icon-16" />
                 </Button>
@@ -307,73 +314,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-border-subtle bg-[#F5F0EB]">
-        <div className={`${container} grid gap-10 py-14 sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr_1fr]`}>
-          <div>
-            <BrandWordmark href="/" logoSize={32} logoClassName="rounded-sm" labelClassName="text-base font-semibold tracking-[0.01em]" />
-            <p className="mt-4 max-w-[320px] text-sm leading-relaxed text-text-secondary">
-              Turn a one-line idea into research, a product plan, mockups, and a first-version build plan you can hand to a coding agent.
-            </p>
-          </div>
-
-          <div>
-            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">Product</p>
-            <ul className="mt-4 space-y-3 text-sm">
-              {navLinks.map((item) => (
-                <li key={item.label}>
-                  <a href={item.href} className="text-text-secondary hover:text-text-primary">
-                    {item.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">Account</p>
-            <ul className="mt-4 space-y-3 text-sm">
-              <li>
-                <Link href="/?modal=auth&mode=signin" scroll={false} className="text-text-secondary hover:text-text-primary">
-                  Sign In
-                </Link>
-              </li>
-              <li>
-                {waitlistMode ? (
-                  <a href="#waitlist" className="text-text-secondary hover:text-text-primary">
-                    Join Waitlist
-                  </a>
-                ) : (
-                  <Link href="/?modal=auth&mode=signup" scroll={false} className="text-text-secondary hover:text-text-primary">
-                    Get Started
-                  </Link>
-                )}
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">Help</p>
-            <ul className="mt-4 space-y-3 text-sm">
-              <li>
-                <Link href="/contact" className="text-text-secondary hover:text-text-primary">
-                  Contact us
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className={`${container} flex min-h-[64px] flex-wrap items-center justify-between gap-3 border-t border-border-subtle text-sm`}>
-          <span className="font-mono text-[0.6875rem] tracking-[0.18em] text-text-muted">© 2026 Maker Compass. All rights reserved.</span>
-          <nav className="flex items-center gap-6 font-mono text-[0.6875rem] tracking-[0.18em]">
-            <Link href="/privacy" className="text-text-muted hover:text-text-primary">
-              PRIVACY
-            </Link>
-            <Link href="/terms" className="text-text-muted hover:text-text-primary">
-              TERMS
-            </Link>
-          </nav>
-        </div>
-      </footer>
+      <SiteFooter />
 
       <Suspense>
         <AuthModal />

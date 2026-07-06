@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
+import { SiteFooter } from "@/components/landing/site-footer"
 
 interface InfoPageShellProps {
   /** Mono uppercase kicker above the page title, e.g. "SUPPORT". */
@@ -32,24 +33,7 @@ export function InfoPageShell({ kicker, title, children }: InfoPageShellProps) {
         <div className="mt-8">{children}</div>
       </main>
 
-      <footer className="border-t border-border-subtle bg-[#F5F0EB]">
-        <div className="mx-auto flex min-h-[64px] w-full max-w-[1320px] flex-wrap items-center justify-between gap-3 px-4 sm:px-8 lg:px-14">
-          <span className="font-mono text-[0.6875rem] tracking-[0.18em] text-text-muted">
-            © 2026 Maker Compass. All rights reserved.
-          </span>
-          <nav className="flex items-center gap-6 font-mono text-[0.6875rem] tracking-[0.18em]">
-            <Link href="/contact" className="text-text-muted hover:text-text-primary">
-              CONTACT
-            </Link>
-            <Link href="/privacy" className="text-text-muted hover:text-text-primary">
-              PRIVACY
-            </Link>
-            <Link href="/terms" className="text-text-muted hover:text-text-primary">
-              TERMS
-            </Link>
-          </nav>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }
