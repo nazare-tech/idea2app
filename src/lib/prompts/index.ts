@@ -7,6 +7,11 @@ export { TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt } from "./tech-spec"
 export { buildMockupPrompt } from "./mockups"
 export { COMPETITOR_SEARCH_SYSTEM_PROMPT, buildCompetitorSearchUserPrompt } from "./competitor-search"
 export {
+  PROJECT_COMPOSER_SYSTEM_PROMPT,
+  buildProjectComposerUserPrompt,
+  type ProjectComposerContextDoc,
+} from "./project-composer"
+export {
   INTAKE_QUESTION_SYSTEM_PROMPT,
   PROJECT_NAME_SYSTEM_PROMPT,
   buildIntakeQuestionUserPrompt,

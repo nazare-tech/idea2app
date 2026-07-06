@@ -259,7 +259,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
     return (
       <div
         ref={ref}
-        className="flex-1 space-y-8 overflow-y-auto bg-background px-3 py-3 sm:px-6 sm:py-4 lg:px-8"
+        className="flex-1 space-y-8 overflow-y-auto bg-background px-3 pb-28 pt-3 sm:px-6 sm:pb-32 sm:pt-4 lg:px-8"
       >
         {/* Executive Summary — rendered immediately (first visible section) */}
         <DocumentWrapper navKey="executive-summary">
