@@ -26,6 +26,13 @@ const COMPOSER_MODEL =
   process.env.OPENROUTER_CHAT_MODEL ||
   "anthropic/claude-sonnet-4-6"
 
+// Output-token cap per answer. Also the amount OpenRouter's affordability
+// pre-check reserves up front, so keep it chat-sized, not document-sized.
+const MAX_ANSWER_TOKENS = (() => {
+  const parsed = Number.parseInt(process.env.OPENROUTER_COMPOSER_MAX_TOKENS ?? "", 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1_024
+})()
+
 const MAX_MESSAGE_CHARS = 4_000
 const MAX_HISTORY_TURNS = 12
 const MAX_HISTORY_ENTRY_CHARS = 6_000
@@ -260,7 +267,7 @@ export async function POST(
           ...history,
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 2_048,
+        max_tokens: MAX_ANSWER_TOKENS,
         stream: true,
         // OpenRouter-specific: enables the online web-search plugin for this
         // request. Passed through the OpenAI SDK as an extra body field.
@@ -309,13 +316,25 @@ export async function POST(
       model: COMPOSER_MODEL,
     })
     const timedOut = timeoutSignal.aborted
-    return NextResponse.json(
-      {
-        error: timedOut
-          ? "The assistant took too long to answer. Please try again."
-          : "The assistant could not answer right now. Please try again.",
-      },
-      { status: timedOut ? 504 : 502 }
-    )
+    // OpenRouter failures carry an HTTP status on the SDK error. Surface the
+    // two actionable ones honestly instead of a generic retry message.
+    const upstreamStatus =
+      error && typeof error === "object" && "status" in error && typeof error.status === "number"
+        ? error.status
+        : null
+
+    let message = "The assistant could not answer right now. Please try again."
+    if (timedOut) {
+      message = "The assistant took too long to answer. Please try again."
+    } else if (upstreamStatus === 402) {
+      message =
+        "The OpenRouter account is out of credits, so the assistant can't answer. Add credits at openrouter.ai and try again."
+    } else if (upstreamStatus === 401 || upstreamStatus === 403) {
+      message = "The OpenRouter API key was rejected. Check the server's OpenRouter configuration."
+    } else if (upstreamStatus === 429) {
+      message = "The AI provider is rate limiting requests right now. Wait a moment and try again."
+    }
+
+    return NextResponse.json({ error: message }, { status: timedOut ? 504 : 502 })
   }
 }
