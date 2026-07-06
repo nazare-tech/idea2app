@@ -206,7 +206,12 @@ test("competitive detail consolidates competitor profile cards into one quick co
   assert.match(html, /Usage-based/)
   assert.match(html, /Solo service teams/)
   assert.equal(countMatches(html, /href="https:\/\/competitor-one\.example"/g), 1)
-  assert.doesNotMatch(html, /<article/)
+  // Positioning score profiles are the only allowed <article> elements;
+  // competitor profiles must stay consolidated into the comparison table.
+  assert.equal(
+    countMatches(html, /<article/g),
+    countMatches(html, /data-positioning-state="scored"/g),
+  )
   assert.doesNotMatch(html, /<colgroup>/)
   assert.doesNotMatch(html, /Competitor Profiles &amp; Fast Comparison/)
   assert.doesNotMatch(html, />PROFILE</)
