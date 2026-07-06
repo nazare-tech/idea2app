@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
 import {
   AlertTriangle,
   Check,
@@ -18,7 +17,6 @@ import {
 } from "lucide-react"
 
 import { ExplainableLabel } from "@/components/analysis/explainable-term"
-import { getPrdDocumentViewModel } from "@/lib/prd-document"
 import type { PlanningDocumentSection, PlanningNarrativeTable } from "@/lib/planning-document-parser"
 import {
   extractSectionsByHeading,
@@ -31,15 +29,13 @@ import {
   DataTable,
   InlineLabeledText,
   NarrativeContent,
-  PageHeader,
-  PencilCard,
   PlanningMarkdownRenderer,
   Warning,
   displayFontClass,
   getCurrentSectionTitle,
   getSectionByAlias,
+  getStatValue,
   getTableCell,
-  hasNarrativeContent,
   isCurrentPromptDocument,
   splitLabeledText,
   stripHorizontalRulesFromMarkdown,
@@ -447,51 +443,6 @@ function getRequirementGroups(narrative: PlanningNarrativeTable) {
   return groups
 }
 
-function RequirementsContent({ narrative }: { narrative: PlanningNarrativeTable }) {
-  const groups = getRequirementGroups(narrative)
-  const visibleGroups = Array.from(groups.entries()).filter(([, items]) => items.length > 0)
-
-  if (visibleGroups.length === 0) {
-    return <NarrativeContent narrative={narrative} />
-  }
-
-  return (
-    <div className="space-y-4">
-      {visibleGroups.map(([label, items]) => (
-        <section key={label} className="border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-5">
-          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[#8A8480]">
-            {label}
-          </p>
-          <div className="mt-4 space-y-4">
-            {items.map((item, index) => {
-              return (
-                <article key={`${item.id ?? item.title ?? item.description}-${index}`} className="border-l border-[#D8CEC5] pl-3">
-                  {item.id ? (
-                    <p className="ui-type-body-sm font-bold text-[#0A0A0A]">{item.id}</p>
-                  ) : null}
-                  {item.title ? (
-                    <p className={cn("ui-type-body-sm text-[#0A0A0A]", item.id && "mt-2")}>{item.title}</p>
-                  ) : null}
-                  {item.description ? (
-                    <p className={cn("ui-type-caption text-[#6F6A66]", (item.id || item.title) && "mt-2")}>
-                      {item.description}
-                    </p>
-                  ) : null}
-                  {item.meta?.map((meta, metaIndex) => (
-                    <p key={`${meta}-${metaIndex}`} className="mt-1 ui-type-caption text-[#6F6A66]">
-                      {meta}
-                    </p>
-                  ))}
-                </article>
-              )
-            })}
-          </div>
-        </section>
-      ))}
-    </div>
-  )
-}
-
 function cleanStoryText(value: string) {
   return stripInlineMarkdown(
     value
@@ -650,49 +601,6 @@ function parseUserStories(narrative: PlanningNarrativeTable) {
       }
     })
     .filter((story): story is NonNullable<typeof story> => story !== null)
-}
-
-function UserStoriesContent({
-  narrative,
-}: {
-  narrative: PlanningNarrativeTable
-}) {
-  const stories = parseUserStories(narrative)
-
-  if (stories.length === 0) {
-    return <NarrativeContent narrative={narrative} />
-  }
-
-  return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      {stories.map((story, index) => (
-        <article key={`${story.id}-${index}`} className="border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-5">
-          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[#8A8480]">
-            {story.id}
-          </p>
-          <h3 className={cn(displayFontClass, "mt-2 text-[18px] font-semibold tracking-[-0.03em] text-[#0A0A0A]")}>
-            {story.title}
-          </h3>
-          <p className="mt-3 ui-type-body-sm text-[#0A0A0A]">{story.story}</p>
-          {story.criteria.length > 0 ? (
-            <div className="mt-4 border-t border-[#E8DDD5] pt-4">
-              <p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-[#8A8480]">
-                Acceptance Criteria
-              </p>
-              <ul className="mt-3 space-y-2">
-                {story.criteria.map((criterion, index) => (
-                  <li key={`${criterion}-${index}`} className="flex gap-2 ui-type-caption text-[#4A4040]">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 bg-primary" />
-                    <span>{criterion}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </article>
-      ))}
-    </div>
-  )
 }
 
 const currentPrdSectionAliases = [
@@ -1142,22 +1050,6 @@ function DetailedPersonaCards({ personas }: { personas: CurrentPersona[] }) {
   )
 }
 
-function currentPersonaFromSection(section: PlanningDocumentSection) {
-  const parsed = parseCurrentPersonas(`**${section.heading}**\n${section.content}`)[0]
-  if (parsed) return parsed
-
-  return {
-    name: section.heading,
-    fields: [
-      {
-        label: "Description",
-        body: stripInlineMarkdown(section.content),
-        items: [],
-      },
-    ],
-  }
-}
-
 function getCurrentPrdMetaItems({
   timeline,
   userStories,
@@ -1316,13 +1208,6 @@ function getNestedNarrative(section: PlanningDocumentSection, aliases: string[])
   const match = getSectionByAlias(nested, aliases)
 
   return match ? parseNarrativeTable(match.content) : parseNarrativeTable("")
-}
-
-function getStatValue(item: string, index: number) {
-  const cleaned = stripInlineMarkdown(item)
-  const metric = cleaned.match(/(?:^|\s)(\$?\d[\d,.]*%?|\d+\+|[A-Z]?\d+\s*(?:seconds?|minutes?|days?|weeks?|months?))/)?.[1]
-
-  return metric ?? String(index + 1).padStart(2, "0")
 }
 
 function GoalsShowcase({ section }: { section: PlanningDocumentSection }) {
@@ -2255,117 +2140,15 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 }
 
 export function PrdDocumentBlocks({ content, projectId }: PlanningDocumentProps) {
-  const viewModel = useMemo(() => getPrdDocumentViewModel(content), [content])
-
-  if (!viewModel.canRenderModules) {
-    return (
-      <div className="space-y-4">
-        {viewModel.warning ? <Warning message={viewModel.warning} /> : null}
-        <PlanningMarkdownRenderer content={content} projectId={projectId} />
-      </div>
-    )
-  }
-
-  const { structured } = viewModel
-
   if (isCurrentPromptDocument(content, currentPrdSectionAliases)) {
     return <CurrentPrdDocumentBlocks content={content} projectId={projectId} />
   }
 
+  // Legacy or unstructured Product Plans render as plain markdown.
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        title="Product Plan"
-        description="A clear brief covering user needs, value, personas, scope, and implementation constraints."
-      />
-
-      {hasNarrativeContent(structured.background) || hasNarrativeContent(structured.vision) ? (
-        <div className="grid gap-6 xl:grid-cols-2">
-          {hasNarrativeContent(structured.background) ? (
-            <PencilCard title="Background / Context" kicker="Product Context">
-              <NarrativeContent narrative={structured.background} />
-            </PencilCard>
-          ) : null}
-          {hasNarrativeContent(structured.vision) ? (
-            <PencilCard title="Vision" kicker="Product Direction" dark>
-              <NarrativeContent narrative={structured.vision} dark />
-            </PencilCard>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div id="prd-user-needs">
-        <PencilCard title="Problem to Solve" kicker="Problem Definition">
-          <NarrativeContent narrative={structured.userNeeds} />
-        </PencilCard>
-      </div>
-
-      <div id="prd-value-proposition">
-        <PencilCard title="Value Proposition" kicker="Product Thesis" dark>
-          <NarrativeContent narrative={structured.valueProposition} dark />
-        </PencilCard>
-      </div>
-
-      <div className="flex flex-col gap-6">
-        <PencilCard title="Measurable Objectives" kicker="Outcomes">
-          <NarrativeContent narrative={structured.objectives} />
-        </PencilCard>
-        <PencilCard title="Positioning" kicker="Market Fit">
-          <NarrativeContent narrative={structured.positioning} />
-        </PencilCard>
-      </div>
-
-      <div id="prd-personas">
-        <PencilCard title="Personas" kicker="Target Users">
-          <div className="space-y-4">
-            {hasNarrativeContent(structured.stakeholders) ? (
-              <div className="border border-[#E0E0E0] bg-white px-5 py-4">
-                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
-                  Stakeholders
-                </p>
-                <NarrativeContent narrative={structured.stakeholders} />
-              </div>
-            ) : null}
-          </div>
-          <div className="mt-4 space-y-4">
-            <DetailedPersonaCards personas={structured.personas.map(currentPersonaFromSection)} />
-          </div>
-        </PencilCard>
-      </div>
-
-      <div id="prd-requirements">
-        <PencilCard title="What to Build" kicker="Functional Scope">
-          <RequirementsContent narrative={structured.requirements} />
-        </PencilCard>
-      </div>
-
-      <div id="prd-user-stories">
-        <PencilCard title="Key User Flows" kicker="Behavior">
-          <UserStoriesContent narrative={structured.userStories} />
-        </PencilCard>
-      </div>
-
-      <div id="prd-prioritization" className="flex flex-col gap-6">
-        {hasNarrativeContent(structured.prioritization) ? (
-          <PencilCard title="Build Order" kicker="Release Focus" dark>
-            <NarrativeContent narrative={structured.prioritization} dark />
-          </PencilCard>
-        ) : null}
-        {hasNarrativeContent(structured.uiUx) || hasNarrativeContent(structured.technical) ? (
-          <div className="grid gap-6 xl:grid-cols-2">
-            {hasNarrativeContent(structured.uiUx) ? (
-              <PencilCard title="Product Experience" kicker="Experience">
-                <NarrativeContent narrative={structured.uiUx} />
-              </PencilCard>
-            ) : null}
-            {hasNarrativeContent(structured.technical) ? (
-              <PencilCard title="Technical Requirements" kicker="Build Constraints">
-                <NarrativeContent narrative={structured.technical} />
-              </PencilCard>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+    <div className="space-y-4">
+      <Warning message="This Product Plan uses an older format, so the designed block view is unavailable. Showing the original document." />
+      <PlanningMarkdownRenderer content={content} projectId={projectId} />
     </div>
   )
 }

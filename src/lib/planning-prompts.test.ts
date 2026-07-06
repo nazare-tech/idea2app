@@ -4,8 +4,9 @@ import assert from "node:assert/strict"
 import { MVP_PLAN_SYSTEM_PROMPT, PRD_SYSTEM_PROMPT } from "./prompts"
 
 // These tests guard the prompt-to-renderer contract: the prompts must keep
-// instructing the exact headings, labels, and tables that the block parsers
-// (src/lib/prd-document.ts, src/lib/mvp-plan-document.ts) consume by name.
+// instructing the exact headings, labels, and tables that the current block
+// renderers (src/components/analysis/product-plan-blocks.tsx and
+// first-version-plan-blocks.tsx, via planning-document-parser aliases) consume by name.
 // They were last aligned to the current 13-section MVP / numbered-PRD contract
 // on 2026-06-12 after the prompt-shortening work; the parsers' alias lists are
 // the source of truth and were verified to match these assertions.

@@ -32,7 +32,6 @@ import {
   buildAiPromptFiles,
 } from "@/components/analysis/ai-prompt-files"
 import { ExplainTermButton } from "@/components/analysis/explainable-term"
-import { getMvpPlanViewModel } from "@/lib/mvp-plan-document"
 import type { PlanningDocumentSection } from "@/lib/planning-document-parser"
 import {
   extractSectionsByHeading,
@@ -42,10 +41,6 @@ import {
 import { cn } from "@/lib/utils"
 import {
   DataTable,
-  MarkdownSectionCard,
-  NarrativeContent,
-  PageHeader,
-  PencilCard,
   PlanningMarkdownRenderer,
   StructuredItemList,
   Warning,
@@ -54,7 +49,6 @@ import {
   getSectionByAlias,
   getStatValue,
   getTableCell,
-  hasNarrativeContent,
   isCurrentPromptDocument,
   splitLabeledText,
   stripHorizontalRulesFromMarkdown,
@@ -914,127 +908,15 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
 }
 
 export function MvpPlanDocumentBlocks({ content, projectId }: PlanningDocumentProps) {
-  const viewModel = useMemo(() => getMvpPlanViewModel(content), [content])
-
-  if (!viewModel.canRenderModules) {
-    return (
-      <div className="space-y-4">
-        {viewModel.warning ? <Warning message={viewModel.warning} /> : null}
-        <PlanningMarkdownRenderer content={content} projectId={projectId} />
-      </div>
-    )
-  }
-
-  const { structured } = viewModel
-
   if (isCurrentPromptDocument(content, currentMvpSectionAliases)) {
     return <CurrentMvpPlanDocumentBlocks content={content} projectId={projectId} />
   }
 
+  // Legacy or unstructured First Version Plans render as plain markdown.
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        title="First Version Plan"
-        description="A launchable scope plan focused on what to prove, the core workflow, feature boundaries, and success signals."
-      />
-
-      <div id="mvp-wedge" className="flex flex-col gap-6">
-        {hasNarrativeContent(structured.overview) ? (
-          <PencilCard title="Product Vision" kicker="Overview">
-            <NarrativeContent narrative={structured.overview} />
-          </PencilCard>
-        ) : null}
-        <PencilCard title="What We Need to Prove" kicker="Validation" dark>
-          <NarrativeContent narrative={structured.hypothesis} dark />
-        </PencilCard>
-        <div className="grid gap-6 xl:grid-cols-2">
-          <PencilCard title="Problem to Prove" kicker="Problem">
-            <NarrativeContent narrative={structured.problem} />
-          </PencilCard>
-          <PencilCard title="Target Customer" kicker="Audience">
-            <NarrativeContent narrative={structured.targetUser} />
-          </PencilCard>
-        </div>
-        <PencilCard title="What's In / Out" kicker="Scope">
-          <NarrativeContent narrative={structured.scope} />
-        </PencilCard>
-      </div>
-
-      <div id="mvp-core-features" className="flex flex-col gap-6">
-        <PencilCard title="Core Features" kicker="Feature Set">
-          <NarrativeContent narrative={structured.featureSummary} />
-        </PencilCard>
-        <div className="grid gap-6 xl:grid-cols-2">
-          {structured.featureDetails.map((feature, index) => (
-            <MarkdownSectionCard
-              key={`${feature.heading}-${index}`}
-              section={feature}
-              projectId={projectId}
-              kicker={`Feature ${String(index + 1).padStart(2, "0")}`}
-              dark={index === 0}
-              className={cn(
-                structured.featureDetails.length % 2 === 1 &&
-                  index === structured.featureDetails.length - 1 &&
-                  "xl:col-span-2",
-              )}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div id="mvp-user-flow" className="flex flex-col gap-6">
-        {structured.userFlow.map((section, index) => (
-          <MarkdownSectionCard
-            key={`${section.heading}-${index}`}
-            section={section}
-            projectId={projectId}
-            title={index === 0 ? "Primary User Journey" : section.heading}
-            kicker="User Flow"
-          />
-        ))}
-      </div>
-
-      <div id="mvp-timeline" className="flex flex-col gap-6">
-        {structured.timeline.map((section, index) => (
-          <MarkdownSectionCard
-            key={`${section.heading}-${index}`}
-            section={section}
-            projectId={projectId}
-            title={index === 0 ? "Timeline & Risks" : section.heading}
-            kicker="Delivery Plan"
-            dark={index === 0}
-          />
-        ))}
-        {structured.techStack.map((section, index) => (
-          <MarkdownSectionCard
-            key={`${section.heading}-${index}`}
-            section={section}
-            projectId={projectId}
-            kicker="Tech Stack"
-          />
-        ))}
-      </div>
-
-      <div id="mvp-success-metrics" className="flex flex-col gap-6">
-        {structured.successMetrics.map((section, index) => (
-          <MarkdownSectionCard
-            key={`${section.heading}-${index}`}
-            section={section}
-            projectId={projectId}
-            title={index === 0 ? "Success Signals" : section.heading}
-            kicker="Validation"
-          />
-        ))}
-        {structured.assumptions.map((section, index) => (
-          <MarkdownSectionCard
-            key={`${section.heading}-${index}`}
-            section={section}
-            projectId={projectId}
-            kicker="Assumptions"
-            dark={index === 0}
-          />
-        ))}
-      </div>
+    <div className="space-y-4">
+      <Warning message="This First Version Plan uses an older format, so the designed block view is unavailable. Showing the original document." />
+      <PlanningMarkdownRenderer content={content} projectId={projectId} />
     </div>
   )
 }
