@@ -173,23 +173,24 @@ Start with the proposal intake form.
   assert.match(html, /id="ai-prompts-recommended-build-tool"/)
   assert.match(html, /Prompt Files/)
   assert.match(html, /id="ai-prompts-files"/)
-  assert.match(html, /id="ai-prompts-next-prompt"/)
+  assert.match(html, /id="ai-prompts-first-prompt"/)
   assert.match(html, /id="ai-prompts-build-guardrails"/)
-  assert.match(html, /id="ai-prompts-build-sequence"/)
+  assert.match(html, /id="ai-prompts-build-steps"/)
   assert.match(html, /id="ai-prompts-functional-requirements"/)
   assert.match(html, /id="ai-prompts-user-stories-acceptance-criteria"/)
   assert.match(html, /id="ai-prompts-sub-agents"/)
   assert.match(html, /id="ai-prompts-project-context"/)
-  assert.match(html, /next-prompt\.md/)
+  assert.match(html, /first-prompt\.md/)
   assert.match(html, /ai-build-guardrails\.md/)
-  assert.match(html, /ai-friendly-build-sequence\.md/)
+  assert.match(html, /build-steps\.md/)
   assert.match(html, /functional-requirements\.md/)
   assert.match(html, /user-stories-and-acceptance-criteria\.md/)
   assert.match(html, /sub-agents\.md/)
   assert.match(html, /project-context\.md/)
-  assert.match(html, /aria-label="Copy next-prompt\.md"/)
-  assert.match(html, /aria-label="Download next-prompt\.md"/)
-  assert.match(html, /aria-label="Open next-prompt\.md preview"/)
+  assert.match(html, /aria-label="Copy first-prompt\.md"/)
+  assert.match(html, /aria-label="Download first-prompt\.md"/)
+  assert.match(html, /aria-label="Open first-prompt\.md preview"/)
+  assert.match(html, /How to use these files/)
   // Tool fields parse with the colon either inside or outside the bold marker,
   // so the raw section (including "### Cursor") must not leak into the card.
   assert.match(html, /Build the proposal intake and generated proposal review screens first\./)
@@ -200,8 +201,10 @@ Start with the proposal intake form.
   assert.match(html, /<strong[^>]*>Next\.js\/Supabase<\/strong>/)
   assert.doesNotMatch(html, /\*\*Next\.js\/Supabase\*\*/)
   assert.ok(html.indexOf("Recommended AI Build Tool") < html.indexOf("Prompt Files"))
-  assert.ok(html.indexOf("next-prompt.md") < html.indexOf("ai-build-guardrails.md"))
-  assert.ok(html.indexOf("ai-build-guardrails.md") < html.indexOf("ai-friendly-build-sequence.md"))
+  // Card order is asserted via anchor ids because the usage guide above the
+  // grid also mentions the file names.
+  assert.ok(html.indexOf('id="ai-prompts-first-prompt"') < html.indexOf('id="ai-prompts-build-guardrails"'))
+  assert.ok(html.indexOf('id="ai-prompts-build-guardrails"') < html.indexOf('id="ai-prompts-build-steps"'))
 })
 
 test("buildAiPromptFiles emits paste-ready file content without injected headings", () => {
@@ -224,7 +227,7 @@ test("buildAiPromptFiles emits paste-ready file content without injected heading
   )
   const files = buildAiPromptFiles({ prdSections: [], mvpSections })
 
-  const nextPrompt = files.find((file) => file.fileName === "next-prompt.md")
+  const nextPrompt = files.find((file) => file.fileName === "first-prompt.md")
   assert.ok(nextPrompt)
   // Fence markers are stripped so the copied file is directly paste-ready.
   assert.doesNotMatch(nextPrompt.content, /```/)
@@ -232,7 +235,7 @@ test("buildAiPromptFiles emits paste-ready file content without injected heading
   // No injected H1 title; the file name identifies the file.
   assert.doesNotMatch(nextPrompt.content, /^# /m)
 
-  const buildSequence = files.find((file) => file.fileName === "ai-friendly-build-sequence.md")
+  const buildSequence = files.find((file) => file.fileName === "build-steps.md")
   assert.ok(buildSequence)
   assert.doesNotMatch(buildSequence.content, /^# /m)
   assert.match(buildSequence.content, /\| Intake form \|/)

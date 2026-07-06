@@ -22,9 +22,9 @@ import {
 
 /** One downloadable/copyable markdown file derived from the planning documents. */
 export interface AiPromptFile {
-  /** Anchor id used by the workspace nav (e.g. "ai-prompts-next-prompt") */
+  /** Anchor id used by the workspace nav (e.g. "ai-prompts-first-prompt") */
   anchorId: string
-  /** File name shown on the card and used for downloads (e.g. "next-prompt.md") */
+  /** File name shown on the card and used for downloads (e.g. "first-prompt.md") */
   fileName: string
   /** Human title shown on the card and used as the H1 inside the file */
   title: string
@@ -136,7 +136,7 @@ function buildProjectContextFile(mvpSections: PlanningDocumentSection[]): AiProm
     [
       "## Working rules",
       "",
-      "- Build one chunk from ai-friendly-build-sequence.md at a time; test before moving on.",
+      "- Build one chunk from build-steps.md at a time; test before moving on.",
       "- Stay inside the MVP scope above; flag out-of-scope work instead of building it.",
       "- Use mock data before real backend; add loading, error, and empty states everywhere.",
       "- Route sensitive API calls through the backend and keep secrets in environment variables.",
@@ -153,7 +153,7 @@ function buildProjectContextFile(mvpSections: PlanningDocumentSection[]): AiProm
     anchorId: "ai-prompts-project-context",
     fileName: "project-context.md",
     title: "Project Context",
-    description: "Starter CLAUDE.md-style context file to drop into your repo root.",
+    description: "Starter CLAUDE.md / AGENTS.md context file to drop into your repo root.",
     content: `${intro}\n\n${parts.join("\n\n")}\n`,
   }
 }
@@ -178,10 +178,10 @@ export function buildAiPromptFiles({
   const files: Array<AiPromptFile | null> = [
     nextPrompt?.content.trim()
       ? {
-          anchorId: "ai-prompts-next-prompt",
-          fileName: "next-prompt.md",
-          title: "Next Prompt",
-          description: "Ready-to-paste kickoff prompt for your AI build tool.",
+          anchorId: "ai-prompts-first-prompt",
+          fileName: "first-prompt.md",
+          title: "Your First Prompt",
+          description: "The first message to paste into your AI build tool. Start here.",
           content: toMarkdownFileContent(stripCodeFenceMarkers(nextPrompt.content)),
         }
       : null,
@@ -196,10 +196,11 @@ export function buildAiPromptFiles({
       : null,
     buildSequence?.content.trim()
       ? {
-          anchorId: "ai-prompts-build-sequence",
-          fileName: "ai-friendly-build-sequence.md",
-          title: "AI-Friendly Build Sequence",
-          description: "Small build chunks to hand to your AI tool one at a time.",
+          anchorId: "ai-prompts-build-steps",
+          fileName: "build-steps.md",
+          title: "Build Steps",
+          description:
+            "The ordered build chunks. After the first prompt, feed these to your AI tool one at a time.",
           content: toMarkdownFileContent(buildSequence.content),
         }
       : null,

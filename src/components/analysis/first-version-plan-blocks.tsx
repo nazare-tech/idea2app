@@ -31,7 +31,6 @@ import {
   InlineMarkdown,
   buildAiPromptFiles,
 } from "@/components/analysis/ai-prompt-files"
-import { ExplainTermButton } from "@/components/analysis/explainable-term"
 import type { PlanningDocumentSection } from "@/lib/planning-document-parser"
 import {
   extractSectionsByHeading,
@@ -78,7 +77,7 @@ function getFirstParagraph(section?: PlanningDocumentSection) {
 function FvpMasthead() {
   return (
     <header className="pb-10 pt-10">
-      <h1 className={cn(displayFontClass, "text-[42px] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#1C1917] sm:text-[56px] lg:text-[68px]")}>
+      <h1 className={cn(displayFontClass, "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#1C1917] md:text-[44px] md:leading-[66px]")}>
         First Version Plan
       </h1>
     </header>
@@ -150,7 +149,7 @@ function FvpSection({
     <section id={id} className="pt-0">
       <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
         <div>
-          <h2 className={cn(displayFontClass, "text-[30px] font-extrabold leading-none tracking-[-0.045em] text-[#1C1917] sm:text-[40px]")}>
+          <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#1C1917]")}>
             {title}
           </h2>
         </div>
@@ -696,21 +695,47 @@ function AiPromptRecommendedToolCard({ section }: { section?: PlanningDocumentSe
 function AiPromptsMasthead() {
   return (
     <header className="pb-10">
-      <div className="flex items-center gap-2">
-        <h1
-          className={cn(
-            displayFontClass,
-            "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]",
-          )}
-        >
-          AI Prompts
-        </h1>
-        <ExplainTermButton termKey="aiPrompts" label="AI Prompts" />
-      </div>
+      <h1
+        className={cn(
+          displayFontClass,
+          "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]",
+        )}
+      >
+        AI Prompts
+      </h1>
       <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
         Your recommended build tool plus ready-to-use prompt files for your AI coding tool.
       </p>
     </header>
+  )
+}
+
+const promptFileUsageSteps = [
+  "Download all the files below into a new, empty folder. That folder becomes your project.",
+  "Open your recommended AI build tool (above) in that folder.",
+  "Rename project-context.md to CLAUDE.md (Claude Code), AGENTS.md (Codex), or your tool's rules file.",
+  "Paste the contents of first-prompt.md as your first message to start the build.",
+  "Work through build-steps.md one chunk at a time; share the other files when your tool needs requirements or acceptance criteria.",
+]
+
+/** Short numbered guide so users know what to do with the downloaded files. */
+function PromptFileUsageGuide() {
+  return (
+    <div className="mb-6 border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-5">
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#4A4040]">
+        How to use these files
+      </p>
+      <ol className="mt-3 space-y-2">
+        {promptFileUsageSteps.map((step, index) => (
+          <li key={step} className="flex gap-3">
+            <span className="w-6 shrink-0 pt-0.5 font-mono text-[11px] font-medium text-[#8A8480]">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <p className="text-[13.5px] leading-[1.55] text-[#4A4040]">{step}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
   )
 }
 
@@ -801,6 +826,7 @@ export function AiPromptsDocumentBlocks({
             Each file is ready to copy or download into your AI build tool. Click a card to
             preview the full markdown.
           </p>
+          <PromptFileUsageGuide />
           <AiPromptFileGrid files={promptFiles} />
         </AiPromptsSection>
       ) : null}
