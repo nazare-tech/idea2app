@@ -4,10 +4,8 @@ export { PRD_SYSTEM_PROMPT, buildPRDUserPrompt } from "./prd"
 export { MVP_PLAN_SYSTEM_PROMPT, buildMVPPlanUserPrompt } from "./mvp-plan"
 export { LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, type LaunchPlanBrief } from "./launch-plan"
 export { TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt } from "./tech-spec"
-export { buildGeneralChatSystemPrompt } from "./general-chat"
 export { buildMockupPrompt } from "./mockups"
 export { COMPETITOR_SEARCH_SYSTEM_PROMPT, buildCompetitorSearchUserPrompt } from "./competitor-search"
-export { LEGACY_ANALYSIS_PROMPTS } from "./legacy-fallback"
 export {
   INTAKE_QUESTION_SYSTEM_PROMPT,
   PROJECT_NAME_SYSTEM_PROMPT,

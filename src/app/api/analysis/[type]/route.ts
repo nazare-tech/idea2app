@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { runCompetitiveAnalysis, runPRD, runMVPPlan, runTechSpec } from "@/lib/analysis-pipelines"
-import { callOpenRouterFallback } from "@/lib/openrouter"
 import { type AnalysisType } from "@/lib/utils"
 import { getTokenCost } from "@/lib/token-economics"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
@@ -251,10 +250,9 @@ export async function POST(request: Request, { params }: AnalysisParams) {
               streamResult = await runPRD({ idea: ideaForGeneration, name, competitiveAnalysis, model }, callbacks)
             } else if (type === "mvp-plan") {
               streamResult = await runMVPPlan({ idea: ideaForGeneration, name, prd, model }, callbacks)
-            } else if (type === "tech-spec") {
-              streamResult = await runTechSpec({ idea: ideaForGeneration, name, prd, model }, callbacks)
             } else {
-              streamResult = await callOpenRouterFallback(type, ideaForGeneration, name, model)
+              // validTypes guarantees the only remaining type is tech-spec
+              streamResult = await runTechSpec({ idea: ideaForGeneration, name, prd, model }, callbacks)
             }
 
             // Save to DB — same as non-streaming path
@@ -361,11 +359,9 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       result = await runPRD({ idea: ideaForGeneration, name, competitiveAnalysis, model })
     } else if (type === "mvp-plan") {
       result = await runMVPPlan({ idea: ideaForGeneration, name, prd, model })
-    } else if (type === "tech-spec") {
-      result = await runTechSpec({ idea: ideaForGeneration, name, prd, model })
     } else {
-      // gap-analysis still uses OpenRouter fallback
-      result = await callOpenRouterFallback(type, ideaForGeneration, name, model)
+      // validTypes guarantees the only remaining type is tech-spec
+      result = await runTechSpec({ idea: ideaForGeneration, name, prd, model })
     }
 
     // Track AI model and source

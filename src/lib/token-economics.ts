@@ -1,13 +1,10 @@
 export type TokenBillableAction =
   | "competitive-analysis"
-  | "gap-analysis"
   | "prd"
   | "mvp-plan"
   | "tech-spec"
   | "mockup"
   | "launch-plan"
-  | "chat"
-  | "document-edit"
 
 const toNumber = (value: string | undefined, fallback: number) => {
   if (!value) return fallback
@@ -24,14 +21,11 @@ export const TOKEN_VALUE_CENTS = toNumber(
 
 export const BASE_ACTION_TOKENS: Record<TokenBillableAction, number> = {
   "competitive-analysis": 15, // raised from 10 (+5 for complexity)
-  "gap-analysis": 5,
   prd: 10,
   "mvp-plan": 10,
   "tech-spec": 10,
   mockup: 0,
   "launch-plan": 5,
-  chat: 1,            // Math.ceil(1 × mult) → 1 (budget) or 2 (premium)
-  "document-edit": 2, // flat cost, no multiplier applied
 }
 
 const DEFAULT_MODEL_MULTIPLIER = toNumber(
@@ -73,12 +67,10 @@ function ceilTo5(x: number): number {
 
 export function getTokenCost(action: TokenBillableAction, modelId?: string) {
   // fixed-cost actions: no model multiplier applied
-  if (action === "document-edit" || action === "mockup") return BASE_ACTION_TOKENS[action]
+  if (action === "mockup") return BASE_ACTION_TOKENS[action]
   const base = BASE_ACTION_TOKENS[action]
   const multiplier = getModelTokenMultiplier(modelId)
-  // chat: 1 or 2 per message depending on model tier
-  if (action === "chat") return Math.max(1, Math.ceil(base * multiplier))
-  // all other generations: round up to nearest 5
+  // all generations: round up to nearest 5
   return ceilTo5(base * multiplier)
 }
 

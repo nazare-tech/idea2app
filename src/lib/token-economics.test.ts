@@ -186,9 +186,9 @@ test("getTokenCost: rounds generation costs up to the nearest 5", () => {
   assert.equal(getTokenCost("competitive-analysis", "claude-sonnet-4-6"), 20)
 })
 
-test("getTokenCost: minimum is 1 (never returns 0)", () => {
-  // chat=1 × :free=0.5 → 0.5 → ceil=1, max(1,1)=1
-  assert.equal(getTokenCost("chat", "some-model:free"), 1)
+test("getTokenCost: free-tier multiplier still rounds up to the nearest 5", () => {
+  // launch-plan=5 × :free=0.5 → 2.5 → ceil-to-5 = 5
+  assert.equal(getTokenCost("launch-plan", "some-model:free"), 5)
 })
 
 test("getTokenCost: grok-4-1-fast (0.8x) on competitive-analysis (15) → ceil-to-5(12.0) = 15", () => {
