@@ -47,6 +47,7 @@ export function ProjectWorkspace({
   initialDocument = DEFAULT_WORKSPACE_DOCUMENT,
   initialDocuments,
   user,
+  composerEnabled = true,
 }: ProjectWorkspaceProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -806,6 +807,7 @@ export function ProjectWorkspace({
               projectName={projectName}
               activeDocKey={activeComposerNavItem.key}
               activeDocLabel={activeComposerNavItem.label}
+              upgradeRequired={!composerEnabled}
             />
           </div>
         </div>

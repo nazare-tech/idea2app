@@ -7,10 +7,14 @@
 // no saved conversation. The client holds the session in memory only.
 
 import { NextResponse } from "next/server"
-import OpenAI from "openai"
 
+import { getOpenRouterClient, isOpenRouterConfigured } from "@/lib/openrouter"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import {
+  getProjectAllowanceStatus,
+  type ProjectAllowanceClient,
+} from "@/lib/project-allowance"
 import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"
 import {
   PROJECT_COMPOSER_SYSTEM_PROMPT,
@@ -38,10 +42,7 @@ const MAX_HISTORY_TURNS = 12
 const MAX_HISTORY_ENTRY_CHARS = 6_000
 const REQUEST_TIMEOUT_MS = 100_000
 
-const openrouter = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY || "",
-})
+const openrouter = getOpenRouterClient()
 
 /** Nav keys the client may send as the active document scope. */
 const DOC_SCOPE_KEYS = [
@@ -175,10 +176,26 @@ export async function POST(
     : "executive-summary"
   const history = parseHistory(body.history)
 
-  if (!process.env.OPENROUTER_API_KEY) {
+  if (!isOpenRouterConfigured()) {
     return NextResponse.json(
       { error: "The assistant is not configured on this server." },
       { status: 503 }
+    )
+  }
+
+  // The composer is a paid-plan feature; mirror the paid-plan check used by
+  // project deletion.
+  const allowanceStatus = await getProjectAllowanceStatus(
+    supabase as unknown as ProjectAllowanceClient,
+    user.id
+  )
+  if (allowanceStatus.planName.toLowerCase() === "free") {
+    return NextResponse.json(
+      {
+        error: "Ask this project is available on paid plans.",
+        upgradeRequired: true,
+      },
+      { status: 403 }
     )
   }
 

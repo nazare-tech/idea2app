@@ -5,6 +5,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import {
   AlignLeft,
   ArrowUp,
@@ -38,6 +39,8 @@ interface ProjectComposerProps {
   activeDocKey: string
   /** Display label for that document (e.g. "Product Plan") */
   activeDocLabel: string
+  /** Free-plan gate: render an upgrade CTA instead of the chat input. */
+  upgradeRequired?: boolean
 }
 
 const MAX_INPUT_HEIGHT_PX = 132
@@ -72,6 +75,7 @@ export function ProjectComposer({
   projectName,
   activeDocKey,
   activeDocLabel,
+  upgradeRequired = false,
 }: ProjectComposerProps) {
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState("")
@@ -218,6 +222,33 @@ export function ProjectComposer({
     setOpen(true)
     inputRef.current?.focus()
   }, [])
+
+  // Free-plan gate: the composer is a paid feature. Render a compact upgrade
+  // bar in place of the chat input; the API enforces the same rule.
+  if (upgradeRequired) {
+    return (
+      <div
+        data-testid="project-composer-upgrade"
+        className="pointer-events-none absolute bottom-4 left-1/2 z-40 flex w-[min(724px,calc(100%-32px))] -translate-x-1/2 flex-col sm:bottom-6 sm:w-[min(724px,calc(100%-72px))]"
+      >
+        <div className="pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
+          <span className={cn(kickerClass, "inline-flex shrink-0 items-center gap-[7px] text-primary")}>
+            <Sparkle className="h-[13px] w-[13px]" />
+            Ask this project
+          </span>
+          <p className="m-0 min-w-0 flex-1 text-sm leading-snug text-muted-foreground">
+            Chat with your project documents on a paid plan.
+          </p>
+          <Link
+            href="/billing"
+            className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Upgrade
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const canSend = input.trim().length > 0 && !streaming
 

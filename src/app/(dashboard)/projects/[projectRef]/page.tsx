@@ -5,6 +5,10 @@ import { ProjectWorkspace } from "@/components/workspace/project-workspace"
 import { APP_BRAND_NAME } from "@/lib/app-brand"
 import { buildProjectRef, parseProjectRef } from "@/lib/project-routing"
 import {
+  getProjectAllowanceStatus,
+  type ProjectAllowanceClient,
+} from "@/lib/project-allowance"
+import {
   DEFAULT_WORKSPACE_DOCUMENT,
   isWorkspaceDocumentType,
   shouldRedirectBlockedWorkspaceTab,
@@ -75,11 +79,21 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
 
   const projectId = parsedProjectRef.id
 
-  const { data: profileData } = await supabase
-    .from("profiles")
-    .select("full_name, avatar_url")
-    .eq("id", user!.id)
-    .single()
+  const [{ data: profileData }, allowanceStatus] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", user!.id)
+      .single(),
+    getProjectAllowanceStatus(
+      supabase as unknown as ProjectAllowanceClient,
+      user!.id
+    ),
+  ])
+
+  // The "Ask this project" composer is a paid-plan feature; free users see an
+  // upgrade CTA instead. The composer API enforces the same rule server-side.
+  const composerEnabled = allowanceStatus.planName.toLowerCase() !== "free"
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -130,6 +144,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         full_name: profileData?.full_name ?? undefined,
         avatar_url: profileData?.avatar_url ?? undefined,
       }}
+      composerEnabled={composerEnabled}
     />
   )
 }
