@@ -13,7 +13,8 @@ import { MVP_PLAN_SYSTEM_PROMPT, PRD_SYSTEM_PROMPT } from "./prompts"
 
 test("Product Plan prompt asks for a scannable, bulleted structure with a quality bar", () => {
   assert.match(PRD_SYSTEM_PROMPT, /## PRD quality standards/)
-  assert.match(PRD_SYSTEM_PROMPT, /Bullet list of specific, measurable business goals/)
+  assert.match(PRD_SYSTEM_PROMPT, /Bullet list of proposed business goals/)
+  assert.doesNotMatch(PRD_SYSTEM_PROMPT, /File output instruction/)
   assert.match(PRD_SYSTEM_PROMPT, /Use bullet points\. Explain briefly why each item is deferred/)
 })
 

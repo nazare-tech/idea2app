@@ -347,7 +347,7 @@ Use 2–3 short paragraphs. The final paragraph must orient the reader before de
 ## 2. Goals
 
 ### 2.1 Business goals
-Bullet list of specific, measurable business goals. Infer from market research and product idea.
+Bullet list of proposed business goals. Infer from market research and product idea. These are displayed to the user as proposed starting targets, not commitments: write each goal as a plain outcome statement, use at most one concrete number per goal, and avoid invented precision when the input evidence is weak.
 
 ### 2.2 User goals
 Bullet list of specific user goals. Infer from target audience and pain points.
@@ -600,20 +600,6 @@ Include assumptions about: target users, MVP scope, platform, authentication, in
 List unresolved questions that may need stakeholder input for future versions.
 
 Do not block the PRD on these. The document must be complete and actionable regardless.
-
----
-
-## File output instruction
-
-Save the generated PRD as:
-
-"/tasks/prd-[feature-name].md"
-
-Use a lowercase, hyphenated version of the feature name.
-
-Example:
-- Feature name: AI Recipe Generator
-- File path: "/tasks/prd-ai-recipe-generator.md"
 
 ---
 
