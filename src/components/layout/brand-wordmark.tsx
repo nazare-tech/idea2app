@@ -32,3 +32,24 @@ export function BrandWordmark({
     </Link>
   )
 }
+
+// App-header preset of the wordmark: compact, truncating, links to /projects.
+export function HeaderBrand({
+  href = "/projects",
+  onClick,
+  className,
+}: {
+  href?: string
+  onClick?: MouseEventHandler<HTMLAnchorElement>
+  className?: string
+}) {
+  return (
+    <BrandWordmark
+      href={href}
+      onClick={onClick}
+      logoSize={APP_HEADER_LOGO_SIZE}
+      className={cn("min-w-0 gap-2", className)}
+      labelClassName="truncate text-sm font-bold uppercase leading-5 tracking-normal text-text-secondary"
+    />
+  )
+}

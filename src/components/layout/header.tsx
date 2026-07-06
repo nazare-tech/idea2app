@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { HeaderBrand } from "@/components/layout/header-brand"
+import { HeaderBrand } from "@/components/layout/brand-wordmark"
 import { HeaderProfileMenu } from "@/components/layout/header-profile-menu"
 
 interface HeaderProps {
@@ -13,9 +13,16 @@ interface HeaderProps {
   pageTitle?: ReactNode
   children?: ReactNode
   rightContent?: ReactNode
+  profileMenuTriggerId?: string
 }
 
-export function Header({ user, pageTitle, children, rightContent }: HeaderProps) {
+export function Header({
+  user,
+  pageTitle,
+  children,
+  rightContent,
+  profileMenuTriggerId = "app-user-menu-trigger",
+}: HeaderProps) {
   const brand = <HeaderBrand />
 
   return (
@@ -36,7 +43,7 @@ export function Header({ user, pageTitle, children, rightContent }: HeaderProps)
 
       <div className="flex shrink-0 items-center justify-end gap-2 justify-self-end sm:gap-4">
         {rightContent}
-        <HeaderProfileMenu user={user} triggerId="app-user-menu-trigger" />
+        <HeaderProfileMenu user={user} triggerId={profileMenuTriggerId} />
       </div>
     </header>
   )
