@@ -4,7 +4,8 @@ import React, { useEffect, useState, useRef, useMemo, useCallback, useSyncExtern
 import ReactMarkdown, { type Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 import DOMPurify, { type Config } from "dompurify"
-import { Maximize2, Minimize2, RotateCcw } from "lucide-react"
+import { Maximize2, RotateCcw } from "lucide-react"
+import { ArtifactLightbox } from "@/components/ui/artifact-lightbox"
 
 interface LazySyntaxHighlighterModule {
   Highlighter: React.ComponentType<{
@@ -302,35 +303,14 @@ function MermaidDiagram({ code }: { code: string }) {
       })
   }, [code, isDark])
 
-  // Close modal on Escape key
-  useEffect(() => {
-    if (!isExpanded) return
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsExpanded(false)
-      }
-    }
-
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [isExpanded])
-
-  // Prevent body scroll when modal is open and reset zoom/pan
+  // Escape close and body scroll lock are handled by ArtifactLightbox.
+  // Reset zoom and pan when opening (intentional state reset on modal open)
   useEffect(() => {
     if (isExpanded) {
-      document.body.style.overflow = 'hidden'
-      // Reset zoom and pan when opening (intentional state reset on modal open)
       /* eslint-disable react-hooks/set-state-in-effect */
       setZoom(100)
       setPan({ x: 0, y: 0 })
       /* eslint-enable react-hooks/set-state-in-effect */
-    } else {
-      document.body.style.overflow = ''
-    }
-
-    return () => {
-      document.body.style.overflow = ''
     }
   }, [isExpanded])
 
@@ -416,26 +396,14 @@ function MermaidDiagram({ code }: { code: string }) {
         </button>
       </div>
 
-      {/* Expanded modal view */}
+      {/* Expanded view in the shared artifact lightbox */}
       {isExpanded && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setIsExpanded(false)}
+        <ArtifactLightbox
+          fileName="Diagram"
+          onClose={() => setIsExpanded(false)}
+          maxWidthClassName="max-w-[calc(100vw-4rem)]"
         >
-          <div
-            className="relative w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] rounded-lg border border-border-subtle bg-card shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button */}
-            <button
-              onClick={() => setIsExpanded(false)}
-              className="absolute top-4 right-4 p-2 rounded-md bg-muted border border-border-subtle hover:bg-secondary transition-colors z-10"
-              title="Close (Esc)"
-              aria-label="Close expanded view"
-            >
-              <Minimize2 className="w-5 h-5 text-text-secondary" />
-            </button>
-
+          <div className="relative h-[calc(100vh-9rem)]">
             {/* Expanded diagram with pan and zoom */}
             <div
               ref={diagramContainerRef}
@@ -505,7 +473,7 @@ function MermaidDiagram({ code }: { code: string }) {
               Middle-click or trackpad scroll to pan • Reset button to center
             </div>
           </div>
-        </div>
+        </ArtifactLightbox>
       )}
     </>
   )
