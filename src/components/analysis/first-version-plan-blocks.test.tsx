@@ -139,6 +139,9 @@ test("AiPromptsDocumentBlocks renders recommended tool section and prompt file c
 
 ## User stories and acceptance criteria
 - As a designer, I can generate a proposal draft.
+
+## Technical considerations
+- Supabase Postgres for storage; server routes own AI calls.
 `}
       mvpContent={`# MVP Plan
 
@@ -178,6 +181,8 @@ Start with the proposal intake form.
   assert.match(html, /id="ai-prompts-build-steps"/)
   assert.match(html, /id="ai-prompts-functional-requirements"/)
   assert.match(html, /id="ai-prompts-user-stories-acceptance-criteria"/)
+  assert.match(html, /id="ai-prompts-technical-considerations"/)
+  assert.match(html, /technical-considerations\.md/)
   assert.match(html, /id="ai-prompts-sub-agents"/)
   assert.match(html, /id="ai-prompts-project-context"/)
   assert.match(html, /first-prompt\.md/)

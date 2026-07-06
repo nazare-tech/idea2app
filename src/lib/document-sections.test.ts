@@ -28,13 +28,12 @@ test("getAllSectionIds de-duplicates parent anchors reused by child links", () =
 test("Product Plan nav labels match the current right-panel section text", () => {
   const productPlan = SCROLLABLE_NAV_ITEMS.find((item) => item.key === "prd")
 
-  assert.deepEqual(productPlan?.sections.slice(0, 8), [
+  assert.deepEqual(productPlan?.sections.slice(0, 7), [
     { id: "prd-introduction-overview", label: "Introduction & Overview" },
     { id: "prd-goals", label: "Goals" },
     { id: "prd-team-milestones", label: "Team & Milestones" },
     { id: "prd-success-metrics", label: "Success Metrics" },
     { id: "prd-user-personas", label: "User Personas" },
-    { id: "prd-technical-considerations", label: "Technical Considerations" },
     { id: "prd-non-goals-out-of-scope", label: "Non-goals & Out of Scope" },
     { id: "prd-follow-through", label: "Risks, Dependencies & Open Questions" },
   ])

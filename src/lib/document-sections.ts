@@ -64,7 +64,6 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
       { id: "prd-team-milestones", label: "Team & Milestones" },
       { id: "prd-success-metrics", label: "Success Metrics" },
       { id: "prd-user-personas", label: "User Personas" },
-      { id: "prd-technical-considerations", label: "Technical Considerations" },
       { id: "prd-non-goals-out-of-scope", label: "Non-goals & Out of Scope" },
       { id: "prd-follow-through", label: "Risks, Dependencies & Open Questions" },
       { id: "prd-user-needs", label: "Problem to Solve" },

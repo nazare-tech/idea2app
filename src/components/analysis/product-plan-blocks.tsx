@@ -3,13 +3,8 @@
 import {
   AlertTriangle,
   Check,
-  ChevronDown,
   CircleGauge,
-  ClipboardList,
   Compass,
-  Database,
-  Layers,
-  Puzzle,
   ShieldCheck,
   Target,
   TrendingUp,
@@ -17,7 +12,7 @@ import {
 } from "lucide-react"
 
 import { ExplainableLabel } from "@/components/analysis/explainable-term"
-import type { PlanningDocumentSection, PlanningNarrativeTable } from "@/lib/planning-document-parser"
+import type { PlanningDocumentSection } from "@/lib/planning-document-parser"
 import {
   extractSectionsByHeading,
   normalizeHeading,
@@ -26,8 +21,6 @@ import {
 } from "@/lib/planning-document-parser"
 import { cn } from "@/lib/utils"
 import {
-  DataTable,
-  InlineLabeledText,
   NarrativeContent,
   PlanningMarkdownRenderer,
   Warning,
@@ -35,57 +28,11 @@ import {
   getCurrentSectionTitle,
   getSectionByAlias,
   getStatValue,
-  getTableCell,
   isCurrentPromptDocument,
   splitLabeledText,
   stripHorizontalRulesFromMarkdown,
   type PlanningDocumentProps,
 } from "./planning-blocks-shared"
-
-function DesignedBulletList({
-  content,
-  marker = "dot",
-  label,
-}: {
-  content: string
-  marker?: "dot" | "check"
-  label: string
-}) {
-  const narrative = parseNarrativeTable(content)
-  const items = [...narrative.items, ...narrative.paragraphs].filter(Boolean)
-
-  if (items.length === 0 && !narrative.table) {
-    return (
-      <p className="ui-type-body-sm text-[#999999]">
-        No structured content available.
-      </p>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      {items.length > 0 ? (
-        <ul aria-label={label} className="space-y-3">
-          {items.map((item, index) => (
-            <li key={`${item}-${index}`} className="flex gap-3">
-              {marker === "check" ? (
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border border-primary/20 bg-primary/5 text-primary">
-                  <Check className="h-3.5 w-3.5" />
-                </span>
-              ) : (
-                <span className="mt-[0.62rem] h-1.5 w-1.5 shrink-0 bg-primary" />
-              )}
-              <InlineLabeledText value={stripInlineMarkdown(item)} className="text-[#4A4040]" />
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {narrative.table ? (
-        <DataTable headers={narrative.table.headers} rows={narrative.table.rows} />
-      ) : null}
-    </div>
-  )
-}
 
 interface TimelinePhaseDetail {
   label?: string
@@ -239,368 +186,6 @@ function TimelinePhaseCard({
       ) : null}
     </article>
   )
-}
-
-type RequirementCategory = "Functional" | "Non-Functional" | "Integration"
-
-interface RequirementItem {
-  id?: string
-  title?: string
-  description: string
-  meta?: string[]
-}
-
-function classifyRequirement(item: string): RequirementCategory {
-  if (
-    /^(?:nfr[-\s]?\d+|performance|privacy|security|reliability|scalability|data retention|compliance)/i.test(
-      item,
-    )
-  ) {
-    return "Non-Functional"
-  }
-
-  if (
-    /^(?:ir[-\s]?\d+|integration|chrome|firefox|safari|api|rest api|webhook|export|slack|jira|linear|third-party)/i.test(
-      item,
-    )
-  ) {
-    return "Integration"
-  }
-
-  return "Functional"
-}
-
-function normalizeRequirementCategory(value: string): RequirementCategory {
-  if (/non[-\s]?functional|nfr/i.test(value)) return "Non-Functional"
-  if (/integration|ir/i.test(value)) return "Integration"
-  return "Functional"
-}
-
-function createRequirementGroups() {
-  return new Map<RequirementCategory, RequirementItem[]>([
-    ["Functional", []],
-    ["Non-Functional", []],
-    ["Integration", []],
-  ])
-}
-
-function getRequirementCategoryFromId(id: string): RequirementCategory {
-  if (/^NFR/i.test(id)) return "Non-Functional"
-  if (/^IR/i.test(id)) return "Integration"
-  return "Functional"
-}
-
-function parseRequirementLine(line: string) {
-  const cleaned = stripInlineMarkdown(
-    line
-      .replace(/^\s*(?:[-*+]|\d+\.)\s+/, "")
-      .replace(/^>\s*/, "")
-      .trim(),
-  )
-
-  if (!cleaned) return null
-
-  const idMatch = cleaned.match(/^([A-Z]{1,5}[-\s]?\d+)\s*:?\s*(.*)$/i)
-  if (idMatch) {
-    const id = idMatch[1].replace(/\s+/, "-").toUpperCase()
-    const rest = idMatch[2]?.trim() ?? ""
-    const labeled = splitLabeledText(rest)
-
-    return {
-      id,
-      title: labeled?.label || rest || undefined,
-      description: labeled?.body || "",
-    }
-  }
-
-  const labeled = splitLabeledText(cleaned)
-  return {
-    id: undefined,
-    title: labeled?.label,
-    description: labeled?.body || cleaned,
-  }
-}
-
-function parseRequirementItemsFromMarkdown(
-  content: string,
-  category?: RequirementCategory,
-) {
-  const items: Array<RequirementItem & { category: RequirementCategory }> = []
-  let active: (RequirementItem & { category: RequirementCategory }) | null = null
-
-  for (const rawLine of stripHorizontalRulesFromMarkdown(content).split("\n")) {
-    if (!rawLine.trim()) continue
-
-    const isListItem = /^\s*(?:[-*+]|\d+\.)\s+/.test(rawLine)
-    const isNestedListItem = /^\s{2,}(?:[-*+]|\d+\.)\s+/.test(rawLine)
-    const parsed = parseRequirementLine(rawLine)
-
-    if (!parsed) continue
-
-    if (isNestedListItem && active) {
-      active.description = [active.description, parsed.description || parsed.title]
-        .filter(Boolean)
-        .join(" ")
-      continue
-    }
-
-    if (active?.id && !parsed.id && isListItem) {
-      active.description = [active.description, parsed.description || parsed.title]
-        .filter(Boolean)
-        .join(" ")
-      continue
-    }
-
-    if (!isListItem && !parsed.id) continue
-
-    const itemCategory =
-      category ??
-      (parsed.id
-        ? getRequirementCategoryFromId(parsed.id)
-        : classifyRequirement(parsed.title ?? parsed.description ?? rawLine))
-    active = {
-      ...parsed,
-      category: itemCategory,
-      description: parsed.description || "",
-    }
-    items.push(active)
-  }
-
-  return items
-}
-
-function addRequirementItemsToGroups(
-  groups: Map<RequirementCategory, RequirementItem[]>,
-  items: Array<RequirementItem & { category: RequirementCategory }>,
-) {
-  for (const item of items) {
-    groups.get(item.category)?.push({
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      meta: item.meta,
-    })
-  }
-}
-
-function getRequirementGroups(narrative: PlanningNarrativeTable) {
-  const groups = createRequirementGroups()
-  const nestedSections = extractSectionsByHeading(narrative.source, 3)
-
-  if (nestedSections.length > 0) {
-    for (const section of nestedSections) {
-      addRequirementItemsToGroups(
-        groups,
-        parseRequirementItemsFromMarkdown(
-          section.content,
-          normalizeRequirementCategory(section.heading),
-        ),
-      )
-    }
-
-    return groups
-  }
-
-  if (narrative.table) {
-    const headers = narrative.table.headers
-
-    for (const row of narrative.table.rows) {
-      const type = normalizeRequirementCategory(getTableCell(row, headers, ["type", "category"]))
-      const id = getTableCell(row, headers, ["id", "#"])
-      const requirement = getTableCell(row, headers, ["requirement", "feature", "name"])
-      const notes = getTableCell(row, headers, ["acceptance", "notes", "priority", "rationale"])
-      const fallback = row.filter(Boolean).join(" - ")
-
-      groups.get(type)?.push({
-        id: id || undefined,
-        title: requirement || fallback,
-        description: notes,
-      })
-    }
-
-    return groups
-  }
-
-  const parsedItems = parseRequirementItemsFromMarkdown(narrative.source)
-  if (parsedItems.length > 0) {
-    addRequirementItemsToGroups(groups, parsedItems)
-    return groups
-  }
-
-  for (const item of narrative.items) {
-    if (/^(functional|non-functional|integration) requirements?$/i.test(item)) {
-      continue
-    }
-
-    const labeled = splitLabeledText(item)
-    const type = classifyRequirement(item)
-    groups.get(type)?.push({
-      title: labeled?.label,
-      description: labeled?.body || item,
-    })
-  }
-
-  return groups
-}
-
-function cleanStoryText(value: string) {
-  return stripInlineMarkdown(
-    value
-      .replace(/^#{1,6}\s*/, "")
-      .replace(/^\s*(?:[-*+]|\d+\.)\s+/, "")
-      .replace(/^>\s*/, "")
-      .replace(/^Story:\s*/i, "")
-      .trim(),
-  )
-}
-
-function isUserStoryLabel(value: string) {
-  return /^User story:?$/i.test(value)
-}
-
-function getStoryHeading(value: string) {
-  const cleaned = cleanStoryText(value)
-  const match = cleaned.match(/^(US[-\s]?\d+)\s*:?\s*(.*)$/i)
-  if (!match) return null
-
-  return {
-    originalId: match[1].replace(/\s+/, "-").toUpperCase(),
-    text: match[2]?.replace(/^["']|["']$/g, "").trim() ?? "",
-  }
-}
-
-function getNormalizedUserStoryId(index: number) {
-  return `US-${String(index + 1).padStart(3, "0")}`
-}
-
-function parseAcceptanceCriteria(lines: string[]) {
-  const criteria: string[] = []
-  let inCriteria = false
-
-  for (const line of lines) {
-    const cleaned = cleanStoryText(line)
-    if (!cleaned) continue
-
-    const criteriaMatch = cleaned.match(/^Acceptance Criteria:?\s*(.*)$/i)
-    if (criteriaMatch) {
-      inCriteria = true
-      const inline = criteriaMatch[1]?.trim()
-      if (inline) {
-        criteria.push(
-          ...inline
-            .split(/\s+-\s+/)
-            .map(cleanStoryText)
-            .map((criterion) => criterion.replace(/^[-*]\s*/, ""))
-            .filter(Boolean),
-        )
-      }
-      continue
-    }
-
-    if (inCriteria && !getStoryHeading(line)) {
-      criteria.push(cleaned)
-    }
-  }
-
-  return criteria
-}
-
-function extractUserStoryText(chunk: string[]) {
-  const cleanedLines = chunk.map(cleanStoryText).filter(Boolean)
-  const heading = chunk.map(getStoryHeading).find(Boolean)
-
-  if (heading?.text && /^As an?\b/i.test(heading.text)) {
-    return heading.text
-  }
-
-  const storyLines: string[] = []
-  let inStory = false
-
-  for (const line of cleanedLines) {
-    if (isUserStoryLabel(line)) {
-      inStory = true
-      continue
-    }
-
-    if (/^Acceptance Criteria:?/i.test(line)) break
-    if (getStoryHeading(line)) continue
-
-    if (/^As an?\b/i.test(line)) {
-      inStory = true
-      storyLines.push(line)
-      continue
-    }
-
-    if (inStory && /^(?:I want|So that)\b/i.test(line)) {
-      storyLines.push(line)
-      continue
-    }
-  }
-
-  if (storyLines.length > 0) {
-    return storyLines.join(" ")
-  }
-
-  return heading?.text ?? ""
-}
-
-function getUserStoryTitle(chunk: string[], story: string, index: number) {
-  const heading = chunk.map(getStoryHeading).find(Boolean)
-
-  if (heading?.text && !/^As an?\b/i.test(heading.text)) {
-    return heading.text
-  }
-
-  const actor = story.match(/^"?(As an? [^,]+)/i)?.[1]
-  return actor ? actor.replace(/^As an?\s+/i, "") : `Story ${index + 1}`
-}
-
-function parseUserStories(narrative: PlanningNarrativeTable) {
-  const lines = narrative.source
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .filter((line) => !/^-{3,}$/.test(line))
-
-  const chunks: string[][] = []
-  let current: string[] = []
-
-  for (const line of lines) {
-    const cleaned = cleanStoryText(line)
-    const startsHeading = Boolean(getStoryHeading(line))
-    const startsAsStory =
-      !/^Story:/i.test(line.trim()) && /^As an?\b/i.test(cleaned)
-    const startsStory = startsHeading || startsAsStory
-
-    if (
-      startsStory &&
-      current.length > 0 &&
-      !(startsAsStory && current.some((currentLine) => Boolean(getStoryHeading(currentLine))))
-    ) {
-      chunks.push(current)
-      current = [line]
-      continue
-    }
-
-    current.push(line)
-  }
-
-  if (current.length > 0) chunks.push(current)
-
-  return chunks
-    .map((chunk, index) => {
-      const story = extractUserStoryText(chunk)
-
-      if (!story) return null
-
-      return {
-        id: getNormalizedUserStoryId(index),
-        title: getUserStoryTitle(chunk, story, index),
-        story,
-        criteria: parseAcceptanceCriteria(chunk),
-      }
-    })
-    .filter((story): story is NonNullable<typeof story> => story !== null)
 }
 
 const currentPrdSectionAliases = [
@@ -1050,75 +635,7 @@ function DetailedPersonaCards({ personas }: { personas: CurrentPersona[] }) {
   )
 }
 
-function getCurrentPrdMetaItems({
-  timeline,
-  userStories,
-  requirements,
-}: {
-  timeline?: PlanningDocumentSection
-  userStories?: PlanningDocumentSection
-  requirements?: PlanningDocumentSection
-}) {
-  const timelineText = timeline?.content ?? ""
-  const timelineNested = extractSectionsByHeading(timelineText, 3)
-  const estimateItems = parseNarrativeTable(
-    getSectionByAlias(timelineNested, ["Project estimate"])?.content ?? "",
-  ).items
-  const estimateValue = (aliases: string[]) => {
-    for (const item of estimateItems) {
-      const labeled = splitLabeledText(stripInlineMarkdown(item))
-      if (
-        labeled &&
-        aliases.some((alias) => normalizeHeading(labeled.label) === normalizeHeading(alias))
-      ) {
-        return labeled.body
-      }
-    }
-
-    return null
-  }
-  const size =
-    estimateValue(["Size", "Project size"]) ??
-    timelineText.match(/Size:\s*([^\n]+)/i)?.[1]?.trim() ??
-    timelineText.match(/Project size:\s*([^\n]+)/i)?.[1]?.trim() ??
-    "Scoped"
-  const duration =
-    estimateValue(["Estimated total duration", "Duration"]) ??
-    timelineText.match(/Estimated total duration:\s*([^\n]+)/i)?.[1]?.trim() ??
-    timelineText.match(/Duration:\s*([^\n]+)/i)?.[1]?.trim() ??
-    timelineText.match(/(\d+\s*(?:weeks?|wks?))/i)?.[1]?.trim() ??
-    "Planned"
-  const teamSection = getSectionByAlias(
-    timelineNested,
-    ["Team composition", "Team"],
-  )
-  const teamCount = teamSection
-    ? parseNarrativeTable(teamSection.content).items.length
-    : (timelineText.match(/-\s+\*\*[^*]+\*\*:/g) ?? []).length
-  const stories = userStories
-    ? parseUserStories(parseNarrativeTable(userStories.content)).length
-    : 0
-  const requirementTotal = requirements
-    ? Array.from(getRequirementGroups(parseNarrativeTable(requirements.content)).values()).reduce(
-        (sum, items) => sum + items.length,
-        0,
-      )
-    : 0
-
-  return [
-    { value: size, label: "Project Size" },
-    { value: duration, label: "Est. Duration" },
-    ...(teamCount > 0 ? [{ value: String(teamCount), label: "Team Members" }] : []),
-    ...(stories > 0 ? [{ value: String(stories), label: "User Stories" }] : []),
-    ...(requirementTotal > 0 ? [{ value: String(requirementTotal), label: "Requirements" }] : []),
-  ]
-}
-
-function ProductPlanMasthead({
-  metaItems,
-}: {
-  metaItems: Array<{ value: string; label: string }>
-}) {
+function ProductPlanMasthead() {
   return (
     <header className="pb-10 pt-6">
       <h1
@@ -1129,23 +646,6 @@ function ProductPlanMasthead({
       >
         Product Plan
       </h1>
-      {metaItems.length > 0 ? (
-        <div className="mt-9 flex flex-wrap border border-[#E8DDD5] bg-white">
-          {metaItems.map((item) => (
-            <div
-              key={item.label}
-              className="min-w-[140px] flex-1 border-b border-r border-[#E8DDD5] px-6 py-5 last:border-r-0 md:border-b-0"
-            >
-              <div className={cn(displayFontClass, "text-[28px] font-extrabold leading-none tracking-[-0.04em] text-[#0A0A0A]")}>
-                {item.value}
-              </div>
-              <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8A8480]">
-                {item.label}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
     </header>
   )
 }
@@ -1210,6 +710,31 @@ function getNestedNarrative(section: PlanningDocumentSection, aliases: string[])
   return match ? parseNarrativeTable(match.content) : parseNarrativeTable("")
 }
 
+/**
+ * Numbered goal cards shared by business and user goals so both lists render
+ * with the same UI (mono 01/02/03 badges, matching the Non-goals grid idiom).
+ */
+function GoalGrid({ label, items }: { label: string; items: string[] }) {
+  return (
+    <div>
+      <p className="mb-4 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[#4A4040]">
+        <span className="h-1.5 w-1.5 bg-primary" />
+        {label}
+      </p>
+      <ul className="grid gap-3 md:grid-cols-2">
+        {items.map((item, index) => (
+          <li key={`${item}-${index}`} className="flex gap-4 border border-[#E8DDD5] bg-white px-5 py-4 text-[15px] leading-6 text-[#4A4040]">
+            <span className="h-fit shrink-0 border border-[#E8DDD5] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#8A8480]">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <span>{stripInlineMarkdown(item)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 function GoalsShowcase({ section }: { section: PlanningDocumentSection }) {
   const business = getNestedNarrative(section, ["Business goals", "Business goal"])
   const user = getNestedNarrative(section, ["User goals", "User goal"])
@@ -1217,42 +742,13 @@ function GoalsShowcase({ section }: { section: PlanningDocumentSection }) {
   return (
     <div className="space-y-10">
       {business.items.length > 0 ? (
-        <div>
-          <p className="mb-4 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[#4A4040]">
-            <span className="h-1.5 w-1.5 bg-primary" />
-            Business Goals
-          </p>
-          <div className="flex flex-wrap gap-px border border-[#E8DDD5] bg-[#E8DDD5]">
-            {business.items.map((item, index) => (
-              <article key={`${item}-${index}`} className="min-w-[180px] flex-1 bg-white px-6 py-6">
-                <p className={cn(displayFontClass, "text-[42px] font-extrabold leading-none tracking-[-0.05em] text-[#0A0A0A]")}>
-                  {getStatValue(item, index)}
-                </p>
-                <p className="mt-4 text-[14px] leading-6 text-[#4A4040]">{stripInlineMarkdown(item)}</p>
-              </article>
-            ))}
-          </div>
-        </div>
+        // "Proposed" signals these are AI-suggested starting targets, not commitments.
+        <GoalGrid label="Proposed Business Goals" items={business.items} />
       ) : (
         <NarrativeContent narrative={parseNarrativeTable(section.content)} />
       )}
 
-      {user.items.length > 0 ? (
-        <div>
-          <p className="mb-4 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[#4A4040]">
-            <span className="h-1.5 w-1.5 bg-primary" />
-            User Goals
-          </p>
-          <ul className="grid gap-3 md:grid-cols-2">
-            {user.items.map((item, index) => (
-              <li key={`${item}-${index}`} className="flex gap-3 border border-[#E8DDD5] bg-white px-5 py-4 text-[15px] leading-6 text-[#4A4040]">
-                <Check className="mt-1 h-4 w-4 shrink-0 text-primary" />
-                <span>{stripInlineMarkdown(item)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {user.items.length > 0 ? <GoalGrid label="User Goals" items={user.items} /> : null}
     </div>
   )
 }
@@ -1275,13 +771,14 @@ function PersonaShowcase({ section, projectId }: { section?: PlanningDocumentSec
         <PlanningMarkdownRenderer content={personaDetails} projectId={projectId} />
       )}
 
+      {/* Cells carry their own top/left hairlines (offset by -1px) so empty space in a partial last row stays white instead of showing a container background. */}
       {roleAccess.items.length > 0 ? (
-        <div className="grid border border-[#E8DDD5] bg-[#E8DDD5] md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid border border-[#E8DDD5] bg-white md:grid-cols-2 xl:grid-cols-4">
           {roleAccess.items.map((item, index) => {
             const labeled = splitLabeledText(stripInlineMarkdown(item))
 
             return (
-              <article key={`${item}-${index}`} className="bg-white px-5 py-5">
+              <article key={`${item}-${index}`} className="-ml-px -mt-px border-l border-t border-[#E8DDD5] bg-white px-5 py-5">
                 <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
                   Access {String(index + 1).padStart(2, "0")}
                 </p>
@@ -1296,256 +793,6 @@ function PersonaShowcase({ section, projectId }: { section?: PlanningDocumentSec
           })}
         </div>
       ) : null}
-    </div>
-  )
-}
-
-export function UserStoryShowcase({ section }: { section?: PlanningDocumentSection }) {
-  if (!section) return null
-
-  const stories = parseUserStories(parseNarrativeTable(section.content))
-  if (stories.length === 0) {
-    return <NarrativeContent narrative={parseNarrativeTable(section.content)} />
-  }
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {stories.map((story) => (
-        <article key={story.id} className="overflow-hidden border border-[#E8DDD5] bg-white">
-          <div className="px-6 py-5">
-            <span className="inline-flex border border-primary/10 bg-primary/5 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
-              {story.id}
-            </span>
-            <h3 className={cn(displayFontClass, "mt-4 text-[18px] font-bold tracking-[-0.02em] text-[#0A0A0A]")}>
-              {story.title}
-            </h3>
-            <p className="mt-3 text-[14px] leading-6 text-[#4A4040]">{story.story}</p>
-          </div>
-          {story.criteria.length > 0 ? (
-            <details className="border-t border-[#E8DDD5]">
-              <summary className="flex cursor-pointer list-none items-center gap-2 px-6 py-4 font-mono text-[10px] uppercase tracking-[0.14em] text-[#4A4040] [&::-webkit-details-marker]:hidden">
-                Acceptance Criteria ({story.criteria.length})
-                <ChevronDown className="ml-auto h-4 w-4" />
-              </summary>
-              <ul className="space-y-2 px-6 pb-5">
-                {story.criteria.map((criterion, index) => (
-                  <li key={`${criterion}-${index}`} className="flex gap-3 text-[13px] leading-5 text-[#4A4040]">
-                    <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-success" />
-                    <span>{criterion}</span>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          ) : null}
-        </article>
-      ))}
-    </div>
-  )
-}
-
-const requirementIcons: Record<RequirementCategory, React.ComponentType<{ className?: string }>> = {
-  Functional: Puzzle,
-  "Non-Functional": ShieldCheck,
-  Integration: Layers,
-}
-
-interface RequirementDisplayGroup {
-  label: string
-  items: RequirementItem[]
-  Icon: React.ComponentType<{ className?: string }>
-  spanWide?: boolean
-}
-
-function getRequirementSubsectionLabel(heading: string) {
-  return stripInlineMarkdown(heading)
-    .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
-    .trim()
-}
-
-function getRequirementIcon(label: string, index: number) {
-  if (/states?|errors?|failure|empty/i.test(label)) return AlertTriangle
-  if (/constraints?|security|privacy|permissions?|limits?|compliance/i.test(label)) return ShieldCheck
-  if (/integration|api|provider|oauth|extension/i.test(label)) return Layers
-
-  const icons = [Puzzle, ClipboardList, Layers]
-  return icons[index % icons.length]
-}
-
-function normalizeRequirementItems(
-  items: Array<RequirementItem & { category?: RequirementCategory }>,
-) {
-  return items.map((item) => ({
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    meta: item.meta,
-  }))
-}
-
-function getRequirementItemsFromNestedSection(content: string) {
-  const parsedItems = normalizeRequirementItems(parseRequirementItemsFromMarkdown(content))
-  if (parsedItems.length > 0) return parsedItems
-
-  const narrative = parseNarrativeTable(content)
-  if (narrative.items.length > 0) {
-    return narrative.items.map((item) => {
-      const labeled = splitLabeledText(item)
-
-      return {
-        title: labeled?.label,
-        description: labeled?.body || item,
-      }
-    })
-  }
-
-  return narrative.paragraphs.map((paragraph) => ({
-    description: paragraph,
-  }))
-}
-
-function getRequirementNestedSections(sectionContent: string) {
-  const h3Sections = extractSectionsByHeading(sectionContent, 3)
-  const h4Sections = extractSectionsByHeading(sectionContent, 4)
-  const hasOnlyWrapperH3 =
-    h3Sections.length === 1 &&
-    /^(?:\d+(?:\.\d+)*\.?\s+)?functional requirements?$/i.test(h3Sections[0]?.heading ?? "")
-
-  if (h4Sections.length > 0 && (h3Sections.length === 0 || hasOnlyWrapperH3)) {
-    return h4Sections
-  }
-
-  return h3Sections
-}
-
-function shouldSpanRequirementDisplayGroup(
-  groups: Array<Pick<RequirementDisplayGroup, "label">>,
-  index: number,
-) {
-  const isCoreStatesConstraintsLayout =
-    groups.length === 3 &&
-    normalizeHeading(groups[0]?.label ?? "") === "core requirements" &&
-    normalizeHeading(groups[1]?.label ?? "") === "states and errors" &&
-    normalizeHeading(groups[2]?.label ?? "") === "constraints"
-
-  if (isCoreStatesConstraintsLayout) {
-    return index === 0
-  }
-
-  return groups.length % 2 === 1 && index === groups.length - 1
-}
-
-function getRequirementDisplayGroups(sectionContent: string): RequirementDisplayGroup[] {
-  const nestedSections = getRequirementNestedSections(sectionContent)
-    .map((section, index) => {
-      const label = getRequirementSubsectionLabel(section.heading)
-
-      return {
-        label,
-        items: getRequirementItemsFromNestedSection(section.content),
-        Icon: getRequirementIcon(label, index),
-      }
-    })
-    .filter((group) => group.label && group.items.length > 0)
-
-  if (nestedSections.length > 0) {
-    return nestedSections.map((group, index) => ({
-      ...group,
-      spanWide: shouldSpanRequirementDisplayGroup(nestedSections, index),
-    }))
-  }
-
-  return Array.from(getRequirementGroups(parseNarrativeTable(sectionContent)).entries())
-    .filter(([, items]) => items.length > 0)
-    .map(([label, items]) => ({
-      label,
-      items,
-      Icon: requirementIcons[label],
-      spanWide: label === "Integration",
-    }))
-}
-
-export function RequirementShowcase({ section }: { section?: PlanningDocumentSection }) {
-  if (!section) return null
-
-  const groups = getRequirementDisplayGroups(section.content)
-
-  if (groups.length === 0) {
-    return <NarrativeContent narrative={parseNarrativeTable(section.content)} />
-  }
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {groups.map(({ label, items, Icon, spanWide }) => {
-        return (
-          <section key={label} className={cn("border border-[#E8DDD5] bg-white px-6 py-6", spanWide && "lg:col-span-2")}>
-            <div className="mb-5 flex items-center gap-3">
-              <div className="grid h-9 w-9 place-items-center border border-[#E8DDD5] bg-[#FAFAFA]">
-                <Icon className="h-4 w-4 text-[#1C1917]" />
-              </div>
-              <h3 className={cn(displayFontClass, "text-[18px] font-bold tracking-[-0.02em] text-[#0A0A0A]")}>
-                {label}
-              </h3>
-              <span className="ml-auto font-mono text-[11px] tracking-[0.08em] text-[#8A8480]">
-                {items.length} reqs
-              </span>
-            </div>
-            <ol className="space-y-0">
-              {items.map((item, index) => (
-                <li key={`${item.id ?? item.title ?? item.description}-${index}`} className="flex gap-4 border-t border-[#E8DDD5] py-3 first:border-t-0">
-                  <span className="min-w-6 font-mono text-[11px] text-[#8A8480]">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span>
-                    {item.title ? <span className="block text-[14px] font-semibold text-[#0A0A0A]">{item.title}</span> : null}
-                    {item.description ? <span className="block text-[13px] leading-5 text-[#4A4040]">{item.description}</span> : null}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </section>
-        )
-      })}
-    </div>
-  )
-}
-
-const techIcons = [Layers, ShieldCheck, Database, CircleGauge, TrendingUp, ClipboardList]
-
-function TechnicalShowcase({ section, projectId }: { section?: PlanningDocumentSection; projectId: string }) {
-  if (!section) return null
-
-  const nested = extractSectionsByHeading(section.content, 3)
-  const cards = nested.length > 0
-    ? nested
-    : parseNarrativeTable(section.content).items.map((item, index) => ({
-        heading: `Technical Item ${index + 1}`,
-        content: item,
-      }))
-
-  if (cards.length === 0) {
-    return <PlanningMarkdownRenderer content={section.content} projectId={projectId} />
-  }
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {cards.map((card, index) => {
-        const Icon = techIcons[index % techIcons.length]
-
-        return (
-          <article key={`${card.heading}-${index}`} className="border border-[#E8DDD5] bg-white px-6 py-6">
-            <div className="mb-4 flex items-center gap-3">
-              <Icon className="h-5 w-5 text-primary" />
-              <h3 className={cn(displayFontClass, "text-[17px] font-bold tracking-[-0.02em] text-[#0A0A0A]")}>
-                {nested.length > 0 ? getCurrentSectionTitle(card.heading) : `Consideration ${String(index + 1).padStart(2, "0")}`}
-              </h3>
-            </div>
-            <DesignedBulletList
-              content={card.content}
-              label={`${getCurrentSectionTitle(card.heading)} details`}
-            />
-          </article>
-        )
-      })}
     </div>
   )
 }
@@ -1869,7 +1116,7 @@ function AssumptionsShowcase({ section }: { section?: PlanningDocumentSection })
   return (
     <section className="space-y-4">
       <FollowThroughHeading>Assumptions</FollowThroughHeading>
-      <div className="grid gap-px border border-[#E8DDD5] bg-[#E8DDD5] md:grid-cols-2">
+      <div className="grid border border-[#E8DDD5] bg-white md:grid-cols-2">
         {assumptions.map((assumption, index) => {
           const highestRisk = isHighestRiskAssumption(assumption)
 
@@ -1877,7 +1124,7 @@ function AssumptionsShowcase({ section }: { section?: PlanningDocumentSection })
             <article
               key={`${assumption.title}-${index}`}
               className={cn(
-                "min-h-[160px] px-6 py-6",
+                "-ml-px -mt-px min-h-[160px] border-l border-t border-[#E8DDD5] px-6 py-6",
                 highestRisk ? "bg-[#E7DDD6]" : "bg-white",
               )}
             >
@@ -1942,10 +1189,9 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   const introduction = getSectionByAlias(sections, ["Introduction/overview", "Introduction overview"])
   const goals = getSectionByAlias(sections, ["Goals"])
   const personas = getSectionByAlias(sections, ["User personas"])
-  const requirements = getSectionByAlias(sections, ["Functional requirements"])
-  const userStories = getSectionByAlias(sections, ["User stories and acceptance criteria"])
+  // Functional requirements, user stories, and technical considerations stay
+  // in the generated markdown but render only as AI Prompts files.
   const outOfScope = getSectionByAlias(sections, ["Non-goals / out of scope", "Out of scope"])
-  const technical = getSectionByAlias(sections, ["Technical considerations"])
   const metrics = getSectionByAlias(sections, ["Success metrics"])
   const timeline = getSectionByAlias(sections, ["Timeline and milestones"])
   const risks = getSectionByAlias(sections, ["Risks and mitigation"])
@@ -1969,9 +1215,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
       introduction,
       goals,
       personas,
-      userStories,
-      requirements,
-      technical,
       outOfScope,
       metrics,
       timeline,
@@ -1981,13 +1224,7 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
 
   return (
     <div className="flex flex-col gap-16">
-      <ProductPlanMasthead
-        metaItems={getCurrentPrdMetaItems({
-          timeline,
-          userStories,
-          requirements,
-        })}
-      />
+      <ProductPlanMasthead />
 
       {introduction ? (
         <DesignedSection
@@ -2025,42 +1262,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
         </DesignedSection>
       ) : null}
 
-      {userStories ? (
-        <DesignedSection
-          id="prd-user-stories-acceptance-criteria"
-          kicker="Behavior"
-          title="User Stories & Acceptance Criteria"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <UserStoryShowcase section={userStories} />
-        </DesignedSection>
-      ) : null}
-
-      {requirements ? (
-        <DesignedSection
-          id="prd-functional-requirements"
-          kicker="Build Scope"
-          title="Functional Requirements"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <RequirementShowcase section={requirements} />
-        </DesignedSection>
-      ) : null}
-
-      {technical ? (
-        <DesignedSection
-          id="prd-technical-considerations"
-          kicker="Technical"
-          title="Technical Considerations"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <TechnicalShowcase section={technical} projectId={projectId} />
-        </DesignedSection>
-      ) : null}
-
       {outOfScope ? (
         <DesignedSection
           id="prd-non-goals-out-of-scope"
@@ -2069,12 +1270,12 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
           index={nextSectionIndex()}
           total={sectionTotal}
         >
-          <div className="grid border border-[#E8DDD5] bg-[#E8DDD5] md:grid-cols-2">
+          <div className="grid border border-[#E8DDD5] bg-white md:grid-cols-2">
             {parseNarrativeTable(outOfScope.content).items.map((item, index) => {
               const labeled = splitLabeledText(stripInlineMarkdown(item))
 
               return (
-                <article key={`${item}-${index}`} className="flex gap-4 bg-white px-5 py-5">
+                <article key={`${item}-${index}`} className="-ml-px -mt-px flex gap-4 border-l border-t border-[#E8DDD5] bg-white px-5 py-5">
                   <span className="h-fit border border-[#E8DDD5] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#8A8480]">
                     {String(index + 1).padStart(2, "0")}
                   </span>

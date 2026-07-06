@@ -65,137 +65,7 @@ As a builder, I want a product plan.
   assert.doesNotMatch(html, /grid gap-4 lg:grid-cols-3/)
 })
 
-test("PrdDocumentBlocks preserves current PRD functional requirement subsections as separate blocks", () => {
-  const html = renderToStaticMarkup(
-    <PrdDocumentBlocks
-      projectId="project-1"
-      content={`# PRD: Wear It Now AI Mirror
 
-## 1. Introduction/overview
-Wear It Now AI Mirror helps shoppers preview outfits before buying.
-
-## 2. Goals
-- Increase confident outfit decisions.
-
-## 3. User personas
-### 3.2 Persona details
-**Priya Mehta**
-- **Description**: Priya wants outfit confidence before buying.
-
-## 4. User stories and acceptance criteria
-### US-001: Preview outfit
-**User story**
-As a shopper, I want to preview an outfit.
-**Acceptance criteria**
-- The preview appears.
-
-## 5. Functional requirements
-### 5.1 Core requirements
-- **CR-001**: Project input
-  - Users can create a mirror try-on project.
-- **CR-002**: Avatar upload
-  - Users can upload one avatar photo.
-
-### 5.2 States and errors
-- **SE-001**: Empty state
-  - Show guidance when no outfit image has been selected.
-- **SE-002**: Generation failure
-  - Show retry copy when AI generation fails.
-
-### 5.3 Constraints
-- **FR-005**: Supported file types
-  - Accept JPEG, PNG, and WEBP images only.
-- **FR-006**: Upload size
-  - Limit avatar uploads to 10 MB.
-
-## 6. Technical considerations
-- Keep image generation on the server.
-`}
-    />,
-  )
-
-  assert.match(html, /Core requirements/)
-  assert.match(html, /States and errors/)
-  assert.match(html, /Constraints/)
-  assert.match(html, /Project input/)
-  assert.match(html, /Generation failure/)
-  assert.match(html, /Supported file types/)
-  assert.match(html, /2 reqs/)
-  assert.match(html, />01<\/span>/)
-  assert.match(html, />02<\/span>/)
-  assert.doesNotMatch(html, /CR-001/)
-  assert.doesNotMatch(html, /CR-002/)
-  assert.doesNotMatch(html, /SE-001/)
-  assert.doesNotMatch(html, /SE-002/)
-  assert.doesNotMatch(html, /FR-005/)
-  assert.doesNotMatch(html, /<h3[^>]*>Functional<\/h3>/)
-  assert.doesNotMatch(html, /<h3[^>]*>Integration<\/h3>/)
-
-  const coreIndex = html.indexOf("Core requirements")
-  const statesIndex = html.indexOf("States and errors")
-  const constraintsIndex = html.indexOf("Constraints")
-  const getSectionOpeningTag = (index: number) => {
-    const sectionStart = html.lastIndexOf("<section", index)
-    return html.slice(sectionStart, html.indexOf(">", sectionStart))
-  }
-
-  assert.ok(coreIndex > -1)
-  assert.ok(statesIndex > coreIndex)
-  assert.ok(constraintsIndex > statesIndex)
-  assert.match(getSectionOpeningTag(coreIndex), /lg:col-span-2/)
-  assert.doesNotMatch(getSectionOpeningTag(statesIndex), /lg:col-span-2/)
-  assert.doesNotMatch(getSectionOpeningTag(constraintsIndex), /lg:col-span-2/)
-})
-
-test("PrdDocumentBlocks preserves deeper functional requirement subsections under a wrapper heading", () => {
-  const html = renderToStaticMarkup(
-    <PrdDocumentBlocks
-      projectId="project-1"
-      content={`# PRD: Wrapped Requirements
-
-## 1. Introduction/overview
-Wrapped Requirements helps validate nested planning output.
-
-## 2. Goals
-- Keep renderer output faithful.
-
-## 3. User personas
-### 3.2 Persona details
-**Builder**
-- **Description**: Builder needs clear scope.
-
-## 4. User stories and acceptance criteria
-### US-001: Read requirements
-**User story**
-As a builder, I want readable requirements.
-**Acceptance criteria**
-- The requirement groups are visible.
-
-## 5. Functional requirements
-### Functional requirements
-#### Core requirements
-- **FR-001**: Create project
-  - Users can create a project.
-
-#### States and errors
-- **FR-002**: Loading state
-  - Users see progress during generation.
-
-#### Constraints
-- **FR-003**: File size
-  - Uploads stay below the configured limit.
-
-## 6. Technical considerations
-- Keep rendering deterministic.
-`}
-    />,
-  )
-
-  assert.match(html, /Core requirements/)
-  assert.match(html, /States and errors/)
-  assert.match(html, /Constraints/)
-  assert.doesNotMatch(html, /<h3[^>]*>Functional requirements<\/h3>/)
-})
 
 test("PrdDocumentBlocks keeps standalone bold persona labels inside the active persona", () => {
   const html = renderToStaticMarkup(
@@ -417,14 +287,12 @@ So that I can send client-ready proposals.
   assert.match(html, /text-\[22px\] font-bold tracking-\[-0\.03em\] text-\[#0A0A0A\]/)
   assert.doesNotMatch(html, />Proposal Pilot<\/h1>/)
   assert.match(html, /Proposal Pilot helps freelance designers turn discovery notes into client-ready proposals/)
-  assert.match(html, /Project Size/)
-  assert.match(html, /Medium/)
-  assert.match(html, /Est\. Duration/)
-  assert.match(html, /8 weeks/)
-  assert.match(html, /Team Members/)
-  assert.match(html, /User Stories/)
-  assert.match(html, /Requirements/)
-  assert.match(html, /Business Goals/)
+  // The masthead stat strip was removed: no fallback "Project Size" /
+  // "Est. Duration" cells under the H1.
+  assert.doesNotMatch(html, /Project Size/)
+  assert.doesNotMatch(html, /Est\. Duration/)
+  assert.doesNotMatch(html, /Team Members/)
+  assert.match(html, /Proposed Business Goals/)
   assert.match(html, /User Goals/)
   assert.match(html, /Dana Designer/)
   assert.match(html, /Omar Owner/)
@@ -439,22 +307,18 @@ So that I can send client-ready proposals.
   assert.match(html, /id="prd-introduction-overview"/)
   assert.match(html, /id="prd-goals"/)
   assert.match(html, /id="prd-user-personas"/)
-  assert.match(html, /id="prd-user-stories-acceptance-criteria"/)
-  assert.match(html, /id="prd-functional-requirements"/)
-  assert.match(html, /id="prd-technical-considerations"/)
+  // Functional requirements, user stories, and technical considerations moved
+  // to the AI Prompts section and must not render inside the Product Plan.
+  assert.doesNotMatch(html, /id="prd-user-stories-acceptance-criteria"/)
+  assert.doesNotMatch(html, /id="prd-functional-requirements"/)
+  assert.doesNotMatch(html, /id="prd-technical-considerations"/)
+  assert.doesNotMatch(html, /Functional Requirements/)
+  assert.doesNotMatch(html, /User Stories &amp; Acceptance Criteria/)
+  assert.doesNotMatch(html, /Technical Considerations/)
   assert.match(html, /id="prd-non-goals-out-of-scope"/)
   assert.match(html, /id="prd-success-metrics"/)
   assert.match(html, /id="prd-timeline-milestones"/)
   assert.match(html, /id="prd-follow-through"/)
-  assert.match(html, /Functional Requirements/)
-  assert.match(html, /User Stories &amp; Acceptance Criteria/)
-  assert.match(html, /Generated proposal includes scope, timeline, and pricing sections/)
-  assert.match(html, /US-001/)
-  assert.match(html, /US-002/)
-  assert.match(html, /grid gap-4 lg:grid-cols-2/)
-  assert.match(html, /Technical Considerations/)
-  assert.match(html, /aria-label="Technical Item 1 details"/)
-  assert.match(html, /aria-label="Technical Item 2 details"/)
   assert.match(html, /Non-goals &amp; Out of Scope/)
   assert.match(html, /Success Metrics/)
   assert.match(html, /Technical \/ Performance Metrics/)
@@ -476,9 +340,7 @@ So that I can send client-ready proposals.
   assert.doesNotMatch(html, /Problem to Solve/)
   assert.doesNotMatch(html, /What to Build/)
 
-  assert.ok(html.indexOf("User Personas") < html.indexOf("User Stories &amp; Acceptance Criteria"))
-  assert.ok(html.indexOf("User Stories &amp; Acceptance Criteria") < html.indexOf("Functional Requirements"))
-  assert.ok(html.indexOf("Technical Considerations") < html.indexOf("Non-goals &amp; Out of Scope"))
+  assert.ok(html.indexOf("User Personas") < html.indexOf("Non-goals &amp; Out of Scope"))
 
   const timelineHtml = html.slice(
     html.indexOf("Timeline &amp; Milestones"),
@@ -562,7 +424,10 @@ As a shopper, I want to preview an outfit.
   assert.match(html, /A02/)
   assert.match(html, /A03/)
   assert.match(html, /Highest Risk/)
-  assert.match(html, /grid gap-px border border-\[#E8DDD5\] bg-\[#E8DDD5\] md:grid-cols-2/)
+  // Hairline pattern: white container, cells own their top/left borders so a
+  // partial last row stays white.
+  assert.match(html, /grid border border-\[#E8DDD5\] bg-white md:grid-cols-2/)
+  assert.match(html, /-ml-px -mt-px min-h-\[160px\] border-l border-t border-\[#E8DDD5\]/)
   assert.match(html, /bg-\[#E7DDD6\]/)
   assert.doesNotMatch(html, /hidden bg-\[#E7DDD6\] md:block/)
 

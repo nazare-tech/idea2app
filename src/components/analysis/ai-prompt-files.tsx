@@ -174,6 +174,7 @@ export function buildAiPromptFiles({
   const buildSequence = getSectionByAlias(mvpSections, ["AI-Friendly Build Sequence"])
   const requirements = getSectionByAlias(prdSections, ["Functional requirements"])
   const userStories = getSectionByAlias(prdSections, ["User stories and acceptance criteria"])
+  const technical = getSectionByAlias(prdSections, ["Technical considerations"])
 
   const files: Array<AiPromptFile | null> = [
     nextPrompt?.content.trim()
@@ -220,6 +221,15 @@ export function buildAiPromptFiles({
           title: "User Stories & Acceptance Criteria",
           description: "User-facing behavior with pass/fail acceptance checks.",
           content: toMarkdownFileContent(userStories.content),
+        }
+      : null,
+    technical?.content.trim()
+      ? {
+          anchorId: "ai-prompts-technical-considerations",
+          fileName: "technical-considerations.md",
+          title: "Technical Considerations",
+          description: "Architecture, data, integrations, and platform notes for your AI build tool.",
+          content: toMarkdownFileContent(technical.content),
         }
       : null,
     buildSubAgentsFile(prdSections),
