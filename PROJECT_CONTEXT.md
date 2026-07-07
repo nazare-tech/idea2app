@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-07-05 (component consolidation and architecture simplification pass)
+**Last Updated**: 2026-07-06 (shared pricing components across landing/billing + UI performance pass)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -30,7 +30,7 @@
   - Public `waitlist` table for email capture
   - Shared `WaitlistForm` component on the landing page
   - Figma-matched desktop hero artwork from layered raster assets in `public/landing/hero/*`, rendered by `HeroArtwork` with pointer parallax and scroll scatter/fade motion (reduced-motion guarded); the hero section uses `overflow-x-clip` so the sticky notes stay visible below the hero boundary without a horizontal scrollbar
-  - Landing pricing grid is the client `PricingSection` component with a marketing-only Monthly/Yearly toggle (15% yearly discount math, borderless pill container) and detailed per-plan feature rows; card CTAs open the signup modal (waitlist anchor in waitlist mode)
+  - Landing pricing grid is the client `PricingSection` component with a Monthly/Yearly toggle (15% yearly discount math) and detailed per-plan feature rows; card CTAs open the signup modal (waitlist anchor in waitlist mode). It renders through the shared pricing components (see Shared UI Architecture): plan copy from `src/lib/pricing-plans.ts` and cards from `src/components/pricing/plan-card.tsx`, the same components the billing page uses, so plan copy edits update both surfaces at once
   - Five feature sections render through the client `FeatureCard` component (scroll-triggered reveal: staggered bottom-up text fade-in, visual fades in scaling 80%→100%, reduced-motion guarded) with live product UI previews via `FeatureProductPreview`, `/landing-preview/[navKey]`, `WorkspaceScreenshot`, `SamplePreviewDocument`, and exported sample content in `src/lib/landing-sample-content.ts`
   - Testimonial band dot animation elongates and directionally blurs the traveling dot by speed (SVG ellipse + per-frame `feGaussianBlur`), settling round at rest
   - Public `/contact`, `/privacy`, and `/terms` pages share `InfoPageShell` (`src/components/landing/info-page-shell.tsx`); the support address lives in `src/lib/support.ts` (`SUPPORT_EMAIL`, placeholder until the real inbox exists)
@@ -298,6 +298,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 - **Stacked tab navigation** — `src/components/layout/stacked-tab-nav.tsx` renders the left-side stacked tab pattern; it is currently used by the Preferences page (project document navigation uses the scroll-aware `AnchorNav` instead).
 - **Shared authenticated page shell** — dashboard-level pages such as Projects, Billing, and Preferences use `src/components/layout/app-page-shell.tsx` for consistent page width, responsive padding, heading hierarchy, and action placement.
 - **Shared account utilities** — credit formatting, billing portal navigation, brand wordmark rendering, and auth sign-out are centralized in shared utilities/hooks/components and reused across dashboard header/sidebar, billing, settings, and auth views.
+- **Shared pricing surface** — plan display copy (names, feature lists, included labels, highlight/CTA treatment, 15% yearly discount) lives once in `src/lib/pricing-plans.ts`; the landing `PricingSection` and the billing page "Available Plans" grid both render through `src/components/pricing/plan-card.tsx` (sharp corners on landing, rounded inside the dashboard) and `src/components/pricing/billing-interval-toggle.tsx`. The database (`plans` + `plan_prices`) stays authoritative for checkout: plan ids, Stripe price ids, and charged amounts. The billing page filters `plan_prices` to `is_active` rows, maps a page-level Monthly/Yearly toggle to interval rows, opens on the interval the user is billed on, and treats the Free card as the current plan when no subscription exists.
 
 ### Key Design Patterns
 
