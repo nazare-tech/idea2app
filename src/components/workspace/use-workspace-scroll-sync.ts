@@ -19,6 +19,14 @@ function getSourceTypeForScrollTarget(targetId: string): DocumentType | null {
   return navItem?.sourceType ?? null
 }
 
+function getNavKeyForScrollTarget(targetId: string): string | null {
+  const navItem = SCROLLABLE_NAV_ITEMS.find(
+    (item) => item.key === targetId || item.sections.some((section) => section.id === targetId),
+  )
+
+  return navItem?.key ?? null
+}
+
 function isScrollableSubsectionId(targetId: string) {
   return SCROLLABLE_NAV_ITEMS.some((item) =>
     item.sections.some((section) => section.id === targetId),
@@ -125,7 +133,7 @@ export function useWorkspaceScrollSync({
       container.removeEventListener("scroll", scheduleUpdate)
       window.removeEventListener("resize", scheduleUpdate)
     }
-  }, [activeDocument])
+  }, [activeDocument, renderedSectionIds])
 
   useEffect(() => {
     const container = scrollContainerRef.current
@@ -180,20 +188,41 @@ export function useWorkspaceScrollSync({
     if (!target) return
 
     const sourceType = getSourceTypeForScrollTarget(targetId)
+    const navKey = getNavKeyForScrollTarget(targetId)
     if (sourceType) {
       setActiveDocument(sourceType)
       void loadWorkspaceDocuments([sourceType])
     }
 
+    const scrollToTarget = (element: Element) => {
+      const containerRect = container.getBoundingClientRect()
+      const targetRect = element.getBoundingClientRect()
+      const containerStyle = window.getComputedStyle(container)
+      const scrollPaddingTop = parseFloat(containerStyle.scrollPaddingTop) || parseFloat(containerStyle.paddingTop) || 0
+      container.scrollTo({
+        top: Math.max(0, container.scrollTop + targetRect.top - containerRect.top - scrollPaddingTop),
+        behavior: "auto",
+      })
+    }
+
     isScrollingProgrammatically.current = true
-    const containerRect = container.getBoundingClientRect()
-    const targetRect = target.getBoundingClientRect()
-    const containerStyle = window.getComputedStyle(container)
-    const scrollPaddingTop = parseFloat(containerStyle.scrollPaddingTop) || parseFloat(containerStyle.paddingTop) || 0
-    container.scrollTo({
-      top: Math.max(0, container.scrollTop + targetRect.top - containerRect.top - scrollPaddingTop),
-      behavior: "auto",
-    })
+    const sourceFrame = navKey
+      ? container.querySelector(`[data-section="${CSS.escape(navKey)}"]`)
+      : null
+    const shouldTwoPhaseScroll = Boolean(sourceType && sourceType !== activeDocument && sourceFrame && targetId !== navKey)
+
+    if (shouldTwoPhaseScroll && sourceFrame) {
+      scrollToTarget(sourceFrame)
+      window.requestAnimationFrame(() => {
+        const exactTarget = container.querySelector(`#${CSS.escape(targetId)}`)
+          || container.querySelector(`[data-section="${targetId}"]`)
+        if (exactTarget) {
+          scrollToTarget(exactTarget)
+        }
+      })
+    } else {
+      scrollToTarget(target)
+    }
 
     if (isScrollableSubsectionId(targetId)) {
       setActiveSectionId(targetId)
@@ -206,7 +235,7 @@ export function useWorkspaceScrollSync({
     setTimeout(() => {
       isScrollingProgrammatically.current = false
     }, 50)
-  }, [loadWorkspaceDocuments, setActiveDocument])
+  }, [activeDocument, loadWorkspaceDocuments, setActiveDocument])
 
   return {
     scrollContainerRef,

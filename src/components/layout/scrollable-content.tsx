@@ -51,6 +51,7 @@ interface ScrollableContentProps {
   projectId: string
   /** Current project name, shown as the proposed name in the Executive Summary */
   projectName?: string
+  activeDocument?: DocumentType
   documents: Record<string, DocumentData>
   onGenerateDocument?: (docType: DocumentType) => void
 }
@@ -251,7 +252,7 @@ function MockupsSection({ content, projectId }: { content: string; projectId: st
 }
 
 export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentProps>(
-  function ScrollableContent({ projectId, projectName, documents, onGenerateDocument }, ref) {
+  function ScrollableContent({ projectId, projectName, activeDocument, documents, onGenerateDocument }, ref) {
     const competitiveData = documents["competitive"]
     const prdData = documents["prd"]
     const mvpData = documents["mvp"]
@@ -296,7 +297,11 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
 
         {/* All sections below are deferred to next animation frame */}
 
-        <DocumentWrapper navKey="market-research">
+        <DocumentWrapper
+          navKey="market-research"
+          performanceContain={activeDocument !== "competitive"}
+          intrinsicSize="auto 2600px"
+        >
           {!renderDeferred ? (
             <DocumentSkeleton label="Market Research" />
           ) : competitiveData?.content ? (
@@ -318,7 +323,11 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        <DocumentWrapper navKey="prd">
+        <DocumentWrapper
+          navKey="prd"
+          performanceContain={activeDocument !== "prd"}
+          intrinsicSize="auto 3200px"
+        >
           {!renderDeferred ? (
             <DocumentSkeleton label="Product Plan" />
           ) : prdData?.content ? (
@@ -339,7 +348,11 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        <DocumentWrapper navKey="mvp">
+        <DocumentWrapper
+          navKey="mvp"
+          performanceContain={activeDocument !== "mvp"}
+          intrinsicSize="auto 2800px"
+        >
           {!renderDeferred ? (
             <DocumentSkeleton label="First Version Plan" />
           ) : mvpData?.content ? (
@@ -360,7 +373,11 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        <DocumentWrapper navKey="mockups">
+        <DocumentWrapper
+          navKey="mockups"
+          performanceContain={activeDocument !== "mockups"}
+          intrinsicSize="auto 1200px"
+        >
           {!renderDeferred ? (
             <DocumentSkeleton label="Design Mockups" />
           ) : mockupsData?.content ? (
@@ -378,7 +395,11 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
           )}
         </DocumentWrapper>
 
-        <DocumentWrapper navKey="ai-prompts">
+        <DocumentWrapper
+          navKey="ai-prompts"
+          performanceContain={activeDocument !== "mvp"}
+          intrinsicSize="auto 1800px"
+        >
           {!renderDeferred ? (
             <DocumentSkeleton label="AI Prompts" />
           ) : prdData?.content || mvpData?.content ? (

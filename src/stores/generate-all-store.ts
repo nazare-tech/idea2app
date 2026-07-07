@@ -91,6 +91,21 @@ type StoreAPI = StoreApi<GenerateAllStore>
 
 const projectStores = new Map<string, StoreAPI>()
 
+const INITIAL_GENERATE_ALL_POLL_DELAY_MS = 3000
+const MID_GENERATE_ALL_POLL_DELAY_MS = 6000
+const LONG_GENERATE_ALL_POLL_DELAY_MS = 10000
+const MID_GENERATE_ALL_POLL_AFTER_MS = 2 * 60 * 1000
+const LONG_GENERATE_ALL_POLL_AFTER_MS = 8 * 60 * 1000
+
+export function getGenerateAllPollDelayMs(startedAtMs: number | null, nowMs = Date.now()) {
+  if (!startedAtMs) return INITIAL_GENERATE_ALL_POLL_DELAY_MS
+
+  const elapsedMs = Math.max(0, nowMs - startedAtMs)
+  if (elapsedMs >= LONG_GENERATE_ALL_POLL_AFTER_MS) return LONG_GENERATE_ALL_POLL_DELAY_MS
+  if (elapsedMs >= MID_GENERATE_ALL_POLL_AFTER_MS) return MID_GENERATE_ALL_POLL_DELAY_MS
+  return INITIAL_GENERATE_ALL_POLL_DELAY_MS
+}
+
 export function getGenerateAllStore(projectId: string): StoreAPI {
   if (!projectStores.has(projectId)) {
     projectStores.set(projectId, createGenerateAllStore(projectId))
@@ -120,19 +135,64 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
   // Polling state
   const pollTimerRef = { current: null as ReturnType<typeof setTimeout> | null }
+  const pollStartedAtRef = { current: null as number | null }
+  const visibilityChangeHandlerRef = { current: null as (() => void) | null }
   const prevQueueRef = { current: null as QueueItem[] | null }
   const executeRetryCountRef = { current: 0 }
 
-  function stopPolling() {
+  function clearPollTimer() {
     if (pollTimerRef.current !== null) {
       clearTimeout(pollTimerRef.current)
       pollTimerRef.current = null
     }
   }
 
+  function removeVisibilityListener() {
+    if (typeof document === "undefined" || !visibilityChangeHandlerRef.current) return
+
+    document.removeEventListener("visibilitychange", visibilityChangeHandlerRef.current)
+    visibilityChangeHandlerRef.current = null
+  }
+
+  function stopPolling() {
+    clearPollTimer()
+    removeVisibilityListener()
+  }
+
+  function ensureVisibilityListener(
+    set: (fn: (s: GenerateAllStore) => Partial<GenerateAllStore>) => void,
+    get: () => GenerateAllStore,
+  ) {
+    if (typeof document === "undefined" || visibilityChangeHandlerRef.current) return
+
+    const handler = () => {
+      if (document.hidden) {
+        clearPollTimer()
+        return
+      }
+
+      if (get().status === "running") {
+        clearPollTimer()
+        void doPoll(set, get)
+      }
+    }
+
+    visibilityChangeHandlerRef.current = handler
+    document.addEventListener("visibilitychange", handler)
+  }
+
   function schedulePoll(set: (fn: (s: GenerateAllStore) => Partial<GenerateAllStore>) => void, get: () => GenerateAllStore) {
-    stopPolling()
-    pollTimerRef.current = setTimeout(() => doPoll(set, get), 3000)
+    clearPollTimer()
+    ensureVisibilityListener(set, get)
+
+    if (typeof document !== "undefined" && document.hidden) {
+      return
+    }
+
+    pollTimerRef.current = setTimeout(
+      () => doPoll(set, get),
+      getGenerateAllPollDelayMs(pollStartedAtRef.current),
+    )
   }
 
   function kickOffExecute() {
@@ -163,6 +223,9 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
       const prevQueue = prevQueueRef.current ?? get().queue
       const incomingQueue: QueueItem[] = dbRow.queue ?? []
+      if (dbRow.started_at) {
+        pollStartedAtRef.current = new Date(dbRow.started_at).getTime()
+      }
 
       // Detect newly-completed steps and notify the workspace to refresh the
       // exact document collections that should now have saved content.
@@ -265,7 +328,11 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
         // Auto-cancel stale running queues (>30 min old)
         if (dbRow.status === "running") {
-          const startedMs = new Date(dbRow.started_at).getTime()
+          pollStartedAtRef.current = dbRow.started_at
+            ? new Date(dbRow.started_at).getTime()
+            : Date.now()
+
+          const startedMs = pollStartedAtRef.current
           const thirtyMin = 30 * 60 * 1000
           if (Date.now() - startedMs > thirtyMin) {
             await fetch("/api/generate-all/cancel", {
@@ -383,6 +450,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
       localStorage.setItem(LOCAL_STORAGE_KEY(projectId), "true")
       executeRetryCountRef.current = 0
+      pollStartedAtRef.current = Date.now()
 
       // Persist queue to DB before kicking off server-side execution. If this
       // fails, do not run /execute against a stale or unrelated existing queue.
@@ -411,7 +479,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       }
 
       // Fire-and-forget: kick off server-side execution
-      // The server runs for up to 800s even if the user closes the tab.
+      // The server runs for up to 540s even if the user closes the tab.
       void kickOffExecute()
 
       // Start polling to reflect server-side progress in the UI

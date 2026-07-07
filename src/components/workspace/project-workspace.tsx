@@ -799,6 +799,7 @@ export function ProjectWorkspace({
               ref={scrollContainerRef}
               projectId={project.id}
               projectName={projectName}
+              activeDocument={activeDocument}
               documents={scrollableDocuments}
               onGenerateDocument={handleGenerateDocument}
             />
