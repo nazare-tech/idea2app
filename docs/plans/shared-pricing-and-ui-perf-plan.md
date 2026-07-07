@@ -1,7 +1,17 @@
 ---
-implemented: false
-implemented_at: null
-implementation_summary: null
+implemented: true
+implemented_at: 2026-07-06
+implementation_summary: >
+  Plan copy unified in src/lib/pricing-plans.ts; landing PricingSection and
+  billing Available Plans both render through shared PlanCard +
+  BillingIntervalToggle (billing keeps plan_prices as checkout truth, filters
+  inactive rows, opens on the billed interval, parallel data loading). Perf
+  pass: dynamic-imported the img-fx/three WebGL loader, gated the hero rAF
+  loop to lg+ viewports while on screen, memoized MarkdownRenderer, cached the
+  landing user count for 60s, preconnected the Supabase origin. Verified via
+  production build on :3100 (monthly/yearly toggle math $19/$16/$192,
+  $49/$42/$504 correct, no console errors); billing UI shares the exact
+  landing-verified components, unauthenticated /billing redirects to /auth.
 ---
 
 # Shared Pricing Components + UI Performance Pass
