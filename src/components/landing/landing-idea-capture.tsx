@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowRight, Loader2 } from "lucide-react"
 
@@ -17,11 +17,35 @@ interface LandingIdeaCaptureProps {
   isAuthenticated?: boolean
 }
 
+/** Textarea heights for the collapsed one-line row and the focused multi-line state. */
+const COLLAPSED_HEIGHT = 46
+const EXPANDED_HEIGHT = 118
+/** Horizontal room reserved for the side-by-side button while collapsed (button + gap). */
+const BUTTON_ZONE = 158
+
 export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptureProps) {
   const router = useRouter()
   const [idea, setIdea] = useState("")
   const [loadingMode, setLoadingMode] = useState<"signin" | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Collapsed: one-line input with the button beside it. Focusing animates the
+  // textarea taller and slides the button below it (it collapses back only
+  // when the field loses focus while empty).
+  const [expanded, setExpanded] = useState(false)
+  // The one-line row only fits comfortably at sm+; small screens always
+  // render the stacked (expanded) layout.
+  const [isRowLayout, setIsRowLayout] = useState(true)
+
+  useEffect(() => {
+    const rowQuery = window.matchMedia("(min-width: 640px)")
+    const syncRowLayout = () => setIsRowLayout(rowQuery.matches)
+
+    syncRowLayout()
+    rowQuery.addEventListener("change", syncRowLayout)
+    return () => rowQuery.removeEventListener("change", syncRowLayout)
+  }, [])
+
+  const isOpen = expanded || !isRowLayout
 
   const trimmedIdea = idea.trim()
   const hasIdea = trimmedIdea.length > 0
@@ -75,7 +99,15 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
   return (
     <div
       data-testid="landing-idea-capture"
-      className="w-full max-w-[720px] border border-border-strong bg-white px-4 py-5 shadow-[0_1px_2px_rgba(0,0,0,0.18)] sm:px-[21px] sm:pb-[21px] sm:pt-[23px]"
+      className="relative w-full max-w-[652px] rounded-md border border-[#8A8480] bg-white p-3 text-left"
+      onBlur={(event) => {
+        // Collapse only when focus leaves the whole widget while empty, so
+        // clicking Get Started never yanks the button out from under the pointer.
+        const next = event.relatedTarget as Node | null
+        if (!event.currentTarget.contains(next) && !hasIdea && loadingMode === null) {
+          setExpanded(false)
+        }
+      }}
     >
       <label htmlFor="landing-idea" className="sr-only">
         Describe what you want to build
@@ -84,27 +116,37 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
         id="landing-idea"
         value={idea}
         onChange={(event) => setIdea(event.target.value)}
+        onFocus={() => setExpanded(true)}
         placeholder="Describe what you want to build in a few sentences..."
-        className="min-h-[118px] resize-none rounded-md border-border-strong bg-[#FFF8F7] px-4 py-3 text-[15px] leading-6 text-text-primary placeholder:text-text-secondary"
+        className="block min-h-0 resize-none overflow-hidden rounded-md border-border-strong bg-white px-[13px] py-3 text-[15px] leading-[1.25] text-text-primary placeholder:text-text-secondary transition-[height,width] duration-[350ms] ease-out-expo"
+        style={{
+          height: isOpen ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT,
+          width: isOpen ? "100%" : `calc(100% - ${BUTTON_ZONE}px)`,
+        }}
       />
       {error && (
         <p className="mt-3 rounded-md border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}
-      <div className="mt-[14px] flex justify-end">
-        <Button
-          type="button"
-          onClick={startFlow}
-          disabled={loadingMode !== null}
-          className="h-11 rounded-md px-5 text-sm"
-          data-testid="landing-idea-signup"
-        >
-          {loadingMode === "signin" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {loadingMode === "signin" ? "Validating" : "Get my build plan"}
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Grows to open a row below the textarea; the absolutely positioned
+          button rides the container's bottom-right corner into that row. */}
+      <div
+        aria-hidden="true"
+        className="transition-[height] duration-[350ms] ease-out-expo"
+        style={{ height: isOpen ? COLLAPSED_HEIGHT + 12 : 0 }}
+      />
+      <Button
+        type="button"
+        onClick={startFlow}
+        disabled={loadingMode !== null}
+        className="absolute bottom-3 right-3 h-[46px] rounded-md bg-[#1C1917] px-5 text-sm font-semibold text-white hover:bg-[#1C1917]/85"
+        data-testid="landing-idea-signup"
+      >
+        {loadingMode === "signin" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        {loadingMode === "signin" ? "Validating" : "Get Started"}
+        <ArrowRight className="h-4 w-4" />
+      </Button>
     </div>
   )
 }

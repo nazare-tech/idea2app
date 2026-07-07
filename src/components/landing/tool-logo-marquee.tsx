@@ -13,7 +13,7 @@ function ToolLogo({ name, src, ariaHidden = false }: { name: string; src: string
         aria-hidden="true"
         width={96}
         height={32}
-        className="h-8 w-auto max-w-[96px] object-contain grayscale opacity-60"
+        className="h-8 w-24 object-contain grayscale opacity-60"
       />
       <span className="font-mono text-[0.625rem] uppercase tracking-[0.18em] text-text-muted">{name}</span>
     </div>

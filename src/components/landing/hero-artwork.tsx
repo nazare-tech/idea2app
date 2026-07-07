@@ -7,138 +7,163 @@ import Image from "next/image"
 const PARALLAX_STRENGTH = 20
 /** How far layers fly outward from the hero center as you scroll away. */
 const SCATTER_DISTANCE = 480
-/** Center of the 1920x838 artwork box; layers scatter away from this point. */
+/** Center of the 1920x720 artwork box; layers scatter away from this point. */
 const CENTER_X = 960
-const CENTER_Y = 419
+const CENTER_Y = 360
 
-const heroLayers = [
+/** Figma frame 362:12585 (1497.7px wide) mapped into the centered 1920px box. */
+const heroLayers: {
+  src: string
+  width: number
+  height: number
+  left: number
+  top: number
+  side: "left" | "right"
+  className: string
+}[] = [
   {
-    src: "/landing/hero/215-098_image-27.png",
-    width: 297,
-    height: 315,
-    left: -8,
-    top: 202,
-    className: "left-[-8px] top-[202px] h-[315px] w-[297px]",
+    src: "/landing/hero/362-12586_note.png",
+    width: 259,
+    height: 274,
+    left: 27,
+    top: 161,
+    side: "left",
+    className: "left-[27px] top-[161px] h-[274px] w-[259px]",
   },
   {
-    src: "/landing/hero/215-099_image-28.png",
-    width: 426,
-    height: 318,
-    left: 60,
-    top: 33,
-    className: "left-[60px] top-[33px] h-[318px] w-[426px]",
+    src: "/landing/hero/362-12587_note.png",
+    width: 371,
+    height: 277,
+    left: 86,
+    top: 7,
+    side: "left",
+    className: "left-[86px] top-[7px] h-[277px] w-[371px]",
   },
   {
-    src: "/landing/hero/215-100_image-23.png",
-    width: 329,
-    height: 390,
-    left: 211,
-    top: 355,
-    className: "left-[211px] top-[355px] h-[390px] w-[329px]",
+    src: "/landing/hero/362-12588_note.png",
+    width: 286,
+    height: 340,
+    left: 217,
+    top: 291,
+    side: "left",
+    className: "left-[217px] top-[291px] h-[340px] w-[286px]",
   },
   {
-    src: "/landing/hero/215-101_image-26.png",
-    width: 227,
-    height: 239,
-    left: 234,
-    top: 242,
-    className: "left-[234px] top-[242px] h-[239px] w-[227px]",
+    src: "/landing/hero/362-12589_note.png",
+    width: 198,
+    height: 208,
+    left: 237,
+    top: 195,
+    side: "left",
+    className: "left-[237px] top-[195px] h-[208px] w-[198px]",
   },
   {
-    src: "/landing/hero/215-102_image-25.png",
-    width: 116,
-    height: 323,
-    left: -45,
-    top: 316,
-    className: "left-[-45px] top-[316px] h-[323px] w-[116px]",
+    src: "/landing/hero/362-12590_note.png",
+    width: 101,
+    height: 281,
+    left: -5,
+    top: 252,
+    side: "left",
+    className: "left-[-5px] top-[252px] h-[281px] w-[101px]",
   },
   {
-    src: "/landing/hero/215-103_image-24.png",
-    width: 175,
-    height: 272,
-    left: 88,
-    top: 377,
-    className: "left-[88px] top-[377px] h-[272px] w-[175px]",
-  },
-  {
-    src: "/landing/hero/215-104_image-21.png",
-    width: 310,
-    height: 276,
-    left: 7,
-    top: 562,
-    className: "left-[7px] top-[562px] h-[276px] w-[310px]",
-  },
-  {
-    src: "/landing/hero/215-105_image-20.png",
-    width: 204,
+    src: "/landing/hero/362-12591_note.png",
+    width: 152,
     height: 237,
-    left: 234,
-    top: 587,
-    className: "left-[234px] top-[587px] h-[237px] w-[204px]",
+    left: 110,
+    top: 309,
+    side: "left",
+    className: "left-[110px] top-[309px] h-[237px] w-[152px]",
   },
   {
-    src: "/landing/hero/215-106_image-22.png",
-    width: 177,
-    height: 167,
-    left: 388,
-    top: 483,
-    className: "left-[388px] top-[483px] h-[167px] w-[177px]",
+    src: "/landing/hero/362-12592_note.png",
+    width: 270,
+    height: 240,
+    left: 40,
+    top: 473,
+    side: "left",
+    className: "left-[40px] top-[473px] h-[240px] w-[270px]",
   },
   {
-    src: "/landing/hero/215-107_image-21.png",
-    width: 345,
-    height: 287,
-    left: 1579,
-    top: 523,
-    className: "left-[1579px] top-[523px] h-[287px] w-[345px]",
+    src: "/landing/hero/362-12593_note.png",
+    width: 178,
+    height: 206,
+    left: 238,
+    top: 487,
+    side: "left",
+    className: "left-[238px] top-[487px] h-[206px] w-[178px]",
   },
   {
-    src: "/landing/hero/215-108_image-22.png",
-    width: 223,
-    height: 248,
-    left: 1419,
-    top: 513,
-    className: "left-[1419px] top-[513px] h-[248px] w-[223px]",
+    src: "/landing/hero/362-12594_note.png",
+    width: 154,
+    height: 145,
+    left: 372,
+    top: 400,
+    side: "left",
+    className: "left-[372px] top-[400px] h-[145px] w-[154px]",
   },
   {
-    src: "/landing/hero/215-109_image-27.png",
-    width: 411,
-    height: 330,
-    left: 1466,
-    top: 79,
-    className: "left-[1466px] top-[79px] h-[330px] w-[411px]",
+    src: "/landing/hero/362-12595_note.png",
+    width: 308,
+    height: 256,
+    left: 1596,
+    top: 442,
+    side: "right",
+    className: "left-[1596px] top-[442px] h-[256px] w-[308px]",
   },
   {
-    src: "/landing/hero/215-110_image-26.png",
-    width: 216,
-    height: 215,
-    left: 1708,
-    top: 21,
-    className: "left-[1708px] top-[21px] h-[215px] w-[216px]",
-  },
-  {
-    src: "/landing/hero/215-111_image-24.png",
+    src: "/landing/hero/362-12596_note.png",
     width: 199,
-    height: 311,
-    left: 1725,
-    top: 217,
-    className: "left-[1725px] top-[217px] h-[311px] w-[199px]",
+    height: 222,
+    left: 1453,
+    top: 437,
+    side: "right",
+    className: "left-[1453px] top-[437px] h-[222px] w-[199px]",
   },
   {
-    src: "/landing/hero/215-112_image-23.png",
-    width: 267,
-    height: 311,
-    left: 1374,
-    top: 247,
-    className: "left-[1374px] top-[247px] h-[311px] w-[267px]",
+    src: "/landing/hero/362-12597_note.png",
+    width: 367,
+    height: 295,
+    left: 1495,
+    top: 42,
+    side: "right",
+    className: "left-[1495px] top-[42px] h-[295px] w-[367px]",
   },
   {
-    src: "/landing/hero/215-113_image-25.png",
-    width: 267,
-    height: 257,
-    left: 1589,
-    top: 383,
-    className: "left-[1589px] top-[383px] h-[257px] w-[267px]",
+    src: "/landing/hero/362-12598_note.png",
+    width: 193,
+    height: 192,
+    left: 1711,
+    top: -7,
+    side: "right",
+    className: "left-[1711px] top-[-7px] h-[192px] w-[193px]",
+  },
+  {
+    src: "/landing/hero/362-12599_note.png",
+    width: 178,
+    height: 278,
+    left: 1726,
+    top: 171,
+    side: "right",
+    className: "left-[1726px] top-[171px] h-[278px] w-[178px]",
+  },
+  {
+    src: "/landing/hero/362-12600_note.png",
+    width: 239,
+    height: 278,
+    left: 1412,
+    top: 191,
+    side: "right",
+    className: "left-[1412px] top-[191px] h-[278px] w-[239px]",
+  },
+  {
+    src: "/landing/hero/362-12601_note.png",
+    width: 239,
+    height: 230,
+    left: 1604,
+    top: 315,
+    side: "right",
+    className: "left-[1604px] top-[315px] h-[230px] w-[239px]",
   },
 ]
 
@@ -188,8 +213,9 @@ export function HeroArtwork() {
     let cmy = 0
     let frame = 0
     let running = false
-    // The artwork is display:none below lg, and the motion is invisible once
-    // the hero scrolls out of view; only run the frame loop while both hold.
+    // The component returns null below lg (this effect never runs there), and
+    // the motion is invisible once the hero scrolls out of view; only run the
+    // frame loop while the hero is visible.
     let heroVisible = true
 
     const onMove = (event: PointerEvent) => {
@@ -202,7 +228,7 @@ export function HeroArtwork() {
       // Lerp toward the pointer so the parallax trails smoothly.
       cmx += (mx - cmx) * 0.06
       cmy += (my - cmy) * 0.06
-      const heroHeight = section?.offsetHeight || 838
+      const heroHeight = section?.offsetHeight || 720
       const progress = Math.min(Math.max(window.scrollY / (heroHeight * 0.85), 0), 1)
       const eased = progress * progress // ease-in: starts gently, accelerates while scrolling away
 
@@ -253,19 +279,26 @@ export function HeroArtwork() {
     <div
       ref={boxRef}
       aria-hidden="true"
-      className="pointer-events-none absolute left-1/2 top-1/2 hidden h-[838px] w-[1920px] -translate-x-1/2 -translate-y-1/2 lg:block"
+      className="pointer-events-none absolute left-1/2 top-1/2 hidden h-[720px] w-[1920px] -translate-x-1/2 -translate-y-1/2 lg:block"
     >
-      {heroLayers.map((layer) => (
-        <Image
+      {/* Entrance animation lives on the wrapper; the parallax loop writes
+          transforms to the inner img, so the two never fight. */}
+      {heroLayers.map((layer, index) => (
+        <div
           key={layer.src}
-          src={layer.src}
-          width={layer.width}
-          height={layer.height}
-          alt=""
-          className={`absolute object-contain ${layer.className}`}
-          loading="eager"
-          decoding="async"
-        />
+          className={`absolute ${layer.className} ${layer.side === "left" ? "hero-enter-left" : "hero-enter-right"}`}
+          style={{ animationDelay: `${120 + (index % 5) * 70}ms` }}
+        >
+          <Image
+            src={layer.src}
+            width={layer.width}
+            height={layer.height}
+            alt=""
+            className="h-full w-full object-contain"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
       ))}
     </div>
   )

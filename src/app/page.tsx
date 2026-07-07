@@ -180,7 +180,10 @@ export default async function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-text-primary">
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
-        <div className={`${container} flex min-h-16 flex-wrap items-center justify-between gap-3 py-3 md:flex-nowrap md:py-0`}>
+        {/* Landing-only header inset: content aligns with the 1320px box edges
+            (1368 - 2x24 padding = 1320), wider than the hero text container.
+            The dashboard header is a separate component and keeps its padding. */}
+        <div className="mx-auto flex min-h-16 w-full max-w-[1368px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 md:flex-nowrap md:py-0">
           <BrandWordmark href="/" logoSize={36} logoClassName="rounded-sm" labelClassName="text-lg font-semibold tracking-[0.01em]" />
 
           <div className="hidden items-center gap-8 md:flex">
@@ -216,13 +219,22 @@ export default async function LandingPage() {
           while letting the sticky notes stay visible below the hero boundary */}
       <section className="relative isolate overflow-x-clip">
         <HeroArtwork />
-        <div className={`${container} relative z-10 flex min-h-[620px] flex-col items-center justify-center py-16 md:min-h-[680px] lg:min-h-[720px] lg:py-20`}>
-          <h1 className="font-display mx-auto flex max-w-[980px] flex-col text-center text-[2.75rem] font-semibold leading-[0.95] tracking-[-0.06em] text-text-primary sm:text-[3.5rem] lg:text-[4.5rem]">
-            <span>Build your startup idea this</span>
-            <span>weekend, not &ldquo;someday.&rdquo;</span>
+        {/* min-h leaves ~150px of the next section peeking above the fold so the
+            tool marquee invites the first scroll (220 = 64px header + peek). */}
+        <div className={`${container} relative z-10 flex min-h-[560px] flex-col items-center justify-center py-16 md:min-h-[calc(100svh-220px)] lg:py-20`}>
+          <h1 className="hero-enter-fade font-display mx-auto flex max-w-[980px] flex-col gap-1 text-center text-[2.75rem] font-semibold leading-[1.005] tracking-[-0.064em] text-text-primary sm:text-[3.5rem] lg:text-[4.25rem]">
+            <span>Build your startup idea</span>
+            <span>
+              this weekend, not <span className="italic text-primary">someday.</span>
+            </span>
           </h1>
 
-          <div className="mt-10 flex w-full justify-center lg:mt-12">
+          <p className="hero-enter-fade mx-auto mt-6 max-w-[698px] text-center text-base font-light leading-[1.3] text-text-secondary [animation-delay:120ms] sm:text-[20px]">
+            Get market research, a PRD, design mockups, and comprehensive prompts to convert your ideas into a
+            working app in minutes.
+          </p>
+
+          <div className="hero-enter-up mt-10 flex w-full justify-center [animation-delay:240ms] lg:mt-14">
             {waitlistMode ? <WaitlistForm showSecondary /> : <LandingIdeaCapture isAuthenticated={isAuthenticated} />}
           </div>
 
@@ -231,26 +243,14 @@ export default async function LandingPage() {
               Early access is full. Leave your email for the next batch.
             </p>
           )}
-
-          <p className="mx-auto mt-8 max-w-[560px] text-center text-base leading-relaxed text-text-secondary sm:text-[20px]">
-            Turn one idea into market research, a product plan, design mockups, and a first-version build plan in minutes.
-            No fluff. No &ldquo;where do I start?&rdquo; spiral.
-          </p>
         </div>
       </section>
 
       {/* Trust bar: what Maker Compass hands off to, since there's no customer logo wall yet */}
       <SectionCard>
         <section aria-label="Where Maker Compass hands off" className="py-3 text-center">
-          <h2 className="mx-auto max-w-[760px] text-[1.75rem] leading-[1.05] tracking-[-0.05em] font-semibold sm:text-[2.25rem]">
-            Built to hand off clean, not create more busywork.
-          </h2>
-          <p className="mx-auto mt-4 max-w-[620px] text-[15px] leading-relaxed text-text-secondary">
-            Maker Compass front-loads the research and planning. When a project is ready, the output is structured
-            for the coding agent you already reach for, not another tool to learn.
-          </p>
-          <p className="mt-8 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-            Hands off to
+          <p className="mx-auto max-w-[620px] text-[15px] leading-[1.25] text-text-secondary">
+            High quality prompts that you can use with your favorite AI coding tool.
           </p>
           <ToolLogoMarquee tools={handoffTools} />
         </section>
