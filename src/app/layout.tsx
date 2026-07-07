@@ -24,6 +24,16 @@ export const metadata: Metadata = {
   },
 }
 
+// Client-side Supabase calls (auth modal, billing, workspace polling) all hit
+// this origin; preconnecting skips DNS + TLS setup on the first request.
+const supabaseOrigin = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin
+  } catch {
+    return null
+  }
+})()
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,6 +41,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {supabaseOrigin && <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />}
+      </head>
       <body
         className={`${hankenGrotesk.variable} ${firaMono.variable} antialiased min-h-screen bg-background`}
       >

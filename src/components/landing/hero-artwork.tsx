@@ -175,6 +175,11 @@ export function HeroArtwork() {
     let cmx = 0
     let cmy = 0
     let frame = 0
+    let running = false
+    // The artwork is display:none below lg, and the motion is invisible once
+    // the hero scrolls out of view; only run the frame loop while both hold.
+    const desktopQuery = window.matchMedia("(min-width: 1024px)")
+    let heroVisible = true
 
     const onMove = (event: PointerEvent) => {
       mx = (event.clientX / window.innerWidth) * 2 - 1
@@ -200,11 +205,38 @@ export function HeroArtwork() {
       }
       frame = requestAnimationFrame(tick)
     }
-    frame = requestAnimationFrame(tick)
+
+    const start = () => {
+      if (running || !desktopQuery.matches || !heroVisible) return
+      running = true
+      frame = requestAnimationFrame(tick)
+    }
+    const stop = () => {
+      if (!running) return
+      running = false
+      cancelAnimationFrame(frame)
+    }
+
+    const onDesktopChange = () => (desktopQuery.matches ? start() : stop())
+    desktopQuery.addEventListener("change", onDesktopChange)
+
+    let observer: IntersectionObserver | null = null
+    if (section && "IntersectionObserver" in window) {
+      observer = new IntersectionObserver(([entry]) => {
+        heroVisible = entry.isIntersecting
+        if (heroVisible) start()
+        else stop()
+      })
+      observer.observe(section)
+    }
+
+    start()
 
     return () => {
       window.removeEventListener("pointermove", onMove)
-      cancelAnimationFrame(frame)
+      desktopQuery.removeEventListener("change", onDesktopChange)
+      observer?.disconnect()
+      stop()
     }
   }, [])
 

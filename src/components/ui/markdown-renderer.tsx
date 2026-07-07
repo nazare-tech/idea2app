@@ -479,7 +479,7 @@ function MermaidDiagram({ code }: { code: string }) {
   )
 }
 
-export function MarkdownRenderer({
+function MarkdownRendererImpl({
   content,
   className = "",
   disableGfm = false,
@@ -566,3 +566,8 @@ export function MarkdownRenderer({
     </div>
   )
 }
+
+// Memoized: workspace documents can be very large, and scroll-driven state
+// changes in the workspace tree would otherwise re-parse every document's
+// markdown on each active-section change. Props are all primitives.
+export const MarkdownRenderer = React.memo(MarkdownRendererImpl)

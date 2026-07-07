@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { Suspense } from "react"
 import Link from "next/link"
+import { unstable_cache } from "next/cache"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LandingIdeaCapture } from "@/components/landing/landing-idea-capture"
@@ -130,19 +131,28 @@ function SectionCard({ children }: { children: ReactNode }) {
   return <section className={`${container} py-8 md:py-10`}>{children}</section>
 }
 
-/** Fetches the current registered user count from the profiles table. */
-async function getUserCount(): Promise<number> {
-  try {
-    const supabase = createServiceClient()
-    const { count, error } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-    if (error) return 0
-    return count ?? 0
-  } catch {
-    return 0
-  }
-}
+/**
+ * Fetches the current registered user count from the profiles table.
+ *
+ * Cached for 60s so the highest-traffic page skips a per-request DB round
+ * trip; waitlist gating already fails open, so brief staleness is fine.
+ */
+const getUserCount = unstable_cache(
+  async (): Promise<number> => {
+    try {
+      const supabase = createServiceClient()
+      const { count, error } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+      if (error) return 0
+      return count ?? 0
+    } catch {
+      return 0
+    }
+  },
+  ["landing-user-count"],
+  { revalidate: 60 }
+)
 
 async function getIsAuthenticated(): Promise<boolean> {
   try {

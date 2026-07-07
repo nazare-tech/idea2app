@@ -2,8 +2,19 @@
 "use client"
 
 import React, { forwardRef, useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import { AlertCircle, CheckCircle2, Circle, Loader2, RotateCcw } from "lucide-react"
-import { MockupGenerationLoader } from "@/components/ui/mockup-generation-loader"
+
+// The WebGL generation loader pulls in img-fx + three. Load it only when a
+// mockup generation is actually on screen instead of shipping it with every
+// workspace visit.
+const MockupGenerationLoader = dynamic(
+  () =>
+    import("@/components/ui/mockup-generation-loader").then(
+      (module) => module.MockupGenerationLoader
+    ),
+  { ssr: false }
+)
 import { MockupRenderer } from "@/components/ui/mockup-renderer"
 import {
   CompetitiveOverviewSection,
