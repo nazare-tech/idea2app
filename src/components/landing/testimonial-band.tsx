@@ -13,6 +13,7 @@ const DOT_RADIUS = 3.5
 /** Caps so the fast early frames of the ease-out curve stay tasteful. */
 const MAX_STRETCH = 1.2
 const MAX_BLUR = 2.5
+const BLUR_BUCKET_SIZE = 0.65
 
 function easeOutQuart(progress: number) {
   return 1 - (1 - progress) ** 4
@@ -90,6 +91,7 @@ export function TestimonialBand() {
 
     const blur = blurRef.current
     let previousPoint: { x: number; y: number } = START_DOT_POSITION
+    let previousBlurBucket = -1
 
     const setDotRadius = (rx: number, ry: number) => {
       dot.setAttribute("rx", String(rx))
@@ -113,9 +115,17 @@ export function TestimonialBand() {
       if (speed > 0.1) {
         const angle = (Math.atan2(deltaY, deltaX) * 180) / Math.PI
         const stretch = 1 + Math.min(speed * 0.18, MAX_STRETCH)
+        const cappedBlur = Math.min(speed * 0.35, MAX_BLUR)
+        const blurBucket = Math.min(
+          MAX_BLUR,
+          Math.round(cappedBlur / BLUR_BUCKET_SIZE) * BLUR_BUCKET_SIZE
+        )
         setDotRadius(DOT_RADIUS * stretch, DOT_RADIUS / Math.sqrt(stretch))
         dot.setAttribute("transform", `rotate(${angle} ${point.x} ${point.y})`)
-        blur?.setAttribute("stdDeviation", `${Math.min(speed * 0.35, MAX_BLUR)} 0.15`)
+        if (blurBucket !== previousBlurBucket) {
+          previousBlurBucket = blurBucket
+          blur?.setAttribute("stdDeviation", `${blurBucket} 0.15`)
+        }
       }
 
       if (progress < 1) {
@@ -123,6 +133,7 @@ export function TestimonialBand() {
       } else {
         setDotPosition(FINAL_DOT_POSITION)
         dot.removeAttribute("transform")
+        previousBlurBucket = -1
         blur?.setAttribute("stdDeviation", "0 0")
         setDotRadius(4.75, 4.75)
         settleTimeout = window.setTimeout(() => setDotRadius(DOT_RADIUS, DOT_RADIUS), 180)

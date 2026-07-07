@@ -21,6 +21,9 @@ const connectSrc = [
 ].join(" ");
 
 const nextConfig: NextConfig = {
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
   // Pin Turbopack to the directory that owns node_modules so worktrees work.
   turbopack: {
     root: findRoot(process.cwd()),

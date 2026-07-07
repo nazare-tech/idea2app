@@ -1,9 +1,6 @@
-// Screenshot document for the landing feature previews.
-//
-// The landing page embeds this route in an iframe fixed at a desktop CSS
-// width, then scales the iframe down. Because media queries resolve against
-// the iframe's own viewport, the workspace always renders its desktop layout
-// here, even when the landing page is viewed on a phone.
+// Capture source for the static landing feature preview images.
+// The export script renders this route at a desktop viewport, crops the
+// visible workspace region, and writes the result under public/landing/samples.
 
 import { notFound } from "next/navigation"
 import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"

@@ -1,10 +1,8 @@
 "use client"
 
-// Natural-size workspace replica rendered inside the /landing-preview/[navKey]
-// iframe. The iframe is fixed at a desktop CSS width by the landing page, so
-// the renderers' viewport media queries resolve to the desktop layout on every
-// device; this component only lays out the rail beside the document and crops
-// the document to the target section anchor.
+// Natural-size workspace replica rendered by /landing-preview/[navKey].
+// The export script captures this route at a desktop viewport and the landing
+// page serves those static images, so users do not boot five live iframes.
 
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { SCROLLABLE_NAV_ITEMS, filterNavItemsByRenderedSections } from "@/lib/document-sections"
@@ -100,6 +98,7 @@ export function WorkspaceScreenshot({
     <div
       aria-hidden="true"
       inert
+      data-landing-preview-ready={ready ? "true" : "false"}
       className="pointer-events-none flex h-screen w-full select-none overflow-clip bg-background"
       style={{ visibility: ready ? "visible" : "hidden" }}
     >

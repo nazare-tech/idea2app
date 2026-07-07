@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 
 /** Max pointer-follow shift in px (scaled per layer by depth). */
@@ -144,10 +144,22 @@ const heroLayers = [
 
 export function HeroArtwork() {
   const boxRef = useRef<HTMLDivElement>(null)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia("(min-width: 1024px)")
+    const syncDesktopState = () => setIsDesktop(desktopQuery.matches)
+
+    syncDesktopState()
+    desktopQuery.addEventListener("change", syncDesktopState)
+    return () => desktopQuery.removeEventListener("change", syncDesktopState)
+  }, [])
 
   // Decorative motion: layers follow the pointer slightly (parallax) and
   // scatter outward + fade as the user scrolls past the hero.
   useEffect(() => {
+    if (!isDesktop) return
+
     const box = boxRef.current
     if (!box) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
@@ -178,7 +190,6 @@ export function HeroArtwork() {
     let running = false
     // The artwork is display:none below lg, and the motion is invisible once
     // the hero scrolls out of view; only run the frame loop while both hold.
-    const desktopQuery = window.matchMedia("(min-width: 1024px)")
     let heroVisible = true
 
     const onMove = (event: PointerEvent) => {
@@ -207,7 +218,7 @@ export function HeroArtwork() {
     }
 
     const start = () => {
-      if (running || !desktopQuery.matches || !heroVisible) return
+      if (running || !heroVisible) return
       running = true
       frame = requestAnimationFrame(tick)
     }
@@ -216,9 +227,6 @@ export function HeroArtwork() {
       running = false
       cancelAnimationFrame(frame)
     }
-
-    const onDesktopChange = () => (desktopQuery.matches ? start() : stop())
-    desktopQuery.addEventListener("change", onDesktopChange)
 
     let observer: IntersectionObserver | null = null
     if (section && "IntersectionObserver" in window) {
@@ -234,11 +242,12 @@ export function HeroArtwork() {
 
     return () => {
       window.removeEventListener("pointermove", onMove)
-      desktopQuery.removeEventListener("change", onDesktopChange)
       observer?.disconnect()
       stop()
     }
-  }, [])
+  }, [isDesktop])
+
+  if (!isDesktop) return null
 
   return (
     <div
@@ -256,7 +265,6 @@ export function HeroArtwork() {
           className={`absolute object-contain ${layer.className}`}
           loading="eager"
           decoding="async"
-          unoptimized
         />
       ))}
     </div>

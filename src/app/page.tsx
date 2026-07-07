@@ -52,7 +52,7 @@ interface FeatureSection {
   title: string
   description: string
   bullets: { label: string; body: string }[]
-  /** Workspace nav item rendered as the section's live UI visual */
+    /** Workspace nav item captured as the section's product visual */
   navKey: string
   /** Subsection shown in its active state */
   activeSectionId: string
@@ -68,7 +68,7 @@ const featureSections: FeatureSection[] = [
       { label: "Audience segments", body: "Who to build for first, and how they talk about the problem." },
       { label: "Differentiation wedges", body: "Where the open lane is for your specific idea." },
     ],
-    // Live workspace nav + real content shown instead of a screenshot.
+    // Static capture generated from the workspace preview route.
     // Feature Comparison is the showcase section until live competitor search
     // is fixed; switch activeSectionId to "market-research-direct-competitors"
     // and re-export the sample data once competitor profiles generate again.
@@ -272,8 +272,7 @@ export default async function LandingPage() {
                 bullets={section.bullets}
                 imageOnRight={index % 2 === 0}
               >
-                {/* Live workspace screenshot of the exported sample project,
-                    embedded via /landing-preview/[navKey] */}
+                {/* Static workspace capture generated from the exported sample project. */}
                 <FeatureProductPreview navKey={section.navKey} activeSectionId={section.activeSectionId} />
               </FeatureCard>
             ))}

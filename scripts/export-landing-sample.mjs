@@ -5,17 +5,21 @@
 // with real content instead of screenshots.
 //
 // Usage:
-//   node scripts/export-landing-sample.mjs                 # survey: list candidate projects
-//   node scripts/export-landing-sample.mjs --project <id>  # export fixtures for one project
+//   node scripts/export-landing-sample.mjs                            # survey: list candidate projects
+//   node scripts/export-landing-sample.mjs --project <id>             # export fixtures for one project
+//   node scripts/export-landing-sample.mjs --capture-previews-only    # capture current /landing-preview routes
+//   node scripts/export-landing-sample.mjs --project <id> --capture-previews
+//                                                                  # export fixtures, then capture previews
 //
 // Outputs (export mode):
 //   src/lib/landing-sample-content.ts        generated fixture module (do not edit by hand)
 //   public/landing/samples/mockup-*.png      one storyboard image per mockup option
+//   public/landing/samples/previews/*.png    static landing feature preview captures
 //
 // Re-run whenever you want the landing samples to reflect newer generated content.
 
 import { createClient } from "@supabase/supabase-js"
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
 
 const root = process.cwd()
@@ -23,6 +27,7 @@ const root = process.cwd()
 // Minimal .env.local loader so the script works without extra dependencies
 function loadEnvLocal() {
   const envPath = path.join(root, ".env.local")
+  if (!existsSync(envPath)) return
   const lines = readFileSync(envPath, "utf8").split("\n")
   for (const line of lines) {
     const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
@@ -32,21 +37,57 @@ function loadEnvLocal() {
   }
 }
 
-loadEnvLocal()
+let supabase = null
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-if (!supabaseUrl || !serviceKey) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local")
-  process.exit(1)
+function getSupabase() {
+  if (supabase) return supabase
+
+  loadEnvLocal()
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !serviceKey) {
+    console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local")
+    process.exit(1)
+  }
+
+  supabase = createClient(supabaseUrl, serviceKey)
+  return supabase
 }
 
-const supabase = createClient(supabaseUrl, serviceKey)
 const MOCKUP_STORAGE_BUCKET = process.env.SUPABASE_MOCKUP_STORAGE_BUCKET || "mockups"
+const PREVIEW_CAPTURES = [
+  {
+    navKey: "market-research",
+    activeSectionId: "market-research-feature-matrix",
+    fileName: "market-research-feature-matrix.png",
+  },
+  {
+    navKey: "prd",
+    activeSectionId: "prd-user-personas",
+    fileName: "prd-user-personas.png",
+  },
+  {
+    navKey: "mvp",
+    activeSectionId: "mvp-validation-plan",
+    fileName: "mvp-validation-plan.png",
+  },
+  {
+    navKey: "mockups",
+    activeSectionId: "mockups-concept-1",
+    fileName: "mockups-concept-1.png",
+  },
+  {
+    navKey: "ai-prompts",
+    activeSectionId: "ai-prompts-recommended-build-tool",
+    fileName: "ai-prompts-recommended-build-tool.png",
+  },
+]
 
 /** Latest row per document table for a project, or null. */
 async function latest(table, projectId, columns, extraFilter) {
-  let query = supabase
+  const client = getSupabase()
+  let query = client
     .from(table)
     .select(columns)
     .eq("project_id", projectId)
@@ -59,7 +100,8 @@ async function latest(table, projectId, columns, extraFilter) {
 }
 
 async function survey() {
-  const { data: projects, error } = await supabase
+  const client = getSupabase()
+  const { data: projects, error } = await client
     .from("projects")
     .select("id, name, created_at")
     .order("created_at", { ascending: false })
@@ -84,7 +126,8 @@ async function survey() {
 }
 
 async function exportProject(projectId) {
-  const { data: project, error } = await supabase
+  const client = getSupabase()
+  const { data: project, error } = await client
     .from("projects")
     .select("id, name")
     .eq("id", projectId)
@@ -111,7 +154,7 @@ async function exportProject(projectId) {
       mkdirSync(samplesDir, { recursive: true })
       for (const option of parsed.options ?? []) {
         if (!option.storagePath) continue
-        const { data: blob, error: downloadError } = await supabase.storage
+        const { data: blob, error: downloadError } = await client.storage
           .from(MOCKUP_STORAGE_BUCKET)
           .download(option.storagePath)
         if (downloadError) {
@@ -190,9 +233,60 @@ async function exportProject(projectId) {
   console.log("  wrote src/lib/landing-sample-content.ts")
 }
 
+async function captureLandingPreviews() {
+  const baseUrl = (process.env.LANDING_PREVIEW_BASE_URL || "http://localhost:3000").replace(/\/$/, "")
+  const previewsDir = path.join(root, "public", "landing", "samples", "previews")
+  mkdirSync(previewsDir, { recursive: true })
+
+  let chromium
+  try {
+    ;({ chromium } = await import("playwright"))
+  } catch {
+    throw new Error("Playwright is not available. Install project dependencies or set NEXT_PUBLIC_LANDING_LIVE_PREVIEWS=1 for live previews.")
+  }
+
+  const browser = await chromium.launch({ headless: true })
+  try {
+    const page = await browser.newPage({
+      viewport: { width: 1280, height: 960 },
+      deviceScaleFactor: 1,
+    })
+
+    for (const capture of PREVIEW_CAPTURES) {
+      const searchParams = new URLSearchParams({ active: capture.activeSectionId })
+      if (capture.cropToId) searchParams.set("crop", capture.cropToId)
+      const url = `${baseUrl}/landing-preview/${encodeURIComponent(capture.navKey)}?${searchParams.toString()}`
+      const outputPath = path.join(previewsDir, capture.fileName)
+
+      await page.goto(url, { waitUntil: "networkidle", timeout: 60000 })
+      await page.waitForFunction(
+        () => document.querySelector('[data-landing-preview-ready="true"]'),
+        null,
+        { timeout: 60000 },
+      )
+      await page.evaluate(() => document.fonts?.ready)
+      await page.screenshot({
+        path: outputPath,
+        clip: { x: 0, y: 0, width: 768, height: 576 },
+      })
+      console.log(`  captured ${capture.fileName}`)
+    }
+  } finally {
+    await browser.close()
+  }
+}
+
 const projectFlagIndex = process.argv.indexOf("--project")
-if (projectFlagIndex !== -1) {
+const shouldCapturePreviews = process.argv.includes("--capture-previews")
+const capturePreviewsOnly = process.argv.includes("--capture-previews-only")
+
+if (capturePreviewsOnly) {
+  await captureLandingPreviews()
+} else if (projectFlagIndex !== -1) {
   await exportProject(process.argv[projectFlagIndex + 1])
+  if (shouldCapturePreviews) {
+    await captureLandingPreviews()
+  }
 } else {
   await survey()
 }
