@@ -5,7 +5,7 @@ import {
   LANDING_INTAKE_AUTOSTART_PARAM,
   LANDING_INTAKE_AUTOSTART_VALUE,
 } from "@/lib/landing-intake-handoff"
-import { createClient } from "@/lib/supabase/server"
+import { getCurrentUser } from "@/lib/supabase/current-user"
 
 interface NewProjectPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -19,10 +19,7 @@ export default async function NewProjectPage({ searchParams }: NewProjectPagePro
   const autoStartQuestions = Array.isArray(autostartParam)
     ? autostartParam.includes(LANDING_INTAKE_AUTOSTART_VALUE)
     : autostartParam === LANDING_INTAKE_AUTOSTART_VALUE
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user } = await getCurrentUser()
 
   if (!user) {
     const params = new URLSearchParams()

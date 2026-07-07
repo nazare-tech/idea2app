@@ -5,6 +5,7 @@ import { DashboardProjectCard } from "@/components/projects/dashboard-project-ca
 import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 import { getProjectUrl } from "@/lib/project-routing"
 import { getProjectAllowanceStatus, type ProjectAllowanceClient } from "@/lib/project-allowance"
+import { getCurrentUser } from "@/lib/supabase/current-user"
 
 type ActiveProject = {
   id: string
@@ -32,10 +33,7 @@ function getWelcomeName({
 
 export default async function ProjectsPage() {
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user } = await getCurrentUser()
 
   const [{ data: projects }, allowanceStatus, { data: profileData }] = await Promise.all([
     supabase

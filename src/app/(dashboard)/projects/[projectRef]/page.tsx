@@ -13,6 +13,7 @@ import {
   isWorkspaceDocumentType,
   shouldRedirectBlockedWorkspaceTab,
 } from "@/lib/workspace-tab-policy"
+import { getCurrentUser } from "@/lib/supabase/current-user"
 
 interface ProjectPageProps {
   params: Promise<{ projectRef: string }>
@@ -26,9 +27,7 @@ async function getProjectForCurrentUser(projectRef: string) {
   }
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user } = await getCurrentUser()
 
   if (!user) {
     return null
@@ -73,9 +72,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     notFound()
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user } = await getCurrentUser()
 
   const projectId = parsedProjectRef.id
 
