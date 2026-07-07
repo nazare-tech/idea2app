@@ -1,7 +1,20 @@
 ---
-implemented: false
-implemented_at: null
-implementation_summary: null
+implemented: true
+implemented_at: 2026-07-06
+implementation_summary: >
+  Shared idea floor (30+ chars, 4+ words) in src/lib/intake/idea-validation.ts,
+  enforced with inline hints and disabled buttons in the landing capture
+  (empty input still allows plain sign-up) and wizard Step 1, and re-enforced
+  with the same copy in /api/intake/pending, /api/intake/questions, and
+  /api/projects/create-from-intake. The intake question-generation prompt now
+  doubles as the LLM gate: it returns {"rejected": true, "reason":
+  gibberish|not-an-idea|unsafe} for garbage/injection input, raised as the
+  non-retryable IntakeIdeaRejectedError and mapped to a 422 with app-authored
+  copy. Composer keeps its 1-char minimum, gains the client-side 4,000-char
+  cap, and its system prompt gains scope-and-safety guardrails. 11 new tests;
+  tsc, lint, and all 415 tests pass. Browser-verified on the landing page:
+  too-short and too-few-words states disable Get Started with hints, valid and
+  empty states enable it, and the pending route returns 400 with matching copy.
 ---
 
 # Input Guardrails for Idea Capture and Project Composer

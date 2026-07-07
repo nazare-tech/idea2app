@@ -6,6 +6,7 @@ import { ArrowRight, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { validateIdeaInput } from "@/lib/intake/idea-validation"
 import {
   buildLandingAuthModalPath,
   buildLandingIntakeNextPath,
@@ -49,6 +50,10 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
 
   const trimmedIdea = idea.trim()
   const hasIdea = trimmedIdea.length > 0
+  // Empty input still allows a plain sign-up; a partial idea must reach the
+  // shared minimum before we accept it into the intake flow.
+  const ideaValidation = validateIdeaInput(idea)
+  const ideaHint = hasIdea && ideaValidation.status !== "ok" ? ideaValidation.message : null
 
   const startFlow = async () => {
     setError(null)
@@ -124,6 +129,11 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
           width: isOpen ? "100%" : `calc(100% - ${BUTTON_ZONE}px)`,
         }}
       />
+      {ideaHint && (
+        <p className="mt-3 text-[13px] leading-snug text-text-secondary" data-testid="landing-idea-hint">
+          {ideaHint}
+        </p>
+      )}
       {error && (
         <p className="mt-3 rounded-md border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
@@ -139,7 +149,7 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
       <Button
         type="button"
         onClick={startFlow}
-        disabled={loadingMode !== null}
+        disabled={loadingMode !== null || ideaHint !== null}
         className="absolute bottom-3 right-3 h-[46px] rounded-md bg-[#1C1917] px-5 text-sm font-semibold text-white hover:bg-[#1C1917]/85"
         data-testid="landing-idea-signup"
       >

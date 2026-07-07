@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { getOpenRouterClient } from "@/lib/openrouter"
 import type { IntakeAnswer, IntakeQuestion, ProjectIntakeSource } from "@/lib/intake/types"
+import { validateIdeaInput } from "@/lib/intake/idea-validation"
 import { formatProjectIntakeForAi } from "@/lib/intake/context"
 import { validateRequiredPlatformAnswer } from "@/lib/intake/required-questions"
 import { buildProjectIntakePayload, buildProjectSummary } from "@/lib/intake/summary"
@@ -18,8 +19,6 @@ import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 
-const MAX_IDEA_LENGTH = 10000
-const MIN_IDEA_LENGTH = 10
 const MAX_ANSWER_LENGTH = 1000
 const MAX_OTHER_LENGTH = 300
 const PROJECT_NAME_MODEL =
@@ -224,15 +223,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 })
   }
 
-  const idea = normalizeText(body.idea, MAX_IDEA_LENGTH)
-  if (idea.length < MIN_IDEA_LENGTH) {
+  const ideaValidation = validateIdeaInput(typeof body.idea === "string" ? body.idea : "")
+  if (ideaValidation.status !== "ok") {
     logWarn("CreateFromIntake", "validation_failed", {
       ...userLogContext,
-      reason: "idea_too_short",
-      ideaLength: idea.length,
+      reason: `idea_${ideaValidation.status}`,
     })
-    return NextResponse.json({ error: "Project idea is too short" }, { status: 400 })
+    return NextResponse.json({ error: ideaValidation.message }, { status: 400 })
   }
+  const idea = ideaValidation.idea
 
   const questions = normalizeQuestions(body.questions)
   if (questions.length < 4 || questions.length > 7) {

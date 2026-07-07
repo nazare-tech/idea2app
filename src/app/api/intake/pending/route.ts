@@ -3,16 +3,12 @@ import { NextResponse } from "next/server"
 
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
+import { validateIdeaInput } from "@/lib/intake/idea-validation"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"
 
-const MAX_IDEA_LENGTH = 10000
 const TOKEN_BYTES = 24
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
-
-function normalizeIdea(value: unknown) {
-  return typeof value === "string" ? value.trim().slice(0, MAX_IDEA_LENGTH) : ""
-}
 
 function normalizeSource(value: unknown) {
   return typeof value === "string" && value.trim()
@@ -53,11 +49,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 })
   }
 
-  const idea = normalizeIdea(body.idea)
-  if (!idea) {
-    logWarn("PendingIntake", "validation_failed", requestLogContext)
-    return NextResponse.json({ error: "Idea is required" }, { status: 400 })
+  const ideaValidation = validateIdeaInput(typeof body.idea === "string" ? body.idea : "")
+  if (ideaValidation.status !== "ok") {
+    logWarn("PendingIntake", "validation_failed", {
+      ...requestLogContext,
+      reason: `idea_${ideaValidation.status}`,
+    })
+    return NextResponse.json({ error: ideaValidation.message }, { status: 400 })
   }
+  const idea = ideaValidation.idea
 
   const token = createOpaqueToken()
   const expiresAt = new Date(Date.now() + ONE_DAY_MS).toISOString()

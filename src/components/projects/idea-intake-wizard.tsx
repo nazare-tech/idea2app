@@ -13,11 +13,11 @@ import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { INTAKE_EXAMPLE_IDEAS } from "@/lib/intake/examples"
+import { validateIdeaInput } from "@/lib/intake/idea-validation"
 import type { IntakeAnswer, IntakeQuestion, IntakeQuestionSet } from "@/lib/intake/types"
 import { cn } from "@/lib/utils"
 
 const SESSION_IDEA_KEY = "makercompass:intake:draft"
-const MIN_IDEA_LENGTH = 10
 const MIN_INTAKE_QUESTIONS = 4
 const MAX_INTAKE_QUESTIONS = 7
 const WIZARD_TOTAL_STEPS = 2
@@ -77,7 +77,13 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
   const [error, setError] = useState<string | null>(null)
 
   const normalizedIdea = useMemo(() => normalizeIdea(idea), [idea])
-  const canContinue = normalizedIdea.length >= MIN_IDEA_LENGTH
+  const ideaValidation = useMemo(() => validateIdeaInput(idea), [idea])
+  const canContinue = ideaValidation.status === "ok"
+  // Guidance, not an error: shown only while a non-empty idea is below the floor.
+  const ideaHint =
+    ideaValidation.status !== "ok" && ideaValidation.status !== "empty"
+      ? ideaValidation.message
+      : null
   const questions = questionSet?.questions ?? []
   const allQuestionsAnswered = questions.length > 0 && questions.every((question) => hasAnswer(question, answers[question.id]))
   const isIdeaStepLocked = isLoadingPending || isGeneratingQuestions
@@ -382,6 +388,11 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
                     className="min-h-[190px] border-border-strong bg-white text-[15px] leading-relaxed"
                     disabled={isIdeaStepLocked}
                   />
+                  {ideaHint && !isIdeaStepLocked && (
+                    <p className="mt-2 text-[13px] leading-snug text-text-secondary" data-testid="intake-idea-hint">
+                      {ideaHint}
+                    </p>
+                  )}
                 </div>
 
                 {isLoadingPending && (

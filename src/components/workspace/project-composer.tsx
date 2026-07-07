@@ -464,6 +464,7 @@ export function ProjectComposer({
                 }
               }}
               placeholder="Ask anything about this project…"
+              maxLength={4000}
               className="max-h-[132px] flex-1 resize-none border-none bg-transparent px-1 py-2 text-[14.5px] leading-normal text-foreground outline-none placeholder:text-muted-foreground"
             />
             <button

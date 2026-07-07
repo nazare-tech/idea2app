@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server"
 
 import { getOpenRouterClient } from "@/lib/openrouter"
-import { generateIntakeQuestions } from "@/lib/intake/question-generation"
+import {
+  IntakeIdeaRejectedError,
+  generateIntakeQuestions,
+} from "@/lib/intake/question-generation"
+import { validateIdeaInput } from "@/lib/intake/idea-validation"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"
 
-const MAX_IDEA_LENGTH = 10000
-const MIN_IDEA_LENGTH = 10
 const INTAKE_MODEL = process.env.OPENROUTER_INTAKE_MODEL || process.env.OPENROUTER_CHAT_MODEL || "anthropic/claude-sonnet-4-6"
 
 const openrouter = getOpenRouterClient()
 
-function normalizeIdea(value: unknown) {
-  return typeof value === "string" ? value.trim().slice(0, MAX_IDEA_LENGTH) : ""
+// App-authored copy for model rejection verdicts; model text is never echoed.
+const IDEA_REJECTION_MESSAGES: Record<string, string> = {
+  unsafe:
+    "We can't create a plan from that input. Please describe a legitimate product or business idea.",
+  default:
+    "That doesn't look like an idea we can plan yet. Describe what you want to build, who it's for, and the problem it solves.",
 }
 
 export async function POST(request: Request) {
@@ -63,13 +69,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 })
   }
 
-  const idea = normalizeIdea(body.idea)
-  if (idea.length < MIN_IDEA_LENGTH) {
-    return NextResponse.json(
-      { error: "Add a little more detail before generating questions." },
-      { status: 400 }
-    )
+  const ideaValidation = validateIdeaInput(typeof body.idea === "string" ? body.idea : "")
+  if (ideaValidation.status !== "ok") {
+    return NextResponse.json({ error: ideaValidation.message }, { status: 400 })
   }
+  const idea = ideaValidation.idea
 
   try {
     const result = await generateIntakeQuestions(idea, {
@@ -96,6 +100,22 @@ export async function POST(request: Request) {
       usedFallback: false,
     })
   } catch (error) {
+    if (error instanceof IntakeIdeaRejectedError) {
+      logWarn("IntakeQuestions", "idea_rejected", {
+        ...requestLogContext,
+        userId: user.id,
+        reason: error.reason,
+        ideaLength: idea.length,
+      })
+      return NextResponse.json(
+        {
+          error: IDEA_REJECTION_MESSAGES[error.reason] ?? IDEA_REJECTION_MESSAGES.default,
+          rejected: true,
+        },
+        { status: 422 }
+      )
+    }
+
     logError("IntakeQuestions", "request_failed", error, {
       ...requestLogContext,
       userId: user.id,

@@ -1,6 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import {
+  IntakeIdeaRejectedError,
   IntakeQuestionParseError,
   generateIntakeQuestions,
   parseIntakeQuestionSet,
@@ -521,4 +522,40 @@ test("generateIntakeQuestions: throws a retryable error when the injected genera
       }),
     /retry/i
   )
+})
+
+test("parseIntakeQuestionSet: surfaces a rejection verdict as IntakeIdeaRejectedError", () => {
+  assert.throws(
+    () => parseIntakeQuestionSet(JSON.stringify({ rejected: true, reason: "gibberish" })),
+    (error: unknown) =>
+      error instanceof IntakeIdeaRejectedError && error.reason === "gibberish"
+  )
+})
+
+test("parseIntakeQuestionSet: falls back to not-an-idea for unknown rejection reasons", () => {
+  assert.throws(
+    () => parseIntakeQuestionSet(JSON.stringify({ rejected: true, reason: "made-up-reason" })),
+    (error: unknown) =>
+      error instanceof IntakeIdeaRejectedError && error.reason === "not-an-idea"
+  )
+})
+
+test("parseIntakeQuestionSet: ignores a non-true rejected field and parses questions normally", () => {
+  const withFlag = JSON.stringify({ rejected: false, ...JSON.parse(validModelOutput) })
+  const questionSet = parseIntakeQuestionSet(withFlag)
+  assert.equal(questionSet.questions.length, 5)
+})
+
+test("generateIntakeQuestions: does not retry after a rejection verdict", async () => {
+  let calls = 0
+  await assert.rejects(
+    generateIntakeQuestions("asdf asdf asdf asdf asdf asdf asdf", {
+      generateText: async () => {
+        calls += 1
+        return JSON.stringify({ rejected: true, reason: "unsafe" })
+      },
+    }),
+    (error: unknown) => error instanceof IntakeIdeaRejectedError && error.reason === "unsafe"
+  )
+  assert.equal(calls, 1)
 })

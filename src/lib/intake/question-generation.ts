@@ -34,6 +34,21 @@ export class IntakeQuestionParseError extends Error {
   }
 }
 
+export const IDEA_REJECTION_REASONS = ["gibberish", "not-an-idea", "unsafe"] as const
+export type IdeaRejectionReason = (typeof IDEA_REJECTION_REASONS)[number]
+
+/**
+ * The model judged the submitted text to not be a usable idea (gibberish,
+ * off-topic content, or a manipulation attempt). Non-retryable: the user
+ * needs to rewrite the idea, not try again.
+ */
+export class IntakeIdeaRejectedError extends Error {
+  constructor(public readonly reason: IdeaRejectionReason) {
+    super(`Idea rejected by intake validation: ${reason}`)
+    this.name = "IntakeIdeaRejectedError"
+  }
+}
+
 export interface IntakeQuestionModelRequest {
   systemPrompt: string
   userPrompt: string
@@ -77,6 +92,12 @@ export async function generateIntakeQuestions(
         rawModelOutput,
       }
     } catch (err) {
+      // A rejection verdict is a final answer about the idea, not a
+      // malformed payload; surface it instead of retrying or masking it.
+      if (err instanceof IntakeIdeaRejectedError) {
+        throw err
+      }
+
       lastError = err
       if (err instanceof IntakeQuestionParseError && attempt < MAX_GENERATION_ATTEMPTS - 1) {
         retryIssues = err.issues
@@ -107,6 +128,15 @@ export function parseIntakeQuestionSet(rawModelOutput: string): IntakeQuestionSe
 
   if (!parsed) {
     throw new IntakeQuestionParseError(issues)
+  }
+
+  if (getRecordValue(parsed, "rejected") === true) {
+    const reason = getRecordValue(parsed, "reason")
+    throw new IntakeIdeaRejectedError(
+      IDEA_REJECTION_REASONS.includes(reason as IdeaRejectionReason)
+        ? (reason as IdeaRejectionReason)
+        : "not-an-idea"
+    )
   }
 
   const questionsValue = getRecordValue(parsed, "questions")
