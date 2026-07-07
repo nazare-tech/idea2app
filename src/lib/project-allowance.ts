@@ -80,6 +80,22 @@ export type ProjectAllowanceClient = {
   }
 }
 
+// The real typed Supabase client does not structurally satisfy the minimal
+// query interface above (its `from` is keyed to Database table names, not
+// `string`), and naming `SupabaseClient` in the signature makes TypeScript
+// recurse into the query-builder generics over the whole Database type, which
+// trips TS2589. This shallow "has a from() method" shape accepts the typed
+// client, the service client, and the structural test fakes without either
+// problem; the one narrowing lives here instead of `as unknown as` casts at
+// every call site.
+export type ProjectAllowanceClientLike = {
+  from: (...args: never[]) => unknown
+}
+
+function asAllowanceClient(client: ProjectAllowanceClientLike): ProjectAllowanceClient {
+  return client as unknown as ProjectAllowanceClient
+}
+
 export type ProjectAllowanceOptions = {
   now?: Date
 }
@@ -111,18 +127,19 @@ const EXPLICIT_ALLOWANCE_KEYS = [
 const warnedFallbackPlans = new Set<string>()
 
 export async function canCreateProject(
-  client: ProjectAllowanceClient,
+  clientLike: ProjectAllowanceClientLike,
   userId: string,
   options: ProjectAllowanceOptions = {}
 ): Promise<ProjectAllowanceStatus> {
-  return getProjectAllowanceStatus(client, userId, options)
+  return getProjectAllowanceStatus(clientLike, userId, options)
 }
 
 export async function getProjectAllowanceStatus(
-  client: ProjectAllowanceClient,
+  clientLike: ProjectAllowanceClientLike,
   userId: string,
   options: ProjectAllowanceOptions = {}
 ): Promise<ProjectAllowanceStatus> {
+  const client = asAllowanceClient(clientLike)
   const now = getValidDate(options.now)
   const trimmedUserId = userId.trim()
 

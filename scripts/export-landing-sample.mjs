@@ -22,6 +22,8 @@ import { createClient } from "@supabase/supabase-js"
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
 
+import { LANDING_PREVIEW_CAPTURES } from "../src/lib/landing-preview-captures.mjs"
+
 const root = process.cwd()
 
 // Minimal .env.local loader so the script works without extra dependencies
@@ -56,33 +58,6 @@ function getSupabase() {
 }
 
 const MOCKUP_STORAGE_BUCKET = process.env.SUPABASE_MOCKUP_STORAGE_BUCKET || "mockups"
-const PREVIEW_CAPTURES = [
-  {
-    navKey: "market-research",
-    activeSectionId: "market-research-feature-matrix",
-    fileName: "market-research-feature-matrix.png",
-  },
-  {
-    navKey: "prd",
-    activeSectionId: "prd-user-personas",
-    fileName: "prd-user-personas.png",
-  },
-  {
-    navKey: "mvp",
-    activeSectionId: "mvp-validation-plan",
-    fileName: "mvp-validation-plan.png",
-  },
-  {
-    navKey: "mockups",
-    activeSectionId: "mockups-concept-1",
-    fileName: "mockups-concept-1.png",
-  },
-  {
-    navKey: "ai-prompts",
-    activeSectionId: "ai-prompts-recommended-build-tool",
-    fileName: "ai-prompts-recommended-build-tool.png",
-  },
-]
 
 /** Latest row per document table for a project, or null. */
 async function latest(table, projectId, columns, extraFilter) {
@@ -252,9 +227,8 @@ async function captureLandingPreviews() {
       deviceScaleFactor: 1,
     })
 
-    for (const capture of PREVIEW_CAPTURES) {
+    for (const capture of LANDING_PREVIEW_CAPTURES) {
       const searchParams = new URLSearchParams({ active: capture.activeSectionId })
-      if (capture.cropToId) searchParams.set("crop", capture.cropToId)
       const url = `${baseUrl}/landing-preview/${encodeURIComponent(capture.navKey)}?${searchParams.toString()}`
       const outputPath = path.join(previewsDir, capture.fileName)
 

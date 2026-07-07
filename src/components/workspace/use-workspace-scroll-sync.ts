@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 
 import type { DocumentType } from "@/lib/document-definitions"
 import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
@@ -19,18 +19,28 @@ function getSourceTypeForScrollTarget(targetId: string): DocumentType | null {
   return navItem?.sourceType ?? null
 }
 
-function getNavKeyForScrollTarget(targetId: string): string | null {
-  const navItem = SCROLLABLE_NAV_ITEMS.find(
-    (item) => item.key === targetId || item.sections.some((section) => section.id === targetId),
-  )
-
-  return navItem?.key ?? null
-}
-
 function isScrollableSubsectionId(targetId: string) {
   return SCROLLABLE_NAV_ITEMS.some((item) =>
     item.sections.some((section) => section.id === targetId),
   )
+}
+
+function findScrollTarget(container: HTMLElement, targetId: string): Element | null {
+  return (
+    container.querySelector(`#${CSS.escape(targetId)}`) ||
+    container.querySelector(`[data-section="${CSS.escape(targetId)}"]`)
+  )
+}
+
+function scrollToElement(container: HTMLElement, element: Element) {
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = element.getBoundingClientRect()
+  const containerStyle = window.getComputedStyle(container)
+  const scrollPaddingTop = parseFloat(containerStyle.scrollPaddingTop) || parseFloat(containerStyle.paddingTop) || 0
+  container.scrollTo({
+    top: Math.max(0, container.scrollTop + targetRect.top - containerRect.top - scrollPaddingTop),
+    behavior: "auto",
+  })
 }
 
 function areStringSetsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>) {
@@ -179,50 +189,33 @@ export function useWorkspaceScrollSync({
     return () => window.clearTimeout(timeoutId)
   }, [activeSectionId, renderedSectionIds])
 
+  // Nav clicks set a pending target and the matching active document, then the
+  // layout effect below performs one scroll after React commits. Inactive
+  // document frames use `content-visibility: auto` containment, so their
+  // section offsets are only estimates until the activeDocument change removes
+  // containment; scrolling post-commit measures the real layout. The object
+  // wrapper (not the bare id) lets repeat clicks on the same target re-fire.
+  const [pendingScroll, setPendingScroll] = useState<{ targetId: string } | null>(null)
+  const handledScrollRef = useRef<{ targetId: string } | null>(null)
+  const scrollFlagReleaseTimer = useRef<number | null>(null)
+
   const handleScrollNavigate = useCallback((targetId: string) => {
     const container = scrollContainerRef.current
     if (!container) return
-
-    const target = container.querySelector(`#${CSS.escape(targetId)}`)
-      || container.querySelector(`[data-section="${targetId}"]`)
-    if (!target) return
+    if (!findScrollTarget(container, targetId)) return
 
     const sourceType = getSourceTypeForScrollTarget(targetId)
-    const navKey = getNavKeyForScrollTarget(targetId)
     if (sourceType) {
       setActiveDocument(sourceType)
       void loadWorkspaceDocuments([sourceType])
     }
 
-    const scrollToTarget = (element: Element) => {
-      const containerRect = container.getBoundingClientRect()
-      const targetRect = element.getBoundingClientRect()
-      const containerStyle = window.getComputedStyle(container)
-      const scrollPaddingTop = parseFloat(containerStyle.scrollPaddingTop) || parseFloat(containerStyle.paddingTop) || 0
-      container.scrollTo({
-        top: Math.max(0, container.scrollTop + targetRect.top - containerRect.top - scrollPaddingTop),
-        behavior: "auto",
-      })
+    if (scrollFlagReleaseTimer.current !== null) {
+      window.clearTimeout(scrollFlagReleaseTimer.current)
+      scrollFlagReleaseTimer.current = null
     }
-
     isScrollingProgrammatically.current = true
-    const sourceFrame = navKey
-      ? container.querySelector(`[data-section="${CSS.escape(navKey)}"]`)
-      : null
-    const shouldTwoPhaseScroll = Boolean(sourceType && sourceType !== activeDocument && sourceFrame && targetId !== navKey)
-
-    if (shouldTwoPhaseScroll && sourceFrame) {
-      scrollToTarget(sourceFrame)
-      window.requestAnimationFrame(() => {
-        const exactTarget = container.querySelector(`#${CSS.escape(targetId)}`)
-          || container.querySelector(`[data-section="${targetId}"]`)
-        if (exactTarget) {
-          scrollToTarget(exactTarget)
-        }
-      })
-    } else {
-      scrollToTarget(target)
-    }
+    setPendingScroll({ targetId })
 
     if (isScrollableSubsectionId(targetId)) {
       setActiveSectionId(targetId)
@@ -231,11 +224,27 @@ export function useWorkspaceScrollSync({
     }
 
     window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${targetId}`)
+  }, [loadWorkspaceDocuments, setActiveDocument])
 
-    setTimeout(() => {
+  useLayoutEffect(() => {
+    // Handled requests are tracked by object identity in a ref rather than by
+    // clearing the state, so the effect never needs to set state itself.
+    if (!pendingScroll || handledScrollRef.current === pendingScroll) return
+    handledScrollRef.current = pendingScroll
+
+    const container = scrollContainerRef.current
+    if (container) {
+      const target = findScrollTarget(container, pendingScroll.targetId)
+      if (target) {
+        scrollToElement(container, target)
+      }
+    }
+
+    scrollFlagReleaseTimer.current = window.setTimeout(() => {
       isScrollingProgrammatically.current = false
+      scrollFlagReleaseTimer.current = null
     }, 50)
-  }, [activeDocument, loadWorkspaceDocuments, setActiveDocument])
+  }, [pendingScroll])
 
   return {
     scrollContainerRef,

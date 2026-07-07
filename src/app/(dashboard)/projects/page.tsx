@@ -1,10 +1,9 @@
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { DashboardProjectCard } from "@/components/projects/dashboard-project-card"
 import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 import { getProjectUrl } from "@/lib/project-routing"
-import { getProjectAllowanceStatus, type ProjectAllowanceClient } from "@/lib/project-allowance"
+import { getProjectAllowanceStatus } from "@/lib/project-allowance"
 import { getCurrentUser } from "@/lib/supabase/current-user"
 
 type ActiveProject = {
@@ -32,8 +31,7 @@ function getWelcomeName({
 }
 
 export default async function ProjectsPage() {
-  const supabase = await createClient()
-  const { user } = await getCurrentUser()
+  const { user, supabase } = await getCurrentUser()
 
   const [{ data: projects }, allowanceStatus, { data: profileData }] = await Promise.all([
     supabase
@@ -41,7 +39,7 @@ export default async function ProjectsPage() {
       .select("*")
       .eq("user_id", user!.id)
       .order("updated_at", { ascending: false }),
-    getProjectAllowanceStatus(supabase as unknown as ProjectAllowanceClient, user!.id),
+    getProjectAllowanceStatus(supabase, user!.id),
     supabase
       .from("profiles")
       .select("full_name")

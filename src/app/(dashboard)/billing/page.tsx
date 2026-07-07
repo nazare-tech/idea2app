@@ -6,22 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 import { BillingPlansClient } from "@/components/pricing/billing-plans-client"
 import { ManageSubscriptionButton } from "@/components/pricing/manage-subscription-button"
-import {
-  getInitialBillingInterval,
-  normalizeBillingPlans,
-  normalizeBillingSubscription,
-} from "@/lib/billing-page-data"
+import { getInitialBillingInterval, toBillingPlans } from "@/lib/billing-page-data"
 import {
   ACTIVE_SUBSCRIPTION_STATUSES,
   getProjectAllowanceStatus,
-  type ProjectAllowanceClient,
 } from "@/lib/project-allowance"
-import { createClient } from "@/lib/supabase/server"
 import { getCurrentUser } from "@/lib/supabase/current-user"
 
 export default async function BillingPage() {
-  const supabase = await createClient()
-  const { user } = await getCurrentUser()
+  const { user, supabase } = await getCurrentUser()
 
   if (!user) {
     redirect("/auth")
@@ -42,11 +35,11 @@ export default async function BillingPage() {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    getProjectAllowanceStatus(supabase as unknown as ProjectAllowanceClient, user.id),
+    getProjectAllowanceStatus(supabase, user.id),
   ])
 
-  const plans = normalizeBillingPlans(plansData)
-  const subscription = normalizeBillingSubscription(subscriptionData)
+  const plans = toBillingPlans(plansData)
+  const subscription = subscriptionData
   const currentPlan = subscription
     ? plans.find((plan) => plan.id === subscription.plan_id) ?? null
     : null

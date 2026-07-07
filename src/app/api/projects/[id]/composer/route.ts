@@ -11,10 +11,7 @@ import { NextResponse } from "next/server"
 import { getOpenRouterClient, isOpenRouterConfigured } from "@/lib/openrouter"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
-import {
-  getProjectAllowanceStatus,
-  type ProjectAllowanceClient,
-} from "@/lib/project-allowance"
+import { getProjectAllowanceStatus } from "@/lib/project-allowance"
 import { buildRequestLogContext, logError, logWarn } from "@/lib/logger"
 import {
   PROJECT_COMPOSER_SYSTEM_PROMPT,
@@ -186,7 +183,7 @@ export async function POST(
   // The composer is a paid-plan feature; mirror the paid-plan check used by
   // project deletion.
   const allowanceStatus = await getProjectAllowanceStatus(
-    supabase as unknown as ProjectAllowanceClient,
+    supabase,
     user.id
   )
   if (allowanceStatus.planName.toLowerCase() === "free") {

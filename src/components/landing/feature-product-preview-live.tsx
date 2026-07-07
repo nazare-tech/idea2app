@@ -6,6 +6,8 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react"
 
+import { PreviewFrame } from "@/components/landing/preview-frame"
+
 /** CSS width the iframe is laid out at (desktop viewport for media queries) */
 const WORKSPACE_WIDTH = 1280
 /** Visible crop region width: 60% of the workspace width (768x576 at 4:3) */
@@ -38,28 +40,19 @@ export function FeatureProductPreviewLive({ navKey, activeSectionId, cropToId }:
   }`
 
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none flex h-full w-full select-none items-center justify-center bg-[#F5F0EB] p-5 sm:p-6"
-    >
+    <PreviewFrame frameRef={frameRef}>
       <div
-        ref={frameRef}
-        className="relative aspect-[4/3] w-full overflow-clip border border-[#E2DDD6] bg-background shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
+        className="absolute left-0 top-0"
+        style={{
+          width: WORKSPACE_WIDTH,
+          height: (WORKSPACE_WIDTH * 3) / 4,
+          transform: `scale(${scale ?? 0})`,
+          transformOrigin: "top left",
+          visibility: scale === null ? "hidden" : "visible",
+        }}
       >
-        <div
-          className="absolute left-0 top-0"
-          style={{
-            width: WORKSPACE_WIDTH,
-            height: (WORKSPACE_WIDTH * 3) / 4,
-            transform: `scale(${scale ?? 0})`,
-            transformOrigin: "top left",
-            visibility: scale === null ? "hidden" : "visible",
-          }}
-        >
-          <iframe src={src} title="" tabIndex={-1} loading="lazy" className="h-full w-full border-0" />
-        </div>
-        <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#FAFAFA] to-transparent" />
+        <iframe src={src} title="" tabIndex={-1} loading="lazy" className="h-full w-full border-0" />
       </div>
-    </div>
+    </PreviewFrame>
   )
 }

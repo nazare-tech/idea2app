@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
-import { getProjectAllowanceStatus, type ProjectAllowanceClient } from "@/lib/project-allowance"
+import { getProjectAllowanceStatus } from "@/lib/project-allowance"
 import { buildRequestLogContext, logError } from "@/lib/logger"
 
 export async function PATCH(
@@ -129,7 +129,7 @@ export async function DELETE(
     userId = user.id
 
     const allowanceStatus = await getProjectAllowanceStatus(
-      supabase as unknown as ProjectAllowanceClient,
+      supabase,
       user.id
     )
     if (allowanceStatus.planName.toLowerCase() === "free") {

@@ -12,7 +12,7 @@ import {
 } from "@/lib/generation/onboarding"
 import { createGenerationQueueItems } from "@/lib/generation/queue-service"
 import { generateProjectName } from "@/lib/project-name-generation"
-import { canCreateProject, type ProjectAllowanceClient } from "@/lib/project-allowance"
+import { canCreateProject } from "@/lib/project-allowance"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
@@ -307,7 +307,7 @@ export async function POST(request: Request) {
     logInfo("CreateFromIntake", "pending_token_verified", userLogContext)
   }
 
-  const allowance = await canCreateProject(supabase as unknown as ProjectAllowanceClient, user.id)
+  const allowance = await canCreateProject(supabase, user.id)
   logInfo("CreateFromIntake", "allowance_checked", {
     ...userLogContext,
     canCreate: allowance.canCreate,
@@ -383,7 +383,7 @@ export async function POST(request: Request) {
   }
   logInfo("CreateFromIntake", "lock_acquired", userLogContext)
 
-  const lockedAllowance = await canCreateProject(queueSupabase as unknown as ProjectAllowanceClient, user.id)
+  const lockedAllowance = await canCreateProject(queueSupabase, user.id)
   logInfo("CreateFromIntake", "locked_allowance_checked", {
     ...userLogContext,
     canCreate: lockedAllowance.canCreate,

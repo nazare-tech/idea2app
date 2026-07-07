@@ -15,6 +15,7 @@ import {
   type QueueItem,
   type QueueItemStatus,
 } from "@/lib/generation/generate-all-helpers"
+import { createVisibilityAwarePoller } from "@/lib/visibility-aware-poller"
 
 // Re-export types so consumers keep working
 export type { QueueItem, QueueItemStatus }
@@ -133,67 +134,18 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
   const onStepCompleteRef = { current: null as OnStepCompleteFn | null }
   const getDocStatusRef = { current: null as ((type: DocumentType) => "done" | "in_progress" | "pending") | null }
 
-  // Polling state
-  const pollTimerRef = { current: null as ReturnType<typeof setTimeout> | null }
+  // Polling state. The scheduling mechanics (timer, hidden-tab suppression,
+  // immediate poll on refocus) live in the shared poller; this store only
+  // decides the cadence and when the loop starts/stops.
   const pollStartedAtRef = { current: null as number | null }
-  const visibilityChangeHandlerRef = { current: null as (() => void) | null }
   const prevQueueRef = { current: null as QueueItem[] | null }
   const executeRetryCountRef = { current: 0 }
 
-  function clearPollTimer() {
-    if (pollTimerRef.current !== null) {
-      clearTimeout(pollTimerRef.current)
-      pollTimerRef.current = null
-    }
-  }
-
-  function removeVisibilityListener() {
-    if (typeof document === "undefined" || !visibilityChangeHandlerRef.current) return
-
-    document.removeEventListener("visibilitychange", visibilityChangeHandlerRef.current)
-    visibilityChangeHandlerRef.current = null
-  }
-
-  function stopPolling() {
-    clearPollTimer()
-    removeVisibilityListener()
-  }
-
-  function ensureVisibilityListener(
-    set: (fn: (s: GenerateAllStore) => Partial<GenerateAllStore>) => void,
-    get: () => GenerateAllStore,
-  ) {
-    if (typeof document === "undefined" || visibilityChangeHandlerRef.current) return
-
-    const handler = () => {
-      if (document.hidden) {
-        clearPollTimer()
-        return
-      }
-
-      if (get().status === "running") {
-        clearPollTimer()
-        void doPoll(set, get)
-      }
-    }
-
-    visibilityChangeHandlerRef.current = handler
-    document.addEventListener("visibilitychange", handler)
-  }
-
-  function schedulePoll(set: (fn: (s: GenerateAllStore) => Partial<GenerateAllStore>) => void, get: () => GenerateAllStore) {
-    clearPollTimer()
-    ensureVisibilityListener(set, get)
-
-    if (typeof document !== "undefined" && document.hidden) {
-      return
-    }
-
-    pollTimerRef.current = setTimeout(
-      () => doPoll(set, get),
-      getGenerateAllPollDelayMs(pollStartedAtRef.current),
-    )
-  }
+  const poller = createVisibilityAwarePoller({
+    poll: () => void doPoll(),
+    getDelayMs: () => getGenerateAllPollDelayMs(pollStartedAtRef.current),
+    shouldPollOnVisible: () => store.getState().status === "running",
+  })
 
   function kickOffExecute() {
     return fetch("/api/generate-all/execute", {
@@ -205,23 +157,20 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
     })
   }
 
-  async function doPoll(
-    set: (fn: (s: GenerateAllStore) => Partial<GenerateAllStore>) => void,
-    get: () => GenerateAllStore,
-  ) {
+  async function doPoll() {
     try {
       const res = await fetch(`/api/generate-all/status?projectId=${projectId}`)
       if (!res.ok) {
-        schedulePoll(set, get)
+        poller.schedule()
         return
       }
       const { queue: dbRow } = await res.json()
       if (!dbRow) {
-        schedulePoll(set, get)
+        poller.schedule()
         return
       }
 
-      const prevQueue = prevQueueRef.current ?? get().queue
+      const prevQueue = prevQueueRef.current ?? store.getState().queue
       const incomingQueue: QueueItem[] = dbRow.queue ?? []
       if (dbRow.started_at) {
         pollStartedAtRef.current = new Date(dbRow.started_at).getTime()
@@ -246,12 +195,12 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       prevQueueRef.current = incomingQueue
 
       const newStatus = dbRow.status as GenerateAllStatus
-      set(() => ({
+      store.setState({
         queue: incomingQueue,
         currentIndex: dbRow.current_index ?? 0,
         status: newStatus,
         error: dbRow.error_info?.message ?? null,
-      }))
+      })
 
       // Continue polling only while running
       if (newStatus === "running") {
@@ -261,18 +210,18 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
           executeRetryCountRef.current += 1
           void kickOffExecute()
         }
-        schedulePoll(set, get)
+        poller.schedule()
       } else {
-        stopPolling()
+        poller.stop()
         localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
       }
     } catch {
       // Network hiccup — retry
-      schedulePoll(set, get)
+      poller.schedule()
     }
   }
 
-  return createStore<GenerateAllStore>()((set, get) => ({
+  const store = createStore<GenerateAllStore>()((set, get) => ({
     // Initial state
     status: "idle",
     queue: [],
@@ -413,7 +362,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
             if (!hydratedQueue.some((item) => item.status === "generating")) {
               void kickOffExecute()
             }
-            schedulePoll(set, get)
+            poller.schedule()
           }
         }
       } catch (err) {
@@ -484,11 +433,11 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
       // Start polling to reflect server-side progress in the UI
       prevQueueRef.current = freshQueue
-      schedulePoll(set, get)
+      poller.schedule()
     },
 
     cancelGenerateAll: async () => {
-      stopPolling()
+      poller.stop()
 
       const getStatus = getDocStatusRef.current
       set((s) => ({
@@ -519,6 +468,8 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       }
     },
   }))
+
+  return store
 }
 
 function areQueueItemsEqual(left: QueueItem[], right: QueueItem[]) {

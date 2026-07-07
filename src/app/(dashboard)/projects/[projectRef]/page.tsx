@@ -1,13 +1,9 @@
 import type { Metadata } from "next"
-import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import { ProjectWorkspace } from "@/components/workspace/project-workspace"
 import { APP_BRAND_NAME } from "@/lib/app-brand"
 import { buildProjectRef, parseProjectRef } from "@/lib/project-routing"
-import {
-  getProjectAllowanceStatus,
-  type ProjectAllowanceClient,
-} from "@/lib/project-allowance"
+import { getProjectAllowanceStatus } from "@/lib/project-allowance"
 import {
   DEFAULT_WORKSPACE_DOCUMENT,
   isWorkspaceDocumentType,
@@ -26,8 +22,7 @@ async function getProjectForCurrentUser(projectRef: string) {
     return null
   }
 
-  const supabase = await createClient()
-  const { user } = await getCurrentUser()
+  const { user, supabase } = await getCurrentUser()
 
   if (!user) {
     return null
@@ -65,14 +60,13 @@ export async function generateMetadata({ params }: { params: Promise<{ projectRe
 export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
   const { projectRef } = await params
   const resolvedSearchParams = await searchParams
-  const supabase = await createClient()
 
   const parsedProjectRef = parseProjectRef(projectRef)
   if (!parsedProjectRef) {
     notFound()
   }
 
-  const { user } = await getCurrentUser()
+  const { user, supabase } = await getCurrentUser()
 
   const projectId = parsedProjectRef.id
 
@@ -83,7 +77,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       .eq("id", user!.id)
       .single(),
     getProjectAllowanceStatus(
-      supabase as unknown as ProjectAllowanceClient,
+      supabase,
       user!.id
     ),
   ])

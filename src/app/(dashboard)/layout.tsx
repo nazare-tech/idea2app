@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { getCurrentUser } from "@/lib/supabase/current-user"
@@ -8,8 +7,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { user } = await getCurrentUser()
+  const { user, supabase } = await getCurrentUser()
 
   if (!user) {
     redirect("/auth")

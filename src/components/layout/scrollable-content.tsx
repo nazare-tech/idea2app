@@ -27,6 +27,7 @@ import {
 } from "@/components/analysis/planning-document-blocks"
 import { WorkspaceDocumentFrame as DocumentWrapper } from "@/components/layout/workspace-document-frame"
 import type { DocumentType } from "@/lib/document-definitions"
+import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
 import type { StreamStage } from "@/lib/parse-document-stream"
 import type {
   DocumentGenerationDisplayState,
@@ -235,6 +236,71 @@ function MockupProgressModule({
   )
 }
 
+// navKey -> owning document type, from the same registry the nav rail uses.
+// Containment for each deferred frame is derived from this mapping so a
+// section's active state can never drift from its nav item (AI Prompts, for
+// example, is sourced from the First Version Plan).
+const NAV_SOURCE_TYPES = new Map<string, DocumentType>(
+  SCROLLABLE_NAV_ITEMS.map((item) => [item.key, item.sourceType]),
+)
+
+/** One below-the-fold workspace document section. */
+interface DeferredSection {
+  navKey: string
+  label: string
+  /** Height estimate for content-visibility containment (containIntrinsicSize) */
+  intrinsicSize: string
+  /** Document whose loading/generating status drives skeletons and retries */
+  statusData?: DocumentData
+  /** AI Prompts also shows a skeleton while its other source (Product Plan) loads */
+  skeletonFallbackData?: DocumentData
+  hasContent: boolean
+  renderContent: () => React.ReactNode
+  /** Mockups render their own progress module instead of the generic status */
+  renderStatus?: (state: DocumentGenerationDisplayState) => React.ReactNode
+}
+
+/** Shared skeleton/content/status/empty fallback chain for deferred sections. */
+function DeferredSectionBody({
+  section,
+  renderDeferred,
+  onGenerateDocument,
+}: {
+  section: DeferredSection
+  renderDeferred: boolean
+  onGenerateDocument?: (docType: DocumentType) => void
+}) {
+  const { label, statusData, skeletonFallbackData } = section
+
+  if (!renderDeferred) {
+    return <DocumentSkeleton label={label} />
+  }
+
+  if (section.hasContent) {
+    return <>{section.renderContent()}</>
+  }
+
+  const displayState = statusData?.displayState
+  if (displayState && displayState.displayStatus !== "idle") {
+    if (section.renderStatus) {
+      return <>{section.renderStatus(displayState)}</>
+    }
+    return (
+      <GenerationStatusModule
+        label={label}
+        state={displayState}
+        onGenerateDocument={onGenerateDocument}
+      />
+    )
+  }
+
+  if (statusData?.isGenerating || statusData?.isLoading || skeletonFallbackData?.isLoading) {
+    return <DocumentSkeleton label={label} mode={getSkeletonMode(statusData ?? skeletonFallbackData)} />
+  }
+
+  return <EmptyState label={label} />
+}
+
 function MockupsSection({ content, projectId }: { content: string; projectId: string }) {
   return (
     <div>
@@ -268,6 +334,78 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
       return () => cancelAnimationFrame(id)
     }, [])
 
+    const deferredSections: DeferredSection[] = [
+      {
+        navKey: "market-research",
+        label: "Market Research",
+        intrinsicSize: "auto 2600px",
+        statusData: competitiveData,
+        hasContent: Boolean(competitiveData?.content),
+        renderContent: () => (
+          <CompetitiveDetailSection
+            content={competitiveData!.content!}
+            metadata={competitiveData!.metadata}
+            projectId={projectId}
+          />
+        ),
+      },
+      {
+        navKey: "prd",
+        label: "Product Plan",
+        intrinsicSize: "auto 3200px",
+        statusData: prdData,
+        hasContent: Boolean(prdData?.content),
+        renderContent: () => (
+          <PrdDocumentBlocks content={prdData!.content!} projectId={projectId} />
+        ),
+      },
+      {
+        navKey: "mvp",
+        label: "First Version Plan",
+        intrinsicSize: "auto 2800px",
+        statusData: mvpData,
+        hasContent: Boolean(mvpData?.content),
+        renderContent: () => (
+          <MvpPlanDocumentBlocks content={mvpData!.content!} projectId={projectId} />
+        ),
+      },
+      {
+        navKey: "mockups",
+        label: "Design Mockups",
+        intrinsicSize: "auto 1200px",
+        statusData: mockupsData,
+        hasContent: Boolean(mockupsData?.content),
+        renderContent: () => (
+          <MockupsSection content={mockupsData!.content!} projectId={projectId} />
+        ),
+        renderStatus: (state) => (
+          <MockupProgressModule
+            state={state}
+            draftOptions={mockupsData?.mockupDraftOptions}
+            onGenerateDocument={onGenerateDocument}
+          />
+        ),
+      },
+      {
+        // Derived from the Product Plan and First Version Plan; status follows
+        // the First Version Plan (its nav sourceType) with the Product Plan as
+        // the extra loading signal.
+        navKey: "ai-prompts",
+        label: "AI Prompts",
+        intrinsicSize: "auto 1800px",
+        statusData: mvpData,
+        skeletonFallbackData: prdData,
+        hasContent: Boolean(prdData?.content || mvpData?.content),
+        renderContent: () => (
+          <AiPromptsDocumentBlocks
+            prdContent={prdData?.content ?? null}
+            mvpContent={mvpData?.content ?? null}
+            projectId={projectId}
+          />
+        ),
+      },
+    ]
+
     return (
       <div
         ref={ref}
@@ -297,129 +435,20 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
 
         {/* All sections below are deferred to next animation frame */}
 
-        <DocumentWrapper
-          navKey="market-research"
-          performanceContain={activeDocument !== "competitive"}
-          intrinsicSize="auto 2600px"
-        >
-          {!renderDeferred ? (
-            <DocumentSkeleton label="Market Research" />
-          ) : competitiveData?.content ? (
-            <CompetitiveDetailSection
-              content={competitiveData.content}
-              metadata={competitiveData.metadata}
-              projectId={projectId}
-            />
-          ) : competitiveData?.displayState && competitiveData.displayState.displayStatus !== "idle" ? (
-            <GenerationStatusModule
-              label="Market Research"
-              state={competitiveData.displayState}
+        {deferredSections.map((section) => (
+          <DocumentWrapper
+            key={section.navKey}
+            navKey={section.navKey}
+            performanceContain={activeDocument !== NAV_SOURCE_TYPES.get(section.navKey)}
+            intrinsicSize={section.intrinsicSize}
+          >
+            <DeferredSectionBody
+              section={section}
+              renderDeferred={renderDeferred}
               onGenerateDocument={onGenerateDocument}
             />
-          ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
-            <DocumentSkeleton label="Market Research" mode={getSkeletonMode(competitiveData)} />
-          ) : (
-            <EmptyState label="Market Research" />
-          )}
-        </DocumentWrapper>
-
-        <DocumentWrapper
-          navKey="prd"
-          performanceContain={activeDocument !== "prd"}
-          intrinsicSize="auto 3200px"
-        >
-          {!renderDeferred ? (
-            <DocumentSkeleton label="Product Plan" />
-          ) : prdData?.content ? (
-            <PrdDocumentBlocks
-              content={prdData.content}
-              projectId={projectId}
-            />
-          ) : prdData?.displayState && prdData.displayState.displayStatus !== "idle" ? (
-            <GenerationStatusModule
-              label="Product Plan"
-              state={prdData.displayState}
-              onGenerateDocument={onGenerateDocument}
-            />
-          ) : prdData?.isGenerating || prdData?.isLoading ? (
-            <DocumentSkeleton label="Product Plan" mode={getSkeletonMode(prdData)} />
-          ) : (
-            <EmptyState label="Product Plan" />
-          )}
-        </DocumentWrapper>
-
-        <DocumentWrapper
-          navKey="mvp"
-          performanceContain={activeDocument !== "mvp"}
-          intrinsicSize="auto 2800px"
-        >
-          {!renderDeferred ? (
-            <DocumentSkeleton label="First Version Plan" />
-          ) : mvpData?.content ? (
-            <MvpPlanDocumentBlocks
-              content={mvpData.content}
-              projectId={projectId}
-            />
-          ) : mvpData?.displayState && mvpData.displayState.displayStatus !== "idle" ? (
-            <GenerationStatusModule
-              label="First Version Plan"
-              state={mvpData.displayState}
-              onGenerateDocument={onGenerateDocument}
-            />
-          ) : mvpData?.isGenerating || mvpData?.isLoading ? (
-            <DocumentSkeleton label="First Version Plan" mode={getSkeletonMode(mvpData)} />
-          ) : (
-            <EmptyState label="First Version Plan" />
-          )}
-        </DocumentWrapper>
-
-        <DocumentWrapper
-          navKey="mockups"
-          performanceContain={activeDocument !== "mockups"}
-          intrinsicSize="auto 1200px"
-        >
-          {!renderDeferred ? (
-            <DocumentSkeleton label="Design Mockups" />
-          ) : mockupsData?.content ? (
-            <MockupsSection content={mockupsData.content} projectId={projectId} />
-          ) : mockupsData?.displayState && mockupsData.displayState.displayStatus !== "idle" ? (
-            <MockupProgressModule
-              state={mockupsData.displayState}
-              draftOptions={mockupsData.mockupDraftOptions}
-              onGenerateDocument={onGenerateDocument}
-            />
-          ) : mockupsData?.isGenerating || mockupsData?.isLoading ? (
-            <DocumentSkeleton label="Design Mockups" mode={getSkeletonMode(mockupsData)} />
-          ) : (
-            <EmptyState label="Design Mockups" />
-          )}
-        </DocumentWrapper>
-
-        <DocumentWrapper
-          navKey="ai-prompts"
-          performanceContain={activeDocument !== "mvp"}
-          intrinsicSize="auto 1800px"
-        >
-          {!renderDeferred ? (
-            <DocumentSkeleton label="AI Prompts" />
-          ) : prdData?.content || mvpData?.content ? (
-            <AiPromptsDocumentBlocks
-              prdContent={prdData?.content ?? null}
-              mvpContent={mvpData?.content ?? null}
-              projectId={projectId}
-            />
-          ) : mvpData?.displayState && mvpData.displayState.displayStatus !== "idle" ? (
-            <GenerationStatusModule
-              label="AI Prompts"
-              state={mvpData.displayState}
-              onGenerateDocument={onGenerateDocument}
-            />
-          ) : mvpData?.isGenerating || mvpData?.isLoading || prdData?.isLoading ? (
-            <DocumentSkeleton label="AI Prompts" mode={getSkeletonMode(mvpData ?? prdData)} />
-          ) : (
-            <EmptyState label="AI Prompts" />
-          )}
-        </DocumentWrapper>
+          </DocumentWrapper>
+        ))}
 
       </div>
     )
