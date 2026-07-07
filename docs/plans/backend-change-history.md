@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-06: UI performance round 2 server billing and cached auth lookup
+
+- Plan: [docs/plans/ui-performance-round-2-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/ui-performance-round-2-plan.md)
+- Review: [docs/plans/ui-performance-round-2-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/ui-performance-round-2-review.md)
+- Durable source of truth: `src/app/(dashboard)/billing/page.tsx`, `src/lib/billing-page-data.ts`, `src/components/pricing/billing-plans-client.tsx`, `src/components/pricing/manage-subscription-button.tsx`, and `src/lib/supabase/current-user.ts`.
+- Schema or data-shape changes: None. `plans`, `plan_prices`, `subscriptions`, and project allowance data keep their existing shapes; billing DTOs only normalize selected fields for the page boundary.
+- Auth, RLS, or permission changes: No RLS or permission changes. Dashboard pages now share a cached per-request `getCurrentUser()` helper around the existing Supabase server `auth.getUser()` call.
+- Runtime/API behavior changes: `/billing` now fetches plans, active subscription, and allowance in a server component before rendering client islands for interval selection, checkout, and portal access. Stripe checkout and portal API routes were not changed.
+- Migration or deployment steps: None.
+- Verification: Focused tests, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, static landing preview capture generation, and real local UI verification are recorded in the review artifact. `/billing` rendered signed-in content with no loading spinner in `ui-evidence/2026-07-07/ui-performance-round-2/billing-desktop.png`.
+- Rollback or recovery: Revert the billing page/client-island split and cached current-user helper usage. No database rollback is needed.
+- Follow-ups: None required.
+
 ## 2026-07-02: Mockup backend bugfixes
 
 - Plan: [docs/plans/mockup-backend-bugfixes-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/mockup-backend-bugfixes-plan.md)

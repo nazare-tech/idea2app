@@ -1,88 +1,77 @@
 ---
-implemented: false
-implemented_at: null
-implementation_summary: null
+implemented: true
+implemented_at: 2026-07-06T17:55:04-07:00
+implementation_summary: "Implemented all nine UI Performance Round 2 items: desktop-gated optimized landing hero, static landing preview captures with a live-preview dev flag, Generate All polling backoff and hidden-tab pause, server-rendered billing with client islands, font weight trimming, AVIF/WebP image optimizer formats, workspace content-visibility containment, cached server current-user lookup, and quantized testimonial blur updates."
 ---
 
-# UI Performance Round 2 — Backlog Plan (not yet implemented)
+# UI Performance Round 2 — Implemented Plan
 
 ## Goal
 
-Catalog the remaining UI performance opportunities found after the 2026-07-06 first pass (lazy WebGL loader, gated hero rAF loop, memoized MarkdownRenderer, cached landing user count, parallel billing fetches, Supabase preconnect). This is a decision-ready backlog: each item has evidence, expected impact, effort, and risk. **Nothing here is implemented yet.**
+Implement the remaining UI performance opportunities found after the 2026-07-06 first pass. The work focuses on the landing page's mobile bandwidth, workspace steady-state CPU/layout cost, billing first render, repeated server auth lookups, and small animation/font/image optimizer wins.
 
 ## Assumptions
 
 - Landing page is the highest-traffic surface; mobile bandwidth and LCP matter most there.
-- Workspace sessions are long-lived; steady-state CPU (polling, layout cost of huge documents) matters more than initial load there.
-- No new dependencies unless an item explicitly says so.
+- Workspace sessions are long-lived; steady-state CPU from polling and huge document layout matters more than one-time load cost.
+- No new runtime dependencies should be added.
+- The Supabase preconnect noted in the first pass was already present and was preserved, not reimplemented.
 
-## Findings and Proposed Improvements (priority order)
+## Clarifying Questions
 
-### 1. Stop shipping 1.2MB of hero PNGs to phones (High impact, Low effort)
-**Evidence:** `public/landing/hero/` is 1.2MB across 16 layered PNGs. `HeroArtwork` renders them with `loading="eager"` + `unoptimized`, and the container is `hidden lg:block`. CSS hiding does not prevent download: every mobile visitor pays 1.2MB for artwork they never see.
-**Proposal:** Render the layer `<Image>`s only when `matchMedia("(min-width: 1024px)")` matches (client gate with a null initial render; the box is already `aria-hidden` decoration so no SEO/CLS concern). Separately, re-export the layers as WebP (expect 60-80% smaller) or drop `unoptimized` so next/image serves WebP/AVIF variants.
-**Risk:** Low. Watch for a flash on desktop first paint (mitigate: keep SSR render for lg via a `<link rel="preload" media="(min-width:1024px)">` or accept one-frame pop-in on an already-animated decoration).
+No blocking clarification was required. Per repo rules, Recommendation A was selected for the two open decisions.
 
-### 2. Replace the five landing feature iframes with static captures (High impact, Medium effort)
-**Evidence:** `FeatureProductPreview` embeds `/landing-preview/[navKey]` in an `<iframe loading="lazy">` five times. Each iframe boots a full Next.js page: framework JS, hydration, fonts, and styles, times five, on the marketing page. `public/landing/samples/` (2.8MB) feeds these previews.
-**Proposal:** Extend the existing `scripts/export-landing-sample.mjs` flow to also capture build-time screenshots of each preview route (Playwright is already used in `output/playwright/`), then swap iframes for `next/image` with proper `sizes`. Keep the iframe path behind a dev flag for design iteration.
-**Risk:** Medium. Loses the "live UI" authenticity and the crop/active-section params must be baked into the captures; screenshots go stale if workspace UI changes (mitigate: regenerate in the same script that exports sample content).
+## Recommendation Choices
 
-### 3. Pause and back off Generate All polling (Medium impact, Low effort)
-**Evidence:** `generate-all-store.ts` polls `/api/generate-all/status` on a fixed 3s `setTimeout` loop while a queue is active. There is no `visibilitychange` handling: a hidden tab keeps polling every 3s for the entire multi-minute generation run.
-**Proposal:** Pause the loop when `document.hidden`, poll immediately on `visibilitychange` back to visible, and step the interval up for long runs (3s for the first ~2 min, then 6-10s). Server-side execution is already durable, so slower polling only delays UI refresh, not generation.
-**Risk:** Low. Keep the immediate poll-on-focus so returning users see fresh state instantly.
+- **Landing previews:** Selected Recommendation A, static captures everywhere. Live iframe previews are retained only behind `NEXT_PUBLIC_LANDING_LIVE_PREVIEWS=1` for local design iteration.
+- **Font weights:** Selected Recommendation A, keep weight 800 and remove weight 900 usage. Weight 300 was dropped because it had no usage.
 
-### 4. Convert /billing to a server component with client islands (Medium impact, Medium effort)
-**Evidence:** `src/app/(dashboard)/billing/page.tsx` is fully client-rendered: users see a spinner while the browser runs auth + three queries (now parallel, but still client round trips after JS loads).
-**Proposal:** Fetch plans, subscription, and allowance in a server component (the dashboard layout already resolves the user server-side) and pass them to a client island that owns only the interval toggle and checkout/portal buttons. Removes the spinner flash and cuts client JS.
-**Risk:** Medium. Checkout state machine and `useBillingPortal` stay client-side; keep the shared `PlanCard`/`BillingIntervalToggle` components as-is (they already work in both worlds).
+## Implementation Phases
 
-### 5. Trim loaded font weights (Small impact, Trivial effort)
-**Evidence:** `layout.tsx` loads Hanken Grotesk in 7 weights (300-900). Usage across `src/`: 400 (3), 500 (85), 600 (117), 700 (55), 800 (5), 900 (2), and **zero** uses of 300. globals.css only pins 400/500.
-**Proposal:** Drop 300 outright. Migrate the 7 uses of `font-extrabold`/`font-black` to 700 or 800 and drop the other, ending at 4-5 weights. Fewer font files on every page of the app.
-**Risk:** Low. Visual check on the two `font-black` usages (billing summary numerals) and five `font-extrabold` spots.
+1. **Landing bandwidth:** Implemented desktop media gating for hero artwork, removed `unoptimized`, added AVIF/WebP optimizer formats, generated five static preview captures, and replaced production feature iframes with `next/image` captures.
+2. **Workspace and polling:** Implemented Generate All polling backoff and visibility pause/resume. Added `content-visibility: auto` plus `contain-intrinsic-size` to inactive heavy workspace document frames and updated scroll navigation to perform exact two-phase jumps when containment is involved.
+3. **Billing and auth:** Converted `/billing` to a server component for initial data, split interval/checkout/portal controls into client islands, added billing DTO helpers, and introduced cached `getCurrentUser()` for dashboard layout/pages.
+4. **Small wins:** Trimmed Hanken Grotesk weights, migrated the `font-black` billing usage to `font-extrabold`, and quantized testimonial blur updates.
+5. **Documentation and verification:** Updated `PROJECT_CONTEXT.md`, generated static preview artifacts, captured UI evidence, and recorded review notes in `docs/plans/ui-performance-round-2-review.md`.
 
-### 6. Enable AVIF in the image optimizer (Small impact, Trivial effort)
-**Evidence:** `next.config.ts` has no `images.formats` entry, so next/image serves WebP at best. The 2.8MB of sample screenshots and mockup images are the main beneficiaries.
-**Proposal:** `images: { formats: ["image/avif", "image/webp"] }`. AVIF typically saves another 20-40% on screenshots.
-**Risk:** Low. First-hit transform cost on Vercel; cached afterward.
+## Architecture Improvement Opportunities
 
-### 7. content-visibility for below-the-fold workspace documents (Medium impact, Medium effort)
-**Evidence:** `ScrollableContent` defers below-fold sections by one animation frame at mount, but after that every generated document (often thousands of DOM nodes each) stays in the layout/paint tree for the life of the session.
-**Proposal:** Apply `content-visibility: auto` with a rough `contain-intrinsic-size` to off-screen document sections so the browser skips their layout/paint work during scrolling and mutations.
-**Risk:** Medium. Must not break hash-anchor navigation (`#executive-summary` etc.), the scroll-sync IntersectionObserver, or scroll-position restoration; needs manual testing on a project with all documents generated. Find-in-page inside skipped sections still works in Chromium but verify the nav-jump UX.
+| Opportunity | Benefit | Trade-off | Boundary | Status |
+|---|---|---|---|---|
+| Static landing preview capture pipeline | Removes five live iframe app boots from the marketing page | Captures can become stale | `scripts/export-landing-sample.mjs`, `/landing-preview`, `FeatureProductPreview` | Selected and implemented |
+| Server billing split | Removes spinner-first billing render and reduces client work | Requires DTO normalization between server and client | `/billing`, pricing components, `billing-page-data.ts` | Selected and implemented |
+| Cached server current user | Avoids repeated Supabase auth user calls within one request | Must stay request-scoped | dashboard layout/pages, `current-user.ts` | Selected and implemented |
+| Workspace content containment | Reduces layout/paint work for large inactive documents | Anchor/hash behavior must be preserved | `ScrollableContent`, `WorkspaceDocumentFrame`, scroll sync hook | Selected and implemented |
+| Polling backoff and visibility pause | Reduces hidden-tab network churn without changing durable server execution | Freshness delay grows during long visible runs | `generate-all-store.ts` | Selected and implemented |
+| Blur update quantization | Reduces SVG filter invalidations | Tiny visual approximation | `testimonial-band.tsx` | Selected and implemented |
 
-### 8. Deduplicate server-side auth lookups per request (Small impact, Low effort)
-**Evidence:** The dashboard layout calls `supabase.auth.getUser()` and pages like `/projects` call it again in the same request; each is a network call to Supabase from the server.
-**Proposal:** Wrap the server-side "current user" lookup in React `cache()` so layout + page share one call per request.
-**Risk:** Low. Scope strictly per-request (React cache already is); no behavior change.
+## Test Strategy And Results
 
-### 9. Quantize the testimonial dot blur updates (Tiny impact, Low effort)
-**Evidence:** `testimonial-band.tsx` writes `feGaussianBlur stdDeviation` every animation frame while the dot travels; each write forces an SVG filter re-rasterization. The animation is short and IntersectionObserver-gated, so total cost is bounded.
-**Proposal:** Quantize `stdDeviation` to ~4 buckets (skip the write when the bucket is unchanged), keeping the visual identical at a fraction of the filter invalidations.
-**Risk:** Low. Purely decorative; verify the settle-to-round frame still looks right.
+- `node --import tsx --test src/stores/generate-all-store.test.ts src/components/layout/workspace-document-frame.test.tsx src/components/layout/scrollable-content.test.tsx` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed with one existing unrelated warning in `output/playwright/prod-full-flow.mjs`.
+- `npm test` passed.
+- `npm run build` passed after rerunning outside the sandbox; the first sandboxed attempt failed on a Turbopack port bind permission error.
+- `LANDING_PREVIEW_BASE_URL=http://localhost:3000 node scripts/export-landing-sample.mjs --capture-previews-only` generated all five static preview PNGs under `public/landing/samples/previews/`.
+- Real local UI verification against `http://localhost:3000` confirmed: mobile landing has zero hero-layer images, zero preview iframes, and no hero/preview image requests; desktop features render five static preview images and zero preview iframes or `/landing-preview` requests; `/billing` renders signed-in content with no loading spinner.
 
-## Suggested Sequencing
+## UI Evidence
 
-1. Quick wins batch: items 5, 6, 8, 3 (one small PR, low risk).
-2. Landing bandwidth batch: items 1, then 2 (largest user-facing wins; item 2 needs the screenshot pipeline).
-3. Workspace/billing batch: items 4 and 7 (each its own PR with browser verification).
-4. Item 9 only if touching the testimonial band anyway.
+- `ui-evidence/2026-07-07/ui-performance-round-2/landing-mobile-top.png` — `/`, 375px mobile viewport, no hidden hero/preview requests.
+- `ui-evidence/2026-07-07/ui-performance-round-2/landing-desktop-features.png` — `/#features`, 1440px desktop viewport, five static preview images.
+- `ui-evidence/2026-07-07/ui-performance-round-2/billing-desktop.png` — `/billing`, 1440px desktop viewport, signed-in server-rendered billing content.
 
-## Validation (when implemented)
+## Rollback Or Recovery
 
-- Lighthouse mobile run on `/` before/after items 1-2 (LCP, total bytes; expect multi-hundred-KB reductions).
-- Network panel: confirm zero hero PNG requests at 375px width; confirm no `/landing-preview` document requests after item 2.
-- DevTools performance trace on a fully generated workspace before/after item 7.
-- Background tab: confirm status polling stops while hidden and resumes on focus (item 3).
-- `npm run build`, lint, tests, and real-browser checks per project rules.
+- Landing preview rollback: set `NEXT_PUBLIC_LANDING_LIVE_PREVIEWS=1` to use the preserved iframe implementation, or revert `FeatureProductPreview` and the generated preview images.
+- Billing rollback: restore the prior client page if a server data contract regression appears; checkout and portal endpoints were not changed.
+- Workspace rollback: remove `performanceContain` props from `ScrollableContent` while keeping the scroll-sync improvements.
+- Polling rollback: set `getGenerateAllPollDelayMs()` to always return `3000` and remove the visibility listener.
 
-## Risks / Rollback
+## Candid Critique
 
-- Each item ships as its own commit; revert individually. Items 2 and 7 are behavior-visible and should get their own plan-file updates with browser evidence when implemented.
-
-## Open Decisions
-
-- Item 2: accept static screenshots vs keep live iframes on desktop only (recommendation: static everywhere; the scaled-down live UI is indistinguishable from a capture at that size).
-- Item 5: keep 800 and drop 900, or migrate both to 700 (recommendation: keep 800, migrate the two 900 uses).
+- **Architecture:** The static capture pipeline creates a new artifact freshness responsibility; keeping it in the existing sample export script limits that risk.
+- **Product:** Static previews are visually equivalent at landing-card size and better for visitors, but they no longer reflect runtime UI changes automatically.
+- **Customer:** Billing now avoids the spinner flash and lands on useful account content sooner.
+- **Engineering:** The workspace containment change is the riskiest interaction area; tests cover the containment props and rendered-frame behavior, and UI/manual follow-up should focus on hash jumps in a fully generated project.
+- **Risk/Security:** No RLS, webhook, checkout validation, or durable data model behavior was weakened. The billing page still scopes data to the authenticated user and leaves Stripe actions in existing API routes.

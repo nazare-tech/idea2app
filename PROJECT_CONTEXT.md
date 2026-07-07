@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md
 
-**Last Updated**: 2026-07-06 (shared pricing components across landing/billing + UI performance pass)
+**Last Updated**: 2026-07-06 (UI performance round 2: static landing captures, server billing, workspace/polling optimizations)
 **Project**: Maker Compass - AI-Powered Business Analysis Platform
 
 ---
@@ -29,15 +29,15 @@
   - Dynamic CTA mode based on current `profiles` count
   - Public `waitlist` table for email capture
   - Shared `WaitlistForm` component on the landing page
-  - Figma-matched desktop hero artwork from layered raster assets in `public/landing/hero/*`, rendered by `HeroArtwork` with pointer parallax and scroll scatter/fade motion (reduced-motion guarded); the hero section uses `overflow-x-clip` so the sticky notes stay visible below the hero boundary without a horizontal scrollbar
+  - Figma-matched desktop hero artwork from layered raster assets in `public/landing/hero/*`, rendered by `HeroArtwork` with a client-side desktop media gate, `next/image` optimization, pointer parallax, and scroll scatter/fade motion (reduced-motion guarded); mobile visitors do not render or request the hidden hero layers
   - Landing pricing grid is the client `PricingSection` component with a Monthly/Yearly toggle (15% yearly discount math) and detailed per-plan feature rows; card CTAs open the signup modal (waitlist anchor in waitlist mode). It renders through the shared pricing components (see Shared UI Architecture): plan copy from `src/lib/pricing-plans.ts` and cards from `src/components/pricing/plan-card.tsx`, the same components the billing page uses, so plan copy edits update both surfaces at once
-  - Five feature sections render through the client `FeatureCard` component (scroll-triggered reveal: staggered bottom-up text fade-in, visual fades in scaling 80%→100%, reduced-motion guarded) with live product UI previews via `FeatureProductPreview`, `/landing-preview/[navKey]`, `WorkspaceScreenshot`, `SamplePreviewDocument`, and exported sample content in `src/lib/landing-sample-content.ts`
-  - Testimonial band dot animation elongates and directionally blurs the traveling dot by speed (SVG ellipse + per-frame `feGaussianBlur`), settling round at rest
+  - Five feature sections render through the client `FeatureCard` component (scroll-triggered reveal: staggered bottom-up text fade-in, visual fades in scaling 80%→100%, reduced-motion guarded) with optimized static `next/image` preview captures from `public/landing/samples/previews/`. The capture source remains `/landing-preview/[navKey]` with `WorkspaceScreenshot`, `SamplePreviewDocument`, and exported sample content in `src/lib/landing-sample-content.ts`; live iframe previews are only enabled when `NEXT_PUBLIC_LANDING_LIVE_PREVIEWS=1`.
+  - Testimonial band dot animation elongates and directionally blurs the traveling dot by speed (SVG ellipse + quantized `feGaussianBlur` updates), settling round at rest
   - Public `/contact`, `/privacy`, and `/terms` pages share `InfoPageShell` (`src/components/landing/info-page-shell.tsx`); the support address lives in `src/lib/support.ts` (`SUPPORT_EMAIL`, placeholder until the real inbox exists)
   - One shared public-site footer (`src/components/landing/site-footer.tsx`) is used by the landing page and all info pages: brand, Product (Features/Pricing/FAQ), Help (Contact), and a bottom bar with Privacy/Terms. It intentionally has no Sign In / Get Started column; those CTAs live in the header and hero only
   - Landing FAQ section (`src/components/landing/faq-section.tsx`): six native details/summary rows at `#faq`, linked from the header nav and footer
   - Landing buttons standardize on `rounded-md`; the design file's sharp bottom CTA was aligned to the rest of the page
-  - `scripts/export-landing-sample.mjs` exports sample document/mockup content from a real project and copies storyboard images to `public/landing/samples/`
+  - `scripts/export-landing-sample.mjs` exports sample document/mockup content from a real project, copies storyboard images to `public/landing/samples/`, and can capture static feature preview PNGs from the local `/landing-preview/[navKey]` routes with `--capture-previews` or `--capture-previews-only`
   - Authenticated visitors to `/` are redirected to `/projects`
   - Fail-open API behavior so CTA rendering does not block on Supabase errors
 - **OpenRouter Image Mockups**: Mockup generation uses OpenRouter image storyboards end to end. Legacy Stitch HTML previews have been removed; if an old Stitch-format row is encountered before production data cleanup, the renderer shows a safe "Legacy mockup format" regeneration notice instead of fetching or rendering HTML. Features:
@@ -54,7 +54,7 @@
 - **Paid-only Project Deletion**: The Projects dashboard renders `DashboardProjectCard` cards with hover/focus workspace warming and delete controls. `DELETE /api/projects/[id]` is ownership-scoped, metrics-tracked, and blocked for Free plan users; the UI shows an upgrade prompt before paid-plan-only deletion.
 - **Generate-Missing-Only Documents**: Planning documents are active singletons by default. Direct generation routes and Generate All/onboarding execution check for an existing active document before credits or external AI calls; duplicate attempts return/record a skipped existing output instead of inserting another row. Future document versioning must be a separate explicit product action.
 - **Dashboard Generation Status**: The project dashboard derives document loading states from the durable Generate All/onboarding queue, not only local browser flags. The left document rail shows compact queued/waiting/generating/ready indicators plus dark `Generate` buttons for missing idle modules and dark `Retry` buttons only for modules that actually failed. Queue items blocked by a failed/missing prerequisite show `Waiting`, not `Retry`, until the prerequisite content exists. The right document modules show queued/waiting/loading states, centered retry placeholders with a user-friendly error message and wider dark `Retry` action, or canonical saved content. Product Plan and First Version Plan no longer show partial streaming previews in the workspace; they show loading/generating states until the saved document is ready. Overview and Market Research share the same competitive-analysis generation state, so a retry from either section moves both rail items together.
-- **Lazy Workspace Loading**: Project workspaces use slugged project refs at `/projects/[projectRef]` and lazy-load owned document collections through `/api/projects/[id]/workspace`. The workspace requests only the document types it needs, keeps section hash navigation in sync, and defers below-the-fold rendering to avoid freezing large generated documents.
+- **Lazy Workspace Loading**: Project workspaces use slugged project refs at `/projects/[projectRef]` and lazy-load owned document collections through `/api/projects/[id]/workspace`. The workspace requests only the document types it needs, keeps section hash navigation in sync, defers below-the-fold rendering to avoid freezing large generated documents, and applies `content-visibility: auto` plus `contain-intrinsic-size` to inactive below-the-fold document frames while keeping the currently active source document fully visible for anchor navigation.
 - **Prompt/Inline Edit Cleanup**: The Prompt tab remains deprecated and `/api/prompt-chat` returns `410 Gone`. The old inline "Edit with AI" client surface and `/api/document-edit` route are not present in the current app. The per-document PATCH routes (`/api/analyses/[id]`, `/api/prds/[id]`, `/api/mvp-plans/[id]`, `/api/tech-specs/[id]`) had no remaining callers and were removed on 2026-07-05.
 
 ### User Workflow
@@ -216,7 +216,7 @@
    - Client calls `startGenerateAll()` in `generate-all-store.ts`
    - Store persists queue to DB via `POST /api/generate-all/start`
    - Store fires `POST /api/generate-all/execute` as fire-and-forget (server runs up to 540s even if user closes tab)
-   - Store polls `GET /api/generate-all/status` every 3s to reflect server-side progress
+   - Store polls `GET /api/generate-all/status` with a visibility-aware cadence: every 3s initially, backing off to 6s after 2 minutes and 10s after 8 minutes, pausing while the tab is hidden and polling immediately when the tab becomes visible again
    - When server marks a step "done", store calls `onStepComplete()` → `router.refresh()` to reload the document
    - The workspace consumes hydrated queue items to keep left-panel and right-panel document states stable across refresh, browser back/forward, and returning to a project. Content existence wins over stale queue state; Product Plan and First Version Plan current-session stream previews can render in the right panel when available, while background queues fall back to durable generating status until saved content exists.
    - The old idle public "Generate All" button is deprecated. The workspace only shows the Generate All status/retry panel while a queue is active, partial, cancelled, or errored.
@@ -283,7 +283,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 - **`DashboardShell`** — authenticated app shell rendered by `src/app/(dashboard)/layout.tsx`; receives the current user profile server-side and keeps credit balances out of the visible shell.
 - **`ProjectHeader`** — per-project header with editable project name and account affordances.
 - **`AnchorNav`** — scroll-aware document rail. It renders `Queued`, `Generating`, `Needs retry`, or ready check marks from `DocumentGenerationDisplayState`.
-- **`ScrollableContent`** — renders Overview, Market Research, Product Plan, First Version Plan, and Design Mockups as stacked sections. It defers below-the-fold sections by one animation frame and uses generation placeholders when content is not saved yet.
+- **`ScrollableContent`** — renders Overview, Market Research, Product Plan, First Version Plan, and Design Mockups as stacked sections. It defers below-the-fold sections by one animation frame, applies browser `content-visibility` containment to inactive heavy documents, and uses generation placeholders when content is not saved yet.
 - **`ProjectWorkspace`** — slim orchestrator component for the workspace shell and render mapping. Hooks own the heavy behavior: `useWorkspaceDocuments` for lazy `/workspace` loading, `usePersistedGenerationState` for local generation flags, `useWorkspaceScrollSync` for hash/scroll state, `useGenerateAllHydration` for store selectors, and `useDocumentGeneration` for manual document/mockup generation.
 
 ### Shared UI Architecture
@@ -297,8 +297,9 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 - **Deprecated chat cleanup** — the old Prompt Chat UI and general chat component are removed from the app tree; `/api/prompt-chat` remains as a minimal `410 Gone` endpoint so external callers receive the documented deprecation response.
 - **Stacked tab navigation** — `src/components/layout/stacked-tab-nav.tsx` renders the left-side stacked tab pattern; it is currently used by the Preferences page (project document navigation uses the scroll-aware `AnchorNav` instead).
 - **Shared authenticated page shell** — dashboard-level pages such as Projects, Billing, and Preferences use `src/components/layout/app-page-shell.tsx` for consistent page width, responsive padding, heading hierarchy, and action placement.
+- **Shared server current-user lookup** — dashboard layouts/pages use `getCurrentUser()` from `src/lib/supabase/current-user.ts`, which wraps the Supabase server `auth.getUser()` call in React `cache()` so layout and page code share one auth lookup per request.
 - **Shared account utilities** — credit formatting, billing portal navigation, brand wordmark rendering, and auth sign-out are centralized in shared utilities/hooks/components and reused across dashboard header/sidebar, billing, settings, and auth views.
-- **Shared pricing surface** — plan display copy (names, feature lists, included labels, highlight/CTA treatment, 15% yearly discount) lives once in `src/lib/pricing-plans.ts`; the landing `PricingSection` and the billing page "Available Plans" grid both render through `src/components/pricing/plan-card.tsx` (sharp corners on landing, rounded inside the dashboard) and `src/components/pricing/billing-interval-toggle.tsx`. The database (`plans` + `plan_prices`) stays authoritative for checkout: plan ids, Stripe price ids, and charged amounts. The billing page filters `plan_prices` to `is_active` rows, maps a page-level Monthly/Yearly toggle to interval rows, opens on the interval the user is billed on, and treats the Free card as the current plan when no subscription exists.
+- **Shared pricing surface** — plan display copy (names, feature lists, included labels, highlight/CTA treatment, 15% yearly discount) lives once in `src/lib/pricing-plans.ts`; the landing `PricingSection` and the billing page "Available Plans" grid both render through `src/components/pricing/plan-card.tsx` (sharp corners on landing, rounded inside the dashboard) and `src/components/pricing/billing-interval-toggle.tsx`. The database (`plans` + `plan_prices`) stays authoritative for checkout: plan ids, Stripe price ids, and charged amounts. The billing page is a server component for initial plans/subscription/allowance data and uses client islands for the interval toggle, checkout button state, and Stripe portal button. It filters `plan_prices` to `is_active` rows, maps a page-level Monthly/Yearly toggle to interval rows, opens on the interval the user is billed on, and treats the Free card as the current plan when no subscription exists.
 
 ### Key Design Patterns
 
@@ -307,7 +308,7 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 3. **Proxy-based Auth Session Refresh**: `src/proxy.ts` delegates to `src/lib/supabase/middleware.ts` to refresh Supabase auth cookies; dashboard route protection also happens in `src/app/(dashboard)/layout.tsx`
 4. **Credit System with Database Functions**: PostgreSQL stored procedures for atomic credit operations
 5. **In-House Analysis Pipelines**: Competitive analysis uses a 3-step pipeline (Perplexity → Tavily → OpenRouter) with retry logic on external calls; Product Plan, First Version Plan, and Tech Spec use direct OpenRouter calls with detailed prompts. Product Plan uses a shared request helper that matches Prompt Lab defaults and passes the full latest Market Research document through the secure prompt builder; First Version Plan uses a shared request helper that matches Prompt Lab defaults and passes the full latest Product Plan document through the secure prompt builder. OpenRouter long-form text synthesis uses a shared `240s` abort timeout for most text artifacts and a `480s` planning-document timeout for Product Plan and First Version Plan, leaving buffer under the 540s route envelope. Credits are refunded through the service-role `refund_credits` RPC on generation failure.
-6. **Server-Side Generate All**: "Generate All" orchestration runs on the server (`/api/generate-all/execute`, `maxDuration=540`) instead of in the browser. Normalized `generation_queue_items` rows track per-document status, dependencies, retries, credit state, and output IDs; `generation_queues.queue` remains a synchronized compatibility snapshot. Queue mutations use trusted server routes/service role after user/project authorization. The Zustand store fires the execute request fire-and-forget and polls DB every 3s. This makes generation durable across tab close, refresh, and network interruptions.
+6. **Server-Side Generate All**: "Generate All" orchestration runs on the server (`/api/generate-all/execute`, `maxDuration=540`) instead of in the browser. Normalized `generation_queue_items` rows track per-document status, dependencies, retries, credit state, and output IDs; `generation_queues.queue` remains a synchronized compatibility snapshot. Queue mutations use trusted server routes/service role after user/project authorization. The Zustand store fires the execute request fire-and-forget and polls DB with a tab-visibility-aware 3s/6s/10s backoff cadence. This makes generation durable across tab close, refresh, and network interruptions without burning hidden-tab polling cycles.
 7. **TypeScript-First**: Strict typing throughout, auto-generated database types
 8. **Component Composition**: Radix UI primitives + CVA for variants
 9. **Optimistic UI Updates**: Immediate feedback with graceful error handling
@@ -1166,7 +1167,7 @@ docker run -p 3000:3000 idea2app
 - **GET /api/generate-all/status**: Poll for queue progress
   - Query: `?projectId=xxx`
   - Returns `{ queue: generation_queues_row }` with the queue/current index/status derived from normalized item rows so polling sees in-progress item changes
-  - Called every 3s by the Zustand store while generation is running; idle manual Generate All controls are no longer rendered, but the status/retry panel appears for active or terminal queue states
+  - Called by the Zustand store while generation is running with a 3s/6s/10s backoff cadence; polling pauses while the document is hidden and resumes immediately on visibility return. Idle manual Generate All controls are no longer rendered, but the status/retry panel appears for active or terminal queue states
 
 - **GET /api/projects/[id]/onboarding-status**: Poll new-project loading progress
   - Query: `?runId=xxx`
@@ -1258,7 +1259,7 @@ docker run -p 3000:3000 idea2app
 - **Checkout Flow**: Server-side redirect to Stripe-hosted checkout (no Stripe.js Elements needed); selected interval comes from `plan_prices`
 - **Customer Portal Configuration**: Use the default Stripe Customer Portal configuration for the active Stripe mode; production portal settings are configured in the Stripe Dashboard
 - **Webhook Processing**: Uses `SUPABASE_SERVICE_ROLE_KEY` (service role) to bypass RLS for subscription and credit updates; `stripe_webhook_events` deduplicates processed events while allowing failed/stale processing rows to be retried, and `stripe_credit_grants`/`grant_subscription_credits_once()` deduplicates credit grants per subscription period
-- **Billing UI**: `src/app/(dashboard)/billing/page.tsx` — displays plan cards, interval selectors, current subscription, project allowance usage, and upgrade/manage-subscription actions
+- **Billing UI**: `src/app/(dashboard)/billing/page.tsx` — server-renders current subscription, project allowance usage, and initial plan data, then delegates interval selectors, checkout state, and upgrade/manage-subscription actions to client islands
 
 ---
 
@@ -1395,8 +1396,12 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/dev/prompt-lab/drafts/route.ts](src/app/api/dev/prompt-lab/drafts/route.ts) | Dev-only endpoint for listing and saving Prompt Lab prompt drafts |
 | [src/app/api/dev/prompt-lab/runs/route.ts](src/app/api/dev/prompt-lab/runs/route.ts) | Dev-only endpoint for listing recent Prompt Lab runs |
 | [src/app/api/dev/prompt-lab/mockup-image/route.ts](src/app/api/dev/prompt-lab/mockup-image/route.ts) | Dev-only proxy for private mockup images associated with Prompt Lab runs |
-| [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering, authenticated-user redirect, and Figma-matched hero artwork |
-| [src/components/landing/hero-artwork.tsx](src/components/landing/hero-artwork.tsx) | Desktop-only layered raster hero artwork using assets from `public/landing/hero/` |
+| [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering, authenticated-user redirect, desktop-gated hero artwork, and static feature preview captures |
+| [src/components/landing/hero-artwork.tsx](src/components/landing/hero-artwork.tsx) | Desktop-gated layered raster hero artwork using optimized `next/image` assets from `public/landing/hero/` |
+| [src/components/landing/feature-product-preview.tsx](src/components/landing/feature-product-preview.tsx) | Landing feature visual renderer using static optimized captures from `public/landing/samples/previews/`, with a live-preview dev flag |
+| [src/components/landing/feature-product-preview-live.tsx](src/components/landing/feature-product-preview-live.tsx) | Dev-only live iframe preview renderer used when `NEXT_PUBLIC_LANDING_LIVE_PREVIEWS=1` |
+| [src/app/landing-preview/[navKey]/page.tsx](src/app/landing-preview/[navKey]/page.tsx) | Capture source route for landing feature previews |
+| [scripts/export-landing-sample.mjs](scripts/export-landing-sample.mjs) | Exports landing sample content and captures static feature preview images from local preview routes |
 | [src/components/landing/waitlist-form.tsx](src/components/landing/waitlist-form.tsx) | Public waitlist email capture form for the landing page |
 | [src/app/api/prompt-chat/route.ts](src/app/api/prompt-chat/route.ts) | Deprecated Prompt Chat endpoint; returns `410 Gone` |
 | [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation using in-house pipelines |
@@ -1408,7 +1413,8 @@ export const BASE_ACTION_TOKENS = {
 | [src/components/workspace/use-persisted-generation-state.ts](src/components/workspace/use-persisted-generation-state.ts) | LocalStorage-backed generation flags and completion detection |
 | [src/components/workspace/use-document-generation.ts](src/components/workspace/use-document-generation.ts) | Manual document and mockup generation workflow |
 | [src/components/layout/anchor-nav.tsx](src/components/layout/anchor-nav.tsx) | Sticky/horizontal document rail for Overview, Market Research, Product Plan, First Version Plan, and Design Mockups with queued/generating/ready/needs-retry indicators |
-| [src/components/layout/scrollable-content.tsx](src/components/layout/scrollable-content.tsx) | Scrollable document body renderer with deferred sections, queue-aware placeholders, PRD/MVP completed-document block rendering, and mockup/status modules |
+| [src/components/layout/scrollable-content.tsx](src/components/layout/scrollable-content.tsx) | Scrollable document body renderer with deferred sections, inactive-document `content-visibility` containment, queue-aware placeholders, PRD/MVP completed-document block rendering, and mockup/status modules |
+| [src/components/layout/workspace-document-frame.tsx](src/components/layout/workspace-document-frame.tsx) | Shared workspace document frame with optional browser performance containment controls |
 | [src/components/layout/app-page-shell.tsx](src/components/layout/app-page-shell.tsx) | Shared authenticated page shell and header for consistent dashboard page spacing and hierarchy |
 | [src/lib/document-definitions.ts](src/lib/document-definitions.ts) | Shared typed document registry for workspace tabs, editor titles, icons, credit cost, and nav visibility |
 | [src/lib/document-sections.ts](src/lib/document-sections.ts) | Scroll workspace section registry and anchor IDs for Overview, Market Research, Product Plan, First Version Plan, and Design Mockups |
@@ -1425,6 +1431,9 @@ export const BASE_ACTION_TOKENS = {
 | [src/components/auth/auth-field.tsx](src/components/auth/auth-field.tsx) | Shared labeled auth input field |
 | [src/components/auth/auth-password-field.tsx](src/components/auth/auth-password-field.tsx) | Shared auth password field with show/hide toggle |
 | [src/hooks/use-billing-portal.ts](src/hooks/use-billing-portal.ts) | Shared client hook to open Stripe billing portal |
+| [src/components/pricing/billing-plans-client.tsx](src/components/pricing/billing-plans-client.tsx) | Billing page client island for Monthly/Yearly toggle, plan-card checkout state, and checkout submission |
+| [src/components/pricing/manage-subscription-button.tsx](src/components/pricing/manage-subscription-button.tsx) | Billing page client island for Stripe portal access |
+| [src/lib/billing-page-data.ts](src/lib/billing-page-data.ts) | Server/client-safe billing DTO normalization and interval price helpers for the billing page |
 | [src/hooks/use-auth-signout.ts](src/hooks/use-auth-signout.ts) | Shared client hook for Supabase sign-out + redirect |
 | [src/hooks/use-copy-feedback.ts](src/hooks/use-copy-feedback.ts) | Shared hook for clipboard copy feedback state |
 | [src/lib/credits.ts](src/lib/credits.ts) | Shared credit formatting and unlimited-credit helpers |
@@ -1456,7 +1465,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/with-retry.ts](src/lib/with-retry.ts) | Shared retry utility — 3 retries, exponential backoff [1s/2s/4s], retries on 429/5xx/network errors |
 | [src/lib/perplexity.ts](src/lib/perplexity.ts) | Perplexity API client for competitor search (wrapped with withRetry) |
 | [src/lib/tavily.ts](src/lib/tavily.ts) | Tavily API client for URL content extraction (wrapped with withRetry) |
-| [src/stores/generate-all-store.ts](src/stores/generate-all-store.ts) | Zustand store for Generate All UI state. Fires execute route fire-and-forget; polls status every 3s. |
+| [src/stores/generate-all-store.ts](src/stores/generate-all-store.ts) | Zustand store for Generate All UI state. Fires execute route fire-and-forget; polls status with visibility pause/resume and 3s/6s/10s backoff. |
 | [src/components/workspace/generate-all-hydrator.tsx](src/components/workspace/generate-all-hydrator.tsx) | Thin bridge: keeps store callbacks fresh each render; runs one-time DB hydration per project |
 | [src/lib/generation/queue-service.ts](src/lib/generation/queue-service.ts) | Normalized queue item helpers for dependency checks, status computation, item claims, and legacy queue JSON sync. |
 | [src/lib/generation/onboarding.ts](src/lib/generation/onboarding.ts) | Onboarding queue metadata, loading row mapping, run-id helpers, and canonical `#executive-summary` redirect construction. |
@@ -1466,6 +1475,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/lib/logger.ts](src/lib/logger.ts) | Structured logger with Sentry warning/error forwarding |
 | [src/lib/stripe/webhook-claim.ts](src/lib/stripe/webhook-claim.ts) | Testable Stripe webhook idempotency claim/reclaim helper |
 | [src/lib/stripe/checkout-plan.ts](src/lib/stripe/checkout-plan.ts) | Checkout plan-price eligibility helper |
+| [src/lib/supabase/current-user.ts](src/lib/supabase/current-user.ts) | Cached server-side current-user helper shared by dashboard layout and pages |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
 | [src/lib/waitlist.ts](src/lib/waitlist.ts) | Waitlist thresholds and email validation helpers |
 | [src/lib/supabase/client.ts](src/lib/supabase/client.ts) | Browser Supabase client |
@@ -1474,7 +1484,7 @@ export const BASE_ACTION_TOKENS = {
 | [src/app/api/stripe/checkout/route.ts](src/app/api/stripe/checkout/route.ts) | POST — creates Stripe checkout session for subscription upgrade |
 | [src/app/api/stripe/portal/route.ts](src/app/api/stripe/portal/route.ts) | POST — creates Stripe billing portal session for subscription management |
 | [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) | POST — handles Stripe webhook events with event idempotency, subscription item price mapping, real period dates, and period-level credit grants |
-| [src/app/(dashboard)/billing/page.tsx](src/app/(dashboard)/billing/page.tsx) | Billing page — plan cards, billing interval selectors, subscription status, project allowance usage, upgrade flow |
+| [src/app/(dashboard)/billing/page.tsx](src/app/(dashboard)/billing/page.tsx) | Billing page server component — fetches plans, active subscription, and allowance before rendering billing client islands |
 | [src/lib/utils.ts](src/lib/utils.ts) | cn() class merging and shared formatting utilities |
 | [src/proxy.ts](src/proxy.ts) | Next proxy entry point for Supabase session refresh |
 | [src/lib/supabase/middleware.ts](src/lib/supabase/middleware.ts) | Supabase cookie/session refresh helper used by `src/proxy.ts` |
