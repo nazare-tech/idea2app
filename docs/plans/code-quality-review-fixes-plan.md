@@ -1,7 +1,7 @@
 ---
-implemented: false
-implemented_at: null
-implementation_summary: null
+implemented: true
+implemented_at: 2026-07-06T22:40:00-07:00
+implementation_summary: All seven review findings implemented behavior-preservingly; typed billing boundary, registry-driven workspace sections, render-then-scroll navigation, shared capture manifest, extracted visibility-aware poller (with unit tests), shared PreviewFrame, and hygiene fixes; 404/404 tests, lint, typecheck, and production build green.
 ---
 
 # Code Quality Review Fixes (Thermo-Nuclear Review 2026-07-06)
@@ -50,13 +50,13 @@ Implement the accepted findings from `docs/reviews/thermo-nuclear-code-quality-r
 
 ## Phased Plan
 
-- [ ] **Phase 1 (F1)**: Rewrite `billing-page-data.ts` on generated Row types; update `billing/page.tsx`; widen `project-allowance.ts` signatures and delete all 7 casts. Verify: `npm run typecheck`, `npm test` (project-allowance tests untouched).
-- [ ] **Phase 2 (F4 + F6)**: Add `landing-preview-captures.mjs` manifest + loud-miss lookup; consume from `feature-product-preview.tsx` and the export script; delete dead `cropToId` read; extract `PreviewFrame` used by static + live previews. Verify: typecheck, build.
-- [ ] **Phase 3 (F2)**: Registry-driven deferred sections in `scrollable-content.tsx`; containment derived from `SCROLLABLE_NAV_ITEMS`. Verify: `scrollable-content.test.tsx` green unmodified.
-- [ ] **Phase 4 (F3)**: Pending-scroll-target reframe in `use-workspace-scroll-sync.ts`. Verify: typecheck + manual browser check of anchor navigation if feasible.
-- [ ] **Phase 5 (F5)**: Extract `createVisibilityAwarePoller` (+ unit test, red-green); rewire `generate-all-store.ts` to use it and drop `(set, get)` threading in `doPoll`. Verify: new poller test + existing store test green.
-- [ ] **Phase 6 (F7)**: Fix stale hero-artwork comment; `getCurrentUser` returns `supabase`; update call sites that currently double-create clients. Verify: typecheck.
-- [ ] **Phase 7**: Update `PROJECT_CONTEXT.md` (new modules, billing data flow); full `npm run typecheck && npm run lint && npm test && npm run build`; browser spot-check landing + workspace if a dev server is available; mark plan implemented.
+- [x] **Phase 1 (F1)**: Rewrite `billing-page-data.ts` on generated Row types; update `billing/page.tsx`; widen `project-allowance.ts` signatures and delete all 7 casts. Verify: `npm run typecheck`, `npm test` (project-allowance tests untouched).
+- [x] **Phase 2 (F4 + F6)**: Add `landing-preview-captures.mjs` manifest + loud-miss lookup; consume from `feature-product-preview.tsx` and the export script; delete dead `cropToId` read; extract `PreviewFrame` used by static + live previews. Verify: typecheck, build.
+- [x] **Phase 3 (F2)**: Registry-driven deferred sections in `scrollable-content.tsx`; containment derived from `SCROLLABLE_NAV_ITEMS`. Verify: `scrollable-content.test.tsx` green unmodified.
+- [x] **Phase 4 (F3)**: Pending-scroll-target reframe in `use-workspace-scroll-sync.ts`. Verify: typecheck + manual browser check of anchor navigation if feasible.
+- [x] **Phase 5 (F5)**: Extract `createVisibilityAwarePoller` (+ unit test, red-green); rewire `generate-all-store.ts` to use it and drop `(set, get)` threading in `doPoll`. Verify: new poller test + existing store test green.
+- [x] **Phase 6 (F7)**: Fix stale hero-artwork comment; `getCurrentUser` returns `supabase`; update call sites that currently double-create clients. Verify: typecheck.
+- [x] **Phase 7**: Update `PROJECT_CONTEXT.md` (new modules, billing data flow); full `npm run typecheck && npm run lint && npm test && npm run build`; browser spot-check landing + workspace if a dev server is available; mark plan implemented.
 
 ## Milestones
 
