@@ -66,12 +66,6 @@ interface ScrollableContentProps {
   onGenerateDocument?: (docType: DocumentType) => void
 }
 
-/** True once a second H2 has streamed, i.e. detail sections have started. */
-function hasStreamedDetailSections(content: string) {
-  const firstSection = content.indexOf("\n## ")
-  return firstSection !== -1 && content.indexOf("\n## ", firstSection + 4) !== -1
-}
-
 function DocumentSkeleton({
   label,
   mode = "loading",
@@ -369,14 +363,16 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             projectId={projectId}
           />
         ),
-        // Live-stream detail sections while onboarding writes the document;
-        // fall back to the static generating module until they start.
+        // Live-stream detail sections while onboarding writes the document.
+        // The live-fill variant promises the full section skeleton from the
+        // first token, so no separate generating module is needed once the
+        // stream exists.
         renderStatus: (state) =>
-          competitiveStreamingContent && hasStreamedDetailSections(competitiveStreamingContent) ? (
+          competitiveStreamingContent ? (
             <CompetitiveStreamingDocument
               content={competitiveStreamingContent}
               finished={false}
-              variant="block-commit"
+              variant="live-fill"
               parts="detail"
             />
           ) : (
@@ -464,7 +460,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             <CompetitiveStreamingDocument
               content={competitiveStreamingContent}
               finished={false}
-              variant="block-commit"
+              variant="live-fill"
               parts="overview"
               projectName={projectName}
             />
