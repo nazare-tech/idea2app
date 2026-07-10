@@ -44,6 +44,9 @@ interface ProjectComposerProps {
 }
 
 const MAX_INPUT_HEIGHT_PX = 132
+// How close to the bottom (px) still counts as "at the bottom" for sticky
+// autoscroll. Absorbs fractional scrollTop values and tiny accidental nudges.
+const STICK_TO_BOTTOM_THRESHOLD_PX = 48
 
 /** Mono uppercase kicker, matching the workspace mc-label idiom. */
 const kickerClass =
@@ -88,6 +91,11 @@ export function ProjectComposer({
   const panelRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const wasOpenRef = useRef(false)
+  // Sticky autoscroll: true while the user is at (or near) the bottom of the
+  // conversation. Scrolling up to read pauses autoscroll; scrolling back to
+  // the bottom, or sending a new message, resumes it. A ref (not state) so
+  // scroll events never trigger re-renders.
+  const stickToBottomRef = useRef(true)
 
   const scopeLabel = scope === "document" ? activeDocLabel : "Whole project"
   const hasConversation = messages.length > 0
@@ -103,13 +111,57 @@ export function ProjectComposer({
     wasOpenRef.current = open
   }, [open])
 
-  // Keep the conversation scrolled to the newest content.
+  // Track whether the user is near the bottom of the conversation. Only an
+  // upward scroll (scrollTop decreasing) pauses autoscroll; landing back near
+  // the bottom resumes it. Distance alone is not enough: our own programmatic
+  // scroll event can be handled after new streamed content has already grown
+  // scrollHeight, which would look like "away from bottom" and wrongly pause.
+  const lastScrollTopRef = useRef(0)
   useEffect(() => {
     const el = panelRef.current
-    if (!el) return
-    requestAnimationFrame(() => {
-      el.scrollTop = el.scrollHeight
-    })
+    if (!el || !open) return
+    lastScrollTopRef.current = el.scrollTop
+    const handleScroll = () => {
+      const top = el.scrollTop
+      const distanceFromBottom = el.scrollHeight - top - el.clientHeight
+      if (top < lastScrollTopRef.current - 1) {
+        stickToBottomRef.current = false
+      } else if (distanceFromBottom <= STICK_TO_BOTTOM_THRESHOLD_PX) {
+        stickToBottomRef.current = true
+      }
+      lastScrollTopRef.current = top
+    }
+    // Wheel/trackpad gestures adjust stickiness immediately. The scroll
+    // listener alone is not enough during fast streaming: a render can move
+    // the panel between the gesture and its scroll event, so the coalesced
+    // event misreads the user's intent. Wheel up always pauses; wheel down
+    // that would land at (or past) the bottom resumes.
+    const handleWheel = (event: WheelEvent) => {
+      if (event.deltaY < 0) {
+        stickToBottomRef.current = false
+      } else if (event.deltaY > 0) {
+        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+        if (distanceFromBottom - event.deltaY <= STICK_TO_BOTTOM_THRESHOLD_PX) {
+          stickToBottomRef.current = true
+        }
+      }
+    }
+    el.addEventListener("scroll", handleScroll, { passive: true })
+    el.addEventListener("wheel", handleWheel, { passive: true })
+    return () => {
+      el.removeEventListener("scroll", handleScroll)
+      el.removeEventListener("wheel", handleWheel)
+    }
+  }, [open])
+
+  // Keep the conversation scrolled to the newest content, unless the user
+  // scrolled up to read earlier messages. Runs synchronously after commit
+  // (no requestAnimationFrame: the DOM is already up to date here, and rAF
+  // callbacks are suspended entirely in background tabs).
+  useEffect(() => {
+    const el = panelRef.current
+    if (!el || !stickToBottomRef.current) return
+    el.scrollTop = el.scrollHeight
   }, [messages, streaming])
 
   // Abort any in-flight request on unmount.
@@ -145,6 +197,8 @@ export function ProjectComposer({
       setInput("")
       setOpen(true)
       setStreaming(true)
+      // A new question always snaps the view back to the latest exchange.
+      stickToBottomRef.current = true
       requestAnimationFrame(() => resizeInput())
 
       const controller = new AbortController()
