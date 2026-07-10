@@ -191,6 +191,8 @@ function TimelinePhaseCard({
 const currentPrdSectionAliases = [
   "Introduction/overview",
   "Goals",
+  "Team and Milestones",
+  "Success metrics",
   "User personas",
   "User stories and acceptance criteria",
   "Functional requirements",
@@ -1188,12 +1190,12 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
   const sections = extractSectionsByHeading(content, 2)
   const introduction = getSectionByAlias(sections, ["Introduction/overview", "Introduction overview"])
   const goals = getSectionByAlias(sections, ["Goals"])
+  const teamAndMilestones = getSectionByAlias(sections, ["Team and Milestones", "Timeline and milestones"])
+  const metrics = getSectionByAlias(sections, ["Success metrics"])
   const personas = getSectionByAlias(sections, ["User personas"])
   // Functional requirements, user stories, and technical considerations stay
   // in the generated markdown but render only as AI Prompts files.
   const outOfScope = getSectionByAlias(sections, ["Non-goals / out of scope", "Out of scope"])
-  const metrics = getSectionByAlias(sections, ["Success metrics"])
-  const timeline = getSectionByAlias(sections, ["Timeline and milestones"])
   const risks = getSectionByAlias(sections, ["Risks and mitigation"])
   const dependenciesAndAssumptions = getSectionByAlias(sections, ["Dependencies and assumptions"])
   const dependencyAssumptionSections = dependenciesAndAssumptions
@@ -1214,10 +1216,10 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
     [
       introduction,
       goals,
+      teamAndMilestones,
+      metrics,
       personas,
       outOfScope,
-      metrics,
-      timeline,
     ].filter(Boolean).length + (hasFollowThroughSections ? 1 : 0)
   let sectionIndex = 1
   const nextSectionIndex = () => sectionIndex++
@@ -1247,6 +1249,30 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
           total={sectionTotal}
         >
           <GoalsShowcase section={goals} />
+        </DesignedSection>
+      ) : null}
+
+      {teamAndMilestones ? (
+        <DesignedSection
+          id="prd-team-milestones"
+          kicker="Delivery"
+          title="Team & Milestones"
+          index={nextSectionIndex()}
+          total={sectionTotal}
+        >
+          <TimelineShowcase section={teamAndMilestones} projectId={projectId} />
+        </DesignedSection>
+      ) : null}
+
+      {metrics ? (
+        <DesignedSection
+          id="prd-success-metrics"
+          kicker="Measurement"
+          title="Success Metrics"
+          index={nextSectionIndex()}
+          total={sectionTotal}
+        >
+          <MetricsShowcase section={metrics} projectId={projectId} />
         </DesignedSection>
       ) : null}
 
@@ -1293,30 +1319,6 @@ function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps)
               )
             })}
           </div>
-        </DesignedSection>
-      ) : null}
-
-      {metrics ? (
-        <DesignedSection
-          id="prd-success-metrics"
-          kicker="Measurement"
-          title="Success Metrics"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <MetricsShowcase section={metrics} projectId={projectId} />
-        </DesignedSection>
-      ) : null}
-
-      {timeline ? (
-        <DesignedSection
-          id="prd-timeline-milestones"
-          kicker="Delivery"
-          title="Timeline & Milestones"
-          index={nextSectionIndex()}
-          total={sectionTotal}
-        >
-          <TimelineShowcase section={timeline} projectId={projectId} />
         </DesignedSection>
       ) : null}
 

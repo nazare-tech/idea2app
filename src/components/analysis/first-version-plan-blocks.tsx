@@ -38,6 +38,7 @@ import {
   stripInlineMarkdown,
 } from "@/lib/planning-document-parser"
 import { cn } from "@/lib/utils"
+import { getAiPromptsReadiness } from "@/lib/ai-prompts-readiness"
 import {
   DataTable,
   PlanningMarkdownRenderer,
@@ -773,10 +774,14 @@ function AiPromptsSection({
 export function AiPromptsDocumentBlocks({
   prdContent,
   mvpContent,
+  prdSettled = Boolean(prdContent),
+  mvpSettled = Boolean(mvpContent),
 }: {
   prdContent: string | null
   mvpContent: string | null
   projectId: string
+  prdSettled?: boolean
+  mvpSettled?: boolean
 }) {
   const prdSections = useMemo(() => extractSectionsByHeading(prdContent ?? "", 2), [prdContent])
   const mvpSections = useMemo(() => extractSectionsByHeading(mvpContent ?? "", 2), [mvpContent])
@@ -788,8 +793,12 @@ export function AiPromptsDocumentBlocks({
   )
 
   const hasRecommendedTool = Boolean(recommendedTool?.content.trim())
+  const readiness = useMemo(
+    () => getAiPromptsReadiness({ prdContent, mvpContent, prdSettled, mvpSettled }),
+    [mvpContent, mvpSettled, prdContent, prdSettled],
+  )
 
-  if (promptFiles.length === 0 && !hasRecommendedTool) {
+  if (readiness.status === "waiting") {
     return (
       <div className="flex items-center justify-center p-6 text-center text-sm text-muted-foreground sm:p-12">
         AI Prompts has not been generated yet.
@@ -804,6 +813,22 @@ export function AiPromptsDocumentBlocks({
   return (
     <div className="flex flex-col gap-16">
       <AiPromptsMasthead />
+
+      {readiness.status === "partial" ? (
+        <div className="border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-4" role="status">
+          <p className="text-[14px] font-semibold text-[#1C1917]">Still assembling AI Prompts</p>
+          <p className="mt-1 text-[13px] leading-5 text-[#4A4040]">
+            Available files can be inspected now. The remaining files will appear as the Product Plan and First Version Plan finish.
+          </p>
+        </div>
+      ) : readiness.status === "incomplete" ? (
+        <div className="border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-4" role="status">
+          <p className="text-[14px] font-semibold text-[#1C1917]">Some AI Prompts files are unavailable</p>
+          <p className="mt-1 text-[13px] leading-5 text-[#4A4040]">
+            The generated plans did not include every required handoff section. Available files remain usable.
+          </p>
+        </div>
+      ) : null}
 
       {hasRecommendedTool ? (
         <AiPromptsSection
@@ -857,10 +882,10 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
   const scopeRows = getFvpScopeRows({ scope, features })
   const sectionTotal = [
     summary,
-    goal,
-    targetProblem,
-    coreFlowRows.length > 0 || userFlow,
     assumptionRows.length > 0,
+    targetProblem,
+    goal,
+    coreFlowRows.length > 0 || userFlow,
     coreFlowRows.length === 0 && scopeRows.length > 0,
     buildApproach,
     validation,
@@ -879,15 +904,21 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
         </FvpSection>
       ) : null}
 
-      {goal ? (
-        <FvpSection id="mvp-bet" kicker="Validation" title="The Bet" index={nextSectionIndex()} total={sectionTotal}>
-          <FvpTechGrid section={goal} fallbackTitle="Goal" />
+      {assumptionRows.length > 0 ? (
+        <FvpSection id="mvp-key-assumptions" kicker="Risks" title="Key Risks & Assumptions" index={nextSectionIndex()} total={sectionTotal}>
+          <FvpScopeGrid rows={assumptionRows} />
         </FvpSection>
       ) : null}
 
       {targetProblem ? (
         <FvpSection id="mvp-target-user-problem" kicker="Audience" title="Target User & Problem" index={nextSectionIndex()} total={sectionTotal}>
           <FvpTechGrid section={targetProblem} fallbackTitle="Target user" />
+        </FvpSection>
+      ) : null}
+
+      {goal ? (
+        <FvpSection id="mvp-bet" kicker="Validation" title="The Bet" index={nextSectionIndex()} total={sectionTotal}>
+          <FvpTechGrid section={goal} fallbackTitle="Goal" />
         </FvpSection>
       ) : null}
 
@@ -898,12 +929,6 @@ function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
       ) : userFlow ? (
         <FvpSection id="mvp-core-user-flow" kicker="Journey" title="Core User Flow" index={nextSectionIndex()} total={sectionTotal}>
           <FvpFlow section={userFlow} />
-        </FvpSection>
-      ) : null}
-
-      {assumptionRows.length > 0 ? (
-        <FvpSection id="mvp-key-assumptions" kicker="Assumptions" title="Key Risks & Assumptions" index={nextSectionIndex()} total={sectionTotal}>
-          <FvpScopeGrid rows={assumptionRows} />
         </FvpSection>
       ) : null}
 

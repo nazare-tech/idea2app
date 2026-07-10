@@ -40,7 +40,8 @@ export function ArtifactLightbox({
   onCopy,
   copied = false,
   onDownload,
-  maxWidthClassName = "max-w-4xl",
+  presentation = "document",
+  maxWidthClassName,
   children,
 }: {
   fileName: string
@@ -50,10 +51,16 @@ export function ArtifactLightbox({
   copied?: boolean
   /** Omit to hide the download action */
   onDownload?: () => void
+  /** Media fills the available viewport; document preserves the scrolling preview shell. */
+  presentation?: "document" | "media"
   /** Tailwind max-width class for the panel; wide artifacts can pass a larger one */
   maxWidthClassName?: string
   children: React.ReactNode
 }) {
+  const isMediaPresentation = presentation === "media"
+  const resolvedMaxWidthClassName = maxWidthClassName
+    ?? (isMediaPresentation ? "max-w-[calc(100vw-2rem)]" : "max-w-4xl")
+
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose()
@@ -78,10 +85,14 @@ export function ArtifactLightbox({
       onClick={onClose}
     >
       <div
-        className={`flex max-h-[calc(100vh-4rem)] w-full ${maxWidthClassName} flex-col overflow-hidden rounded-lg bg-white shadow-2xl`}
+        className={`flex min-h-0 w-full ${resolvedMaxWidthClassName} flex-col overflow-hidden rounded-lg bg-white shadow-2xl ${
+          isMediaPresentation
+            ? "h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)]"
+            : "max-h-[calc(100vh-4rem)]"
+        }`}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-[#E8DDD5] px-5 py-3">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#E8DDD5] px-5 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <FileText aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.9} />
             <span className="truncate font-mono text-[12px] tracking-[0.06em] text-[#1C1917]">
@@ -111,7 +122,13 @@ export function ArtifactLightbox({
             </ArtifactActionButton>
           </div>
         </div>
-        <div className="overflow-y-auto">{children}</div>
+        <div
+          className={isMediaPresentation
+            ? "flex min-h-0 flex-1 overflow-hidden"
+            : "min-h-0 overflow-y-auto"}
+        >
+          {children}
+        </div>
       </div>
     </div>
   )

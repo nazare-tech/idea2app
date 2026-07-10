@@ -14,7 +14,10 @@ export const PRODUCT_PLAN_MAX_TOKENS = 16_384
 export const PRODUCT_PLAN_TEMPERATURE = 0.3
 
 export const FIRST_VERSION_PLAN_DEFAULT_MODEL = "xiaomi/mimo-v2.5-pro"
-export const FIRST_VERSION_PLAN_MAX_TOKENS = 16_384
+// 16,384 truncated real First Version Plans mid-table (the build-sequence and
+// validation tables are token-heavy), which stranded the derived AI Prompts
+// files. Generation now fails loudly on truncation; this cap gives headroom.
+export const FIRST_VERSION_PLAN_MAX_TOKENS = 24_576
 export const FIRST_VERSION_PLAN_TEMPERATURE = 0.3
 
 export interface PlanningPromptRequest {

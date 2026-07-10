@@ -20,6 +20,7 @@ import {
   CompetitiveOverviewSection,
   CompetitiveDetailSection,
 } from "@/components/analysis/competitive-analysis-document"
+import { CompetitiveStreamingDocument } from "@/components/analysis/competitive-streaming-document"
 import {
   AiPromptsDocumentBlocks,
   MvpPlanDocumentBlocks,
@@ -35,6 +36,7 @@ import type {
 } from "@/lib/document-generation-display-status"
 import type { OpenRouterImageMockupOption } from "@/lib/mockups/openrouter-image-format"
 import { cn } from "@/lib/utils"
+import { getAiPromptsReadiness } from "@/lib/ai-prompts-readiness"
 
 interface DocumentData {
   content: string | null
@@ -54,7 +56,20 @@ interface ScrollableContentProps {
   projectName?: string
   activeDocument?: DocumentType
   documents: Record<string, DocumentData>
+  /**
+   * Partial Market Research markdown streamed during onboarding generation.
+   * While present (and no saved document exists) the Executive Summary and
+   * Market Research sections render the live streaming document instead of
+   * static generating placeholders.
+   */
+  competitiveStreamingContent?: string | null
   onGenerateDocument?: (docType: DocumentType) => void
+}
+
+/** True once a second H2 has streamed, i.e. detail sections have started. */
+function hasStreamedDetailSections(content: string) {
+  const firstSection = content.indexOf("\n## ")
+  return firstSection !== -1 && content.indexOf("\n## ", firstSection + 4) !== -1
 }
 
 function DocumentSkeleton({
@@ -318,11 +333,17 @@ function MockupsSection({ content, projectId }: { content: string; projectId: st
 }
 
 export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentProps>(
-  function ScrollableContent({ projectId, projectName, activeDocument, documents, onGenerateDocument }, ref) {
+  function ScrollableContent({ projectId, projectName, activeDocument, documents, competitiveStreamingContent, onGenerateDocument }, ref) {
     const competitiveData = documents["competitive"]
     const prdData = documents["prd"]
     const mvpData = documents["mvp"]
     const mockupsData = documents["mockups"]
+    const aiPromptsReadiness = getAiPromptsReadiness({
+      prdContent: prdData?.content,
+      mvpContent: mvpData?.content,
+      prdSettled: Boolean(prdData?.content) && !prdData?.isGenerating && !prdData?.isLoading,
+      mvpSettled: Boolean(mvpData?.content) && !mvpData?.isGenerating && !mvpData?.isLoading,
+    })
     // Defer rendering of all sections below the first one to the next animation
     // frame. This allows the browser to paint the initial layout (first section +
     // skeletons) before doing the heavy markdown/structured-data rendering work,
@@ -348,6 +369,23 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             projectId={projectId}
           />
         ),
+        // Live-stream detail sections while onboarding writes the document;
+        // fall back to the static generating module until they start.
+        renderStatus: (state) =>
+          competitiveStreamingContent && hasStreamedDetailSections(competitiveStreamingContent) ? (
+            <CompetitiveStreamingDocument
+              content={competitiveStreamingContent}
+              finished={false}
+              variant="block-commit"
+              parts="detail"
+            />
+          ) : (
+            <GenerationStatusModule
+              label="Market Research"
+              state={state}
+              onGenerateDocument={onGenerateDocument}
+            />
+          ),
       },
       {
         navKey: "prd",
@@ -395,12 +433,14 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         intrinsicSize: "auto 1800px",
         statusData: mvpData,
         skeletonFallbackData: prdData,
-        hasContent: Boolean(prdData?.content || mvpData?.content),
+        hasContent: aiPromptsReadiness.status !== "waiting",
         renderContent: () => (
           <AiPromptsDocumentBlocks
             prdContent={prdData?.content ?? null}
             mvpContent={mvpData?.content ?? null}
             projectId={projectId}
+            prdSettled={Boolean(prdData?.content) && !prdData?.isGenerating && !prdData?.isLoading}
+            mvpSettled={Boolean(mvpData?.content) && !mvpData?.isGenerating && !mvpData?.isLoading}
           />
         ),
       },
@@ -418,6 +458,14 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
               content={competitiveData.content}
               metadata={competitiveData.metadata}
               projectId={projectId}
+              projectName={projectName}
+            />
+          ) : competitiveStreamingContent ? (
+            <CompetitiveStreamingDocument
+              content={competitiveStreamingContent}
+              finished={false}
+              variant="block-commit"
+              parts="overview"
               projectName={projectName}
             />
           ) : competitiveData?.displayState && competitiveData.displayState.displayStatus !== "idle" ? (

@@ -15,6 +15,12 @@ export interface DocumentNavItem {
   label: string
   /** Which DocumentType this maps to for status/content lookup */
   sourceType: DocumentType
+  /**
+   * Derived items (AI Prompts) have no generation queue item of their own, so
+   * the nav never offers Generate/Retry actions for them; an incomplete state
+   * is a fact about the source documents, not a retryable step.
+   */
+  derived?: boolean
   /** Sub-sections within this document */
   sections: DocumentSection[]
 }
@@ -80,10 +86,10 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
     sourceType: "mvp",
     sections: [
       { id: "mvp-summary", label: "MVP Summary" },
-      { id: "mvp-bet", label: "The Bet" },
-      { id: "mvp-target-user-problem", label: "Target User & Problem" },
-      { id: "mvp-core-user-flow", label: "Core User Flows" },
       { id: "mvp-key-assumptions", label: "Key Risks & Assumptions" },
+      { id: "mvp-target-user-problem", label: "Target User & Problem" },
+      { id: "mvp-bet", label: "The Bet" },
+      { id: "mvp-core-user-flow", label: "Core User Flows" },
       { id: "mvp-scope", label: "MVP Scope" },
       { id: "mvp-suggested-stack", label: "Suggested Build Approach" },
       { id: "mvp-validation-plan", label: "Validation Plan" },
@@ -109,6 +115,7 @@ export const SCROLLABLE_NAV_ITEMS: DocumentNavItem[] = [
     key: "ai-prompts",
     label: "AI Prompts",
     sourceType: "mvp",
+    derived: true,
     sections: [
       { id: "ai-prompts-recommended-build-tool", label: "Recommended Tool" },
       { id: "ai-prompts-files", label: "Prompt Files" },

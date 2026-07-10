@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { DocumentType } from "@/lib/document-definitions"
 import type { Json } from "@/types/database"
+import { getAiPromptsReadiness } from "@/lib/ai-prompts-readiness"
 
 type EffectiveStatus = "running" | "ready" | "partial" | "error"
 
@@ -87,14 +88,14 @@ export async function GET(
       .maybeSingle(),
     supabase
       .from("prds")
-      .select("id")
+      .select("id, content")
       .eq("project_id", id)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
     supabase
       .from("mvp_plans")
-      .select("id")
+      .select("id, content")
       .eq("project_id", id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -115,6 +116,12 @@ export async function GET(
     mvp: Boolean(mvpResult.data?.id),
     mockups: Boolean(mockupResult.data?.id),
   }
+  const aiPromptsReadiness = getAiPromptsReadiness({
+    prdContent: prdResult.data?.content,
+    mvpContent: mvpResult.data?.content,
+    prdSettled: Boolean(prdResult.data?.id),
+    mvpSettled: Boolean(mvpResult.data?.id),
+  })
   const queueSupabase = createServiceClient()
   let queueItems = await getGenerationQueueItems(queueSupabase, queueRow)
   const recoveredItems =
@@ -133,7 +140,11 @@ export async function GET(
     ...queueRow,
     queue: queueItems.map(queueItemRowToJson) as unknown as Json,
   }
-  const rows = mapOnboardingLoadingRows({ queueRow: queueForRows, completedDocs }).map((row) => ({
+  const rows = mapOnboardingLoadingRows({
+    queueRow: queueForRows,
+    completedDocs,
+    aiPromptsReadiness,
+  }).map((row) => ({
     key: row.key,
     label: row.label,
     message: row.phrase,
@@ -157,6 +168,18 @@ export async function GET(
   const metadataRedirect = typeof metadata?.redirectUrl === "string" ? metadata.redirectUrl : null
   const redirectUrl = metadataRedirect || buildOnboardingRedirectUrl(project)
 
+  // Live streaming preview: while market research is still generating, expose
+  // the executor's partial markdown so the loading screen can render the
+  // document as it is written. Only served for an actively generating item.
+  const competitiveItem = queueItems.find((item) => item.doc_type === "competitive")
+  const streamingPreview =
+    !competitiveReady &&
+    competitiveItem?.status === "generating" &&
+    typeof competitiveItem.partial_content === "string" &&
+    competitiveItem.partial_content.length > 0
+      ? { docType: "competitive" as const, content: competitiveItem.partial_content }
+      : null
+
   return NextResponse.json({
     runId,
     status: queueRow.status,
@@ -165,6 +188,7 @@ export async function GET(
     redirectUrl,
     needsExecute: recoveredItems.length > 0,
     rows,
+    streamingPreview,
     errors: rows
       .filter((row) => row.error)
       .map((row) => ({ key: row.key, message: row.error })),

@@ -718,6 +718,44 @@ function getDesignRationaleText(description: string): string {
     : `Design rationale: ${trimmed}`
 }
 
+export function MockupImageLightbox({
+  fileName,
+  imageUrl,
+  imageAlt,
+  copied,
+  onCopy,
+  onDownload,
+  onClose,
+}: {
+  fileName: string
+  imageUrl: string
+  imageAlt: string
+  copied: boolean
+  onCopy: () => void
+  onDownload: () => void
+  onClose: () => void
+}) {
+  return (
+    <ArtifactLightbox
+      fileName={fileName}
+      presentation="media"
+      copied={copied}
+      onCopy={onCopy}
+      onDownload={onDownload}
+      onClose={onClose}
+    >
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-[#F8F4F1] p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt={imageAlt}
+          className="h-full w-full max-w-full object-contain rounded-lg bg-white"
+        />
+      </div>
+    </ArtifactLightbox>
+  )
+}
+
 function OpenRouterImageMockupViewer({
   data,
   projectName,
@@ -918,23 +956,15 @@ function OpenRouterImageMockupViewer({
         )
       })}
       {lightboxOption && (
-        <ArtifactLightbox
+        <MockupImageLightbox
           fileName={buildImageFileName(lightboxOption.label, lightboxOption.contentType)}
+          imageUrl={lightboxOption.imageUrl}
+          imageAlt={`${lightboxOption.conceptLabel}: ${lightboxOption.title}`}
           copied={copiedLabel === lightboxOption.label}
           onCopy={() => void handleCopyImage(lightboxOption)}
           onDownload={() => void handleDownload(lightboxOption)}
           onClose={() => setLightboxOption(null)}
-          maxWidthClassName="max-w-6xl"
-        >
-          <div className="bg-[#F8F4F1] p-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lightboxOption.imageUrl}
-              alt={`${lightboxOption.conceptLabel}: ${lightboxOption.title}`}
-              className="mx-auto h-auto max-h-[calc(100vh-12rem)] w-auto max-w-full rounded-lg bg-white object-contain"
-            />
-          </div>
-        </ArtifactLightbox>
+        />
       )}
     </div>
   )

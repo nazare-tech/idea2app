@@ -1,4 +1,5 @@
 import { isDocumentType, type DocumentType } from "@/lib/document-definitions"
+import type { AiPromptsReadiness } from "@/lib/ai-prompts-readiness"
 import { getProjectUrl } from "@/lib/project-routing"
 import type { Json } from "@/types/database"
 
@@ -14,6 +15,10 @@ export type OnboardingGenerationStatus =
   | "error"
   | "skipped"
   | "cancelled"
+  | "partial"
+  | "incomplete"
+
+type OnboardingQueueStatus = Exclude<OnboardingGenerationStatus, "partial" | "incomplete">
 
 export type OnboardingLoadingRowKey =
   | "executive-summary"
@@ -26,7 +31,7 @@ export type OnboardingLoadingRowKey =
 export interface OnboardingQueueItem {
   docType: DocumentType
   label: string
-  status: OnboardingGenerationStatus
+  status: OnboardingQueueStatus
   creditCost: number
   stageMessage?: string
   error?: string
@@ -187,6 +192,7 @@ export function buildOnboardingRedirectUrl(project: { id: string; name: string }
 export function mapOnboardingLoadingRows(params: {
   queueRow: QueueLike | null
   completedDocs: Partial<Record<DocumentType, boolean>>
+  aiPromptsReadiness?: AiPromptsReadiness
 }): OnboardingLoadingRow[] {
   const queue = parseQueue(params.queueRow?.queue)
 
@@ -194,7 +200,11 @@ export function mapOnboardingLoadingRows(params: {
     if (row.key === "ai-prompts") {
       return {
         ...row,
-        status: getDerivedAiPromptsStatus(queue, params.completedDocs),
+        status: getDerivedAiPromptsStatus(
+          queue,
+          params.completedDocs,
+          params.aiPromptsReadiness,
+        ),
       }
     }
 
@@ -212,14 +222,21 @@ export function mapOnboardingLoadingRows(params: {
 function getDerivedAiPromptsStatus(
   queue: OnboardingQueueItem[],
   completedDocs: Partial<Record<DocumentType, boolean>>,
+  readiness?: AiPromptsReadiness,
 ): OnboardingGenerationStatus {
-  if (completedDocs.prd && completedDocs.mvp) return "done"
+  if (readiness?.status === "ready") return "done"
 
   const prd = queue.find((item) => item.docType === "prd")
   const mvp = queue.find((item) => item.docType === "mvp")
   const upstreamStatuses = [prd?.status, mvp?.status]
 
+  if (upstreamStatuses.some((status) => status === "error")) return "error"
   if (upstreamStatuses.some((status) => status === "cancelled")) return "cancelled"
+  if (readiness?.status === "incomplete") return "incomplete"
+  if (readiness?.status === "partial") return "partial"
+
+  if (completedDocs.prd && completedDocs.mvp) return "done"
+  if (readiness?.status === "waiting") return "pending"
 
   return "pending"
 }
@@ -260,7 +277,7 @@ export function parseQueue(value: Json | null | undefined): OnboardingQueueItem[
   return parsed
 }
 
-function normalizeQueueItemStatus(value: unknown): OnboardingGenerationStatus {
+function normalizeQueueItemStatus(value: unknown): OnboardingQueueStatus {
   if (
     value === "pending" ||
     value === "generating" ||

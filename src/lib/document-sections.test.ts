@@ -58,10 +58,10 @@ test("First Version nav labels match the current right-panel section text", () =
 
   assert.deepEqual(firstVersion?.sections.slice(0, 9), [
     { id: "mvp-summary", label: "MVP Summary" },
-    { id: "mvp-bet", label: "The Bet" },
-    { id: "mvp-target-user-problem", label: "Target User & Problem" },
-    { id: "mvp-core-user-flow", label: "Core User Flows" },
     { id: "mvp-key-assumptions", label: "Key Risks & Assumptions" },
+    { id: "mvp-target-user-problem", label: "Target User & Problem" },
+    { id: "mvp-bet", label: "The Bet" },
+    { id: "mvp-core-user-flow", label: "Core User Flows" },
     { id: "mvp-scope", label: "MVP Scope" },
     { id: "mvp-suggested-stack", label: "Suggested Build Approach" },
     { id: "mvp-validation-plan", label: "Validation Plan" },

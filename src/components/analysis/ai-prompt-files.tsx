@@ -64,7 +64,11 @@ function buildSubAgentsFile(prdSections: PlanningDocumentSection[]): AiPromptFil
   const team = getSectionByAlias(prdSections, ["Team and milestones", "Team and Milestones"])
   if (!team) return null
 
-  const agents = getSectionByAlias(extractSectionsByHeading(team.content, 3), ["Agents"])
+  // Models emit the Agents list at H3 or nested at H4 under "3.4 Milestones";
+  // accept both (mirrors getAiPromptsReadiness).
+  const agents =
+    getSectionByAlias(extractSectionsByHeading(team.content, 3), ["Agents"]) ??
+    getSectionByAlias(extractSectionsByHeading(team.content, 4), ["Agents"])
   if (!agents) return null
 
   const roles = parseListItems(agents.content)

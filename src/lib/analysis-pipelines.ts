@@ -88,10 +88,27 @@ type TavilyExtractStatus =
 
 async function consumeStream(
   apiResponse: import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk> | import("openai/resources/chat/completions").ChatCompletion,
+  label: string,
   onToken?: (token: string) => void
 ): Promise<string> {
+  // A "length" finish reason means the model hit max_tokens and the document is
+  // truncated mid-section. Saving it would strand downstream derived content
+  // (e.g. AI Prompts files), so fail the step and let the queue retry instead.
+  const assertNotTruncated = (finishReason: string | null | undefined, content: string) => {
+    if (finishReason === "length") {
+      logError("AnalysisPipeline", "generation_truncated_at_max_tokens", null, {
+        label,
+        contentLength: content.length,
+      })
+      throw new Error(
+        `${label} generation stopped at the model output limit before the document was complete. Try again.`
+      )
+    }
+  }
+
   if (onToken && Symbol.asyncIterator in apiResponse) {
     let content = ""
+    let finishReason: string | null | undefined
     try {
       for await (const chunk of apiResponse as import("openai/streaming").Stream<import("openai/resources/chat/completions").ChatCompletionChunk>) {
         const token = chunk.choices?.[0]?.delta?.content ?? ""
@@ -99,16 +116,20 @@ async function consumeStream(
           content += token
           onToken(token)
         }
+        finishReason = chunk.choices?.[0]?.finish_reason ?? finishReason
       }
     } catch (err) {
       throw new Error(
         `Stream interrupted: ${err instanceof Error ? err.message : String(err)}`
       )
     }
+    assertNotTruncated(finishReason, content)
     return content
   } else {
     const resp = apiResponse as import("openai/resources/chat/completions").ChatCompletion
-    return resp.choices[0]?.message?.content ?? ""
+    const content = resp.choices[0]?.message?.content ?? ""
+    assertNotTruncated(resp.choices[0]?.finish_reason, content)
+    return content
   }
 }
 
@@ -224,7 +245,7 @@ export async function runCompetitiveAnalysis(
     rethrowOpenRouterTimeout(error, "Market Research")
   }
 
-  const content = await consumeStream(completion, callbacks?.onToken)
+  const content = await consumeStream(completion, "Market Research", callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter synthesis")
   logInfo("CompetitiveAnalysis", "openrouter_synthesis_succeeded", {
@@ -281,7 +302,7 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
     rethrowOpenRouterTimeout(error, "Product Plan", OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS)
   }
 
-  const content = await consumeStream(completion, callbacks?.onToken)
+  const content = await consumeStream(completion, "Product Plan", callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for Product Plan")
   logInfo("ProductPlan", "openrouter_generation_succeeded", {
@@ -323,7 +344,7 @@ export async function runMVPPlan(
     rethrowOpenRouterTimeout(error, "First Version Plan", OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS)
   }
 
-  const content = await consumeStream(completion, callbacks?.onToken)
+  const content = await consumeStream(completion, "First Version Plan", callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for First Version Plan")
   logInfo("MVPPlan", "openrouter_generation_succeeded", {
@@ -365,7 +386,7 @@ export async function runTechSpec(
     rethrowOpenRouterTimeout(error, "Technical Specifications")
   }
 
-  const content = await consumeStream(completion, callbacks?.onToken)
+  const content = await consumeStream(completion, "Technical Specifications", callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for Tech Spec")
   logInfo("TechSpec", "openrouter_generation_succeeded", {
@@ -404,7 +425,7 @@ export async function runLaunchPlan(
     rethrowOpenRouterTimeout(error, "Launch Plan")
   }
 
-  const content = await consumeStream(completion, callbacks?.onToken)
+  const content = await consumeStream(completion, "Launch Plan", callbacks?.onToken)
 
   if (!content) throw new Error("No content returned from OpenRouter for Launch Plan")
   logInfo("LaunchPlan", "openrouter_generation_succeeded", {

@@ -4,7 +4,30 @@ import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 
 import { OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE } from "@/lib/mockups/openrouter-image-format"
-import { MockupRenderer } from "./mockup-renderer"
+import { MockupImageLightbox, MockupRenderer } from "./mockup-renderer"
+
+test("MockupImageLightbox: opts into the near-full-viewport media presentation", () => {
+  const markup = renderToStaticMarkup(
+    <MockupImageLightbox
+      fileName="fixture-mockup-option-a.png"
+      imageUrl="/mockup.png"
+      imageAlt="Concept 1: Focused dashboard"
+      copied={false}
+      onCopy={() => undefined}
+      onDownload={() => undefined}
+      onClose={() => undefined}
+    />,
+  )
+
+  assert.match(markup, /h-\[calc\(100dvh-2rem\)\]/)
+  assert.match(markup, /max-w-\[calc\(100vw-2rem\)\]/)
+  assert.match(markup, /flex min-h-0 flex-1 items-center justify-center/)
+  assert.match(markup, /h-full w-full max-w-full object-contain/)
+  assert.match(markup, /alt="Concept 1: Focused dashboard"/)
+  assert.match(markup, /aria-label="Copy fixture-mockup-option-a\.png"/)
+  assert.match(markup, /aria-label="Download fixture-mockup-option-a\.png"/)
+  assert.match(markup, /aria-label="Close preview"/)
+})
 
 test("MockupRenderer: renders simplified storyboard concept cards", () => {
   const content = JSON.stringify({

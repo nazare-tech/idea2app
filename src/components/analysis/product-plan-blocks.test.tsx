@@ -152,6 +152,74 @@ test("planning document blocks fall back to markdown for loose legacy content", 
   assert.match(html, /Loose legacy notes only/)
 })
 
+test("PrdDocumentBlocks follows the current prompt and navigation contract", () => {
+  const html = renderToStaticMarkup(
+    <PrdDocumentBlocks
+      projectId="project-1"
+      content={`# PRD: Proposal Pilot
+
+## 1. Introduction/overview
+Proposal Pilot turns discovery notes into client-ready proposals.
+
+## 2. Goals
+### Business goals
+- Validate demand with freelance designers.
+### User goals
+- Draft a proposal without rewriting standard sections.
+
+## 3. Team and Milestones
+### 3.1 Project size and team shape
+- **Project size**: Small, because one builder can validate the core workflow.
+- **Suggested team shape**: Product-minded full-stack builder.
+### Phase 1: Validation shell
+- **Goal**: Validate the proposal workflow.
+
+## 4. Success metrics
+### 4.1 30-day success threshold
+- Five designers complete a proposal draft.
+
+## 5. User personas
+### 5.1 Persona details
+**Dana Designer**
+*The Fast Proposal Maker*
+- **Age**: 34
+- **Occupation**: Freelance designer
+- **Location**: Remote
+- **Technical level**: Technical-adjacent
+**Description**
+Dana sends several proposals each month.
+**Needs**
+- Faster first drafts
+**Pain points**
+- Rewrites common sections
+**Motivation**
+Dana wants to spend more time on client work.
+
+## 8. Non-goals / out of scope
+- Multi-seat approvals are deferred.
+`}
+    />,
+  )
+
+  assert.match(html, /id="prd-team-milestones"/)
+  assert.match(html, /Team &amp; Milestones/)
+
+  const orderedSections = [
+    'id="prd-introduction-overview"',
+    'id="prd-goals"',
+    'id="prd-team-milestones"',
+    'id="prd-success-metrics"',
+    'id="prd-user-personas"',
+    'id="prd-non-goals-out-of-scope"',
+  ]
+
+  orderedSections.reduce((previousIndex, sectionId) => {
+    const sectionIndex = html.indexOf(sectionId)
+    assert.ok(sectionIndex > previousIndex, `${sectionId} should follow the previous Product Plan section`)
+    return sectionIndex
+  }, -1)
+})
+
 test("PrdDocumentBlocks renders current numbered PRD prompt content as blocks", () => {
   const html = renderToStaticMarkup(
     <PrdDocumentBlocks
@@ -317,12 +385,12 @@ So that I can send client-ready proposals.
   assert.doesNotMatch(html, /Technical Considerations/)
   assert.match(html, /id="prd-non-goals-out-of-scope"/)
   assert.match(html, /id="prd-success-metrics"/)
-  assert.match(html, /id="prd-timeline-milestones"/)
+  assert.match(html, /id="prd-team-milestones"/)
   assert.match(html, /id="prd-follow-through"/)
   assert.match(html, /Non-goals &amp; Out of Scope/)
   assert.match(html, /Success Metrics/)
   assert.match(html, /Technical \/ Performance Metrics/)
-  assert.match(html, /Timeline &amp; Milestones/)
+  assert.match(html, /Team &amp; Milestones/)
   assert.match(html, /Team Composition/)
   assert.match(html, /Phase 1/)
   assert.match(html, /Weeks 1-3/)
@@ -343,7 +411,7 @@ So that I can send client-ready proposals.
   assert.ok(html.indexOf("User Personas") < html.indexOf("Non-goals &amp; Out of Scope"))
 
   const timelineHtml = html.slice(
-    html.indexOf("Timeline &amp; Milestones"),
+    html.indexOf("Team &amp; Milestones"),
     html.indexOf("Risks, Dependencies &amp; Open Questions"),
   )
   assert.doesNotMatch(timelineHtml, /lucide-check h-3\.5 w-3\.5/)

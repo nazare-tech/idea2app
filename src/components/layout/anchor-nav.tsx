@@ -68,9 +68,11 @@ function StatusMarker({
 function StatusText({
   status,
   displayState,
+  derived = false,
 }: {
   status: NavStatus
   displayState?: DocumentGenerationDisplayState
+  derived?: boolean
 }) {
   if (status === "in_progress") {
     return (
@@ -81,7 +83,9 @@ function StatusText({
     )
   }
 
-  if (status === "needs_retry") return <span>Needs retry</span>
+  // Derived items have no queue item to retry; the honest label is that the
+  // assembled content is incomplete, not that a generation step failed.
+  if (status === "needs_retry") return <span>{derived ? "Incomplete" : "Needs retry"}</span>
   if (displayState?.displayStatus === "waiting") return <span>Waiting</span>
   if (displayState?.displayStatus === "queued") return <span>Queued</span>
   if (status === "done") return <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#22C55E] opacity-60" />
@@ -114,8 +118,8 @@ export function AnchorNavTab({
   const isInProgress = status === "in_progress"
   const isPending = status === "pending"
   const hasIssue = status === "needs_retry"
-  const showGenerateAction = displayState?.displayStatus === "idle" && isPending
-  const showRetryAction = hasIssue
+  const showGenerateAction = displayState?.displayStatus === "idle" && isPending && !item.derived
+  const showRetryAction = hasIssue && !item.derived
   const actionLabel = showRetryAction ? "Retry" : showGenerateAction ? "Generate" : null
   const ActionIcon = showRetryAction ? RotateCcw : Play
 
@@ -194,7 +198,7 @@ export function AnchorNavTab({
             "shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
             hasIssue ? "text-destructive" : "text-[#8A8480]",
           )}>
-            <StatusText status={status} displayState={displayState} />
+            <StatusText status={status} displayState={displayState} derived={item.derived} />
           </span>
         )}
       </div>
@@ -240,7 +244,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
   onGenerateDocument,
 }, ref) {
   const getStatus = (item: DocumentNavItem): NavStatus => {
-    return documentStatuses[item.sourceType] || "pending"
+    return documentStatuses[item.key] || documentStatuses[item.sourceType] || "pending"
   }
 
   return (

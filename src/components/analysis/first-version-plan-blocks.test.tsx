@@ -120,6 +120,97 @@ Start with the proposal intake form and mock proposal generation.
   assert.doesNotMatch(html, /AI-Friendly Build Sequence/)
   assert.doesNotMatch(html, /AI Build Guardrails/)
   assert.doesNotMatch(html, /Next Prompt/)
+
+  assert.ok(html.indexOf('id="mvp-summary"') < html.indexOf('id="mvp-key-assumptions"'))
+  assert.ok(html.indexOf('id="mvp-key-assumptions"') < html.indexOf('id="mvp-target-user-problem"'))
+  assert.ok(html.indexOf('id="mvp-target-user-problem"') < html.indexOf('id="mvp-core-user-flow"'))
+})
+
+test("MvpPlanDocumentBlocks follows the current risk-first prompt contract", () => {
+  const html = renderToStaticMarkup(
+    <MvpPlanDocumentBlocks
+      projectId="project-1"
+      content={`# MVP Plan: Proposal Pilot
+
+## 1. MVP Summary
+Proposal Pilot validates whether freelance designers want a faster proposal workflow.
+
+## 2. Key Risks, Assumptions, and Scope Decisions
+| Risk to Retire | Impact | Uncertainty | Validation Action |
+|---|---|---|---|
+| Designers do not trust generated drafts | High | High | Test drafts with five designers |
+- [SCOPE DECISION] Multi-seat approvals are excluded.
+
+## 3. Target User and Problem
+- **Primary User**: Freelance designers who write proposals manually.
+- **Problem**: Rewriting scope language delays every proposal.
+
+## 4. MVP Goal, Definition of Done, and Riskiest Assumptions
+- **Goal**: Validate whether designers complete and send an assisted proposal.
+- **Definition of Done**: A designer completes the workflow without help.
+
+## 5. Core User Flows
+| Flow / Capability | User Action | Value / Why It Matters | Include in MVP | Exclude for Now | Validation Action |
+|---|---|---|---|---|---|
+| Capture notes | Enter discovery notes | Starts the draft | Structured intake | CRM import | Observe completion |
+
+## 6. Suggested Build Approach
+| Layer | Recommendation | Reason |
+|---|---|---|
+| Frontend | Next.js | Fast web delivery |
+
+## 9. Validation Plan
+### First test audience
+Five freelance designers.
+`}
+    />,
+  )
+
+  const orderedSections = [
+    'id="mvp-summary"',
+    'id="mvp-key-assumptions"',
+    'id="mvp-target-user-problem"',
+    'id="mvp-bet"',
+    'id="mvp-core-user-flow"',
+    'id="mvp-suggested-stack"',
+    'id="mvp-validation-plan"',
+  ]
+
+  orderedSections.reduce((previousIndex, sectionId) => {
+    const sectionIndex = html.indexOf(sectionId)
+    assert.ok(sectionIndex > previousIndex, `${sectionId} should follow the previous First Version Plan section`)
+    return sectionIndex
+  }, -1)
+  assert.match(html, /Designers do not trust generated drafts/)
+  assert.match(html, /Test drafts with five designers/)
+})
+
+test("AiPromptsDocumentBlocks builds sub-agents.md from an H4 Agents list under Milestones", () => {
+  // Real generations nest "#### Agents" inside "### 3.4 Milestones" instead of
+  // emitting an H3 sibling; the sub-agents file must still assemble.
+  const html = renderToStaticMarkup(
+    <AiPromptsDocumentBlocks
+      projectId="project-1"
+      prdContent={`# PRD
+
+## 3. Team and Milestones
+
+### 3.4 Milestones
+
+#### Agents
+- **Frontend agent**: Builds the proposal intake and review screens.
+
+#### Phase 1: Foundation
+- **Goal**: Working shell.
+`}
+      mvpContent={null}
+      prdSettled
+      mvpSettled={false}
+    />,
+  )
+
+  assert.match(html, /id="ai-prompts-sub-agents"/)
+  assert.match(html, /sub-agents\.md/)
 })
 
 test("AiPromptsDocumentBlocks renders recommended tool section and prompt file cards", () => {
