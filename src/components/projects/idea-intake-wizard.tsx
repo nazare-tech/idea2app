@@ -4,16 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
-import {
-  IntakeSubmissionLoadingPanel,
-  type IntakeLoadingRow,
-} from "@/components/projects/intake-submission-loading-panel"
+import { IntakeSubmissionLoadingPanel } from "@/components/projects/intake-submission-loading-panel"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { INTAKE_EXAMPLE_IDEAS } from "@/lib/intake/examples"
 import { validateIdeaInput } from "@/lib/intake/idea-validation"
+import { shouldSubmitOnEnter } from "@/lib/intake/keyboard-submit"
 import type { IntakeAnswer, IntakeQuestion, IntakeQuestionSet } from "@/lib/intake/types"
 import { cn } from "@/lib/utils"
 
@@ -23,14 +21,6 @@ const MAX_INTAKE_QUESTIONS = 7
 const WIZARD_TOTAL_STEPS = 2
 
 type WizardStep = "idea" | "questions"
-
-type OnboardingStatusPayload = {
-  readyToRedirect?: boolean
-  redirectUrl?: string
-  effectiveStatus?: string
-  rows?: IntakeLoadingRow[]
-  needsExecute?: boolean
-}
 
 type AnswerDraft = {
   selectedOptionIds: string[]
@@ -62,6 +52,7 @@ function normalizeIdea(value: string) {
 export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: IdeaIntakeWizardProps) {
   const router = useRouter()
   const autoStartAttemptedRef = useRef(false)
+  const questionsRequestLockRef = useRef(false)
   const [step, setStep] = useState<WizardStep>("idea")
   const [idea, setIdea] = useState("")
   const [lastGeneratedIdea, setLastGeneratedIdea] = useState("")
@@ -70,10 +61,6 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
   const [isLoadingPending, setIsLoadingPending] = useState(Boolean(pendingToken))
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false)
   const [isCreatingProject, setIsCreatingProject] = useState(false)
-  const [creationStatusUrl, setCreationStatusUrl] = useState<string | null>(null)
-  const [creationRedirectUrl, setCreationRedirectUrl] = useState<string | null>(null)
-  const [creationProjectId, setCreationProjectId] = useState<string | null>(null)
-  const [creationRows, setCreationRows] = useState<IntakeLoadingRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const normalizedIdea = useMemo(() => normalizeIdea(idea), [idea])
@@ -87,6 +74,7 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
   const questions = questionSet?.questions ?? []
   const allQuestionsAnswered = questions.length > 0 && questions.every((question) => hasAnswer(question, answers[question.id]))
   const isIdeaStepLocked = isLoadingPending || isGeneratingQuestions
+  const isIdeaSubmitDisabled = !canContinue || isIdeaStepLocked
 
   useEffect(() => {
     let cancelled = false
@@ -135,75 +123,6 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
     window.sessionStorage.setItem(SESSION_IDEA_KEY, idea)
   }, [idea])
 
-  useEffect(() => {
-    if (!isCreatingProject || !creationStatusUrl) return
-
-    let cancelled = false
-    let timeout: ReturnType<typeof setTimeout> | null = null
-    let idlePollCount = 0
-    let executeRetryCount = 0
-
-    async function pollOnboardingStatus() {
-      try {
-        const response = await fetch(creationStatusUrl!, { cache: "no-store" })
-        const data = (await response.json().catch(() => null)) as OnboardingStatusPayload | null
-
-        if (cancelled) return
-
-        if (response.ok && data) {
-          if (Array.isArray(data.rows)) {
-            setCreationRows(data.rows)
-
-            const hasPendingWork = data.rows.some((row) => row.status === "pending")
-            const hasGeneratingWork = data.rows.some((row) => row.status === "generating")
-            if ((data.needsExecute || hasPendingWork) && !hasGeneratingWork) {
-              idlePollCount += 1
-              if (creationProjectId && idlePollCount >= 2 && executeRetryCount < 3) {
-                executeRetryCount += 1
-                fetch("/api/generate-all/execute", {
-                  method: "POST",
-                  keepalive: true,
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ projectId: creationProjectId }),
-                }).catch((executeError) => {
-                  console.error("[intake] Failed to retry onboarding generation:", executeError)
-                })
-              }
-            } else {
-              idlePollCount = 0
-            }
-          }
-
-          if (data.readyToRedirect) {
-            window.sessionStorage.removeItem(SESSION_IDEA_KEY)
-            router.push(data.redirectUrl || creationRedirectUrl || "/projects")
-            router.refresh()
-            return
-          }
-
-          if (data.effectiveStatus === "error") {
-            setError("We couldn't generate the initial project documents. Please try again.")
-            setIsCreatingProject(false)
-            return
-          }
-        }
-      } catch {
-        // Keep polling through transient network errors while the server runs.
-      }
-
-      if (!cancelled) {
-        timeout = setTimeout(pollOnboardingStatus, 2000)
-      }
-    }
-
-    pollOnboardingStatus()
-
-    return () => {
-      cancelled = true
-      if (timeout) clearTimeout(timeout)
-    }
-  }, [creationProjectId, creationRedirectUrl, creationStatusUrl, isCreatingProject, router])
-
   const updateIdea = (value: string) => {
     setIdea(value)
     setError(null)
@@ -216,7 +135,8 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
   }
 
   const generateQuestions = useCallback(async () => {
-    if (!canContinue || isGeneratingQuestions) return
+    if (!canContinue || questionsRequestLockRef.current) return
+    questionsRequestLockRef.current = true
     setError(null)
 
     if (questionSet && normalizedIdea === lastGeneratedIdea) {
@@ -253,9 +173,10 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate questions")
     } finally {
+      questionsRequestLockRef.current = false
       setIsGeneratingQuestions(false)
     }
-  }, [canContinue, isGeneratingQuestions, lastGeneratedIdea, normalizedIdea, questionSet])
+  }, [canContinue, lastGeneratedIdea, normalizedIdea, questionSet])
 
   useEffect(() => {
     if (
@@ -301,10 +222,6 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
     if (!questionSet || !allQuestionsAnswered || isCreatingProject) return
     setError(null)
     setIsCreatingProject(true)
-    setCreationRows(null)
-    setCreationStatusUrl(null)
-    setCreationRedirectUrl(null)
-    setCreationProjectId(null)
 
     try {
       const response = await fetch("/api/projects/create-from-intake", {
@@ -324,12 +241,10 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
         throw new Error(data?.error || "Failed to create project")
       }
 
-      if (typeof data?.statusUrl === "string" && typeof data?.project?.id === "string") {
-        const redirectUrl = typeof data.redirectUrl === "string" ? data.redirectUrl : data.projectUrl
-        setCreationStatusUrl(data.statusUrl)
-        setCreationRedirectUrl(redirectUrl)
-        setCreationProjectId(data.project.id)
-
+      // Fire onboarding generation and go straight to the workspace: it
+      // hydrates the durable queue, streams Market Research in place, and
+      // retries execute itself if this fire-and-forget request is lost.
+      if (typeof data?.project?.id === "string") {
         fetch("/api/generate-all/execute", {
           method: "POST",
           keepalive: true,
@@ -338,24 +253,23 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
         }).catch((executeError) => {
           console.error("[intake] Failed to start onboarding generation:", executeError)
         })
-        return
       }
 
+      const redirectUrl =
+        (typeof data?.redirectUrl === "string" && data.redirectUrl) ||
+        (typeof data?.projectUrl === "string" && data.projectUrl) ||
+        "/projects"
       window.sessionStorage.removeItem(SESSION_IDEA_KEY)
-      router.push(data.projectUrl)
+      router.push(redirectUrl)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create project")
-      setCreationRows(null)
-      setCreationStatusUrl(null)
-      setCreationRedirectUrl(null)
-      setCreationProjectId(null)
       setIsCreatingProject(false)
     }
   }
 
   if (isCreatingProject) {
-    return <IntakeSubmissionLoadingPanel rows={creationRows ?? undefined} />
+    return <IntakeSubmissionLoadingPanel />
   }
 
   return (
@@ -384,6 +298,25 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
                     data-testid="intake-idea-textarea"
                     value={idea}
                     onChange={(event) => updateIdea(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (
+                        !shouldSubmitOnEnter(
+                          {
+                            key: event.key,
+                            shiftKey: event.shiftKey,
+                            repeat: event.repeat,
+                            isComposing: event.nativeEvent.isComposing,
+                          },
+                          isIdeaSubmitDisabled
+                        )
+                      ) {
+                        return
+                      }
+
+                      event.preventDefault()
+                      void generateQuestions()
+                    }}
+                    enterKeyHint="go"
                     placeholder="Example: A product intelligence tool that turns support tickets, sales calls, and customer chats into roadmap priorities..."
                     className="min-h-[190px] border-border-strong bg-white text-[15px] leading-relaxed"
                     disabled={isIdeaStepLocked}
@@ -437,7 +370,7 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
                 <Button
                   type="button"
                   onClick={generateQuestions}
-                  disabled={!canContinue || isIdeaStepLocked}
+                  disabled={isIdeaSubmitDisabled}
                   className="h-11 w-full rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10 sm:w-auto"
                   data-testid="intake-continue"
                 >

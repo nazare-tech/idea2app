@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowRight, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { validateIdeaInput } from "@/lib/intake/idea-validation"
+import { shouldSubmitOnEnter } from "@/lib/intake/keyboard-submit"
 import {
   buildLandingAuthModalPath,
   buildLandingIntakeNextPath,
@@ -26,6 +27,7 @@ const BUTTON_ZONE = 158
 
 export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptureProps) {
   const router = useRouter()
+  const submissionLockRef = useRef(false)
   const [idea, setIdea] = useState("")
   const [loadingMode, setLoadingMode] = useState<"signin" | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -54,8 +56,11 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
   // shared minimum before we accept it into the intake flow.
   const ideaValidation = validateIdeaInput(idea)
   const ideaHint = hasIdea && ideaValidation.status !== "ok" ? ideaValidation.message : null
+  const isSubmitDisabled = loadingMode !== null || ideaHint !== null
 
   const startFlow = async () => {
+    if (submissionLockRef.current) return
+    submissionLockRef.current = true
     setError(null)
     setLoadingMode("signin")
 
@@ -97,6 +102,7 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
 
       router.push(buildLandingAuthModalPath(nextPath), { scroll: false })
     } finally {
+      submissionLockRef.current = false
       setLoadingMode(null)
     }
   }
@@ -122,6 +128,25 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
         value={idea}
         onChange={(event) => setIdea(event.target.value)}
         onFocus={() => setExpanded(true)}
+        onKeyDown={(event) => {
+          if (
+            !shouldSubmitOnEnter(
+              {
+                key: event.key,
+                shiftKey: event.shiftKey,
+                repeat: event.repeat,
+                isComposing: event.nativeEvent.isComposing,
+              },
+              isSubmitDisabled
+            )
+          ) {
+            return
+          }
+
+          event.preventDefault()
+          void startFlow()
+        }}
+        enterKeyHint="go"
         placeholder="Describe what you want to build in a few sentences..."
         className="block min-h-0 resize-none overflow-hidden rounded-md border-border-strong bg-white px-[13px] py-3 text-[15px] leading-[1.25] text-text-primary placeholder:text-text-secondary transition-[height,width] duration-[350ms] ease-out-expo"
         style={{
@@ -149,7 +174,7 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
       <Button
         type="button"
         onClick={startFlow}
-        disabled={loadingMode !== null || ideaHint !== null}
+        disabled={isSubmitDisabled}
         className="absolute bottom-3 right-3 h-[46px] rounded-md bg-[#1C1917] px-5 text-sm font-semibold text-white hover:bg-[#1C1917]/85"
         data-testid="landing-idea-signup"
       >
