@@ -218,6 +218,51 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
     }))
   }
 
+  // Keep the submission loading panel up until the first Market Research
+  // token has streamed, so the workspace opens with live content instead of
+  // an empty generating state. Escape hatches so the user is never stranded:
+  // the queue ends without streaming (error/cancelled/completed), the
+  // competitive item settles without partial content, or the deadline passes.
+  const FIRST_TOKEN_POLL_INTERVAL_MS = 1200
+  const FIRST_TOKEN_WAIT_LIMIT_MS = 60_000
+
+  const waitForFirstStreamedToken = async (projectId: string) => {
+    const deadline = Date.now() + FIRST_TOKEN_WAIT_LIMIT_MS
+
+    while (Date.now() < deadline) {
+      try {
+        const response = await fetch(
+          `/api/generate-all/status?projectId=${encodeURIComponent(projectId)}`
+        )
+        const data = await response.json().catch(() => null)
+
+        if (response.ok && data) {
+          const streamed = data.streamingPreview?.content
+          if (typeof streamed === "string" && streamed.length > 0) return
+
+          const queueStatus = data.queue?.status
+          if (queueStatus && !["queued", "pending", "running"].includes(queueStatus)) return
+
+          const competitiveItem = Array.isArray(data.queue?.queue)
+            ? data.queue.queue.find(
+                (item: { docType?: string; status?: string }) => item?.docType === "competitive"
+              )
+            : null
+          if (
+            competitiveItem?.status &&
+            !["pending", "generating"].includes(competitiveItem.status)
+          ) {
+            return
+          }
+        }
+      } catch {
+        // Transient network error: keep polling until the deadline.
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, FIRST_TOKEN_POLL_INTERVAL_MS))
+    }
+  }
+
   const createProject = async () => {
     if (!questionSet || !allQuestionsAnswered || isCreatingProject) return
     setError(null)
@@ -253,6 +298,10 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
         }).catch((executeError) => {
           console.error("[intake] Failed to start onboarding generation:", executeError)
         })
+
+        // Hold the loading panel here until Market Research has actually
+        // started streaming, so the workspace never opens to a blank state.
+        await waitForFirstStreamedToken(data.project.id)
       }
 
       const redirectUrl =
