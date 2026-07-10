@@ -436,6 +436,40 @@ body {
   animation: hero-enter-right 0.9s var(--motion-ease-out-expo) backwards;
 }
 
+/* Streaming document generation: committed blocks snap in, prose shows a caret */
+@keyframes stream-snap-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+.stream-snap-in {
+  animation: stream-snap-in 0.55s var(--motion-ease-out-expo) backwards;
+}
+
+@keyframes stream-caret-blink {
+  50% { opacity: 0; }
+}
+
+.stream-caret {
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: var(--primary);
+  animation: stream-caret-blink 0.9s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stream-snap-in {
+    animation: none;
+  }
+
+  .stream-caret {
+    animation: none;
+  }
+}
+
 /* Composer bar glow effect */
 .composer-glow {
   position: relative;

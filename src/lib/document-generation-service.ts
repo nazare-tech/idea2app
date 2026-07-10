@@ -42,6 +42,12 @@ export interface GenerateProjectDocumentInput {
   userId?: string | null
   runId?: string | null
   logContext?: LogContext
+  /**
+   * Called with the accumulated markdown as it streams from the model.
+   * Currently supported for competitive analysis only; used to persist
+   * partial content for the onboarding streaming preview.
+   */
+  onPartialContent?: (content: string) => void
 }
 
 export interface GeneratedProjectDocument {
@@ -81,6 +87,7 @@ export async function generateProjectDocument({
   userId,
   runId,
   logContext = {},
+  onPartialContent,
 }: GenerateProjectDocumentInput): Promise<GeneratedProjectDocument | null> {
   const baseLogContext = { ...logContext, projectId, docType, modelId }
   logInfo("DocumentGeneration", "started", baseLogContext)
@@ -111,7 +118,19 @@ export async function generateProjectDocument({
     const name = project.name
 
     if (docType === "competitive") {
-      const result = await runCompetitiveAnalysis({ idea, name, model: modelId })
+      // Accumulate streamed tokens so the caller sees the growing document,
+      // not individual deltas. Passing onToken switches the pipeline's final
+      // synthesis call to streaming mode.
+      let streamedContent = ""
+      const callbacks = onPartialContent
+        ? {
+            onToken: (token: string) => {
+              streamedContent += token
+              onPartialContent(streamedContent)
+            },
+          }
+        : undefined
+      const result = await runCompetitiveAnalysis({ idea, name, model: modelId }, callbacks)
       const content = linkifyBareUrls(result.content)
       const { data, error } = await supabase
         .from("analyses")

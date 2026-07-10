@@ -19,6 +19,7 @@ import { refundGenerationQueueItemCredits } from "@/lib/generation/queue-billing
 import {
   claimGenerationQueueItem,
   computeQueueStatus,
+  createGenerationQueueItemPartialContentWriter,
   getBlockedItems,
   getGenerationQueueItems,
   getRunMetadata,
@@ -394,6 +395,18 @@ async function executeQueueItem({
   const maxAttempts = isBundledItem ? Math.max(1, claimed.max_attempts) : 1
   let attempt = claimed.attempt
 
+  // Persist partial streamed markdown for the onboarding live preview.
+  // Isolated failure domain: writer errors disable partial writes only.
+  const partialWriter =
+    claimed.doc_type === "competitive"
+      ? createGenerationQueueItemPartialContentWriter(queueSupabase, claimed, {
+          onError: (error) => {
+            logWarn("GenerateAll", "item_partial_content_write_failed", itemLogContext, error)
+          },
+        })
+      : null
+
+  try {
   while (attempt < maxAttempts) {
     attempt += 1
     logInfo("GenerateAll", "item_attempt_started", {
@@ -430,6 +443,7 @@ async function executeQueueItem({
         userId: claimed.user_id,
         runId: claimed.run_id,
         logContext: itemLogContext,
+        onPartialContent: partialWriter ? partialWriter.write : undefined,
       })
 
       if (!output?.outputTable || !output.outputId) {
@@ -519,6 +533,10 @@ async function executeQueueItem({
     error: "Generation failed",
     completed_at: new Date().toISOString(),
   })
+  } finally {
+    // Clear the stored partial regardless of which terminal path ran.
+    await partialWriter?.finish()
+  }
 }
 
 async function finishGeneratingItem(

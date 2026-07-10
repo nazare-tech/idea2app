@@ -152,7 +152,7 @@ export function IntakeSubmissionLoadingPanel({
                       <p
                         className={cn(
                           "text-sm text-[#4A4040] sm:text-right",
-                          row.status === "error" && "text-destructive",
+                          (row.status === "error" || row.status === "incomplete") && "text-destructive",
                           row.status === "done" && "text-[#166534]",
                         )}
                       >
@@ -164,7 +164,7 @@ export function IntakeSubmissionLoadingPanel({
                         className={cn(
                           "intake-progress-fill relative h-full overflow-hidden bg-[#0D1320] transition-[width] duration-500 ease-out",
                           isAnimated && "intake-progress-fill--active",
-                          row.status === "error" && "bg-destructive",
+                          (row.status === "error" || row.status === "incomplete") && "bg-destructive",
                           row.status === "done" && "bg-[#166534]",
                         )}
                         style={{ width: `${value}%` }}
@@ -196,10 +196,13 @@ export function getNextIntakeProgressValue(
   timedProgress: number,
 ) {
   if (status === "done") return 100
-  if (status === "error" || status === "cancelled") {
+  if (status === "error" || status === "cancelled" || status === "incomplete") {
     return Math.min(currentValue ?? timedProgress, INTAKE_MAX_FAKE_PROGRESS)
   }
   if (status === "generating") {
+    return Math.max(currentValue ?? 0, timedProgress)
+  }
+  if (status === "partial") {
     return Math.max(currentValue ?? 0, timedProgress)
   }
 
@@ -207,13 +210,15 @@ export function getNextIntakeProgressValue(
 }
 
 export function shouldAnimateIntakeProgress(status: OnboardingGenerationStatus, value: number) {
-  return status === "generating" && value >= INTAKE_MIN_ANIMATED_PROGRESS
+  return (status === "generating" || status === "partial") && value >= INTAKE_MIN_ANIMATED_PROGRESS
 }
 
 export function statusMessage(row: IntakeLoadingRow) {
   if (row.status === "done") return "Ready"
   if (row.status === "error") return "Needs retry"
   if (row.status === "cancelled") return "Cancelled"
+  if (row.status === "incomplete") return "Unavailable"
+  if (row.status === "partial") return "Finishing"
   if (row.status === "pending" || row.status === "skipped") return "Waiting"
   return row.message
 }

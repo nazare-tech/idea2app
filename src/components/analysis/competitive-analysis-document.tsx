@@ -20,6 +20,7 @@ import {
   type CompetitiveAnalysisCompetitorProfile,
   type CompetitiveAnalysisPositioningPoint,
   type CompetitiveAnalysisStructuredData,
+  type CompetitiveAnalysisV2SectionName,
   getCompetitiveAnalysisViewModel,
   parsePositioningAxis,
   sanitizeCompetitiveAnalysisDisplayMarkdown,
@@ -207,7 +208,7 @@ function WorkspaceSectionHeader({
   )
 }
 
-function WorkspaceDesignedSection({
+export function WorkspaceDesignedSection({
   id,
   title,
   index,
@@ -859,6 +860,197 @@ function CompetitiveResearchPage({
 }
 
 /**
+ * Config for each designed Market Research subsection. Shared by the full
+ * document renderer below and the streaming preview, so both always render
+ * the exact same components. `v2Sections` lists the markdown H2 sections a
+ * block needs before it can render from a partial stream.
+ */
+export interface CompetitiveDetailSectionConfig {
+  id: string
+  kicker: string
+  title: string
+  v2Sections: CompetitiveAnalysisV2SectionName[]
+  render: (structured: CompetitiveAnalysisStructuredData) => React.ReactNode
+}
+
+export const COMPETITIVE_DETAIL_SECTION_CONFIGS: CompetitiveDetailSectionConfig[] = [
+  {
+    id: "market-research-direct-competitors",
+    kicker: "Deep Analysis",
+    title: "Direct Competitors",
+    v2Sections: ["Direct Competitors"],
+    render: (structured) => (
+      <CompetitorProfiles competitors={structured.directCompetitors} showHeader={false} />
+    ),
+  },
+  {
+    id: "market-research-landscape-overview",
+    kicker: "Deep Analysis",
+    title: "Market Landscape",
+    v2Sections: ["Competitive Landscape Overview"],
+    render: (structured) => (
+      <SmallListCard
+        title="Competitive Landscape Overview"
+        items={structured.competitiveLandscapeOverview}
+        showHeader={false}
+      />
+    ),
+  },
+  {
+    id: "market-research-feature-matrix",
+    kicker: "Deep Analysis",
+    title: "Feature Comparison",
+    v2Sections: ["Feature Comparison"],
+    render: (structured) => (
+      <CompactTableCard
+        title="Feature Comparison"
+        paragraphs={structured.featureMatrix.paragraphs}
+        headers={structured.featureMatrix.table?.headers ?? []}
+        rows={structured.featureMatrix.table?.rows ?? []}
+        showHeader={false}
+      />
+    ),
+  },
+  {
+    id: "market-research-positioning",
+    kicker: "Deep Analysis",
+    title: "Positioning Map",
+    v2Sections: ["Positioning Map"],
+    render: (structured) => (
+      <PositioningMap
+        title="Positioning Map"
+        description="Where you fit in the market."
+        positioningMap={structured.positioningMap}
+        showHeader={false}
+      />
+    ),
+  },
+  {
+    id: "market-research-pricing",
+    kicker: "Deep Analysis",
+    title: "Pricing Comparison",
+    v2Sections: ["Pricing Comparison"],
+    render: (structured) => (
+      <CompactTableCard
+        title="Pricing Comparison"
+        paragraphs={structured.pricingAndPackaging.paragraphs}
+        headers={structured.pricingAndPackaging.table?.headers ?? []}
+        rows={structured.pricingAndPackaging.table?.rows ?? []}
+        showHeader={false}
+      />
+    ),
+  },
+  {
+    id: "market-research-audience",
+    kicker: "Deep Analysis",
+    title: "Best Customer Segments",
+    v2Sections: ["Best Customer Segments"],
+    render: (structured) => (
+      <SmallListCard
+        title="Best Customer Segments"
+        items={structured.audienceSegments}
+        showHeader={false}
+      />
+    ),
+  },
+  {
+    id: "market-research-gtm",
+    kicker: "Deep Analysis",
+    title: "How You'll Reach Customers",
+    v2Sections: ["How You'll Reach Customers"],
+    render: (structured) => (
+      <SmallListCard
+        title="How You'll Reach Customers"
+        items={structured.gtmSignals}
+        dark={true}
+        showHeader={false}
+      />
+    ),
+  },
+  {
+    id: "market-research-gap-analysis",
+    kicker: "Deep Analysis",
+    title: "Gap Analysis",
+    v2Sections: ["Gap Analysis"],
+    render: (structured) => (
+      <SmallListCard title="Gap Analysis" items={structured.gapAnalysis} showHeader={false} />
+    ),
+  },
+  {
+    id: "market-research-differentiation",
+    kicker: "Deep Analysis",
+    title: "Ways to Stand Out",
+    v2Sections: ["Ways to Stand Out"],
+    render: (structured) => (
+      <SmallListCard
+        title="Ways to Stand Out"
+        items={structured.differentiationWedges}
+        dark={true}
+        showHeader={false}
+      />
+    ),
+  },
+  {
+    id: "market-research-moat",
+    kicker: "Deep Analysis",
+    title: "What Makes It Hard to Copy",
+    v2Sections: ["What Makes It Hard to Copy"],
+    render: (structured) => (
+      <SmallListCard
+        title="What Makes It Hard to Copy"
+        items={structured.moatAndDefensibility}
+        showHeader={false}
+      />
+    ),
+  },
+  {
+    id: "market-research-mvp-wedge",
+    kicker: "Deep Analysis",
+    title: "First Version Focus",
+    v2Sections: ["First Version Focus"],
+    render: (structured) => (
+      <MVPCard
+        paragraphs={structured.mvpWedgeRecommendation.paragraphs}
+        bullets={structured.mvpWedgeRecommendation.bullets}
+        showHeader={false}
+      />
+    ),
+  },
+  {
+    id: "market-research-strategic-recommendations",
+    kicker: "Deep Analysis",
+    title: "Recommended Next Moves",
+    v2Sections: ["Recommended Next Moves"],
+    render: (structured) => (
+      <SmallListCard
+        title="Recommended Next Moves"
+        items={structured.strategicRecommendations}
+        showHeader={false}
+      />
+    ),
+  },
+]
+
+/**
+ * Executive Summary cards rendered from already-parsed structured data.
+ * Used by the full overview section below and by the streaming preview.
+ */
+export function CompetitiveOverviewBody({
+  structured,
+  projectName,
+}: {
+  structured: CompetitiveAnalysisStructuredData
+  projectName?: string
+}) {
+  return (
+    <div className="flex flex-col gap-y-3 gap-x-0">
+      <ProposedNameCard projectName={projectName} />
+      <ExecutiveSummaryCard summary={structured.executiveSummary} showHeader={false} />
+    </div>
+  )
+}
+
+/**
  * Executive Summary portion of competitive analysis. The generated executive
  * summary and opportunity verdict are merged into one user-facing block.
  */
@@ -886,10 +1078,7 @@ export function CompetitiveOverviewSection({
         description="Market snapshot, entry assessment, and key risk."
       />
 
-      <div className="flex flex-col gap-y-3 gap-x-0">
-        <ProposedNameCard projectName={projectName} />
-        <ExecutiveSummaryCard summary={structured.executiveSummary} showHeader={false} />
-      </div>
+      <CompetitiveOverviewBody structured={structured} projectName={projectName} />
     </section>
   )
 }
@@ -921,175 +1110,18 @@ export function CompetitiveDetailSection({
         description="Competitive landscape, customer segments, positioning, and recommended next moves."
       />
 
-      <WorkspaceDesignedSection
-        id="market-research-direct-competitors"
-        kicker="Deep Analysis"
-        title="Direct Competitors"
-        index={1}
-        total={12}
-      >
-        <CompetitorProfiles
-          competitors={structured.directCompetitors}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-landscape-overview"
-        kicker="Deep Analysis"
-        title="Market Landscape"
-        index={2}
-        total={12}
-      >
-        <SmallListCard
-          title="Competitive Landscape Overview"
-          items={structured.competitiveLandscapeOverview}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-feature-matrix"
-        kicker="Deep Analysis"
-        title="Feature Comparison"
-        index={3}
-        total={12}
-      >
-        <CompactTableCard
-          title="Feature Comparison"
-          paragraphs={structured.featureMatrix.paragraphs}
-          headers={structured.featureMatrix.table?.headers ?? []}
-          rows={structured.featureMatrix.table?.rows ?? []}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-positioning"
-        kicker="Deep Analysis"
-        title="Positioning Map"
-        index={4}
-        total={12}
-      >
-        <PositioningMap
-          title="Positioning Map"
-          description="Where you fit in the market."
-          positioningMap={structured.positioningMap}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-pricing"
-        kicker="Deep Analysis"
-        title="Pricing Comparison"
-        index={5}
-        total={12}
-      >
-        <CompactTableCard
-          title="Pricing Comparison"
-          paragraphs={structured.pricingAndPackaging.paragraphs}
-          headers={structured.pricingAndPackaging.table?.headers ?? []}
-          rows={structured.pricingAndPackaging.table?.rows ?? []}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-audience"
-        kicker="Deep Analysis"
-        title="Best Customer Segments"
-        index={6}
-        total={12}
-      >
-        <SmallListCard
-          title="Best Customer Segments"
-          items={structured.audienceSegments}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-gtm"
-        kicker="Deep Analysis"
-        title="How You'll Reach Customers"
-        index={7}
-        total={12}
-      >
-        <SmallListCard
-          title="How You'll Reach Customers"
-          items={structured.gtmSignals}
-          dark={true}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-gap-analysis"
-        kicker="Deep Analysis"
-        title="Gap Analysis"
-        index={8}
-        total={12}
-      >
-        <SmallListCard title="Gap Analysis" items={structured.gapAnalysis} showHeader={false} />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-differentiation"
-        kicker="Deep Analysis"
-        title="Ways to Stand Out"
-        index={9}
-        total={12}
-      >
-        <SmallListCard
-          title="Ways to Stand Out"
-          items={structured.differentiationWedges}
-          dark={true}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-moat"
-        kicker="Deep Analysis"
-        title="What Makes It Hard to Copy"
-        index={10}
-        total={12}
-      >
-        <SmallListCard
-          title="What Makes It Hard to Copy"
-          items={structured.moatAndDefensibility}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-mvp-wedge"
-        kicker="Deep Analysis"
-        title="First Version Focus"
-        index={11}
-        total={12}
-      >
-        <MVPCard
-          paragraphs={structured.mvpWedgeRecommendation.paragraphs}
-          bullets={structured.mvpWedgeRecommendation.bullets}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
-
-      <WorkspaceDesignedSection
-        id="market-research-strategic-recommendations"
-        kicker="Deep Analysis"
-        title="Recommended Next Moves"
-        index={12}
-        total={12}
-      >
-        <SmallListCard
-          title="Recommended Next Moves"
-          items={structured.strategicRecommendations}
-          showHeader={false}
-        />
-      </WorkspaceDesignedSection>
+      {COMPETITIVE_DETAIL_SECTION_CONFIGS.map((config, index) => (
+        <WorkspaceDesignedSection
+          key={config.id}
+          id={config.id}
+          kicker={config.kicker}
+          title={config.title}
+          index={index + 1}
+          total={COMPETITIVE_DETAIL_SECTION_CONFIGS.length}
+        >
+          {config.render(structured)}
+        </WorkspaceDesignedSection>
+      ))}
     </section>
   )
 }

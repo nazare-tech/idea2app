@@ -381,7 +381,7 @@ const COMPETITIVE_ANALYSIS_SECTION_LOOKUP = new Map<
   ]),
 )
 
-function resolveCompetitiveAnalysisSectionName(
+export function resolveCompetitiveAnalysisSectionName(
   heading: string,
 ): CompetitiveAnalysisV2SectionName | null {
   return COMPETITIVE_ANALYSIS_SECTION_LOOKUP.get(normalizeFieldLabel(heading)) ?? null

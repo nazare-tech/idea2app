@@ -32,6 +32,7 @@ function queueItem(
     model_id: null,
     output_id: null,
     output_table: null,
+    partial_content: null,
     project_id: "project-1",
     queue_id: "queue-1",
     run_id: "run-1",

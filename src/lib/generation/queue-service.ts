@@ -257,6 +257,64 @@ export async function syncGenerationQueueJson(
   if (error) throw error
 }
 
+/**
+ * Throttled writer that persists partial streamed markdown onto a generating
+ * queue item so pollers (onboarding-status) can serve a live preview.
+ *
+ * Failure-isolated by design: any write error (including a missing
+ * partial_content column before the migration is applied) disables the writer
+ * for the rest of the run without affecting generation itself.
+ */
+export function createGenerationQueueItemPartialContentWriter(
+  supabase: ServerSupabaseClient,
+  item: Pick<GenerationQueueItemRow, "id" | "user_id">,
+  {
+    intervalMs = 1500,
+    onError,
+  }: { intervalMs?: number; onError?: (error: unknown) => void } = {},
+) {
+  let lastWriteAt = 0
+  let inFlight = false
+  let disabled = false
+
+  async function persist(content: string | null) {
+    inFlight = true
+    try {
+      const { error } = await supabase
+        .from("generation_queue_items")
+        .update({ partial_content: content })
+        .eq("id", item.id)
+        .eq("user_id", item.user_id)
+      if (error) throw error
+    } catch (error) {
+      disabled = true
+      onError?.(error)
+    } finally {
+      inFlight = false
+    }
+  }
+
+  return {
+    write(content: string) {
+      if (disabled || inFlight) return
+      const now = Date.now()
+      if (now - lastWriteAt < intervalMs) return
+      lastWriteAt = now
+      void persist(content)
+    },
+    /** Clear the stored partial once the item reaches a terminal state. */
+    async finish() {
+      if (disabled) return
+      disabled = true
+      // Let any in-flight throttled write settle so the clearing write wins.
+      while (inFlight) {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+      }
+      await persist(null)
+    },
+  }
+}
+
 export async function updateGenerationQueueItem(
   supabase: ServerSupabaseClient,
   item: Pick<GenerationQueueItemRow, "id" | "user_id">,
