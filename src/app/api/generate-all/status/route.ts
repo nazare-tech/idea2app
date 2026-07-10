@@ -92,7 +92,19 @@ export async function GET(request: Request) {
     )
     const status = data.status === "cancelled" ? "cancelled" : computeQueueStatus(items)
 
+    // Live streaming preview: partial markdown persisted by the executor
+    // while Market Research is actively generating. Kept out of the legacy
+    // queue JSON so the large text never syncs into generation_queues.queue.
+    const competitiveItem = items.find((item) => item.doc_type === "competitive")
+    const streamingPreview =
+      competitiveItem?.status === "generating" &&
+      typeof competitiveItem.partial_content === "string" &&
+      competitiveItem.partial_content.length > 0
+        ? { docType: "competitive" as const, content: competitiveItem.partial_content }
+        : null
+
     return NextResponse.json({
+      streamingPreview,
       queue: {
         ...data,
         queue,

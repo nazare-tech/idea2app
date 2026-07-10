@@ -27,6 +27,7 @@ import {
   isWorkspaceDocumentType,
   resolveWorkspaceDocumentTab,
 } from "@/lib/workspace-tab-policy"
+import { useSmoothedStream } from "@/hooks/use-smoothed-stream"
 import { useWorkspaceDocuments } from "./use-workspace-documents"
 import { usePersistedGenerationState } from "./use-persisted-generation-state"
 import { useWorkspaceScrollSync, getSourceTypeForScrollTarget } from "./use-workspace-scroll-sync"
@@ -37,6 +38,7 @@ import type {
   ProjectWorkspaceProps,
   WorkspaceGenerationCounts,
 } from "./workspace-types"
+import { getAiPromptsReadiness } from "@/lib/ai-prompts-readiness"
 
 const VISIBLE_WORKSPACE_DOCUMENT_TYPES: DocumentType[] = Array.from(
   new Set(SCROLLABLE_NAV_ITEMS.map((item) => item.sourceType))
@@ -146,7 +148,11 @@ export function ProjectWorkspace({
     }
   }, [analyses, prds, mvpPlans, mockups, techSpecs, deployments])
 
-  const { generateAllQueue, generateAllStatus, resumeGenerateAll } = useGenerateAllHydration(project.id)
+  const { generateAllQueue, generateAllStatus, generateAllStreamingPreview, resumeGenerateAll } =
+    useGenerateAllHydration(project.id)
+  // Smooth the 3s poll chunks of partial Market Research markdown into a
+  // continuous word-by-word reveal shared by both streaming sections.
+  const { text: smoothedStreamingText } = useSmoothedStream(generateAllStreamingPreview ?? "")
   const {
     generatingDocuments,
     setGeneratingDocuments,
@@ -726,6 +732,28 @@ export function ProjectWorkspace({
     },
   }
 
+  // Live stream while there is no saved competitive document yet. "ready" is
+  // included to bridge the gap between stream end and the refreshed document
+  // load; error states fall through to the retry module instead.
+  const competitiveDisplayStatus = scrollableDocuments.competitive.displayState?.displayStatus
+  const competitiveStreamingContent =
+    !scrollableDocuments.competitive.content &&
+    smoothedStreamingText &&
+    (competitiveDisplayStatus === "generating" || competitiveDisplayStatus === "ready")
+      ? smoothedStreamingText
+      : null
+
+  const aiPromptsReadiness = getAiPromptsReadiness({
+    prdContent: scrollableDocuments.prd.content,
+    mvpContent: scrollableDocuments.mvp.content,
+    prdSettled: Boolean(scrollableDocuments.prd.content) &&
+      !scrollableDocuments.prd.isGenerating &&
+      !scrollableDocuments.prd.isLoading,
+    mvpSettled: Boolean(scrollableDocuments.mvp.content) &&
+      !scrollableDocuments.mvp.isGenerating &&
+      !scrollableDocuments.mvp.isLoading,
+  })
+
   // Build status map for AnchorNav (keyed by sourceType)
   const navDocumentStatuses: Record<string, LegacyDocumentStatus | "needs_retry"> = {}
   const navDocumentDisplayStates: Record<string, DocumentGenerationDisplayState> = {}
@@ -737,6 +765,33 @@ export function ProjectWorkspace({
     if (displayStates[item.sourceType]) {
       navDocumentDisplayStates[item.key] = displayStates[item.sourceType]
     }
+  }
+  navDocumentStatuses["ai-prompts"] = aiPromptsReadiness.status === "ready"
+    ? "done"
+    : aiPromptsReadiness.status === "partial"
+      ? "in_progress"
+      : aiPromptsReadiness.status === "incomplete"
+        ? "needs_retry"
+        : "pending"
+  navDocumentDisplayStates["ai-prompts"] = {
+    docType: "mvp",
+    displayStatus: aiPromptsReadiness.status === "ready"
+      ? "ready"
+      : aiPromptsReadiness.status === "partial"
+        ? "generating"
+        : aiPromptsReadiness.status === "incomplete"
+          ? "needs_retry"
+          : "waiting",
+    navStatus: navDocumentStatuses["ai-prompts"],
+    label: "AI Prompts",
+    message: aiPromptsReadiness.status === "ready"
+      ? "Ready"
+      : aiPromptsReadiness.status === "incomplete"
+        ? "Incomplete"
+        : "Assembling AI handoff",
+    detail: aiPromptsReadiness.status === "incomplete"
+      ? "Some prompt files are unavailable from the generated plans."
+      : "AI Prompts is derived from the Product Plan and First Version Plan.",
   }
   const visibleNavItems = filterNavItemsByRenderedSections(
     SCROLLABLE_NAV_ITEMS,
@@ -801,6 +856,7 @@ export function ProjectWorkspace({
               projectName={projectName}
               activeDocument={activeDocument}
               documents={scrollableDocuments}
+              competitiveStreamingContent={competitiveStreamingContent}
               onGenerateDocument={handleGenerateDocument}
             />
             <ProjectComposer
