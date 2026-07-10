@@ -33,6 +33,7 @@ Visual idioms to match:
 - Keep code simple and well-commented so I can learn from it
 - If something breaks, explain what went wrong in plain English
 - If you make architectural changes or add new dependencies, you must update `PROJECT_CONTEXT.md` to keep it current.
+- Before creating, updating, closing, or adding evidence to a Linear issue, read `docs/operating-system/linear-issue-format.md`. Completion evidence must be attached to the issue, embedded inline in the verification comment using the Linear-hosted asset URL, and verified by reading the saved comment back.
 
 ## How I Want You To Work
 
@@ -145,4 +146,3 @@ Guide for creating new skills that extend Claude's capabilities.
 2. **Or describe what you need**: Say "Deploy to Vercel" instead of memorizing commands
 3. **Context matters**: Some skills work best with specific file types or project setups
 4. **Combine skills**: Use multiple skills in sequence (e.g., `/frontend-design` then `/deploy`)
-

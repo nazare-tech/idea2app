@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-09: Pre-launch Stripe and derived-readiness safeguards
+
+- Plan: [docs/plans/prelaunch-meeting-ticket-fixes-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/prelaunch-meeting-ticket-fixes-plan.md)
+- Review: [docs/plans/prelaunch-meeting-ticket-fixes-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/prelaunch-meeting-ticket-fixes-review.md)
+- Durable source of truth: `src/app/api/stripe/checkout/route.ts`, `src/lib/stripe/checkout-idempotency.ts`, `src/lib/stripe/billing-flow.ts`, `src/app/api/projects/[id]/onboarding-status/route.ts`, `src/lib/ai-prompts-readiness.ts`, and `src/lib/generation/onboarding.ts`.
+- Schema or data-shape changes: None. AI Prompts remains display-only and derived from Product Plan and First Version Plan content; no queue item or table was added.
+- Auth, RLS, or permission changes: None. Stripe routes keep user authentication and server-side plan/price validation. Onboarding status keeps project and queue ownership checks before service-client reads.
+- Runtime/API behavior changes: Checkout retries for one user and selected price use a stable Stripe idempotency key; stale test customer IDs are repaired before checkout; client redirects require exact hosted Stripe HTTPS origins and failures render inline. Onboarding status derives AI Prompts waiting/partial/ready/incomplete from actual source content, and failed upstream generation no longer leaves the derived row indefinitely pending.
+- Migration or deployment steps: None. No Stripe keys, live products, database rows, or webhook configuration were changed by implementation.
+- Verification: 443 tests, typecheck, lint, production build, diff check, and real Chrome evidence are recorded in the review. Full test-mode checkout/subscription/portal/cancellation remains blocked because the e2e account points to a missing historical test customer and clean signup confirmation/rate limiting prevented a replacement account in this session.
+- Rollback or recovery: Revert the checkout helper/idempotency option and derived readiness consumers. No schema rollback is needed. Preserve the existing Stripe webhook mapping and subscription rows.
+- Follow-ups: The owner approved closing NAZ-38 with the test-account limitation recorded. Before live billing activation, provision a confirmed clean Stripe QA user or scripted test-clock fixture and complete checkout, subscription-row/allowance, portal cancellation, and webhook-transition evidence.
+
 ## 2026-07-06: UI performance round 2 server billing and cached auth lookup
 
 - Plan: [docs/plans/ui-performance-round-2-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/ui-performance-round-2-plan.md)

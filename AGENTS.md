@@ -15,6 +15,7 @@
 - If something breaks, explain what went wrong in plain English
 - If you make architectural changes or add new dependencies, you must update `PROJECT_CONTEXT.md` to keep it current.
 - Before handling raw research transcripts, meeting transcripts, or pasted meeting notes, read `docs/operating-system/transcript-sanitization-protocol.md`. Ask for missing transcript metadata first: when it happened, the research participant name for research, and the meeting title/attendees for meetings.
+- Before creating, updating, closing, or adding evidence to a Linear issue, read `docs/operating-system/linear-issue-format.md`. Completion evidence must be attached to the issue, embedded inline in the verification comment using the Linear-hosted asset URL, and verified by reading the saved comment back.
 
 ## How I Want You To Work
 
@@ -39,6 +40,7 @@
 - When I ask for a change, do your best to test that change before returning control to me
 - If I ask for a visual/UI change, add it to your test plan and visually confirm the change actually happened before returning control to me
 - For any UI, visual, user-flow, or user-visible backend change, test through the real local UI as a real user would. Do not patch routes, stub providers, switch to fixtures, shorten waits, use dummy environment values, or bypass auth/database/image-generation flows just to make verification faster. If the real dependency is unavailable, blocked, unsafe, or would spend money unexpectedly, report that blocker instead of faking the UI path.
+- For loading, progressive generation, onboarding progress, or derived-readiness UI changes, create a new project through the current real intake flow and capture the state during that project's generation. Do not use an older project as the primary evidence because its saved artifacts may reflect obsolete prompts, parsers, schemas, or section contracts. Older projects may be used only as clearly labeled compatibility/regression evidence in addition to the fresh-project run.
 - When a normal human would complete the task through the UI and the UI path exposes a bug, fix that UI/user-flow bug before continuing. Do not bypass the broken path with direct API/database calls just because lower-level access is available, unless the user explicitly asks for an API-only workflow.
 - If Google Chrome or the browser controller becomes unavailable during a required real-UI verification or artifact-generation flow, first try to recover the Chrome workflow: reconnect to the existing tab, target the correct Chrome profile/extension instance, refresh/reopen the local route, and verify the dev server/session state. If the UI workflow still cannot be restored, stop and report the blocker instead of continuing through direct API, database, or server-side generation as a substitute for the user-visible flow.
 - For UI-visible changes, capture and share screenshot or video evidence in the same thread where I gave the task. Prefer screenshots for static states and short video when motion, loading, generation progress, or multi-step flows matter. Save verification screenshots/videos under `ui-evidence/` using a date/task subfolder; this directory lives inside the repo working tree but is ignored by Git. Include the exact route/viewport/state tested and the saved artifact path in the plan or review.
@@ -67,6 +69,7 @@
 - For repeatable Maker Compass intake/UI/report-generation tests, use `docs/guides/idea-intake-test-cases.md`.
 - Use Idea 1.1 from that file by default unless I explicitly ask you to use another variant, or unless generating multiple projects would materially help compare outputs.
 - When the intake wizard asks a new follow-up question, answer it using the closest matching policy in that file, then append the exact question and answer to the observed question log.
+- When the behavior under test depends on generation timing or current generated artifact structure, complete project creation with Idea 1.1 and use that fresh project as the primary QA artifact.
 
 ## Available Skills
 

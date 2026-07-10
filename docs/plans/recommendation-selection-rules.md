@@ -57,6 +57,12 @@ When the user says a different recommendation should have been chosen:
 - Reason: Stopping the server can look like browser/controller failure and can invalidate real-user UI verification. The server process is part of the test environment, so preserving it keeps screenshots, navigation, auth, and long-running generation flows inspectable.
 - Example: If a UI test cannot navigate to `localhost:3000`, first check that the dev server is still listening and serving the route before switching tools or using API/server-side shortcuts.
 
+### 2026-07-09: Use Fresh Projects For Generation-State UI Verification
+
+- Prefer: Creating a new project through the current real intake and generation pipeline when verifying loading, progressive generation, onboarding progress, derived readiness, or generated-artifact structure.
+- Reason: Older projects contain artifacts produced by older prompts, parsers, schemas, and renderer contracts. They can be valuable compatibility fixtures, but they cannot prove that the current pipeline produces the intended transient state or current artifact shape.
+- Example: NAZ-118 was initially evidenced with a nine-day-old Signal To Roadmap project. That screenshot proved terminal incomplete handling for legacy content, but it did not prove the current AI Prompts partial state while a newly created project was generating. Future loading-state work must use a fresh Idea 1.1 project as primary evidence and label older-project screenshots as supplemental regression evidence.
+
 Use this format for future entries:
 
 ```markdown

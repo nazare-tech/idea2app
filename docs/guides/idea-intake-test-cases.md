@@ -14,6 +14,8 @@ The intake wizard asks AI-generated follow-up questions, so the exact wording an
 4. Always answer the required platform question using the canonical `primary-platform` option ID listed for the idea.
 5. If the UI asks a new question, choose the closest answer from the idea's answer policy, then append the question and chosen answer to `Observed Question Log`.
 6. For question-capture QA, stop before clicking `Create project` unless the task explicitly asks for full project creation.
+7. For loading, progressive generation, onboarding progress, derived-readiness, or generated-document structure QA, click `Create project` and use that newly generated project as the primary evidence. Capture the relevant transient state while generation is active; do not substitute an older saved project.
+8. Older projects may be used as supplemental backward-compatibility evidence only. Label their creation age and the legacy state they demonstrate so they are not mistaken for current-pipeline verification.
 
 Do not use Ideas 1.2, 2.1, 2.2, 3.1, or 3.2 by default. They exist for explicit alternate-domain testing or compare/contrast runs.
 
@@ -386,3 +388,21 @@ Captured during real `/projects/new` UI project creation for Idea 1.1. The first
 | 1.1 | Which data sources will the first version prioritize ingesting? | Support tickets; Chat transcripts; Sales call recordings; Internal docs | `support-tickets`, `chat-transcripts`, `sales-calls`, `internal-docs` |
 | 1.1 | What is the most valuable output for users in v1? | Roadmap suggestions | `roadmap-recs` |
 | 1.1 | Where will people use the first version? | Desktop website | `desktop-web` |
+
+### 2026-07-09 Fresh Loading-State Verification: Idea 1.1
+
+Captured through the real `/projects/new` UI for NAZ-118, NAZ-119, and NAZ-120 current-pipeline evidence. The project was created as `Signal Roadmap Intelligence Suite` (`b104e9e3-45a2-4eeb-87bf-e5bc76f39184`).
+
+| Idea variant | Question text | Answer used | Option ID when stable |
+| --- | --- | --- | --- |
+| 1.1 | Where will people use the first version? | Desktop website | `desktop-web` |
+| 1.1 | What size companies are the primary target customers? | Mid-market (501–2k) |  |
+| 1.1 | Which data sources must be supported in the first version? | Support tickets; Chat transcripts; Sales call recordings; Internal docs |  |
+| 1.1 | What is the intended business model? | SaaS per-seat |  |
+| 1.1 | Which technical capabilities are required from day one? | 3rd-party integrations; Private data / SOC 2; LLM / AI pipeline |  |
+| 1.1 | How technical is the team building this? | Full-stack devs |  |
+
+Evidence:
+- Live partial AI Prompts: `ui-evidence/2026-07-09-prelaunch-ticket-fixes/NAZ-118/fresh-project/ai-prompts-partial-live.png`
+- Fresh completed mockup lightbox: `ui-evidence/2026-07-09-prelaunch-ticket-fixes/NAZ-119/fresh-project/mockup-full-view-current.png`
+- Fresh current Product Plan order: `ui-evidence/2026-07-09-prelaunch-ticket-fixes/NAZ-120/fresh-project/product-plan-order-current.png`

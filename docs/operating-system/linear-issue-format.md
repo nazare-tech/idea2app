@@ -2,6 +2,10 @@
 
 Linear is the source of truth for actionable work. Repo docs should link to Linear issues, not maintain a separate task backlog.
 
+## Instruction Discovery
+
+This file is the canonical Linear workflow for the repository. Root `AGENTS.md` (Codex) and root `CLAUDE.md` (Claude) must both require reading it before any Linear create, update, close, or evidence action. Keep the detailed workflow here instead of duplicating it in platform-specific skills, so both agent runtimes follow one maintained source of truth.
+
 ## Issue Body Template
 
 ```md
@@ -95,3 +99,22 @@ risk:stability
 - Add one work-type label such as `Feature`, `Improvement`, `Bug`, or one `type:*` label.
 - Add `risk:*` labels only when the risk is materially relevant.
 - Use `source:slack` only when Slack is the source of the issue. Do not use Slack as the task tracker.
+
+## Visual Evidence In Comments
+
+When a completed ticket needs screenshot or video evidence, make the evidence visible inside the verification comment instead of mentioning only the filename.
+
+1. Save the local artifact under the ticket-specific `ui-evidence/` folder.
+2. Call Linear's `prepare_attachment_upload` with the exact filename, MIME type, and byte size.
+3. Immediately upload the raw bytes with `PUT`, preserving every signed request header exactly.
+4. Call `create_attachment_from_upload` with the returned `assetUrl` so the file remains attached to the issue.
+5. Add or update the verification comment with standard Markdown image syntax using that same Linear-hosted `assetUrl`:
+
+```md
+![NAZ-123 verification screenshot](https://uploads.linear.app/...)
+```
+
+6. Read the comment back and verify that it contains the inline image embed. Keep the issue attachment as a durable fallback, but do not use `Attached: filename.png` as the only visual reference.
+7. For videos or file types Linear cannot render inline, attach the file and include a direct descriptive link in the comment.
+
+Upload and finalize one file at a time because signed upload URLs expire quickly. Never paste base64 image data into a Linear comment or expose credentials, payment details, private email addresses, or unrelated customer/project content in evidence.
