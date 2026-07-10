@@ -14,6 +14,7 @@ import { displayFontClass } from "@/components/analysis/planning-blocks-shared"
 import {
   COMPETITIVE_DETAIL_SECTION_CONFIGS,
   CompetitiveOverviewBody,
+  TopLevelDocumentHeader,
   WorkspaceDesignedSection,
   type CompetitiveDetailSectionConfig,
 } from "@/components/analysis/competitive-analysis-document"
@@ -25,10 +26,11 @@ import {
 import {
   getSafeStreamTail,
   parseStreamingCompetitiveAnalysis,
+  sanitizeLiveSectionContent,
   type StreamingCompetitiveParseResult,
 } from "@/lib/competitive-analysis-streaming"
 
-export type CompetitiveStreamingVariant = "block-commit" | "skeleton" | "ticker"
+export type CompetitiveStreamingVariant = "block-commit" | "skeleton" | "ticker" | "live-fill"
 
 /**
  * Which portion of the document to render. The workspace splits the stream
@@ -50,12 +52,19 @@ interface CompetitiveStreamingDocumentProps {
 
 const TOTAL_SECTIONS = COMPETITIVE_DETAIL_SECTION_CONFIGS.length
 
-function buildStructuredData(parse: StreamingCompetitiveParseResult) {
+function buildStructuredData(
+  parse: StreamingCompetitiveParseResult,
+  /** Active (still-growing) section to expose to the designed renderers, live-fill only */
+  liveSection?: { name: NonNullable<StreamingCompetitiveParseResult["sections"][number]["name"]>; content: string } | null
+) {
   const sections: CompetitiveAnalysisV2ParseResult["sections"] = {}
   for (const section of parse.sections) {
     if (section.complete && section.name) {
       sections[section.name] = section.content
     }
+  }
+  if (liveSection) {
+    sections[liveSection.name] = liveSection.content
   }
 
   const parsedLike: CompetitiveAnalysisV2ParseResult = {
@@ -143,6 +152,47 @@ function ActiveStreamingSection({
   )
 }
 
+/**
+ * Whether the active section's partial body has enough parseable substance
+ * for its designed block to render something real instead of an empty state.
+ */
+function liveSectionHasRenderableData(config: CompetitiveDetailSectionConfig | null, content: string) {
+  // The competitor table's empty state is a "profiles not found" card; wait
+  // for the first `### Name` so the table frame is what appears first.
+  if (config?.id === "market-research-direct-competitors") {
+    return /^###\s+\S/m.test(content)
+  }
+  return content.trim().length > 0
+}
+
+/** Active section rendered through its real designed block while text streams into it. */
+function LiveFillSection({
+  title,
+  index,
+  children,
+}: {
+  title: string
+  index?: number
+  children: React.ReactNode
+}) {
+  return (
+    <section className="stream-snap-in">
+      <StreamingSectionHeader title={title} index={index} status="writing" />
+      {children}
+    </section>
+  )
+}
+
+function SkeletonBars() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      <div className="h-3 w-[92%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
+      <div className="h-3 w-[84%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
+      <div className="h-3 w-[55%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
+    </div>
+  )
+}
+
 function SkeletonSection({ title, index }: { title: string; index?: number }) {
   return (
     <section aria-hidden="true">
@@ -156,11 +206,7 @@ function SkeletonSection({ title, index }: { title: string; index?: number }) {
           </p>
         ) : null}
       </div>
-      <div className="space-y-3">
-        <div className="h-3 w-[92%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-        <div className="h-3 w-[84%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-        <div className="h-3 w-[55%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-      </div>
+      <SkeletonBars />
     </section>
   )
 }
@@ -177,11 +223,19 @@ export function CompetitiveStreamingDocument({
     () => parseStreamingCompetitiveAnalysis(content, { finished }),
     [content, finished]
   )
-  const structured = useMemo(() => buildStructuredData(parse), [parse])
+  const liveFill = variant === "live-fill"
+  const structured = useMemo(() => {
+    const active = parse.activeSection
+    const liveSection =
+      liveFill && active?.name
+        ? { name: active.name, content: sanitizeLiveSectionContent(active.content) }
+        : null
+    return buildStructuredData(parse, liveSection)
+  }, [parse, liveFill])
 
   const executiveComplete = parse.completeSectionNames.has("Executive Summary")
   const activeSection = parse.activeSection
-  const showProseTail = variant !== "ticker" && activeSection !== null
+  const showProseTail = variant !== "ticker" && !liveFill && activeSection !== null
   const showOverview = parts !== "detail"
   const showDetail = parts !== "overview"
 
@@ -194,8 +248,37 @@ export function CompetitiveStreamingDocument({
 
   return (
     <div className={cn("flex flex-col gap-y-10", className)}>
-      {/* Executive Summary */}
-      {showOverview ? (
+      {/* Executive Summary. The standalone workspace section ("overview")
+          mirrors the saved document exactly: same top-level header, no inner
+          H2, so the swap to the saved document does not reflow. */}
+      {showOverview && parts === "overview" ? (
+        <section id="executive-summary" className="flex flex-col gap-y-3 gap-x-0">
+          <TopLevelDocumentHeader
+            title="Executive Summary"
+            description="Market snapshot, entry assessment, and key risk."
+          />
+          {executiveComplete ? (
+            <div className="stream-snap-in">
+              <CompetitiveOverviewBody structured={structured} projectName={projectName} />
+            </div>
+          ) : liveFill &&
+            activeSection?.name === "Executive Summary" &&
+            liveSectionHasRenderableData(null, activeSection.content) ? (
+            <div className="stream-snap-in">
+              <StreamStatusLabel />
+              <div className="mt-3">
+                <CompetitiveOverviewBody structured={structured} projectName={projectName} />
+              </div>
+            </div>
+          ) : showProseTail && activeSection?.name === "Executive Summary" ? (
+            <ActiveStreamingSection title="Executive Summary" rawContent={activeSection.content} />
+          ) : (
+            <SkeletonBars />
+          )}
+        </section>
+      ) : null}
+
+      {showOverview && parts !== "overview" ? (
         executiveComplete ? (
           <section className="stream-snap-in">
             <StreamingSectionHeader title="Executive Summary" />
@@ -203,9 +286,24 @@ export function CompetitiveStreamingDocument({
           </section>
         ) : showProseTail && activeSection?.name === "Executive Summary" ? (
           <ActiveStreamingSection title="Executive Summary" rawContent={activeSection.content} />
-        ) : variant === "skeleton" ? (
+        ) : liveFill &&
+          activeSection?.name === "Executive Summary" &&
+          liveSectionHasRenderableData(null, activeSection.content) ? (
+          <LiveFillSection title="Executive Summary">
+            <CompetitiveOverviewBody structured={structured} projectName={projectName} />
+          </LiveFillSection>
+        ) : variant === "skeleton" || liveFill ? (
           <SkeletonSection title="Executive Summary" />
         ) : null
+      ) : null}
+
+      {/* Standalone Market Research section: same top-level header the saved
+          document renders, so streaming and saved states line up. */}
+      {parts === "detail" ? (
+        <TopLevelDocumentHeader
+          title="Market Research"
+          description="Competitive landscape, customer segments, positioning, and recommended next moves."
+        />
       ) : null}
 
       {/* Designed detail sections, in contract order */}
@@ -238,7 +336,20 @@ export function CompetitiveStreamingDocument({
               )
             }
 
-            if (variant === "skeleton") {
+            if (
+              liveFill &&
+              index === activeConfigIndex &&
+              activeSection?.name &&
+              liveSectionHasRenderableData(config, activeSection.content)
+            ) {
+              return (
+                <LiveFillSection key={config.id} title={config.title} index={index + 1}>
+                  {config.render(structured)}
+                </LiveFillSection>
+              )
+            }
+
+            if (variant === "skeleton" || liveFill) {
               return <SkeletonSection key={config.id} title={config.title} index={index + 1} />
             }
 
@@ -248,12 +359,12 @@ export function CompetitiveStreamingDocument({
 
       {/* A recognized document can stream sections we do not map to a designed
           block (unknown headings); show them as prose so nothing is lost. */}
-      {showDetail && showProseTail && activeSection && activeSection.name === null ? (
+      {showDetail && (showProseTail || liveFill) && activeSection && activeSection.name === null ? (
         <ActiveStreamingSection title={activeSection.heading} rawContent={activeSection.content} />
       ) : null}
 
       {/* Before the first heading arrives */}
-      {showOverview && parse.sections.length === 0 && !finished && variant !== "skeleton" ? (
+      {showOverview && parse.sections.length === 0 && !finished && variant !== "skeleton" && !liveFill ? (
         <div className="flex items-center gap-3 border border-dashed border-[#D8CEC5] bg-[#FAFAFA] px-5 py-4">
           <StreamStatusLabel label="Starting market research" />
         </div>

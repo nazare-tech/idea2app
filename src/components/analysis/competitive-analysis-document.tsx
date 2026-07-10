@@ -58,7 +58,7 @@ function ProposedNameCard({ projectName }: { projectName?: string }) {
   )
 }
 
-function TopLevelDocumentHeader({
+export function TopLevelDocumentHeader({
   title,
   description,
 }: {

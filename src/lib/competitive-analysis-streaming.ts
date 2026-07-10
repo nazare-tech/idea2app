@@ -86,6 +86,23 @@ function toSection(
   }
 }
 
+/**
+ * Prepare a still-growing section body for the structured (designed block)
+ * parsers used by the live-fill streaming variant. The v2 parsers already
+ * tolerate partial lists, tables, and headings; the one artifact they cannot
+ * hide is a trailing unclosed `**`, which `stripInlineMarkdown` would leave
+ * as literal asterisks. Drop that lone marker so the text under it streams
+ * as plain text until the closing `**` arrives.
+ */
+export function sanitizeLiveSectionContent(content: string) {
+  const boldMarkers = content.match(/\*\*/g) ?? []
+  if (boldMarkers.length % 2 === 1) {
+    const lastIndex = content.lastIndexOf("**")
+    return content.slice(0, lastIndex) + content.slice(lastIndex + 2)
+  }
+  return content
+}
+
 export type StreamTailBuffering = "table" | null
 
 export interface SafeStreamTail {

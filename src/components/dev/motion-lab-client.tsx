@@ -38,6 +38,12 @@ const VARIANTS: { key: CompetitiveStreamingVariant; label: string; blurb: string
     blurb:
       "No mid-text streaming. A mono ticker narrates pipeline events while finished sections snap into the document fully formed.",
   },
+  {
+    key: "live-fill",
+    label: "D · Live fill",
+    blurb:
+      "Full document skeleton up front; the active section renders its real designed block immediately and text streams into table cells and numbered slots as it arrives.",
+  },
 ]
 
 const SPEEDS = [
@@ -287,22 +293,30 @@ export function MotionLabClient() {
         >
           {variant === "ticker" ? <TickerPanel events={sim.events} /> : null}
 
-          <div className="min-w-0 rounded-lg bg-background px-3 py-3 sm:px-6 sm:py-4">
+          {/* Mirror the workspace layout exactly: Executive Summary and
+              Market Research are separate document frames rendering the same
+              split parts the project page uses. */}
+          <div className="min-w-0 space-y-8 rounded-lg bg-background px-3 py-3 sm:px-6 sm:py-4">
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#8A8480]">
+              {SAMPLE_PROJECT_NAME} · {finished ? "Ready" : "Generating"}
+            </p>
             <WorkspaceDocumentFrame>
-              <div className="mb-8">
-                <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-[#8A8480]">
-                  Market research · {finished ? "Ready" : "Generating"}
-                </p>
-                <h1 className="mt-2 text-[36px] font-bold leading-[44px] tracking-[-0.03em] text-[#0A0A0A]">
-                  {SAMPLE_PROJECT_NAME}
-                </h1>
-              </div>
               <CompetitiveStreamingDocument
-                key={runId}
+                key={`${runId}-overview`}
                 content={displayedContent}
                 finished={finished}
                 variant={variant}
+                parts="overview"
                 projectName={SAMPLE_PROJECT_NAME}
+              />
+            </WorkspaceDocumentFrame>
+            <WorkspaceDocumentFrame>
+              <CompetitiveStreamingDocument
+                key={`${runId}-detail`}
+                content={displayedContent}
+                finished={finished}
+                variant={variant}
+                parts="detail"
               />
             </WorkspaceDocumentFrame>
           </div>
