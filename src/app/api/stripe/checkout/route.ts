@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getStripeClient } from "@/lib/stripe"
 import type Stripe from "stripe"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
+import { buildCheckoutSessionIdempotencyKey } from "@/lib/stripe/checkout-idempotency"
 
 type CheckoutSupabaseClient = Awaited<ReturnType<typeof createClient>>
 
@@ -244,24 +245,33 @@ export async function POST(request: Request) {
     }
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price: planPrice.stripe_price_id,
-          quantity: 1,
+    const session = await stripe.checkout.sessions.create(
+      {
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price: planPrice.stripe_price_id,
+            quantity: 1,
+          },
+        ],
+        mode: "subscription",
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
+        metadata: {
+          supabase_user_id: user.id,
+          plan_id: planPrice.plan_id,
+          plan_price_id: planPrice.id,
         },
-      ],
-      mode: "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
-      metadata: {
-        supabase_user_id: user.id,
-        plan_id: planPrice.plan_id,
-        plan_price_id: planPrice.id,
       },
-    })
+      {
+        idempotencyKey: buildCheckoutSessionIdempotencyKey({
+          userId: user.id,
+          planPriceId: planPrice.id,
+          stripePriceId: planPrice.stripe_price_id,
+        }),
+      }
+    )
     logInfo("StripeCheckout", "session_created", {
       ...checkoutLogContext,
       stripeCustomerId: customerId,

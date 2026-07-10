@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -18,6 +18,11 @@ import {
   type BillingPlan,
   type BillingSubscription,
 } from "@/lib/billing-page-data"
+import {
+  getBillingPlanCtaMode,
+  parseStripeRedirectResponse,
+} from "@/lib/stripe/billing-flow"
+import { useBillingPortal } from "@/hooks/use-billing-portal"
 
 interface BillingPlansClientProps {
   plans: BillingPlan[]
@@ -31,9 +36,16 @@ export function BillingPlansClient({
   initialBillingInterval,
 }: BillingPlansClientProps) {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [billingInterval, setBillingInterval] = useState<BillingInterval>(initialBillingInterval)
+  const checkoutInFlightRef = useRef(false)
+  const { loading: portalLoading, openBillingPortal } = useBillingPortal()
 
   const handleCheckout = async (planId: string, priceId: string) => {
+    if (checkoutInFlightRef.current) return
+
+    checkoutInFlightRef.current = true
+    setCheckoutError(null)
     setCheckoutLoading(planId)
 
     try {
@@ -43,15 +55,33 @@ export function BillingPlansClient({
         body: JSON.stringify({ planId, priceId }),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
+      const result = parseStripeRedirectResponse(
+        data,
+        response.status,
+        "Unable to start checkout. Please try again.",
+      )
 
-      if (data.url) {
-        window.location.href = data.url
+      if (result.ok) {
+        window.location.assign(result.url)
+        return
       }
+
+      setCheckoutError(result.error)
     } catch (error) {
       console.error("Checkout error:", error)
+      setCheckoutError("Unable to start checkout. Please try again.")
     } finally {
+      checkoutInFlightRef.current = false
       setCheckoutLoading(null)
+    }
+  }
+
+  const handleManageSubscription = async () => {
+    setCheckoutError(null)
+    const result = await openBillingPortal()
+    if (!result.ok) {
+      setCheckoutError(result.error ?? "Unable to open billing portal.")
     }
   }
 
@@ -70,6 +100,12 @@ export function BillingPlansClient({
           const highlighted = Boolean(display?.highlighted)
           const selectedPrice = isFree ? null : getPriceForInterval(plan, billingInterval)
           const canCheckout = Boolean(selectedPrice && isCheckoutReadyPlanPrice(selectedPrice))
+          const ctaMode = getBillingPlanCtaMode({
+            isFree,
+            isCurrentPlan,
+            hasSubscription: Boolean(subscription),
+            canCheckout,
+          })
           const yearlySelected = Boolean(selectedPrice && isYearlyPrice(selectedPrice))
 
           // Yearly prices display as a per-month equivalent, like the landing grid.
@@ -105,15 +141,23 @@ export function BillingPlansClient({
               badge={isCurrentPlan ? "Current Plan" : highlighted ? "Best Value" : null}
               corners="rounded"
               cta={
-                isCurrentPlan ? (
+                ctaMode === "current" ? (
                   <Button className={planCtaClasses(false)} disabled>
                     Current Plan
                   </Button>
-                ) : isFree ? (
+                ) : ctaMode === "free" ? (
                   <Button className={planCtaClasses(false)} disabled>
                     Free Tier
                   </Button>
-                ) : (
+                ) : ctaMode === "manage" ? (
+                  <Button
+                    className={planCtaClasses(highlighted)}
+                    onClick={() => void handleManageSubscription()}
+                    disabled={portalLoading || checkoutLoading !== null}
+                  >
+                    {portalLoading ? <Spinner size="sm" /> : "Manage plan"}
+                  </Button>
+                ) : ctaMode === "checkout" ? (
                   <Button
                     className={planCtaClasses(highlighted)}
                     onClick={() =>
@@ -128,12 +172,24 @@ export function BillingPlansClient({
                       `Upgrade to ${plan.name}`
                     )}
                   </Button>
+                ) : (
+                  <Button className={planCtaClasses(false)} disabled>
+                    Checkout unavailable
+                  </Button>
                 )
               }
             />
           )
         })}
       </div>
+      {checkoutError ? (
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          {checkoutError}
+        </p>
+      ) : null}
     </section>
   )
 }

@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react"
 
+import { parseStripeRedirectResponse } from "@/lib/stripe/billing-flow"
+
 interface BillingPortalResult {
   ok: boolean
   error?: string
@@ -17,14 +19,19 @@ export function useBillingPortal() {
       const response = await fetch("/api/stripe/portal", {
         method: "POST",
       })
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
+      const result = parseStripeRedirectResponse(
+        data,
+        response.status,
+        "Unable to open billing portal.",
+      )
 
-      if (data?.url) {
-        window.location.href = data.url
+      if (result.ok) {
+        window.location.assign(result.url)
         return { ok: true }
       }
 
-      return { ok: false, error: data?.error || "Unable to open billing portal." }
+      return result
     } catch {
       return { ok: false, error: "Unable to open billing portal." }
     } finally {
