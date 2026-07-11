@@ -7,6 +7,7 @@
 * For any non-trivial task (3+ steps or architectural decisions), create or update a markdown plan in `docs/plans/`
 * Include clarifying questions with Recommendation A/B options and trade-offs
 * Include an Architecture Improvement Opportunities section that looks for scoped durability, idempotency, ownership validation, contract-sync, parser/validator, recovery, observability, modularity, reuse, progressive-loading, or rollback improvements. Record the benefit, trade-off, boundaries/files, and selected/deferred/rejected status for each opportunity.
+* Include a Runtime and Change-Impact Analysis section using the template in `docs/plans/README.md`. Trace repeated work, state ownership/lifetime, fan-out, boundary and cache semantics, failure/recovery behavior, and risk-matched verification. High-frequency state belongs at the lowest practical ownership boundary unless measurement justifies otherwise.
 * Pick Recommendation A by default and proceed without waiting unless repo/user instructions, safety constraints, or `docs/plans/recommendation-selection-rules.md` point elsewhere
 * If something goes sideways, STOP and re-plan immediately – don't keep pushing
 * Include verification steps, not just building
