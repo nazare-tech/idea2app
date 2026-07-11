@@ -23,7 +23,7 @@ function buildV2Fixture(
     "Executive Summary":
       "This category has real demand, but underserved workflows still exist for smaller teams.\n\nWin with a narrow wedge.\n\n- **Verdict**: Enter with a wedge\n- **Why now**: Buyers want automation\n- **Biggest risk**: Incumbent copy",
     "Direct Competitors":
-      "### [Competitor One](https://competitor-one.example)\n- **Overview**: Broad platform\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Generalist\n- **Strengths**: Strong distribution\n- **Key Edge**: Distribution engine\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market\n\n### Competitor Two\n- **Overview**: Focused operator tool\n- **Core Product/Service**: Booking workflow automation\n- **Market Positioning**: Vertical specialist\n- **Strengths**: Fast setup\n- **Key Edge**: Mobile-first operations\n- **Limitations**: Narrow integration surface\n- **Pricing Model**: Usage-based\n- **Target Audience**: Solo service teams",
+      "### [Competitor One](https://competitor-one.example.com)\n- **Overview**: Broad platform\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Generalist\n- **Strengths**: Strong distribution\n- **Key Edge**: Distribution engine\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market\n\n### Competitor Two\n- **Overview**: Focused operator tool\n- **Core Product/Service**: Booking workflow automation\n- **Market Positioning**: Vertical specialist\n- **Strengths**: Fast setup\n- **Key Edge**: Mobile-first operations\n- **Limitations**: Narrow integration surface\n- **Pricing Model**: Usage-based\n- **Target Audience**: Solo service teams",
     "Feature Comparison":
       "| Product | Setup | Collaboration |\n|---|---|---|\n| Competitor One | Medium | Strong |",
     "Pricing Comparison":
@@ -64,11 +64,97 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
   assert.match(html, /Win with a narrow wedge\./)
   assert.match(html, /Assessment: Enter with a wedge/)
   assert.doesNotMatch(html, /Verdict: Enter with a wedge/)
-  assert.match(html, /href="https:\/\/competitor-one\.example"/)
+  assert.match(html, /href="https:\/\/competitor-one\.example\.com\/"/)
   assert.match(html, /Key Edge/)
   assert.match(html, /Distribution engine/)
   assert.doesNotMatch(html, /predates Market Research v2/)
   assert.doesNotMatch(html, /Markdown/)
+})
+
+test("verified competitor sources link repeated mentions across structured Market Research", () => {
+  const content = buildV2Fixture({
+    "Executive Summary":
+      "Competitor One leads the category, while Competitor Two remains unverified.\n\nCompetitor One has strong distribution.\n\n- **Assessment**: Differentiate from Competitor One\n- **Why now**: Buyers want automation\n- **Biggest risk**: Competitor One copies the wedge",
+    "Direct Competitors":
+      "### [Competitor One](https://stale-competitor-one.example.com)\n- **Overview**: Broad platform compared with Competitor Two\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Generalist\n- **Strengths**: Strong distribution\n- **Key Edge**: Distribution engine\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market\n\n### Competitor Two\n- **Overview**: Focused operator tool\n- **Core Product/Service**: Booking workflow automation\n- **Market Positioning**: Vertical specialist\n- **Strengths**: Fast setup\n- **Key Edge**: Mobile-first operations\n- **Limitations**: Narrow integration surface\n- **Pricing Model**: Usage-based\n- **Target Audience**: Solo service teams",
+    "Feature Comparison":
+      "Competitor One leads collaboration.\n\n| Dimension | Competitor One | Competitor Two |\n|---|---|---|\n| Setup | Medium | Fast |\n| Collaboration | Strong | Medium |",
+    "Pricing Comparison":
+      "| Product | Free Tier | Pricing Model |\n|---|---|---|\n| Competitor One | No | Per seat |",
+    "Competitive Landscape Overview":
+      "- Competitor One owns the broad-platform position.",
+    "Positioning Map":
+      "- **X-axis**: Competitor One compatibility\n- **Y-axis**: Collaboration depth\n\n| Competitor | X Score | Y Score | Placement Rationale | Evidence Confidence |\n|---|---:|---:|---|---|\n| Competitor One | 5 | 8 | Competitor One has broad reach | Competitor One public docs |",
+  })
+  const metadata = {
+    document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
+    live_research: {
+      competitor_sources: [
+        { name: "Competitor One", url: "https://competitor-one.example.com" },
+        { name: "Unsafe", url: "javascript:alert(1)" },
+      ],
+    },
+  }
+
+  const overviewHtml = renderToStaticMarkup(
+    <CompetitiveOverviewSection
+      content={content}
+      metadata={metadata}
+      projectId="project-1"
+    />
+  )
+  const detailHtml = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={content}
+      metadata={metadata}
+      projectId="project-1"
+    />
+  )
+
+  for (const html of [overviewHtml, detailHtml]) {
+    assert.match(
+      html,
+      /href="https:\/\/competitor-one\.example\.com\/"[^>]*target="_blank"[^>]*rel="noreferrer"/
+    )
+    assert.match(html, /class="[^"]*underline[^"]*underline-offset/)
+    assert.doesNotMatch(html, /javascript:alert/)
+  }
+
+  assert.doesNotMatch(detailHtml, /href="https:\/\/stale-competitor-one\.example\.com\/"/)
+  assert.match(detailHtml, />Competitor One<\/a> has broad reach/)
+  assert.match(detailHtml, />Competitor One<\/a> public docs/)
+  assert.match(detailHtml, /<th[^>]*>[^<]*<a[^>]*>Competitor One<\/a>/)
+  assert.match(detailHtml, />Competitor One<\/a> compatibility/)
+  assert.match(detailHtml, /href="https:\/\/www\.google\.com\/search\?q=Competitor(?:%20|\+)Two"/)
+  assert.doesNotMatch(
+    detailHtml,
+    /href="https:\/\/competitor-one\.example\.com\/"[^>]*>Competitor Two<\/a>/
+  )
+})
+
+test("new evidence metadata fails closed instead of rendering synthesized H3 links", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={buildV2Fixture()}
+      metadata={{
+        document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION,
+        live_research: { competitor_sources: [] },
+      }}
+      projectId="project-1"
+    />
+  )
+
+  // New reports treat metadata as authoritative. A model-authored H3 URL is
+  // ignored when no evidence-backed pair exists, and the explicit competitor
+  // cell uses the existing search fallback instead.
+  assert.equal(
+    countMatches(html, /href="https:\/\/competitor-one\.example\.com\//g),
+    0
+  )
+  assert.match(
+    html,
+    /href="https:\/\/www\.google\.com\/search\?q=Competitor(?:%20|\+)One"/
+  )
 })
 
 test("competitive overview renders one merged executive summary block", () => {
@@ -205,7 +291,7 @@ test("competitive detail consolidates competitor profile cards into one quick co
   assert.match(html, /Booking workflow automation/)
   assert.match(html, /Usage-based/)
   assert.match(html, /Solo service teams/)
-  assert.equal(countMatches(html, /href="https:\/\/competitor-one\.example"/g), 1)
+  assert.equal(countMatches(html, /href="https:\/\/competitor-one\.example\.com\//g), 4)
   // Positioning score profiles are the only allowed <article> elements;
   // competitor profiles must stay consolidated into the comparison table.
   assert.equal(
@@ -360,6 +446,28 @@ test("legacy competitive document falls back to markdown renderer", () => {
   assert.doesNotMatch(html, /Regenerate as V2/)
 })
 
+test("legacy markdown preserves authored links without automatic mention enrichment", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveAnalysisDocument
+      content={
+        "# Competitive Analysis: Legacy\n\nPlain Competitor One mention. [Authored link](https://authored.example)."
+      }
+      metadata={{
+        live_research: {
+          competitor_sources: [
+            { name: "Competitor One", url: "https://competitor-one.example.com" },
+          ],
+        },
+      }}
+      currentVersion={0}
+      projectId="project-1"
+    />
+  )
+
+  assert.doesNotMatch(html, /href="https:\/\/competitor-one\.example\.com\/"/)
+  assert.match(html, /href="https:\/\/authored\.example"/)
+})
+
 test("positioning map shows the 0/10 legend once and short axis names on bars", () => {
   const html = renderToStaticMarkup(
     <CompetitiveDetailSection
@@ -393,7 +501,7 @@ test("competitor without a verified URL falls back to a web search link", () => 
 
   // Competitor One keeps its verified URL; Competitor Two has none in the
   // document, so its name links to a search instead of rendering unlinked.
-  assert.match(html, /href="https:\/\/competitor-one\.example"/)
+  assert.match(html, /href="https:\/\/competitor-one\.example\.com\/"/)
   assert.match(
     html,
     /href="https:\/\/www\.google\.com\/search\?q=Competitor(?:%20|\+)Two"/

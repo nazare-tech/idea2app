@@ -140,11 +140,13 @@ export function ParagraphStack({
   dark = false,
   className,
   leadFirst = false,
+  renderText,
 }: {
   paragraphs: string[]
   dark?: boolean
   className?: string
   leadFirst?: boolean
+  renderText?: (value: string) => React.ReactNode
 }) {
   if (paragraphs.length === 0) return null
 
@@ -160,7 +162,7 @@ export function ParagraphStack({
             dark ? "text-[#4A4040]" : "text-[#666666]",
           )}
         >
-          {paragraph}
+          {renderText ? renderText(paragraph) : paragraph}
         </p>
       ))}
     </div>
@@ -280,9 +282,11 @@ export function StructuredItemList({ items, dark = false }: { items: string[]; d
 export function DataTable({
   headers,
   rows,
+  renderText,
 }: {
   headers: string[]
   rows: string[][]
+  renderText?: (value: string) => React.ReactNode
 }) {
   if (headers.length === 0) return null
 
@@ -296,7 +300,7 @@ export function DataTable({
                 key={header}
                 className="border border-[#D8CEC5] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]"
               >
-                {header}
+                {renderText ? renderText(header) : header}
               </th>
             ))}
           </tr>
@@ -309,7 +313,9 @@ export function DataTable({
                   key={`${header}-${cellIndex}`}
                   className="border border-[#E0E0E0] px-4 py-3 align-top ui-type-table text-[#0A0A0A]"
                 >
-                  {row[cellIndex] ?? ""}
+                  {renderText
+                    ? renderText(row[cellIndex] ?? "")
+                    : row[cellIndex] ?? ""}
                 </td>
               ))}
             </tr>

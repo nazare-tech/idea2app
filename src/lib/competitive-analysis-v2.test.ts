@@ -20,7 +20,7 @@ function buildV2Fixture(
     "Executive Summary":
       "This market is active and crowded, but the most valuable workflows are still fragmented for smaller teams.\n\nA focused entrant can win if it avoids the broad all-in-one category fight.\n\n- **Verdict**: Worth entering with a narrow wedge\n- **Why now**: Teams want automation tied to outcomes\n- **Biggest risk**: Fast incumbent copy",
     "Direct Competitors":
-      "### [Competitor One](https://competitor-one.example) (conservative inference)\n- **Overview**: Strong incumbent\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Broad platform\n- **Strengths**: Distribution and integrations\n- **Key Edge**: Distribution + integrations\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market teams\n\n### Competitor Two\n- **Overview**: Specialist player\n- **Core Product/Service**: Single workflow tool\n- **Market Positioning**: Best-of-breed\n- **Strengths**: Fast setup\n- **Key Edge**: Fastest setup in category\n- **Limitations**: Narrow scope\n- **Pricing Model**: Usage-based\n- **Target Audience**: Operators",
+      "### [Competitor One](https://competitor-one.example.com) (conservative inference)\n- **Overview**: Strong incumbent\n- **Core Product/Service**: Workflow suite\n- **Market Positioning**: Broad platform\n- **Strengths**: Distribution and integrations\n- **Key Edge**: Distribution + integrations\n- **Limitations**: Heavy onboarding\n- **Pricing Model**: Per seat\n- **Target Audience**: Mid-market teams\n\n### Competitor Two\n- **Overview**: Specialist player\n- **Core Product/Service**: Single workflow tool\n- **Market Positioning**: Best-of-breed\n- **Strengths**: Fast setup\n- **Key Edge**: Fastest setup in category\n- **Limitations**: Narrow scope\n- **Pricing Model**: Usage-based\n- **Target Audience**: Operators",
     "Feature Comparison":
       "| Product | Setup | Collaboration | Automation |\n|---|---|---|---|\n| Competitor One | Medium | Strong | Medium |\n| Competitor Two | Fast | Weak | Strong |",
     "Pricing Comparison":
@@ -68,11 +68,25 @@ test("parseCompetitiveAnalysisV2 accepts a valid v2 document", () => {
   assert.equal(structured.directCompetitors[0]?.heading, "Competitor One")
   assert.equal(
     structured.directCompetitors[0]?.websiteUrl,
-    "https://competitor-one.example"
+    "https://competitor-one.example.com/"
   )
   assert.equal(structured.directCompetitors[0]?.fields["Strengths"], "Distribution and integrations")
   assert.equal(structured.directCompetitors[0]?.fields["Key Edge"], "Distribution + integrations")
   assert.equal(structured.positioningMap.points[0]?.x, 4)
+})
+
+test("structured competitor sources reject non-public generated URLs", () => {
+  const parsed = parseCompetitiveAnalysisV2(
+    buildV2Fixture({
+      "Direct Competitors":
+        "### [Local Admin](http://127.0.0.1/admin)\n- **Overview**: Unsafe local target\n\n### [Credential Trap](https://trusted.com@evil.com)\n- **Overview**: Deceptive target",
+    })
+  )
+  const structured = getCompetitiveAnalysisStructuredData(parsed)
+
+  assert.deepEqual(structured.competitorSources, [])
+  assert.equal(structured.directCompetitors[0]?.websiteUrl, null)
+  assert.equal(structured.directCompetitors[1]?.websiteUrl, null)
 })
 
 test("parseCompetitiveAnalysisV2 strips removed risks and SWOT sections", () => {

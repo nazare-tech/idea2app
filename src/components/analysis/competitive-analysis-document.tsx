@@ -27,6 +27,11 @@ import {
   sanitizeDirectCompetitorDisplayContent,
 } from "@/lib/competitive-analysis-v2"
 import { getExplainableTermKeyByLabel } from "@/lib/explainable-terms"
+import {
+  CompetitorMentionLinksProvider,
+  CompetitorMentionText,
+  competitorLinkClassName,
+} from "@/components/analysis/competitor-mention-links"
 
 interface CompetitiveAnalysisDocumentProps {
   content: string
@@ -35,6 +40,10 @@ interface CompetitiveAnalysisDocumentProps {
   projectId: string
   /** AI-generated project name, surfaced as the proposed name in the Executive Summary */
   projectName?: string
+}
+
+function renderCompetitorMentionText(value: string) {
+  return <CompetitorMentionText text={value} />
 }
 
 function ProposedNameCard({ projectName }: { projectName?: string }) {
@@ -259,7 +268,7 @@ function NumberedList({
               dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
             )}
           >
-            {item}
+            <CompetitorMentionText text={item} />
           </p>
         </li>
       ))}
@@ -280,7 +289,9 @@ function MarketSignalStrip({ items }: { items: string[] }) {
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
             Signal {String(index + 1).padStart(2, "0")}
           </p>
-          <p className="mt-2 ui-type-body-sm text-[#0A0A0A]">{item}</p>
+          <p className="mt-2 ui-type-body-sm text-[#0A0A0A]">
+            <CompetitorMentionText text={item} />
+          </p>
         </div>
       ))}
     </div>
@@ -302,7 +313,12 @@ function ExecutiveSummaryCard({
       kicker="Executive Summary"
       showHeader={showHeader}
     >
-      <ParagraphStack paragraphs={summary.paragraphs} className="space-y-3" leadFirst />
+      <ParagraphStack
+        paragraphs={summary.paragraphs}
+        className="space-y-3"
+        leadFirst
+        renderText={renderCompetitorMentionText}
+      />
       {bullets.length > 0 ? (
         <div className="pt-5">
           <NumberedList items={bullets} />
@@ -326,7 +342,11 @@ function SnapshotHero({
   return (
     <div className="space-y-6">
       <PencilCard title="Market Snapshot & Entry Thesis" kicker="Category Snapshot">
-        <ParagraphStack paragraphs={structured.executiveSummary.paragraphs} className="space-y-3" />
+        <ParagraphStack
+          paragraphs={structured.executiveSummary.paragraphs}
+          className="space-y-3"
+          renderText={renderCompetitorMentionText}
+        />
         {bullets.length > 0 ? (
           <div className="pt-5">
             <NumberedList items={bullets} />
@@ -360,7 +380,7 @@ function CompetitorTableDetail({
           emphasis ? "font-medium text-[#1C1917]" : "text-[#4A4040]"
         )}
       >
-        {value}
+        <CompetitorMentionText text={value} />
       </p>
     </div>
   )
@@ -434,7 +454,10 @@ function FastComparisonTable({
                   }
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-start gap-1.5 transition-opacity hover:opacity-80"
+                  className={cn(
+                    competitorLinkClassName,
+                    "inline-flex items-start gap-1.5"
+                  )}
                 >
                   <span
                     className={cn(
@@ -536,9 +559,17 @@ function CompactTableCard({
 }) {
   return (
     <PencilCard title={title} kicker={kicker} showHeader={showHeader}>
-      <ParagraphStack paragraphs={paragraphs} className="space-y-3" />
+      <ParagraphStack
+        paragraphs={paragraphs}
+        className="space-y-3"
+        renderText={renderCompetitorMentionText}
+      />
       <div className={paragraphs.length > 0 ? "pt-5" : ""}>
-        <DataTable headers={headers} rows={rows} />
+        <DataTable
+          headers={headers}
+          rows={rows}
+          renderText={renderCompetitorMentionText}
+        />
       </div>
     </PencilCard>
   )
@@ -596,10 +627,11 @@ function PositioningLegend({
         {axes.map((axis) => (
           <div key={axis.name}>
             <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#4A4040]">
-              {axis.name}
+              <CompetitorMentionText text={axis.name} />
             </p>
             <p className="mt-1 ui-type-caption text-[#777777]">
-              0 = {axis.lowLabel} &middot; 10 = {axis.highLabel}
+              0 = <CompetitorMentionText text={axis.lowLabel ?? ""} /> &middot; 10 ={" "}
+              <CompetitorMentionText text={axis.highLabel ?? ""} />
             </p>
           </div>
         ))}
@@ -625,7 +657,7 @@ function PositioningScoreBar({
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <p className="min-w-0 font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
-          {label}
+          <CompetitorMentionText text={label} />
         </p>
         <p className="shrink-0 font-mono text-[11px] tracking-[0.08em] text-[#4A4040]">
           {score}/10
@@ -692,7 +724,7 @@ function PositioningMap({
                         accent ? "text-primary" : "text-[#1C1917]"
                       )}
                     >
-                      {point.competitor}
+                      <CompetitorMentionText text={point.competitor} />
                     </p>
                     {accent ? (
                       <span className="border border-primary/20 bg-primary/[0.03] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-primary">
@@ -707,10 +739,14 @@ function PositioningMap({
                   </div>
 
                   {point.rationale ? (
-                    <p className="mt-4 ui-type-table text-[#0A0A0A]">{point.rationale}</p>
+                    <p className="mt-4 ui-type-table text-[#0A0A0A]">
+                      <CompetitorMentionText text={point.rationale} />
+                    </p>
                   ) : null}
                   {point.evidence ? (
-                    <p className="mt-2 ui-type-caption text-[#777777]">{point.evidence}</p>
+                    <p className="mt-2 ui-type-caption text-[#777777]">
+                      <CompetitorMentionText text={point.evidence} />
+                    </p>
                   ) : null}
                 </article>
               )
@@ -730,10 +766,12 @@ function PositioningMap({
                   data-positioning-state="unscored"
                 >
                   <p className="ui-type-table font-medium text-[#0A0A0A]">
-                    {point.competitor}
+                    <CompetitorMentionText text={point.competitor} />
                   </p>
                   <p className="ui-type-caption text-[#777777]">
-                    {point.rationale || "Missing a valid 0-10 X or Y score."}
+                    <CompetitorMentionText
+                      text={point.rationale || "Missing a valid 0-10 X or Y score."}
+                    />
                   </p>
                 </div>
               ))}
@@ -776,7 +814,12 @@ function MVPCard({
 }) {
   return (
     <PencilCard title="First Version Focus" kicker="Build Scope" dark showHeader={showHeader}>
-      <ParagraphStack paragraphs={paragraphs} className="space-y-3" dark={true} />
+      <ParagraphStack
+        paragraphs={paragraphs}
+        className="space-y-3"
+        dark={true}
+        renderText={renderCompetitorMentionText}
+      />
       <div className="pt-5">
         <NumberedList items={bullets} dark={true} />
       </div>
@@ -790,7 +833,8 @@ function CompetitiveResearchPage({
   structured: CompetitiveAnalysisStructuredData
 }) {
   return (
-    <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
+    <CompetitorMentionLinksProvider sources={structured.competitorSources}>
+      <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
       <TopLevelDocumentHeader
         title="Market Research"
         description="Competitive landscape, customer segments, positioning, and recommended next moves."
@@ -855,7 +899,8 @@ function CompetitiveResearchPage({
         title="Recommended Next Moves"
         items={structured.strategicRecommendations}
       />
-    </div>
+      </div>
+    </CompetitorMentionLinksProvider>
   )
 }
 
@@ -1043,10 +1088,12 @@ export function CompetitiveOverviewBody({
   projectName?: string
 }) {
   return (
-    <div className="flex flex-col gap-y-3 gap-x-0">
-      <ProposedNameCard projectName={projectName} />
-      <ExecutiveSummaryCard summary={structured.executiveSummary} showHeader={false} />
-    </div>
+    <CompetitorMentionLinksProvider sources={structured.competitorSources}>
+      <div className="flex flex-col gap-y-3 gap-x-0">
+        <ProposedNameCard projectName={projectName} />
+        <ExecutiveSummaryCard summary={structured.executiveSummary} showHeader={false} />
+      </div>
+    </CompetitorMentionLinksProvider>
   )
 }
 
@@ -1110,18 +1157,20 @@ export function CompetitiveDetailSection({
         description="Competitive landscape, customer segments, positioning, and recommended next moves."
       />
 
-      {COMPETITIVE_DETAIL_SECTION_CONFIGS.map((config, index) => (
-        <WorkspaceDesignedSection
-          key={config.id}
-          id={config.id}
-          kicker={config.kicker}
-          title={config.title}
-          index={index + 1}
-          total={COMPETITIVE_DETAIL_SECTION_CONFIGS.length}
-        >
-          {config.render(structured)}
-        </WorkspaceDesignedSection>
-      ))}
+      <CompetitorMentionLinksProvider sources={structured.competitorSources}>
+        {COMPETITIVE_DETAIL_SECTION_CONFIGS.map((config, index) => (
+          <WorkspaceDesignedSection
+            key={config.id}
+            id={config.id}
+            kicker={config.kicker}
+            title={config.title}
+            index={index + 1}
+            total={COMPETITIVE_DETAIL_SECTION_CONFIGS.length}
+          >
+            {config.render(structured)}
+          </WorkspaceDesignedSection>
+        ))}
+      </CompetitorMentionLinksProvider>
     </section>
   )
 }

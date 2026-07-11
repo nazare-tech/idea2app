@@ -18,6 +18,7 @@ import {
   WorkspaceDesignedSection,
   type CompetitiveDetailSectionConfig,
 } from "@/components/analysis/competitive-analysis-document"
+import { CompetitorMentionLinksProvider } from "@/components/analysis/competitor-mention-links"
 import { extractSectionsByHeading } from "@/lib/planning-document-parser"
 import {
   type CompetitiveAnalysisV2ParseResult,
@@ -75,10 +76,12 @@ function buildStructuredData(
     errors: [],
   }
 
-  return getCompetitiveAnalysisStructuredData(parsedLike)
+  return getCompetitiveAnalysisStructuredData(parsedLike, undefined, {
+    allowParsedSourceFallback: false,
+  })
 }
 
-function StreamStatusLabel({ label = "Writing" }: { label?: string }) {
+function StreamStatusLabel({ label }: { label: string }) {
   return (
     <span className="inline-flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-primary">
       <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-primary motion-reduce:animate-none" />
@@ -90,11 +93,9 @@ function StreamStatusLabel({ label = "Writing" }: { label?: string }) {
 function StreamingSectionHeader({
   title,
   index,
-  status,
 }: {
   title: string
   index?: number
-  status?: "writing" | null
 }) {
   return (
     <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
@@ -102,7 +103,6 @@ function StreamingSectionHeader({
         <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
           {title}
         </h2>
-        {status === "writing" ? <StreamStatusLabel /> : null}
       </div>
       {typeof index === "number" ? (
         <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#8A8480]">
@@ -141,7 +141,7 @@ function ActiveStreamingSection({
 
   return (
     <section className="stream-snap-in">
-      <StreamingSectionHeader title={title} index={index} status="writing" />
+      <StreamingSectionHeader title={title} index={index} />
       {tail.visibleText ? <MarkdownRenderer content={tail.visibleText} /> : null}
       {tail.buffering === "table" ? (
         <AssemblingChip label="Assembling comparison table" />
@@ -177,7 +177,7 @@ function LiveFillSection({
 }) {
   return (
     <section className="stream-snap-in">
-      <StreamingSectionHeader title={title} index={index} status="writing" />
+      <StreamingSectionHeader title={title} index={index} />
       {children}
     </section>
   )
@@ -247,7 +247,8 @@ export function CompetitiveStreamingDocument({
   )
 
   return (
-    <div className={cn("flex flex-col gap-y-10", className)}>
+    <CompetitorMentionLinksProvider sources={structured.competitorSources}>
+      <div className={cn("flex flex-col gap-y-10", className)}>
       {/* Executive Summary. The standalone workspace section ("overview")
           mirrors the saved document exactly: same top-level header, no inner
           H2, so the swap to the saved document does not reflow. */}
@@ -265,10 +266,7 @@ export function CompetitiveStreamingDocument({
             activeSection?.name === "Executive Summary" &&
             liveSectionHasRenderableData(null, activeSection.content) ? (
             <div className="stream-snap-in">
-              <StreamStatusLabel />
-              <div className="mt-3">
-                <CompetitiveOverviewBody structured={structured} projectName={projectName} />
-              </div>
+              <CompetitiveOverviewBody structured={structured} projectName={projectName} />
             </div>
           ) : showProseTail && activeSection?.name === "Executive Summary" ? (
             <ActiveStreamingSection title="Executive Summary" rawContent={activeSection.content} />
@@ -369,6 +367,7 @@ export function CompetitiveStreamingDocument({
           <StreamStatusLabel label="Starting market research" />
         </div>
       ) : null}
-    </div>
+      </div>
+    </CompetitorMentionLinksProvider>
   )
 }

@@ -1,3 +1,11 @@
+import {
+  getCompetitorSourcesFromMetadata,
+  getSafeExternalHttpUrl,
+  hasCompetitorSourceMetadata,
+  mergeCompetitorSources,
+  type CompetitorSource,
+} from "@/lib/competitor-mention-links"
+
 export const COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION = "competitive-analysis-v2"
 export const COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION =
   "competitive-analysis-v2-2026-07-05-no-direct-competitor-notice"
@@ -127,6 +135,7 @@ export interface CompetitiveAnalysisPositioningAxis {
 export interface CompetitiveAnalysisStructuredData {
   executiveSummary: { paragraphs: string[]; bullets: string[] }
   directCompetitors: CompetitiveAnalysisCompetitorProfile[]
+  competitorSources: CompetitorSource[]
   directCompetitorEvidenceNotice: string | null
   featureMatrix: CompetitiveAnalysisNarrativeTable
   pricingAndPackaging: CompetitiveAnalysisNarrativeTable
@@ -400,11 +409,11 @@ function sanitizeCompetitorHeading(heading: string) {
 function extractMarkdownLinkUrl(value: string) {
   const markdownLinkMatch = value.match(/\[[^\]]+\]\((https?:\/\/[^)\s]+)\)/i)
   if (markdownLinkMatch) {
-    return markdownLinkMatch[1]
+    return getSafeExternalHttpUrl(markdownLinkMatch[1])
   }
 
   const bareUrlMatch = value.match(/https?:\/\/[^\s)]+/i)
-  return bareUrlMatch?.[0] ?? null
+  return getSafeExternalHttpUrl(bareUrlMatch?.[0])
 }
 
 function parseLabeledList(content: string) {
@@ -591,16 +600,46 @@ function getSection(
 }
 
 export function getCompetitiveAnalysisStructuredData(
-  parsed: CompetitiveAnalysisV2ParseResult
+  parsed: CompetitiveAnalysisV2ParseResult,
+  metadata?: JsonLike,
+  options?: { allowParsedSourceFallback?: boolean }
 ): CompetitiveAnalysisStructuredData {
   const { sections, competitorEntries } = parsed
+  const parsedCompetitors = parseCompetitorProfiles(competitorEntries)
+  const metadataSources = getCompetitorSourcesFromMetadata(metadata)
+  const hasSourceMetadata = hasCompetitorSourceMetadata(metadata)
+  const allowParsedSourceFallback =
+    options?.allowParsedSourceFallback !== false &&
+    !hasSourceMetadata
+  const competitorSources = mergeCompetitorSources(
+    metadataSources,
+    allowParsedSourceFallback
+      ? parsedCompetitors.map((competitor) => ({
+          name: competitor.heading,
+          url: competitor.websiteUrl,
+        }))
+      : []
+  )
+  const sourcesByName = new Map(
+    competitorSources.map((source) => [
+      source.name.toLocaleLowerCase("en-US"),
+      source.url,
+    ])
+  )
+  const directCompetitors = parsedCompetitors.map((competitor) => ({
+    ...competitor,
+    websiteUrl:
+      sourcesByName.get(competitor.heading.toLocaleLowerCase("en-US")) ??
+      (hasSourceMetadata ? null : competitor.websiteUrl),
+  }))
 
   return {
     executiveSummary: {
       paragraphs: parseParagraphBlocks(getSection(sections, "Executive Summary")),
       bullets: parseListItems(getSection(sections, "Executive Summary")),
     },
-    directCompetitors: parseCompetitorProfiles(competitorEntries),
+    directCompetitors,
+    competitorSources,
     directCompetitorEvidenceNotice: null,
     featureMatrix: parseNarrativeTable(
       getSection(sections, "Feature Comparison")
@@ -775,7 +814,7 @@ export function getCompetitiveAnalysisViewModel(
 ): CompetitiveAnalysisViewModel {
   const documentVersion = getCompetitiveAnalysisDocumentVersion(metadata)
   const parsed = parseCompetitiveAnalysisV2(content)
-  const structured = getCompetitiveAnalysisStructuredData(parsed)
+  const structured = getCompetitiveAnalysisStructuredData(parsed, metadata)
 
   if (documentVersion === "legacy") {
     return {
