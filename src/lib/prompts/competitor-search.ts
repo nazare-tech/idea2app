@@ -38,6 +38,8 @@ const COMPETITOR_SEARCH_USER_TEMPLATE = `Find 3-5 real competitors for this busi
 Business Name: {{name}}
 Business Idea: {{idea}}
 
+Use current web evidence for this request and prefer the company's current official website URL.
+
 Return the JSON object with competitors as described in your instructions.`
 
 export function buildCompetitorSearchUserPrompt(

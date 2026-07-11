@@ -69,6 +69,12 @@ When the user says a different recommendation should have been chosen:
 - Reason: Placeholder structure is part of the page's information architecture. When the side rail lists Concept 1/2/3 (or file names, or sections), the content pane must show a matching container per entry so the nav and the pane never disagree; collapsing them into one generic loader breaks that parity. "Remove the loading noise" feedback targets duplicate status indicators, not the structural skeletons.
 - Example: `docs/plans/workspace-streaming-nav-follow-and-loading-states-plan.md` (Q3): the correction was to keep the three Design Mockups concept placeholder cells (hosting the WebGL loader inside each pending cell) and remove only the per-option "Option A/B/C generating" status rows above them.
 
+### 2026-07-10: Accept Explicitly Temporary Link Risk To Test A Provider Quickly
+
+- Prefer: The faster testable path when the user explicitly accepts temporary external-link accuracy risk, the risk is visible and bounded, the change is reversible, and the missing trust layer is tracked as prioritized follow-up work.
+- Reason: Speed-to-test can be more valuable than blocking a provider experiment on complete link validation when inaccurate links are an understood temporary product risk rather than a hidden security, authorization, data-loss, or irreversible-production risk.
+- Example: [OpenRouter Exa Market Research](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/openrouter-exa-market-research-plan.md) shipped syntactically safe Exa candidate URLs without reachability or company-identity validation, with a rollback flag and P1 follow-up NAZ-129.
+
 Use this format for future entries:
 
 ```markdown

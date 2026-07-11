@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-10: OpenRouter-managed Exa primary Market Research discovery
+
+- Plan: [docs/plans/openrouter-exa-market-research-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/openrouter-exa-market-research-plan.md)
+- Review: [docs/plans/openrouter-exa-market-research-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/openrouter-exa-market-research-review.md)
+- Durable source of truth: `src/lib/openrouter-competitor-research.ts` owns the bounded OpenRouter `openrouter:web_search` request with `engine: "exa"`; `src/lib/competitor-research.ts` owns provider-neutral JSON parsing and candidate status; `src/lib/analysis-pipelines.ts` owns Exa-first/fallback orchestration and persisted provider metadata.
+- Schema or data-shape changes: No migration. New Market Research rows add optional `live_research.primary_provider`, `provider_used`, `openrouter_exa_search_status`, `openrouter_research_model`, `openrouter_citation_count`, `fallback_used`, `fallback_reason`, and `research_evidence_count` fields inside the existing `analyses.metadata` JSON. Exa-success `competitor_sources` contain syntactically safe model-proposed candidate name/URL pairs without reachability or company-identity validation; legacy fallback sources retain the Tavily-match requirement.
+- Auth, RLS, or permission changes: None. Existing authenticated generation routes, ownership checks, service-side persistence, and RLS behavior are unchanged. OpenRouter credentials remain server-only environment variables.
+- Runtime/API behavior changes: Manual and Generate All/onboarding Market Research now attempt an OpenRouter-managed Exa discovery call first using Gemini 3.5 Flash, five results maximum, five total results, 2,000 characters per result, a 120-second timeout, and existing retry policy. Perplexity/Tavily run only when Exa is disabled, fails, cannot be parsed, has no usable public URLs, or returns no citations. Provider metadata distinguishes Perplexity-only from Perplexity-plus-Tavily, and Tavily extraction reports succeeded, partial, empty, not-configured, or failed accurately. Final report synthesis remains plan-tier routed and receives bounded, explicitly delimited untrusted research evidence.
+- Migration or deployment steps: No database step. Ensure `OPENROUTER_API_KEY` is configured. Optional `OPENROUTER_COMPETITOR_RESEARCH_MODEL` overrides the low-cost research model. `PERPLEXITY_API_KEY` and `TAVILY_API_KEY` remain recommended for fallback coverage.
+- Verification: Focused parser/adapter/orchestration/prompt tests, typecheck, scoped lint, live adapter smoke, full relevant suite, review/security remediation, and real authenticated fresh-project UI evidence are recorded in the review artifact.
+- Rollback or recovery: Set `OPENROUTER_EXA_MARKET_RESEARCH_DISABLED=1` to restore Perplexity/Tavily as the primary path without reverting a deploy. Removing the optional metadata fields or adapter requires no historical rewrite.
+- Follow-ups: P1 [NAZ-129](https://linear.app/nazareworkspace/issue/NAZ-129/add-mandatory-competitor-url-and-identity-validation-after-exa) adds bounded reachability, redirect, identity, relevance, and SSRF-aware validation. Until then, Exa candidate URLs are not identity-verified.
+
 ## 2026-07-10: First-party product event analytics foundation (NAZ-43, NAZ-126)
 
 - Plan: [docs/plans/product-event-analytics-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/product-event-analytics-plan.md)

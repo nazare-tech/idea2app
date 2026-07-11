@@ -2,6 +2,10 @@ import OpenAI from "openai"
 import { COMPETITOR_SEARCH_SYSTEM_PROMPT, buildCompetitorSearchUserPrompt } from "@/lib/prompts"
 import { withRetry } from "@/lib/with-retry"
 import { logWarn } from "@/lib/logger"
+import {
+  parseCompetitorSearchResponse,
+  type CompetitorSearchResult,
+} from "@/lib/competitor-research"
 
 // Perplexity uses an OpenAI-compatible interface with a different base URL
 const perplexity = new OpenAI({
@@ -9,60 +13,19 @@ const perplexity = new OpenAI({
   apiKey: process.env.PERPLEXITY_API_KEY || "",
 })
 
-export interface PerplexityCompetitorResult {
-  competitors: Array<{
-    name: string
-    description: string
-    whyCompetes: string
-    url: string
-  }>
-  rawResponse: string
-  parseFailed?: boolean
-}
+export type PerplexityCompetitorResult = CompetitorSearchResult
 
 export function parsePerplexityCompetitorResponse(
   rawResponse: string
 ): PerplexityCompetitorResult {
-  try {
-    // Extract JSON from response (Perplexity may wrap it in markdown code blocks)
-    const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      if (rawResponse.trim().length > 0) {
-        logWarn("Perplexity", "competitor_json_missing", {
-          rawResponseLength: rawResponse.length,
-        })
-        return { competitors: [], rawResponse, parseFailed: true }
-      }
-
-      return { competitors: [], rawResponse }
-    }
-
-    const parsed = JSON.parse(jsonMatch[0])
-    if (!parsed || !Array.isArray(parsed.competitors)) {
-      logWarn("Perplexity", "competitor_json_shape_invalid", {
-        rawResponseLength: rawResponse.length,
-      })
-      return { competitors: [], rawResponse, parseFailed: true }
-    }
-
-    return {
-      competitors: parsed.competitors
-        .filter((competitor: unknown) => competitor && typeof competitor === "object")
-        .map((competitor: Record<string, unknown>) => ({
-          name: String(competitor.name || ""),
-          description: String(competitor.description || ""),
-          whyCompetes: String(competitor.whyCompetes || ""),
-          url: String(competitor.url || ""),
-        })),
-      rawResponse,
-    }
-  } catch {
-    // If JSON parsing fails, return empty competitors but preserve raw response.
-    logWarn("Perplexity", "competitor_json_parse_failed", {
+  const result = parseCompetitorSearchResponse(rawResponse)
+  if (result.parseFailed) {
+    logWarn("Perplexity", "competitor_json_invalid", {
       rawResponseLength: rawResponse.length,
     })
-    return { competitors: [], rawResponse, parseFailed: true }
   }
+
+  return result
 }
 
 export async function searchCompetitors(

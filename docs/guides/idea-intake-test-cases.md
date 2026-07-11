@@ -423,3 +423,19 @@ Evidence:
 - `ui-evidence/2026-07-10/portable-project-rules/project-context-preview-top-1144x933.png`
 - `ui-evidence/2026-07-10/portable-project-rules/project-context-metrics-rules-1144x933.png`
 - `ui-evidence/2026-07-10/portable-project-rules/project-context-working-rules-1144x933.png`
+
+### 2026-07-10 OpenRouter Exa Market Research Verification: Idea 1.1
+
+Captured through the real `/projects/new` UI while verifying OpenRouter-managed Exa as the primary Market Research provider. The project was created as `Signal Driven Roadmap Intelligence` (`f3f634a7-f4fc-4603-a1e5-95f7911da1d3`).
+
+| Idea variant | Question text | Answer used | Option ID when stable |
+| --- | --- | --- | --- |
+| 1.1 | Where will people use the first version? | Desktop website | `desktop-web` |
+| 1.1 | Which core capability should the first version focus on? | Roadmap Prioritization |  |
+| 1.1 | Which data sources must be supported at launch? | Support Tickets; Chat Transcripts; Sales Call Recordings; Internal Docs |  |
+| 1.1 | What is your intended business model? | Per-seat SaaS |  |
+| 1.1 | Which backend capabilities are required from day one? | Auth & SSO; LLM Processing; 3rd-party Integrations; Payments; Private Data Storage; Role-based Access |  |
+| 1.1 | What best describes your technical comfort level? | Full-stack developer |  |
+
+Evidence:
+- `ui-evidence/2026-07-10/openrouter-exa-market-research/fresh-idea-1-1-direct-competitors.png`

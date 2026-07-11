@@ -1,6 +1,18 @@
 import { getOpenRouterClient } from "@/lib/openrouter"
 import { searchCompetitors, type PerplexityCompetitorResult } from "./perplexity"
 import { extractCompetitorInfo, type TavilyExtractResult } from "./tavily"
+import {
+  getCompetitorSearchStatus as getProviderCompetitorSearchStatus,
+  getUsableCompetitors,
+  type CompetitorCandidate,
+  type CompetitorEvidencePage,
+  type CompetitorSearchStatus,
+} from "@/lib/competitor-research"
+import {
+  getOpenRouterCompetitorResearchModel,
+  searchCompetitorsWithOpenRouterExa,
+  type OpenRouterCompetitorResearchResult,
+} from "@/lib/openrouter-competitor-research"
 import { COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, buildCompetitiveAnalysisUserPrompt, LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt, type LaunchPlanBrief } from "@/lib/prompts"
 import {
   buildOpenRouterTimeoutMessage,
@@ -74,20 +86,69 @@ export interface StreamCallbacks {
   onToken?: (content: string) => void
 }
 
-type CompetitorSearchStatus =
+type TavilyExtractStatus =
+  | "not_attempted"
+  | "succeeded"
+  | "partial"
+  | "empty"
+  | "not_configured"
+  | "failed"
+
+type OpenRouterExaSearchStatus =
+  | "disabled"
   | "found"
   | "unusable"
   | "empty"
   | "parse_failed"
+  | "no_citations"
   | "not_configured"
   | "failed"
 
-type TavilyExtractStatus =
-  | "not_attempted"
-  | "succeeded"
-  | "empty"
-  | "not_configured"
-  | "failed"
+type CompetitorResearchProvider =
+  | "openrouter_exa"
+  | "perplexity"
+  | "perplexity_tavily"
+  | "none"
+
+type CompetitorResearchFallbackReason =
+  | "openrouter_disabled"
+  | "openrouter_error"
+  | "openrouter_not_configured"
+  | "openrouter_empty"
+  | "openrouter_parse_failed"
+  | "openrouter_unusable"
+  | "openrouter_no_citations"
+
+interface CompetitorResearchDependencies {
+  openrouterExaDisabled?: boolean
+  searchOpenRouterExa?: typeof searchCompetitorsWithOpenRouterExa
+  searchPerplexity?: typeof searchCompetitors
+  extractTavily?: typeof extractCompetitorInfo
+  onEvidenceStage?: () => void
+}
+
+interface CompetitorResearchBundle {
+  competitors: CompetitorCandidate[]
+  evidenceResults: CompetitorEvidencePage[]
+  providerUsed: CompetitorResearchProvider
+  openrouterExaStatus: OpenRouterExaSearchStatus
+  openrouterResearchModel: string | null
+  openrouterCitationCount: number
+  fallbackUsed: boolean
+  fallbackReason: CompetitorResearchFallbackReason | null
+  competitorSearchStatus: CompetitorSearchStatus
+  tavilyExtractStatus: TavilyExtractStatus
+  rawCompetitorCount: number
+  usableCompetitorCount: number
+  tavilyFailedResultCount: number
+}
+
+class CompetitorResearchProgressError extends Error {
+  constructor(cause: unknown) {
+    super("Competitor research progress callback failed", { cause })
+    this.name = "CompetitorResearchProgressError"
+  }
+}
 
 // ─── Streaming Helper ────────────────────────────────────────────────
 
@@ -146,6 +207,216 @@ function rethrowOpenRouterTimeout(error: unknown, label: string, timeoutMs?: num
   throw error
 }
 
+function getOpenRouterFallbackReason(
+  status: OpenRouterExaSearchStatus
+): CompetitorResearchFallbackReason {
+  if (status === "parse_failed") return "openrouter_parse_failed"
+  if (status === "unusable") return "openrouter_unusable"
+  if (status === "no_citations") return "openrouter_no_citations"
+  if (status === "not_configured") return "openrouter_not_configured"
+  if (status === "failed") return "openrouter_error"
+  if (status === "disabled") return "openrouter_disabled"
+  return "openrouter_empty"
+}
+
+export async function gatherCompetitorResearch(
+  input: Required<Pick<CompetitiveAnalysisInput, "idea" | "name">> & {
+    model: string
+  },
+  dependencies: CompetitorResearchDependencies = {}
+): Promise<CompetitorResearchBundle> {
+  const searchOpenRouterExa =
+    dependencies.searchOpenRouterExa ?? searchCompetitorsWithOpenRouterExa
+  const searchPerplexity = dependencies.searchPerplexity ?? searchCompetitors
+  const extractTavily = dependencies.extractTavily ?? extractCompetitorInfo
+  const openrouterExaDisabled =
+    dependencies.openrouterExaDisabled ??
+    process.env.OPENROUTER_EXA_MARKET_RESEARCH_DISABLED === "1"
+  let evidenceStageEmitted = false
+  const emitEvidenceStage = () => {
+    if (evidenceStageEmitted) return
+    evidenceStageEmitted = true
+    try {
+      dependencies.onEvidenceStage?.()
+    } catch (error) {
+      throw new CompetitorResearchProgressError(error)
+    }
+  }
+
+  let openrouterExaStatus: OpenRouterExaSearchStatus = openrouterExaDisabled
+    ? "disabled"
+    : "empty"
+  let openrouterResearchModel: string | null = openrouterExaDisabled
+    ? null
+    : getOpenRouterCompetitorResearchModel()
+  let openrouterCitationCount = 0
+  let fallbackReason: CompetitorResearchFallbackReason | null =
+    openrouterExaDisabled ? "openrouter_disabled" : null
+
+  if (!openrouterExaDisabled) {
+    try {
+      logInfo("CompetitiveAnalysis", "openrouter_exa_search_started", {
+        model: input.model,
+        researchModel: openrouterResearchModel,
+      })
+      const result: OpenRouterCompetitorResearchResult =
+        await searchOpenRouterExa(input.idea, input.name)
+      emitEvidenceStage()
+      const usableCompetitors = getUsableCompetitors(result.competitors)
+      const providerStatus = getProviderCompetitorSearchStatus(result)
+
+      openrouterResearchModel = result.modelUsed
+      openrouterCitationCount = result.citations.length
+      openrouterExaStatus =
+        providerStatus === "found" && openrouterCitationCount === 0
+          ? "no_citations"
+          : providerStatus
+
+      logInfo("CompetitiveAnalysis", "openrouter_exa_search_succeeded", {
+        model: input.model,
+        researchModel: openrouterResearchModel,
+        competitorCount: result.competitors.length,
+        usableCompetitorCount: usableCompetitors.length,
+        citationCount: openrouterCitationCount,
+        status: openrouterExaStatus,
+      })
+
+      if (openrouterExaStatus === "found") {
+        return {
+          competitors: usableCompetitors,
+          evidenceResults: result.evidenceResults,
+          providerUsed: "openrouter_exa",
+          openrouterExaStatus,
+          openrouterResearchModel,
+          openrouterCitationCount,
+          fallbackUsed: false,
+          fallbackReason: null,
+          competitorSearchStatus: "found",
+          tavilyExtractStatus: "not_attempted",
+          rawCompetitorCount: result.competitors.length,
+          usableCompetitorCount: usableCompetitors.length,
+          tavilyFailedResultCount: 0,
+        }
+      }
+
+      fallbackReason = getOpenRouterFallbackReason(openrouterExaStatus)
+    } catch (error) {
+      if (error instanceof CompetitorResearchProgressError) throw error
+      openrouterExaStatus = isMissingProviderConfigError(error)
+        ? "not_configured"
+        : "failed"
+      fallbackReason =
+        openrouterExaStatus === "not_configured"
+          ? "openrouter_not_configured"
+          : "openrouter_error"
+      logWarn(
+        "CompetitiveAnalysis",
+        "openrouter_exa_search_failed_nonfatal",
+        { model: input.model, status: openrouterExaStatus },
+        error
+      )
+    }
+  }
+
+  let perplexityData: PerplexityCompetitorResult = {
+    competitors: [],
+    rawResponse: "",
+  }
+  let competitorSearchStatus: CompetitorSearchStatus = "empty"
+  let tavilyExtractStatus: TavilyExtractStatus = "not_attempted"
+  let evidenceResults: TavilyExtractResult[] = []
+  let tavilyFailedResultCount = 0
+
+  try {
+    logInfo("CompetitiveAnalysis", "perplexity_search_started", {
+      model: input.model,
+      fallbackReason,
+    })
+    perplexityData = await searchPerplexity(input.idea, input.name)
+    competitorSearchStatus = getCompetitorSearchStatus(perplexityData)
+    logInfo("CompetitiveAnalysis", "perplexity_search_succeeded", {
+      model: input.model,
+      competitorCount: perplexityData.competitors.length,
+      parseFailed: Boolean(perplexityData.parseFailed),
+    })
+  } catch (error) {
+    competitorSearchStatus = isMissingProviderConfigError(error)
+      ? "not_configured"
+      : "failed"
+    logWarn(
+      "CompetitiveAnalysis",
+      "perplexity_search_failed_nonfatal",
+      { model: input.model },
+      error
+    )
+  }
+
+  const usableCompetitors = getUsableCompetitors(perplexityData.competitors)
+  if (competitorSearchStatus === "found" && usableCompetitors.length === 0) {
+    competitorSearchStatus = "unusable"
+  }
+
+  if (usableCompetitors.length > 0) {
+    try {
+      emitEvidenceStage()
+      const urls = usableCompetitors.map((competitor) => competitor.url)
+      logInfo("CompetitiveAnalysis", "tavily_extract_started", {
+        model: input.model,
+        urlCount: urls.length,
+      })
+      const tavilyData = await extractTavily(urls)
+      evidenceResults = tavilyData.results
+      tavilyFailedResultCount = tavilyData.failed_results.length
+      tavilyExtractStatus = tavilyData.results.length > 0
+        ? tavilyData.failed_results.length > 0
+          ? "partial"
+          : "succeeded"
+        : tavilyData.failed_results.length > 0
+          ? "failed"
+          : "empty"
+      logInfo("CompetitiveAnalysis", "tavily_extract_completed", {
+        model: input.model,
+        status: tavilyExtractStatus,
+        resultCount: tavilyData.results.length,
+        failedResultCount: tavilyFailedResultCount,
+      })
+    } catch (error) {
+      if (error instanceof CompetitorResearchProgressError) throw error
+      tavilyExtractStatus = isMissingProviderConfigError(error)
+        ? "not_configured"
+        : "failed"
+      logWarn(
+        "CompetitiveAnalysis",
+        "tavily_extract_failed_nonfatal",
+        { model: input.model },
+        error
+      )
+    }
+  }
+
+  emitEvidenceStage()
+
+  return {
+    competitors: usableCompetitors,
+    evidenceResults,
+    providerUsed: usableCompetitors.length === 0
+      ? "none"
+      : evidenceResults.length > 0
+        ? "perplexity_tavily"
+        : "perplexity",
+    openrouterExaStatus,
+    openrouterResearchModel,
+    openrouterCitationCount,
+    fallbackUsed: !openrouterExaDisabled,
+    fallbackReason,
+    competitorSearchStatus,
+    tavilyExtractStatus,
+    rawCompetitorCount: perplexityData.competitors.length,
+    usableCompetitorCount: usableCompetitors.length,
+    tavilyFailedResultCount,
+  }
+}
+
 // ─── Competitive Analysis Pipeline ──────────────────────────────────
 
 export async function runCompetitiveAnalysis(
@@ -155,71 +426,20 @@ export async function runCompetitiveAnalysis(
   const model = input.model || DEFAULT_MODEL
   callbacks?.onStage?.("Identifying top competitors...", 1, 4)
 
-  let perplexityData: PerplexityCompetitorResult = {
-    competitors: [],
-    rawResponse: "",
-  }
-  let tavilyData: {
-    results: TavilyExtractResult[]
-    failed_results: Array<{ url: string; error: string }>
-  } = { results: [], failed_results: [] }
-  let competitorSearchStatus: CompetitorSearchStatus = "empty"
-  let tavilyExtractStatus: TavilyExtractStatus = "not_attempted"
-
-  // Step 1: Perplexity — find competitors with strategic reasoning
-  try {
-    logInfo("CompetitiveAnalysis", "perplexity_search_started", { model })
-    perplexityData = await searchCompetitors(input.idea, input.name)
-    competitorSearchStatus = getCompetitorSearchStatus(perplexityData)
-    logInfo("CompetitiveAnalysis", "perplexity_search_succeeded", {
-      model,
-      competitorCount: perplexityData.competitors.length,
-      parseFailed: Boolean(perplexityData.parseFailed),
-    })
-  } catch (err) {
-    // Non-fatal: if Perplexity fails, synthesize from idea alone
-    competitorSearchStatus = isMissingProviderConfigError(err)
-      ? "not_configured"
-      : "failed"
-    logWarn("CompetitiveAnalysis", "perplexity_search_failed_nonfatal", { model }, err)
-  }
-  callbacks?.onStage?.("Extracting competitor details...", 2, 4)
-
-  // Step 2: Tavily — extract factual info from competitor URLs
-  const usableCompetitors = getUsableCompetitors(perplexityData.competitors)
-  if (competitorSearchStatus === "found" && usableCompetitors.length === 0) {
-    competitorSearchStatus = "unusable"
-  }
-  if (usableCompetitors.length > 0) {
-    try {
-      const urls = usableCompetitors.map((competitor) => competitor.url)
-      logInfo("CompetitiveAnalysis", "tavily_extract_started", {
-        model,
-        urlCount: urls.length,
-      })
-      tavilyData = await extractCompetitorInfo(urls)
-      tavilyExtractStatus =
-        tavilyData.results.length > 0 || tavilyData.failed_results.length > 0
-          ? "succeeded"
-          : "empty"
-      logInfo("CompetitiveAnalysis", "tavily_extract_succeeded", {
-        model,
-        resultCount: tavilyData.results.length,
-        failedResultCount: tavilyData.failed_results.length,
-      })
-    } catch (err) {
-      tavilyExtractStatus = isMissingProviderConfigError(err)
-        ? "not_configured"
-        : "failed"
-      logWarn("CompetitiveAnalysis", "tavily_extract_failed_nonfatal", { model }, err)
-    }
-  }
+  const research = await gatherCompetitorResearch({
+    idea: input.idea,
+    name: input.name,
+    model,
+  }, {
+    onEvidenceStage: () =>
+      callbacks?.onStage?.("Reviewing competitor evidence...", 2, 4),
+  })
   callbacks?.onStage?.("Writing competitive analysis...", 3, 4)
 
   // Step 3: Build context from gathered data
   const competitorContext = buildCompetitorContext(
-    perplexityData.competitors,
-    tavilyData.results
+    research.competitors,
+    research.evidenceResults
   )
 
   // Step 4: OpenRouter synthesis — produce the final report
@@ -256,9 +476,11 @@ export async function runCompetitiveAnalysis(
   logInfo("CompetitiveAnalysis", "openrouter_synthesis_succeeded", {
     model,
     contentLength: content.length,
-    competitorSearchStatus,
-    usableCompetitorCount: usableCompetitors.length,
-    tavilyExtractStatus,
+    researchProvider: research.providerUsed,
+    openrouterExaStatus: research.openrouterExaStatus,
+    competitorSearchStatus: research.competitorSearchStatus,
+    usableCompetitorCount: research.usableCompetitorCount,
+    tavilyExtractStatus: research.tavilyExtractStatus,
   })
   callbacks?.onStage?.("Finalizing analysis...", 4, 4)
 
@@ -268,17 +490,34 @@ export async function runCompetitiveAnalysis(
     model,
     metadata: {
       live_research: {
-        competitor_search_status: competitorSearchStatus,
-        competitor_count: perplexityData.competitors.length,
-        usable_competitor_count: usableCompetitors.length,
+        primary_provider: "openrouter_exa",
+        provider_used: research.providerUsed,
+        openrouter_exa_search_status: research.openrouterExaStatus,
+        openrouter_research_model: research.openrouterResearchModel,
+        openrouter_citation_count: research.openrouterCitationCount,
+        fallback_used: research.fallbackUsed,
+        fallback_reason: research.fallbackReason,
+        competitor_search_status: research.competitorSearchStatus,
+        competitor_count: research.rawCompetitorCount,
+        usable_competitor_count: research.usableCompetitorCount,
         competitor_context_available: competitorContext.trim().length > 0,
-        tavily_extract_status: tavilyExtractStatus,
-        tavily_result_count: tavilyData.results.length,
-        tavily_failed_result_count: tavilyData.failed_results.length,
-        competitor_sources: buildCompetitorSourcesMetadata(
-          perplexityData.competitors,
-          tavilyData.results
-        ),
+        tavily_extract_status: research.tavilyExtractStatus,
+        tavily_result_count:
+          research.providerUsed === "openrouter_exa"
+            ? 0
+            : research.evidenceResults.length,
+        tavily_failed_result_count: research.tavilyFailedResultCount,
+        research_evidence_count: research.evidenceResults.length,
+        competitor_sources:
+          research.providerUsed === "openrouter_exa"
+            ? normalizeCompetitorSources(research.competitors).map((source) => ({
+                name: source.name,
+                url: source.url,
+              }))
+            : buildCompetitorSourcesMetadata(
+                research.competitors,
+                research.evidenceResults
+              ),
       },
     },
   }
@@ -474,57 +713,31 @@ export function buildCompetitorSourcesMetadata(
     }))
 }
 
-function getUsableCompetitors(
-  competitors: Array<{
-    name: string
-    description: string
-    whyCompetes: string
-    url: string
-  }>
-) {
-  return competitors
-    .map((competitor) => ({
-      ...competitor,
-      url: getSafeExternalHttpUrl(competitor.url),
-    }))
-    .filter(
-      (competitor): competitor is typeof competitor & { url: string } =>
-        Boolean(competitor.name?.trim() && competitor.url)
-    )
-}
-
 export function getCompetitorSearchStatus(
   perplexityData: PerplexityCompetitorResult
 ): CompetitorSearchStatus {
-  if (perplexityData.parseFailed) return "parse_failed"
-  if (perplexityData.competitors.length === 0) return "empty"
-  return getUsableCompetitors(perplexityData.competitors).length > 0
-    ? "found"
-    : "unusable"
+  return getProviderCompetitorSearchStatus(perplexityData)
 }
 
 export function buildCompetitorContext(
-  competitors: Array<{
-    name: string
-    description: string
-    whyCompetes: string
-    url: string
-  }>,
-  tavilyResults: TavilyExtractResult[]
+  competitors: CompetitorCandidate[],
+  evidenceResults: CompetitorEvidencePage[]
 ): string {
   const usableCompetitors = getUsableCompetitors(competitors)
   if (usableCompetitors.length === 0) return ""
 
-  const tavilyMap = new Map(
-    tavilyResults.map((result) => [
-      getSafeExternalHttpUrl(result.url) ?? result.url,
-      result,
-    ])
-  )
+  const boundedEvidence = evidenceResults.slice(0, 10).flatMap((result) => {
+    const url = getSafeExternalHttpUrl(result.url)
+    if (!url || !result.content.trim()) return []
+    return [{ ...result, url }]
+  })
+  const evidenceMap = new Map(boundedEvidence.map((result) => [result.url, result]))
+  const matchedEvidenceUrls = new Set<string>()
 
-  return usableCompetitors
+  const competitorSections = usableCompetitors
     .map((comp) => {
-      const urlData = tavilyMap.get(comp.url)
+      const urlData = evidenceMap.get(comp.url)
+      if (urlData) matchedEvidenceUrls.add(comp.url)
       const urlContent = urlData?.content
         ? `\nURL Content (from ${comp.url}):\n${urlData.content.substring(0, 1500)}`
         : `\nURL: ${comp.url} (content extraction not available)`
@@ -534,4 +747,18 @@ Description: ${comp.description}
 Why they compete: ${comp.whyCompetes}${urlContent}`
     })
     .join("\n\n---\n\n")
+
+  const unmatchedEvidence = boundedEvidence.filter(
+    (result) => !matchedEvidenceUrls.has(result.url)
+  )
+  if (unmatchedEvidence.length === 0) return competitorSections
+
+  const researchEvidence = unmatchedEvidence
+    .map((result) => {
+      const title = result.title?.trim().slice(0, 300) || "Additional research source"
+      return `### ${title}\nSource URL: ${result.url}\nExcerpt: ${result.content.slice(0, 1500)}`
+    })
+    .join("\n\n")
+
+  return `${competitorSections}\n\n---\n\n## Additional Research Evidence\n${researchEvidence}`
 }
