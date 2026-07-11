@@ -307,9 +307,15 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
       if (flag === "true") set(() => ({ status: "loading" }))
 
+      // Hydrate is the single entry point that starts polling: if its one
+      // status fetch dies (transient 500, dev-server recompile, network blip)
+      // the workspace would otherwise never update again. Retry transient
+      // failures with backoff before giving up.
+      const MAX_HYDRATE_ATTEMPTS = 5
+      for (let attempt = 1; attempt <= MAX_HYDRATE_ATTEMPTS; attempt += 1) {
       try {
         const res = await fetch(buildStatusUrl())
-        if (!res.ok) return
+        if (!res.ok) throw new Error(`Generate All status returned ${res.status}`)
         const { queue: dbRow, streamingPreview } = await res.json()
 
         if (!dbRow) {
@@ -375,8 +381,9 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
           })
 
           const nextPending = hydratedQueue.findIndex((item) => item.status === "pending")
+          const hasGenerating = hydratedQueue.some((item) => item.status === "generating")
 
-          if (nextPending === -1) {
+          if (nextPending === -1 && !hasGenerating) {
             set(() => ({
               queue: hydratedQueue,
               currentIndex: hydratedQueue.length,
@@ -396,10 +403,16 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
             })
             localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
           } else {
-            // The execute route is still running on the server — resume polling
+            // The execute route is still running on the server — resume polling.
+            // nextPending can be -1 while an item is still generating (e.g. the
+            // last document); point currentIndex at the generating item then.
+            const currentIndex =
+              nextPending === -1
+                ? hydratedQueue.findIndex((item) => item.status === "generating")
+                : nextPending
             set((state) => ({
               queue: hydratedQueue,
-              currentIndex: nextPending,
+              currentIndex,
               startedAt: dbRow.started_at ? new Date(dbRow.started_at) : null,
               status: "running",
               streamingPreviews: mergeStreamingPreview(state.streamingPreviews, streamingPreview),
@@ -409,16 +422,23 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
               ),
             }))
             localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
-            if (!hydratedQueue.some((item) => item.status === "generating")) {
+            if (!hasGenerating) {
               void kickOffExecute()
             }
             poller.schedule()
           }
         }
+        return
       } catch (err) {
-        console.error("Failed to hydrate Generate All state:", err)
-        localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
-        set(() => ({ status: "idle" }))
+        if (attempt === MAX_HYDRATE_ATTEMPTS) {
+          console.error("Failed to hydrate Generate All state:", err)
+          localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
+          set(() => ({ status: "idle" }))
+          return
+        }
+        // Transient failure: back off and retry (1s, 2s, 4s, 8s).
+        await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** (attempt - 1)))
+      }
       }
     },
 

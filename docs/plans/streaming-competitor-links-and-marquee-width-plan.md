@@ -23,9 +23,11 @@ implementation_summary: >
   streaming-time links proven in Dev Motion Lab live-fill (underlined
   Productboard/Dovetail links in the comparison table while later sections were
   still skeletons); real-run transport confirmed by logs (partial writes, no
-  write_failed) plus 119 unit tests, tsc, eslint. Follow-up chip filed: the
-  generate-all store's one-shot hydrate has no retry (pre-existing zombie-tab
-  risk observed during verification).
+  write_failed) plus 119 unit tests, tsc, eslint. The generate-all store's one-shot hydrate
+  (pre-existing zombie-tab risk observed during verification) was fixed in the
+  same session: transient failures now retry with backoff (5 attempts), and a
+  hydrate that finds no pending items but a still-generating one resumes
+  polling instead of marking the queue completed.
 ---
 
 # Streaming competitor links + marquee loop width
