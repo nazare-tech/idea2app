@@ -11,11 +11,12 @@
 
 - Local production build passed before deployment and after customer/Portal remediation.
 - Full suite: 598/598 tests passed; typecheck, changed-file ESLint, production build, and diff check passed.
-- Vercel deployment `dpl_9fHRK9u3mSt28pGxEbNhdSsGRzjB` and secret-bearing redeploy completed; apex alias moved to Ready deployments.
+- Initial deployment `dpl_9fHRK9u3mSt28pGxEbNhdSsGRzjB`, secret-bearing redeploy, and final ownership-hardening deployment `dpl_DuAiGHydAXhcvAbiic9YLPRmCv1Q` completed; the final Ready deployment owns the apex alias.
 - Live endpoint `we_1Ts8dNRZYXj2bJrBStpepAxz` is enabled with exactly five handled events.
 - Temporary metadata-only live customer emitted `customer.created`; production webhook returned HTTP 200 and durable claim `evt_1Ts8lPRZYXj2bJrBmEMfi4ke` is live, processed, and error-free. Probe customer deleted; temporary event subscription removed.
-- Production Chrome Billing sign-in worked. Initial Portal attempt exposed stale test customer behavior; Vercel logs confirmed `resource_missing`. Remediation verification pending final deployment.
+- Production Chrome Billing sign-in worked. Initial Portal attempt exposed stale test customer behavior; Vercel logs confirmed `resource_missing`. After remediation deployment, Billing showed `Internal Dev`, zero Manage Subscription/Manage plan actions, and two safe unavailable paid-plan CTAs. Evidence: `ui-evidence/2026-07-11/stripe-production-webhook-rollout/billing-internal-dev-safe.png`.
 - Migration `20260711030000_protect_stripe_customer_ownership.sql` was applied. An authenticated e2e privilege probe received PostgreSQL `42501` when updating `stripe_customer_id`, while an allowed same-value `full_name` update succeeded.
+- Final production checks: apex HTTP 200, webhook GET HTTP 405, endpoint enabled with exactly five handled events, signed probe claim live/processed/error-free, and no Vercel production error logs in the post-deploy window. Exactly four approved monthly/annual rows are checkout-enabled; legacy monthly and both six-month rows remain disabled.
 
 ## Fresh-Eyes Self Review
 
@@ -53,4 +54,8 @@
 - [x] Fail Portal closed for stale/deleted customers.
 - [x] Hide Stripe management for private/internal subscriptions.
 - [x] Protect `profiles.stripe_customer_id` from browser writes and verify Stripe metadata ownership.
-- [ ] Deploy final remediation and recapture production Billing evidence.
+- [x] Deploy final remediation and recapture production Billing evidence.
+
+## Remaining Verification Gap
+
+- The available production QA user is intentionally Internal Dev, so it cannot start hosted Checkout. A normal Free/canceled production QA account is still needed for a no-charge Checkout redirect-only smoke. The real live-card Checkout/refund test and deployed signed-webhook proof cover the payment and fulfillment boundaries without bypassing the user-visible flow.

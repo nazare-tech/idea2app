@@ -1,7 +1,7 @@
 ---
-implemented: false
-implemented_at:
-implementation_summary:
+implemented: true
+implemented_at: 2026-07-11T15:11:14-07:00
+implementation_summary: Deployed the live Stripe webhook and customer-ownership hardening to makercompass.com, proved signed delivery and durable processing, verified the production Billing UI, and enabled only the approved monthly/annual checkout rows.
 ---
 
 # Plan: Stripe Production Webhook Rollout
@@ -170,9 +170,9 @@ Authenticate Vercel CLI against the existing account, locate the project owning 
 - [x] Deploy current committed main.
 - [x] Create live webhook and install secret.
 - [x] Redeploy and verify signed delivery. Temporary `customer.created` probe returned HTTP 200 and produced processed live claim `evt_1Ts8lPRZYXj2bJrBmEMfi4ke`; probe customer was deleted and endpoint restored to five events.
-- [ ] Verify production Billing/Checkout/Portal.
-- [ ] Re-enable only the four previously enabled monthly/annual checkout rows after final remediation deploy.
-- [ ] Review, security review, docs, commit.
+- [x] Verify production Billing and safe Portal/Checkout behavior for the Internal Dev QA account. A standard Free/canceled production QA account remains a documented gap for a no-charge hosted Checkout redirect smoke.
+- [x] Re-enable only the four previously enabled monthly/annual checkout rows after final remediation deploy.
+- [x] Review, security review, docs, commit.
 
 ## Implementation Progress
 
@@ -183,3 +183,5 @@ Authenticate Vercel CLI against the existing account, locate the project owning 
 - Stripe CLI resend lacked restricted-key permission. Used a temporary metadata-only live customer event instead; Vercel recorded `POST /api/stripe/webhook` 200 and Supabase recorded a live processed claim. Endpoint and customer were cleaned up afterward.
 - Real production Billing exposed an Internal Dev user-flow bug: private non-Stripe subscription rendered generic `Active` and offered a Portal button backed by a stale test customer ID. Remediation now displays the resolved private plan name, hides Stripe management for non-Stripe subscriptions, validates Portal customers fail-closed, shares customer validation with Checkout, and makes Checkout customer creation retry-idempotent.
 - Final security review found that browser roles could write `profiles.stripe_customer_id`, making a cross-customer substitution possible. Migration `20260711030000_protect_stripe_customer_ownership.sql` now removes that browser write path, Checkout persists through the service role, and both Checkout and Portal require matching `supabase_user_id` Stripe metadata. An authenticated database probe confirmed the protected write is denied while normal profile updates still work. Checkout was disabled again pending deployment of this remediation.
+- Commit `b085cc6d` deployed as Vercel deployment `dpl_DuAiGHydAXhcvAbiic9YLPRmCv1Q`; it reached Ready and owns the `makercompass.com` alias. Production Billing shows `Internal Dev`, exposes zero Portal/manage-plan actions, and renders safe unavailable CTAs. Evidence: `ui-evidence/2026-07-11/stripe-production-webhook-rollout/billing-internal-dev-safe.png`.
+- Final health checks returned apex HTTP 200 and webhook GET HTTP 405, the live endpoint remained enabled with exactly the five handled events, the signed probe claim remained live/processed/error-free, and recent production error logs were empty. Exactly four monthly/annual checkout rows were re-enabled; the legacy monthly and both six-month rows remain disabled.
