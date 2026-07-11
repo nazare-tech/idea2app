@@ -11,7 +11,13 @@ const SCATTER_DISTANCE = 480
 const CENTER_X = 960
 const CENTER_Y = 360
 
-/** Figma frame 362:12585 (1497.7px wide) mapped into the centered 1920px box. */
+/**
+ * Figma frame 362:12585 (1497.7px wide) mapped into the centered artwork box.
+ * The box stretches to the viewport when wider than 1920px, so left-side notes
+ * anchor with `left` offsets and right-side notes with `right` offsets — both
+ * clusters hug the screen edges instead of floating inward on wide displays.
+ * `left`/`top` here stay in 1920-box coordinates for the scatter vectors.
+ */
 const heroLayers: {
   src: string
   width: number
@@ -109,7 +115,7 @@ const heroLayers: {
     left: 1596,
     top: 442,
     side: "right",
-    className: "left-[1596px] top-[442px] h-[256px] w-[308px]",
+    className: "right-[16px] top-[442px] h-[256px] w-[308px]",
   },
   {
     src: "/landing/hero/362-12596_note.png",
@@ -118,7 +124,7 @@ const heroLayers: {
     left: 1453,
     top: 437,
     side: "right",
-    className: "left-[1453px] top-[437px] h-[222px] w-[199px]",
+    className: "right-[268px] top-[437px] h-[222px] w-[199px]",
   },
   {
     src: "/landing/hero/362-12597_note.png",
@@ -127,7 +133,7 @@ const heroLayers: {
     left: 1495,
     top: 42,
     side: "right",
-    className: "left-[1495px] top-[42px] h-[295px] w-[367px]",
+    className: "right-[58px] top-[42px] h-[295px] w-[367px]",
   },
   {
     src: "/landing/hero/362-12598_note.png",
@@ -136,7 +142,7 @@ const heroLayers: {
     left: 1711,
     top: -7,
     side: "right",
-    className: "left-[1711px] top-[-7px] h-[192px] w-[193px]",
+    className: "right-[16px] top-[-7px] h-[192px] w-[193px]",
   },
   {
     src: "/landing/hero/362-12599_note.png",
@@ -145,7 +151,7 @@ const heroLayers: {
     left: 1726,
     top: 171,
     side: "right",
-    className: "left-[1726px] top-[171px] h-[278px] w-[178px]",
+    className: "right-[16px] top-[171px] h-[278px] w-[178px]",
   },
   {
     src: "/landing/hero/362-12600_note.png",
@@ -154,7 +160,7 @@ const heroLayers: {
     left: 1412,
     top: 191,
     side: "right",
-    className: "left-[1412px] top-[191px] h-[278px] w-[239px]",
+    className: "right-[269px] top-[191px] h-[278px] w-[239px]",
   },
   {
     src: "/landing/hero/362-12601_note.png",
@@ -163,7 +169,7 @@ const heroLayers: {
     left: 1604,
     top: 315,
     side: "right",
-    className: "left-[1604px] top-[315px] h-[230px] w-[239px]",
+    className: "right-[77px] top-[315px] h-[230px] w-[239px]",
   },
 ]
 
@@ -279,7 +285,7 @@ export function HeroArtwork() {
     <div
       ref={boxRef}
       aria-hidden="true"
-      className="pointer-events-none absolute left-1/2 top-1/2 hidden h-[720px] w-[1920px] -translate-x-1/2 -translate-y-1/2 lg:block"
+      className="pointer-events-none absolute left-1/2 top-1/2 hidden h-[720px] w-[max(1920px,100vw)] -translate-x-1/2 -translate-y-1/2 lg:block"
     >
       {/* Entrance animation lives on the wrapper; the parallax loop writes
           transforms to the inner img, so the two never fight. */}
