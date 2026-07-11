@@ -14,21 +14,16 @@ import {
   ListChecks,
   RotateCcw,
   Sparkle,
-  Target,
   X,
   Clock,
 } from "lucide-react"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { cn } from "@/lib/utils"
 
-type ComposerScope = "document" | "project"
-
 interface ComposerMessage {
   id: number
   role: "user" | "assistant"
   text: string
-  /** Scope label shown on assistant answers ("Product Plan" / "Whole project") */
-  scopeLabel?: string
   isError?: boolean
 }
 
@@ -37,8 +32,6 @@ interface ProjectComposerProps {
   projectName: string
   /** Nav key of the document currently in view (e.g. "prd", "market-research") */
   activeDocKey: string
-  /** Display label for that document (e.g. "Product Plan") */
-  activeDocLabel: string
   /** Free-plan gate: render an upgrade CTA instead of the chat input. */
   upgradeRequired?: boolean
 }
@@ -51,6 +44,52 @@ const STICK_TO_BOTTOM_THRESHOLD_PX = 48
 /** Mono uppercase kicker, matching the workspace mc-label idiom. */
 const kickerClass =
   "font-mono text-[10px] font-medium uppercase tracking-[0.18em]"
+
+interface SuggestionChipConfig {
+  label: string
+  prompt: string
+  icon: "summary" | "steps" | "question"
+}
+
+/**
+ * Two realistic starter questions per document. Chips follow the document in
+ * view so the suggestions match what the user is reading, but every question
+ * is answered with whole-project context.
+ */
+const SUGGESTION_CHIPS: Record<string, [SuggestionChipConfig, SuggestionChipConfig]> = {
+  "executive-summary": [
+    { label: "Summarize this project", prompt: "Give me a short summary of this project and where it stands.", icon: "summary" },
+    { label: "What should I do first?", prompt: "What should I do first to move this project forward?", icon: "steps" },
+  ],
+  "market-research": [
+    { label: "Summarize the market research", prompt: "Summarize the market research: market size, competitors, and the main opportunity.", icon: "summary" },
+    { label: "Who are my main competitors?", prompt: "Who are my main competitors, and how is this product different from them?", icon: "question" },
+  ],
+  prd: [
+    { label: "Summarize the product plan", prompt: "Summarize the product plan: what we're building, for whom, and the core features.", icon: "summary" },
+    { label: "Which features matter most?", prompt: "Which features in the product plan matter most, and why?", icon: "question" },
+  ],
+  mvp: [
+    { label: "Summarize the first version plan", prompt: "Summarize the first version plan: the goal, the scope, and what's deliberately left out.", icon: "summary" },
+    { label: "What do I build first?", prompt: "According to the build sequence, what should I build first and how do I test it?", icon: "steps" },
+  ],
+  mockups: [
+    { label: "Compare the design concepts", prompt: "Compare the design mockup concepts and their trade-offs.", icon: "summary" },
+    { label: "Which concept should I pick?", prompt: "Which design concept best fits the product plan, and why?", icon: "question" },
+  ],
+  "ai-prompts": [
+    { label: "How do I use these files?", prompt: "How do I use the AI prompt files to start building? Walk me through the order.", icon: "steps" },
+    { label: "Which AI tool should I use?", prompt: "Which AI build tool is recommended for this project, and why?", icon: "question" },
+  ],
+}
+
+const DEFAULT_CHIPS = SUGGESTION_CHIPS["executive-summary"]
+
+const CHIP_ICONS = {
+  summary: <AlignLeft className="h-[15px] w-[15px]" />,
+  steps: <ListChecks className="h-[15px] w-[15px]" />,
+  question: <CircleHelp className="h-[15px] w-[15px]" />,
+} as const
 
 function SuggestionChip({
   icon,
@@ -77,18 +116,17 @@ export function ProjectComposer({
   projectId,
   projectName,
   activeDocKey,
-  activeDocLabel,
   upgradeRequired = false,
 }: ProjectComposerProps) {
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState("")
-  const [scope, setScope] = useState<ComposerScope>("document")
   const [messages, setMessages] = useState<ComposerMessage[]>([])
   const [streaming, setStreaming] = useState(false)
 
   const idRef = useRef(0)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const wasOpenRef = useRef(false)
   // Sticky autoscroll: true while the user is at (or near) the bottom of the
@@ -97,7 +135,6 @@ export function ProjectComposer({
   // scroll events never trigger re-renders.
   const stickToBottomRef = useRef(true)
 
-  const scopeLabel = scope === "document" ? activeDocLabel : "Whole project"
   const hasConversation = messages.length > 0
   const lastMessage = messages[messages.length - 1]
   const waitingForFirstToken =
@@ -167,6 +204,22 @@ export function ProjectComposer({
   // Abort any in-flight request on unmount.
   useEffect(() => () => abortRef.current?.abort(), [])
 
+  // Clicking outside the composer collapses it when the input is empty.
+  // Typed-but-unsent text keeps it open, and a streaming answer is never
+  // hidden mid-flight.
+  useEffect(() => {
+    if (!open) return
+    const handlePointerDown = (event: MouseEvent) => {
+      const card = cardRef.current
+      if (!card || card.contains(event.target as Node)) return
+      if (inputRef.current?.value.trim()) return
+      if (streaming) return
+      setOpen(false)
+    }
+    document.addEventListener("mousedown", handlePointerDown)
+    return () => document.removeEventListener("mousedown", handlePointerDown)
+  }, [open, streaming])
+
   const resizeInput = useCallback(() => {
     const el = inputRef.current
     if (!el) return
@@ -175,14 +228,10 @@ export function ProjectComposer({
   }, [])
 
   const send = useCallback(
-    async (rawText: string, scopeOverride?: ComposerScope) => {
+    async (rawText: string) => {
       const text = rawText.trim()
       if (!text || streaming) return
 
-      const requestScope = scopeOverride ?? scope
-      if (scopeOverride && scopeOverride !== scope) setScope(scopeOverride)
-      const requestScopeLabel =
-        requestScope === "document" ? activeDocLabel : "Whole project"
       // History is the conversation before this question, bounded server-side.
       const history = messages
         .filter((m) => !m.isError)
@@ -208,9 +257,11 @@ export function ProjectComposer({
         const response = await fetch(`/api/projects/${projectId}/composer`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          // Always answer with whole-project context; docKey tells the
+          // assistant which document the user is currently viewing.
           body: JSON.stringify({
             message: text,
-            scope: requestScope,
+            scope: "project",
             docKey: activeDocKey,
             history,
           }),
@@ -227,7 +278,7 @@ export function ProjectComposer({
         const assistantId = ++idRef.current
         setMessages((prev) => [
           ...prev,
-          { id: assistantId, role: "assistant", text: "", scopeLabel: requestScopeLabel },
+          { id: assistantId, role: "assistant", text: "" },
         ])
 
         const reader = response.body.getReader()
@@ -255,7 +306,6 @@ export function ProjectComposer({
             id: ++idRef.current,
             role: "assistant",
             text: message,
-            scopeLabel: requestScopeLabel,
             isError: true,
           },
         ])
@@ -264,7 +314,7 @@ export function ProjectComposer({
         setStreaming(false)
       }
     },
-    [activeDocKey, activeDocLabel, messages, projectId, resizeInput, scope, streaming]
+    [activeDocKey, messages, projectId, resizeInput, streaming]
   )
 
   const resetSession = useCallback(() => {
@@ -323,7 +373,10 @@ export function ProjectComposer({
         /* The composer card is the focus surface; the input itself is borderless per design. */
         [data-testid="project-composer"] textarea:focus-visible{outline:none}
       `}</style>
-      <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
+      <div
+        ref={cardRef}
+        className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
+      >
         {open && (
           <>
             {/* Header */}
@@ -367,29 +420,17 @@ export function ProjectComposer({
                 <div style={{ animation: "composerUp .28s var(--ease-out-expo)" }}>
                   <p className="m-0 text-sm leading-[1.55] text-text-secondary">
                     Ask anything about {projectName}. Answers read your generated
-                    docs. This is a scratch session, it isn&apos;t saved and never
-                    changes your documents.
+                    docs.
                   </p>
                   <div className="mt-3.5 flex flex-wrap gap-2">
-                    <SuggestionChip
-                      icon={<AlignLeft className="h-[15px] w-[15px]" />}
-                      label={`Summarize ${activeDocLabel}`}
-                      onClick={() => void send(`Summarize ${activeDocLabel}`, "document")}
-                    />
-                    <SuggestionChip
-                      icon={<ListChecks className="h-[15px] w-[15px]" />}
-                      label="Suggest next steps"
-                      onClick={() => void send("Suggest the next steps for this project", "project")}
-                    />
-                    <SuggestionChip
-                      icon={<CircleHelp className="h-[15px] w-[15px]" />}
-                      label="Explain a decision"
-                      onClick={() =>
-                        void send(
-                          "Explain the most important decision in this plan and why it was made"
-                        )
-                      }
-                    />
+                    {(SUGGESTION_CHIPS[activeDocKey] ?? DEFAULT_CHIPS).map((chip) => (
+                      <SuggestionChip
+                        key={chip.label}
+                        icon={CHIP_ICONS[chip.icon]}
+                        label={chip.label}
+                        onClick={() => void send(chip.prompt)}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
@@ -421,16 +462,6 @@ export function ProjectComposer({
                           <span className={cn(kickerClass, "text-muted-foreground")}>
                             Assistant
                           </span>
-                          {message.scopeLabel && (
-                            <span
-                              className={cn(
-                                kickerClass,
-                                "border-l border-border pl-2 tracking-[0.08em] text-sidebar-muted"
-                              )}
-                            >
-                              {message.scopeLabel}
-                            </span>
-                          )}
                         </div>
                         {message.isError ? (
                           <p className="m-0 text-sm leading-relaxed text-text-secondary">
@@ -482,21 +513,6 @@ export function ProjectComposer({
           )}
         >
           <div className="flex items-end gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setScope((prev) => (prev === "document" ? "project" : "document"))
-                setOpen(true)
-              }}
-              title="Toggle answer scope"
-              className={cn(
-                kickerClass,
-                "mb-[7px] inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-secondary px-[9px] py-1 tracking-[0.08em] text-text-secondary transition-colors hover:border-primary/30 hover:text-foreground"
-              )}
-            >
-              <Target className="h-[11px] w-[11px]" />
-              {scopeLabel}
-            </button>
             <textarea
               ref={inputRef}
               rows={1}

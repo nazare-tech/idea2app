@@ -863,7 +863,6 @@ export function ProjectWorkspace({
               projectId={project.id}
               projectName={projectName}
               activeDocKey={activeComposerNavItem.key}
-              activeDocLabel={activeComposerNavItem.label}
               upgradeRequired={!composerEnabled}
             />
           </div>

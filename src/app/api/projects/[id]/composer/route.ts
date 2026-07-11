@@ -259,8 +259,12 @@ export async function POST(
       Object.values(SOURCE_LABELS).indexOf(b.label)
   )
 
+  // Project scope still names the document in view so "this document"
+  // questions resolve naturally.
   const scopeLabel =
-    scope === "project" ? "Whole project" : DOC_SCOPE_LABELS[docKey]
+    scope === "project"
+      ? `Whole project (the user is currently viewing: ${DOC_SCOPE_LABELS[docKey]})`
+      : DOC_SCOPE_LABELS[docKey]
 
   const userPrompt = buildProjectComposerUserPrompt({
     projectName: project.name,
