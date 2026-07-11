@@ -14,11 +14,12 @@ import {
   type StripePlanPriceMapping,
   type SubscriptionSyncSnapshot,
 } from "@/lib/stripe/subscription-sync"
-import { claimWebhookEvent, type WebhookClaim } from "@/lib/stripe/webhook-claim"
 import {
-  markWebhookEventProcessed,
-  tryMarkWebhookEventFailed,
-} from "@/lib/stripe/webhook-finalizer"
+  claimWebhookEvent,
+  finalizeWebhookEvent,
+  WebhookLeaseLostError,
+  type WebhookClaim,
+} from "@/lib/stripe/webhook-lease"
 import { recordServerProductEvent } from "@/lib/product-analytics/server"
 import { normalizeProductAnalyticsPlanKey } from "@/lib/product-analytics/storage"
 import { parseCheckoutAnalyticsMetadata } from "@/lib/stripe/checkout-analytics"
@@ -651,23 +652,22 @@ export async function POST(request: Request) {
         break
     }
 
-    await markWebhookEventProcessed(supabase, event.id, claim.receivedAt)
-
-    return NextResponse.json({ received: true })
   } catch (error) {
-    const statusWriteError = await tryMarkWebhookEventFailed(
-      supabase,
-      event.id,
-      claim.receivedAt,
+    const statusWriteError = await finalizeWebhookEvent(supabase, claim.lease, {
+      status: "failed",
       error,
-    )
+    })
 
     if (statusWriteError) {
-      logWebhook("error", "Failed to persist webhook failure status", {
-        event_id: event.id,
-        event_type: event.type,
-        error: statusWriteError.message,
-      })
+      logWebhook(
+        statusWriteError instanceof WebhookLeaseLostError ? "warn" : "error",
+        "Failed to persist webhook failure status",
+        {
+          event_id: event.id,
+          event_type: event.type,
+          error: statusWriteError.message,
+        }
+      )
     }
 
     logWebhook("error", "Webhook processing error", {
@@ -680,4 +680,30 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+
+  // Handler side effects landed; only the durable status write remains. If it
+  // fails, the row must stay "processing" (not "failed"): a false "failed" is
+  // immediately reclaimable and would re-run every side effect, while
+  // "processing" recovers through the normal stale-lease claim path.
+  const processedWriteError = await finalizeWebhookEvent(supabase, claim.lease, {
+    status: "processed",
+  })
+
+  if (processedWriteError) {
+    logWebhook(
+      processedWriteError instanceof WebhookLeaseLostError ? "warn" : "error",
+      "Failed to persist webhook processed status",
+      {
+        event_id: event.id,
+        event_type: event.type,
+        error: processedWriteError.message,
+      }
+    )
+    return NextResponse.json(
+      { error: "Webhook finalization failed" },
+      { status: 500 }
+    )
+  }
+
+  return NextResponse.json({ received: true })
 }
