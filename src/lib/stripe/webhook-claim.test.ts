@@ -16,20 +16,23 @@ function stripeEvent() {
 
 function makeClaimClient({
   insertError = null,
+  insertData = { received_at: "2026-06-18T00:00:00.000Z" },
   existingEvent = null,
-  reclaimData = { event_id: "evt_123" },
+  reclaimData = { event_id: "evt_123", received_at: "2026-06-18T00:10:00.000Z" },
 }: {
   insertError?: { code: string; message: string } | null
+  insertData?: { received_at: string | null } | null
   existingEvent?: { status: string; received_at: string | null } | null
-  reclaimData?: { event_id: string } | null
+  reclaimData?: { event_id: string; received_at: string | null } | null
 }) {
   const eqCalls: Array<{ column: string; value: unknown }> = []
   const updates: Record<string, unknown>[] = []
-  let mode: "read" | "update" = "read"
+  let mode: "insert" | "read" | "update" = "read"
 
   const query = {
-    async insert() {
-      return { error: insertError }
+    insert() {
+      mode = "insert"
+      return this
     },
     select() {
       return this
@@ -44,9 +47,9 @@ function makeClaimClient({
       return this
     },
     async maybeSingle() {
-      return mode === "update"
-        ? { data: reclaimData, error: null }
-        : { data: existingEvent, error: null }
+      if (mode === "insert") return { data: insertData, error: insertError }
+      if (mode === "update") return { data: reclaimData, error: null }
+      return { data: existingEvent, error: null }
     },
   }
 
@@ -55,6 +58,7 @@ function makeClaimClient({
     updates,
     client: {
       from() {
+        mode = "read"
         return query
       },
     } as never,
@@ -67,7 +71,17 @@ test("claimWebhookEvent claims a first-seen event", async () => {
   assert.deepEqual(await claimWebhookEvent(client, stripeEvent()), {
     shouldProcess: true,
     retrying: false,
+    receivedAt: "2026-06-18T00:00:00.000Z",
   })
+})
+
+test("claimWebhookEvent rejects an inserted claim without a lease timestamp", async () => {
+  const { client } = makeClaimClient({ insertData: { received_at: null } })
+
+  await assert.rejects(
+    claimWebhookEvent(client, stripeEvent()),
+    /inserted claim has no lease timestamp/,
+  )
 })
 
 test("claimWebhookEvent ignores an already processed duplicate", async () => {
@@ -114,6 +128,7 @@ test("claimWebhookEvent reclaims a failed duplicate", async () => {
   assert.deepEqual(await claimWebhookEvent(client, stripeEvent(), { nowMs: () => now }), {
     shouldProcess: true,
     retrying: true,
+    receivedAt: "2026-06-18T00:10:00.000Z",
   })
   assert.equal(updates[0].status, "processing")
   assert.equal(updates[0].received_at, "2026-06-18T00:10:00.000Z")
@@ -133,6 +148,7 @@ test("claimWebhookEvent reclaims stale processing with received_at guard", async
   assert.deepEqual(await claimWebhookEvent(client, stripeEvent(), { nowMs: () => now }), {
     shouldProcess: true,
     retrying: true,
+    receivedAt: "2026-06-18T00:10:00.000Z",
   })
   assert.ok(eqCalls.some((call) => call.column === "received_at" && call.value === receivedAt))
 })
@@ -151,4 +167,20 @@ test("claimWebhookEvent treats reclaim races as still processing", async () => {
     shouldProcess: false,
     reason: "processing",
   })
+})
+
+test("claimWebhookEvent rejects a reclaimed claim without a lease timestamp", async () => {
+  const { client } = makeClaimClient({
+    insertError: { code: "23505", message: "duplicate" },
+    existingEvent: {
+      status: "failed",
+      received_at: "2026-06-18T00:00:00.000Z",
+    },
+    reclaimData: { event_id: "evt_123", received_at: null },
+  })
+
+  await assert.rejects(
+    claimWebhookEvent(client, stripeEvent()),
+    /reclaimed claim has no lease timestamp/,
+  )
 })

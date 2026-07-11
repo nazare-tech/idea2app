@@ -15,6 +15,10 @@ import {
   type SubscriptionSyncSnapshot,
 } from "@/lib/stripe/subscription-sync"
 import { claimWebhookEvent, type WebhookClaim } from "@/lib/stripe/webhook-claim"
+import {
+  markWebhookEventProcessed,
+  tryMarkWebhookEventFailed,
+} from "@/lib/stripe/webhook-finalizer"
 import { recordServerProductEvent } from "@/lib/product-analytics/server"
 import { normalizeProductAnalyticsPlanKey } from "@/lib/product-analytics/storage"
 import { parseCheckoutAnalyticsMetadata } from "@/lib/stripe/checkout-analytics"
@@ -647,24 +651,24 @@ export async function POST(request: Request) {
         break
     }
 
-    await supabase
-      .from("stripe_webhook_events")
-      .update({
-        status: "processed",
-        processed_at: new Date().toISOString(),
-        error: null,
-      })
-      .eq("event_id", event.id)
+    await markWebhookEventProcessed(supabase, event.id, claim.receivedAt)
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    await supabase
-      .from("stripe_webhook_events")
-      .update({
-        status: "failed",
-        error: error instanceof Error ? error.message : String(error),
+    const statusWriteError = await tryMarkWebhookEventFailed(
+      supabase,
+      event.id,
+      claim.receivedAt,
+      error,
+    )
+
+    if (statusWriteError) {
+      logWebhook("error", "Failed to persist webhook failure status", {
+        event_id: event.id,
+        event_type: event.type,
+        error: statusWriteError.message,
       })
-      .eq("event_id", event.id)
+    }
 
     logWebhook("error", "Webhook processing error", {
       event_id: event.id,

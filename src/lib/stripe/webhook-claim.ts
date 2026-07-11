@@ -9,7 +9,7 @@ type ClaimableStripeEvent = Pick<Stripe.Event, "id" | "type" | "livemode">
 export const WEBHOOK_PROCESSING_RETRY_AFTER_MS = 5 * 60 * 1000
 
 export type WebhookClaim =
-  | { shouldProcess: true; retrying: boolean }
+  | { shouldProcess: true; retrying: boolean; receivedAt: string }
   | { shouldProcess: false; reason: "processed" | "processing" }
 
 export async function claimWebhookEvent(
@@ -18,15 +18,22 @@ export async function claimWebhookEvent(
   options: { nowMs?: () => number } = {},
 ): Promise<WebhookClaim> {
   const nowMs = options.nowMs ?? Date.now
-  const { error: insertError } = await supabase.from("stripe_webhook_events").insert({
-    event_id: event.id,
-    event_type: event.type,
-    livemode: event.livemode,
-    status: "processing",
-  })
+  const { data: insertedEvent, error: insertError } = await supabase
+    .from("stripe_webhook_events")
+    .insert({
+      event_id: event.id,
+      event_type: event.type,
+      livemode: event.livemode,
+      status: "processing",
+    })
+    .select("received_at")
+    .maybeSingle()
 
   if (!insertError) {
-    return { shouldProcess: true, retrying: false }
+    if (!insertedEvent?.received_at) {
+      throw new Error("Failed to claim Stripe event: inserted claim has no lease timestamp")
+    }
+    return { shouldProcess: true, retrying: false, receivedAt: insertedEvent.received_at }
   }
 
   if (insertError.code !== "23505") {
@@ -75,7 +82,7 @@ export async function claimWebhookEvent(
   }
 
   const { data: reclaimedEvent, error: reclaimError } = await reclaimQuery
-    .select("event_id")
+    .select("event_id, received_at")
     .maybeSingle()
 
   if (reclaimError) {
@@ -86,5 +93,9 @@ export async function claimWebhookEvent(
     return { shouldProcess: false, reason: "processing" }
   }
 
-  return { shouldProcess: true, retrying: true }
+  if (!reclaimedEvent.received_at) {
+    throw new Error("Failed to reclaim Stripe event: reclaimed claim has no lease timestamp")
+  }
+
+  return { shouldProcess: true, retrying: true, receivedAt: reclaimedEvent.received_at }
 }

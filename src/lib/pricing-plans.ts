@@ -51,6 +51,7 @@ export const PLAN_DISPLAYS: PlanDisplay[] = [
     includedLabel: "Everything in Free plus:",
     features: [
       "5 projects/mo",
+      "Good AI models for research and generation",
       "Bundled planning docs for each new project",
       "Three design mockup directions per project",
       "Product plan + tech spec export",
@@ -65,6 +66,7 @@ export const PLAN_DISPLAYS: PlanDisplay[] = [
     includedLabel: "Everything in Starter plus:",
     features: [
       "10 projects/mo",
+      "Best AI models for research and generation",
       "Bundled planning docs for heavier build cycles",
       "Deeper research with the thinking model",
       "Priority generation queue",

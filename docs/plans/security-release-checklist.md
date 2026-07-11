@@ -31,12 +31,15 @@ Close pre-release gaps around:
 ## 2) Env hygiene
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` never exposed client-side
 - [x] `STRIPE_WEBHOOK_SECRET` set in prod env and rotated on incident
+- [x] `STRIPE_WEBHOOK_SECRET` scoped to Vercel Production only
+- [ ] Rotate the formerly Preview-exposed webhook secret and expire the old value after production proof
 - [ ] `NEXT_PUBLIC_*` contains only non-sensitive values
 - [ ] Add CI check to fail if service secrets appear in client bundles
 
 ## 3) Webhook monitoring
 - [x] Structured webhook logs include `event_id`, `event_type`, timestamp
 - [x] Route webhook logs to centralized sink (Datadog/Logflare/Sentry)
+- [x] Stripe email alerts enabled for API integration errors, webhook delivery failures, and webhook event-generation failures
 - [ ] Add alert for repeated signature verification failures
 - [ ] Add alert for repeated processing failures by event type
 
@@ -49,3 +52,4 @@ Close pre-release gaps around:
 - 2026-07-11: Live catalog validation and a real $19 smoke test proved Checkout, signed webhook claims, subscription/credit sync, Customer Portal cancellation, immediate cancellation, and full refund. Secrets stayed in ignored local/process environment only. This does not replace the unchecked deployed webhook endpoint, production secret, or RLS audit tasks.
 - 2026-07-11: Full-refund reconciliation is service-role-only and idempotent by invoice/grant row; the real 100-credit grant reversed once and replay made no second ledger entry.
 - 2026-07-11: Production endpoint `we_1Ts8dNRZYXj2bJrBStpepAxz` at the apex domain received a signed live no-charge event; Vercel returned 200 and Supabase stored a processed live claim. Secret values were transferred manually and never logged or committed. Vercel currently reports the endpoint secret scoped to Preview and Production; reducing it to Production-only remains recommended when Vercel can split the shared entry without deleting Production.
+- 2026-07-11: Operational hardening enabled Stripe email notifications for webhook delivery and event-generation failures plus API integration errors; Vercel now reports `STRIPE_WEBHOOK_SECRET` as Production-only. The old value still requires phone-verified rotation so existing Preview deployments cannot retain useful access. No Sentry account was created.

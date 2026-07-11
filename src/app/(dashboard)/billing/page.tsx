@@ -46,16 +46,26 @@ export default async function BillingPage() {
     : null
   const currentPlanPrice =
     currentPlan?.plan_prices.find((price) => price.id === subscription?.plan_price_id) ?? null
+  // Remaining (not used) reads correctly through plan changes: upgrades and
+  // renewals only ever increase what's left, so the number never looks wrong.
   const visibleProjectAllowance = projectAllowance
     ? projectAllowance.allowance === null
       ? "Unlimited projects"
-      : `${projectAllowance.used} of ${projectAllowance.allowance} projects used`
+      : `${projectAllowance.remaining} of ${projectAllowance.allowance} projects left`
     : "Project usage unavailable"
+  const allowanceResetDate = projectAllowance?.window.end
+    ? new Date(projectAllowance.window.end).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+      })
+    : null
   const projectAllowanceDetail = projectAllowance?.allowance === null
     ? "Your current plan does not have a monthly project cap."
     : projectAllowance?.window.source === "lifetime"
-      ? "Free plan allowance is lifetime-based."
-      : "Your project allowance resets monthly."
+      ? "Free plan projects are a lifetime allowance."
+      : allowanceResetDate
+        ? `Your allowance resets on ${allowanceResetDate}.`
+        : "Your project allowance resets monthly."
 
   return (
     <AppPageShell contentClassName="max-w-[1180px]">

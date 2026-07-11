@@ -51,7 +51,7 @@ The 2026-07-11 local real-card smoke and deployed signed webhook probe both pass
 
 - [ ] **Review RLS policies for subscriptions table**: Ensure users can only read their own subscription records and that service-role inserts/updates from the webhook are not blocked
 - [ ] **Test credit renewal on invoice.paid**: The webhook handles `invoice.paid` with `billing_reason: "subscription_cycle"` to add interval-scaled credits once per subscription period. Use Stripe test clocks or a controlled live smoke flow.
-- [ ] **Add error logging/monitoring**: Consider adding structured logging or an error tracking service (e.g., Sentry) for webhook failures in production
+- [x] **Add webhook failure notifications**: Stripe email alerts are enabled for API integration errors, webhook delivery failures, and webhook event-generation failures. Structured webhook errors continue through the existing logger/Sentry SDK path; no new Sentry account was created.
 
 ---
 
