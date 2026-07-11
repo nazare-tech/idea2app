@@ -1009,6 +1009,8 @@ export type Database = {
           period_start: string
           plan_id: string | null
           plan_price_id: string | null
+          reversal_event_id: string | null
+          reversed_at: string | null
           stripe_event_id: string | null
           stripe_invoice_id: string | null
           stripe_subscription_id: string
@@ -1023,6 +1025,8 @@ export type Database = {
           period_start: string
           plan_id?: string | null
           plan_price_id?: string | null
+          reversal_event_id?: string | null
+          reversed_at?: string | null
           stripe_event_id?: string | null
           stripe_invoice_id?: string | null
           stripe_subscription_id: string
@@ -1037,6 +1041,8 @@ export type Database = {
           period_start?: string
           plan_id?: string | null
           plan_price_id?: string | null
+          reversal_event_id?: string | null
+          reversed_at?: string | null
           stripe_event_id?: string | null
           stripe_invoice_id?: string | null
           stripe_subscription_id?: string
@@ -1244,6 +1250,14 @@ export type Database = {
           p_stripe_invoice_id: string | null
           p_stripe_subscription_id: string
           p_user_id: string
+        }
+        Returns: boolean
+      }
+      reverse_subscription_credits_once: {
+        Args: {
+          p_description?: string
+          p_stripe_event_id: string
+          p_stripe_invoice_id: string
         }
         Returns: boolean
       }

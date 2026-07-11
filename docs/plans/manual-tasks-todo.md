@@ -1,6 +1,6 @@
 # To-Do (Manual Tasks)
 
-**Last Updated**: 2026-06-09
+**Last Updated**: 2026-07-11
 
 ---
 
@@ -8,24 +8,26 @@
 
 ### Immediate (Test Mode)
 
-- [ ] **Test full checkout flow in browser**: Log in to the app at `http://localhost:3000`, navigate to `/billing`, click "Upgrade to Starter", and complete checkout using test card `4242 4242 4242 4242` (any future expiry, any CVC, any zip)
-- [ ] **Verify subscription was created**: After checkout, check Supabase `subscriptions` table for a new row with `status: "active"`, correct `plan_id`, correct `plan_price_id`, and real Stripe period dates
-- [ ] **Verify credits were added once**: Check Supabase `credits`, `credits_history`, and `stripe_credit_grants` to confirm the interval credit grant was recorded once
-- [ ] **Test Customer Portal**: After subscribing, click "Manage Subscription" on the billing page to verify the Stripe portal opens for subscription management (cancel, upgrade, payment method changes)
-- [ ] **Test subscription cancellation**: Cancel a subscription via the Customer Portal, then verify the webhook updates the `subscriptions` table to `status: "canceled"`
+- [x] **Test full checkout flow in browser**: Test-mode checkout was verified, then superseded by a real live $19 Starter checkout on 2026-07-11.
+- [x] **Verify subscription was created**: Live subscription synchronized with the correct plan, interval price, and Stripe period.
+- [x] **Verify credits were added once**: One idempotent 100-credit initial grant was recorded for the live Starter period.
+- [x] **Test Customer Portal**: The live portal opened from Billing and showed the current plan, invoice, payment method, and cancellation controls.
+- [x] **Test subscription cancellation**: Portal cancellation and final immediate cancellation both synchronized through processed live webhooks.
 
 ### Before Production
 
-- [ ] **Switch to live Stripe keys**: Replace `sk_test_*` and `pk_test_*` in `.env.local` (or Vercel env vars) with your live keys from [Stripe Dashboard > API Keys](https://dashboard.stripe.com/apikeys)
-- [ ] **Create live products & prices**: Create live Starter and Pro products with monthly, 6-month, and annual recurring prices. Starter: $19/mo, $105/6 months, $194/year. Pro: $49/mo, $270/6 months, $499/year. Keep Enterprise non-public/checkout-disabled for now.
-- [ ] **Update production Supabase billing rows**: Update `plan_prices.stripe_price_id` with live `price_*` IDs, enable checkout for the live Starter/Pro intervals, and keep `plans.stripe_price_id` aligned with each plan's live monthly/default price for backward compatibility.
+- [x] **Switch local smoke environment to live Stripe key**: `.env.local` uses a live restricted key. Vercel/production environment setup remains separate and must not reuse a local CLI listener secret.
+- [x] **Create live products & prices**: Live Starter and Pro monthly, 6-month, and annual Prices exist at $19/$105/$194 and $49/$270/$499. Enterprise remains non-public/checkout-disabled.
+- [x] **Update shared Supabase billing rows**: Monthly/annual live Prices are checkout-enabled, 6-month rows are retained disabled, and legacy monthly mappings are aligned.
 - [ ] **Set up production webhook endpoint**: In [Stripe Dashboard > Webhooks](https://dashboard.stripe.com/webhooks), add your production URL: `https://yourdomain.com/api/stripe/webhook`. Select these events:
   - `checkout.session.completed`
   - `customer.subscription.updated`
   - `customer.subscription.deleted`
   - `invoice.paid`
 - [ ] **Update STRIPE_WEBHOOK_SECRET**: Copy the signing secret from the production webhook endpoint and set it in your Vercel/production environment variables
-- [ ] **Configure Stripe Customer Portal**: In [Stripe Dashboard > Settings > Billing > Customer Portal](https://dashboard.stripe.com/settings/billing/portal), customize the portal appearance, enable subscription cancellation/upgrades, and set the return URL to `https://yourdomain.com/billing`
+- [x] **Configure live Stripe Customer Portal for smoke testing**: Live default portal supports invoice history, customer/payment-method updates, and cancellation. Confirm the final production return URL after deployment.
+
+The 2026-07-11 live smoke test used a temporary local Stripe CLI listener. Public launch still requires the unchecked deployed webhook endpoint and production `STRIPE_WEBHOOK_SECRET` tasks above.
 
 ---
 

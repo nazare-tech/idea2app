@@ -4,7 +4,7 @@ export const ACTIVE_SUBSCRIPTION_STATUSES = ["active", "trialing"] as const
 
 export const PLAN_NAME_PROJECT_ALLOWANCES: Record<string, number | null> = {
   free: 1,
-  starter: 3,
+  starter: 5,
   basic: 3,
   pro: 10,
   growth: 25,

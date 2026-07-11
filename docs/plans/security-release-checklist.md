@@ -24,9 +24,9 @@ Close pre-release gaps around:
 - [ ] `grant_subscription_credits_once` is service-role-only and deduplicates grants by `idempotency_key`
 
 ### billing price catalog
-- [ ] `plan_prices` exposes only active public-plan prices to browser clients
-- [ ] Disabled or null-`stripe_price_id` prices cannot create Checkout sessions
-- [ ] Enterprise plan rows remain non-public or checkout-disabled until sales/support workflows are ready
+- [x] `plan_prices` exposes only active public-plan prices to browser clients
+- [x] Disabled or null-`stripe_price_id` prices cannot create Checkout sessions
+- [x] Enterprise plan rows remain non-public or checkout-disabled until sales/support workflows are ready
 
 ## 2) Env hygiene
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` never exposed client-side
@@ -46,3 +46,5 @@ Close pre-release gaps around:
 - Interval billing adds `plan_prices`, `subscriptions.plan_price_id`, and `stripe_credit_grants`; include these in the production RLS audit.
 - 2026-06-16: Milestone 1 repo-side cleanup removed Stitch/app-generation/chat credit-charging surfaces and re-homed root metrics/prompt-chat SQL into `supabase/migrations`. Section 1 remains unchecked until the production Supabase RLS audit is run with project access.
 - 2026-06-19: Milestone 2 added Sentry via `@sentry/nextjs` and routed Stripe webhook structured logs through `src/lib/logger.ts`. Alert rules for repeated signature/processing failures still need to be created in the Sentry dashboard.
+- 2026-07-11: Live catalog validation and a real $19 smoke test proved Checkout, signed webhook claims, subscription/credit sync, Customer Portal cancellation, immediate cancellation, and full refund. Secrets stayed in ignored local/process environment only. This does not replace the unchecked deployed webhook endpoint, production secret, or RLS audit tasks.
+- 2026-07-11: Full-refund reconciliation is service-role-only and idempotent by invoice/grant row; the real 100-credit grant reversed once and replay made no second ledger entry.

@@ -4,6 +4,8 @@ import assert from "node:assert/strict"
 import {
   buildSubscriptionCreditGrantKey,
   buildSubscriptionSyncSnapshot,
+  didScheduleSubscriptionCancellation,
+  getInvoiceIdsForPaymentIntent,
   getInvoiceSubscriptionId,
   invoiceMatchesSubscriptionPeriod,
   type StripePlanPriceMapping,
@@ -67,6 +69,53 @@ test("buildSubscriptionSyncSnapshot maps the subscription item price to the app 
     currentPeriodStart: "2026-05-01T00:00:00.000Z",
     currentPeriodEnd: "2026-05-31T00:00:00.000Z",
   })
+})
+
+test("buildSubscriptionSyncSnapshot recognizes portal cancellation scheduled at period end", () => {
+  const snapshot = buildSubscriptionSyncSnapshot(
+    subscription({ cancel_at: 1_780_185_600 }),
+    new Map([["price_starter_monthly", planPrice()]])
+  )
+
+  assert.equal(snapshot.cancelAtPeriodEnd, true)
+  assert.equal(
+    didScheduleSubscriptionCancellation(snapshot, { cancel_at: null }),
+    true
+  )
+})
+
+test("didScheduleSubscriptionCancellation supports the standard Stripe flag transition", () => {
+  assert.equal(
+    didScheduleSubscriptionCancellation(
+      { cancelAtPeriodEnd: true },
+      { cancel_at_period_end: false }
+    ),
+    true
+  )
+  assert.equal(
+    didScheduleSubscriptionCancellation({ cancelAtPeriodEnd: true }, null),
+    false
+  )
+  assert.equal(
+    didScheduleSubscriptionCancellation(
+      { cancelAtPeriodEnd: false },
+      { cancel_at_period_end: true }
+    ),
+    false
+  )
+})
+
+test("buildSubscriptionSyncSnapshot does not treat an earlier custom cancellation as period-end", () => {
+  const snapshot = buildSubscriptionSyncSnapshot(
+    subscription({ cancel_at: 1_780_099_200 }),
+    new Map([["price_starter_monthly", planPrice()]])
+  )
+
+  assert.equal(snapshot.cancelAtPeriodEnd, false)
+  assert.equal(
+    didScheduleSubscriptionCancellation(snapshot, { cancel_at: null }),
+    false
+  )
 })
 
 test("buildSubscriptionSyncSnapshot selects the mapped plan item when add-ons are present", () => {
@@ -194,6 +243,38 @@ test("getInvoiceSubscriptionId preserves legacy and expanded subscription shapes
   )
   assert.equal(getInvoiceSubscriptionId({ parent: null }), "")
   assert.equal(getInvoiceSubscriptionId({ parent: { subscription_details: null } }), "")
+})
+
+test("getInvoiceIdsForPaymentIntent resolves paid invoice payments", () => {
+  assert.deepEqual(
+    getInvoiceIdsForPaymentIntent(
+      [{
+        status: "paid",
+        invoice: "in_123",
+        payment: { type: "payment_intent", payment_intent: "pi_123" },
+      }],
+      "pi_123"
+    ),
+    ["in_123"]
+  )
+})
+
+test("getInvoiceIdsForPaymentIntent distinguishes missing and multiple mappings", () => {
+  const payment = {
+    status: "paid",
+    invoice: "in_123",
+    payment: { type: "payment_intent", payment_intent: "pi_123" },
+  }
+
+  assert.deepEqual(getInvoiceIdsForPaymentIntent([], "pi_123"), [])
+  assert.deepEqual(
+    getInvoiceIdsForPaymentIntent([payment, { ...payment, invoice: "in_456" }], "pi_123"),
+    ["in_123", "in_456"]
+  )
+  assert.deepEqual(
+    getInvoiceIdsForPaymentIntent([{ ...payment, status: "open" }], "pi_123"),
+    []
+  )
 })
 
 test("invoiceMatchesSubscriptionPeriod rejects delayed invoices from an older period", () => {

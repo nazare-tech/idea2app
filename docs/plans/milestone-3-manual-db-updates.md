@@ -11,7 +11,7 @@ ALTER TABLE plans
 UPDATE plans
 SET monthly_project_allowance = CASE lower(name)
   WHEN 'free' THEN 1
-  WHEN 'starter' THEN 3
+  WHEN 'starter' THEN 5
   WHEN 'basic' THEN 3
   WHEN 'pro' THEN 10
   WHEN 'growth' THEN 25

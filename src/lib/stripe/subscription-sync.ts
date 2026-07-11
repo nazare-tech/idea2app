@@ -111,7 +111,7 @@ export function buildSubscriptionSyncSnapshot(
     stripeSubscriptionId: subscriptionId,
     stripeCustomerId: customerId,
     status: getString(subscription.status) || "active",
-    cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
+    cancelAtPeriodEnd: isCancellationAtPeriodEnd(subscription, end),
     stripePriceId: mapped.stripePriceId,
     stripeSubscriptionItemId: getString(mapped.item.id) || "",
     planId: planPrice.plan_id,
@@ -122,6 +122,27 @@ export function buildSubscriptionSyncSnapshot(
     currentPeriodStart: new Date(start * 1000).toISOString(),
     currentPeriodEnd: new Date(end * 1000).toISOString(),
   }
+}
+
+function isCancellationAtPeriodEnd(
+  subscription: StripeLikeSubscription,
+  currentPeriodEnd: number
+): boolean {
+  if (subscription.cancel_at_period_end === true) return true
+
+  const cancelAt = getUnixSeconds(subscription.cancel_at)
+  return cancelAt !== null && Math.abs(cancelAt - currentPeriodEnd) <= 1
+}
+
+export function didScheduleSubscriptionCancellation(
+  snapshot: Pick<SubscriptionSyncSnapshot, "cancelAtPeriodEnd">,
+  previousAttributes: Record<string, unknown> | null
+): boolean {
+  if (!snapshot.cancelAtPeriodEnd || !previousAttributes) return false
+  if (previousAttributes.cancel_at_period_end === false) return true
+
+  return Object.prototype.hasOwnProperty.call(previousAttributes, "cancel_at")
+    && getUnixSeconds(previousAttributes.cancel_at) === null
 }
 
 export function buildSubscriptionCreditGrantKey(snapshot: SubscriptionSyncSnapshot): string {
@@ -145,6 +166,22 @@ export function getInvoiceSubscriptionId(invoice: Record<string, unknown>): stri
   }
 
   return getStringId(subscriptionDetails.subscription)
+}
+
+export function getInvoiceIdsForPaymentIntent(
+  invoicePayments: unknown[],
+  paymentIntentId: string
+): string[] {
+  return invoicePayments.flatMap((value) => {
+    if (!isRecord(value) || value.status !== "paid" || !isRecord(value.payment)) {
+      return []
+    }
+
+    const matches = value.payment.type === "payment_intent"
+      && getStringId(value.payment.payment_intent) === paymentIntentId
+    const invoiceId = matches ? getStringId(value.invoice) : ""
+    return invoiceId ? [invoiceId] : []
+  })
 }
 
 export function invoiceMatchesSubscriptionPeriod(

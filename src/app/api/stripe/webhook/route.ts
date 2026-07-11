@@ -7,6 +7,8 @@ import { logError, logInfo, logWarn } from "@/lib/logger"
 import {
   buildSubscriptionCreditGrantKey,
   buildSubscriptionSyncSnapshot,
+  didScheduleSubscriptionCancellation,
+  getInvoiceIdsForPaymentIntent,
   getInvoiceSubscriptionId,
   invoiceMatchesSubscriptionPeriod,
   type StripePlanPriceMapping,
@@ -169,6 +171,24 @@ async function grantSubscriptionCreditsOnce(
 
   if (error) {
     throw new Error(`Failed to grant subscription credits: ${error.message}`)
+  }
+
+  return data === true
+}
+
+async function reverseSubscriptionCreditsOnce(
+  supabase: AdminClient,
+  stripeInvoiceId: string,
+  eventId: string
+) {
+  const { data, error } = await supabase.rpc("reverse_subscription_credits_once", {
+    p_stripe_invoice_id: stripeInvoiceId,
+    p_stripe_event_id: eventId,
+    p_description: "Subscription payment fully refunded",
+  })
+
+  if (error) {
+    throw new Error(`Failed to reverse subscription credits: ${error.message}`)
   }
 
   return data === true
@@ -393,10 +413,7 @@ export async function POST(request: Request) {
 
         await syncSubscriptionSnapshot(supabase, userId, snapshot)
         const previousAttributes = event.data.previous_attributes as Record<string, unknown> | null
-        if (
-          snapshot.cancelAtPeriodEnd &&
-          previousAttributes?.cancel_at_period_end === false
-        ) {
+        if (didScheduleSubscriptionCancellation(snapshot, previousAttributes)) {
           await recordServerProductEvent({
             eventName: "subscription_cancel_requested",
             idempotencyKey: `stripe:${event.id}:subscription_cancel_requested`,
@@ -563,6 +580,59 @@ export async function POST(request: Request) {
               event_id: event.id,
               stripe_subscription_id: snapshot.stripeSubscriptionId,
               period_start: snapshot.currentPeriodStart,
+            })
+          }
+        }
+        break
+      }
+
+      case "charge.refunded": {
+        const charge = event.data.object
+        if (charge.refunded && charge.amount_refunded === charge.amount) {
+          const paymentIntentId = getStripeObjectId(charge.payment_intent)
+          if (!paymentIntentId) {
+            throw new Error("Fully refunded subscription charge is missing a PaymentIntent")
+          }
+
+          const stripe = getStripeClient()
+          const invoicePayments = await stripe.invoicePayments.list({
+            payment: { type: "payment_intent", payment_intent: paymentIntentId },
+            status: "paid",
+            limit: 2,
+          })
+          const stripeInvoiceIds = getInvoiceIdsForPaymentIntent(
+            invoicePayments.data as unknown[],
+            paymentIntentId
+          )
+
+          if (stripeInvoiceIds.length === 0) {
+            logWebhook("info", "Fully refunded charge is not linked to an invoice", {
+              event_id: event.id,
+            })
+            break
+          }
+          if (stripeInvoiceIds.length > 1) {
+            throw new Error("Fully refunded charge maps to multiple paid invoices")
+          }
+          const stripeInvoiceId = stripeInvoiceIds[0]
+          const invoice = await stripe.invoices.retrieve(stripeInvoiceId)
+          if (!getInvoiceSubscriptionId(invoice as unknown as Record<string, unknown>)) {
+            logWebhook("info", "Fully refunded invoice is not subscription-backed", {
+              event_id: event.id,
+              stripe_invoice_id: stripeInvoiceId,
+            })
+            break
+          }
+
+          const reversed = await reverseSubscriptionCreditsOnce(
+            supabase,
+            stripeInvoiceId,
+            event.id
+          )
+          if (!reversed) {
+            logWebhook("info", "Subscription refund credits already reversed", {
+              event_id: event.id,
+              stripe_invoice_id: stripeInvoiceId,
             })
           }
         }

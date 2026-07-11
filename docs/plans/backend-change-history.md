@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-11: Stripe live catalog, entitlement alignment, and portal cancellation compatibility
+
+- Plan: [docs/plans/stripe-live-rollout-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/stripe-live-rollout-plan.md)
+- Review: [docs/plans/stripe-live-rollout-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/stripe-live-rollout-review.md)
+- Durable source of truth: Stripe owns live Products, Prices, invoices, charges, refunds, and subscriptions; `plan_prices` owns enabled checkout mappings; `plans.monthly_project_allowance` owns explicit project entitlement; `stripe_credit_grants` owns grant/reversal idempotency; `src/lib/stripe/subscription-sync.ts` owns Stripe subscription and invoice-payment shape normalization.
+- Schema or data-shape changes: Applied additive migration `20260711010000_align_starter_project_allowance.sql`, which defensively creates `plans.monthly_project_allowance` when missing and sets Starter to five. Applied `20260711020000_reverse_credits_on_subscription_refund.sql`, adding grant reversal metadata, unique invoice/reversal indexes, and the service-role-only `reverse_subscription_credits_once` RPC.
+- Auth, RLS, or permission changes: None. Existing browser-read/service-write boundaries, signature verification, webhook claims, and credit-grant idempotency remain unchanged.
+- Runtime/API behavior changes: Live monthly/annual Starter and Pro checkout mappings are enabled; 6-month rows remain disabled. Starter fallback enforcement now matches the five-project public promise. A Portal `cancel_at` equal to the current subscription item period end maps to the existing local period-end cancellation flag and cancellation-request analytics. A full `charge.refunded` resolves its paid invoice through Stripe Invoice Payments and reverses the matching legacy credit grant exactly once.
+- Migration or deployment steps: Live Stripe catalog and default Customer Portal were created/configured. Shared Supabase catalog and allowance migration were applied. Local `.env.local` uses a live restricted key; the signing secret is process-only. No public deployment or production endpoint was created.
+- Verification: Real $19 Starter Checkout, paid invoice, required webhooks, one initial credit grant, trusted checkout analytics, fresh project creation, Billing `1 of 5`, real portal cancellation, cancellation analytics, immediate deletion, full refund, and deleted/refund webhooks all passed. The exact 100-credit live grant reversed once; replay returned false and created no duplicate history. Focused tests, full suite, typecheck, lint, diff check, review, and security results are recorded in the review artifact.
+- Rollback or recovery: Disable checkout rows first. Restore test mappings/env only for an intentional mode rollback. Revert code and use a forward data migration if the Starter contract changes; preserve Stripe audit history.
+- Follow-ups: Deploy a public HTTPS webhook endpoint and set production `STRIPE_WEBHOOK_SECRET`/live key before public traffic. Configure webhook failure alerts and an operator reconciliation path for delayed older-period paid invoices that correctly fail the current-period guard.
+
 ## 2026-07-11: Stripe subscription webhook schema and Clover invoice repair
 
 - Plan: [docs/plans/stripe-subscription-user-uniqueness-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/stripe-subscription-user-uniqueness-plan.md)

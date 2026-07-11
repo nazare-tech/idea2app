@@ -163,6 +163,11 @@ test("resolveProjectAllowance reads project allowance from feature text", () => 
 })
 
 test("resolveProjectAllowance falls back conservatively by plan name", () => {
+  assert.deepEqual(resolveProjectAllowance({ name: "Starter" }), {
+    allowance: 5,
+    source: "plan_name",
+    planName: "Starter",
+  })
   assert.deepEqual(resolveProjectAllowance({ name: "Pro" }), {
     allowance: 10,
     source: "plan_name",
@@ -198,7 +203,7 @@ test("explicit plan allowance fields match current plan-name fallback mapping", 
   }
 })
 
-test("getProjectAllowanceStatus allows users below an explicit plan limit", async () => {
+test("getProjectAllowanceStatus allows Starter users below the five-project limit", async () => {
   const { client, queries } = createFakeClient({
     subscriptions: {
       data: [
@@ -208,20 +213,20 @@ test("getProjectAllowanceStatus allows users below an explicit plan limit", asyn
           current_period_end: "2026-05-15T10:00:00.000Z",
           plans: {
             name: "Starter",
-            monthly_project_allowance: 3,
+            monthly_project_allowance: 5,
           },
         },
       ],
       error: null,
     },
-    projects: { data: null, error: null, count: 2 },
+    projects: { data: null, error: null, count: 4 },
   })
 
   const result = await getProjectAllowanceStatus(client, "user-1", { now: NOW })
 
   assert.equal(result.canCreate, true)
-  assert.equal(result.allowance, 3)
-  assert.equal(result.used, 2)
+  assert.equal(result.allowance, 5)
+  assert.equal(result.used, 4)
   assert.equal(result.remaining, 1)
   assert.equal(result.window.source, "subscription_period")
 
@@ -272,7 +277,7 @@ test("getProjectAllowanceStatus keeps paid project allowance on a calendar month
   )
 })
 
-test("canCreateProject blocks users at the monthly limit", async () => {
+test("canCreateProject blocks Starter users at the five-project limit", async () => {
   const { client } = createFakeClient({
     subscriptions: {
       data: [
@@ -282,13 +287,13 @@ test("canCreateProject blocks users at the monthly limit", async () => {
           current_period_end: "2026-05-01T00:00:00.000Z",
           plans: {
             name: "Starter",
-            monthly_project_allowance: 3,
+            monthly_project_allowance: 5,
           },
         },
       ],
       error: null,
     },
-    projects: { data: null, error: null, count: 3 },
+    projects: { data: null, error: null, count: 5 },
   })
 
   const result = await canCreateProject(client, "user-1", { now: NOW })
