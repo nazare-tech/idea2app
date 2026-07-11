@@ -276,13 +276,22 @@ export function createGenerationQueueItemPartialContentWriter(
   let lastWriteAt = 0
   let inFlight = false
   let disabled = false
+  // Tracks whether a partial_metadata write succeeded. Only then does finish()
+  // clear that column, so environments without the 20260711120000 migration
+  // never reference it in the clearing update (which would otherwise also lose
+  // the partial_content clear).
+  let metadataWritten = false
 
   async function persist(content: string | null) {
     inFlight = true
     try {
       const { error } = await supabase
         .from("generation_queue_items")
-        .update({ partial_content: content })
+        .update(
+          metadataWritten && content === null
+            ? { partial_content: null, partial_metadata: null }
+            : { partial_content: content },
+        )
         .eq("id", item.id)
         .eq("user_id", item.user_id)
       if (error) throw error
@@ -302,7 +311,27 @@ export function createGenerationQueueItemPartialContentWriter(
       lastWriteAt = now
       void persist(content)
     },
-    /** Clear the stored partial once the item reaches a terminal state. */
+    /**
+     * Persist streaming preview metadata (e.g. competitor source pairs) once.
+     * Failure-isolated separately from content writes: on error (including a
+     * missing column before the migration) the preview simply renders without
+     * links, and content streaming is unaffected.
+     */
+    async writeMetadata(metadata: Json) {
+      if (disabled) return
+      try {
+        const { error } = await supabase
+          .from("generation_queue_items")
+          .update({ partial_metadata: metadata })
+          .eq("id", item.id)
+          .eq("user_id", item.user_id)
+        if (error) throw error
+        metadataWritten = true
+      } catch (error) {
+        onError?.(error)
+      }
+    },
+    /** Clear the stored partials once the item reaches a terminal state. */
     async finish() {
       if (disabled) return
       disabled = true

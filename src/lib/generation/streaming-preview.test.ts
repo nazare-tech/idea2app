@@ -4,6 +4,7 @@ import test from "node:test"
 import {
   buildStreamingPreviewPayload,
   encodeStreamingPreviewLengths,
+  mergeStreamingCompetitorSources,
   mergeStreamingPreview,
   parseStreamingPreviewLengths,
 } from "./streaming-preview"
@@ -81,4 +82,50 @@ test("legacy payloads without a mode keep longest-wins semantics", () => {
   const previous = { prd: "abcd" }
   assert.equal(mergeStreamingPreview(previous, { docType: "prd", content: "ab" }), previous)
   assert.deepEqual(mergeStreamingPreview(previous, { docType: "prd", content: "abcdef" }), { prd: "abcdef" })
+})
+
+test("mergeStreamingCompetitorSources: adopts competitive sources and is sticky", () => {
+  const sources = [
+    { name: "Enterpret", url: "https://www.enterpret.com" },
+    { name: "Productboard", url: "https://www.productboard.com" },
+  ]
+  const adopted = mergeStreamingCompetitorSources([], {
+    docType: "competitive",
+    mode: "full",
+    content: "# doc",
+    competitorSources: sources,
+  })
+  assert.deepEqual(adopted, sources)
+
+  // Payloads without sources (e.g. suffix polls) keep the ones already seen.
+  assert.equal(
+    mergeStreamingCompetitorSources(adopted, { docType: "competitive", mode: "unchanged", totalLength: 5 }),
+    adopted,
+  )
+  // A smaller set never shrinks the map mid-stream.
+  assert.equal(
+    mergeStreamingCompetitorSources(adopted, {
+      docType: "competitive",
+      mode: "full",
+      content: "# doc",
+      competitorSources: [sources[0]],
+    }),
+    adopted,
+  )
+})
+
+test("mergeStreamingCompetitorSources: ignores non-competitive and malformed payloads", () => {
+  const previous = [{ name: "Enterpret", url: "https://www.enterpret.com" }]
+  assert.equal(
+    mergeStreamingCompetitorSources(previous, { docType: "prd", competitorSources: [{ name: "X", url: "https://x.com" }] }),
+    previous,
+  )
+  assert.equal(mergeStreamingCompetitorSources(previous, null), previous)
+  assert.deepEqual(
+    mergeStreamingCompetitorSources([], {
+      docType: "competitive",
+      competitorSources: [{ name: "Ok", url: "https://ok.com" }, { name: 5 }, "junk"],
+    }),
+    [{ name: "Ok", url: "https://ok.com" }],
+  )
 })

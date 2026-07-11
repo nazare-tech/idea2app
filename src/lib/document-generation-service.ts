@@ -49,6 +49,12 @@ export interface GenerateProjectDocumentInput {
    * for the onboarding streaming preview.
    */
   onPartialContent?: (content: string) => void
+  /**
+   * Competitive analysis only: called once live research resolves (before the
+   * synthesis stream starts) with the competitor source pairs that will also
+   * be saved to analyses.metadata, so the streaming preview can link mentions.
+   */
+  onCompetitorSources?: (sources: { name: string; url: string }[]) => void
 }
 
 /**
@@ -56,14 +62,22 @@ export interface GenerateProjectDocumentInput {
  * individual deltas. Passing onToken switches a pipeline's final synthesis
  * call to streaming mode.
  */
-function buildStreamCallbacks(onPartialContent?: (content: string) => void) {
-  if (!onPartialContent) return undefined
+function buildStreamCallbacks(
+  onPartialContent?: (content: string) => void,
+  onCompetitorSources?: (sources: { name: string; url: string }[]) => void,
+) {
+  if (!onPartialContent && !onCompetitorSources) return undefined
   let streamedContent = ""
   return {
-    onToken: (token: string) => {
-      streamedContent += token
-      onPartialContent(streamedContent)
-    },
+    ...(onPartialContent
+      ? {
+          onToken: (token: string) => {
+            streamedContent += token
+            onPartialContent(streamedContent)
+          },
+        }
+      : {}),
+    ...(onCompetitorSources ? { onCompetitorSources } : {}),
   }
 }
 
@@ -105,6 +119,7 @@ export async function generateProjectDocument({
   runId,
   logContext = {},
   onPartialContent,
+  onCompetitorSources,
 }: GenerateProjectDocumentInput): Promise<GeneratedProjectDocument | null> {
   const baseLogContext = { ...logContext, projectId, docType, modelId }
   logInfo("DocumentGeneration", "started", baseLogContext)
@@ -137,7 +152,7 @@ export async function generateProjectDocument({
     if (docType === "competitive") {
       const result = await runCompetitiveAnalysis(
         { idea, name, model: modelId },
-        buildStreamCallbacks(onPartialContent),
+        buildStreamCallbacks(onPartialContent, onCompetitorSources),
       )
       const content = linkifyBareUrls(result.content)
       const { data, error } = await supabase

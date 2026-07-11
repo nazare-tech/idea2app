@@ -23,6 +23,32 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-11: Streaming preview competitor sources (generation_queue_items.partial_metadata)
+
+- Plan: docs/plans/streaming-competitor-links-and-marquee-width-plan.md
+- Review: implementation summary in the plan; UI evidence in ui-evidence/2026-07-11/intake-option-1/verification.md (follow-up section).
+- Durable source of truth: `generation_queue_items.partial_metadata` (JSONB, nullable) holds `{ live_research: { competitor_sources: [{name,url}] } }` only while a competitive item generates; cleared together with `partial_content` at terminal state. The permanent copy remains `analyses.metadata.live_research.competitor_sources`; both come from one helper (`buildCompetitorSourcePairs` in `src/lib/analysis-pipelines.ts`) so they cannot diverge.
+- Schema or data-shape changes: Migration `20260711120000_add_generation_queue_item_partial_metadata.sql` adds the nullable JSONB column. `/api/generate-all/status` `streamingPreview` gains an optional `competitorSources` array while the competitive item streams.
+- Auth, RLS, or permission changes: None. Existing queue-item policies apply (server-mutable, user-readable).
+- Runtime/API behavior changes: `runCompetitiveAnalysis` fires `StreamCallbacks.onCompetitorSources` after live research resolves (before synthesis streams); the execute route persists it through the failure-isolated partial writer (`writeMetadata`); the status route re-validates via `getCompetitorSourcesFromMetadata` before serving. The client store keeps a sticky `streamingCompetitorSources` and `CompetitiveStreamingDocument` links competitor mentions during streaming. Environments without the migration silently degrade to prior behavior (links appear when the saved row loads); the clearing update only references the new column after a successful metadata write.
+- Migration or deployment steps: `npx supabase db push` (dry run listed only this migration) applied to the linked shared Supabase project on 2026-07-11.
+- Verification: Fresh onboarding run (project "Signal Road Product Intelligence", Idea 1.1) completed competitive generation with partial writes and no `item_partial_content_write_failed` events; renderer proven in Dev Motion Lab live-fill with sample sources (underlined competitor links visible mid-stream while later sections were skeletons); 119 unit tests including new `mergeStreamingCompetitorSources` cases; tsc/eslint clean.
+- Rollback or recovery: Revert the code paths; the column is additive/nullable and safe to leave (or drop in a deliberate follow-up migration). No backfill; values are transient by design.
+- Follow-ups: generate-all store `hydrate()` has no retry on a failed first status fetch (pre-existing; observed as a stale workspace tab during verification). Filed as a separate task.
+
+## 2026-07-11: Payment operational risk hardening
+
+- Plan: [docs/plans/payment-operational-risk-hardening-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/payment-operational-risk-hardening-plan.md)
+- Review: [docs/plans/payment-operational-risk-hardening-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/payment-operational-risk-hardening-review.md)
+- Durable source of truth: Stripe communication preferences own provider/API/webhook failure email notifications; Vercel project `idea2app-root-v2` owns runtime secret scope and `www` certificate/redirect; Supabase Auth owns the isolated Free QA identity; `stripe_webhook_events.received_at` is the per-claim lease token for compare-and-set finalization.
+- Schema or data-shape changes: No database migration. `WebhookClaim` now returns the durable claim `received_at` lease token to the route; processed/failed event finalization requires that token, `status = 'processing'`, and one returned event row.
+- Auth, RLS, or permission changes: No RLS/grant changes. A separate confirmed production QA auth user/profile was created with no subscription row or Internal Dev entitlement. Credentials are stored only in ignored local `.env.production-qa.local` mode `0600`.
+- Runtime/API behavior changes: Stripe webhook success now returns HTTP 200 only after its exact owned claim is durably marked processed. Database errors, zero-row updates, and stale-worker finalization return/log failure so Stripe can retry without an old worker overwriting a reclaimed claim.
+- Migration or deployment steps: Vercel `STRIPE_WEBHOOK_SECRET` was changed from Production + Preview to Production only. `www.makercompass.com` was added as a Vercel 308 redirect to apex and received a dedicated certificate. Signing-secret roll awaits Stripe phone verification; no secret value entered source/logs.
+- Verification: 14 focused claim/finalizer tests passed; full 608-test suite, typecheck, task ESLint, and production build passed. Real production QA Billing showed Free with 0/1 lifetime usage, hosted Starter Checkout opened, no card was entered, and follow-up subscription count stayed zero. Stripe email preferences read back enabled for API integration errors, webhook failures, and webhook event-generation failures. Live `www` certificate SAN and HTTP 308 to apex passed. Evidence: `ui-evidence/2026-07-11/payment-operational-risk-hardening/free-production-qa-billing.png`.
+- Rollback or recovery: Revert the lease-token finalizer changes if needed while retaining event claim/reclaim logic; delete only the new QA identity if it becomes invalid; restore prior Vercel scope only for an explicitly approved preview webhook; remove only the `www` redirect domain if certificate routing regresses, leaving apex intact.
+- Follow-ups: Complete the phone-verified signing-secret roll, update/redeploy Vercel Production, resend a safe live event, then expire the old secret. Existing-Sentry issue alerts remain unconfigured because no authenticated Sentry account was available and the user explicitly declined creating one. Replace Preview's all-environment live `STRIPE_SECRET_KEY` with an intentional test-mode configuration in a separate billing-environment task.
+
 ## 2026-07-11: Production Stripe webhook and customer-mode safety
 
 - Plan: [docs/plans/stripe-production-webhook-rollout-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/stripe-production-webhook-rollout-plan.md)

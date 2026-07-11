@@ -84,6 +84,13 @@ export interface LaunchPlanInput {
 export interface StreamCallbacks {
   onStage?: (message: string, step: number, totalSteps: number) => void
   onToken?: (content: string) => void
+  /**
+   * Competitive analysis only: fired once live research resolves (before
+   * synthesis starts streaming) with the same competitor source pairs that
+   * will be saved to analyses.metadata.live_research.competitor_sources, so
+   * the streaming UI can link competitor mentions from the first token.
+   */
+  onCompetitorSources?: (sources: { name: string; url: string }[]) => void
 }
 
 type TavilyExtractStatus =
@@ -436,6 +443,12 @@ export async function runCompetitiveAnalysis(
   })
   callbacks?.onStage?.("Writing competitive analysis...", 3, 4)
 
+  // Competitor source pairs are fully known before synthesis begins. Compute
+  // them once here so the streaming callback and the saved metadata can never
+  // diverge, and surface them to the executor for the live preview.
+  const competitorSourcePairs = buildCompetitorSourcePairs(research)
+  callbacks?.onCompetitorSources?.(competitorSourcePairs)
+
   // Step 3: Build context from gathered data
   const competitorContext = buildCompetitorContext(
     research.competitors,
@@ -508,19 +521,30 @@ export async function runCompetitiveAnalysis(
             : research.evidenceResults.length,
         tavily_failed_result_count: research.tavilyFailedResultCount,
         research_evidence_count: research.evidenceResults.length,
-        competitor_sources:
-          research.providerUsed === "openrouter_exa"
-            ? normalizeCompetitorSources(research.competitors).map((source) => ({
-                name: source.name,
-                url: source.url,
-              }))
-            : buildCompetitorSourcesMetadata(
-                research.competitors,
-                research.evidenceResults
-              ),
+        competitor_sources: competitorSourcePairs,
       },
     },
   }
+}
+
+/**
+ * The competitor source pairs persisted to
+ * analyses.metadata.live_research.competitor_sources AND streamed to the live
+ * preview via StreamCallbacks.onCompetitorSources. Single builder so the two
+ * consumers always agree: Exa-success runs persist normalized candidate pairs;
+ * legacy fallback runs still require a matching Tavily extraction result.
+ */
+function buildCompetitorSourcePairs(research: {
+  providerUsed: CompetitorResearchProvider
+  competitors: Array<{ name: string; url: string }>
+  evidenceResults: TavilyExtractResult[]
+}): { name: string; url: string }[] {
+  return research.providerUsed === "openrouter_exa"
+    ? normalizeCompetitorSources(research.competitors).map((source) => ({
+        name: source.name,
+        url: source.url,
+      }))
+    : buildCompetitorSourcesMetadata(research.competitors, research.evidenceResults)
 }
 
 // ─── Product Plan Pipeline ───────────────────────────────────────────

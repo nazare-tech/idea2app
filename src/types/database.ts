@@ -232,6 +232,7 @@ export type Database = {
           output_id: string | null
           output_table: string | null
           partial_content: string | null
+          partial_metadata: Json | null
           project_id: string
           queue_id: string
           run_id: string | null
@@ -259,6 +260,7 @@ export type Database = {
           output_id?: string | null
           output_table?: string | null
           partial_content?: string | null
+          partial_metadata?: Json | null
           project_id: string
           queue_id: string
           run_id?: string | null
@@ -286,6 +288,7 @@ export type Database = {
           output_id?: string | null
           output_table?: string | null
           partial_content?: string | null
+          partial_metadata?: Json | null
           project_id?: string
           queue_id?: string
           run_id?: string | null

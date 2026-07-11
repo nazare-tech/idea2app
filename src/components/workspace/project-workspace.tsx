@@ -148,8 +148,13 @@ export function ProjectWorkspace({
     }
   }, [analyses, prds, mvpPlans, mockups, techSpecs, deployments])
 
-  const { generateAllQueue, generateAllStatus, generateAllStreamingPreviews, resumeGenerateAll } =
-    useGenerateAllHydration(project.id)
+  const {
+    generateAllQueue,
+    generateAllStatus,
+    generateAllStreamingPreviews,
+    generateAllStreamingCompetitorSources,
+    resumeGenerateAll,
+  } = useGenerateAllHydration(project.id)
   // Raw partial markdown flows down as-is; the streaming document components
   // smooth their own tails, so reveal ticks never re-render the workspace.
   const {
@@ -749,6 +754,9 @@ export function ProjectWorkspace({
     competitive: getStreamingContent("competitive"),
     prd: getStreamingContent("prd"),
     mvp: getStreamingContent("mvp"),
+    // Live competitor source pairs so streamed competitor mentions link
+    // before the saved analyses row loads.
+    competitiveSources: generateAllStreamingCompetitorSources,
   }
 
   const aiPromptsReadiness = getAiPromptsReadiness({

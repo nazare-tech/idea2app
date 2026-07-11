@@ -18,6 +18,7 @@ import {
 } from "@/lib/generation/generate-all-helpers"
 import {
   encodeStreamingPreviewLengths,
+  mergeStreamingCompetitorSources,
   mergeStreamingPreview,
 } from "@/lib/generation/streaming-preview"
 import { createVisibilityAwarePoller } from "@/lib/visibility-aware-poller"
@@ -83,6 +84,12 @@ interface GenerateAllState {
    * route).
    */
   streamingPreviews: Partial<Record<StreamingPreviewDocType, string>>
+  /**
+   * Live competitor source pairs for the streaming Market Research preview
+   * (server-validated, from generation_queue_items.partial_metadata). Retained
+   * once seen, like streamingPreviews, so links never disappear mid-stream.
+   */
+  streamingCompetitorSources: { name: string; url: string }[]
 }
 
 interface GenerateAllActions {
@@ -232,6 +239,10 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
           store.getState().streamingPreviews,
           streamingPreview,
         ),
+        streamingCompetitorSources: mergeStreamingCompetitorSources(
+          store.getState().streamingCompetitorSources,
+          streamingPreview,
+        ),
       })
 
       // Continue polling only while running
@@ -263,6 +274,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
     startedAt: null,
     error: null,
     streamingPreviews: {},
+    streamingCompetitorSources: [],
 
     // Update always-fresh callback refs (called by Hydrator on every render).
     // Also rebuilds the idle queue and totalCredits when doc statuses change.
@@ -391,6 +403,10 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
               startedAt: dbRow.started_at ? new Date(dbRow.started_at) : null,
               status: "running",
               streamingPreviews: mergeStreamingPreview(state.streamingPreviews, streamingPreview),
+              streamingCompetitorSources: mergeStreamingCompetitorSources(
+                state.streamingCompetitorSources,
+                streamingPreview,
+              ),
             }))
             localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
             if (!hydratedQueue.some((item) => item.status === "generating")) {
@@ -432,6 +448,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
         // A previous failed run's partial would otherwise display as this
         // run's live stream (merges keep the longest content per docType).
         streamingPreviews: {},
+        streamingCompetitorSources: [],
       }))
 
       localStorage.setItem(LOCAL_STORAGE_KEY(projectId), "true")

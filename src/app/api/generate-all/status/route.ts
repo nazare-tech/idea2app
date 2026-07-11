@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 import { isPlanningTextDocType, type PlanningTextDocType } from "@/lib/document-definitions"
+import { getCompetitorSourcesFromMetadata } from "@/lib/competitor-mention-links"
 import {
   buildStreamingPreviewPayload,
   parseStreamingPreviewLengths,
@@ -112,12 +113,23 @@ export async function GET(request: Request) {
     // Clients report how much preview they already hold (previewLengths=
     // "prd:1234,..."); only the new tail is sent back. No report → full body.
     const clientPreviewLengths = parseStreamingPreviewLengths(searchParams.get("previewLengths"))
+    // Competitive streaming also carries the live competitor source pairs
+    // (persisted to partial_metadata before synthesis starts) so mention
+    // links can render during streaming. Re-validated through the same
+    // metadata reader used for saved analyses rows.
+    const streamingSources =
+      streamingItem?.doc_type === "competitive"
+        ? getCompetitorSourcesFromMetadata(streamingItem.partial_metadata)
+        : []
     const streamingPreview = streamingItem
-      ? buildStreamingPreviewPayload(
-          streamingItem.doc_type as PlanningTextDocType,
-          streamingItem.partial_content as string,
-          clientPreviewLengths[streamingItem.doc_type as PlanningTextDocType],
-        )
+      ? {
+          ...buildStreamingPreviewPayload(
+            streamingItem.doc_type as PlanningTextDocType,
+            streamingItem.partial_content as string,
+            clientPreviewLengths[streamingItem.doc_type as PlanningTextDocType],
+          ),
+          ...(streamingSources.length > 0 ? { competitorSources: streamingSources } : {}),
+        }
       : null
 
     return NextResponse.json({

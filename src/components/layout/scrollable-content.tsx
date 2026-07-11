@@ -67,6 +67,11 @@ interface ScrollableContentProps {
     competitive?: string | null
     prd?: string | null
     mvp?: string | null
+    /**
+     * Live competitor source pairs for the competitive stream so mention
+     * links render before the saved analyses row exists.
+     */
+    competitiveSources?: { name: string; url: string }[]
   }
   onGenerateDocument?: (docType: DocumentType) => void
 }
@@ -356,6 +361,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
     const mvpData = documents["mvp"]
     const mockupsData = documents["mockups"]
     const competitiveStreamingContent = streamingContents?.competitive ?? null
+    const competitiveStreamingSources = streamingContents?.competitiveSources
     const prdStreamingContent = streamingContents?.prd ?? null
     const mvpStreamingContent = streamingContents?.mvp ?? null
     const aiPromptsReadiness = getAiPromptsReadiness({
@@ -414,6 +420,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
               finished={false}
               variant="live-fill"
               parts="detail"
+              competitorSources={competitiveStreamingSources}
             />
           ) : (
             <GenerationStatusModule
@@ -535,6 +542,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
               variant="live-fill"
               parts="overview"
               projectName={projectName}
+              competitorSources={competitiveStreamingSources}
             />
           ) : competitiveData?.displayState && competitiveData.displayState.displayStatus !== "idle" ? (
             <GenerationStatusModule

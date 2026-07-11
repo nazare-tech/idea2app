@@ -52,6 +52,12 @@ interface CompetitiveStreamingDocumentProps {
   className?: string
   /** Disable the internal word-by-word reveal (dev tooling that pre-smooths) */
   smoothTail?: boolean
+  /**
+   * Live competitor source pairs streamed alongside the partial markdown
+   * (from generation_queue_items.partial_metadata), so competitor mention
+   * links render during streaming instead of only after the saved row loads.
+   */
+  competitorSources?: { name: string; url: string }[]
 }
 
 const TOTAL_SECTIONS = COMPETITIVE_DETAIL_SECTION_CONFIGS.length
@@ -59,7 +65,9 @@ const TOTAL_SECTIONS = COMPETITIVE_DETAIL_SECTION_CONFIGS.length
 function buildStructuredData(
   parse: StreamingCompetitiveParseResult,
   /** Active (still-growing) section to expose to the designed renderers, live-fill only */
-  liveSection?: { name: NonNullable<StreamingCompetitiveParseResult["sections"][number]["name"]>; content: string } | null
+  liveSection?: { name: NonNullable<StreamingCompetitiveParseResult["sections"][number]["name"]>; content: string } | null,
+  /** Server-streamed competitor source pairs; validated through the metadata path */
+  competitorSources?: { name: string; url: string }[]
 ) {
   const sections: CompetitiveAnalysisV2ParseResult["sections"] = {}
   for (const section of parse.sections) {
@@ -79,7 +87,15 @@ function buildStructuredData(
     errors: [],
   }
 
-  return getCompetitiveAnalysisStructuredData(parsedLike, undefined, {
+  // Shape the streamed pairs exactly like saved analyses metadata so the same
+  // validation (syntactic public http(s), fail-closed) applies. The parsed-URL
+  // fallback stays off: streaming never promotes model-authored H3 URLs.
+  const metadataLike =
+    competitorSources && competitorSources.length > 0
+      ? { live_research: { competitor_sources: competitorSources } }
+      : undefined
+
+  return getCompetitiveAnalysisStructuredData(parsedLike, metadataLike, {
     allowParsedSourceFallback: false,
   })
 }
@@ -222,6 +238,7 @@ export function CompetitiveStreamingDocument({
   projectName,
   className,
   smoothTail = true,
+  competitorSources,
 }: CompetitiveStreamingDocumentProps) {
   // Structure, section membership, and competitor sources (the mention-link
   // regex) all derive from the raw poll content (~3s cadence). The per-tick
@@ -237,8 +254,8 @@ export function CompetitiveStreamingDocument({
       liveFill && active?.name
         ? { name: active.name, content: sanitizeLiveSectionContent(active.content) }
         : null
-    return buildStructuredData(parse, liveSection)
-  }, [parse, liveFill])
+    return buildStructuredData(parse, liveSection, competitorSources)
+  }, [parse, liveFill, competitorSources])
 
   const executiveComplete = parse.completeSectionNames.has("Executive Summary")
   const activeSection = parse.activeSection
@@ -248,6 +265,7 @@ export function CompetitiveStreamingDocument({
   const reveal = smoothTail && !finished
   const { text: smoothedActiveBody } = useSmoothedStream(activeSection?.content ?? "", {
     enabled: reveal,
+    resetKey: activeSection?.name ?? null,
   })
   const activeTail = reveal ? smoothedActiveBody : activeSection?.content ?? ""
   const showProseTail = variant !== "ticker" && !liveFill && activeSection !== null

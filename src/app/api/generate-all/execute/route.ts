@@ -548,6 +548,16 @@ async function executeQueueItem({
         runId: claimed.run_id,
         logContext: itemLogContext,
         onPartialContent: partialWriter ? partialWriter.write : undefined,
+        // Competitive only: persist the live competitor source pairs so the
+        // streaming preview can link mentions before the analyses row exists.
+        onCompetitorSources:
+          partialWriter && claimed.doc_type === "competitive"
+            ? (sources) => {
+                void partialWriter.writeMetadata({
+                  live_research: { competitor_sources: sources },
+                })
+              }
+            : undefined,
       })
 
       if (!output?.outputTable || !output.outputId) {

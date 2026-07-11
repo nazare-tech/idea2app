@@ -33,6 +33,7 @@ function queueItem(
     output_id: null,
     output_table: null,
     partial_content: null,
+    partial_metadata: null,
     project_id: "project-1",
     queue_id: "queue-1",
     run_id: "run-1",

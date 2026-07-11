@@ -19,6 +19,15 @@ import { cn } from "@/lib/utils"
 const SAMPLE_CONTENT = LANDING_SAMPLE_CONTENT.competitive.content
 const SAMPLE_PROJECT_NAME = LANDING_SAMPLE_CONTENT.exportedFrom.projectName
 
+// Lab stand-in for the live competitor source pairs the workspace receives via
+// the generate-all streaming preview (partial_metadata), so mention links can
+// be exercised during simulated streaming too.
+const SAMPLE_COMPETITOR_SOURCES = [
+  { name: "Productboard", url: "https://www.productboard.com" },
+  { name: "Dovetail", url: "https://dovetail.com" },
+  { name: "Zendesk AI", url: "https://www.zendesk.com" },
+]
+
 const VARIANTS: { key: CompetitiveStreamingVariant; label: string; blurb: string }[] = [
   {
     key: "block-commit",
@@ -309,6 +318,7 @@ export function MotionLabClient() {
                 parts="overview"
                 projectName={SAMPLE_PROJECT_NAME}
                 smoothTail={false}
+                competitorSources={SAMPLE_COMPETITOR_SOURCES}
               />
             </WorkspaceDocumentFrame>
             <WorkspaceDocumentFrame>
@@ -319,6 +329,7 @@ export function MotionLabClient() {
                 variant={variant}
                 parts="detail"
                 smoothTail={false}
+                competitorSources={SAMPLE_COMPETITOR_SOURCES}
               />
             </WorkspaceDocumentFrame>
           </div>
