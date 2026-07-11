@@ -30,7 +30,7 @@ Close pre-release gaps around:
 
 ## 2) Env hygiene
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` never exposed client-side
-- [ ] `STRIPE_WEBHOOK_SECRET` set in prod env and rotated on incident
+- [x] `STRIPE_WEBHOOK_SECRET` set in prod env and rotated on incident
 - [ ] `NEXT_PUBLIC_*` contains only non-sensitive values
 - [ ] Add CI check to fail if service secrets appear in client bundles
 
@@ -48,3 +48,4 @@ Close pre-release gaps around:
 - 2026-06-19: Milestone 2 added Sentry via `@sentry/nextjs` and routed Stripe webhook structured logs through `src/lib/logger.ts`. Alert rules for repeated signature/processing failures still need to be created in the Sentry dashboard.
 - 2026-07-11: Live catalog validation and a real $19 smoke test proved Checkout, signed webhook claims, subscription/credit sync, Customer Portal cancellation, immediate cancellation, and full refund. Secrets stayed in ignored local/process environment only. This does not replace the unchecked deployed webhook endpoint, production secret, or RLS audit tasks.
 - 2026-07-11: Full-refund reconciliation is service-role-only and idempotent by invoice/grant row; the real 100-credit grant reversed once and replay made no second ledger entry.
+- 2026-07-11: Production endpoint `we_1Ts8dNRZYXj2bJrBStpepAxz` at the apex domain received a signed live no-charge event; Vercel returned 200 and Supabase stored a processed live claim. Secret values were transferred manually and never logged or committed. Vercel currently reports the endpoint secret scoped to Preview and Production; reducing it to Production-only remains recommended when Vercel can split the shared entry without deleting Production.

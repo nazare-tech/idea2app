@@ -29,7 +29,7 @@ export default async function BillingPage() {
       .order("price_monthly", { ascending: true }),
     supabase
       .from("subscriptions")
-      .select("id, plan_id, plan_price_id, status, cancel_at_period_end, current_period_end, created_at")
+      .select("id, plan_id, plan_price_id, stripe_subscription_id, status, cancel_at_period_end, current_period_end, created_at")
       .eq("user_id", user.id)
       .in("status", [...ACTIVE_SUBSCRIPTION_STATUSES])
       .order("created_at", { ascending: false })
@@ -40,6 +40,7 @@ export default async function BillingPage() {
 
   const plans = toBillingPlans(plansData)
   const subscription = subscriptionData
+  const canManageSubscription = Boolean(subscription?.stripe_subscription_id)
   const currentPlan = subscription
     ? plans.find((plan) => plan.id === subscription.plan_id) ?? null
     : null
@@ -78,7 +79,7 @@ export default async function BillingPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-extrabold tracking-tight">
-              {subscription ? currentPlan?.name || "Active" : "Free"}
+              {subscription ? currentPlan?.name || projectAllowance.planName || "Active" : "Free"}
             </p>
             {subscription?.cancel_at_period_end && (
               <Badge variant="warning" className="mt-2">Cancels at period end</Badge>
@@ -88,7 +89,7 @@ export default async function BillingPage() {
                 {currentPlanPrice.label} billing
               </p>
             )}
-            {subscription && <ManageSubscriptionButton />}
+            {canManageSubscription && <ManageSubscriptionButton />}
           </CardContent>
         </Card>
 
@@ -117,6 +118,7 @@ export default async function BillingPage() {
       <BillingPlansClient
         plans={plans}
         subscription={subscription}
+        canManageSubscription={canManageSubscription}
         initialBillingInterval={getInitialBillingInterval(plans, subscription)}
       />
     </AppPageShell>

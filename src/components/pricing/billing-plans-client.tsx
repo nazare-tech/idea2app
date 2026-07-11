@@ -34,12 +34,14 @@ import {
 interface BillingPlansClientProps {
   plans: BillingPlan[]
   subscription: BillingSubscription | null
+  canManageSubscription: boolean
   initialBillingInterval: BillingInterval
 }
 
 export function BillingPlansClient({
   plans,
   subscription,
+  canManageSubscription,
   initialBillingInterval,
 }: BillingPlansClientProps) {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
@@ -142,6 +144,7 @@ export function BillingPlansClient({
             isFree,
             isCurrentPlan,
             hasSubscription: Boolean(subscription),
+            canManageSubscription,
             canCheckout,
           })
           const yearlySelected = Boolean(selectedPrice && isYearlyPrice(selectedPrice))

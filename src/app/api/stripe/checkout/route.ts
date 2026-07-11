@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { getStripeClient } from "@/lib/stripe"
-import type Stripe from "stripe"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 import { buildCheckoutSessionIdempotencyKey } from "@/lib/stripe/checkout-idempotency"
 import {
@@ -11,41 +10,12 @@ import {
 import { recordServerProductEvent } from "@/lib/product-analytics/server"
 import { normalizeProductAnalyticsPlanKey } from "@/lib/product-analytics/storage"
 import { createServiceClient } from "@/lib/supabase/service"
+import {
+  buildStripeCustomerIdempotencyKey,
+  getUsableStripeCustomerId,
+} from "@/lib/stripe/customer"
 
 type CheckoutSupabaseClient = Awaited<ReturnType<typeof createClient>>
-
-function isStripeMissingResourceError(error: unknown) {
-  return Boolean(
-    error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "resource_missing"
-  )
-}
-
-async function getUsableStripeCustomerId(
-  stripe: Stripe,
-  customerId: string | null
-) {
-  if (!customerId) {
-    return null
-  }
-
-  try {
-    const customer = await stripe.customers.retrieve(customerId)
-    if ("deleted" in customer && customer.deleted) {
-      return null
-    }
-
-    return customer.id
-  } catch (error) {
-    if (isStripeMissingResourceError(error)) {
-      return null
-    }
-
-    throw error
-  }
-}
 
 async function persistStripeCustomerId(
   supabase: CheckoutSupabaseClient,
@@ -224,21 +194,32 @@ export async function POST(request: Request) {
     }
 
     const storedCustomerId = profile.stripe_customer_id
-    let customerId = await getUsableStripeCustomerId(stripe, storedCustomerId)
+    let customerId = await getUsableStripeCustomerId(stripe, storedCustomerId, user.id)
 
     if (!customerId) {
       logInfo("StripeCheckout", "customer_create_started", checkoutLogContext)
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          supabase_user_id: user.id,
+      const customer = await stripe.customers.create(
+        {
+          email: user.email,
+          metadata: {
+            supabase_user_id: user.id,
+          },
         },
-      })
+        {
+          idempotencyKey: buildStripeCustomerIdempotencyKey(user.id, storedCustomerId),
+        }
+      )
 
       try {
         customerId = await getUsableStripeCustomerId(
           stripe,
-          await persistStripeCustomerId(supabase, user.id, storedCustomerId, customer.id)
+          await persistStripeCustomerId(
+            createServiceClient(),
+            user.id,
+            storedCustomerId,
+            customer.id
+          ),
+          user.id
         )
       } catch (error) {
         logError("StripeCheckout", "customer_persist_failed", error, {

@@ -12,6 +12,7 @@ test("getBillingPlanCtaMode routes existing subscribers to subscription manageme
       isFree: false,
       isCurrentPlan: false,
       hasSubscription: true,
+      canManageSubscription: true,
       canCheckout: true,
     }),
     "manage",
@@ -24,6 +25,7 @@ test("getBillingPlanCtaMode only offers checkout to eligible users without a sub
       isFree: false,
       isCurrentPlan: false,
       hasSubscription: false,
+      canManageSubscription: false,
       canCheckout: true,
     }),
     "checkout",
@@ -33,7 +35,21 @@ test("getBillingPlanCtaMode only offers checkout to eligible users without a sub
       isFree: false,
       isCurrentPlan: false,
       hasSubscription: false,
+      canManageSubscription: false,
       canCheckout: false,
+    }),
+    "unavailable",
+  )
+})
+
+test("getBillingPlanCtaMode blocks checkout and portal for internal subscriptions", () => {
+  assert.equal(
+    getBillingPlanCtaMode({
+      isFree: false,
+      isCurrentPlan: false,
+      hasSubscription: true,
+      canManageSubscription: false,
+      canCheckout: true,
     }),
     "unavailable",
   )
@@ -45,6 +61,7 @@ test("getBillingPlanCtaMode preserves current and free plan states", () => {
       isFree: false,
       isCurrentPlan: true,
       hasSubscription: true,
+      canManageSubscription: true,
       canCheckout: true,
     }),
     "current",
@@ -54,6 +71,7 @@ test("getBillingPlanCtaMode preserves current and free plan states", () => {
       isFree: true,
       isCurrentPlan: false,
       hasSubscription: false,
+      canManageSubscription: false,
       canCheckout: false,
     }),
     "free",

@@ -14,7 +14,7 @@ export type BillingPlanPrice = Database["public"]["Tables"]["plan_prices"]["Row"
 
 export type BillingSubscription = Pick<
   Database["public"]["Tables"]["subscriptions"]["Row"],
-  "id" | "plan_id" | "plan_price_id" | "status" | "cancel_at_period_end" | "current_period_end"
+  "id" | "plan_id" | "plan_price_id" | "status" | "cancel_at_period_end" | "current_period_end" | "stripe_subscription_id"
 >
 
 /** A plan row with a display-ready feature list and active, sorted prices. */

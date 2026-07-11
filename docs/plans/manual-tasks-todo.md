@@ -16,18 +16,19 @@
 
 ### Before Production
 
-- [x] **Switch local smoke environment to live Stripe key**: `.env.local` uses a live restricted key. Vercel/production environment setup remains separate and must not reuse a local CLI listener secret.
+- [x] **Switch local and Vercel Production to live Stripe keys**: `.env.local` and production use the verified live restricted key; raw values were never logged or committed.
 - [x] **Create live products & prices**: Live Starter and Pro monthly, 6-month, and annual Prices exist at $19/$105/$194 and $49/$270/$499. Enterprise remains non-public/checkout-disabled.
 - [x] **Update shared Supabase billing rows**: Monthly/annual live Prices are checkout-enabled, 6-month rows are retained disabled, and legacy monthly mappings are aligned.
-- [ ] **Set up production webhook endpoint**: In [Stripe Dashboard > Webhooks](https://dashboard.stripe.com/webhooks), add your production URL: `https://yourdomain.com/api/stripe/webhook`. Select these events:
+- [x] **Set up production webhook endpoint**: Live endpoint `we_1Ts8dNRZYXj2bJrBStpepAxz` targets `https://makercompass.com/api/stripe/webhook` with:
   - `checkout.session.completed`
   - `customer.subscription.updated`
   - `customer.subscription.deleted`
   - `invoice.paid`
-- [ ] **Update STRIPE_WEBHOOK_SECRET**: Copy the signing secret from the production webhook endpoint and set it in your Vercel/production environment variables
-- [x] **Configure live Stripe Customer Portal for smoke testing**: Live default portal supports invoice history, customer/payment-method updates, and cancellation. Confirm the final production return URL after deployment.
+  - `charge.refunded`
+- [x] **Update STRIPE_WEBHOOK_SECRET**: Endpoint-specific signing secret is installed in Vercel and a no-charge live event produced HTTP 200 plus a processed durable claim.
+- [x] **Configure live Stripe Customer Portal**: Live default portal supports invoice history, customer/payment-method updates, cancellation, and production return URL `https://makercompass.com/billing`.
 
-The 2026-07-11 live smoke test used a temporary local Stripe CLI listener. Public launch still requires the unchecked deployed webhook endpoint and production `STRIPE_WEBHOOK_SECRET` tasks above.
+The 2026-07-11 local real-card smoke and deployed signed webhook probe both passed. Local CLI listener is no longer production infrastructure.
 
 ---
 

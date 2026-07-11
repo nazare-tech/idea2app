@@ -9,16 +9,18 @@ export function getBillingPlanCtaMode({
   isFree,
   isCurrentPlan,
   hasSubscription,
+  canManageSubscription,
   canCheckout,
 }: {
   isFree: boolean
   isCurrentPlan: boolean
   hasSubscription: boolean
+  canManageSubscription: boolean
   canCheckout: boolean
 }): BillingPlanCtaMode {
   if (isCurrentPlan) return "current"
   if (isFree) return "free"
-  if (hasSubscription) return "manage"
+  if (hasSubscription) return canManageSubscription ? "manage" : "unavailable"
   return canCheckout ? "checkout" : "unavailable"
 }
 

@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-11: Production Stripe webhook and customer-mode safety
+
+- Plan: [docs/plans/stripe-production-webhook-rollout-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/stripe-production-webhook-rollout-plan.md)
+- Review: [docs/plans/stripe-production-webhook-rollout-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/stripe-production-webhook-rollout-review.md)
+- Durable source of truth: Vercel project `idea2app-root-v2` owns production runtime/env; Stripe endpoint `we_1Ts8dNRZYXj2bJrBStpepAxz` owns live delivery to the apex webhook; Supabase webhook claims own processing evidence; `src/lib/stripe/customer.ts` owns active-mode customer validation and customer-create idempotency keys.
+- Schema or data-shape changes: Migration `20260711030000_protect_stripe_customer_ownership.sql` changes profile column privileges without changing table shape. Billing subscription reads now include existing `stripe_subscription_id` so UI distinguishes Stripe-managed from private/internal subscriptions.
+- Auth, RLS, or permission changes: Browser roles can no longer insert or update `profiles.stripe_customer_id`; normal profile fields retain explicit grants. Checkout persists repaired customer IDs through the service-role client. Checkout and Portal require the retrieved Stripe customer's `supabase_user_id` metadata to match the authenticated user. Webhook signature verification, service-role webhook writes, RLS, and RPC grants remain unchanged.
+- Runtime/API behavior changes: Production uses apex return URLs and a live Stripe key/signing secret. Webhook listens to Checkout completed, subscription updated/deleted, invoice paid, and charge refunded. Checkout customer replacement is retry-idempotent and ownership-bound. Portal validates active-mode customer ownership and fails stale, deleted, or mismatched IDs closed. Non-Stripe subscriptions no longer expose Portal actions or generic `Active` plan copy.
+- Migration or deployment steps: Linked existing Vercel project, set production app/live Stripe env, pushed seven committed main changes, deployed/redeployed successfully, created the live endpoint, then restored the four prior monthly/annual checkout flags after signed delivery. A temporary metadata-only live customer event verified delivery and was deleted; endpoint returned to exactly five events.
+- Verification: Production build passed; 598 tests, typecheck, changed-file ESLint, and diff check passed. An authenticated privilege probe proved `stripe_customer_id` writes fail with PostgreSQL `42501` while a normal profile-field write succeeds. Vercel logged `POST /api/stripe/webhook` 200; live claim `evt_1Ts8lPRZYXj2bJrBmEMfi4ke` is processed with no error. Final deployment/UI evidence is recorded in the review.
+- Rollback or recovery: Disable four paid checkout rows, disable Stripe endpoint, and roll Vercel back to the prior deployment. Replay failed events after forward repair. Never reconcile customers by email.
+- Follow-ups: Add signature/processing failure alerts; scope endpoint secret to Production-only if Vercel environment-variable UI permits splitting the shared Preview/Production entry; repair `www` TLS; add a normal Free production QA account for no-charge Checkout redirect smoke.
+
 ## 2026-07-11: Stripe live catalog, entitlement alignment, and portal cancellation compatibility
 
 - Plan: [docs/plans/stripe-live-rollout-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/stripe-live-rollout-plan.md)
