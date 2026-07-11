@@ -105,6 +105,13 @@ const content = JSON.stringify({
   ],
 })
 
+const pendingContent = JSON.stringify({
+  type: "openrouter-image-v2",
+  model: "draft",
+  generatedAt: "",
+  options: [],
+})
+
 const partialContent = JSON.stringify({
   type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
   model: "draft",
@@ -146,6 +153,29 @@ export default function MockupRendererPreviewPage() {
             <h2 className="mt-1 text-xl font-semibold tracking-tight">Waiting for first image</h2>
           </div>
           <MockupGenerationLoader />
+        </section>
+
+        <section className="rounded-lg bg-card px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
+          <div className="mb-4">
+            <p className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Generation state
+            </p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight">
+              All concepts pending (per-cell loaders)
+            </h2>
+          </div>
+          <MockupRenderer
+            content={pendingContent}
+            projectId="preview"
+            projectName="Preview"
+            expectedOptionLabels={["A", "B", "C"]}
+            optionStatuses={[
+              { label: "Option A", status: "generating", message: "Generating" },
+              { label: "Option B", status: "generating", message: "Generating" },
+              { label: "Option C", status: "generating", message: "Generating" },
+            ]}
+            pendingMedia={<MockupGenerationLoader className="flex-1" />}
+          />
         </section>
 
         <section className="rounded-lg bg-card px-5 py-6 sm:px-8 lg:px-10 lg:py-8">

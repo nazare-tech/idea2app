@@ -99,6 +99,10 @@ export function useWorkspaceScrollSync({
 
     const updateActiveScrollTarget = () => {
       if (isScrollingProgrammatically.current) return
+      // Modal artifact previews can temporarily change measured layout while
+      // the underlying workspace is inert. Keep the last semantic section so
+      // lightbox dwell never masquerades as a scroll/reach transition.
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return
 
       const containerRect = container.getBoundingClientRect()
       const markerTop = containerRect.top + container.clientHeight * 0.22

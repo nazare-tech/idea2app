@@ -287,6 +287,7 @@ Start with the proposal intake form.
   assert.match(html, /aria-label="Download first-prompt\.md"/)
   assert.match(html, /aria-label="Open first-prompt\.md preview"/)
   assert.match(html, /How to use these files/)
+  assert.match(html, /Lovable or v0/)
   // Tool fields parse with the colon either inside or outside the bold marker,
   // so the raw section (including "### Cursor") must not leak into the card.
   assert.match(html, /Build the proposal intake and generated proposal review screens first\./)
@@ -335,4 +336,119 @@ test("buildAiPromptFiles emits paste-ready file content without injected heading
   assert.ok(buildSequence)
   assert.doesNotMatch(buildSequence.content, /^# /m)
   assert.match(buildSequence.content, /\| Intake form \|/)
+})
+
+test("project-context.md carries portable delivery rules and project-specific metrics", () => {
+  const prdSections = extractSectionsByHeading(
+    [
+      "# Product Plan",
+      "",
+      "## 4. Success metrics",
+      "### 4.1 30-day success threshold",
+      "- 10 users complete the core workflow.",
+      "### 4.3 User metrics",
+      "- Activation rate",
+      "- Day 7 retention",
+      "### 4.4 Business metrics",
+      "- Free-to-paid conversion",
+      "### 4.5 Technical/performance metrics",
+      "- Error rate below 1%",
+    ].join("\n"),
+    2,
+  )
+  const mvpSections = extractSectionsByHeading(
+    [
+      "# First Version Plan",
+      "",
+      "## 1. MVP Summary",
+      "A focused workflow product for small teams.",
+      "",
+      "## 6. Suggested Build Approach",
+      "| Layer | Recommendation | Reason |",
+      "|---|---|---|",
+      "| Database | Cloudflare D1 | Keep the first version operationally simple |",
+    ].join("\n"),
+    2,
+  )
+
+  const projectContext = buildAiPromptFiles({ prdSections, mvpSections }).find(
+    (file) => file.fileName === "project-context.md",
+  )
+
+  assert.ok(projectContext)
+  assert.match(projectContext.content, /## Product metrics and instrumentation/)
+  assert.match(projectContext.content, /10 users complete the core workflow/)
+  assert.match(projectContext.content, /Activation rate/)
+  assert.match(projectContext.content, /Free-to-paid conversion/)
+  assert.match(projectContext.content, /Error rate below 1%/)
+  assert.match(projectContext.content, /red, green, refactor/i)
+  assert.match(projectContext.content, /two viable approaches/i)
+  assert.match(projectContext.content, /architecture, product, customer, engineering, and risk/i)
+  assert.match(projectContext.content, /existing application database/i)
+  assert.match(projectContext.content, /Cloudflare[^\n]*D1/i)
+  assert.match(projectContext.content, /controlled event names/i)
+  assert.match(projectContext.content, /personal data|sensitive data/i)
+  assert.match(projectContext.content, /loading, error, and empty states/i)
+  assert.match(projectContext.content, /security review/i)
+  assert.match(projectContext.content, /verified server session/i)
+  assert.match(projectContext.content, /cross-account denial/i)
+  assert.match(projectContext.content, /rollback|recovery/i)
+  assert.match(projectContext.content, /deleting or overwriting data/i)
+  assert.match(projectContext.content, /paid external services/i)
+  assert.match(projectContext.content, /project instructions or knowledge/i)
+  assert.doesNotMatch(projectContext.content, /\/holistic-implementation|Codex skill/i)
+})
+
+test("project-context.md uses fallback metrics without forcing D1 onto a non-Cloudflare stack", () => {
+  const mvpSections = extractSectionsByHeading(
+    [
+      "# First Version Plan",
+      "",
+      "## 1. MVP Summary",
+      "A focused workflow product for small teams.",
+      "",
+      "## 6. Suggested Build Approach",
+      "| Layer | Recommendation | Reason |",
+      "|---|---|---|",
+      "| Database | Supabase Postgres | Native backend for the selected browser builder |",
+    ].join("\n"),
+    2,
+  )
+
+  const projectContext = buildAiPromptFiles({ prdSections: [], mvpSections }).find(
+    (file) => file.fileName === "project-context.md",
+  )
+
+  assert.ok(projectContext)
+  assert.match(projectContext.content, /## Product metrics and instrumentation/)
+  assert.match(projectContext.content, /Suggested starting measures/)
+  assert.match(projectContext.content, /existing application database/i)
+  assert.doesNotMatch(projectContext.content, /\bD1\b/)
+})
+
+test("project-context.md keeps analytics in Neon when only deployment targets Cloudflare", () => {
+  const mvpSections = extractSectionsByHeading(
+    [
+      "# First Version Plan",
+      "",
+      "## 1. MVP Summary",
+      "A focused workflow product for small teams.",
+      "",
+      "## 6. Suggested Build Approach",
+      "| Layer | Recommendation | Reason |",
+      "|---|---|---|",
+      "| Backend | Next.js server routes on Cloudflare Workers | Serverless deployment |",
+      "| Database | Neon PostgreSQL with Drizzle ORM | Relational and vector needs |",
+      "| Deployment | Cloudflare Workers through OpenNext | Edge delivery |",
+    ].join("\n"),
+    2,
+  )
+
+  const projectContext = buildAiPromptFiles({ prdSections: [], mvpSections }).find(
+    (file) => file.fileName === "project-context.md",
+  )
+
+  assert.ok(projectContext)
+  assert.match(projectContext.content, /existing application database/i)
+  assert.doesNotMatch(projectContext.content, /\bD1\b/)
 })

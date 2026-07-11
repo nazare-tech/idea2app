@@ -93,15 +93,23 @@ export async function GET(request: Request) {
     const status = data.status === "cancelled" ? "cancelled" : computeQueueStatus(items)
 
     // Live streaming preview: partial markdown persisted by the executor
-    // while Market Research is actively generating. Kept out of the legacy
-    // queue JSON so the large text never syncs into generation_queues.queue.
-    const competitiveItem = items.find((item) => item.doc_type === "competitive")
-    const streamingPreview =
-      competitiveItem?.status === "generating" &&
-      typeof competitiveItem.partial_content === "string" &&
-      competitiveItem.partial_content.length > 0
-        ? { docType: "competitive" as const, content: competitiveItem.partial_content }
-        : null
+    // while a text planning document (Market Research, Product Plan, First
+    // Version Plan) is actively generating. The dependency chain means at
+    // most one of them streams at a time. Kept out of the legacy queue JSON
+    // so the large text never syncs into generation_queues.queue.
+    const streamingItem = items.find(
+      (item) =>
+        ["competitive", "prd", "mvp"].includes(item.doc_type) &&
+        item.status === "generating" &&
+        typeof item.partial_content === "string" &&
+        item.partial_content.length > 0,
+    )
+    const streamingPreview = streamingItem
+      ? {
+          docType: streamingItem.doc_type as "competitive" | "prd" | "mvp",
+          content: streamingItem.partial_content as string,
+        }
+      : null
 
     return NextResponse.json({
       streamingPreview,

@@ -128,3 +128,33 @@ test("MockupRenderer: renders retry messages for failed missing options", () => 
   assert.match(markup, /Needs retry/)
   assert.doesNotMatch(markup, /Waiting for image/)
 })
+
+test("MockupRenderer: pending concept cells host the provided pendingMedia surface", () => {
+  const content = JSON.stringify({
+    type: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+    model: "draft",
+    generatedAt: "",
+    options: [],
+  })
+
+  const markup = renderToStaticMarkup(
+    <MockupRenderer
+      content={content}
+      expectedOptionLabels={["A", "B", "C"]}
+      optionStatuses={[
+        { label: "Option A", status: "generating", message: "Generating" },
+        { label: "Option B", status: "generating", message: "Generating" },
+        { label: "Option C", status: "generating", message: "Generating" },
+      ]}
+      pendingMedia={<div data-testid="pending-loader" />}
+    />,
+  )
+
+  // All three concept cells stay visible, each hosting the loader surface
+  // instead of the default pulse skeleton.
+  assert.match(markup, /Concept 1/)
+  assert.match(markup, /Concept 2/)
+  assert.match(markup, /Concept 3/)
+  assert.equal(markup.split('data-testid="pending-loader"').length - 1, 3)
+  assert.doesNotMatch(markup, /animate-pulse rounded-lg bg-white/)
+})

@@ -33,6 +33,7 @@ import { usePersistedGenerationState } from "./use-persisted-generation-state"
 import { useWorkspaceScrollSync, getSourceTypeForScrollTarget } from "./use-workspace-scroll-sync"
 import { useGenerateAllHydration } from "./use-generate-all-hydration"
 import { useDocumentGeneration } from "./use-document-generation"
+import { useWorkspaceProductAnalytics } from "./use-workspace-product-analytics"
 import type {
   LegacyDocumentStatus,
   ProjectWorkspaceProps,
@@ -148,11 +149,15 @@ export function ProjectWorkspace({
     }
   }, [analyses, prds, mvpPlans, mockups, techSpecs, deployments])
 
-  const { generateAllQueue, generateAllStatus, generateAllStreamingPreview, resumeGenerateAll } =
+  const { generateAllQueue, generateAllStatus, generateAllStreamingPreviews, resumeGenerateAll } =
     useGenerateAllHydration(project.id)
-  // Smooth the 3s poll chunks of partial Market Research markdown into a
-  // continuous word-by-word reveal shared by both streaming sections.
-  const { text: smoothedStreamingText } = useSmoothedStream(generateAllStreamingPreview ?? "")
+  // Smooth the 3s poll chunks of partial document markdown into continuous
+  // word-by-word reveals, one per streaming planning document.
+  const { text: smoothedCompetitiveStream } = useSmoothedStream(
+    generateAllStreamingPreviews.competitive ?? "",
+  )
+  const { text: smoothedPrdStream } = useSmoothedStream(generateAllStreamingPreviews.prd ?? "")
+  const { text: smoothedMvpStream } = useSmoothedStream(generateAllStreamingPreviews.mvp ?? "")
   const {
     generatingDocuments,
     setGeneratingDocuments,
@@ -732,16 +737,25 @@ export function ProjectWorkspace({
     },
   }
 
-  // Live stream while there is no saved competitive document yet. "ready" is
-  // included to bridge the gap between stream end and the refreshed document
-  // load; error states fall through to the retry module instead.
-  const competitiveDisplayStatus = scrollableDocuments.competitive.displayState?.displayStatus
-  const competitiveStreamingContent =
-    !scrollableDocuments.competitive.content &&
-    smoothedStreamingText &&
-    (competitiveDisplayStatus === "generating" || competitiveDisplayStatus === "ready")
-      ? smoothedStreamingText
+  // Live stream while there is no saved document yet. "ready" is included to
+  // bridge the gap between stream end and the refreshed document load; error
+  // states fall through to the retry module instead.
+  const getStreamingContent = (
+    docType: "competitive" | "prd" | "mvp",
+    smoothedText: string,
+  ): string | null => {
+    const displayStatus = scrollableDocuments[docType].displayState?.displayStatus
+    return !scrollableDocuments[docType].content &&
+      smoothedText &&
+      (displayStatus === "generating" || displayStatus === "ready")
+      ? smoothedText
       : null
+  }
+  const streamingContents = {
+    competitive: getStreamingContent("competitive", smoothedCompetitiveStream),
+    prd: getStreamingContent("prd", smoothedPrdStream),
+    mvp: getStreamingContent("mvp", smoothedMvpStream),
+  }
 
   const aiPromptsReadiness = getAiPromptsReadiness({
     prdContent: scrollableDocuments.prd.content,
@@ -806,6 +820,29 @@ export function ProjectWorkspace({
         item.sections.some((section) => section.id === activeSectionId)
     ) ?? SCROLLABLE_NAV_ITEMS[0]
 
+  const activeSourceType = getSourceTypeForScrollTarget(activeSectionId ?? "executive-summary") ?? "competitive"
+  const activeDisplayStatus = activeSourceType === "mvp" && activeSectionId?.startsWith("ai-prompts-")
+    ? navDocumentDisplayStates["ai-prompts"]?.displayStatus
+    : displayStates[activeSourceType]?.displayStatus
+  const activeContentState = activeDisplayStatus === "ready"
+    ? "ready" as const
+    : activeDisplayStatus === "generating"
+      ? "partial" as const
+      : activeDisplayStatus === "needs_retry"
+        ? "failed" as const
+        : activeDisplayStatus === "idle"
+          ? "incomplete" as const
+          : "waiting" as const
+  const trackWorkspaceNavClick = useWorkspaceProductAnalytics({
+    projectId: project.id,
+    activeSectionId,
+    activeContentState,
+  })
+  const handleTrackedScrollNavigate = useCallback((targetId: string) => {
+    trackWorkspaceNavClick(targetId)
+    handleScrollNavigate(targetId)
+  }, [handleScrollNavigate, trackWorkspaceNavClick])
+
   const handleGenerationStepComplete = useCallback((completedDocTypes: DocumentType[]) => {
     const docTypes = completedDocTypes.length > 0
       ? completedDocTypes
@@ -846,7 +883,7 @@ export function ProjectWorkspace({
             documentStatuses={navDocumentStatuses}
             documentDisplayStates={navDocumentDisplayStates}
             activeSectionId={activeSectionId}
-            onNavigate={handleScrollNavigate}
+            onNavigate={handleTrackedScrollNavigate}
             onGenerateDocument={handleGenerateDocument}
           />
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -856,7 +893,7 @@ export function ProjectWorkspace({
               projectName={projectName}
               activeDocument={activeDocument}
               documents={scrollableDocuments}
-              competitiveStreamingContent={competitiveStreamingContent}
+              streamingContents={streamingContents}
               onGenerateDocument={handleGenerateDocument}
             />
             <ProjectComposer

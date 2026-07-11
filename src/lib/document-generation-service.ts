@@ -44,10 +44,27 @@ export interface GenerateProjectDocumentInput {
   logContext?: LogContext
   /**
    * Called with the accumulated markdown as it streams from the model.
-   * Currently supported for competitive analysis only; used to persist
-   * partial content for the onboarding streaming preview.
+   * Supported for the text planning documents (competitive analysis,
+   * Product Plan, First Version Plan); used to persist partial content
+   * for the onboarding streaming preview.
    */
   onPartialContent?: (content: string) => void
+}
+
+/**
+ * Accumulate streamed tokens so the caller sees the growing document, not
+ * individual deltas. Passing onToken switches a pipeline's final synthesis
+ * call to streaming mode.
+ */
+function buildStreamCallbacks(onPartialContent?: (content: string) => void) {
+  if (!onPartialContent) return undefined
+  let streamedContent = ""
+  return {
+    onToken: (token: string) => {
+      streamedContent += token
+      onPartialContent(streamedContent)
+    },
+  }
 }
 
 export interface GeneratedProjectDocument {
@@ -118,19 +135,10 @@ export async function generateProjectDocument({
     const name = project.name
 
     if (docType === "competitive") {
-      // Accumulate streamed tokens so the caller sees the growing document,
-      // not individual deltas. Passing onToken switches the pipeline's final
-      // synthesis call to streaming mode.
-      let streamedContent = ""
-      const callbacks = onPartialContent
-        ? {
-            onToken: (token: string) => {
-              streamedContent += token
-              onPartialContent(streamedContent)
-            },
-          }
-        : undefined
-      const result = await runCompetitiveAnalysis({ idea, name, model: modelId }, callbacks)
+      const result = await runCompetitiveAnalysis(
+        { idea, name, model: modelId },
+        buildStreamCallbacks(onPartialContent),
+      )
       const content = linkifyBareUrls(result.content)
       const { data, error } = await supabase
         .from("analyses")
@@ -160,12 +168,15 @@ export async function generateProjectDocument({
         upstreamDocType: "competitive",
         hasContent: Boolean(analysisRow?.content),
       })
-      const result = await runPRD({
-        idea,
-        name,
-        competitiveAnalysis: analysisRow?.content,
-        model: modelId,
-      })
+      const result = await runPRD(
+        {
+          idea,
+          name,
+          competitiveAnalysis: analysisRow?.content,
+          model: modelId,
+        },
+        buildStreamCallbacks(onPartialContent),
+      )
       const content = linkifyBareUrls(result.content)
       const { data, error } = await supabase
         .from("prds")
@@ -189,12 +200,15 @@ export async function generateProjectDocument({
         upstreamDocType: "prd",
         hasContent: Boolean(prdRow?.content),
       })
-      const result = await runMVPPlan({
-        idea,
-        name,
-        prd: prdRow?.content,
-        model: modelId,
-      })
+      const result = await runMVPPlan(
+        {
+          idea,
+          name,
+          prd: prdRow?.content,
+          model: modelId,
+        },
+        buildStreamCallbacks(onPartialContent),
+      )
       const content = linkifyBareUrls(result.content)
       const { data, error } = await supabase
         .from("mvp_plans")

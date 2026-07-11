@@ -57,6 +57,11 @@ export interface GenerateDocumentFn {
 // Store shape
 // ---------------------------------------------------------------------------
 
+/** Text planning documents that stream partial markdown during generation. */
+export type StreamingPreviewDocType = "competitive" | "prd" | "mvp"
+
+const STREAMING_PREVIEW_DOC_TYPES: StreamingPreviewDocType[] = ["competitive", "prd", "mvp"]
+
 interface GenerateAllState {
   status: GenerateAllStatus
   queue: QueueItem[]
@@ -66,11 +71,37 @@ interface GenerateAllState {
   startedAt: Date | null
   error: string | null
   /**
-   * Partial Market Research markdown streamed by the onboarding executor
-   * while the competitive item is generating; null once it settles. The
-   * workspace renders it as a live document preview.
+   * Partial planning-document markdown streamed by the executor while an
+   * item is generating, keyed by docType. Each entry keeps the longest
+   * content seen (a throttle gap or out-of-order poll never rewinds the
+   * reveal) and is retained after the item completes so the workspace can
+   * keep showing it until the saved document loads.
    */
-  streamingPreviewContent: string | null
+  streamingPreviews: Partial<Record<StreamingPreviewDocType, string>>
+}
+
+function isStreamingPreviewDocType(value: unknown): value is StreamingPreviewDocType {
+  return typeof value === "string" &&
+    (STREAMING_PREVIEW_DOC_TYPES as string[]).includes(value)
+}
+
+function mergeStreamingPreview(
+  previous: Partial<Record<StreamingPreviewDocType, string>>,
+  incoming: { docType?: unknown; content?: unknown } | null | undefined,
+): Partial<Record<StreamingPreviewDocType, string>> {
+  if (
+    !incoming ||
+    !isStreamingPreviewDocType(incoming.docType) ||
+    typeof incoming.content !== "string" ||
+    incoming.content.length === 0
+  ) {
+    return previous
+  }
+
+  const existing = previous[incoming.docType]
+  if (existing && existing.length >= incoming.content.length) return previous
+
+  return { ...previous, [incoming.docType]: incoming.content }
 }
 
 interface GenerateAllActions {
@@ -202,27 +233,15 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
       const newStatus = dbRow.status as GenerateAllStatus
 
-      // Streaming preview: keep the longest content seen so a throttle gap
-      // or out-of-order poll response never rewinds the reveal. Deliberately
-      // retained after the item completes: the workspace keeps showing it
-      // until the saved document loads (router.refresh), avoiding a flash of
-      // the static status module between stream end and document swap.
-      const incomingPreview =
-        typeof streamingPreview?.content === "string" && streamingPreview.content.length > 0
-          ? (streamingPreview.content as string)
-          : null
-      const previousPreview = store.getState().streamingPreviewContent
-      const nextPreview =
-        incomingPreview && (!previousPreview || incomingPreview.length >= previousPreview.length)
-          ? incomingPreview
-          : previousPreview
-
       store.setState({
         queue: incomingQueue,
         currentIndex: dbRow.current_index ?? 0,
         status: newStatus,
         error: dbRow.error_info?.message ?? null,
-        streamingPreviewContent: nextPreview,
+        streamingPreviews: mergeStreamingPreview(
+          store.getState().streamingPreviews,
+          streamingPreview,
+        ),
       })
 
       // Continue polling only while running
@@ -253,7 +272,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
     creditsUsed: 0,
     startedAt: null,
     error: null,
-    streamingPreviewContent: null,
+    streamingPreviews: {},
 
     // Update always-fresh callback refs (called by Hydrator on every render).
     // Also rebuilds the idle queue and totalCredits when doc statuses change.
@@ -376,15 +395,12 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
             localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
           } else {
             // The execute route is still running on the server — resume polling
-            set(() => ({
+            set((state) => ({
               queue: hydratedQueue,
               currentIndex: nextPending,
               startedAt: dbRow.started_at ? new Date(dbRow.started_at) : null,
               status: "running",
-              streamingPreviewContent:
-                typeof streamingPreview?.content === "string" && streamingPreview.content.length > 0
-                  ? (streamingPreview.content as string)
-                  : null,
+              streamingPreviews: mergeStreamingPreview(state.streamingPreviews, streamingPreview),
             }))
             localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
             if (!hydratedQueue.some((item) => item.status === "generating")) {

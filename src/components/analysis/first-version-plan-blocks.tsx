@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 
 import {
+  AI_PROMPT_FILE_PLACEHOLDERS,
   AiPromptFileGrid,
   InlineMarkdown,
   buildAiPromptFiles,
@@ -715,7 +716,7 @@ function AiPromptsMasthead() {
 const promptFileUsageSteps = [
   "Download all the files below into a new, empty folder. That folder becomes your project.",
   "Open your recommended AI build tool (above) in that folder.",
-  "Rename project-context.md to CLAUDE.md (Claude Code), AGENTS.md (Codex), or your tool's rules file.",
+  "Rename project-context.md to CLAUDE.md (Claude Code), AGENTS.md (Codex), or your tool's rules file. In browser builders such as Lovable or v0, paste it into the project's instructions or knowledge.",
   "Paste the contents of first-prompt.md as your first message to start the build.",
   "Work through build-steps.md one chunk at a time; share the other files when your tool needs requirements or acceptance criteria.",
 ]
@@ -774,6 +775,7 @@ function AiPromptsSection({
 export function AiPromptsDocumentBlocks({
   prdContent,
   mvpContent,
+  projectId,
   prdSettled = Boolean(prdContent),
   mvpSettled = Boolean(mvpContent),
 }: {
@@ -798,7 +800,18 @@ export function AiPromptsDocumentBlocks({
     [mvpContent, mvpSettled, prdContent, prdSettled],
   )
 
-  if (readiness.status === "waiting") {
+  // While either source plan is still being written, every expected file
+  // renders as a non-interactive queued placeholder so the full set of
+  // upcoming files is visible from the start. Once both sources settle,
+  // missing files are terminal and get the incomplete notice instead.
+  const showQueuedPlaceholders = !prdSettled || !mvpSettled
+  const pendingFiles = showQueuedPlaceholders
+    ? AI_PROMPT_FILE_PLACEHOLDERS.filter(
+        (placeholder) => !promptFiles.some((file) => file.fileName === placeholder.fileName),
+      )
+    : []
+
+  if (readiness.status === "waiting" && !showQueuedPlaceholders) {
     return (
       <div className="flex items-center justify-center p-6 text-center text-sm text-muted-foreground sm:p-12">
         AI Prompts has not been generated yet.
@@ -806,7 +819,9 @@ export function AiPromptsDocumentBlocks({
     )
   }
 
-  const sectionTotal = (hasRecommendedTool ? 1 : 0) + (promptFiles.length > 0 ? 1 : 0)
+  const showToolSection = hasRecommendedTool || showQueuedPlaceholders
+  const showFilesSection = promptFiles.length > 0 || pendingFiles.length > 0
+  const sectionTotal = (showToolSection ? 1 : 0) + (showFilesSection ? 1 : 0)
   let sectionIndex = 1
   const nextSectionIndex = () => sectionIndex++
 
@@ -814,14 +829,7 @@ export function AiPromptsDocumentBlocks({
     <div className="flex flex-col gap-16">
       <AiPromptsMasthead />
 
-      {readiness.status === "partial" ? (
-        <div className="border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-4" role="status">
-          <p className="text-[14px] font-semibold text-[#1C1917]">Still assembling AI Prompts</p>
-          <p className="mt-1 text-[13px] leading-5 text-[#4A4040]">
-            Available files can be inspected now. The remaining files will appear as the Product Plan and First Version Plan finish.
-          </p>
-        </div>
-      ) : readiness.status === "incomplete" ? (
+      {readiness.status === "incomplete" ? (
         <div className="border border-[#E8DDD5] bg-[#FAFAFA] px-5 py-4" role="status">
           <p className="text-[14px] font-semibold text-[#1C1917]">Some AI Prompts files are unavailable</p>
           <p className="mt-1 text-[13px] leading-5 text-[#4A4040]">
@@ -830,18 +838,30 @@ export function AiPromptsDocumentBlocks({
         </div>
       ) : null}
 
-      {hasRecommendedTool ? (
+      {showToolSection ? (
         <AiPromptsSection
           id="ai-prompts-recommended-build-tool"
           title="Recommended AI Build Tool"
           index={nextSectionIndex()}
           total={sectionTotal}
         >
-          <AiPromptRecommendedToolCard section={recommendedTool} />
+          {hasRecommendedTool ? (
+            <AiPromptRecommendedToolCard section={recommendedTool} />
+          ) : (
+            <div className="border border-dashed border-[#E8DDD5] bg-[#FAFAFA] px-6 py-6">
+              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A8480]">
+                Queued
+              </span>
+              <div className="mt-4 space-y-3" aria-hidden="true">
+                <div className="h-3 w-[70%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
+                <div className="h-3 w-[52%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
+              </div>
+            </div>
+          )}
         </AiPromptsSection>
       ) : null}
 
-      {promptFiles.length > 0 ? (
+      {showFilesSection ? (
         <AiPromptsSection
           id="ai-prompts-files"
           title="Prompt Files"
@@ -853,14 +873,41 @@ export function AiPromptsDocumentBlocks({
             preview the full markdown.
           </p>
           <PromptFileUsageGuide />
-          <AiPromptFileGrid files={promptFiles} />
+          <AiPromptFileGrid files={promptFiles} pendingFiles={pendingFiles} projectId={projectId} />
         </AiPromptsSection>
       ) : null}
     </div>
   )
 }
 
-function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
+/**
+ * Displayed First Version Plan sections in contract order, with the H2
+ * aliases that source each one. The streaming renderer uses this to show
+ * titled skeletons for sections that have not arrived yet; keep it in sync
+ * with CurrentMvpPlanDocumentBlocks below.
+ */
+export const MVP_STREAMING_EXPECTED_SECTIONS: ReadonlyArray<{
+  title: string
+  aliases: string[]
+}> = [
+  { title: "MVP Summary", aliases: ["MVP Summary"] },
+  {
+    title: "Key Risks & Assumptions",
+    aliases: ["Key Risks, Assumptions, and Scope Decisions", "Key Assumptions and Scope Decisions"],
+  },
+  { title: "Target User & Problem", aliases: ["Target User and Problem"] },
+  { title: "The Bet", aliases: ["MVP Goal, Definition of Done, and Riskiest Assumptions"] },
+  { title: "Core User Flows", aliases: ["Core User Flows", "Core User Flow"] },
+  { title: "Suggested Build Approach", aliases: ["Suggested Build Approach"] },
+  { title: "Validation Plan", aliases: ["Validation Plan"] },
+]
+
+/**
+ * Current-format renderer, exported so the streaming preview can render
+ * partial documents through the exact same designed blocks without the
+ * legacy-format gate (early streams have too few sections to pass it).
+ */
+export function CurrentMvpPlanDocumentBlocks({ content }: PlanningDocumentProps) {
   const sections = extractSectionsByHeading(content, 2)
   const summary = getSectionByAlias(sections, ["MVP Summary"])
   const assumptions = getSectionByAlias(sections, ["Key Risks, Assumptions, and Scope Decisions", "Key Assumptions and Scope Decisions"])

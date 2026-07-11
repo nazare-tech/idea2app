@@ -21,6 +21,7 @@ import {
   CompetitiveDetailSection,
 } from "@/components/analysis/competitive-analysis-document"
 import { CompetitiveStreamingDocument } from "@/components/analysis/competitive-streaming-document"
+import { PlanningStreamingDocument } from "@/components/analysis/planning-streaming-document"
 import {
   AiPromptsDocumentBlocks,
   MvpPlanDocumentBlocks,
@@ -57,12 +58,16 @@ interface ScrollableContentProps {
   activeDocument?: DocumentType
   documents: Record<string, DocumentData>
   /**
-   * Partial Market Research markdown streamed during onboarding generation.
-   * While present (and no saved document exists) the Executive Summary and
-   * Market Research sections render the live streaming document instead of
-   * static generating placeholders.
+   * Partial document markdown streamed during onboarding generation, keyed
+   * by docType. While present (and no saved document exists) the matching
+   * sections render the live streaming document instead of static
+   * generating placeholders.
    */
-  competitiveStreamingContent?: string | null
+  streamingContents?: {
+    competitive?: string | null
+    prd?: string | null
+    mvp?: string | null
+  }
   onGenerateDocument?: (docType: DocumentType) => void
 }
 
@@ -114,6 +119,7 @@ function GenerationStatusModule({
   label: string
   state?: DocumentGenerationDisplayState
   onGenerateDocument?: (docType: DocumentType) => void
+  /** Mockups render per-concept loaders in MockupProgressModule instead */
   showMockupLoader?: boolean
 }) {
   if (!state || state.displayStatus === "idle") {
@@ -191,7 +197,10 @@ function GenerationStatusModule({
         )
       )}
 
-      {state.mockupOptionStatuses && state.mockupOptionStatuses.length > 0 && (
+      {/* Per-option rows only when something is actionable; while options are
+          simply generating, the loader above is the whole loading story. */}
+      {state.mockupOptionStatuses &&
+        state.mockupOptionStatuses.some((option) => option.status === "needs_retry") && (
         <div className="divide-y divide-border-subtle rounded-md border border-border-subtle">
           {state.mockupOptionStatuses.map((option) => (
             <div key={option.label} className="flex items-center gap-3 px-4 py-3">
@@ -225,6 +234,12 @@ function MockupProgressModule({
     generatedAt: "",
     options: draftOptions,
   })
+  // Queued and waiting count too: mockups sit queued for most of onboarding,
+  // and the cells should show the generation shader the whole time.
+  const isPendingGeneration =
+    state?.displayStatus === "generating" ||
+    state?.displayStatus === "queued" ||
+    state?.displayStatus === "waiting"
 
   return (
     <div className="space-y-6">
@@ -234,11 +249,19 @@ function MockupProgressModule({
         onGenerateDocument={onGenerateDocument}
         showMockupLoader={false}
       />
+      {/* Concept 1/2/3 cells always mirror the nav rail's concept entries:
+          arrived images render as real cards, pending concepts keep their
+          placeholder cell hosting the WebGL generation loader. */}
       <div className="px-5 pb-6 sm:px-8">
         <MockupRenderer
           content={draftContent}
           expectedOptionLabels={["A", "B", "C"]}
           optionStatuses={state?.mockupOptionStatuses}
+          pendingMedia={
+            isPendingGeneration ? (
+              <MockupGenerationLoader images={state?.mockupPreviewImages} className="flex-1" />
+            ) : undefined
+          }
         />
       </div>
     </div>
@@ -327,17 +350,34 @@ function MockupsSection({ content, projectId }: { content: string; projectId: st
 }
 
 export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentProps>(
-  function ScrollableContent({ projectId, projectName, activeDocument, documents, competitiveStreamingContent, onGenerateDocument }, ref) {
+  function ScrollableContent({ projectId, projectName, activeDocument, documents, streamingContents, onGenerateDocument }, ref) {
     const competitiveData = documents["competitive"]
     const prdData = documents["prd"]
     const mvpData = documents["mvp"]
     const mockupsData = documents["mockups"]
+    const competitiveStreamingContent = streamingContents?.competitive ?? null
+    const prdStreamingContent = streamingContents?.prd ?? null
+    const mvpStreamingContent = streamingContents?.mvp ?? null
     const aiPromptsReadiness = getAiPromptsReadiness({
       prdContent: prdData?.content,
       mvpContent: mvpData?.content,
       prdSettled: Boolean(prdData?.content) && !prdData?.isGenerating && !prdData?.isLoading,
       mvpSettled: Boolean(mvpData?.content) && !mvpData?.isGenerating && !mvpData?.isLoading,
     })
+    // While the source plans are queued or generating, the AI Prompts section
+    // renders its real containers with queued placeholders instead of a
+    // generic status module.
+    const isPipelineActive = (data?: DocumentData) => {
+      const displayStatus = data?.displayState?.displayStatus
+      return Boolean(
+        data?.isGenerating ||
+          displayStatus === "queued" ||
+          displayStatus === "waiting" ||
+          displayStatus === "generating" ||
+          displayStatus === "ready",
+      )
+    }
+    const aiPromptsSourcesActive = isPipelineActive(prdData) || isPipelineActive(mvpData)
     // Defer rendering of all sections below the first one to the next animation
     // frame. This allows the browser to paint the initial layout (first section +
     // skeletons) before doing the heavy markdown/structured-data rendering work,
@@ -392,6 +432,23 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         renderContent: () => (
           <PrdDocumentBlocks content={prdData!.content!} projectId={projectId} />
         ),
+        // Live-stream the Product Plan through its designed blocks while the
+        // onboarding queue writes it.
+        renderStatus: (state) =>
+          prdStreamingContent ? (
+            <PlanningStreamingDocument
+              docType="prd"
+              content={prdStreamingContent}
+              finished={false}
+              projectId={projectId}
+            />
+          ) : (
+            <GenerationStatusModule
+              label="Product Plan"
+              state={state}
+              onGenerateDocument={onGenerateDocument}
+            />
+          ),
       },
       {
         navKey: "mvp",
@@ -402,6 +459,21 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         renderContent: () => (
           <MvpPlanDocumentBlocks content={mvpData!.content!} projectId={projectId} />
         ),
+        renderStatus: (state) =>
+          mvpStreamingContent ? (
+            <PlanningStreamingDocument
+              docType="mvp"
+              content={mvpStreamingContent}
+              finished={false}
+              projectId={projectId}
+            />
+          ) : (
+            <GenerationStatusModule
+              label="First Version Plan"
+              state={state}
+              onGenerateDocument={onGenerateDocument}
+            />
+          ),
       },
       {
         navKey: "mockups",
@@ -429,7 +501,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         intrinsicSize: "auto 1800px",
         statusData: mvpData,
         skeletonFallbackData: prdData,
-        hasContent: aiPromptsReadiness.status !== "waiting",
+        hasContent: aiPromptsReadiness.status !== "waiting" || aiPromptsSourcesActive,
         renderContent: () => (
           <AiPromptsDocumentBlocks
             prdContent={prdData?.content ?? null}

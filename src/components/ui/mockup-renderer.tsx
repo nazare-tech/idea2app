@@ -9,6 +9,7 @@ import { ArtifactLightbox } from "@/components/ui/artifact-lightbox"
 import { extractMockupOptions } from "@/lib/mockups/format-contract"
 import { parseOpenRouterImageMockupContent, type OpenRouterImageMockupContent } from "@/lib/mockups/openrouter-image-format"
 import type { MockupOptionStatus } from "@/lib/document-generation-display-status"
+import { trackClientProductEvent } from "@/lib/product-analytics/client"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,12 @@ interface MockupRendererProps {
   projectId?: string
   expectedOptionLabels?: string[]
   optionStatuses?: MockupOptionStatus[]
+  /**
+   * Loading surface rendered inside each concept cell whose image has not
+   * arrived yet (replaces the default pulse skeleton). The workspace passes
+   * the WebGL generation loader here while mockups are generating.
+   */
+  pendingMedia?: React.ReactNode
 }
 
 // ---- JSON-render mockup types and parsing ----
@@ -763,13 +770,17 @@ export function MockupImageLightbox({
 function OpenRouterImageMockupViewer({
   data,
   projectName,
+  projectId,
   expectedOptionLabels,
   optionStatuses,
+  pendingMedia,
 }: {
   data: OpenRouterImageMockupContent
   projectName?: string
+  projectId?: string
   expectedOptionLabels?: string[]
   optionStatuses?: MockupOptionStatus[]
+  pendingMedia?: React.ReactNode
 }) {
   const [downloadingLabel, setDownloadingLabel] = React.useState<string | null>(null)
   const [copiedLabel, setCopiedLabel] = React.useState<string | null>(null)
@@ -780,6 +791,7 @@ function OpenRouterImageMockupViewer({
     conceptLabel: string
     label: string
     contentType: string
+    conceptIndex: 1 | 2 | 3
   } | null>(null)
 
   const buildImageFileName = React.useCallback(
@@ -791,7 +803,11 @@ function OpenRouterImageMockupViewer({
     [projectName],
   )
 
-  const handleDownload = React.useCallback(async (option: { label: string; imageUrl: string }) => {
+  const handleDownload = React.useCallback(async (
+    option: { label: string; imageUrl: string },
+    conceptIndex: 1 | 2 | 3,
+    surface: "card" | "lightbox",
+  ) => {
     setDownloadingLabel(option.label)
     try {
       const response = await fetch(option.imageUrl)
@@ -805,14 +821,21 @@ function OpenRouterImageMockupViewer({
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      if (isAnalyticsProjectId(projectId)) {
+        trackClientProductEvent("mockup_concept_downloaded", { conceptIndex, surface }, { projectId })
+      }
     } finally {
       setDownloadingLabel(null)
     }
-  }, [buildImageFileName])
+  }, [buildImageFileName, projectId])
 
   // Copy the mockup image itself to the clipboard. The clipboard only accepts
   // PNG, so JPEG/WebP sources are converted through a canvas first.
-  const handleCopyImage = React.useCallback(async (option: { label: string; imageUrl: string }) => {
+  const handleCopyImage = React.useCallback(async (
+    option: { label: string; imageUrl: string },
+    conceptIndex: 1 | 2 | 3,
+    surface: "card" | "lightbox",
+  ) => {
     try {
       const response = await fetch(option.imageUrl)
       if (!response.ok) throw new Error("Failed to load mockup image")
@@ -832,13 +855,16 @@ function OpenRouterImageMockupViewer({
       }
 
       await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
+      if (isAnalyticsProjectId(projectId)) {
+        trackClientProductEvent("mockup_concept_copied", { conceptIndex, surface }, { projectId })
+      }
       setCopiedLabel(option.label)
       if (copyResetRef.current) clearTimeout(copyResetRef.current)
       copyResetRef.current = setTimeout(() => setCopiedLabel(null), 2000)
     } catch {
       // Clipboard image support is browser-dependent; Download remains available.
     }
-  }, [])
+  }, [projectId])
 
   React.useEffect(() => {
     return () => {
@@ -869,6 +895,7 @@ function OpenRouterImageMockupViewer({
         const option = optionsByLabel.get(label)
         const status = statusByLabel.get(label)
         const conceptLabel = getConceptLabel(index)
+        const conceptIndex = (index + 1) as 1 | 2 | 3
         if (!option) {
           return (
             <div
@@ -885,15 +912,17 @@ function OpenRouterImageMockupViewer({
                     {status?.message || "Waiting for image"}
                   </p>
                 </div>
-                <div className="flex flex-1 items-center justify-center rounded-lg bg-[#f8f8f7]">
-                  <div className="w-full max-w-4xl space-y-4">
-                    <div className="aspect-[21/9] w-full animate-pulse rounded-lg bg-white" />
-                    <div className="space-y-2">
-                      <div className="h-3 w-32 animate-pulse rounded bg-gray-200" />
-                      <div className="h-3 w-2/3 animate-pulse rounded bg-gray-100" />
+                {pendingMedia ?? (
+                  <div className="flex flex-1 items-center justify-center rounded-lg bg-[#f8f8f7]">
+                    <div className="w-full max-w-4xl space-y-4">
+                      <div className="aspect-[21/9] w-full animate-pulse rounded-lg bg-white" />
+                      <div className="space-y-2">
+                        <div className="h-3 w-32 animate-pulse rounded bg-gray-200" />
+                        <div className="h-3 w-2/3 animate-pulse rounded bg-gray-100" />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )
@@ -921,7 +950,7 @@ function OpenRouterImageMockupViewer({
                   type="button"
                   className="flex w-full shrink-0 items-center justify-center gap-2 rounded-[6px] border border-[#e8ddd5] px-[16.909px] py-[8.909px] text-xs font-medium leading-4 text-[#1c1917] transition-colors hover:bg-[#f8f4f1] disabled:opacity-50 sm:w-auto"
                   disabled={downloadingLabel !== null}
-                  onClick={() => handleDownload(option)}
+                  onClick={() => void handleDownload(option, conceptIndex, "card")}
                 >
                   <Download className="h-3.5 w-3.5" />
                   <span>{isDownloading ? "Downloading..." : "Export Image"}</span>
@@ -933,12 +962,19 @@ function OpenRouterImageMockupViewer({
                 aria-label={`Open ${conceptLabel} mockup in lightbox`}
                 className="block w-full cursor-zoom-in rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 onClick={() => {
+                  if (isAnalyticsProjectId(projectId)) {
+                    trackClientProductEvent("mockup_concept_opened", {
+                      conceptIndex,
+                      surface: "card",
+                    }, { projectId })
+                  }
                   setLightboxOption({
                     imageUrl: option.imageUrl,
                     title: option.title,
                     conceptLabel,
                     label: option.label,
                     contentType: option.contentType || "image/png",
+                    conceptIndex,
                   })
                 }}
               >
@@ -966,8 +1002,8 @@ function OpenRouterImageMockupViewer({
           imageUrl={lightboxOption.imageUrl}
           imageAlt={`${lightboxOption.conceptLabel}: ${lightboxOption.title}`}
           copied={copiedLabel === lightboxOption.label}
-          onCopy={() => void handleCopyImage(lightboxOption)}
-          onDownload={() => void handleDownload(lightboxOption)}
+          onCopy={() => void handleCopyImage(lightboxOption, lightboxOption.conceptIndex, "lightbox")}
+          onDownload={() => void handleDownload(lightboxOption, lightboxOption.conceptIndex, "lightbox")}
           onClose={() => setLightboxOption(null)}
         />
       )}
@@ -1421,8 +1457,8 @@ export function MockupRenderer({
   projectId,
   expectedOptionLabels,
   optionStatuses,
+  pendingMedia,
 }: MockupRendererProps) {
-  void projectId
   // All hooks must be called unconditionally before any early return (Rules of Hooks)
   const retiredHtmlData = React.useMemo(() => parseRetiredHtmlContent(content), [content])
   const openRouterImageData = React.useMemo(
@@ -1456,8 +1492,10 @@ export function MockupRenderer({
         <OpenRouterImageMockupViewer
           data={openRouterImageData}
           projectName={projectName}
+          projectId={projectId}
           expectedOptionLabels={expectedOptionLabels}
           optionStatuses={optionStatuses}
+          pendingMedia={pendingMedia}
         />
       </div>
     )
@@ -1535,4 +1573,8 @@ export function MockupRenderer({
       <AsciiMockupContent sections={sections} />
     </div>
   )
+}
+
+function isAnalyticsProjectId(projectId: string | undefined): projectId is string {
+  return Boolean(projectId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
 }

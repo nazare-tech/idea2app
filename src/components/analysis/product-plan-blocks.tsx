@@ -1186,7 +1186,34 @@ function OpenQuestionsShowcase({ section }: { section?: PlanningDocumentSection 
   )
 }
 
-function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps) {
+/**
+ * Displayed Product Plan sections in contract order, with the H2 aliases
+ * that source each one. The streaming renderer uses this to show titled
+ * skeletons for sections that have not arrived yet; keep it in sync with
+ * CurrentPrdDocumentBlocks below.
+ */
+export const PRD_STREAMING_EXPECTED_SECTIONS: ReadonlyArray<{
+  title: string
+  aliases: string[]
+}> = [
+  { title: "Introduction & Overview", aliases: ["Introduction/overview", "Introduction overview"] },
+  { title: "Goals", aliases: ["Goals"] },
+  { title: "Team & Milestones", aliases: ["Team and Milestones", "Timeline and milestones"] },
+  { title: "Success Metrics", aliases: ["Success metrics"] },
+  { title: "User Personas", aliases: ["User personas"] },
+  { title: "Non-goals & Out of Scope", aliases: ["Non-goals / out of scope", "Out of scope"] },
+  {
+    title: "Risks, Dependencies & Open Questions",
+    aliases: ["Risks and mitigation", "Dependencies and assumptions", "Open questions"],
+  },
+]
+
+/**
+ * Current-format renderer, exported so the streaming preview can render
+ * partial documents through the exact same designed blocks without the
+ * legacy-format gate (early streams have too few sections to pass it).
+ */
+export function CurrentPrdDocumentBlocks({ content, projectId }: PlanningDocumentProps) {
   const sections = extractSectionsByHeading(content, 2)
   const introduction = getSectionByAlias(sections, ["Introduction/overview", "Introduction overview"])
   const goals = getSectionByAlias(sections, ["Goals"])

@@ -1,7 +1,7 @@
 // src/components/layout/anchor-nav.tsx
 "use client"
 
-import { forwardRef, type MouseEvent } from "react"
+import { forwardRef, useCallback, useEffect, useRef, type MouseEvent, type MutableRefObject } from "react"
 import { Play, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
@@ -105,6 +105,7 @@ export function AnchorNavTab({
   onNavigate,
   onGenerateDocument,
   expandSubTabs = false,
+  onNavClick,
 }: {
   item: DocumentNavItem
   status: NavStatus
@@ -114,6 +115,8 @@ export function AnchorNavTab({
   onGenerateDocument?: (docType: DocumentType) => void
   /** Show sub-tabs at every viewport width (workspace hides them below lg) */
   expandSubTabs?: boolean
+  /** Lets the rail suppress scroll-follow right after a click (workspace only) */
+  onNavClick?: () => void
 }) {
   const isInProgress = status === "in_progress"
   const isPending = status === "pending"
@@ -138,6 +141,7 @@ export function AnchorNavTab({
       : "text-[#5D5551]"
   const connectorColor = "border-[#E5DCD4]"
   const handleNavClick = (event: MouseEvent<HTMLButtonElement>, targetId: string) => {
+    onNavClick?.()
     const nav = event.currentTarget.closest("nav")
     const scrollTop = nav?.scrollTop ?? 0
     const scrollLeft = nav?.scrollLeft ?? 0
@@ -247,9 +251,75 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
     return documentStatuses[item.key] || documentStatuses[item.sourceType] || "pending"
   }
 
+  const navRef = useRef<HTMLElement | null>(null)
+  const setNavRef = useCallback((node: HTMLElement | null) => {
+    navRef.current = node
+    if (typeof ref === "function") ref(node)
+    else if (ref) (ref as MutableRefObject<HTMLElement | null>).current = node
+  }, [ref])
+
+  // Rail clicks already restore the rail's scroll position themselves; pause
+  // scroll-follow briefly so the two mechanisms never fight over the rail.
+  const suppressFollowUntilRef = useRef(0)
+  const markNavClick = useCallback(() => {
+    suppressFollowUntilRef.current = Date.now() + 1000
+  }, [])
+
+  // Keep the active subsection visible as the document pane scrolls: the rail
+  // starts following two rows before the active row would touch either edge,
+  // so it never sits against the header or the bottom of the viewport.
+  useEffect(() => {
+    if (!activeSectionId) return
+    const nav = navRef.current
+    if (!nav) return
+    if (Date.now() < suppressFollowUntilRef.current) return
+
+    let target = nav.querySelector<HTMLElement>(
+      `[data-nav-target="${CSS.escape(activeSectionId)}"]`,
+    )
+    if (target && target.getBoundingClientRect().height === 0) {
+      // Sub-tabs are hidden below lg; follow the owning document tab instead.
+      const owner = navItems.find((item) =>
+        item.sections.some((section) => section.id === activeSectionId),
+      )
+      target = owner
+        ? nav.querySelector<HTMLElement>(`[data-nav-target="${CSS.escape(owner.key)}"]`)
+        : null
+    }
+    if (!target) return
+
+    const navRect = nav.getBoundingClientRect()
+    const rect = target.getBoundingClientRect()
+    if (rect.height === 0) return
+
+    const marginY = rect.height * 2 + 8
+    let top = 0
+    if (rect.top < navRect.top + marginY) {
+      top = rect.top - (navRect.top + marginY)
+    } else if (rect.bottom > navRect.bottom - marginY) {
+      top = rect.bottom - (navRect.bottom - marginY)
+    }
+
+    // Horizontal rail (small screens): keep the active tab a little clear of
+    // the side edges too.
+    const marginX = Math.min(rect.width, 48)
+    let left = 0
+    if (nav.scrollWidth > nav.clientWidth) {
+      if (rect.left < navRect.left + marginX) {
+        left = rect.left - (navRect.left + marginX)
+      } else if (rect.right > navRect.right - marginX) {
+        left = rect.right - (navRect.right - marginX)
+      }
+    }
+
+    if (top === 0 && left === 0) return
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    nav.scrollBy({ top, left, behavior: reduceMotion ? "auto" : "smooth" })
+  }, [activeSectionId, navItems])
+
   return (
     <nav
-      ref={ref}
+      ref={setNavRef}
       className="workspace-anchor-nav flex w-full shrink-0 gap-2 overflow-x-auto border-b border-[#E2DDD6] bg-background px-4 py-3 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6 lg:py-5"
     >
       {/* Document tabs */}
@@ -262,6 +332,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
           displayState={documentDisplayStates[item.key]}
           onNavigate={onNavigate}
           onGenerateDocument={onGenerateDocument}
+          onNavClick={markNavClick}
         />
       ))}
     </nav>
