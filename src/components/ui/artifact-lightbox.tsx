@@ -36,6 +36,7 @@ export function ArtifactActionButton({
  */
 export function ArtifactLightbox({
   fileName,
+  displayName,
   onClose,
   onCopy,
   copied = false,
@@ -45,6 +46,8 @@ export function ArtifactLightbox({
   children,
 }: {
   fileName: string
+  /** Clean human name for the header and action labels; falls back to fileName */
+  displayName?: string
   onClose: () => void
   /** Omit to hide the copy action */
   onCopy?: () => void
@@ -58,6 +61,7 @@ export function ArtifactLightbox({
   children: React.ReactNode
 }) {
   const isMediaPresentation = presentation === "media"
+  const shownName = displayName ?? fileName
   const resolvedMaxWidthClassName = maxWidthClassName
     ?? (isMediaPresentation ? "max-w-[calc(100vw-2rem)]" : "max-w-4xl")
 
@@ -80,7 +84,7 @@ export function ArtifactLightbox({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`${fileName} preview`}
+      aria-label={`${shownName} preview`}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       onClick={onClose}
     >
@@ -96,13 +100,13 @@ export function ArtifactLightbox({
           <div className="flex min-w-0 items-center gap-2">
             <FileText aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.9} />
             <span className="truncate font-mono text-[12px] tracking-[0.06em] text-[#1C1917]">
-              {fileName}
+              {shownName}
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {onCopy ? (
               <ArtifactActionButton
-                label={copied ? `Copied ${fileName}` : `Copy ${fileName}`}
+                label={copied ? `Copied ${shownName}` : `Copy ${shownName}`}
                 onClick={onCopy}
               >
                 {copied ? (
@@ -113,7 +117,7 @@ export function ArtifactLightbox({
               </ArtifactActionButton>
             ) : null}
             {onDownload ? (
-              <ArtifactActionButton label={`Download ${fileName}`} onClick={onDownload}>
+              <ArtifactActionButton label={`Download ${shownName}`} onClick={onDownload}>
                 <Download className="h-3.5 w-3.5" />
               </ArtifactActionButton>
             ) : null}

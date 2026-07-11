@@ -296,6 +296,22 @@ export function InlineMarkdown({ value }: { value: string }) {
   return <>{nodes}</>
 }
 
+/**
+ * Sentence-case display name for the lightbox header, derived from the file
+ * name: "user-stories-and-acceptance-criteria.md" → "User stories and
+ * acceptance criteria". Download names stay kebab-case.
+ */
+export function humanizeFileName(fileName: string) {
+  const words = fileName.replace(/\.[a-z0-9]+$/i, "").split("-")
+  return words
+    .map((word, index) => {
+      if (word === "ai") return "AI"
+      if (index === 0) return word.charAt(0).toUpperCase() + word.slice(1)
+      return word
+    })
+    .join(" ")
+}
+
 function downloadMarkdownFile(file: AiPromptFile) {
   const blob = new Blob([file.content], { type: "text/markdown" })
   const url = URL.createObjectURL(blob)
@@ -414,6 +430,7 @@ export function AiPromptFileGrid({ files }: { files: AiPromptFile[] }) {
       {activeFile && (
         <ArtifactLightbox
           fileName={activeFile.fileName}
+          displayName={humanizeFileName(activeFile.fileName)}
           copied={copiedFileName === activeFile.fileName}
           onCopy={() => void handleCopy(activeFile)}
           onDownload={() => downloadMarkdownFile(activeFile)}

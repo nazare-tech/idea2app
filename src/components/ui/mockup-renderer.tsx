@@ -720,6 +720,7 @@ function getDesignRationaleText(description: string): string {
 
 export function MockupImageLightbox({
   fileName,
+  displayName,
   imageUrl,
   imageAlt,
   copied,
@@ -728,6 +729,8 @@ export function MockupImageLightbox({
   onClose,
 }: {
   fileName: string
+  /** Clean human name for the header (e.g. "Concept 1: Command Center") */
+  displayName?: string
   imageUrl: string
   imageAlt: string
   copied: boolean
@@ -738,6 +741,7 @@ export function MockupImageLightbox({
   return (
     <ArtifactLightbox
       fileName={fileName}
+      displayName={displayName}
       presentation="media"
       copied={copied}
       onCopy={onCopy}
@@ -958,6 +962,7 @@ function OpenRouterImageMockupViewer({
       {lightboxOption && (
         <MockupImageLightbox
           fileName={buildImageFileName(lightboxOption.label, lightboxOption.contentType)}
+          displayName={`${lightboxOption.conceptLabel}: ${lightboxOption.title}`}
           imageUrl={lightboxOption.imageUrl}
           imageAlt={`${lightboxOption.conceptLabel}: ${lightboxOption.title}`}
           copied={copiedLabel === lightboxOption.label}

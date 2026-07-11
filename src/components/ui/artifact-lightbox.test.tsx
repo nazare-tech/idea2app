@@ -23,6 +23,26 @@ test("ArtifactLightbox: keeps the default document presentation", () => {
   assert.match(markup, /aria-label="Close preview"/)
 })
 
+test("ArtifactLightbox: displayName replaces the file name in header and action labels", () => {
+  const markup = renderToStaticMarkup(
+    <ArtifactLightbox
+      fileName="first-prompt.md"
+      displayName="First prompt"
+      onClose={() => undefined}
+      onCopy={() => undefined}
+      onDownload={() => undefined}
+    >
+      <article>Document preview</article>
+    </ArtifactLightbox>,
+  )
+
+  assert.match(markup, /aria-label="First prompt preview"/)
+  assert.match(markup, /aria-label="Copy First prompt"/)
+  assert.match(markup, /aria-label="Download First prompt"/)
+  assert.match(markup, />First prompt</)
+  assert.doesNotMatch(markup, />first-prompt\.md</)
+})
+
 test("ArtifactLightbox: media presentation uses the available viewport without flex overflow", () => {
   const markup = renderToStaticMarkup(
     <ArtifactLightbox
