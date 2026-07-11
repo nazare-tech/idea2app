@@ -16,6 +16,7 @@ This folder defines the working agreements for turning research, meetings, and t
 - Use `research-format.md` for research summaries.
 - Use `meeting-notes-format.md` for meeting summaries.
 - Use `linear-issue-format.md` when extracting action items into Linear.
+- Use `product-analytics-event-taxonomy.md` when planning or reviewing a user-visible feature, entitlement, funnel, or trusted lifecycle transition.
 
 ## Intake Rule
 

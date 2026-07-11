@@ -71,6 +71,12 @@
 - When the intake wizard asks a new follow-up question, answer it using the closest matching policy in that file, then append the exact question and answer to the observed question log.
 - When the behavior under test depends on generation timing or current generated artifact structure, complete project creation with Idea 1.1 and use that fresh project as the primary QA artifact.
 
+## Product Analytics Taxonomy
+
+- For every new user-visible feature, user flow, entitlement, or trusted lifecycle transition, review `docs/operating-system/product-analytics-event-taxonomy.md` during planning and review.
+- Record which impression, reach, intentional action, successful outcome, or trusted server transition is needed—or explicitly record why no new event is warranted.
+- Keep the typed registry in `src/lib/product-analytics/contracts.ts` as executable authority. Never add generic autocapture, raw content, PII, URLs, DOM data, or arbitrary error strings to product events.
+
 ## Available Skills
 
 Skills extend Codex's capabilities with specialized workflows. Invoke them using slash commands (e.g., `/deploy`, `/code-review`).

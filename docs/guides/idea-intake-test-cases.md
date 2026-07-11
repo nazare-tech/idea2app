@@ -406,3 +406,20 @@ Evidence:
 - Live partial AI Prompts: `ui-evidence/2026-07-09-prelaunch-ticket-fixes/NAZ-118/fresh-project/ai-prompts-partial-live.png`
 - Fresh completed mockup lightbox: `ui-evidence/2026-07-09-prelaunch-ticket-fixes/NAZ-119/fresh-project/mockup-full-view-current.png`
 - Fresh current Product Plan order: `ui-evidence/2026-07-09-prelaunch-ticket-fixes/NAZ-120/fresh-project/product-plan-order-current.png`
+
+### 2026-07-10 Portable Project Rules Verification: Idea 1.1
+
+Captured through the real `/projects/new` UI while verifying the portable `project-context.md` rules and metrics handoff. The project was created as `Signal To Roadmap` (`291f20f5-ef38-460a-b04f-568d6f4b47dd`).
+
+| Idea variant | Question text | Answer used | Option ID when stable |
+| --- | --- | --- | --- |
+| 1.1 | Where will people use the first version? | Desktop website | `desktop-web` |
+| 1.1 | What size of company is your primary customer? | Mid-market (500–5k) |  |
+| 1.1 | Which data sources must be supported in the first version? | Support tickets; Chat transcripts; Sales call recordings; Internal docs |  |
+| 1.1 | How do you plan to monetize? | Tiered plans |  |
+| 1.1 | How technical are you (or your build team)? | Some coding |  |
+
+Evidence:
+- `ui-evidence/2026-07-10/portable-project-rules/project-context-preview-top-1144x933.png`
+- `ui-evidence/2026-07-10/portable-project-rules/project-context-metrics-rules-1144x933.png`
+- `ui-evidence/2026-07-10/portable-project-rules/project-context-working-rules-1144x933.png`

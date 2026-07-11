@@ -55,6 +55,12 @@ test("First Version Plan prompt keeps concision and compression guidance", () =>
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /Avoid fake precision/)
 })
 
+test("First Version Plan handoff keeps first-prompt and project rules aligned", () => {
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Read and follow project-context\.md/i)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /failing test or acceptance check/i)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /red, green, refactor/i)
+})
+
 test("First Version Plan prompt preserves the renderer heading contract", () => {
   const requiredHeadings = [
     "# MVP Plan: [Product Name]",

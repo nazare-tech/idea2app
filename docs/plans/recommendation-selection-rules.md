@@ -63,6 +63,12 @@ When the user says a different recommendation should have been chosen:
 - Reason: Older projects contain artifacts produced by older prompts, parsers, schemas, and renderer contracts. They can be valuable compatibility fixtures, but they cannot prove that the current pipeline produces the intended transient state or current artifact shape.
 - Example: NAZ-118 was initially evidenced with a nine-day-old Signal To Roadmap project. That screenshot proved terminal incomplete handling for legacy content, but it did not prove the current AI Prompts partial state while a newly created project was generating. Future loading-state work must use a fresh Idea 1.1 project as primary evidence and label older-project screenshots as supplemental regression evidence.
 
+### 2026-07-10: Preserve Structural Placeholders That Mirror Navigation During Loading Cleanups
+
+- Prefer: Keeping per-item placeholder containers (cells, cards, sections) that correspond one-to-one with visible navigation entries when simplifying loading UI; remove only redundant status chrome (extra status rows, chips, labels) layered on top of them.
+- Reason: Placeholder structure is part of the page's information architecture. When the side rail lists Concept 1/2/3 (or file names, or sections), the content pane must show a matching container per entry so the nav and the pane never disagree; collapsing them into one generic loader breaks that parity. "Remove the loading noise" feedback targets duplicate status indicators, not the structural skeletons.
+- Example: `docs/plans/workspace-streaming-nav-follow-and-loading-states-plan.md` (Q3): the correction was to keep the three Design Mockups concept placeholder cells (hosting the WebGL loader inside each pending cell) and remove only the per-option "Option A/B/C generating" status rows above them.
+
 Use this format for future entries:
 
 ```markdown
