@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState, type ComponentType } from "react"
 import { createClient } from "@/lib/supabase/client"
@@ -17,6 +16,7 @@ import { SettingsSectionCard } from "@/components/settings/settings-section-card
 import { useBillingPortal } from "@/hooks/use-billing-portal"
 import { StackedTabNav, type StackedTabNavItem } from "@/components/layout/stacked-tab-nav"
 import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
+import { UpgradeCtaLink } from "@/components/analytics/upgrade-cta-link"
 
 type MessageState = { type: "success" | "error"; text: string }
 type SettingsTab = "profile" | "settings" | "subscriptions"
@@ -485,11 +485,11 @@ export default function SettingsPage() {
                       No active subscription found. You currently appear to be on the free tier.
                     </p>
                     <div className="flex flex-wrap gap-3">
-                      <Link href="/billing" className="inline-flex">
+                      <UpgradeCtaLink surface="preferences" className="inline-flex">
                         <Button variant="outline" className="border-border-subtle text-text-primary">
                           View Plans
                         </Button>
-                      </Link>
+                      </UpgradeCtaLink>
                       <Button
                         onClick={async () => {
                           setSubscriptionMessage(null)

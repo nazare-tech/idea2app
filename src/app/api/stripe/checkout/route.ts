@@ -4,6 +4,13 @@ import { getStripeClient } from "@/lib/stripe"
 import type Stripe from "stripe"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 import { buildCheckoutSessionIdempotencyKey } from "@/lib/stripe/checkout-idempotency"
+import {
+  buildCheckoutAnalyticsMetadata,
+  parseCheckoutAnalyticsInput,
+} from "@/lib/stripe/checkout-analytics"
+import { recordServerProductEvent } from "@/lib/product-analytics/server"
+import { normalizeProductAnalyticsPlanKey } from "@/lib/product-analytics/storage"
+import { createServiceClient } from "@/lib/supabase/service"
 
 type CheckoutSupabaseClient = Awaited<ReturnType<typeof createClient>>
 
@@ -103,6 +110,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null)
     const priceId = typeof body?.priceId === "string" ? body.priceId.trim() : ""
     const planId = typeof body?.planId === "string" ? body.planId.trim() : ""
+    let analyticsContext = parseCheckoutAnalyticsInput(body)
     const checkoutLogContext = { ...userLogContext, priceId, planId }
     logInfo("StripeCheckout", "request_started", checkoutLogContext)
 
@@ -120,7 +128,7 @@ export async function POST(request: Request) {
 
     const { data: planPrice, error: planError } = await supabase
       .from("plan_prices")
-      .select("id, plan_id, stripe_price_id, is_active, checkout_enabled, plans(id, is_active, is_public, checkout_enabled)")
+      .select("id, plan_id, stripe_price_id, is_active, checkout_enabled, plans(id, name, is_active, is_public, checkout_enabled)")
       .eq("plan_id", planId)
       .eq("stripe_price_id", priceId)
       .eq("is_active", true)
@@ -150,6 +158,19 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    if (analyticsContext.projectId) {
+      const { data: attributedProject } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("id", analyticsContext.projectId)
+        .eq("user_id", user.id)
+        .maybeSingle()
+      if (!attributedProject) {
+        analyticsContext = { ...analyticsContext, projectId: undefined }
+      }
+    }
+    analyticsContext = await correlateCheckoutAttribution(user.id, analyticsContext)
 
     const { data: existingSubscription, error: subscriptionError } = await supabase
       .from("subscriptions")
@@ -262,6 +283,7 @@ export async function POST(request: Request) {
           supabase_user_id: user.id,
           plan_id: planPrice.plan_id,
           plan_price_id: planPrice.id,
+          ...buildCheckoutAnalyticsMetadata(analyticsContext),
         },
       },
       {
@@ -278,6 +300,23 @@ export async function POST(request: Request) {
       checkoutSessionId: session.id,
     })
 
+    const targetPlanKey = normalizeProductAnalyticsPlanKey(joinedPlan?.name ?? "")
+    await recordServerProductEvent({
+      eventName: "checkout_started",
+      idempotencyKey: `stripe:checkout:${session.id}:started`,
+      userId: user.id,
+      ...(analyticsContext.projectId ? { projectId: analyticsContext.projectId } : {}),
+      ...(analyticsContext.sessionId ? { sessionId: analyticsContext.sessionId } : {}),
+      properties: {
+        checkoutSessionId: session.id,
+        planKey: targetPlanKey,
+        sourceSurface: analyticsContext.sourceSurface,
+        ...(analyticsContext.experimentVariant
+          ? { experimentVariant: analyticsContext.experimentVariant }
+          : {}),
+      },
+    })
+
     return NextResponse.json({ url: session.url })
   } catch (error) {
     logError("StripeCheckout", "request_failed", error, requestLogContext)
@@ -286,4 +325,30 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+}
+
+async function correlateCheckoutAttribution(
+  userId: string,
+  context: ReturnType<typeof parseCheckoutAnalyticsInput>,
+): Promise<ReturnType<typeof parseCheckoutAnalyticsInput>> {
+  if (!context.attributionEventId) return { sourceSurface: "billing" }
+  const { data, error } = await createServiceClient()
+    .from("product_events")
+    .select("session_id, project_id, properties")
+    .eq("idempotency_key", `client:${userId}:${context.attributionEventId}`)
+    .eq("event_name", "upgrade_cta_clicked")
+    .gte("received_at", new Date(Date.now() - 30 * 60 * 1000).toISOString())
+    .maybeSingle()
+  if (error || !data || data.properties?.surface !== context.sourceSurface) {
+    return { sourceSurface: "billing" }
+  }
+  if (context.sessionId && data.session_id !== context.sessionId) return { sourceSurface: "billing" }
+  if (context.projectId && data.project_id !== context.projectId) return { sourceSurface: "billing" }
+  return parseCheckoutAnalyticsInput({
+    sourceSurface: data.properties.surface,
+    sessionId: data.session_id,
+    projectId: data.project_id,
+    experimentVariant: data.properties.experimentVariant,
+    attributionEventId: context.attributionEventId,
+  })
 }

@@ -11,6 +11,12 @@ import {
   type SubscriptionSyncSnapshot,
 } from "@/lib/stripe/subscription-sync"
 import { claimWebhookEvent, type WebhookClaim } from "@/lib/stripe/webhook-claim"
+import { recordServerProductEvent } from "@/lib/product-analytics/server"
+import { normalizeProductAnalyticsPlanKey } from "@/lib/product-analytics/storage"
+import { parseCheckoutAnalyticsMetadata } from "@/lib/stripe/checkout-analytics"
+import { readRequestTextWithLimit, RequestBodyTooLargeError } from "@/lib/read-request-body"
+
+const MAX_STRIPE_WEBHOOK_BYTES = 2 * 1024 * 1024
 
 function logWebhook(level: "info" | "warn" | "error", message: string, context: Record<string, unknown> = {}) {
   const event = message
@@ -176,8 +182,79 @@ async function buildSnapshotForSubscription(
   )
 }
 
+async function resolveAttributedProjectId(
+  supabase: AdminClient,
+  userId: string,
+  projectId: string | undefined,
+) {
+  if (!projectId) return undefined
+  const { data } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", userId)
+    .maybeSingle()
+  return typeof data?.id === "string" ? data.id : undefined
+}
+
+async function findLocalSubscriptionAnalyticsIdentity(
+  supabase: AdminClient,
+  subscriptionId: string,
+) {
+  if (!subscriptionId) return null
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("user_id, plans(name)")
+    .eq("stripe_subscription_id", subscriptionId)
+    .maybeSingle()
+  if (error) {
+    logWebhook("warn", "Failed to resolve subscription analytics identity", {
+      stripe_subscription_id: subscriptionId,
+      error: error.message,
+    })
+    return null
+  }
+  const joinedPlan = Array.isArray(data?.plans) ? data.plans[0] : data?.plans
+  return data?.user_id && joinedPlan?.name
+    ? { userId: data.user_id, planName: joinedPlan.name }
+    : null
+}
+
+async function findUserSubscriptionAnalyticsIdentity(
+  supabase: AdminClient,
+  userId: string,
+) {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("user_id, plans(name)")
+    .eq("user_id", userId)
+    .maybeSingle()
+  const joinedPlan = Array.isArray(data?.plans) ? data.plans[0] : data?.plans
+  return data?.user_id && joinedPlan?.name
+    ? { userId: data.user_id, planName: joinedPlan.name }
+    : null
+}
+
+function getCancellationReason(subscription: Record<string, unknown>) {
+  const details = subscription.cancellation_details
+  const reason = details && typeof details === "object" && "reason" in details
+    ? details.reason
+    : null
+  if (reason === "cancellation_requested") return "requested" as const
+  if (reason === "payment_failed") return "payment_failed" as const
+  return "unknown" as const
+}
+
 export async function POST(request: Request) {
-  const body = await request.text()
+  let body: string
+  try {
+    body = await readRequestTextWithLimit(request, MAX_STRIPE_WEBHOOK_BYTES)
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413 })
+    }
+    throw error
+  }
   const headersList = await headers()
   const signature = headersList.get("stripe-signature")
 
@@ -275,6 +352,26 @@ export async function POST(request: Request) {
         }
 
         await syncSubscriptionSnapshot(supabase, userId, snapshot)
+        const attribution = parseCheckoutAnalyticsMetadata(session.metadata)
+        const attributedProjectId = await resolveAttributedProjectId(
+          supabase,
+          userId,
+          attribution.projectId,
+        )
+        await recordServerProductEvent({
+          eventName: "checkout_completed",
+          idempotencyKey: `stripe:checkout:${session.id}:completed`,
+          userId,
+          ...(attributedProjectId ? { projectId: attributedProjectId } : {}),
+          ...(attribution.sessionId ? { sessionId: attribution.sessionId } : {}),
+          planName: snapshot.planName,
+          source: "stripe_webhook",
+          properties: {
+            checkoutSessionId: session.id,
+            subscriptionId: snapshot.stripeSubscriptionId,
+            planKey: normalizeProductAnalyticsPlanKey(snapshot.planName),
+          },
+        })
         break
       }
 
@@ -293,6 +390,24 @@ export async function POST(request: Request) {
         }
 
         await syncSubscriptionSnapshot(supabase, userId, snapshot)
+        const previousAttributes = event.data.previous_attributes as Record<string, unknown> | null
+        if (
+          snapshot.cancelAtPeriodEnd &&
+          previousAttributes?.cancel_at_period_end === false
+        ) {
+          await recordServerProductEvent({
+            eventName: "subscription_cancel_requested",
+            idempotencyKey: `stripe:${event.id}:subscription_cancel_requested`,
+            userId,
+            planName: snapshot.planName,
+            source: "stripe_webhook",
+            properties: {
+              subscriptionId: snapshot.stripeSubscriptionId,
+              planKey: normalizeProductAnalyticsPlanKey(snapshot.planName),
+              cancelAtPeriodEnd: true,
+            },
+          })
+        }
         break
       }
 
@@ -300,6 +415,20 @@ export async function POST(request: Request) {
         const subscription = event.data.object as unknown as Record<string, unknown>
         const subscriptionId = getStripeObjectId(subscription)
         const customerId = getStripeObjectId(subscription.customer)
+        let deletedPlanName: string | null = null
+        try {
+          deletedPlanName = (await buildSnapshotForSubscription(supabase, subscription)).planName
+        } catch (error) {
+          logWebhook("warn", "Deleted subscription plan could not be resolved for analytics", {
+            event_id: event.id,
+            stripe_subscription_id: subscriptionId,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
+        const analyticsIdentity = await findLocalSubscriptionAnalyticsIdentity(
+          supabase,
+          subscriptionId,
+        )
 
         if (subscriptionId) {
           const { data: canceledSubscription, error: cancelBySubscriptionError } = await supabase
@@ -310,7 +439,7 @@ export async function POST(request: Request) {
               updated_at: new Date().toISOString(),
             })
             .eq("stripe_subscription_id", subscriptionId)
-            .select("id")
+            .select("id, user_id")
             .maybeSingle()
 
           if (cancelBySubscriptionError) {
@@ -318,6 +447,25 @@ export async function POST(request: Request) {
           }
 
           if (canceledSubscription) {
+            const cancellationIdentity = analyticsIdentity ?? (
+              canceledSubscription.user_id
+                ? { userId: canceledSubscription.user_id, planName: deletedPlanName ?? "unknown" }
+                : null
+            )
+            if (cancellationIdentity) {
+              await recordServerProductEvent({
+                eventName: "subscription_canceled",
+                idempotencyKey: `stripe:${event.id}:subscription_canceled`,
+                userId: cancellationIdentity.userId,
+                planName: cancellationIdentity.planName,
+                source: "stripe_webhook",
+                properties: {
+                  subscriptionId,
+                  planKey: normalizeProductAnalyticsPlanKey(cancellationIdentity.planName),
+                  cancellationReason: getCancellationReason(subscription),
+                },
+              })
+            }
             break
           }
         }
@@ -341,6 +489,10 @@ export async function POST(request: Request) {
           break
         }
 
+        const fallbackAnalyticsIdentity = analyticsIdentity ??
+          await findUserSubscriptionAnalyticsIdentity(supabase, profile.id) ??
+          { userId: profile.id, planName: deletedPlanName ?? "unknown" }
+
         const { error: updateError } = await supabase
           .from("subscriptions")
           .update({
@@ -352,6 +504,20 @@ export async function POST(request: Request) {
 
         if (updateError) {
           throw new Error(`Failed to cancel subscription by profile: ${updateError.message}`)
+        }
+        if (fallbackAnalyticsIdentity) {
+          await recordServerProductEvent({
+            eventName: "subscription_canceled",
+            idempotencyKey: `stripe:${event.id}:subscription_canceled`,
+            userId: fallbackAnalyticsIdentity.userId,
+            planName: fallbackAnalyticsIdentity.planName,
+            source: "stripe_webhook",
+            properties: {
+              subscriptionId,
+              planKey: normalizeProductAnalyticsPlanKey(fallbackAnalyticsIdentity.planName),
+              cancellationReason: getCancellationReason(subscription),
+            },
+          })
         }
         break
       }

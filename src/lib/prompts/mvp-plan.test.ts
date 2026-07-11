@@ -18,6 +18,8 @@ test("MVP plan prompt keeps Lovable and v0 recommendations buildable in their na
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /v0[\s\S]{0,300}Supabase, Neon, or Upstash/i)
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /choose the build tool and stack as one compatible decision/i)
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /do not pair a browser builder with Cloudflare D1/i)
+  assert.doesNotMatch(MVP_PLAN_SYSTEM_PROMPT, /a D1 table[^\n]*over an admin dashboard/i)
+  assert.doesNotMatch(MVP_PLAN_SYSTEM_PROMPT, /manage data directly in a D1 table/i)
 })
 
 test("MVP plan prompt requires server-derived ownership checks for D1", () => {
@@ -26,3 +28,11 @@ test("MVP plan prompt requires server-derived ownership checks for D1", () => {
   assert.match(MVP_PLAN_SYSTEM_PROMPT, /cross-tenant denial/i)
 })
 
+test("MVP plan prompt keeps early analytics lightweight, private, and stack-relative", () => {
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /existing application database/i)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /Cloudflare[^\n]*D1/i)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /append-only/i)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /controlled event names/i)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /sensitive personal data/i)
+  assert.match(MVP_PLAN_SYSTEM_PROMPT, /dedicated analytics vendor[^\n]*justify/i)
+})

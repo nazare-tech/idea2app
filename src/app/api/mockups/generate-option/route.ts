@@ -15,6 +15,11 @@ import { upsertMockupOptionDraft } from "@/lib/mockups/option-drafts"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
+import { getUserPlanName } from "@/lib/project-allowance"
+import {
+  recordManualGenerationFailed,
+  recordManualGenerationStarted,
+} from "@/lib/product-analytics/generation"
 
 export const maxDuration = 800
 
@@ -31,6 +36,10 @@ function parseOptionLabel(value: unknown): OpenRouterMockupOptionLabel | null {
 
 export async function POST(request: Request) {
   const requestLogContext = buildRequestLogContext(request)
+  let analyticsRunId: string | undefined
+  let analyticsUserId: string | undefined
+  let analyticsProjectId: string | undefined
+  let analyticsPlanName: string | undefined
   try {
     const supabase = await createClient()
     const {
@@ -153,6 +162,19 @@ export async function POST(request: Request) {
       }
     }
 
+    if (runId && isUuid(runId)) {
+      analyticsRunId = runId
+      analyticsUserId = user.id
+      analyticsProjectId = projectId
+      analyticsPlanName = await getUserPlanName(supabase, user.id)
+      await recordManualGenerationStarted({
+        runId,
+        userId: user.id,
+        projectId,
+        planName: analyticsPlanName,
+      })
+    }
+
     logInfo("MockupOption", "generation_started", mockupLogContext)
     const result = await generateOpenRouterImageMockupOption({
       mvpPlan,
@@ -183,10 +205,26 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result)
   } catch (error) {
+    if (analyticsRunId && analyticsUserId && analyticsProjectId) {
+      await recordManualGenerationFailed({
+        runId: analyticsRunId,
+        userId: analyticsUserId,
+        projectId: analyticsProjectId,
+        documentType: "mockups",
+        failureKind: error instanceof Error && error.message.includes("timed out")
+          ? "timeout"
+          : "provider",
+        planName: analyticsPlanName,
+      })
+    }
     logError("MockupOption", "request_failed", error, requestLogContext)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate mockup option" },
       { status: 500 },
     )
   }
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }

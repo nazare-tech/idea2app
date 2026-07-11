@@ -20,6 +20,7 @@ import {
   getActiveDocumentIdentityForDocumentType,
 } from "@/lib/active-document-policy"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
+import { recordServerProductEvent } from "@/lib/product-analytics/server"
 
 export async function POST(request: Request) {
   const requestLogContext = buildRequestLogContext(request)
@@ -113,9 +114,28 @@ export async function POST(request: Request) {
       const nextItems = existingItems.map(
         (item) => resetItems.find((updated) => updated.id === item.id) ?? item,
       )
+      const resumedAt = new Date().toISOString()
+      const retryRunId = createGenerationRunId("retry")
+      const existingMetadata = isRecord(existingQueue.model_selections)
+        ? existingQueue.model_selections
+        : {}
+      const { error: retryMetadataError } = await queueSupabase
+        .from("generation_queues")
+        .update({
+          model_selections: {
+            ...existingMetadata,
+            analyticsRunId: retryRunId,
+            analyticsMode: "retry",
+          },
+        })
+        .eq("id", existingQueue.id)
+        .eq("user_id", user.id)
+      if (retryMetadataError) {
+        throw new Error(`Failed to persist retry analytics identity: ${retryMetadataError.message}`)
+      }
       await syncGenerationQueueJson(queueSupabase, existingQueue, nextItems, {
         status: "running",
-        started_at: new Date().toISOString(),
+        started_at: resumedAt,
         completed_at: null,
         error_info: null,
       })
@@ -123,6 +143,14 @@ export async function POST(request: Request) {
         ...queueLogContext,
         queueId: existingQueue.id,
         resetItemCount: resetItems.length,
+      })
+
+      await recordServerProductEvent({
+        eventName: "generation_started",
+        idempotencyKey: `generation:${retryRunId}:started`,
+        userId: user.id,
+        projectId,
+        properties: { runId: retryRunId, mode: "retry" },
       })
 
       const { data: resumedQueue } = await queueSupabase
@@ -215,9 +243,20 @@ export async function POST(request: Request) {
       itemCount: queueWithExistingSkipped.length,
       skippedExistingCount: queueWithExistingSkipped.filter((item) => item.status === "skipped").length,
     })
+    await recordServerProductEvent({
+      eventName: "generation_started",
+      idempotencyKey: `generation:${runId}:started`,
+      userId: user.id,
+      projectId,
+      properties: { runId, mode: "generate_all" },
+    })
     return NextResponse.json({ queue: data })
   } catch (error) {
     logError("GenerateAllStart", "request_failed", error, requestLogContext)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
+}
+
+function isRecord(value: unknown): value is Record<string, Json> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value))
 }

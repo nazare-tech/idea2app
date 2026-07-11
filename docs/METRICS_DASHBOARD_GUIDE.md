@@ -1,5 +1,7 @@
 # Metrics Dashboard Usage Guide
 
+> This guide covers operational API performance and cost metrics in `api_request_metrics`. Behavioral product analytics—workspace section reach, artifact engagement, activation, retention, churn risk, upgrade intent, and billing conversion—live separately in `public.product_events` and the private `analytics` views documented in `docs/operating-system/product-analytics-event-taxonomy.md`.
+
 ## Overview
 
 This guide explains how to view usage metrics for your MakerCompass application using Supabase SQL Editor. All metrics are automatically tracked and aggregated daily, weekly, and monthly via pg_cron jobs.

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -23,6 +23,12 @@ import {
   parseStripeRedirectResponse,
 } from "@/lib/stripe/billing-flow"
 import { useBillingPortal } from "@/hooks/use-billing-portal"
+import {
+  consumeUpgradeAttribution,
+  flushProductEvents,
+  getProductAnalyticsTabSessionId,
+  trackClientProductEvent,
+} from "@/lib/product-analytics/client"
 
 interface BillingPlansClientProps {
   plans: BillingPlan[]
@@ -41,6 +47,15 @@ export function BillingPlansClient({
   const checkoutInFlightRef = useRef(false)
   const { loading: portalLoading, openBillingPortal } = useBillingPortal()
 
+  useEffect(() => {
+    const hasCheckoutOption = !subscription && plans.some((plan) =>
+      plan.plan_prices.some((price) => isCheckoutReadyPlanPrice(price)),
+    )
+    if (hasCheckoutOption) {
+      trackClientProductEvent("upgrade_cta_viewed", { surface: "billing" })
+    }
+  }, [plans, subscription])
+
   const handleCheckout = async (planId: string, priceId: string) => {
     if (checkoutInFlightRef.current) return
 
@@ -49,10 +64,29 @@ export function BillingPlansClient({
     setCheckoutLoading(planId)
 
     try {
+      const billingClickEventId = trackClientProductEvent("upgrade_cta_clicked", { surface: "billing" })
+      const rememberedAttribution = consumeUpgradeAttribution()
+      const attribution = rememberedAttribution.attributionEventId
+        ? rememberedAttribution
+        : {
+            sourceSurface: "billing" as const,
+            attributionEventId: billingClickEventId,
+            projectId: undefined,
+          }
+      await flushProductEvents()
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId, priceId }),
+        body: JSON.stringify({
+          planId,
+          priceId,
+          sourceSurface: attribution.sourceSurface,
+          ...(attribution.projectId ? { projectId: attribution.projectId } : {}),
+          ...(attribution.attributionEventId
+            ? { attributionEventId: attribution.attributionEventId }
+            : {}),
+          analyticsSessionId: getProductAnalyticsTabSessionId(),
+        }),
       })
 
       const data = await response.json().catch(() => null)

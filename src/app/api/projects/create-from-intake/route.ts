@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
+import { recordServerProductEvent } from "@/lib/product-analytics/server"
 
 const MAX_ANSWER_LENGTH = 1000
 const MAX_OTHER_LENGTH = 300
@@ -505,6 +506,25 @@ export async function POST(request: Request) {
     runId: generationRunId,
     itemCount: onboardingQueue.length,
   })
+
+  await Promise.all([
+    recordServerProductEvent({
+      eventName: "project_created",
+      idempotencyKey: `project:${project.id}:created`,
+      userId: user.id,
+      projectId: project.id,
+      planName: lockedAllowance.planName,
+      properties: { creationSource: "intake" },
+    }),
+    recordServerProductEvent({
+      eventName: "generation_started",
+      idempotencyKey: `generation:${generationRunId}:started`,
+      userId: user.id,
+      projectId: project.id,
+      planName: lockedAllowance.planName,
+      properties: { runId: generationRunId, mode: "onboarding" },
+    }),
+  ])
 
   if (pendingToken) {
     const { error: claimError } = await supabase

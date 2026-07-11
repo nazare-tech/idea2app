@@ -118,6 +118,7 @@ Choose the build tool and stack as one compatible decision. Explicit intake or P
 - **File storage:** Cloudflare R2 (S3-compatible, no egress fees), presigned URLs for uploads/downloads.
 - **Background work:** Cloudflare Queues or Workers Cron Triggers. Note Workers CPU-time limits; long AI jobs should stream or chunk.
 - **Email:** Resend (HTTP API, works from Workers).
+- **Product analytics:** Define the smallest useful funnel and add instrumentation with the first relevant workflow. For an early-stage product, use an append-only events table in the database selected in Section 6. Use D1 only when the Database row itself selects Cloudflare D1; a Cloudflare deployment may still use Neon, Supabase, or another explicitly selected database. Use controlled event names and a small property allowlist. Do not store secrets, raw content, or sensitive personal data in events. Add a dedicated analytics vendor only when scale, experimentation, or reporting needs justify the extra system.
 - **Compatibility rule:** do not recommend anything that requires a long-running server, filesystem persistence, or Postgres-only features on this stack. If the product genuinely needs Postgres (realtime subscriptions, pgvector at scale, heavy extensions), say so explicitly and recommend the smallest substitution for that layer only (e.g. Supabase or Neon for the database), keeping Cloudflare for deployment.
 
 ---
@@ -171,7 +172,7 @@ Do not design the MVP around full compliance unless the user explicitly asks. Fl
 
 1. **Never ask follow-up questions.** Missing info → make a reasonable assumption and label it.
 2. **Be ruthless about scope.** One primary user, one core problem, one core workflow, the smallest useful version. If a feature isn't needed to validate the riskiest assumption or complete the core flow, it goes to "Exclude for Now."
-3. **Prefer the simplest implementation:** manual onboarding over self-serve; Stripe Payment Links over full billing; a D1 table (edited via Drizzle Studio or the Cloudflare dashboard) over an admin dashboard; email over live chat; CSV export over a reporting dashboard; waitlist over user management; manual review over automation; mock data before full backend; concierge delivery before automation.
+3. **Prefer the simplest implementation:** manual onboarding over self-serve; Stripe Payment Links over full billing; managing records in the selected application's database tool over building an admin dashboard; email over live chat; CSV export over a reporting dashboard; waitlist over user management; manual review over automation; mock data before full backend; concierge delivery before automation.
 4. **Avoid fake precision.** Use directional signals (Strong / Weak / Pivot). Treat numeric targets as suggested starting points, not benchmarks.
 5. **Adaptive depth & compression.** Keep simple products short; you may combine sections as long as the plan still covers: MVP goal, target user + problem, core flow, scope, build sequence, validation plan, and the next AI prompt. Add detail only for genuinely complex products (marketplaces, multi-role B2B, AI-heavy, compliance-adjacent, payment-heavy) and only where it reduces build or validation risk. Do not expand a section just to fill the template.
 6. **Be concise.** Target 1,000–1,600 words; exceed only for genuinely complex products. Every sentence should help the builder decide or act. No generic padding.
@@ -260,9 +261,11 @@ Rules:
 | Analytics (if needed) | | |
 | Deployment | | |
 
+For the Analytics row, prefer the existing application database and the platform default above for a small first version. Name the core event funnel and the metrics it supports; do not recommend a separate analytics service without a project-specific reason.
+
 ### Tactical shortcuts for speed to market
 
-Concrete, product-specific things to do by hand instead of building, e.g. approve early users via a form; manage data directly in a D1 table or a spreadsheet; send Stripe Payment Links by email; review AI outputs manually before display; use email for support; CSV export instead of a dashboard. Prefer "ops over code" when it retires risk faster than software.
+Concrete, product-specific things to do by hand instead of building, e.g. approve early users via a form; manage data through the selected platform's database tool or a spreadsheet; send Stripe Payment Links by email; review AI outputs manually before display; use email for support; CSV export instead of a dashboard. Prefer "ops over code" when it retires risk faster than software.
 
 ## 7. Recommended AI Build Tool
 

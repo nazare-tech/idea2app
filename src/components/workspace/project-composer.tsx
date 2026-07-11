@@ -5,7 +5,6 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import Link from "next/link"
 import {
   AlignLeft,
   ArrowUp,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { cn } from "@/lib/utils"
+import { UpgradeCtaLink } from "@/components/analytics/upgrade-cta-link"
 
 interface ComposerMessage {
   id: number
@@ -343,12 +343,13 @@ export function ProjectComposer({
           <p className="m-0 min-w-0 flex-1 text-sm leading-snug text-muted-foreground">
             Chat with your project documents on a paid plan.
           </p>
-          <Link
-            href="/billing"
+          <UpgradeCtaLink
+            surface="project_composer"
+            projectId={projectId}
             className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Upgrade
-          </Link>
+          </UpgradeCtaLink>
         </div>
       </div>
     )

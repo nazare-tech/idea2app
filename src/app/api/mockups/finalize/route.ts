@@ -22,6 +22,11 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
+import { getUserPlanName } from "@/lib/project-allowance"
+import {
+  recordManualGenerationCompleted,
+  recordManualGenerationFailed,
+} from "@/lib/product-analytics/generation"
 
 export const maxDuration = 800
 
@@ -87,6 +92,11 @@ function normalizeScreens(value: unknown): OpenRouterImageMockupScreen[] {
 
 export async function POST(request: Request) {
   const requestLogContext = buildRequestLogContext(request)
+  let analyticsRunId: string | undefined
+  let analyticsUserId: string | undefined
+  let analyticsProjectId: string | undefined
+  let analyticsPlanName: string | undefined
+  let analyticsStartedAt = Date.now()
   try {
     const supabase = await createClient()
     const {
@@ -161,6 +171,35 @@ export async function POST(request: Request) {
     if (!project) {
       logWarn("MockupFinalize", "project_not_found", mockupLogContext)
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
+    }
+
+    if (isUuid(runId)) {
+      analyticsRunId = runId
+      analyticsUserId = user.id
+      analyticsProjectId = projectId
+      analyticsPlanName = await getUserPlanName(supabase, user.id)
+      const { data: generationStart } = await createServiceClient()
+        .from("product_events")
+        .select("received_at")
+        .eq("idempotency_key", `generation:${runId}:started`)
+        .eq("user_id", user.id)
+        .eq("project_id", projectId)
+        .eq("event_name", "generation_started")
+        .maybeSingle()
+      const { data: firstDraft } = await supabase
+        .from("mockup_option_drafts")
+        .select("created_at")
+        .eq("project_id", projectId)
+        .eq("user_id", user.id)
+        .eq("run_id", runId)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      const trustedStartedAt = generationStart?.received_at ?? firstDraft?.created_at
+      const parsedStartedAt = trustedStartedAt
+        ? Date.parse(trustedStartedAt)
+        : Number.NaN
+      if (Number.isFinite(parsedStartedAt)) analyticsStartedAt = parsedStartedAt
     }
 
     const documentIdentity = getActiveDocumentIdentity("mockups")
@@ -254,6 +293,17 @@ export async function POST(request: Request) {
       })
     }
 
+    if (analyticsRunId) {
+      await recordManualGenerationCompleted({
+        runId: analyticsRunId,
+        userId: user.id,
+        projectId,
+        documentType: "mockups",
+        startedAt: analyticsStartedAt,
+        planName: analyticsPlanName,
+      })
+    }
+
     return NextResponse.json({
       id: data.id,
       content: JSON.stringify(content),
@@ -261,10 +311,24 @@ export async function POST(request: Request) {
       source: OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
     })
   } catch (error) {
+    if (analyticsRunId && analyticsUserId && analyticsProjectId) {
+      await recordManualGenerationFailed({
+        runId: analyticsRunId,
+        userId: analyticsUserId,
+        projectId: analyticsProjectId,
+        documentType: "mockups",
+        failureKind: "storage",
+        planName: analyticsPlanName,
+      })
+    }
     logError("MockupFinalize", "request_failed", error, requestLogContext)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to save mockups" },
       { status: 500 },
     )
   }
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }

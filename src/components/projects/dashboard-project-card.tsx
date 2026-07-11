@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { MouseEvent } from "react"
+import { UpgradeCtaLink } from "@/components/analytics/upgrade-cta-link"
 
 interface DashboardProjectCardProps {
   id: string
@@ -223,12 +224,13 @@ export function DashboardProjectCard({
               >
                 Not now
               </button>
-              <Link
-                href="/billing"
+              <UpgradeCtaLink
+                surface="project_delete"
+                projectId={id}
                 className="inline-flex h-11 items-center rounded-md bg-primary px-5 text-[13px] ui-font-semibold text-primary-foreground"
               >
                 Upgrade plan
-              </Link>
+              </UpgradeCtaLink>
             </div>
           </div>
         </div>
