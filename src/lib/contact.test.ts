@@ -38,6 +38,14 @@ describe("validateContactRequest", () => {
     assert.match(validateContactRequest({ ...validInput, email: "a@b" }) ?? "", /valid email/i)
   })
 
+  it("rejects every email the DB constraint rejects (no retry-proof 500s)", () => {
+    // contact_requests_email_format: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+    assert.match(validateContactRequest({ ...validInput, email: "john smith@gmail.com" }) ?? "", /valid email/i)
+    assert.match(validateContactRequest({ ...validInput, email: "a@b@c.com" }) ?? "", /valid email/i)
+    assert.match(validateContactRequest({ ...validInput, email: "a@b c.com" }) ?? "", /valid email/i)
+    assert.equal(validateContactRequest({ ...validInput, email: "ada+notes@sub.example.co" }), null)
+  })
+
   it("rejects an email over 254 characters", () => {
     const email = `${"a".repeat(250)}@example.com`
     assert.match(validateContactRequest({ ...validInput, email }) ?? "", /too long/i)

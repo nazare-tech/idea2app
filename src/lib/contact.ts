@@ -33,7 +33,9 @@ export function validateContactRequest({ name, email, message }: ContactRequestI
     return "Email is required."
   }
   const trimmedEmail = email.trim()
-  if (!trimmedEmail.includes("@") || !/\.[a-z]{2,}$/i.test(trimmedEmail)) {
+  // Mirrors contact_requests_email_format so nothing passes validation but
+  // fails the DB constraint (which would surface as a retry-proof 500).
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmedEmail)) {
     return "Please enter a valid email address."
   }
   if (trimmedEmail.length > 254) {

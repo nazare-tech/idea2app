@@ -110,7 +110,7 @@ export function ContactForm() {
         />
       </div>
 
-      {status === "error" && errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+      {status === "error" && errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
 
       <div>
         <Button

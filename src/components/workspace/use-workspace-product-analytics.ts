@@ -34,12 +34,33 @@ export function useWorkspaceProductAnalytics({
   const activeSinceRef = useRef<number | null>(null)
   const activeDurationRef = useRef(0)
   const unmountTimerRef = useRef<number | null>(null)
+  const pendingSessionEndRef = useRef<(() => void) | null>(null)
+  const trackedProjectIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (unmountTimerRef.current !== null) {
+      // The deferred session-end scheduled by the previous cleanup has not
+      // fired yet. Same project (StrictMode re-run): cancel it, the session
+      // continues. Different project (soft navigation): flush it now — the
+      // macrotask would otherwise be lost — and start a fresh session so the
+      // old project's session id and reach state don't leak into this one.
       window.clearTimeout(unmountTimerRef.current)
       unmountTimerRef.current = null
+      if (trackedProjectIdRef.current !== null && trackedProjectIdRef.current !== projectId) {
+        pendingSessionEndRef.current?.()
+        sessionIdRef.current = createProductAnalyticsSessionId()
+        entrySectionRef.current = getInitialSectionId()
+        reachedRef.current = new Set()
+        impressedMockupsRef.current = new Set()
+        lastSectionRef.current = getInitialSectionId()
+        deepestSectionRef.current = getInitialSectionId()
+        pendingNavTargetRef.current = null
+        sessionEndedRef.current = false
+        activeDurationRef.current = 0
+      }
     }
+    pendingSessionEndRef.current = null
+    trackedProjectIdRef.current = projectId
     activeSinceRef.current = document.visibilityState === "visible" ? Date.now() : null
     trackClientProductEvent("workspace_session_started", {
       entrySectionId: entrySectionRef.current,
@@ -77,6 +98,7 @@ export function useWorkspaceProductAnalytics({
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility)
       window.removeEventListener("pagehide", handlePageHide)
+      pendingSessionEndRef.current = handlePageHide
       unmountTimerRef.current = window.setTimeout(handlePageHide, 0)
     }
   }, [projectId])

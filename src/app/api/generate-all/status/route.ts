@@ -12,6 +12,7 @@ import {
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
+import { isPlanningTextDocType, type PlanningTextDocType } from "@/lib/document-definitions"
 
 export async function GET(request: Request) {
   const requestLogContext = buildRequestLogContext(request)
@@ -99,14 +100,14 @@ export async function GET(request: Request) {
     // so the large text never syncs into generation_queues.queue.
     const streamingItem = items.find(
       (item) =>
-        ["competitive", "prd", "mvp"].includes(item.doc_type) &&
+        isPlanningTextDocType(item.doc_type) &&
         item.status === "generating" &&
         typeof item.partial_content === "string" &&
         item.partial_content.length > 0,
     )
     const streamingPreview = streamingItem
       ? {
-          docType: streamingItem.doc_type as "competitive" | "prd" | "mvp",
+          docType: streamingItem.doc_type as PlanningTextDocType,
           content: streamingItem.partial_content as string,
         }
       : null

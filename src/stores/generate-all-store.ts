@@ -4,7 +4,9 @@ import { createStore, useStore, type StoreApi } from "zustand"
 import {
   GENERATE_ALL_QUEUE_ORDER,
   GENERATE_ALL_DEFAULT_MODELS,
+  isPlanningTextDocType,
   type DocumentType,
+  type PlanningTextDocType,
 } from "@/lib/document-definitions"
 import {
   estimateGenerateAllCost,
@@ -58,9 +60,7 @@ export interface GenerateDocumentFn {
 // ---------------------------------------------------------------------------
 
 /** Text planning documents that stream partial markdown during generation. */
-export type StreamingPreviewDocType = "competitive" | "prd" | "mvp"
-
-const STREAMING_PREVIEW_DOC_TYPES: StreamingPreviewDocType[] = ["competitive", "prd", "mvp"]
+export type StreamingPreviewDocType = PlanningTextDocType
 
 interface GenerateAllState {
   status: GenerateAllStatus
@@ -80,18 +80,13 @@ interface GenerateAllState {
   streamingPreviews: Partial<Record<StreamingPreviewDocType, string>>
 }
 
-function isStreamingPreviewDocType(value: unknown): value is StreamingPreviewDocType {
-  return typeof value === "string" &&
-    (STREAMING_PREVIEW_DOC_TYPES as string[]).includes(value)
-}
-
 function mergeStreamingPreview(
   previous: Partial<Record<StreamingPreviewDocType, string>>,
   incoming: { docType?: unknown; content?: unknown } | null | undefined,
 ): Partial<Record<StreamingPreviewDocType, string>> {
   if (
     !incoming ||
-    !isStreamingPreviewDocType(incoming.docType) ||
+    !isPlanningTextDocType(incoming.docType) ||
     typeof incoming.content !== "string" ||
     incoming.content.length === 0
   ) {
@@ -439,6 +434,9 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
         error: null,
         startedAt: new Date(),
         status: "running",
+        // A previous failed run's partial would otherwise display as this
+        // run's live stream (merges keep the longest content per docType).
+        streamingPreviews: {},
       }))
 
       localStorage.setItem(LOCAL_STORAGE_KEY(projectId), "true")

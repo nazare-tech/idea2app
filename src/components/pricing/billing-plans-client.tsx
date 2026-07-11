@@ -27,6 +27,7 @@ import {
   consumeUpgradeAttribution,
   flushProductEvents,
   getProductAnalyticsTabSessionId,
+  getUpgradeAttribution,
   trackClientProductEvent,
 } from "@/lib/product-analytics/client"
 
@@ -65,7 +66,9 @@ export function BillingPlansClient({
 
     try {
       const billingClickEventId = trackClientProductEvent("upgrade_cta_clicked", { surface: "billing" })
-      const rememberedAttribution = consumeUpgradeAttribution()
+      // Read without consuming: a failed request must not lose the CTA
+      // attribution for the user's retry click.
+      const rememberedAttribution = getUpgradeAttribution()
       const attribution = rememberedAttribution.attributionEventId
         ? rememberedAttribution
         : {
@@ -97,6 +100,7 @@ export function BillingPlansClient({
       )
 
       if (result.ok) {
+        consumeUpgradeAttribution()
         window.location.assign(result.url)
         return
       }

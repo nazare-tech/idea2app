@@ -22,3 +22,19 @@ test("checkout idempotency key changes with the selected price", () => {
     buildCheckoutSessionIdempotencyKey({ ...input, stripePriceId: "price_2" })
   )
 })
+
+test("checkout idempotency key follows the analytics metadata fingerprint", () => {
+  const first = { ...input, analyticsFingerprint: '{"analytics_attribution_event_id":"click-1"}' }
+  const second = { ...input, analyticsFingerprint: '{"analytics_attribution_event_id":"click-2"}' }
+  // A new click (fresh attribution) must get a new key: Stripe rejects a
+  // reused key when any request param differs.
+  assert.notEqual(
+    buildCheckoutSessionIdempotencyKey(first),
+    buildCheckoutSessionIdempotencyKey(second)
+  )
+  // Identical retries of the same attempt still dedupe.
+  assert.equal(
+    buildCheckoutSessionIdempotencyKey(first),
+    buildCheckoutSessionIdempotencyKey({ ...first })
+  )
+})

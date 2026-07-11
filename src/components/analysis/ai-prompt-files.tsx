@@ -181,7 +181,7 @@ function buildProductMetricsSection(
       ].join("\n")
 
   const eventStorageRule = usesCloudflareD1
-    ? "For this Cloudflare stack, store early append-only product events in the existing application database—Cloudflare D1 for this stack. Add a dedicated analytics vendor only when scale, experimentation, or reporting needs justify the extra system."
+    ? "For this Cloudflare stack, store early append-only product events in the existing application database (Cloudflare D1). Add a dedicated analytics vendor only when scale, experimentation, or reporting needs justify the extra system."
     : "For an early-stage product, store append-only events in the existing application database named in the build approach. Do not introduce another database or analytics vendor until scale, experimentation, or reporting needs justify the extra system."
   const instrumentationRules = [
     "Add measurement when the first relevant workflow is built, not after launch. Track the smallest useful funnel: entry, meaningful action, successful outcome, and failure.",

@@ -9,7 +9,11 @@
 import { NextResponse } from "next/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { GENERATE_ALL_DEFAULT_MODELS } from "@/lib/document-definitions"
+import {
+  GENERATE_ALL_DEFAULT_MODELS,
+  PLANNING_TEXT_DOC_TYPES,
+  isPlanningTextDocType,
+} from "@/lib/document-definitions"
 import { generateProjectDocument } from "@/lib/document-generation-service"
 import {
   consumeGenerationQueueItemCredits,
@@ -53,19 +57,22 @@ import {
 } from "@/lib/generation-model-policy"
 import { getUserPlanName } from "@/lib/project-allowance"
 import { recordServerProductEvent } from "@/lib/product-analytics/server"
+import {
+  boundGenerationDurationMs,
+  buildGenerationStepIdempotencyKey,
+} from "@/lib/product-analytics/generation"
 import type { ProductEventPropertyMap } from "@/lib/product-analytics/contracts"
 
 export const maxDuration = 540
 
 type SB = SupabaseClient<Database>
 
-const INCLUDED_PROJECT_OUTPUT_DOC_TYPES = new Set(["competitive", "prd", "mvp", "mockups"])
+const INCLUDED_PROJECT_OUTPUT_DOC_TYPES = new Set<string>([...PLANNING_TEXT_DOC_TYPES, "mockups"])
 
 // Text documents that follow plan-tier model routing; mockups keep their
 // dedicated image model.
-const TIER_ROUTED_TEXT_DOC_TYPES = new Set(["competitive", "prd", "mvp"])
-const ANALYTICS_DOCUMENT_TYPES = new Set(["competitive", "prd", "mvp", "mockups"])
-const MAX_GENERATION_ANALYTICS_DURATION_MS = 24 * 60 * 60 * 1000
+const TIER_ROUTED_TEXT_DOC_TYPES = new Set<string>(PLANNING_TEXT_DOC_TYPES)
+const ANALYTICS_DOCUMENT_TYPES = new Set<string>([...PLANNING_TEXT_DOC_TYPES, "mockups"])
 
 type GenerationAnalyticsMode = ProductEventPropertyMap["generation_started"]["mode"]
 type GenerationAnalyticsDocumentType = ProductEventPropertyMap["generation_step_completed"]["documentType"]
@@ -380,9 +387,13 @@ async function executeQueueItem({
     maxAttempts: claimed.max_attempts,
   })
 
+  // Bundling compares against the run id minted at enqueue: onboarding
+  // retries overwrite model_selections.analyticsRunId (see getQueueRunId)
+  // while items keep their original run_id, and a mismatch here would
+  // silently collapse maxAttempts to 1 for every retried item.
   const isBundledItem =
     isOnboardingQueue &&
-    claimed.run_id === getQueueRunId(queueRow) &&
+    claimed.run_id === getRunMetadata(queueRow.model_selections).runId &&
     claimed.source === "onboarding"
 
   if (claimed.doc_type === "launch") {
@@ -490,9 +501,8 @@ async function executeQueueItem({
 
   // Persist partial streamed markdown for the onboarding live preview.
   // Isolated failure domain: writer errors disable partial writes only.
-  const STREAMING_PREVIEW_DOC_TYPES = ["competitive", "prd", "mvp"]
   const partialWriter =
-    STREAMING_PREVIEW_DOC_TYPES.includes(claimed.doc_type)
+    isPlanningTextDocType(claimed.doc_type)
       ? createGenerationQueueItemPartialContentWriter(queueSupabase, claimed, {
           onError: (error) => {
             logWarn("GenerateAll", "item_partial_content_write_failed", itemLogContext, error)
@@ -701,7 +711,7 @@ function getBoundedDurationMs(start: string | null, end: string | null) {
   const startMs = start ? Date.parse(start) : Number.NaN
   const endMs = end ? Date.parse(end) : Number.NaN
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return 0
-  return Math.min(MAX_GENERATION_ANALYTICS_DURATION_MS, Math.max(0, Math.round(endMs - startMs)))
+  return boundGenerationDurationMs(endMs - startMs)
 }
 
 async function recordCompletedGenerationSteps({
@@ -739,7 +749,7 @@ async function recordCompletedGenerationSteps({
   await Promise.all(completedItems.map((item) =>
     recordServerProductEvent({
       eventName: "generation_step_completed",
-      idempotencyKey: `generation:${runId}:step:${item.id}`,
+      idempotencyKey: buildGenerationStepIdempotencyKey(runId, item.doc_type),
       userId,
       projectId,
       planName,

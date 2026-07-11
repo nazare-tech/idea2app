@@ -79,3 +79,25 @@ test("committed markdown keeps complete sections verbatim and sanitizes the tail
   assert.equal(result.activeHeading, "Target User and Problem")
   assert.deepEqual(result.headings, ["MVP Summary", "Target User and Problem"])
 })
+
+test("a trailing partially-streamed heading line is withheld until its newline arrives", () => {
+  const content = [
+    "## MVP Summary",
+    "",
+    "A complete summary.",
+    "",
+    "## Core User Fl",
+  ].join("\n")
+
+  const streaming = buildStreamingPlanningMarkdown(content, { finished: false })
+  assert.deepEqual(streaming.headings, ["MVP Summary"])
+  assert.doesNotMatch(streaming.markdown, /Core User Fl/)
+
+  // The newline after the heading commits it.
+  const committed = buildStreamingPlanningMarkdown(`${content}\n`, { finished: false })
+  assert.deepEqual(committed.headings, ["MVP Summary", "Core User Fl"])
+
+  // A finished document keeps its final heading even without a trailing newline.
+  const finished = buildStreamingPlanningMarkdown(content, { finished: true })
+  assert.deepEqual(finished.headings, ["MVP Summary", "Core User Fl"])
+})

@@ -46,8 +46,10 @@ test("finished stream marks the final section complete with no active section", 
 })
 
 test("alias headings resolve to canonical section names", () => {
+  // The second heading carries a trailing newline: a bare "## Next" tail
+  // would be withheld as potentially mid-stream.
   const result = parseStreamingCompetitiveAnalysis(
-    "## MVP Wedge Recommendation\nFocus tightly.\n\n## Next",
+    "## MVP Wedge Recommendation\nFocus tightly.\n\n## Next\n",
     { finished: false }
   )
 
@@ -103,4 +105,23 @@ test("safe tail keeps a completed bold label line", () => {
 
 test("safe tail of empty text is empty", () => {
   assert.deepEqual(getSafeStreamTail(""), { visibleText: "", buffering: null })
+})
+
+test("a trailing partially-streamed heading line is withheld until its newline arrives", () => {
+  const content = "## Executive Summary\n\nDone prose.\n\n## Feature Mat"
+
+  const streaming = parseStreamingCompetitiveAnalysis(content, { finished: false })
+  assert.deepEqual(streaming.sections.map((section) => section.heading), ["Executive Summary"])
+
+  const committed = parseStreamingCompetitiveAnalysis(`${content}\n`, { finished: false })
+  assert.deepEqual(
+    committed.sections.map((section) => section.heading),
+    ["Executive Summary", "Feature Mat"],
+  )
+
+  const finished = parseStreamingCompetitiveAnalysis(content, { finished: true })
+  assert.deepEqual(
+    finished.sections.map((section) => section.heading),
+    ["Executive Summary", "Feature Mat"],
+  )
 })

@@ -44,6 +44,11 @@ export function parseStreamingPlanningDocument(
   const sections: StreamingPlanningSection[] = []
   const preambleLines: string[] = []
   const lines = content.split("\n")
+  // A trailing heading with no newline after it may still be mid-stream
+  // ("## Core User Fl"); withhold it until the newline commits it.
+  if (!finished && lines.length > 0 && H2_PATTERN.test(lines[lines.length - 1])) {
+    lines.pop()
+  }
   let current: { heading: string; body: string[] } | null = null
 
   for (const line of lines) {

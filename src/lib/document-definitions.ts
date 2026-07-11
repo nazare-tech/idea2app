@@ -133,6 +133,20 @@ export const GENERATE_ALL_QUEUE_ORDER: DocumentType[] = [
   "mockups",
 ]
 
+/**
+ * Text planning documents in the Generate All pipeline. These stream partial
+ * markdown while generating and follow plan-tier model routing; mockups keep
+ * their dedicated image model and never stream text. Single source for the
+ * store, the status route, and the execute route.
+ */
+export const PLANNING_TEXT_DOC_TYPES = ["competitive", "prd", "mvp"] as const
+export type PlanningTextDocType = (typeof PLANNING_TEXT_DOC_TYPES)[number]
+
+export function isPlanningTextDocType(value: unknown): value is PlanningTextDocType {
+  return typeof value === "string" &&
+    (PLANNING_TEXT_DOC_TYPES as readonly string[]).includes(value)
+}
+
 /** Default AI models for each Generate All document type */
 export const GENERATE_ALL_DEFAULT_MODELS: Record<string, string> = {
   competitive: "google/gemini-3.1-pro-preview",

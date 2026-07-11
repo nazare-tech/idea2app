@@ -265,7 +265,10 @@ export async function POST(request: Request) {
       })
     }
 
-    // Create checkout session
+    // Create checkout session. The analytics metadata is part of the keyed
+    // request params, so it must feed the idempotency key or a second attempt
+    // with fresh attribution would collide (Stripe idempotency_error).
+    const analyticsMetadata = buildCheckoutAnalyticsMetadata(analyticsContext)
     const session = await stripe.checkout.sessions.create(
       {
         customer: customerId,
@@ -283,7 +286,7 @@ export async function POST(request: Request) {
           supabase_user_id: user.id,
           plan_id: planPrice.plan_id,
           plan_price_id: planPrice.id,
-          ...buildCheckoutAnalyticsMetadata(analyticsContext),
+          ...analyticsMetadata,
         },
       },
       {
@@ -291,6 +294,7 @@ export async function POST(request: Request) {
           userId: user.id,
           planPriceId: planPrice.id,
           stripePriceId: planPrice.stripe_price_id,
+          analyticsFingerprint: JSON.stringify(analyticsMetadata),
         }),
       }
     )
