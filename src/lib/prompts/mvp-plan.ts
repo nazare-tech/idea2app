@@ -91,15 +91,34 @@ Apply these defaults unless the PRD or intake specifies a better stack or constr
 
 | Type | Default Stack | Auth | Payments | Validation Target | Key Risk |
 |---|---|---|---|---|---|
-| B2B SaaS | Next.js, Supabase, Stripe, Resend | Invite-only / workspace | Stripe Payment Links first | 3–5 pilot or paying customers | Will a decision-maker pay before it's polished? |
-| B2C Consumer | Next.js or Vite, Supabase/Firebase | Magic link / Google OAuth | Freemium or one-time | Workflow completion + return usage | Will users come back after session one? |
-| Mobile App | React Native / Expo, Supabase | Apple/Google sign-in | RevenueCat if needed | D1/D7 retention if relevant | App store approval timeline |
-| Internal Tool | Next.js, existing DB or Supabase | SSO / invite list | N/A | Weekly usage by target team | Will users change their workflow? |
+| B2B SaaS | Tool-compatible full-stack web app | Invite-only / workspace | Stripe Payment Links first | 3–5 pilot or paying customers | Will a decision-maker pay before it's polished? |
+| B2C Consumer | Tool-compatible full-stack web app | Magic link / Google OAuth | Freemium or one-time | Workflow completion + return usage | Will users come back after session one? |
+| Mobile App | React Native / Expo + compatible managed backend | Apple/Google sign-in | RevenueCat if needed | D1/D7 retention if relevant | App store approval timeline |
+| Internal Tool | Tool-compatible web app + existing database when available | SSO / invite list | N/A | Weekly usage by target team | Will users change their workflow? |
 | Developer Tool | Node/Python CLI or SDK, docs site | API key if needed | Free tier + usage cap | Install + repeat usage | Is the DX good enough to survive first use? |
-| Marketplace | Next.js, Supabase, Stripe Connect | Separate buyer/seller flows | Stripe Connect for payouts | First transaction between strangers | Chicken-and-egg problem |
-| AI-first | Next.js, Supabase, OpenAI/Anthropic | Match primary | Match primary | Output usefulness + correction rate | Is the AI output good enough to trust? |
-| Data-first | Next.js, Supabase | Match primary | Match primary | Data accuracy + activation | Is the data accurate and available? |
-| UI-first | Next.js, Tailwind, shadcn/ui | Match primary | Match primary | Task completion rate | Does the UX make the core action easier? |
+| Marketplace | Tool-compatible web app + managed relational database | Separate buyer/seller flows | Stripe Connect for payouts | First transaction between strangers | Chicken-and-egg problem |
+| AI-first | Tool-compatible web app + OpenAI/Anthropic | Match primary | Match primary | Output usefulness + correction rate | Is the AI output good enough to trust? |
+| Data-first | Tool-compatible web app + managed relational database | Match primary | Match primary | Data accuracy + activation | Is the data accurate and available? |
+| UI-first | Tool-native React web stack | Match primary | Match primary | Task completion rate | Does the UX make the core action easier? |
+
+## Build Tool And Stack Compatibility (mandatory)
+
+Choose the build tool and stack as one compatible decision. Explicit intake or PRD constraints win. Do not recommend a platform-native browser builder and then hand it an infrastructure stack it cannot configure, preview, and verify through its normal workflow.
+
+- **Lovable:** use its current tool-native web stack with Lovable Cloud or Supabase for database, auth, storage, and server functions. Do not prescribe Cloudflare D1 unless the plan explicitly includes exporting the code and handing backend work to a repo-aware tool.
+- **v0:** use Next.js with one of v0's supported data integrations such as Supabase, Neon, or Upstash. Prefer its native deployment path for the lowest-friction first version; if Cloudflare is a real requirement, explicitly include the export/OpenNext handoff and choose who will configure and test it.
+- **Other browser builders:** prefer the builder's supported framework, built-in backend, or official managed integration. Do not pair a browser builder with Cloudflare D1 merely because Cloudflare is the repo-aware default below.
+- **Repo-aware tools** such as Cursor, Claude Code, Codex, Cline, or GitHub Copilot: when the user has not selected another stack, use the Cloudflare defaults below for web products.
+
+## Cloudflare Defaults (only when the selected build path targets Cloudflare)
+
+- **Deployment:** Cloudflare. Next.js apps deploy to Cloudflare Workers via the OpenNext Cloudflare adapter (\`@opennextjs/cloudflare\`); static or Vite sites deploy to Cloudflare Pages/Workers static assets.
+- **Database:** Cloudflare D1 (serverless SQLite) with Drizzle ORM. D1 has no row-level security, so derive the user/org id from the verified server session, never accept ownership authority from the request payload, filter every read and write by that identity, and include a cross-tenant denial test.
+- **Auth:** better-auth running on Workers with D1 (magic link or Google OAuth). Recommend a managed provider (e.g. Clerk) only when the user prefers managed auth or needs enterprise SSO fast.
+- **File storage:** Cloudflare R2 (S3-compatible, no egress fees), presigned URLs for uploads/downloads.
+- **Background work:** Cloudflare Queues or Workers Cron Triggers. Note Workers CPU-time limits; long AI jobs should stream or chunk.
+- **Email:** Resend (HTTP API, works from Workers).
+- **Compatibility rule:** do not recommend anything that requires a long-running server, filesystem persistence, or Postgres-only features on this stack. If the product genuinely needs Postgres (realtime subscriptions, pgvector at scale, heavy extensions), say so explicitly and recommend the smallest substitution for that layer only (e.g. Supabase or Neon for the database), keeping Cloudflare for deployment.
 
 ---
 
@@ -152,7 +171,7 @@ Do not design the MVP around full compliance unless the user explicitly asks. Fl
 
 1. **Never ask follow-up questions.** Missing info → make a reasonable assumption and label it.
 2. **Be ruthless about scope.** One primary user, one core problem, one core workflow, the smallest useful version. If a feature isn't needed to validate the riskiest assumption or complete the core flow, it goes to "Exclude for Now."
-3. **Prefer the simplest implementation:** manual onboarding over self-serve; Stripe Payment Links over full billing; a Supabase table over an admin dashboard; email over live chat; CSV export over a reporting dashboard; waitlist over user management; manual review over automation; mock data before full backend; concierge delivery before automation.
+3. **Prefer the simplest implementation:** manual onboarding over self-serve; Stripe Payment Links over full billing; a D1 table (edited via Drizzle Studio or the Cloudflare dashboard) over an admin dashboard; email over live chat; CSV export over a reporting dashboard; waitlist over user management; manual review over automation; mock data before full backend; concierge delivery before automation.
 4. **Avoid fake precision.** Use directional signals (Strong / Weak / Pivot). Treat numeric targets as suggested starting points, not benchmarks.
 5. **Adaptive depth & compression.** Keep simple products short; you may combine sections as long as the plan still covers: MVP goal, target user + problem, core flow, scope, build sequence, validation plan, and the next AI prompt. Add detail only for genuinely complex products (marketplaces, multi-role B2B, AI-heavy, compliance-adjacent, payment-heavy) and only where it reduces build or validation risk. Do not expand a section just to fill the template.
 6. **Be concise.** Target 1,000–1,600 words; exceed only for genuinely complex products. Every sentence should help the builder decide or act. No generic padding.
@@ -243,7 +262,7 @@ Rules:
 
 ### Tactical shortcuts for speed to market
 
-Concrete, product-specific things to do by hand instead of building, e.g. approve early users via a form; manage data in a Supabase table; send Stripe Payment Links by email; review AI outputs manually before display; use email for support; CSV export instead of a dashboard. Prefer "ops over code" when it retires risk faster than software.
+Concrete, product-specific things to do by hand instead of building, e.g. approve early users via a form; manage data directly in a D1 table or a spreadsheet; send Stripe Payment Links by email; review AI outputs manually before display; use email for support; CSV export instead of a dashboard. Prefer "ops over code" when it retires risk faster than software.
 
 ## 7. Recommended AI Build Tool
 
@@ -258,7 +277,7 @@ Allowed tools only:
 - Cline — best for technical users who want open-source VS Code agent control, bring-your-own-key usage, and low vendor lock-in.
 - Warp — best for shell-heavy developers who want terminal-native agent orchestration rather than a visual app builder.
 - Lovable — best for nontechnical founders building a hosted web app prototype quickly.
-- v0 — best for UI-first React/Next.js/Vercel apps where the next step is polished interface generation.
+- v0 — best for UI-first React/Next.js apps where the next step is polished interface generation.
 - Bolt — best for fast browser-based web prototypes with hosting/database support.
 - Replit — best for beginner-friendly browser IDE workflows, simple hosted apps, demos, and collaboration.
 - Gemini Code Assist — best for low-cost Google Cloud-aligned code assistance, especially when the user already uses Google Cloud.
@@ -266,7 +285,8 @@ Allowed tools only:
 Decision rules:
 - If the first version is a native desktop app, native mobile app, backend-heavy app, regulated/private-data workflow, or needs durable tests, prefer Cursor, Claude Code, Codex, Cline, GitHub Copilot, or Gemini Code Assist over browser app builders.
 - If the user is likely nontechnical and the first version is a web app prototype with ordinary backend needs, prefer Lovable or Bolt.
-- If the main risk is UI clarity or a Next.js/Vercel front end, prefer v0.
+- If the main risk is UI clarity or a polished Next.js front end, prefer v0 and keep Section 6 on its supported stack. Name an explicit export/OpenNext handoff only when Cloudflare is a real requirement.
+- If recommending Lovable or v0, confirm that every database, auth, storage, background-work, and deployment choice in Section 6 is available through that tool's native workflow or explicitly assigned to a later repo-aware handoff.
 - If the first version is a simple learning/demo app in a browser workspace, prefer Replit.
 - If the project has auth, payments, sensitive customer data, file ingestion, AI APIs, or database permissions, explicitly warn that the selected tool should be used with reviewable code, environment variables, and targeted tests.
 
@@ -354,8 +374,10 @@ Out of scope for now:
 [top 3-5 exclusions from §5]
 
 Rules:
+- Read and follow project-context.md, or the same rules after it has been renamed to AGENTS.md / CLAUDE.md or pasted into project instructions.
 - Inspect the codebase and summarize architecture before changing anything.
 - Build only this chunk; build nothing out of scope; don't refactor unrelated files.
+- Before implementation, define a failing test or acceptance check. Use red, green, refactor: confirm the check fails, make the smallest change that passes it, then improve the code without changing behavior.
 - Use mock data before real backend; add loading/error/empty states everywhere.
 - Keep files under ~200 lines; route all sensitive API calls through the backend.
 - After implementation: list changed files and explain how to test locally.
