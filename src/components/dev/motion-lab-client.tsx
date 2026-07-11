@@ -308,6 +308,7 @@ export function MotionLabClient() {
                 variant={variant}
                 parts="overview"
                 projectName={SAMPLE_PROJECT_NAME}
+                smoothTail={false}
               />
             </WorkspaceDocumentFrame>
             <WorkspaceDocumentFrame>
@@ -317,6 +318,7 @@ export function MotionLabClient() {
                 finished={finished}
                 variant={variant}
                 parts="detail"
+                smoothTail={false}
               />
             </WorkspaceDocumentFrame>
           </div>

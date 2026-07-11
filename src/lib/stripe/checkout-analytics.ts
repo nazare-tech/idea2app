@@ -1,4 +1,4 @@
-import { UPGRADE_SURFACES } from "@/lib/product-analytics/contracts"
+import { UPGRADE_SURFACES, isRecord, isSafeToken, isUuid } from "@/lib/product-analytics/contracts"
 
 export type CheckoutAnalyticsContext = {
   sourceSurface: typeof UPGRADE_SURFACES[number]
@@ -58,16 +58,4 @@ function compactContext(context: CheckoutAnalyticsContext): CheckoutAnalyticsCon
 
 function isUpgradeSurface(value: unknown): value is CheckoutAnalyticsContext["sourceSurface"] {
   return typeof value === "string" && (UPGRADE_SURFACES as readonly string[]).includes(value)
-}
-
-function isUuid(value: unknown): value is string {
-  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
-}
-
-function isSafeToken(value: unknown): value is string {
-  return typeof value === "string" && value.length >= 1 && value.length <= 64 && /^[a-z0-9][a-z0-9_-]*$/i.test(value)
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value))
 }

@@ -9,6 +9,7 @@
 
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
+import { useSmoothedStream } from "@/hooks/use-smoothed-stream"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { displayFontClass } from "@/components/analysis/planning-blocks-shared"
 import {
@@ -41,7 +42,7 @@ export type CompetitiveStreamingVariant = "block-commit" | "skeleton" | "ticker"
 export type CompetitiveStreamingParts = "full" | "overview" | "detail"
 
 interface CompetitiveStreamingDocumentProps {
-  /** Partial (or complete) competitive-analysis markdown */
+  /** Raw partial (or complete) competitive-analysis markdown; smoothing happens inside */
   content: string
   /** True once the generation stream has ended */
   finished: boolean
@@ -49,6 +50,8 @@ interface CompetitiveStreamingDocumentProps {
   parts?: CompetitiveStreamingParts
   projectName?: string
   className?: string
+  /** Disable the internal word-by-word reveal (dev tooling that pre-smooths) */
+  smoothTail?: boolean
 }
 
 const TOTAL_SECTIONS = COMPETITIVE_DETAIL_SECTION_CONFIGS.length
@@ -218,7 +221,11 @@ export function CompetitiveStreamingDocument({
   parts = "full",
   projectName,
   className,
+  smoothTail = true,
 }: CompetitiveStreamingDocumentProps) {
+  // Structure, section membership, and competitor sources (the mention-link
+  // regex) all derive from the raw poll content (~3s cadence). The per-tick
+  // word reveal below touches none of these memos.
   const parse = useMemo(
     () => parseStreamingCompetitiveAnalysis(content, { finished }),
     [content, finished]
@@ -235,6 +242,14 @@ export function CompetitiveStreamingDocument({
 
   const executiveComplete = parse.completeSectionNames.has("Executive Summary")
   const activeSection = parse.activeSection
+
+  // Word-by-word reveal of the active section's prose tail only. The timer
+  // lives in this leaf and dies with it when the saved document swaps in.
+  const reveal = smoothTail && !finished
+  const { text: smoothedActiveBody } = useSmoothedStream(activeSection?.content ?? "", {
+    enabled: reveal,
+  })
+  const activeTail = reveal ? smoothedActiveBody : activeSection?.content ?? ""
   const showProseTail = variant !== "ticker" && !liveFill && activeSection !== null
   const showOverview = parts !== "detail"
   const showDetail = parts !== "overview"
@@ -269,7 +284,7 @@ export function CompetitiveStreamingDocument({
               <CompetitiveOverviewBody structured={structured} projectName={projectName} />
             </div>
           ) : showProseTail && activeSection?.name === "Executive Summary" ? (
-            <ActiveStreamingSection title="Executive Summary" rawContent={activeSection.content} />
+            <ActiveStreamingSection title="Executive Summary" rawContent={activeTail} />
           ) : (
             <SkeletonBars />
           )}
@@ -283,7 +298,7 @@ export function CompetitiveStreamingDocument({
             <CompetitiveOverviewBody structured={structured} projectName={projectName} />
           </section>
         ) : showProseTail && activeSection?.name === "Executive Summary" ? (
-          <ActiveStreamingSection title="Executive Summary" rawContent={activeSection.content} />
+          <ActiveStreamingSection title="Executive Summary" rawContent={activeTail} />
         ) : liveFill &&
           activeSection?.name === "Executive Summary" &&
           liveSectionHasRenderableData(null, activeSection.content) ? (
@@ -329,7 +344,7 @@ export function CompetitiveStreamingDocument({
                   key={config.id}
                   title={config.title}
                   index={index + 1}
-                  rawContent={activeSection.content}
+                  rawContent={activeTail}
                 />
               )
             }
@@ -358,7 +373,7 @@ export function CompetitiveStreamingDocument({
       {/* A recognized document can stream sections we do not map to a designed
           block (unknown headings); show them as prose so nothing is lost. */}
       {showDetail && (showProseTail || liveFill) && activeSection && activeSection.name === null ? (
-        <ActiveStreamingSection title={activeSection.heading} rawContent={activeSection.content} />
+        <ActiveStreamingSection title={activeSection.heading} rawContent={activeTail} />
       ) : null}
 
       {/* Before the first heading arrives */}

@@ -4,7 +4,6 @@ import { createStore, useStore, type StoreApi } from "zustand"
 import {
   GENERATE_ALL_QUEUE_ORDER,
   GENERATE_ALL_DEFAULT_MODELS,
-  isPlanningTextDocType,
   type DocumentType,
   type PlanningTextDocType,
 } from "@/lib/document-definitions"
@@ -17,6 +16,10 @@ import {
   type QueueItem,
   type QueueItemStatus,
 } from "@/lib/generation/generate-all-helpers"
+import {
+  encodeStreamingPreviewLengths,
+  mergeStreamingPreview,
+} from "@/lib/generation/streaming-preview"
 import { createVisibilityAwarePoller } from "@/lib/visibility-aware-poller"
 
 // Re-export types so consumers keep working
@@ -75,28 +78,11 @@ interface GenerateAllState {
    * item is generating, keyed by docType. Each entry keeps the longest
    * content seen (a throttle gap or out-of-order poll never rewinds the
    * reveal) and is retained after the item completes so the workspace can
-   * keep showing it until the saved document loads.
+   * keep showing it until the saved document loads. Merge semantics live in
+   * src/lib/generation/streaming-preview.ts (delta protocol with the status
+   * route).
    */
   streamingPreviews: Partial<Record<StreamingPreviewDocType, string>>
-}
-
-function mergeStreamingPreview(
-  previous: Partial<Record<StreamingPreviewDocType, string>>,
-  incoming: { docType?: unknown; content?: unknown } | null | undefined,
-): Partial<Record<StreamingPreviewDocType, string>> {
-  if (
-    !incoming ||
-    !isPlanningTextDocType(incoming.docType) ||
-    typeof incoming.content !== "string" ||
-    incoming.content.length === 0
-  ) {
-    return previous
-  }
-
-  const existing = previous[incoming.docType]
-  if (existing && existing.length >= incoming.content.length) return previous
-
-  return { ...previous, [incoming.docType]: incoming.content }
 }
 
 interface GenerateAllActions {
@@ -189,9 +175,18 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
     })
   }
 
+  // Report current preview lengths so the status route can respond with only
+  // the new streamed tail instead of the full accumulated markdown.
+  function buildStatusUrl() {
+    const lengths = encodeStreamingPreviewLengths(store.getState().streamingPreviews)
+    return `/api/generate-all/status?projectId=${projectId}${
+      lengths ? `&previewLengths=${encodeURIComponent(lengths)}` : ""
+    }`
+  }
+
   async function doPoll() {
     try {
-      const res = await fetch(`/api/generate-all/status?projectId=${projectId}`)
+      const res = await fetch(buildStatusUrl())
       if (!res.ok) {
         poller.schedule()
         return
@@ -301,7 +296,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       if (flag === "true") set(() => ({ status: "loading" }))
 
       try {
-        const res = await fetch(`/api/generate-all/status?projectId=${projectId}`)
+        const res = await fetch(buildStatusUrl())
         if (!res.ok) return
         const { queue: dbRow, streamingPreview } = await res.json()
 

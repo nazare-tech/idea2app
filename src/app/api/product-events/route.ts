@@ -8,6 +8,7 @@ import {
 } from "@/lib/product-analytics/ingest"
 import { ProductEventValidationError } from "@/lib/product-analytics/contracts"
 import { getUserPlanName } from "@/lib/project-allowance"
+import { getCachedPlanName } from "@/lib/product-analytics/plan-name-cache"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
         if (error) throw error
         return (data ?? []).map((project) => project.id)
       },
-      loadPlanName: () => getUserPlanName(supabase, user.id),
+      loadPlanName: () => getCachedPlanName(user.id, () => getUserPlanName(supabase, user.id)),
       insertRows: async (rows) => {
         const { error } = await service.rpc("ingest_product_event_batch", {
           p_user_id: user.id,

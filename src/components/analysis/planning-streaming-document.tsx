@@ -9,8 +9,11 @@
 import { useMemo } from "react"
 
 import { cn } from "@/lib/utils"
-import { buildStreamingPlanningMarkdown } from "@/lib/planning-document-streaming"
-import { extractSectionsByHeading } from "@/lib/planning-document-parser"
+import {
+  parseStreamingPlanningDocument,
+  sanitizeStreamingPlanningTail,
+} from "@/lib/planning-document-streaming"
+import { useSmoothedStream } from "@/hooks/use-smoothed-stream"
 import {
   displayFontClass,
   getSectionByAlias,
@@ -28,12 +31,14 @@ export type PlanningStreamingDocType = "prd" | "mvp"
 
 interface PlanningStreamingDocumentProps {
   docType: PlanningStreamingDocType
-  /** Partial (or complete) planning-document markdown */
+  /** Raw partial (or complete) planning-document markdown; smoothing happens inside */
   content: string
   /** True once the generation stream has ended */
   finished: boolean
   projectId: string
   className?: string
+  /** Disable the internal word-by-word reveal (dev tooling that pre-smooths) */
+  smoothTail?: boolean
 }
 
 function StreamingSkeletonSection({ title }: { title: string }) {
@@ -59,18 +64,52 @@ export function PlanningStreamingDocument({
   finished,
   projectId,
   className,
+  smoothTail = true,
 }: PlanningStreamingDocumentProps) {
-  const { markdown } = useMemo(
-    () => buildStreamingPlanningMarkdown(content, { finished }),
-    [content, finished],
-  )
-  const sections = useMemo(() => extractSectionsByHeading(markdown, 2), [markdown])
+  // Structure is derived from the raw poll content (~3s cadence): complete
+  // sections, their markdown, and the still-growing active section. The
+  // per-tick word reveal below never re-parses this.
+  const structure = useMemo(() => {
+    const { preamble, sections } = parseStreamingPlanningDocument(content, { finished })
+    const complete = sections.filter((section) => section.complete)
+    const active = sections.find((section) => !section.complete) ?? null
+    const parts: string[] = []
+    if (preamble) parts.push(preamble)
+    for (const section of complete) {
+      parts.push(`## ${section.heading}\n\n${section.content}`.trimEnd())
+    }
+    return { completeMarkdown: parts.join("\n\n"), complete, active }
+  }, [content, finished])
+
+  // Only the active section's prose tail is smoothed word-by-word; the
+  // interval lives in this leaf, so ticks re-render the streaming document
+  // alone, and it unmounts (killing the timer) once the saved doc loads.
+  const reveal = smoothTail && !finished
+  const { text: smoothedActiveBody } = useSmoothedStream(structure.active?.content ?? "", {
+    enabled: reveal,
+  })
+
+  const markdown = useMemo(() => {
+    if (!structure.active) return structure.completeMarkdown
+    const body = reveal
+      ? sanitizeStreamingPlanningTail(smoothedActiveBody)
+      : finished
+        ? structure.active.content
+        : sanitizeStreamingPlanningTail(structure.active.content)
+    const activePart = `## ${structure.active.heading}\n\n${body}`.trimEnd()
+    return [structure.completeMarkdown, activePart].filter(Boolean).join("\n\n")
+  }, [structure, reveal, finished, smoothedActiveBody])
 
   const expectedSections =
     docType === "prd" ? PRD_STREAMING_EXPECTED_SECTIONS : MVP_STREAMING_EXPECTED_SECTIONS
-  const upcomingSections = expectedSections.filter(
-    (expected) => !getSectionByAlias(sections, [...expected.aliases]),
-  )
+  // Skeleton set changes only when the section structure does (per poll),
+  // not per reveal tick.
+  const upcomingSections = useMemo(() => {
+    const arrived = [...structure.complete, ...(structure.active ? [structure.active] : [])]
+    return expectedSections.filter(
+      (expected) => !getSectionByAlias(arrived, [...expected.aliases]),
+    )
+  }, [structure, expectedSections])
 
   return (
     <div className={cn("flex flex-col gap-16", className)}>

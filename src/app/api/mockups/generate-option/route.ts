@@ -20,6 +20,7 @@ import {
   recordManualGenerationFailed,
   recordManualGenerationStarted,
 } from "@/lib/product-analytics/generation"
+import { isUuid } from "@/lib/product-analytics/contracts"
 
 export const maxDuration = 800
 
@@ -223,8 +224,4 @@ export async function POST(request: Request) {
       { status: 500 },
     )
   }
-}
-
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }

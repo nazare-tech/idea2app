@@ -27,7 +27,6 @@ import {
   isWorkspaceDocumentType,
   resolveWorkspaceDocumentTab,
 } from "@/lib/workspace-tab-policy"
-import { useSmoothedStream } from "@/hooks/use-smoothed-stream"
 import { useWorkspaceDocuments } from "./use-workspace-documents"
 import { usePersistedGenerationState } from "./use-persisted-generation-state"
 import { useWorkspaceScrollSync, getSourceTypeForScrollTarget } from "./use-workspace-scroll-sync"
@@ -151,13 +150,8 @@ export function ProjectWorkspace({
 
   const { generateAllQueue, generateAllStatus, generateAllStreamingPreviews, resumeGenerateAll } =
     useGenerateAllHydration(project.id)
-  // Smooth the 3s poll chunks of partial document markdown into continuous
-  // word-by-word reveals, one per streaming planning document.
-  const { text: smoothedCompetitiveStream } = useSmoothedStream(
-    generateAllStreamingPreviews.competitive ?? "",
-  )
-  const { text: smoothedPrdStream } = useSmoothedStream(generateAllStreamingPreviews.prd ?? "")
-  const { text: smoothedMvpStream } = useSmoothedStream(generateAllStreamingPreviews.mvp ?? "")
+  // Raw partial markdown flows down as-is; the streaming document components
+  // smooth their own tails, so reveal ticks never re-render the workspace.
   const {
     generatingDocuments,
     setGeneratingDocuments,
@@ -742,19 +736,19 @@ export function ProjectWorkspace({
   // states fall through to the retry module instead.
   const getStreamingContent = (
     docType: "competitive" | "prd" | "mvp",
-    smoothedText: string,
   ): string | null => {
+    const rawText = generateAllStreamingPreviews[docType] ?? ""
     const displayStatus = scrollableDocuments[docType].displayState?.displayStatus
     return !scrollableDocuments[docType].content &&
-      smoothedText &&
+      rawText &&
       (displayStatus === "generating" || displayStatus === "ready")
-      ? smoothedText
+      ? rawText
       : null
   }
   const streamingContents = {
-    competitive: getStreamingContent("competitive", smoothedCompetitiveStream),
-    prd: getStreamingContent("prd", smoothedPrdStream),
-    mvp: getStreamingContent("mvp", smoothedMvpStream),
+    competitive: getStreamingContent("competitive"),
+    prd: getStreamingContent("prd"),
+    mvp: getStreamingContent("mvp"),
   }
 
   const aiPromptsReadiness = getAiPromptsReadiness({

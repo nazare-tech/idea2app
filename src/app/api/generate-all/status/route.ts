@@ -13,6 +13,10 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
 import { isPlanningTextDocType, type PlanningTextDocType } from "@/lib/document-definitions"
+import {
+  buildStreamingPreviewPayload,
+  parseStreamingPreviewLengths,
+} from "@/lib/generation/streaming-preview"
 
 export async function GET(request: Request) {
   const requestLogContext = buildRequestLogContext(request)
@@ -105,11 +109,15 @@ export async function GET(request: Request) {
         typeof item.partial_content === "string" &&
         item.partial_content.length > 0,
     )
+    // Clients report how much preview they already hold (previewLengths=
+    // "prd:1234,..."); only the new tail is sent back. No report → full body.
+    const clientPreviewLengths = parseStreamingPreviewLengths(searchParams.get("previewLengths"))
     const streamingPreview = streamingItem
-      ? {
-          docType: streamingItem.doc_type as PlanningTextDocType,
-          content: streamingItem.partial_content as string,
-        }
+      ? buildStreamingPreviewPayload(
+          streamingItem.doc_type as PlanningTextDocType,
+          streamingItem.partial_content as string,
+          clientPreviewLengths[streamingItem.doc_type as PlanningTextDocType],
+        )
       : null
 
     return NextResponse.json({

@@ -320,7 +320,8 @@ function hasExactKeys(value: Record<string, unknown>, allowed: readonly string[]
   return allowed.every((key) => key in value)
 }
 
-function isUuid(value: unknown) {
+/** Shared analytics id validator; the single copy for every analytics surface. */
+export function isUuid(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
 
@@ -328,8 +329,13 @@ function isIntegerInRange(value: unknown, min: number, max: number) {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= min && value <= max
 }
 
-function isSafeToken(value: unknown) {
+/** Controlled-vocabulary token rule shared with checkout metadata parsing. */
+export function isSafeToken(value: unknown): value is string {
   return typeof value === "string" && value.length >= 1 && value.length <= 64 && /^[a-z0-9][a-z0-9_-]*$/i.test(value)
+}
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value))
 }
 
 function isOpaqueId(value: unknown, prefix: string) {

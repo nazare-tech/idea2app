@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from "react"
 import Link from "next/link"
 
-import type { ProductEventPropertyMap } from "@/lib/product-analytics/contracts"
+import { isUuid, type ProductEventPropertyMap } from "@/lib/product-analytics/contracts"
 import { rememberUpgradeAttribution, trackClientProductEvent } from "@/lib/product-analytics/client"
 
 type UpgradeSurface = ProductEventPropertyMap["upgrade_cta_viewed"]["surface"]
@@ -41,8 +41,4 @@ export function UpgradeCtaLink({
       {children}
     </Link>
   )
-}
-
-function isUuid(value: string | undefined): value is string {
-  return Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))
 }

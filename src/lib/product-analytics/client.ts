@@ -3,6 +3,7 @@
 import {
   MAX_PRODUCT_EVENTS_PER_BATCH,
   PRODUCT_EVENT_SCHEMA_VERSION,
+  isUuid,
   type ClientProductEventInput,
   type ClientProductEventName,
   type ProductEventPropertyMap,
@@ -236,8 +237,4 @@ async function deliverProductEvents(events: ClientProductEventInput[], keepalive
   if (response.ok) return "accepted"
   if (response.status === 429 || response.status >= 500) return "retry"
   return "drop"
-}
-
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
