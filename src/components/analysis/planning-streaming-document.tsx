@@ -87,6 +87,7 @@ export function PlanningStreamingDocument({
   const reveal = smoothTail && !finished
   const { text: smoothedActiveBody } = useSmoothedStream(structure.active?.content ?? "", {
     enabled: reveal,
+    resetKey: structure.active?.heading ?? null,
   })
 
   const markdown = useMemo(() => {
