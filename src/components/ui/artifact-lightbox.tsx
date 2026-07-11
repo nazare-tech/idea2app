@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { createPortal } from "react-dom"
 import { Check, Copy, Download, FileText, X } from "lucide-react"
 
 /**
@@ -80,7 +81,7 @@ export function ArtifactLightbox({
     }
   }, [onClose])
 
-  return (
+  const overlay = (
     <div
       role="dialog"
       aria-modal="true"
@@ -136,4 +137,11 @@ export function ArtifactLightbox({
       </div>
     </div>
   )
+
+  // Portal to <body>: workspace section frames use content-visibility
+  // containment, which makes them containing blocks for fixed-position
+  // descendants and would trap the overlay inside the section. Server
+  // rendering has no document; the lightbox only opens client-side, so the
+  // inline fallback is never hydrated against a portaled tree.
+  return typeof document === "undefined" ? overlay : createPortal(overlay, document.body)
 }
