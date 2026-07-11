@@ -265,7 +265,7 @@ export function CompetitiveStreamingDocument({
   const reveal = smoothTail && !finished
   const { text: smoothedActiveBody } = useSmoothedStream(activeSection?.content ?? "", {
     enabled: reveal,
-    resetKey: activeSection?.name ?? null,
+    resetKey: activeSection?.heading ?? null,
   })
   const activeTail = reveal ? smoothedActiveBody : activeSection?.content ?? ""
   const showProseTail = variant !== "ticker" && !liveFill && activeSection !== null
