@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DashboardProjectCard } from "@/components/projects/dashboard-project-card"
+import { NewProjectButton } from "@/components/projects/project-limit-dialog"
 import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 import { getProjectUrl } from "@/lib/project-routing"
 import { getProjectAllowanceStatus } from "@/lib/project-allowance"
@@ -80,11 +81,12 @@ export default async function ProjectsPage() {
           description={`Welcome, ${welcomeName}`}
           descriptionClassName="text-xl font-semibold leading-tight text-text-primary sm:text-2xl"
           actions={(
-            <Link href="/projects/new" className="shrink-0" prefetch={false}>
-              <Button className="h-9 bg-primary px-4 text-sm text-primary-foreground">
-                New Project
-              </Button>
-            </Link>
+            <NewProjectButton
+              canCreate={allowanceStatus.canCreate}
+              used={allowanceStatus.used}
+              planName={allowanceStatus.planName}
+              className="h-9 bg-primary px-4 text-sm text-primary-foreground"
+            />
           )}
         />
 
