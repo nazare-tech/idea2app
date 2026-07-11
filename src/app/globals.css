@@ -225,41 +225,61 @@ body {
   }
 }
 
-.intake-progress-fill--active {
-  background-image: linear-gradient(90deg, #0D1320 0%, #251E1C 50%, #0D1320 100%);
+/* Intake example-idea rows + loader artifact row (Intake Flow Option 1).
+   Duration is set per row via the --intake-marquee-duration custom property so
+   the three example rows can drift at different speeds. Reuses the shared
+   landing-logo-marquee-scroll keyframe (0 -> -50%) with a duplicated track. */
+.intake-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 120px, black calc(100% - 120px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 120px, black calc(100% - 120px), transparent);
 }
 
-.intake-progress-fill--active::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(245, 240, 235, 0.16) 32%,
-    rgba(232, 221, 213, 0.9) 50%,
-    rgba(245, 240, 235, 0.16) 68%,
-    transparent 100%
-  );
-  transform: translateX(-120%);
-  animation: intake-progress-sheen 1400ms linear infinite;
-  will-change: transform;
+.intake-marquee__track {
+  display: flex;
+  width: max-content;
+  animation: landing-logo-marquee-scroll var(--intake-marquee-duration, 45s) linear infinite;
 }
 
-@keyframes intake-progress-sheen {
-  from {
-    transform: translateX(-120%);
-  }
-
-  to {
-    transform: translateX(120%);
-  }
+.intake-marquee:hover .intake-marquee__track {
+  animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .intake-progress-fill--active::after {
+  .intake-marquee {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .intake-marquee::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .intake-marquee__track {
     animation: none;
-    opacity: 0;
+  }
+}
+
+/* Warm shimmer for the intake Step 2 question skeletons. */
+@keyframes intake-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.intake-skeleton {
+  background: linear-gradient(90deg, #F5F0EB 25%, #EDE4DC 50%, #F5F0EB 75%);
+  background-size: 200% 100%;
+  animation: intake-skeleton-shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intake-skeleton {
+    animation: none;
   }
 }
 

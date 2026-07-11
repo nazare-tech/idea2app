@@ -1,224 +1,264 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type ElementType } from "react"
-import {
-  ChartNoAxesColumn,
-  ClipboardList,
-  FileText,
-  LayoutGrid,
-  Rocket,
-  Sparkles,
-} from "lucide-react"
+import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 
-import type {
-  OnboardingGenerationStatus,
-  OnboardingLoadingRowKey,
-} from "@/lib/generation/onboarding"
-import { cn } from "@/lib/utils"
+import { IntakeMarquee } from "@/components/projects/intake-marquee"
 
-export interface IntakeLoadingRow {
-  key: OnboardingLoadingRowKey
-  label: string
-  message: string
-  status: OnboardingGenerationStatus
-}
+// Single post-submit loader (Intake Flow Option 1). One large message rotates at
+// a fixed cadence while a thin red line fills; the redirect to the workspace is
+// driven separately by the first streamed Market Research token, so this loader
+// clamps to its final "opening your workspace" line and holds until that redirect
+// fires. It is intentionally decorative: no live queue status is wired in here.
 
-interface IntakeSubmissionLoadingPanelProps {
-  rows?: IntakeLoadingRow[]
-}
-
-export const INTAKE_FAKE_PROGRESS_DURATION_MS = 40000
-export const INTAKE_MAX_FAKE_PROGRESS = 90
-export const INTAKE_MIN_ANIMATED_PROGRESS = 12
-
-const DEFAULT_ROWS: IntakeLoadingRow[] = [
-  {
-    key: "executive-summary",
-    label: "Executive Summary",
-    message: "Finding market patterns",
-    status: "generating",
-  },
-  {
-    key: "market-research",
-    label: "Market research",
-    message: "Scoping opportunity",
-    status: "generating",
-  },
-  {
-    key: "prd",
-    label: "Product Plan",
-    message: "Drafting requirements",
-    status: "pending",
-  },
-  {
-    key: "mvp",
-    label: "First version plan",
-    message: "Planning launchable scope",
-    status: "pending",
-  },
-  {
-    key: "mockups",
-    label: "Design mockups",
-    message: "Generating visual directions",
-    status: "pending",
-  },
-  {
-    key: "ai-prompts",
-    label: "AI Prompts",
-    message: "Assembling AI handoff",
-    status: "pending",
-  },
+export const INTAKE_LOADER_MESSAGES = [
+  "Sending your idea to the research desk...",
+  "Filing your answers where the plan can find them...",
+  "Sizing up the market and the competition...",
+  "Drafting the first cut of your product plan...",
+  "Sketching mockup directions...",
+  "Here it comes. Opening your workspace...",
 ]
 
-const ROW_ICONS: Record<OnboardingLoadingRowKey, ElementType> = {
-  "executive-summary": FileText,
-  "market-research": ChartNoAxesColumn,
-  prd: ClipboardList,
-  mvp: Rocket,
-  mockups: LayoutGrid,
-  "ai-prompts": Sparkles,
+// ~4s per message keeps the felt window close to the old 40s fake loader while
+// leaving the final message to hold until the first-token redirect.
+export const INTAKE_LOADER_MESSAGE_INTERVAL_MS = 4000
+const TICK_MS = 100
+
+interface IntakeSubmissionLoadingPanelProps {
+  messages?: string[]
+}
+
+export function getLoaderMessageIndex(
+  elapsedMs: number,
+  messageCount: number,
+  intervalMs: number = INTAKE_LOADER_MESSAGE_INTERVAL_MS,
+): number {
+  if (messageCount <= 0) return 0
+  const raw = Math.floor(Math.max(0, elapsedMs) / Math.max(1, intervalMs))
+  return Math.min(messageCount - 1, raw)
+}
+
+export function getLoaderLineWidth(
+  elapsedMs: number,
+  messageCount: number,
+  intervalMs: number = INTAKE_LOADER_MESSAGE_INTERVAL_MS,
+): number {
+  if (messageCount <= 0) return 0
+  const pct = (Math.max(0, elapsedMs) / Math.max(1, intervalMs * messageCount)) * 100
+  return Math.min(100, pct)
+}
+
+function subscribeReducedMotion(callback: () => void) {
+  const query = window.matchMedia("(prefers-reduced-motion: reduce)")
+  query.addEventListener("change", callback)
+  return () => query.removeEventListener("change", callback)
+}
+
+function useReducedMotion() {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false,
+  )
 }
 
 export function IntakeSubmissionLoadingPanel({
-  rows = DEFAULT_ROWS,
+  messages = INTAKE_LOADER_MESSAGES,
 }: IntakeSubmissionLoadingPanelProps) {
   const startedAtRef = useRef(0)
-  const [progress, setProgress] = useState<Record<string, number>>({})
-  const normalizedRows = useMemo(() => (rows.length > 0 ? rows : DEFAULT_ROWS), [rows])
+  const [elapsed, setElapsed] = useState(0)
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
+    if (reducedMotion) return
+
     if (startedAtRef.current === 0) {
       startedAtRef.current = Date.now()
     }
 
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-
-    function updateProgress() {
-      const elapsedMs = Date.now() - startedAtRef.current
-      const timedProgress = getTimedIntakeProgress(elapsedMs, prefersReducedMotion)
-
-      setProgress((current) => {
-        const next = { ...current }
-        for (const row of normalizedRows) {
-          next[row.key] = getNextIntakeProgressValue(row.status, current[row.key], timedProgress)
-        }
-        return next
-      })
-    }
-
-    updateProgress()
-    if (prefersReducedMotion) return
-
-    const interval = window.setInterval(updateProgress, 250)
+    const interval = window.setInterval(() => {
+      setElapsed(Date.now() - startedAtRef.current)
+    }, TICK_MS)
     return () => window.clearInterval(interval)
-  }, [normalizedRows])
+  }, [reducedMotion])
+
+  const total = messages.length
+  const activeIndex = getLoaderMessageIndex(elapsed, total)
+  const lineWidth = reducedMotion ? 42 : getLoaderLineWidth(elapsed, total)
+  const isFinalMessage = activeIndex === total - 1
 
   return (
     <div
-      className="min-h-full bg-[#FAFAFA] text-[#1C1917]"
+      className="flex min-h-full flex-col bg-background text-text-primary"
       data-testid="intake-submission-loading"
       aria-live="polite"
       aria-busy="true"
     >
-      <main className="flex min-h-full items-center justify-center px-4 py-8">
-        <section className="w-full max-w-[800px] bg-white px-6 py-8 sm:px-10" aria-label="Project generation progress">
-          <div>
-            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-[#8A8480]">
-              Analyzing your inputs
-            </p>
-            <h1 className="mt-2 font-[family:var(--font-display)] text-4xl font-bold leading-none text-[#1C1917] sm:text-5xl">
-              Creating your project plan
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-[#4A4040]">
-              Generating market research, product scope, and mockup directions.
-            </p>
-          </div>
+      {/* Rotating headline block, vertically centered */}
+      <div className="flex flex-1 flex-col items-center justify-center px-6 pt-12 pb-6">
+        <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+          Creating your project
+        </p>
 
-          <div className="mt-7 divide-y divide-[#E8DDD5] border-y border-[#E8DDD5]">
-            {normalizedRows.map((row) => {
-              const Icon = ROW_ICONS[row.key]
-              const value = progress[row.key] ?? 0
-              const isAnimated = shouldAnimateIntakeProgress(row.status, value)
+        <div className="relative mt-5 h-24 w-full max-w-[760px]">
+          {reducedMotion ? (
+            <div className="absolute inset-0 flex items-center justify-center text-center">
+              <span className="font-[family:var(--font-display)] text-[28px] font-bold leading-[1.15] tracking-[-0.04em] text-text-primary sm:text-[34px]">
+                {messages[0]}
+              </span>
+            </div>
+          ) : (
+            messages.map((text, index) => {
+              const isActive = index === activeIndex
+              const offset = isActive ? "translateY(0)" : index < activeIndex ? "translateY(-16px)" : "translateY(16px)"
               return (
-                <div key={row.key} className="flex gap-4 py-[18px] sm:gap-5">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[rgba(121,116,126,0.16)] bg-[#FAFAFA] sm:size-12">
-                    <Icon className="size-5 text-[#1C1917] sm:size-6" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                      <p className="font-[family:var(--font-display)] text-lg font-bold text-[#0D1320] sm:text-xl">
-                        {row.label}
-                      </p>
-                      <p
-                        className={cn(
-                          "text-sm text-[#4A4040] sm:text-right",
-                          (row.status === "error" || row.status === "incomplete") && "text-destructive",
-                          row.status === "done" && "text-[#166534]",
-                        )}
-                      >
-                        {statusMessage(row)}
-                      </p>
-                    </div>
-                    <div className="mt-3 h-1.5 w-full bg-[#E5E7EB]">
-                      <div
-                        className={cn(
-                          "intake-progress-fill relative h-full overflow-hidden bg-[#0D1320] transition-[width] duration-500 ease-out",
-                          isAnimated && "intake-progress-fill--active",
-                          (row.status === "error" || row.status === "incomplete") && "bg-destructive",
-                          row.status === "done" && "bg-[#166534]",
-                        )}
-                        style={{ width: `${value}%` }}
-                      />
-                    </div>
-                  </div>
+                <div
+                  key={text}
+                  className="absolute inset-0 flex items-center justify-center text-center transition-[opacity,transform] duration-500 [transition-timing-function:var(--motion-ease-out-expo)]"
+                  style={{ opacity: isActive ? 1 : 0, transform: offset }}
+                  aria-hidden={!isActive}
+                >
+                  <span className="font-[family:var(--font-display)] text-[28px] font-bold leading-[1.15] tracking-[-0.04em] text-text-primary sm:text-[34px]">
+                    {text}
+                    {isActive && isFinalMessage && <span className="stream-caret ml-1.5 h-6 align-[-3px]" />}
+                  </span>
                 </div>
               )
-            })}
-          </div>
-        </section>
-      </main>
+            })
+          )}
+        </div>
+
+        {/* Thin red progress line */}
+        <div className="mt-6 h-0.5 w-[220px] bg-border-strong">
+          <div
+            className="h-full bg-primary transition-[width] duration-300 ease-linear"
+            style={{ width: `${lineWidth}%` }}
+          />
+        </div>
+      </div>
+
+      {/* "What you're about to get" artifact marquee */}
+      <div className="pb-11">
+        <p className="mb-[18px] text-center font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+          What you&apos;re about to get
+        </p>
+        {/* Decorative preview strip: hidden from assistive tech (the rotating
+            status message above is the announced progress signal). The marquee
+            clamps itself to the width of one card set and centers. */}
+        <div aria-hidden="true">
+          <IntakeMarquee duration="45s">
+            {LOADER_ARTIFACT_CARDS.map((card, index) => (
+              <LoaderArtifactCard key={index} kind={card.kind} label={card.label} />
+            ))}
+          </IntakeMarquee>
+        </div>
+      </div>
     </div>
   )
 }
 
-export function getTimedIntakeProgress(elapsedMs: number, prefersReducedMotion: boolean) {
-  if (prefersReducedMotion) return 85
+type ArtifactKind = "bars" | "lines" | "checklist" | "grid" | "dark" | "numbered"
 
-  return Math.min(
-    INTAKE_MAX_FAKE_PROGRESS,
-    (Math.max(0, elapsedMs) / INTAKE_FAKE_PROGRESS_DURATION_MS) * INTAKE_MAX_FAKE_PROGRESS,
+const LOADER_ARTIFACT_CARDS: { kind: ArtifactKind; label: string }[] = [
+  { kind: "bars", label: "Market research" },
+  { kind: "lines", label: "Product plan" },
+  { kind: "checklist", label: "First version plan" },
+  { kind: "grid", label: "Design mockups" },
+  { kind: "dark", label: "AI prompts" },
+  { kind: "numbered", label: "Executive summary" },
+]
+
+function LoaderArtifactCard({ kind, label }: { kind: ArtifactKind; label: string }) {
+  const isDark = kind === "dark"
+  return (
+    <div
+      className="mr-4 box-border w-[172px] shrink-0 rounded-lg border border-border-subtle p-3.5"
+      style={{ background: isDark ? "#1C1917" : "#FFFFFF" }}
+    >
+      <div className="h-[110px]">
+        <ArtifactVisual kind={kind} />
+      </div>
+      <p
+        className="mt-2.5 font-mono text-[9px] font-medium uppercase tracking-[0.16em]"
+        style={{ color: isDark ? "#8A8480" : "#6B7280" }}
+      >
+        {label}
+      </p>
+    </div>
   )
 }
 
-export function getNextIntakeProgressValue(
-  status: OnboardingGenerationStatus,
-  currentValue: number | undefined,
-  timedProgress: number,
-) {
-  if (status === "done") return 100
-  if (status === "error" || status === "cancelled" || status === "incomplete") {
-    return Math.min(currentValue ?? timedProgress, INTAKE_MAX_FAKE_PROGRESS)
+function ArtifactVisual({ kind }: { kind: ArtifactKind }) {
+  if (kind === "bars") {
+    return (
+      <div className="flex h-full items-end justify-center gap-2 pb-2">
+        <div className="w-4 bg-[#E8DDD5]" style={{ height: 34 }} />
+        <div className="w-4 bg-[#E8DDD5]" style={{ height: 62 }} />
+        <div className="w-4 bg-[#1C1917]" style={{ height: 48 }} />
+        <div className="w-4 bg-[#E8DDD5]" style={{ height: 78 }} />
+      </div>
+    )
   }
-  if (status === "generating") {
-    return Math.max(currentValue ?? 0, timedProgress)
+  if (kind === "lines") {
+    return (
+      <div className="pt-1.5">
+        <div className="h-3 w-[70%] bg-[#1C1917]" />
+        <div className="mt-3 h-[7px] w-full bg-[#F5F0EB]" />
+        <div className="mt-1.5 h-[7px] w-[92%] bg-[#F5F0EB]" />
+        <div className="mt-1.5 h-[7px] w-[96%] bg-[#F5F0EB]" />
+        <div className="mt-1.5 h-[7px] w-[60%] bg-[#F5F0EB]" />
+        <div className="mt-3 h-[7px] w-[84%] bg-[#F5F0EB]" />
+      </div>
+    )
   }
-  if (status === "partial") {
-    return Math.max(currentValue ?? 0, timedProgress)
+  if (kind === "checklist") {
+    return (
+      <div className="flex h-full flex-col justify-center gap-3">
+        {[true, true, false, false].map((checked, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <div
+              className="size-3 rounded-[3px] border-[1.5px]"
+              style={{
+                borderColor: checked ? "#1C1917" : "#CCC2B8",
+                background: checked ? "#1C1917" : "#FFFFFF",
+              }}
+            />
+            <div className="h-[7px] flex-1 bg-[#F5F0EB]" />
+          </div>
+        ))}
+      </div>
+    )
   }
-
-  return 0
-}
-
-export function shouldAnimateIntakeProgress(status: OnboardingGenerationStatus, value: number) {
-  return (status === "generating" || status === "partial") && value >= INTAKE_MIN_ANIMATED_PROGRESS
-}
-
-export function statusMessage(row: IntakeLoadingRow) {
-  if (row.status === "done") return "Ready"
-  if (row.status === "error") return "Needs retry"
-  if (row.status === "cancelled") return "Cancelled"
-  if (row.status === "incomplete") return "Unavailable"
-  if (row.status === "partial") return "Finishing"
-  if (row.status === "pending" || row.status === "skipped") return "Waiting"
-  return row.message
+  if (kind === "grid") {
+    return (
+      <div className="grid h-full grid-cols-2 gap-2 py-1">
+        <div className="rounded border border-[#E8DDD5] bg-[#F5F0EB]" />
+        <div className="rounded border border-[#E8DDD5] bg-[#F5F0EB]" />
+        <div className="rounded border border-[#E8DDD5] bg-[#F5F0EB]" />
+        <div className="rounded bg-[#1C1917]" />
+      </div>
+    )
+  }
+  if (kind === "dark") {
+    return (
+      <div className="pt-1.5">
+        <div className="h-2 w-[44%] bg-[#8A8480]" />
+        <div className="mt-2.5 h-[7px] w-[88%] bg-[#2C2520]" />
+        <div className="mt-1.5 h-[7px] w-[74%] bg-[#2C2520]" />
+        <div className="mt-1.5 h-[7px] w-[92%] bg-[#2C2520]" />
+        <div className="mt-2.5 h-2 w-[36%] bg-[#8A8480]" />
+        <div className="mt-2.5 h-[7px] w-[80%] bg-[#2C2520]" />
+      </div>
+    )
+  }
+  // numbered
+  return (
+    <div className="pt-1.5">
+      <div className="font-mono text-[22px] font-medium text-[#1C1917]">01</div>
+      <div className="mt-2.5 h-[7px] w-full bg-[#F5F0EB]" />
+      <div className="mt-1.5 h-[7px] w-[88%] bg-[#F5F0EB]" />
+      <div className="mt-1.5 h-[7px] w-[94%] bg-[#F5F0EB]" />
+      <div className="mt-1.5 h-[7px] w-[52%] bg-[#F5F0EB]" />
+    </div>
+  )
 }

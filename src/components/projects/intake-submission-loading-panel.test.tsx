@@ -3,54 +3,47 @@ import assert from "node:assert/strict"
 import { renderToStaticMarkup } from "react-dom/server"
 
 import {
-  INTAKE_FAKE_PROGRESS_DURATION_MS,
-  INTAKE_MAX_FAKE_PROGRESS,
-  getNextIntakeProgressValue,
-  getTimedIntakeProgress,
-  shouldAnimateIntakeProgress,
-  statusMessage,
+  INTAKE_LOADER_MESSAGES,
+  INTAKE_LOADER_MESSAGE_INTERVAL_MS,
+  getLoaderLineWidth,
+  getLoaderMessageIndex,
   IntakeSubmissionLoadingPanel,
-  type IntakeLoadingRow,
 } from "./intake-submission-loading-panel"
 
-test("getTimedIntakeProgress: reaches fake cap after the slower onboarding duration", () => {
-  assert.equal(INTAKE_FAKE_PROGRESS_DURATION_MS, 40000)
-  assert.equal(getTimedIntakeProgress(INTAKE_FAKE_PROGRESS_DURATION_MS / 2, false), 45)
-  assert.equal(getTimedIntakeProgress(INTAKE_FAKE_PROGRESS_DURATION_MS, false), INTAKE_MAX_FAKE_PROGRESS)
-  assert.equal(getTimedIntakeProgress(INTAKE_FAKE_PROGRESS_DURATION_MS * 2, false), INTAKE_MAX_FAKE_PROGRESS)
+test("getLoaderMessageIndex: advances one message per interval", () => {
+  const count = INTAKE_LOADER_MESSAGES.length
+  assert.equal(getLoaderMessageIndex(0, count), 0)
+  assert.equal(getLoaderMessageIndex(INTAKE_LOADER_MESSAGE_INTERVAL_MS - 1, count), 0)
+  assert.equal(getLoaderMessageIndex(INTAKE_LOADER_MESSAGE_INTERVAL_MS, count), 1)
+  assert.equal(getLoaderMessageIndex(INTAKE_LOADER_MESSAGE_INTERVAL_MS * 2.5, count), 2)
 })
 
-test("getNextIntakeProgressValue: keeps pending onboarding rows at zero", () => {
-  assert.equal(getNextIntakeProgressValue("pending", undefined, 35), 0)
-  assert.equal(getNextIntakeProgressValue("pending", 40, 60), 0)
+test("getLoaderMessageIndex: clamps to the final message and holds", () => {
+  const count = INTAKE_LOADER_MESSAGES.length
+  const past = INTAKE_LOADER_MESSAGE_INTERVAL_MS * (count + 20)
+  assert.equal(getLoaderMessageIndex(past, count), count - 1)
 })
 
-test("getNextIntakeProgressValue: advances only generating rows and completes done rows", () => {
-  assert.equal(getNextIntakeProgressValue("generating", undefined, 35), 35)
-  assert.equal(getNextIntakeProgressValue("generating", 45, 35), 45)
-  assert.equal(getNextIntakeProgressValue("done", 45, 60), 100)
+test("getLoaderLineWidth: fills monotonically and caps at 100", () => {
+  const count = INTAKE_LOADER_MESSAGES.length
+  const full = INTAKE_LOADER_MESSAGE_INTERVAL_MS * count
+  assert.equal(getLoaderLineWidth(0, count), 0)
+  assert.equal(getLoaderLineWidth(full / 2, count), 50)
+  assert.equal(getLoaderLineWidth(full, count), 100)
+  assert.equal(getLoaderLineWidth(full * 3, count), 100)
 })
 
-test("shouldAnimateIntakeProgress: waits until the fill can visually carry the shimmer", () => {
-  assert.equal(shouldAnimateIntakeProgress("generating", 8), false)
-  assert.equal(shouldAnimateIntakeProgress("generating", 12), true)
-  assert.equal(shouldAnimateIntakeProgress("pending", 40), false)
+test("getLoaderLineWidth: never negative for pre-start clock skew", () => {
+  assert.equal(getLoaderLineWidth(-5000, INTAKE_LOADER_MESSAGES.length), 0)
 })
 
-test("statusMessage: pending rows do not imply downstream work has started", () => {
-  const row: IntakeLoadingRow = {
-    key: "prd",
-    label: "Product Plan",
-    message: "Drafting requirements",
-    status: "pending",
-  }
-
-  assert.equal(statusMessage(row), "Waiting")
-})
-
-test("IntakeSubmissionLoadingPanel: default rows include the derived AI Prompts handoff", () => {
+test("IntakeSubmissionLoadingPanel: renders the loader kicker and artifact labels", () => {
   const html = renderToStaticMarkup(<IntakeSubmissionLoadingPanel />)
 
-  assert.match(html, /AI Prompts/)
-  assert.match(html, /Waiting/)
+  assert.match(html, /Creating your project/)
+  assert.match(html, /about to get/)
+  assert.match(html, /Market research/)
+  assert.match(html, /Executive summary/)
+  // First message renders (server render has elapsed 0 → index 0).
+  assert.match(html, /Sending your idea to the research desk/)
 })

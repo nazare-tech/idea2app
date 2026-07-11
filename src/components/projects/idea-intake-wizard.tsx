@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 
 import { IntakeSubmissionLoadingPanel } from "@/components/projects/intake-submission-loading-panel"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
-import { INTAKE_EXAMPLE_IDEAS } from "@/lib/intake/examples"
+import { IntakeMarquee } from "@/components/projects/intake-marquee"
+import { INTAKE_EXAMPLE_IDEAS, type IntakeExampleIdea } from "@/lib/intake/examples"
 import { validateIdeaInput } from "@/lib/intake/idea-validation"
 import { shouldSubmitOnEnter } from "@/lib/intake/keyboard-submit"
 import type { IntakeAnswer, IntakeQuestion, IntakeQuestionSet } from "@/lib/intake/types"
@@ -19,6 +20,10 @@ const SESSION_IDEA_KEY = "makercompass:intake:draft"
 const MIN_INTAKE_QUESTIONS = 4
 const MAX_INTAKE_QUESTIONS = 7
 const WIZARD_TOTAL_STEPS = 2
+
+// Skeleton placeholders shown while questions generate (Step 2 reveal).
+const SKELETON_TITLE_WIDTHS = ["58%", "44%", "66%", "50%"]
+const QUESTION_REVEAL_STAGGER_MS = 90
 
 type WizardStep = "idea" | "questions"
 
@@ -136,14 +141,20 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
 
   const generateQuestions = useCallback(async () => {
     if (!canContinue || questionsRequestLockRef.current) return
-    questionsRequestLockRef.current = true
     setError(null)
 
+    // Same idea, questions already generated: just reveal them.
     if (questionSet && normalizedIdea === lastGeneratedIdea) {
       setStep("questions")
       return
     }
 
+    // Reveal Step 2 immediately with skeleton question cards, then generate,
+    // so the wait reads as "writing your questions" instead of a stalled button.
+    questionsRequestLockRef.current = true
+    setQuestionSet(null)
+    setAnswers({})
+    setStep("questions")
     setIsGeneratingQuestions(true)
     try {
       const response = await fetch("/api/intake/questions", {
@@ -169,7 +180,6 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
       setQuestionSet(data.questionSet)
       setAnswers({})
       setLastGeneratedIdea(normalizedIdea)
-      setStep("questions")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate questions")
     } finally {
@@ -321,180 +331,212 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
     return <IntakeSubmissionLoadingPanel />
   }
 
-  return (
-    <div data-testid="idea-intake-wizard" className="min-h-full bg-background px-4 py-6 text-text-primary sm:px-8 lg:px-14">
-      <div className="mx-auto flex min-h-[calc(100vh-112px)] w-full max-w-[760px] flex-col">
-        <div className="flex flex-1 items-start justify-center">
-          {step === "idea" ? (
-            <section className="w-full">
-              <div className="rounded-lg border border-border-subtle bg-card p-5 sm:p-8 lg:p-10">
-                <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-                  Step 1 of {WIZARD_TOTAL_STEPS}
-                </p>
-                <h2 className="mt-2 font-[family:var(--font-display)] text-[2.25rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
-                  Idea Brief
-                </h2>
-                <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
-                  Describe your business idea in a few sentences
-                </p>
+  if (step === "idea") {
+    return (
+      <div
+        data-testid="idea-intake-wizard"
+        className="flex min-h-[calc(100vh-112px)] flex-col bg-background pt-6 pb-24 text-text-primary"
+      >
+        <div className="px-4 sm:px-8 lg:px-14">
+          <section className="mx-auto w-full max-w-[760px]">
+            <div className="rounded-lg border border-border-subtle bg-card p-5 sm:p-8 lg:p-10">
+              <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+                Step 1 of {WIZARD_TOTAL_STEPS}
+              </p>
+              <h2 className="mt-2 font-[family:var(--font-display)] text-[2.25rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
+                Idea Brief
+              </h2>
+              <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
+                Describe your business idea in a few sentences
+              </p>
 
-                <div className="mt-6">
-                  <label htmlFor="idea-brief" className="sr-only">
-                    What are you building?
-                  </label>
-                  <Textarea
-                    id="idea-brief"
-                    data-testid="intake-idea-textarea"
-                    value={idea}
-                    onChange={(event) => updateIdea(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (
-                        !shouldSubmitOnEnter(
-                          {
-                            key: event.key,
-                            shiftKey: event.shiftKey,
-                            repeat: event.repeat,
-                            isComposing: event.nativeEvent.isComposing,
-                          },
-                          isIdeaSubmitDisabled
-                        )
-                      ) {
-                        return
-                      }
+              <div className="mt-6">
+                <label htmlFor="idea-brief" className="sr-only">
+                  What are you building?
+                </label>
+                <Textarea
+                  id="idea-brief"
+                  data-testid="intake-idea-textarea"
+                  value={idea}
+                  onChange={(event) => updateIdea(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (
+                      !shouldSubmitOnEnter(
+                        {
+                          key: event.key,
+                          shiftKey: event.shiftKey,
+                          repeat: event.repeat,
+                          isComposing: event.nativeEvent.isComposing,
+                        },
+                        isIdeaSubmitDisabled
+                      )
+                    ) {
+                      return
+                    }
 
-                      event.preventDefault()
-                      void generateQuestions()
-                    }}
-                    enterKeyHint="go"
-                    placeholder="Example: A product intelligence tool that turns support tickets, sales calls, and customer chats into roadmap priorities..."
-                    className="min-h-[190px] border-border-strong bg-white text-[15px] leading-relaxed"
-                    disabled={isIdeaStepLocked}
-                  />
-                  {ideaHint && !isIdeaStepLocked && (
-                    <p className="mt-2 text-[13px] leading-snug text-text-secondary" data-testid="intake-idea-hint">
-                      {ideaHint}
-                    </p>
-                  )}
-                </div>
-
-                {isLoadingPending && (
-                  <div className="mt-4 flex items-center gap-2 text-sm text-text-secondary">
-                    <Spinner size="sm" />
-                    Loading your saved idea...
-                  </div>
+                    event.preventDefault()
+                    void generateQuestions()
+                  }}
+                  enterKeyHint="go"
+                  placeholder="Example: A product intelligence tool that turns support tickets, sales calls, and customer chats into roadmap priorities..."
+                  className="min-h-[190px] border-border-strong bg-white text-[15px] leading-relaxed"
+                  disabled={isIdeaStepLocked}
+                />
+                {ideaHint && !isIdeaStepLocked && (
+                  <p className="mt-2 text-[13px] leading-snug text-text-secondary" data-testid="intake-idea-hint">
+                    {ideaHint}
+                  </p>
                 )}
-
-                <div
-                  className={cn(
-                    "mt-6 transition-opacity duration-200",
-                    isIdeaStepLocked && "pointer-events-none opacity-0"
-                  )}
-                  aria-hidden={isIdeaStepLocked}
-                >
-                  <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-                    Or start from an example
-                  </p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    {INTAKE_EXAMPLE_IDEAS.map((example) => (
-                      <button
-                        key={example.id}
-                        type="button"
-                        disabled={isIdeaStepLocked}
-                        onClick={() => updateIdea(example.description)}
-                        className="rounded-lg border border-border-subtle bg-white p-4 text-left transition-colors hover:border-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed"
-                      >
-                        <span className="block text-sm font-semibold">{example.title}</span>
-                        <span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-text-secondary">
-                          {example.description}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
-              <WizardError error={error} />
-
-              <div className="mt-5 flex justify-stretch sm:justify-end">
-                <Button
-                  type="button"
-                  onClick={generateQuestions}
-                  disabled={isIdeaSubmitDisabled}
-                  className="h-11 w-full rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10 sm:w-auto"
-                  data-testid="intake-continue"
-                >
-                  {isGeneratingQuestions ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating questions
-                    </>
-                  ) : (
-                    "Next"
-                  )}
-                </Button>
-              </div>
-            </section>
-          ) : (
-            <section className="w-full">
-              <div className="rounded-lg border border-border-subtle bg-card p-5 sm:p-8 lg:p-10">
-                <div className="mb-6">
-                  <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-                    Step 2 of {WIZARD_TOTAL_STEPS}
-                  </p>
-                  <h2 className="mt-2 font-[family:var(--font-display)] text-[2.2rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
-                    Tell us a bit more
-                  </h2>
-                  <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
-                    These questions will help build a better plan for your business
-                  </p>
+              {isLoadingPending && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-text-secondary">
+                  <Spinner size="sm" />
+                  Loading your saved idea...
                 </div>
+              )}
+            </div>
 
-                <div className="space-y-4">
-                  {questions.map((question) => (
+            <WizardError error={error} />
+
+            <div className="mt-5 flex justify-stretch sm:justify-end">
+              <Button
+                type="button"
+                onClick={generateQuestions}
+                disabled={isIdeaSubmitDisabled}
+                className="h-11 w-full rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10 sm:w-auto"
+                data-testid="intake-continue"
+              >
+                Next
+              </Button>
+            </div>
+          </section>
+        </div>
+
+        {/* Scrolling example ideas: three drifting rows, hidden while the idea
+            step is locked (e.g. restoring a saved idea). */}
+        <div
+          className={cn(
+            "mt-14 w-full transition-opacity duration-200",
+            isIdeaStepLocked && "pointer-events-none opacity-0"
+          )}
+          aria-hidden={isIdeaStepLocked}
+        >
+          <p className="mb-5 text-center font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+            Start from any idea
+          </p>
+          <div className="flex flex-col gap-3">
+            <ExampleIdeaRow
+              ideas={INTAKE_EXAMPLE_IDEAS.slice(0, 4)}
+              duration="50s"
+              disabled={isIdeaStepLocked}
+              onPick={updateIdea}
+            />
+            <ExampleIdeaRow
+              ideas={INTAKE_EXAMPLE_IDEAS.slice(4, 8)}
+              duration="60s"
+              disabled={isIdeaStepLocked}
+              onPick={updateIdea}
+            />
+            <ExampleIdeaRow
+              ideas={INTAKE_EXAMPLE_IDEAS.slice(8, 12)}
+              duration="43s"
+              disabled={isIdeaStepLocked}
+              onPick={updateIdea}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const showSkeletons = isGeneratingQuestions || (questions.length === 0 && !error)
+  const showRetry = !isGeneratingQuestions && questions.length === 0 && Boolean(error)
+
+  return (
+    <div
+      data-testid="idea-intake-wizard"
+      className="min-h-full bg-background px-4 py-6 text-text-primary sm:px-8 lg:px-14"
+    >
+      <section className="mx-auto w-full max-w-[760px]">
+        <div className="rounded-lg border border-border-subtle bg-card p-5 sm:p-8 lg:p-10">
+          <div className="mb-6">
+            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
+              Step 2 of {WIZARD_TOTAL_STEPS}
+            </p>
+            <h2 className="mt-2 font-[family:var(--font-display)] text-[2.2rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
+              Tell us a bit more
+            </h2>
+            <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
+              {isGeneratingQuestions
+                ? "Reading your idea and writing questions worth answering..."
+                : "These questions will help build a better plan for your business"}
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {showSkeletons
+              ? SKELETON_TITLE_WIDTHS.map((width, index) => (
+                  <SkeletonQuestionCard key={`skeleton-${index}`} titleWidth={width} />
+                ))
+              : questions.map((question, index) => (
+                  <div
+                    key={question.id}
+                    className="animate-fade-up"
+                    style={{ animationDelay: `${index * QUESTION_REVEAL_STAGGER_MS}ms` }}
+                  >
                     <QuestionCard
-                      key={question.id}
                       question={question}
                       answer={answers[question.id] ?? emptyAnswer()}
                       onAnswerChange={(updater) => setAnswer(question.id, updater)}
                     />
-                  ))}
-                </div>
+                  </div>
+                ))}
+          </div>
 
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep("idea")}
-                    disabled={isCreatingProject}
-                    className="h-11 rounded-md border-text-primary bg-transparent px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-text-primary hover:bg-background sm:h-10"
-                    data-testid="intake-back"
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={createProject}
-                    disabled={!allQuestionsAnswered || isCreatingProject}
-                    className="h-11 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10"
-                    data-testid="intake-create-project"
-                  >
-                    {isCreatingProject ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Creating project
-                      </>
-                    ) : (
-                      "Create project"
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <WizardError error={error} />
-            </section>
-          )}
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep("idea")}
+              disabled={isCreatingProject}
+              className="h-11 rounded-md border-text-primary bg-transparent px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-text-primary hover:bg-background sm:h-10"
+              data-testid="intake-back"
+            >
+              Back
+            </Button>
+            {showRetry ? (
+              <Button
+                type="button"
+                onClick={generateQuestions}
+                className="h-11 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10"
+                data-testid="intake-retry-questions"
+              >
+                Retry
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={createProject}
+                disabled={!allQuestionsAnswered || isCreatingProject}
+                className="h-11 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10"
+                data-testid="intake-create-project"
+              >
+                {isCreatingProject ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creating project
+                  </>
+                ) : (
+                  "Create project"
+                )}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+
+        <WizardError error={error} />
+      </section>
     </div>
   )
 }
@@ -511,9 +553,16 @@ function QuestionCard({
   return (
     <article className="rounded-lg border border-border-subtle bg-white p-[18px]">
       <div className="min-w-0">
-        <h3 className="font-[family:var(--font-display)] text-xl font-bold leading-snug tracking-[-0.015em] text-[#0D1320]">
-          {question.question}
-        </h3>
+        <div className="flex items-baseline justify-between gap-4">
+          <h3 className="font-[family:var(--font-display)] text-xl font-bold leading-snug tracking-[-0.015em] text-[#0D1320]">
+            {question.question}
+          </h3>
+          {question.selectionMode !== "text" && (
+            <span className="shrink-0 font-mono text-[10px] font-medium uppercase tracking-[0.18em] whitespace-nowrap text-text-muted">
+              {question.selectionMode === "multiple" ? "Pick a few" : "Pick one"}
+            </span>
+          )}
+        </div>
         {question.helperText && (
           <p className="mt-1 text-xs leading-relaxed text-text-secondary">{question.helperText}</p>
         )}
@@ -532,21 +581,43 @@ function QuestionCard({
             <div className="mt-4 flex flex-wrap gap-2">
               {question.options.map((option) => {
                 const selected = answer.selectedOptionIds.includes(option.id)
+                const isMulti = question.selectionMode === "multiple"
                 return (
                   <button
                     key={option.id}
                     type="button"
+                    role={isMulti ? "checkbox" : undefined}
+                    aria-checked={isMulti ? selected : undefined}
+                    aria-pressed={isMulti ? undefined : selected}
                     onClick={() =>
                       onAnswerChange((draft) => toggleOption(question, draft, option.id))
                     }
                     className={cn(
                       "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0 sm:py-1.5",
-                      selected
-                        ? "border-text-primary bg-text-primary text-white"
-                        : "border-border-subtle bg-white text-text-primary hover:border-text-primary"
+                      // Multi-select keeps a white chip with a leading checkbox; only
+                      // single-select inverts to a solid fill when chosen.
+                      isMulti
+                        ? cn(
+                            "bg-white text-text-primary",
+                            selected ? "border-text-primary" : "border-border-subtle hover:border-text-primary"
+                          )
+                        : selected
+                          ? "border-text-primary bg-text-primary text-white"
+                          : "border-border-subtle bg-white text-text-primary hover:border-text-primary"
                     )}
                   >
-                    {option.label}
+                    {isMulti && (
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "mr-[7px] inline-flex size-[13px] shrink-0 items-center justify-center rounded-[3px] border-[1.5px] transition-colors",
+                          selected ? "border-text-primary bg-text-primary" : "border-[#CCC2B8] bg-white"
+                        )}
+                      >
+                        {selected && <Check className="size-[9px] text-white" strokeWidth={4} />}
+                      </span>
+                    )}
+                    <span>{option.label}</span>
                   </button>
                 )
               })}
@@ -649,6 +720,48 @@ function buildAnswers(questions: IntakeQuestion[], answers: AnswerState): Intake
           }),
     }
   })
+}
+
+function ExampleIdeaRow({
+  ideas,
+  duration,
+  disabled,
+  onPick,
+}: {
+  ideas: IntakeExampleIdea[]
+  duration: string
+  disabled: boolean
+  onPick: (description: string) => void
+}) {
+  return (
+    <IntakeMarquee duration={duration}>
+      {ideas.map((idea) => (
+        <button
+          key={idea.id}
+          type="button"
+          disabled={disabled}
+          onClick={() => onPick(idea.description)}
+          className="mr-3 inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-border-subtle bg-white px-[18px] py-[9px] text-[13px] font-medium text-text-primary transition-colors hover:border-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed"
+        >
+          {idea.title}
+        </button>
+      ))}
+    </IntakeMarquee>
+  )
+}
+
+function SkeletonQuestionCard({ titleWidth }: { titleWidth: string }) {
+  return (
+    <article className="rounded-lg border border-border-subtle bg-white p-[18px]" aria-hidden="true">
+      <div className="intake-skeleton h-4 rounded" style={{ width: titleWidth }} />
+      <div className="intake-skeleton mt-2.5 h-2.5 w-[34%] rounded" />
+      <div className="mt-4 flex flex-wrap gap-2">
+        {["112px", "88px", "136px", "96px"].map((width, index) => (
+          <div key={index} className="intake-skeleton h-[30px] rounded-md" style={{ width }} />
+        ))}
+      </div>
+    </article>
+  )
 }
 
 function WizardError({ error }: { error: string | null }) {
