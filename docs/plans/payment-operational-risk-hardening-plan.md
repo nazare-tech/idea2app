@@ -1,7 +1,7 @@
 ---
-implemented: false
-implemented_at:
-implementation_summary:
+implemented: true
+implemented_at: 2026-07-11T23:23:44Z
+implementation_summary: Hardened webhook finalization, enabled Stripe failure email alerts, provisioned and verified an isolated Free production QA account, restricted the webhook signing secret to Vercel Production, rotated and expired the former secret, proved a fresh signed delivery returned HTTP 200 after redeploy, and repaired secure www-to-apex redirect behavior.
 ---
 
 # Plan: Payment Operational Risk Hardening
@@ -103,9 +103,9 @@ Fix webhook durable-status finalization before adding alerts: a successful handl
 1. [x] Add failing focused tests for webhook final-status persistence errors; implement checked lease-owned finalization and rerun tests.
 2. [x] Add a guarded production-QA provisioning helper, create the separate Free account, and verify no subscription/Internal Dev entitlement.
 3. [x] Enable Stripe email notifications for API integration, webhook delivery, and webhook event-generation failures. Do not create a Sentry account.
-4. [ ] Change Vercel `STRIPE_WEBHOOK_SECRET` to Production-only, phone-verify and roll the old value, redeploy Production, and verify signed delivery. Scope is complete; roll/proof remains.
+4. [x] Change Vercel `STRIPE_WEBHOOK_SECRET` to Production-only, phone-verify and roll the old value, redeploy Production, and verify signed delivery.
 5. [x] Add `www.makercompass.com` to Vercel as a 308 redirect to apex; confirm certificate SAN and permanent HTTPS redirect.
-6. [ ] Finish full verification, two fresh-eyes passes, code/security review, remediation, and documentation/history updates after secret-roll proof.
+6. [x] Finish full verification, two fresh-eyes passes, code/security review, remediation, and documentation/history updates after secret-roll proof.
 
 ## Milestones
 
@@ -141,7 +141,6 @@ Fix webhook durable-status finalization before adding alerts: a successful handl
 
 ## Open Decisions
 
-- Stripe phone verification is waiting in Chrome before the former Preview-exposed signing secret can be rolled. The user must enter the code directly in Stripe; it must not be sent through chat.
 - No Sentry account will be created. Stripe provider email notifications are the active alert path; app-processing alert rules can be added only if an existing Sentry account is connected later.
 
 ## Critique

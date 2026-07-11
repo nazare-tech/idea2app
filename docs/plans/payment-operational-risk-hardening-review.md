@@ -21,7 +21,7 @@
 - Stripe communication preferences: API integration errors, webhook delivery failures, and webhook event-generation failures all have Email enabled.
 - Vercel environment read-back: `STRIPE_WEBHOOK_SECRET` changed from Production + Preview to Production only.
 - `www` live proof: certificate CN/SAN is `www.makercompass.com`; HTTPS returns HTTP 308 with `Location: https://makercompass.com/`; apex remains untouched.
-- Production signing-secret rotation: pending Stripe phone verification before new secret transfer/redeploy/resend proof.
+- Production signing-secret rotation: completed. The new value is Vercel Production-only, the former secret was expired, the post-update production redeployment reached Ready, and a fresh signed live delivery returned HTTP 200 at Jul 11, 2026 4:22:51 PM PDT. The temporary `customer.created` probe subscription was removed afterward, restoring the exact five-event production set.
 - Production build: passed outside the sandbox after the sandboxed run failed because Turbopack could not bind its internal worker port.
 
 ## Fresh-Eyes Self Review
@@ -52,7 +52,7 @@
 - No hardcoded key, signing secret, QA password, customer email, or raw webhook payload was added to source, logs, screenshots, or review artifacts. The nonsecret expected Supabase project hostname is pinned in the provisioner to prevent wrong-project admin mutation.
 - QA credentials live only in `.env.production-qa.local`, ignored by Git and mode `0600`.
 - QA user is confirmed but has no subscription/Internal Dev entitlement; real UI stopped before card entry.
-- Production signing secret is now absent from future Preview deployments. Old preview deployments require the pending secret roll to lose access to the former signing secret.
+- Production signing secret is absent from future Preview deployments, and the former signing secret has been expired so old Preview deployments cannot verify new live deliveries.
 - Webhook signature verification still precedes all database mutation; idempotent claim/reclaim remains unchanged.
 - Failed final-status persistence logs a separate sanitized Sentry/Vercel event while preserving the original 500 retry response.
 - `www` repair uses Vercel certificate/domain controls; no TLS key material entered the repo or browser automation output.
@@ -68,7 +68,7 @@
 - [x] Prove hosted Checkout redirect with no charge/subscription.
 - [x] Enable Stripe webhook/API failure email notifications.
 - [x] Scope `STRIPE_WEBHOOK_SECRET` to Production only.
-- [ ] Complete phone-verified signing-secret roll, update Vercel Production, redeploy, and resend a safe event.
+- [x] Complete phone-verified signing-secret roll, update Vercel Production, redeploy, and resend a safe event.
 - [x] Bind `www`, issue certificate, and verify permanent apex redirect.
 - [x] Record final build result.
-- [ ] Close plan metadata after signing-secret rotation proof.
+- [x] Close plan metadata after signing-secret rotation proof.
