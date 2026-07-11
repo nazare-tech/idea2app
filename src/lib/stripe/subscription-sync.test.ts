@@ -4,6 +4,8 @@ import assert from "node:assert/strict"
 import {
   buildSubscriptionCreditGrantKey,
   buildSubscriptionSyncSnapshot,
+  getInvoiceSubscriptionId,
+  invoiceMatchesSubscriptionPeriod,
   type StripePlanPriceMapping,
 } from "@/lib/stripe/subscription-sync"
 
@@ -165,5 +167,102 @@ test("buildSubscriptionCreditGrantKey is stable for duplicate period events", ()
   assert.equal(
     buildSubscriptionCreditGrantKey(snapshot),
     "subscription_period:sub_123:2026-05-01T00:00:00.000Z"
+  )
+})
+
+test("getInvoiceSubscriptionId supports current Clover invoice parent shape", () => {
+  assert.equal(
+    getInvoiceSubscriptionId({
+      parent: {
+        subscription_details: {
+          subscription: "sub_current",
+        },
+      },
+    }),
+    "sub_current"
+  )
+})
+
+test("getInvoiceSubscriptionId preserves legacy and expanded subscription shapes", () => {
+  assert.equal(getInvoiceSubscriptionId({ subscription: "sub_legacy" }), "sub_legacy")
+  assert.equal(getInvoiceSubscriptionId({ subscription: { id: "sub_expanded" } }), "sub_expanded")
+  assert.equal(
+    getInvoiceSubscriptionId({
+      parent: { subscription_details: { subscription: { id: "sub_current_expanded" } } },
+    }),
+    "sub_current_expanded"
+  )
+  assert.equal(getInvoiceSubscriptionId({ parent: null }), "")
+  assert.equal(getInvoiceSubscriptionId({ parent: { subscription_details: null } }), "")
+})
+
+test("invoiceMatchesSubscriptionPeriod rejects delayed invoices from an older period", () => {
+  const snapshot = buildSubscriptionSyncSnapshot(
+    subscription(),
+    new Map([["price_starter_monthly", planPrice()]])
+  )
+  const invoice = (start: number, end: number, overrides: Record<string, unknown> = {}) => ({
+    lines: {
+      data: [
+        {
+          parent: {
+            subscription_item_details: {
+              proration: false,
+              subscription: "sub_123",
+              subscription_item: "si_123",
+            },
+          },
+          pricing: {
+            price_details: { price: "price_starter_monthly" },
+          },
+          period: { start, end },
+          ...overrides,
+        },
+      ],
+    },
+  })
+
+  assert.equal(
+    invoiceMatchesSubscriptionPeriod(invoice(1_777_593_600, 1_780_185_600), snapshot),
+    true
+  )
+  assert.equal(
+    invoiceMatchesSubscriptionPeriod(invoice(1_775_174_400, 1_777_593_600), snapshot),
+    false
+  )
+  assert.equal(invoiceMatchesSubscriptionPeriod({}, snapshot), false)
+  assert.equal(
+    invoiceMatchesSubscriptionPeriod(
+      {
+        lines: {
+          data: [
+            {
+              subscription: "sub_123",
+              subscription_item: "si_123",
+              price: { id: "price_starter_monthly" },
+              proration: false,
+              period: { start: 1_777_593_600, end: 1_780_185_600 },
+            },
+          ],
+        },
+      },
+      snapshot
+    ),
+    true
+  )
+  assert.equal(
+    invoiceMatchesSubscriptionPeriod(
+      invoice(1_777_593_600, 1_780_185_600, {
+        parent: {
+          subscription_item_details: {
+            proration: true,
+            subscription: "sub_123",
+            subscription_item: "si_123",
+          },
+        },
+      }),
+      snapshot
+    ),
+    false
   )
 })

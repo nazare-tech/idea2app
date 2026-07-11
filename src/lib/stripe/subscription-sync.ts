@@ -128,6 +128,78 @@ export function buildSubscriptionCreditGrantKey(snapshot: SubscriptionSyncSnapsh
   return `subscription_period:${snapshot.stripeSubscriptionId}:${snapshot.currentPeriodStart}`
 }
 
+export function getInvoiceSubscriptionId(invoice: Record<string, unknown>): string {
+  const legacySubscriptionId = getStringId(invoice.subscription)
+  if (legacySubscriptionId) {
+    return legacySubscriptionId
+  }
+
+  const parent = invoice.parent
+  if (!isRecord(parent)) {
+    return ""
+  }
+
+  const subscriptionDetails = parent.subscription_details
+  if (!isRecord(subscriptionDetails)) {
+    return ""
+  }
+
+  return getStringId(subscriptionDetails.subscription)
+}
+
+export function invoiceMatchesSubscriptionPeriod(
+  invoice: Record<string, unknown>,
+  snapshot: SubscriptionSyncSnapshot
+): boolean {
+  const lines = invoice.lines
+  if (!isRecord(lines) || !Array.isArray(lines.data)) {
+    return false
+  }
+
+  const snapshotStart = Date.parse(snapshot.currentPeriodStart)
+  const snapshotEnd = Date.parse(snapshot.currentPeriodEnd)
+  if (!Number.isFinite(snapshotStart) || !Number.isFinite(snapshotEnd)) {
+    return false
+  }
+
+  const matchingLines = lines.data.filter((line) => {
+    if (!isRecord(line) || !isRecord(line.period)) {
+      return false
+    }
+
+    const details = isRecord(line.parent) ? line.parent.subscription_item_details : null
+    const hasCurrentDetails = isRecord(details)
+    const subscriptionId = hasCurrentDetails
+      ? getStringId(details.subscription)
+      : getStringId(line.subscription)
+    const subscriptionItemId = hasCurrentDetails
+      ? getString(details.subscription_item)
+      : getStringId(line.subscription_item)
+    const isProration = hasCurrentDetails ? details.proration : line.proration
+
+    const pricing = line.pricing
+    const priceDetails = isRecord(pricing) ? pricing.price_details : null
+    const priceId = isRecord(priceDetails)
+      ? getStringId(priceDetails.price)
+      : getStringId(line.price)
+
+    const start = getUnixSeconds(line.period.start)
+    const end = getUnixSeconds(line.period.end)
+    return (
+      isProration === false &&
+      subscriptionId === snapshot.stripeSubscriptionId &&
+      subscriptionItemId === snapshot.stripeSubscriptionItemId &&
+      priceId === snapshot.stripePriceId &&
+      start !== null &&
+      end !== null &&
+      start * 1000 === snapshotStart &&
+      end * 1000 === snapshotEnd
+    )
+  })
+
+  return matchingLines.length === 1
+}
+
 export function getCreditMultiplier(planPrice: Pick<StripePlanPriceMapping, "credits_multiplier" | "interval_unit" | "interval_count">): number {
   if (typeof planPrice.credits_multiplier === "number" && Number.isFinite(planPrice.credits_multiplier)) {
     return Math.max(1, Math.floor(planPrice.credits_multiplier))

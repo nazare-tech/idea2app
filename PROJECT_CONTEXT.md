@@ -1064,6 +1064,7 @@ docker run -p 3000:3000 idea2app
 
 - **subscriptions**: User subscriptions
   - Fields: `id`, `user_id`, `plan_id`, `stripe_subscription_id`, `status`, `current_period_end`
+  - Constraints: one local subscription snapshot per user via `UNIQUE(user_id)`; Stripe webhook retries upsert on this key
   - RLS: Users can only view their own subscription
 
 - **waitlist**: Public early-access waitlist submissions
@@ -1230,7 +1231,7 @@ docker run -p 3000:3000 idea2app
     - `checkout.session.completed` — retrieves the Stripe subscription, maps the actual item Price ID to `plan_prices`, and syncs real period dates
     - `customer.subscription.updated` — syncs status, cancel_at_period_end, period dates, `plan_id`, `plan_price_id`, and `stripe_price_id` from the actual subscription item Price ID
     - `customer.subscription.deleted` — marks subscription as canceled
-    - `invoice.paid` (billing_reason = `subscription_create` or `subscription_cycle`) — interval-scaled initial/renewal credits via `grant_subscription_credits_once()`
+    - `invoice.paid` (billing_reason = `subscription_create` or `subscription_cycle`) — interval-scaled initial/renewal credits via `grant_subscription_credits_once()`; subscription identity supports legacy top-level and Clover parent shapes, while grants require one matching non-proration subscription invoice line and service period before local subscription mutation
 
 ---
 
@@ -1523,6 +1524,7 @@ export const BASE_ACTION_TOKENS = {
 | [supabase/migrations/20260621000000_populate_plan_project_allowance.sql](supabase/migrations/20260621000000_populate_plan_project_allowance.sql) | Adds and backfills `plans.monthly_project_allowance` so project allowance resolves from explicit plan fields. |
 | [supabase/migrations/20260518000000_create_prompt_lab_tables.sql](supabase/migrations/20260518000000_create_prompt_lab_tables.sql) | Supabase migration for Prompt Lab drafts/runs with user-scoped RLS. |
 | [supabase/migrations/20260609000000_stripe_interval_prices.sql](supabase/migrations/20260609000000_stripe_interval_prices.sql) | Supabase migration for interval-aware Stripe `plan_prices`, subscription price tracking, disabled Enterprise checkout, and idempotent subscription credit grants. |
+| [supabase/migrations/20260711000000_add_subscriptions_user_unique.sql](supabase/migrations/20260711000000_add_subscriptions_user_unique.sql) | Guarded schema repair enforcing one `subscriptions` row per user so webhook `ON CONFLICT (user_id)` upserts are atomic and replay-safe. |
 | [supabase/migrations/20260710000100_create_product_event_analytics.sql](supabase/migrations/20260710000100_create_product_event_analytics.sql) | Service-only product event store, production analysis views, indexes, and fixed 180-day cleanup schedule. |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Deprecated setup guide for the removed Prompt tab AI chat feature |
 

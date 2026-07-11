@@ -7,6 +7,8 @@ import { logError, logInfo, logWarn } from "@/lib/logger"
 import {
   buildSubscriptionCreditGrantKey,
   buildSubscriptionSyncSnapshot,
+  getInvoiceSubscriptionId,
+  invoiceMatchesSubscriptionPeriod,
   type StripePlanPriceMapping,
   type SubscriptionSyncSnapshot,
 } from "@/lib/stripe/subscription-sync"
@@ -524,7 +526,7 @@ export async function POST(request: Request) {
 
       case "invoice.paid": {
         const invoice = event.data.object as unknown as Record<string, unknown>
-        const subscriptionId = getStripeObjectId(invoice.subscription)
+        const subscriptionId = getInvoiceSubscriptionId(invoice)
 
         if (invoice.billing_reason === "subscription_create" || invoice.billing_reason === "subscription_cycle") {
           if (!subscriptionId) {
@@ -538,6 +540,10 @@ export async function POST(request: Request) {
 
           if (!userId) {
             throw new Error(`No profile found for Stripe customer ${snapshot.stripeCustomerId}`)
+          }
+
+          if (!invoiceMatchesSubscriptionPeriod(invoice, snapshot)) {
+            throw new Error("Paid invoice period does not match current Stripe subscription period")
           }
 
           await syncSubscriptionSnapshot(supabase, userId, snapshot)

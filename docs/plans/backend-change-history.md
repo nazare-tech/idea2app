@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-11: Stripe subscription webhook schema and Clover invoice repair
+
+- Plan: [docs/plans/stripe-subscription-user-uniqueness-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/stripe-subscription-user-uniqueness-plan.md)
+- Review: [docs/plans/stripe-subscription-user-uniqueness-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/stripe-subscription-user-uniqueness-review.md)
+- Durable source of truth: `subscriptions.user_id` unique constraint owns one local entitlement snapshot per user; `src/lib/stripe/subscription-sync.ts` owns invoice subscription compatibility and paid subscription-line validation.
+- Schema or data-shape changes: Applied migration `20260711000000_add_subscriptions_user_unique.sql` adds `UNIQUE(user_id)` after a fail-closed duplicate check. No row/API payload shape changes.
+- Auth, RLS, or permission changes: None. Stripe signature verification and service-role-only writes remain unchanged.
+- Runtime/API behavior changes: `invoice.paid` accepts legacy top-level and Clover parent subscription references. Credit grants require exactly one non-proration invoice line matching current subscription, subscription item, price, and service period; validation occurs before subscription mutation.
+- Migration or deployment steps: Duplicate preflight passed (1 row, 1 user, 0 duplicates). Migration history/dry run showed only the intended migration; linked `supabase db push` succeeded; local and remote histories now match.
+- Verification: Focused red-green tests 8/8, full suite 581/581, typecheck, changed-file ESLint, and diff check pass. Original failed checkout then invoice events were replayed: both claims are processed with cleared errors, subscription is active with Stripe/plan/period fields, exactly one positive initial credit grant exists, duplicate subscription users remain zero, and trusted `checkout_completed` analytics exists from `stripe_webhook`. Chrome UI evidence was blocked after full health/recovery checks because no controllable instance appeared.
+- Rollback or recovery: Revert resolver/line guard if Stripe payload behavior changes. Drop `subscriptions_user_id_key` only if product intentionally adopts multiple local subscriptions; preserve all rows. Failed webhook claims remain replayable after forward repair.
+- Follow-ups: Optional billing-page screenshot after Chrome plugin connectivity is restored; no backend recovery work remains.
+
 ## 2026-07-11: Seven-candidate Exa discovery with three-to-five direct selection
 
 - Plan: [docs/plans/exa-seven-competitor-candidates-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/exa-seven-competitor-candidates-plan.md)
