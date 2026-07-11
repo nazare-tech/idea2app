@@ -134,6 +134,26 @@ export async function canCreateProject(
   return getProjectAllowanceStatus(clientLike, userId, options)
 }
 
+/**
+ * Resolves the customer-facing plan name for a user from their active
+ * subscription with a single query. Returns "Free" when there is no active
+ * subscription or the lookup fails, so callers that branch on plan (e.g.
+ * tier model routing) fail safe to the cheapest entitlement.
+ */
+export async function getUserPlanName(
+  clientLike: ProjectAllowanceClientLike,
+  userId: string,
+  options: ProjectAllowanceOptions = {}
+): Promise<string> {
+  const trimmedUserId = userId.trim()
+  if (!trimmedUserId) return "Free"
+
+  const client = asAllowanceClient(clientLike)
+  const now = getValidDate(options.now)
+  const lookup = await getActiveSubscription(client, trimmedUserId, now)
+  return getPlanName(getJoinedPlan(lookup.subscription))
+}
+
 export async function getProjectAllowanceStatus(
   clientLike: ProjectAllowanceClientLike,
   userId: string,

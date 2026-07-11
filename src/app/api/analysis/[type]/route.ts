@@ -24,8 +24,21 @@ import {
   PRODUCT_PLAN_DEFAULT_MODEL,
 } from "@/lib/planning-document-requests"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
+import {
+  isTierModelRoutingEnabled,
+  resolveTierTextModel,
+} from "@/lib/generation-model-policy"
+import { getUserPlanName } from "@/lib/project-allowance"
+import { randomUUID } from "node:crypto"
+import {
+  getAnalyticsDocumentType,
+  recordManualGenerationCompleted,
+  recordManualGenerationFailed,
+  recordManualGenerationStarted,
+} from "@/lib/product-analytics/generation"
 
-// Fixed default models per analysis type — user model selection removed
+// Legacy fixed default models per analysis type. Used only when tier model
+// routing is disabled via TIER_MODEL_ROUTING_DISABLED (rollback path).
 const ANALYSIS_DEFAULT_MODELS: Record<string, string> = {
   "competitive-analysis": "google/gemini-3.1-pro-preview",
   "prd":                  PRODUCT_PLAN_DEFAULT_MODEL,
@@ -84,6 +97,10 @@ export async function POST(request: Request, { params }: AnalysisParams) {
   let userId: string | undefined
   let projectId: string | undefined
   let analysisType: string | undefined
+  let analyticsRunId: string | undefined
+  let analyticsDocumentType: ReturnType<typeof getAnalyticsDocumentType> = null
+  let analyticsStartedAt = 0
+  let analyticsPlanName: string | undefined
 
   let isStreaming = false
 
@@ -130,7 +147,10 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     const body = await request.json()
     projectId = body.projectId
     const { idea, name, competitiveAnalysis, prd, stream: streamRequested } = body
-    const model = ANALYSIS_DEFAULT_MODELS[type] ?? "anthropic/claude-sonnet-4-6"
+    analyticsPlanName = await getUserPlanName(supabase, user.id)
+    const model = isTierModelRoutingEnabled()
+      ? resolveTierTextModel(analyticsPlanName)
+      : ANALYSIS_DEFAULT_MODELS[type] ?? "anthropic/claude-sonnet-4-6"
     const analysisLogContext = { ...userLogContext, projectId, model }
 
     if (!projectId || !idea || !name) {
@@ -224,6 +244,17 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     }
 
     creditsConsumed = creditCost
+    analyticsDocumentType = getAnalyticsDocumentType(type)
+    if (analyticsDocumentType) {
+      analyticsRunId = randomUUID()
+      analyticsStartedAt = Date.now()
+      await recordManualGenerationStarted({
+        runId: analyticsRunId,
+        userId: user.id,
+        projectId,
+        planName: analyticsPlanName,
+      })
+    }
 
     // ─── Streaming path ────────────────────────────────────────────────
     if (streamRequested === true) {
@@ -261,24 +292,39 @@ export async function POST(request: Request, { params }: AnalysisParams) {
             const contentWithLinks = linkifyBareUrls(streamResult.content)
             const metadata = buildAnalysisMetadata(type, streamResult)
             if (type === "prd") {
-              await supabase.from("prds").insert({ project_id: projectId!, content: contentWithLinks })
+              const { error } = await supabase.from("prds").insert({ project_id: projectId!, content: contentWithLinks })
+              if (error) throw new Error(`Failed to save Product Plan: ${error.message}`)
             } else if (type === "mvp-plan") {
-              await supabase.from("mvp_plans").insert({ project_id: projectId!, content: contentWithLinks })
+              const { error } = await supabase.from("mvp_plans").insert({ project_id: projectId!, content: contentWithLinks })
+              if (error) throw new Error(`Failed to save First Version Plan: ${error.message}`)
             } else if (type === "tech-spec") {
-              await supabase.from("tech_specs").insert({ project_id: projectId!, content: contentWithLinks })
+              const { error } = await supabase.from("tech_specs").insert({ project_id: projectId!, content: contentWithLinks })
+              if (error) throw new Error(`Failed to save Technical Specification: ${error.message}`)
             } else {
-              await supabase.from("analyses").insert({
+              const { error } = await supabase.from("analyses").insert({
                 project_id: projectId!,
                 type,
                 content: contentWithLinks,
                 metadata,
               })
+              if (error) throw new Error(`Failed to save Market Research: ${error.message}`)
             }
 
             await supabase
               .from("projects")
               .update({ status: "active", updated_at: new Date().toISOString() })
               .eq("id", projectId!)
+
+            if (analyticsRunId && analyticsDocumentType) {
+              await recordManualGenerationCompleted({
+                runId: analyticsRunId,
+                userId: user.id,
+                projectId: projectId!,
+                documentType: analyticsDocumentType,
+                startedAt: analyticsStartedAt,
+                planName: analyticsPlanName,
+              })
+            }
 
             modelUsed = streamResult.model
             aiSource = streamResult.source as "openrouter" | "inhouse"
@@ -304,6 +350,17 @@ export async function POST(request: Request, { params }: AnalysisParams) {
             errorType = "generation_error"
             errorMessage = msg
             statusCode = 500
+
+            if (analyticsRunId && analyticsDocumentType) {
+              await recordManualGenerationFailed({
+                runId: analyticsRunId,
+                userId: user.id,
+                projectId: projectId!,
+                documentType: analyticsDocumentType,
+                failureKind: msg.includes("timed out") ? "timeout" : "unknown",
+                planName: analyticsPlanName,
+              })
+            }
 
             // Refund credits on generation failure
             if (creditsConsumed > 0) {
@@ -376,27 +433,31 @@ export async function POST(request: Request, { params }: AnalysisParams) {
 
     // Store the result based on type — always include source/model metadata
     if (type === "prd") {
-      await supabase.from("prds").insert({
+      const { error } = await supabase.from("prds").insert({
         project_id: projectId,
         content: contentWithLinks,
       })
+      if (error) throw new Error(`Failed to save Product Plan: ${error.message}`)
     } else if (type === "mvp-plan") {
-      await supabase.from("mvp_plans").insert({
+      const { error } = await supabase.from("mvp_plans").insert({
         project_id: projectId,
         content: contentWithLinks,
       })
+      if (error) throw new Error(`Failed to save First Version Plan: ${error.message}`)
     } else if (type === "tech-spec") {
-      await supabase.from("tech_specs").insert({
+      const { error } = await supabase.from("tech_specs").insert({
         project_id: projectId,
         content: contentWithLinks,
       })
+      if (error) throw new Error(`Failed to save Technical Specification: ${error.message}`)
     } else {
-      await supabase.from("analyses").insert({
+      const { error } = await supabase.from("analyses").insert({
         project_id: projectId,
         type,
         content: contentWithLinks,
         metadata,
       })
+      if (error) throw new Error(`Failed to save Market Research: ${error.message}`)
     }
 
     // Update project
@@ -404,6 +465,17 @@ export async function POST(request: Request, { params }: AnalysisParams) {
       .from("projects")
       .update({ status: "active", updated_at: new Date().toISOString() })
       .eq("id", projectId)
+
+    if (analyticsRunId && analyticsDocumentType) {
+      await recordManualGenerationCompleted({
+        runId: analyticsRunId,
+        userId: user.id,
+        projectId,
+        documentType: analyticsDocumentType,
+        startedAt: analyticsStartedAt,
+        planName: analyticsPlanName,
+      })
+    }
 
     logInfo("Analysis", "generation_completed", {
       ...analysisLogContext,
@@ -428,6 +500,17 @@ export async function POST(request: Request, { params }: AnalysisParams) {
     const safeTimeoutMessage = isSafeTimeoutMessage(errorMessage)
     statusCode = safeTimeoutMessage ? 504 : 500
     errorType = getErrorType(statusCode, error)
+
+    if (!isStreaming && analyticsRunId && analyticsDocumentType && userId && projectId) {
+      await recordManualGenerationFailed({
+        runId: analyticsRunId,
+        userId,
+        projectId,
+        documentType: analyticsDocumentType,
+        failureKind: safeTimeoutMessage ? "timeout" : "unknown",
+        planName: analyticsPlanName,
+      })
+    }
 
     // Refund credits on generation failure
     if (creditsConsumed > 0 && userId) {

@@ -4,6 +4,7 @@ import assert from "node:assert/strict"
 import { buildCompetitiveAnalysisUserPrompt } from "./prompts"
 import {
   buildCompetitorContext,
+  buildCompetitorSourcesMetadata,
   getCompetitorSearchStatus,
 } from "./analysis-pipelines"
 
@@ -50,17 +51,33 @@ test("competitors with usable URLs preserve live-research prompt context", () =>
         name: "Example Competitor",
         description: "A direct workflow product",
         whyCompetes: "Targets the same buyer",
-        url: "https://competitor.example",
+        url: "https://competitor.example.com",
       },
     ],
     [
       {
-        url: "https://competitor.example",
+        url: "https://competitor.example.com",
         content: "Competitor example offers a booking workflow and team dashboard.",
       },
     ],
   )
 
   assert.match(competitorContext, /## Example Competitor/)
-  assert.match(competitorContext, /URL Content \(from https:\/\/competitor\.example\)/)
+  assert.match(competitorContext, /URL Content \(from https:\/\/competitor\.example\.com\/\)/)
+})
+
+test("competitor source metadata persists only normalized HTTP(S) pairs", () => {
+  assert.deepEqual(
+    buildCompetitorSourcesMetadata([
+      { name: " Example Competitor ", url: " https://competitor.example.com " },
+      { name: "Unextracted", url: "https://unextracted.example.com" },
+      { name: "Unsafe", url: "javascript:alert(1)" },
+      { name: "Fake HTTP", url: "http-not-a-url" },
+      { name: "Relative", url: "/competitor" },
+    ], [
+      { url: "https://competitor.example.com" },
+      { url: "javascript:alert(1)" },
+    ]),
+    [{ name: "Example Competitor", url: "https://competitor.example.com/" }]
+  )
 })

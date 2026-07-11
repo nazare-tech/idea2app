@@ -34,15 +34,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  // Sized so no plan's project entitlement can collide with the abuse
+  // guardrail: Pro allows 10 projects/month, all burnable in one hour, so the
+  // per-user limit is double that. Same limit for every plan; limits are
+  // abuse prevention, not entitlement (see NAZ-124).
   const [userRateLimit, ipRateLimit] = await Promise.all([
     checkRateLimit({
       key: `intake-questions:user:${user.id}`,
-      limit: 5,
+      limit: 20,
       windowMs: 60 * 60 * 1000,
     }),
     checkRateLimit({
       key: `intake-questions:ip:${getClientIp(request)}`,
-      limit: 20,
+      limit: 80,
       windowMs: 60 * 60 * 1000,
     }),
   ])

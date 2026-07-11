@@ -19,13 +19,30 @@ import {
   sanitizeInput,
   type ProjectComposerContextDoc,
 } from "@/lib/prompts"
+import {
+  getReasoningParams,
+  isTierModelRoutingEnabled,
+  resolveTierTextModel,
+  withReasoningHeadroom,
+} from "@/lib/generation-model-policy"
 
 export const maxDuration = 120
 
-const COMPOSER_MODEL =
-  process.env.OPENROUTER_COMPOSER_MODEL ||
-  process.env.OPENROUTER_CHAT_MODEL ||
-  "anthropic/claude-sonnet-4-6"
+// Composer-specific ops escape hatch: wins even over tier routing. The
+// generic OPENROUTER_CHAT_MODEL is legacy default-model config and must NOT
+// silently defeat plan-tier routing, so it only applies when routing is off.
+const COMPOSER_MODEL_ENV_OVERRIDE = process.env.OPENROUTER_COMPOSER_MODEL || ""
+
+// Legacy behavior, used when tier routing is disabled via the kill switch.
+const COMPOSER_LEGACY_MODEL =
+  process.env.OPENROUTER_CHAT_MODEL || "anthropic/claude-sonnet-4-6"
+
+/** Resolves the composer model: composer env override > plan tier > legacy. */
+function resolveComposerModel(planName: string): string {
+  if (COMPOSER_MODEL_ENV_OVERRIDE) return COMPOSER_MODEL_ENV_OVERRIDE
+  if (isTierModelRoutingEnabled()) return resolveTierTextModel(planName)
+  return COMPOSER_LEGACY_MODEL
+}
 
 // Output-token cap per answer. Also the amount OpenRouter's affordability
 // pre-check reserves up front, so keep it chat-sized, not document-sized.
@@ -128,11 +145,19 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const [userRateLimit, ipRateLimit] = await Promise.all([
+  // Abuse guardrails, not usage metering (NAZ-124): a burst limit per hour,
+  // a daily backstop so the hourly window cannot be ridden around the clock,
+  // and an IP cap shared across accounts.
+  const [userRateLimit, userDailyRateLimit, ipRateLimit] = await Promise.all([
     checkRateLimit({
       key: `project-composer:user:${user.id}`,
-      limit: 30,
+      limit: 40,
       windowMs: 60 * 60 * 1000,
+    }),
+    checkRateLimit({
+      key: `project-composer:user-day:${user.id}`,
+      limit: 200,
+      windowMs: 24 * 60 * 60 * 1000,
     }),
     checkRateLimit({
       key: `project-composer:ip:${getClientIp(request)}`,
@@ -141,9 +166,10 @@ export async function POST(
     }),
   ])
 
-  if (userRateLimit.limited || ipRateLimit.limited) {
+  if (userRateLimit.limited || userDailyRateLimit.limited || ipRateLimit.limited) {
     const retryAfterSeconds = Math.max(
       userRateLimit.retryAfterSeconds,
+      userDailyRateLimit.retryAfterSeconds,
       ipRateLimit.retryAfterSeconds
     )
     return NextResponse.json(
@@ -195,6 +221,8 @@ export async function POST(
       { status: 403 }
     )
   }
+
+  const composerModel = resolveComposerModel(allowanceStatus.planName)
 
   // Ownership check + project context.
   const { data: project, error: projectError } = await supabase
@@ -279,14 +307,17 @@ export async function POST(
   try {
     const completion = await openrouter.chat.completions.create(
       {
-        model: COMPOSER_MODEL,
+        model: composerModel,
         messages: [
           { role: "system", content: PROJECT_COMPOSER_SYSTEM_PROMPT },
           ...history,
           { role: "user", content: userPrompt },
         ],
-        max_tokens: MAX_ANSWER_TOKENS,
+        // Reasoning tokens count against max_tokens on tier models; keep the
+        // headroom chat-sized so OpenRouter's affordability reserve stays small.
+        max_tokens: withReasoningHeadroom(composerModel, MAX_ANSWER_TOKENS, 2_048),
         stream: true,
+        ...getReasoningParams(composerModel),
         // OpenRouter-specific: enables the online web-search plugin for this
         // request. Passed through the OpenAI SDK as an extra body field.
         ...({ plugins: [{ id: "web", max_results: 3 }] } as Record<string, unknown>),
@@ -308,7 +339,7 @@ export async function POST(
             ...requestLogContext,
             userId: user.id,
             projectId,
-            model: COMPOSER_MODEL,
+            model: composerModel,
           })
           controller.error(error)
         }
@@ -331,7 +362,7 @@ export async function POST(
       projectId,
       scope,
       docKey,
-      model: COMPOSER_MODEL,
+      model: composerModel,
     })
     const timedOut = timeoutSignal.aborted
     // OpenRouter failures carry an HTTP status on the SDK error. Surface the

@@ -38,8 +38,10 @@ const MODEL_MULTIPLIERS: Array<{ match: string; multiplier: number }> = [
   // (Array.find returns the first match)
   { match: "gpt-5.4-mini", multiplier: 0.85 },  // GPT-5.4 Mini (Fastest)
   { match: "gpt-5-mini", multiplier: 0.85 },     // legacy alias
+  { match: "gpt-5.6-sol", multiplier: 1.5 },     // GPT 5.6 Sol (Pro tier, high thinking)
   { match: "gpt-5", multiplier: 1.5 },
   { match: "claude-opus", multiplier: 1.35 },
+  { match: "gemini-3.5-flash", multiplier: 0.9 }, // Gemini 3.5 Flash (standard tier, high thinking)
   { match: "gemini-3.1-pro", multiplier: 1.25 }, // Gemini 3.1 Pro Preview (Thinking)
   { match: "gemini-3", multiplier: 1.25 },
   { match: "claude-sonnet", multiplier: 1.15 },  // Claude Sonnet 4.6 (Efficient)

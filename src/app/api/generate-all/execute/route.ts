@@ -47,12 +47,28 @@ import {
   logWarn,
   type LogContext,
 } from "@/lib/logger"
+import {
+  isTierModelRoutingEnabled,
+  resolveTierTextModel,
+} from "@/lib/generation-model-policy"
+import { getUserPlanName } from "@/lib/project-allowance"
+import { recordServerProductEvent } from "@/lib/product-analytics/server"
+import type { ProductEventPropertyMap } from "@/lib/product-analytics/contracts"
 
 export const maxDuration = 540
 
 type SB = SupabaseClient<Database>
 
 const INCLUDED_PROJECT_OUTPUT_DOC_TYPES = new Set(["competitive", "prd", "mvp", "mockups"])
+
+// Text documents that follow plan-tier model routing; mockups keep their
+// dedicated image model.
+const TIER_ROUTED_TEXT_DOC_TYPES = new Set(["competitive", "prd", "mvp"])
+const ANALYTICS_DOCUMENT_TYPES = new Set(["competitive", "prd", "mvp", "mockups"])
+const MAX_GENERATION_ANALYTICS_DURATION_MS = 24 * 60 * 60 * 1000
+
+type GenerationAnalyticsMode = ProductEventPropertyMap["generation_started"]["mode"]
+type GenerationAnalyticsDocumentType = ProductEventPropertyMap["generation_step_completed"]["documentType"]
 
 // This only parallelizes independent documents; getRunnableItems still requires
 // every declared dependency to be done or skipped before a document can run.
@@ -112,6 +128,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 })
   }
 
+  // Plan-tier model routing: resolved once per request from the queue
+  // owner's plan, applied to text documents only (mockups keep their image
+  // model). Null when the rollback kill switch is set.
+  const userPlanName = await getUserPlanName(supabase, user.id)
+  const tierTextModel = isTierModelRoutingEnabled()
+    ? resolveTierTextModel(userPlanName)
+    : null
+
   const queueRow = await fetchQueueRow(queueSupabase, projectId, user.id)
   if (!queueRow) {
     logWarn("GenerateAll", "queue_not_found", baseLogContext)
@@ -161,10 +185,24 @@ export async function POST(request: Request) {
           ),
       )
       const nextItems = mergeUpdatedItems(items, cancelledItems)
+      const cancelledAt = new Date().toISOString()
       await syncGenerationQueueJson(queueSupabase, activeQueueRow, nextItems, {
         status: "cancelled",
-        completed_at: new Date().toISOString(),
+        completed_at: cancelledAt,
       })
+      const cancelledRunId = getQueueRunId(activeQueueRow)
+      if (cancelledRunId) {
+        await recordCompletedGenerationSteps({
+          items: nextItems,
+          queueRow: activeQueueRow,
+          runId: cancelledRunId,
+          mode: getQueueAnalyticsMode(activeQueueRow, isOnboardingQueue),
+          userId: user.id,
+          projectId,
+          planName: userPlanName,
+          fallbackCompletedAt: cancelledAt,
+        })
+      }
       return NextResponse.json({ success: true, status: "cancelled" })
     }
 
@@ -218,6 +256,7 @@ export async function POST(request: Request) {
           queueRow: activeQueueRow,
           project,
           isOnboardingQueue,
+          tierTextModel,
           logContext: queueLogContext,
         }),
       ),
@@ -237,11 +276,60 @@ export async function POST(request: Request) {
     finalStatus,
     itemCount: finalItems.length,
   })
+  const finalCompletedAt = new Date().toISOString()
   await syncGenerationQueueJson(queueSupabase, activeQueueRow, finalItems, {
     status: finalStatus,
-    completed_at: finalStatus === "running" ? null : new Date().toISOString(),
+    completed_at: finalStatus === "running" ? null : finalCompletedAt,
     error_info: buildErrorInfo(finalItems),
   })
+
+  const runId = getQueueRunId(activeQueueRow)
+  if (runId) {
+    const mode = getQueueAnalyticsMode(activeQueueRow, isOnboardingQueue)
+    await recordCompletedGenerationSteps({
+      items: finalItems,
+      queueRow: activeQueueRow,
+      runId,
+      mode,
+      userId: user.id,
+      projectId,
+      planName: userPlanName,
+      fallbackCompletedAt: finalCompletedAt,
+    })
+
+    if (finalStatus === "completed") {
+      await recordServerProductEvent({
+        eventName: "generation_completed",
+        idempotencyKey: `generation:${runId}:completed`,
+        userId: user.id,
+        projectId,
+        planName: userPlanName,
+        properties: {
+          runId,
+          mode,
+          durationMs: getBoundedDurationMs(activeQueueRow.started_at, finalCompletedAt),
+        },
+      })
+    } else if (finalStatus === "error" || finalStatus === "partial") {
+      const failedItem = finalItems.find((item) => item.status === "error" || item.status === "blocked")
+      const documentType = failedItem && isAnalyticsDocumentType(failedItem.doc_type)
+        ? failedItem.doc_type
+        : undefined
+      await recordServerProductEvent({
+        eventName: "generation_failed",
+        idempotencyKey: `generation:${runId}:failed`,
+        userId: user.id,
+        projectId,
+        planName: userPlanName,
+        properties: {
+          runId,
+          mode,
+          ...(documentType ? { documentType } : {}),
+          failureKind: failedItem?.status === "blocked" ? "dependency" : "unknown",
+        },
+      })
+    }
+  }
 
   await supabase
     .from("projects")
@@ -260,6 +348,7 @@ async function executeQueueItem({
   queueRow,
   project,
   isOnboardingQueue,
+  tierTextModel,
   logContext,
 }: {
   billingSupabase: SB
@@ -269,6 +358,7 @@ async function executeQueueItem({
   queueRow: GenerationQueueRow
   project: { description: string; name: string }
   isOnboardingQueue: boolean
+  tierTextModel: string | null
   logContext: LogContext
 }) {
   const itemLogContext = {
@@ -308,7 +398,10 @@ async function executeQueueItem({
   }
 
   const action = GENERATE_ALL_ACTION_MAP[claimed.doc_type]
-  const model = claimed.model_id ?? GENERATE_ALL_DEFAULT_MODELS[claimed.doc_type]
+  const model =
+    tierTextModel && TIER_ROUTED_TEXT_DOC_TYPES.has(claimed.doc_type)
+      ? tierTextModel
+      : claimed.model_id ?? GENERATE_ALL_DEFAULT_MODELS[claimed.doc_type]
   const isIncludedProjectOutput = INCLUDED_PROJECT_OUTPUT_DOC_TYPES.has(claimed.doc_type)
   const creditCost = isBundledItem || isIncludedProjectOutput
     ? 0
@@ -397,8 +490,9 @@ async function executeQueueItem({
 
   // Persist partial streamed markdown for the onboarding live preview.
   // Isolated failure domain: writer errors disable partial writes only.
+  const STREAMING_PREVIEW_DOC_TYPES = ["competitive", "prd", "mvp"]
   const partialWriter =
-    claimed.doc_type === "competitive"
+    STREAMING_PREVIEW_DOC_TYPES.includes(claimed.doc_type)
       ? createGenerationQueueItemPartialContentWriter(queueSupabase, claimed, {
           onError: (error) => {
             logWarn("GenerateAll", "item_partial_content_write_failed", itemLogContext, error)
@@ -580,7 +674,86 @@ function buildErrorInfo(items: GenerationQueueItemRow[]) {
 }
 
 function getQueueRunId(queueRow: GenerationQueueRow) {
-  return getRunMetadata(queueRow.model_selections).runId
+  const metadata = isRecord(queueRow.model_selections) ? queueRow.model_selections : null
+  return typeof metadata?.analyticsRunId === "string"
+    ? metadata.analyticsRunId
+    : getRunMetadata(queueRow.model_selections).runId
+}
+
+function getQueueAnalyticsMode(
+  queueRow: GenerationQueueRow,
+  isOnboardingQueue: boolean,
+): GenerationAnalyticsMode {
+  const metadata = isRecord(queueRow.model_selections) ? queueRow.model_selections : null
+  if (metadata?.analyticsMode === "retry") return "retry"
+  return isOnboardingQueue ? "onboarding" : "generate_all"
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value))
+}
+
+function isAnalyticsDocumentType(value: string): value is GenerationAnalyticsDocumentType {
+  return ANALYTICS_DOCUMENT_TYPES.has(value)
+}
+
+function getBoundedDurationMs(start: string | null, end: string | null) {
+  const startMs = start ? Date.parse(start) : Number.NaN
+  const endMs = end ? Date.parse(end) : Number.NaN
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return 0
+  return Math.min(MAX_GENERATION_ANALYTICS_DURATION_MS, Math.max(0, Math.round(endMs - startMs)))
+}
+
+async function recordCompletedGenerationSteps({
+  items,
+  queueRow,
+  runId,
+  mode,
+  userId,
+  projectId,
+  planName,
+  fallbackCompletedAt,
+}: {
+  items: GenerationQueueItemRow[]
+  queueRow: GenerationQueueRow
+  runId: string
+  mode: GenerationAnalyticsMode
+  userId: string
+  projectId: string
+  planName: string
+  fallbackCompletedAt: string
+}) {
+  const completedItems = items.filter(
+    (item): item is GenerationQueueItemRow & { doc_type: GenerationAnalyticsDocumentType } =>
+      (item.status === "done" || item.status === "skipped") &&
+      isAnalyticsDocumentType(item.doc_type) &&
+      (
+        mode !== "retry" ||
+        Boolean(
+          item.started_at &&
+          queueRow.started_at &&
+          Date.parse(item.started_at) >= Date.parse(queueRow.started_at),
+        )
+      ),
+  )
+  await Promise.all(completedItems.map((item) =>
+    recordServerProductEvent({
+      eventName: "generation_step_completed",
+      idempotencyKey: `generation:${runId}:step:${item.id}`,
+      userId,
+      projectId,
+      planName,
+      properties: {
+        runId,
+        mode,
+        documentType: item.doc_type,
+        durationMs: getBoundedDurationMs(
+          item.started_at ?? queueRow.started_at,
+          item.completed_at ?? fallbackCompletedAt,
+        ),
+      },
+    }),
+  ))
 }
 
 async function isQueueCancelled(supabase: SB, item: GenerationQueueItemRow) {

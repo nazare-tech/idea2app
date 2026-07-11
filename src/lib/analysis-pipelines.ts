@@ -13,6 +13,11 @@ import {
   buildProductPlanPromptRequest,
 } from "@/lib/planning-document-requests"
 import { logError, logInfo, logWarn } from "@/lib/logger"
+import { getReasoningParams, withReasoningHeadroom } from "@/lib/generation-model-policy"
+import {
+  getSafeExternalHttpUrl,
+  normalizeCompetitorSources,
+} from "@/lib/competitor-mention-links"
 import type { Json } from "@/types/database"
 
 const openrouter = getOpenRouterClient()
@@ -154,7 +159,6 @@ export async function runCompetitiveAnalysis(
     competitors: [],
     rawResponse: "",
   }
-
   let tavilyData: {
     results: TavilyExtractResult[]
     failed_results: Array<{ url: string; error: string }>
@@ -188,7 +192,7 @@ export async function runCompetitiveAnalysis(
   }
   if (usableCompetitors.length > 0) {
     try {
-      const urls = usableCompetitors.map((c) => c.url)
+      const urls = usableCompetitors.map((competitor) => competitor.url)
       logInfo("CompetitiveAnalysis", "tavily_extract_started", {
         model,
         urlCount: urls.length,
@@ -236,9 +240,10 @@ export async function runCompetitiveAnalysis(
           ),
         },
       ],
-      max_tokens: 8192,
+      max_tokens: withReasoningHeadroom(model, 8192),
       temperature: 0.3,
       stream: callbacks?.onToken ? true : false,
+      ...getReasoningParams(model),
     }, { signal: createOpenRouterLongTextSignal() })
   } catch (error) {
     logError("CompetitiveAnalysis", "openrouter_synthesis_failed", error, { model })
@@ -270,6 +275,10 @@ export async function runCompetitiveAnalysis(
         tavily_extract_status: tavilyExtractStatus,
         tavily_result_count: tavilyData.results.length,
         tavily_failed_result_count: tavilyData.failed_results.length,
+        competitor_sources: buildCompetitorSourcesMetadata(
+          perplexityData.competitors,
+          tavilyData.results
+        ),
       },
     },
   }
@@ -293,9 +302,10 @@ export async function runPRD(input: PRDInput, callbacks?: StreamCallbacks): Prom
         { role: "system", content: request.systemPrompt },
         { role: "user", content: request.userPrompt },
       ],
-      max_tokens: request.maxTokens,
+      max_tokens: withReasoningHeadroom(request.model, request.maxTokens),
       temperature: request.temperature,
       stream: callbacks?.onToken ? true : false,
+      ...getReasoningParams(request.model),
     }, { signal: createOpenRouterLongTextSignal(OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS) })
   } catch (error) {
     logError("ProductPlan", "openrouter_generation_failed", error, { model: request.model })
@@ -335,9 +345,10 @@ export async function runMVPPlan(
         { role: "system", content: request.systemPrompt },
         { role: "user", content: request.userPrompt },
       ],
-      max_tokens: request.maxTokens,
+      max_tokens: withReasoningHeadroom(request.model, request.maxTokens),
       temperature: request.temperature,
       stream: callbacks?.onToken ? true : false,
+      ...getReasoningParams(request.model),
     }, { signal: createOpenRouterLongTextSignal(OPENROUTER_PLANNING_DOCUMENT_TIMEOUT_MS) })
   } catch (error) {
     logError("MVPPlan", "openrouter_generation_failed", error, { model: request.model })
@@ -377,9 +388,10 @@ export async function runTechSpec(
         { role: "system", content: TECH_SPEC_SYSTEM_PROMPT },
         { role: "user", content: buildTechSpecUserPrompt(input.idea, input.name, input.prd) },
       ],
-      max_tokens: 8192,
+      max_tokens: withReasoningHeadroom(model, 8192),
       temperature: 0.3,
       stream: callbacks?.onToken ? true : false,
+      ...getReasoningParams(model),
     }, { signal: createOpenRouterLongTextSignal() })
   } catch (error) {
     logError("TechSpec", "openrouter_generation_failed", error, { model })
@@ -416,9 +428,10 @@ export async function runLaunchPlan(
         { role: "system", content: LAUNCH_PLAN_SYSTEM_PROMPT },
         { role: "user", content: buildLaunchPlanUserPrompt(input.idea, input.name, input.brief) },
       ],
-      max_tokens: LAUNCH_PLAN_MAX_TOKENS,
+      max_tokens: withReasoningHeadroom(model, LAUNCH_PLAN_MAX_TOKENS),
       temperature: 0.35,
       stream: callbacks?.onToken ? true : false,
+      ...getReasoningParams(model),
     }, { signal: createOpenRouterLongTextSignal() })
   } catch (error) {
     logError("LaunchPlan", "openrouter_generation_failed", error, { model })
@@ -443,6 +456,24 @@ function isMissingProviderConfigError(error: unknown) {
   return error instanceof Error && /API key not configured/i.test(error.message)
 }
 
+export function buildCompetitorSourcesMetadata(
+  competitors: Array<{ name: string; url: string }>,
+  extractedResults: Array<{ url: string }>
+) {
+  const extractedUrls = new Set(
+    extractedResults
+      .map((result) => getSafeExternalHttpUrl(result.url))
+      .filter((url): url is string => Boolean(url))
+  )
+
+  return normalizeCompetitorSources(competitors)
+    .filter((source) => extractedUrls.has(source.url))
+    .map((source) => ({
+      name: source.name,
+      url: source.url,
+    }))
+}
+
 function getUsableCompetitors(
   competitors: Array<{
     name: string
@@ -451,11 +482,15 @@ function getUsableCompetitors(
     url: string
   }>
 ) {
-  return competitors.filter(
-    (competitor) =>
-      competitor.name?.trim() &&
-      competitor.url?.trim().startsWith("http")
-  )
+  return competitors
+    .map((competitor) => ({
+      ...competitor,
+      url: getSafeExternalHttpUrl(competitor.url),
+    }))
+    .filter(
+      (competitor): competitor is typeof competitor & { url: string } =>
+        Boolean(competitor.name?.trim() && competitor.url)
+    )
 }
 
 export function getCompetitorSearchStatus(
@@ -480,12 +515,17 @@ export function buildCompetitorContext(
   const usableCompetitors = getUsableCompetitors(competitors)
   if (usableCompetitors.length === 0) return ""
 
-  const tavilyMap = new Map(tavilyResults.map((r) => [r.url, r]))
+  const tavilyMap = new Map(
+    tavilyResults.map((result) => [
+      getSafeExternalHttpUrl(result.url) ?? result.url,
+      result,
+    ])
+  )
 
   return usableCompetitors
     .map((comp) => {
       const urlData = tavilyMap.get(comp.url)
-      const urlContent = urlData
+      const urlContent = urlData?.content
         ? `\nURL Content (from ${comp.url}):\n${urlData.content.substring(0, 1500)}`
         : `\nURL: ${comp.url} (content extraction not available)`
 
