@@ -5,7 +5,12 @@ export { MVP_PLAN_SYSTEM_PROMPT, buildMVPPlanUserPrompt } from "./mvp-plan"
 export { LAUNCH_PLAN_SYSTEM_PROMPT, buildLaunchPlanUserPrompt, type LaunchPlanBrief } from "./launch-plan"
 export { TECH_SPEC_SYSTEM_PROMPT, buildTechSpecUserPrompt } from "./tech-spec"
 export { buildMockupPrompt } from "./mockups"
-export { COMPETITOR_SEARCH_SYSTEM_PROMPT, buildCompetitorSearchUserPrompt } from "./competitor-search"
+export {
+  COMPETITOR_SEARCH_SYSTEM_PROMPT,
+  EXA_COMPETITOR_SEARCH_SYSTEM_PROMPT,
+  buildCompetitorSearchUserPrompt,
+  buildExaCompetitorSearchUserPrompt,
+} from "./competitor-search"
 export {
   PROJECT_COMPOSER_SYSTEM_PROMPT,
   buildProjectComposerUserPrompt,

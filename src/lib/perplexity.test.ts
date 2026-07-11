@@ -1,7 +1,17 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 
+import { COMPETITOR_SEARCH_SYSTEM_PROMPT } from "./prompts"
 import { parsePerplexityCompetitorResponse } from "./perplexity"
+
+test("legacy Perplexity search prompt keeps adjacent partial-match fallback", () => {
+  assert.match(COMPETITOR_SEARCH_SYSTEM_PROMPT, /identify 3-5 real, currently active competitors/)
+  assert.match(
+    COMPETITOR_SEARCH_SYSTEM_PROMPT,
+    /nearest adjacent alternatives.*partial matches/i
+  )
+  assert.doesNotMatch(COMPETITOR_SEARCH_SYSTEM_PROMPT, /Do not pad the list/)
+})
 
 test("parsePerplexityCompetitorResponse parses valid competitor JSON", () => {
   const result = parsePerplexityCompetitorResponse(`\`\`\`json

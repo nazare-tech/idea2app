@@ -18,6 +18,18 @@ test("competitive analysis prompt requires direct competitor website links and k
     COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
     /Direct Competitors.*### \[Competitor Name\]\(https:\/\/competitor-site\.example\).*Key Edge/s
   )
+  assert.match(
+    COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+    /select only the 3-5 strongest direct competitors.*do not automatically include every research candidate/is
+  )
+  assert.match(
+    COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+    /exclude adjacent alternatives, directories, articles, generic platforms, and weak matches/is
+  )
+  assert.match(
+    COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+    /if fewer than 3.*evidence-supported direct competitors.*output only those supported matches.*never pad/is
+  )
 })
 
 test("competitive analysis prompt describes provider-neutral live research with Exa primary", () => {

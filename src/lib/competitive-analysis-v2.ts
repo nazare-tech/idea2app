@@ -8,7 +8,7 @@ import {
 
 export const COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION = "competitive-analysis-v2"
 export const COMPETITIVE_ANALYSIS_V2_PROMPT_VERSION =
-  "competitive-analysis-v2-2026-07-05-no-direct-competitor-notice"
+  "competitive-analysis-v2-2026-07-11-seven-candidate-direct-selection"
 
 export const COMPETITIVE_ANALYSIS_V2_SECTION_ORDER = [
   "Executive Summary",

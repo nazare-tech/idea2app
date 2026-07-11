@@ -9,13 +9,13 @@ import { getStandardTierTextModel } from "@/lib/generation-model-policy"
 import { getSafeExternalHttpUrl } from "@/lib/competitor-mention-links"
 import { getOpenRouterClient, isOpenRouterConfigured } from "@/lib/openrouter"
 import {
-  COMPETITOR_SEARCH_SYSTEM_PROMPT,
-  buildCompetitorSearchUserPrompt,
+  EXA_COMPETITOR_SEARCH_SYSTEM_PROMPT,
+  buildExaCompetitorSearchUserPrompt,
 } from "@/lib/prompts"
 import { withRetry } from "@/lib/with-retry"
 
 const OPENROUTER_EXA_TIMEOUT_MS = 120_000
-const OPENROUTER_EXA_MAX_RESULTS = 5
+const OPENROUTER_EXA_MAX_RESULTS = 7
 const OPENROUTER_EXA_MAX_CHARACTERS = 2_000
 const MAX_CITATIONS = 10
 const MAX_CITATION_TITLE_LENGTH = 300
@@ -129,10 +129,10 @@ export function buildOpenRouterExaCompetitorRequest(
   return {
     model,
     messages: [
-      { role: "system", content: COMPETITOR_SEARCH_SYSTEM_PROMPT },
+      { role: "system", content: EXA_COMPETITOR_SEARCH_SYSTEM_PROMPT },
       {
         role: "user",
-        content: `You must call the web search tool before answering.\n\n${buildCompetitorSearchUserPrompt(
+        content: `You must call the web search tool before answering.\n\n${buildExaCompetitorSearchUserPrompt(
           idea,
           name
         )}`,
@@ -165,6 +165,7 @@ export function parseOpenRouterExaCompletion(
 
   return {
     ...parsed,
+    competitors: parsed.competitors.slice(0, OPENROUTER_EXA_MAX_RESULTS),
     citations,
     evidenceResults: citations,
     modelUsed: completion.model || requestedModel,
