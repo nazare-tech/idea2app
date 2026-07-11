@@ -4,6 +4,7 @@ import assert from "node:assert/strict"
 import {
   buildManualGenerationQueue,
   computeQueueStatus,
+  createGenerationQueueItemPartialContentWriter,
   getBlockedItems,
   getRunnableItems,
   recoverStaleGenerationQueueItems,
@@ -186,6 +187,8 @@ test("recoverStaleGenerationQueueItems: requeues stale generating work for retry
     max_attempts: 2,
     updated_at: new Date(now - 10 * 60 * 1000).toISOString(),
     started_at: new Date(now - 10 * 60 * 1000).toISOString(),
+    partial_content: "## Executive Summary\nDead run preview",
+    partial_metadata: { live_research: { competitor_sources: [] } },
   })
   const fresh = queueItem({
     doc_type: "launch",
@@ -222,6 +225,8 @@ test("recoverStaleGenerationQueueItems: requeues stale generating work for retry
   assert.equal(recovered[0].status, "pending")
   assert.equal(recovered[0].attempt, 1)
   assert.equal(recovered[0].started_at, null)
+  assert.equal(recovered[0].partial_content, null)
+  assert.equal(recovered[0].partial_metadata, null)
 })
 
 test("resetGenerationQueueItemsForRetry: resets failed and blocked items to pending", async () => {
@@ -276,4 +281,91 @@ test("resetGenerationQueueItemsForRetry: resets failed and blocked items to pend
     assert.equal(item.credit_cost, 0)
     assert.equal(item.max_attempts, 2)
   }
+})
+
+test("partial content writer fences every write on status = 'generating'", async () => {
+  const eqCalls: Array<Array<{ column: string; value: unknown }>> = []
+  const updates: Record<string, unknown>[] = []
+  const supabase = {
+    from: () => {
+      const call: Array<{ column: string; value: unknown }> = []
+      eqCalls.push(call)
+      return {
+        update(update: Record<string, unknown>) {
+          updates.push(update)
+          return this
+        },
+        eq(column: string, value: unknown) {
+          call.push({ column, value })
+          return Object.assign(Promise.resolve({ error: null }), this)
+        },
+      }
+    },
+  } as unknown as Parameters<typeof createGenerationQueueItemPartialContentWriter>[0]
+
+  const writer = createGenerationQueueItemPartialContentWriter(
+    supabase,
+    { id: "item-1", user_id: "user-1" },
+    { intervalMs: 0 },
+  )
+
+  writer.write("## partial")
+  await writer.writeMetadata({ live_research: { competitor_sources: [] } })
+  await new Promise((resolve) => setImmediate(resolve))
+
+  assert.deepEqual(updates, [
+    { partial_content: "## partial" },
+    { partial_metadata: { live_research: { competitor_sources: [] } } },
+  ])
+  for (const call of eqCalls) {
+    assert.deepEqual(call, [
+      { column: "id", value: "item-1" },
+      { column: "user_id", value: "user-1" },
+      { column: "status", value: "generating" },
+    ])
+  }
+})
+
+test("partial content writer disables content writes after a write error, metadata errors stay isolated", async () => {
+  let failNext = false
+  const updates: Record<string, unknown>[] = []
+  const errors: unknown[] = []
+  const supabase = {
+    from: () => ({
+      update(update: Record<string, unknown>) {
+        updates.push(update)
+        return this
+      },
+      eq() {
+        const shouldFail = failNext
+        return Object.assign(
+          Promise.resolve(shouldFail ? { error: { message: "column missing" } } : { error: null }),
+          this,
+        )
+      },
+    }),
+  } as unknown as Parameters<typeof createGenerationQueueItemPartialContentWriter>[0]
+
+  const writer = createGenerationQueueItemPartialContentWriter(
+    supabase,
+    { id: "item-1", user_id: "user-1" },
+    { intervalMs: 0, onError: (error) => errors.push(error) },
+  )
+
+  failNext = true
+  await writer.writeMetadata({ live_research: { competitor_sources: [] } })
+  failNext = false
+  writer.write("still streaming")
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(updates.length, 2, "metadata failure must not disable content writes")
+
+  failNext = true
+  writer.write("first content write fails")
+  await new Promise((resolve) => setImmediate(resolve))
+  failNext = false
+  writer.write("after content failure")
+  await new Promise((resolve) => setImmediate(resolve))
+
+  assert.equal(updates.length, 3, "content failure disables the writer")
+  assert.equal(errors.length, 2)
 })

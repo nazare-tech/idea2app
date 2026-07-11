@@ -510,7 +510,6 @@ async function executeQueueItem({
         })
       : null
 
-  try {
   while (attempt < maxAttempts) {
     attempt += 1
     logInfo("GenerateAll", "item_attempt_started", {
@@ -647,10 +646,6 @@ async function executeQueueItem({
     error: "Generation failed",
     completed_at: new Date().toISOString(),
   })
-  } finally {
-    // Clear the stored partial regardless of which terminal path ran.
-    await partialWriter?.finish()
-  }
 }
 
 async function finishGeneratingItem(
@@ -662,7 +657,13 @@ async function finishGeneratingItem(
     supabase,
     item,
     "generating",
-    update,
+    {
+      // Atomic with the terminal status flip; the partial writer's own
+      // status = 'generating' fence keeps late preview writes out afterward.
+      partial_content: null,
+      partial_metadata: null,
+      ...update,
+    },
   )
 
   if (updated) return updated

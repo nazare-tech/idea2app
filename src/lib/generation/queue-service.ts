@@ -261,9 +261,13 @@ export async function syncGenerationQueueJson(
  * Throttled writer that persists partial streamed markdown onto a generating
  * queue item so pollers (onboarding-status) can serve a live preview.
  *
- * Failure-isolated by design: any write error (including a missing
- * partial_content column before the migration is applied) disables the writer
- * for the rest of the run without affecting generation itself.
+ * Failure-isolated by design: any write error disables the writer for the
+ * rest of the run without affecting generation itself.
+ *
+ * Every write is fenced on `status = 'generating'`: the terminal update that
+ * finishes the item clears both partial columns atomically with the status
+ * flip, and the fence guarantees a late in-flight preview write can never
+ * resurrect partials on a finished row.
  */
 export function createGenerationQueueItemPartialContentWriter(
   supabase: ServerSupabaseClient,
@@ -276,30 +280,19 @@ export function createGenerationQueueItemPartialContentWriter(
   let lastWriteAt = 0
   let inFlight = false
   let disabled = false
-  // Tracks whether a partial_metadata write succeeded. Only then does finish()
-  // clear that column, so environments without the 20260711120000 migration
-  // never reference it in the clearing update (which would otherwise also lose
-  // the partial_content clear).
-  let metadataWritten = false
 
-  async function persist(content: string | null) {
-    inFlight = true
+  async function persist(update: GenerationQueueItemUpdate) {
     try {
       const { error } = await supabase
         .from("generation_queue_items")
-        .update(
-          metadataWritten && content === null
-            ? { partial_content: null, partial_metadata: null }
-            : { partial_content: content },
-        )
+        .update(update)
         .eq("id", item.id)
         .eq("user_id", item.user_id)
+        .eq("status", "generating")
       if (error) throw error
     } catch (error) {
       disabled = true
       onError?.(error)
-    } finally {
-      inFlight = false
     }
   }
 
@@ -309,13 +302,15 @@ export function createGenerationQueueItemPartialContentWriter(
       const now = Date.now()
       if (now - lastWriteAt < intervalMs) return
       lastWriteAt = now
-      void persist(content)
+      inFlight = true
+      void persist({ partial_content: content }).finally(() => {
+        inFlight = false
+      })
     },
     /**
      * Persist streaming preview metadata (e.g. competitor source pairs) once.
-     * Failure-isolated separately from content writes: on error (including a
-     * missing column before the migration) the preview simply renders without
-     * links, and content streaming is unaffected.
+     * Failure-isolated separately from content writes: on error the preview
+     * simply renders without links, and content streaming is unaffected.
      */
     async writeMetadata(metadata: Json) {
       if (disabled) return
@@ -325,21 +320,11 @@ export function createGenerationQueueItemPartialContentWriter(
           .update({ partial_metadata: metadata })
           .eq("id", item.id)
           .eq("user_id", item.user_id)
+          .eq("status", "generating")
         if (error) throw error
-        metadataWritten = true
       } catch (error) {
         onError?.(error)
       }
-    },
-    /** Clear the stored partials once the item reaches a terminal state. */
-    async finish() {
-      if (disabled) return
-      disabled = true
-      // Let any in-flight throttled write settle so the clearing write wins.
-      while (inFlight) {
-        await new Promise((resolve) => setTimeout(resolve, 50))
-      }
-      await persist(null)
     },
   }
 }
@@ -425,6 +410,9 @@ export async function recoverStaleGenerationQueueItems(
         error: null,
         started_at: null,
         attempt: Math.max(0, Math.min(item.attempt, item.max_attempts - 1)),
+        // The dead run's preview must not survive into the next attempt.
+        partial_content: null,
+        partial_metadata: null,
       }),
     ),
   ).then((updatedItems) =>
@@ -462,6 +450,8 @@ export async function resetGenerationQueueItemsForRetry(
         output_table: null,
         output_id: null,
         attempt: 0,
+        partial_content: null,
+        partial_metadata: null,
         ...(options.source !== undefined ? { source: options.source } : {}),
         ...(options.creditStatus !== undefined ? { credit_status: options.creditStatus } : {}),
         ...(options.creditCost !== undefined ? { credit_cost: options.creditCost } : {}),
