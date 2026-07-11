@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-11: Seven-candidate Exa discovery with three-to-five direct selection
+
+- Plan: [docs/plans/exa-seven-competitor-candidates-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/exa-seven-competitor-candidates-plan.md)
+- Review: [docs/plans/exa-seven-competitor-candidates-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/exa-seven-competitor-candidates-review.md)
+- Durable source of truth: `src/lib/openrouter-competitor-research.ts` owns the Exa result budget; `src/lib/prompts/competitor-search.ts` owns Exa-specific candidate quality instructions while preserving the legacy fallback prompt; `src/lib/prompts/competitive-analysis.ts` owns final three-to-five direct-competitor selection.
+- Schema or data-shape changes: None. Existing optional Market Research metadata fields and candidate source-pair shapes are unchanged.
+- Auth, RLS, or permission changes: None. Existing authenticated generation, ownership, server-side credentials, persistence, and RLS behavior are unchanged.
+- Runtime/API behavior changes: Each Exa attempt may retrieve up to seven total results instead of five, still bounded to 2,000 characters per result, seven retained Exa candidates, ten citations, a 120-second timeout, and existing retries. Exa is instructed to rank only current direct competitors and return fewer than seven rather than pad with adjacent results. Final synthesis aims for the strongest three to five direct competitors and excludes adjacent alternatives, directories, articles, generic platforms, and weak matches; if evidence supports fewer than three, it outputs only supported matches. Perplexity fallback retains its prior prompt unchanged.
+- Migration or deployment steps: None.
+- Verification: Focused prompt and Exa request contract tests, static checks, review/security findings, and real-flow evidence or blocker are recorded in the review artifact.
+- Rollback or recovery: Set `OPENROUTER_EXA_MARKET_RESEARCH_DISABLED=1` to bypass Exa immediately, or revert the result cap and prompt clauses. Existing reports require no rewrite.
+- Follow-ups: NAZ-129 still owns reachability, redirect, company-identity, and deterministic relevance validation. Prompt filtering improves candidate precision but does not guarantee identity.
+
 ## 2026-07-10: OpenRouter-managed Exa primary Market Research discovery
 
 - Plan: [docs/plans/openrouter-exa-market-research-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/openrouter-exa-market-research-plan.md)
