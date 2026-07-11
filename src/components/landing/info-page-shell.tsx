@@ -1,5 +1,4 @@
 import type { ReactNode } from "react"
-import Link from "next/link"
 
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { SiteFooter } from "@/components/landing/site-footer"
@@ -19,11 +18,8 @@ export function InfoPageShell({ kicker, title, children }: InfoPageShellProps) {
   return (
     <div className="min-h-screen bg-background text-text-primary">
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto flex min-h-16 w-full max-w-[1320px] items-center justify-between gap-3 px-4 sm:px-8 lg:px-14">
+        <div className="mx-auto flex min-h-16 w-full max-w-[1320px] items-center gap-3 px-4 sm:px-8 lg:px-14">
           <BrandWordmark href="/" logoSize={36} logoClassName="rounded-sm" labelClassName="text-lg font-semibold tracking-[0.01em]" />
-          <Link href="/" className="text-sm font-medium text-text-primary hover:text-text-secondary">
-            Back to home
-          </Link>
         </div>
       </header>
 

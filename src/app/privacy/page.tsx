@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { InfoPageShell } from "@/components/landing/info-page-shell"
-import { SUPPORT_EMAIL } from "@/lib/support"
 
 export const metadata: Metadata = {
   title: "Privacy Policy - Maker Compass",
@@ -44,12 +43,16 @@ export default function PrivacyPage() {
       <h2 className={sectionHeading}>Retention and deletion</h2>
       <p className={body}>
         Your projects stay in your account until you delete them or your account. To request deletion of your
-        account and its data, email us at {SUPPORT_EMAIL} from the address on your account.
+        account and its data, use the{" "}
+        <Link href="/contact" className="text-text-primary underline underline-offset-2 hover:text-text-secondary">
+          contact page
+        </Link>{" "}
+        with the email address on your account.
       </p>
 
       <h2 className={sectionHeading}>Contact</h2>
       <p className={body}>
-        Questions about this policy: email {SUPPORT_EMAIL} or use the{" "}
+        Questions about this policy: use the{" "}
         <Link href="/contact" className="text-text-primary underline underline-offset-2 hover:text-text-secondary">
           contact page
         </Link>

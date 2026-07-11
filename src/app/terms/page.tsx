@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { InfoPageShell } from "@/components/landing/info-page-shell"
-import { SUPPORT_EMAIL } from "@/lib/support"
 
 export const metadata: Metadata = {
   title: "Terms of Service - Maker Compass",
@@ -63,8 +62,7 @@ export default function TermsPage() {
 
       <h2 className={sectionHeading}>Changes and contact</h2>
       <p className={body}>
-        We may update these terms as the product evolves and will note the date above. Questions: email{" "}
-        {SUPPORT_EMAIL} or use the{" "}
+        We may update these terms as the product evolves and will note the date above. Questions: use the{" "}
         <Link href="/contact" className="text-text-primary underline underline-offset-2 hover:text-text-secondary">
           contact page
         </Link>
