@@ -1,110 +1,41 @@
 ---
 name: commit
-description: This skill should be used when the user asks Codex to commit all current work, merge the active branch into main, prune merged branches, and push the resulting state to the remote repository.
+description: This skill should be used when the user asks to commit current work and push it, e.g. "commit this", "commit and push", "commit in chunks and push", "ship what's uncommitted". It commits the current branch's uncommitted work in logical chunks and pushes that branch. It never merges other branches into main and never prunes branches.
 ---
 
-# Commit Merge Prune Push
+# Commit and Push (current branch only)
 
 ## Overview
 
-Execute a guarded Git shipping workflow for requests like "commit everything and merge to main", "ship this branch", "merge to main and prune branches", or "commit all, push main, clean branches".
+Guarded Git shipping workflow for the CURRENT branch: summarize uncommitted work, commit it in logical chunks, and push the branch to the remote.
 
-Treat the workflow as high impact. It creates commits, mutates `main`, pushes to the remote, and may delete branch refs. Prefer explicit status summaries and confirmations before any destructive branch deletion.
+Scope is deliberately narrow:
 
-## Trigger Examples
+- **Only the current branch.** Never switch branches, never merge any other branch into `main`, never rebase other branches. If work exists on other branches, it stays there; mention it at most.
+- **No branch pruning.** Never delete local or remote branches. If the user wants cleanup, that is a separate explicit request.
+- **Commit + push, nothing more.** Committed-but-unpushed work on this branch is included in the push.
 
-- "commit everything, merge to main, prune branches and push to remote"
-- "ship this branch to main and clean up merged branches"
-- "commit all current changes and push main"
-- "merge this work into main and prune stale branches"
+If the current branch is not the integration branch and the user asked for the work to land on `main`, stop and say so; do not merge on their behalf.
 
-## Required Safety Rules
+## Safety Rules
 
-1. Inspect repository state before changing it. Run `git status --short --branch`, identify the current branch, identify the default integration branch, and check the remote.
-2. Never run `git reset --hard`, `git clean`, force push, or delete unmerged branches unless the user explicitly asks for that exact destructive action.
-3. Never commit secrets. If staged or unstaged changes appear to include credentials, API keys, `.env` files, private keys, tokens, or generated credential dumps, stop and ask for direction.
-4. Preserve user work. Do not revert unrelated changes. If the request says "commit everything", include all current tracked and untracked changes after summarizing them.
-5. Treat branch pruning as destructive. Delete only branches that Git reports as merged into `main`. Never delete `main`, `master`, the current branch, protected release branches, or unmerged branches.
-6. Stop on merge conflicts, failed checks, rejected pushes, or uncertain branch state. Explain the blocker and leave the repository in the safest understandable state.
-
-## Preflight
-
-Run the bundled preflight helper when available:
-
-```bash
-python3 .agents/skills/commit/scripts/git_ship_preflight.py
-```
-
-Use the output to summarize:
-
-- current branch
-- upstream branch
-- remote URLs
-- changed files
-- local branches already merged into the integration branch
-- branches with unmerged work
-
-If the helper is unavailable, collect the same information with direct Git commands.
+1. Inspect before changing: `git status --short --branch`, current branch, remote.
+2. Never run `git reset --hard`, `git clean`, force pushes, or history rewrites.
+3. Never commit secrets. If changes appear to include credentials, API keys, `.env` files, private keys, or tokens, stop and ask. (`.env*` is git-ignored here; treat any tracked exception with suspicion.)
+4. Commit only files belonging to the work being shipped. Unrelated working-tree changes (another session's edits, tool lockfiles you didn't touch) stay uncommitted; list them in the final report. Include everything only when the user explicitly says "commit everything".
+5. Never bypass hooks. This repo's `.githooks/pre-commit` runs `eslint --fix` + typecheck on staged code files and refuses partially staged files: stage files whole, and if the hook fails, fix the cause. No `--no-verify` unless the user explicitly asks.
+6. Stop on conflicts, failed checks, or a rejected push. For a rejected push, `git fetch origin` and report the divergence; do not auto-rebase or force.
 
 ## Workflow
 
-1. Establish context.
-   - Read `PROJECT_CONTEXT.md` when present.
-   - Check `AGENTS.md` when present.
-   - Determine whether the integration branch is `main` or `master`. Prefer `main` when both exist unless repo history clearly indicates otherwise.
-
-2. Summarize pending changes.
-   - Run `git status --short`.
-   - Run `git diff --stat`.
-   - Run `git diff --check` when practical.
-   - Inspect suspicious files before staging, especially env files, generated dumps, lockfiles, and large binary assets.
-
-3. Verify before committing.
-   - Run the narrowest reliable checks for the touched surface when practical.
-   - For JavaScript or TypeScript projects, prefer `npm run typecheck` and `npm run lint` when available.
-   - If checks are too slow or blocked, report exactly what was skipped and why.
-
-4. Commit all current changes.
-   - Run `git add -A`.
-   - Re-run `git status --short` to confirm the staged scope.
-   - Create one clear commit unless the user requested multiple commits.
-   - Use a concise imperative commit message that reflects the actual diff.
-   - If there are no changes to commit, skip the commit step and continue only if merge or push work remains.
-
-5. Update the remote view.
-   - Run `git fetch --prune origin`.
-   - If network access is blocked by the sandbox, request escalation for the same Git command rather than inventing a workaround.
-
-6. Merge into the integration branch.
-   - Remember the source branch before switching.
-   - Switch to the integration branch with `git switch main` or the detected branch name.
-   - Update it with `git pull --ff-only origin main`.
-   - Merge the source branch using the repository's established merge style. If no clear style exists, use normal `git merge <source-branch>` and allow fast-forward when possible.
-   - Stop and report if conflicts occur.
-
-7. Push the integration branch.
-   - Run `git push origin main` or the detected integration branch.
-   - Report push success and the branch pushed.
-
-8. Prune merged branches.
-   - List local merged branches with `git branch --merged main`.
-   - Exclude `main`, `master`, the current branch, release branches, and any branch that is not clearly disposable.
-   - Delete only merged local branches with `git branch -d <branch>`.
-   - For remote branch deletion, list exact remote branches first. Delete remote source or merged branches only when the user explicitly requested branch pruning in the same request or confirms the list.
-   - Prefer `git push origin --delete <branch>` only for branches confirmed merged into the pushed integration branch.
-
-9. Final verification.
-   - Run `git status --short --branch`.
-   - Confirm the integration branch is clean and up to date with its upstream.
-   - Report commits created, branch merged, branches pruned, remote pushed, checks run, and any residual warnings.
-
-## Command Reference
-
-Load `references/api_reference.md` for a compact Git command reference and pruning decision checklist.
+1. **Survey.** `git status --short --branch`, `git diff --stat`. Group the pending changes into logical chunks (docs, tooling, feature, tests, plans). Note unrelated changes to leave behind.
+2. **Verify.** Run the narrowest reliable checks for the touched surface (`npm run typecheck`, `npm run lint`, targeted tests) when practical; the pre-commit hook re-enforces lint + typecheck on code files anyway.
+3. **Commit in chunks.** Default to one commit per logical concern (matching repo history style, e.g. `docs(systems): ...`, `chore(hooks): ...`, `test(e2e): ...`). Single commit only when the change is genuinely one concern or the user asks. Stage each chunk by explicit paths, never `git add -A` unless the user said "everything". Subject imperative and concise; body only when the why is not obvious.
+4. **Push.** `git push origin <current-branch>`. Report the pushed range.
+5. **Sweep check (this repo).** Run `node scripts/sweep-check.mjs`. If it reports `SWEEP DUE`, tell the user the net line count and offer to run the `commit-sweep` skill (`.agents/skills/commit-sweep`) — it is the successor to the thermo-nuclear review and spends reviewer-CLI tokens, so it runs only on explicit confirmation, never automatically.
+6. **Report.** Commits created (hash + subject), branch pushed, checks run, sweep status, and any files deliberately left uncommitted.
 
 ## Resources
 
-- `scripts/git_ship_preflight.py`: non-destructive repository state reporter.
-- `scripts/example.py`: compatibility wrapper for the preflight helper.
-- `references/api_reference.md`: command reference and pruning checklist.
-- `assets/example_asset.txt`: notes that no output assets are required for this skill.
+- `scripts/git_ship_preflight.py`: optional non-destructive repository state reporter.
+- `references/api_reference.md`: compact command reference.

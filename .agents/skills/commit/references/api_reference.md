@@ -1,6 +1,6 @@
 # Git Shipping Command Reference
 
-Use this reference after reading the main workflow in `SKILL.md`.
+Use this reference after reading the main workflow in `SKILL.md`. Scope: commit and push the CURRENT branch only. No branch merging, no pruning.
 
 ## Inspection
 
@@ -10,50 +10,36 @@ git branch --show-current
 git remote -v
 git diff --stat
 git diff --check
-git branch --merged main
-git branch --no-merged main
 ```
 
-## Commit
+## Commit (chunked)
+
+Stage each logical chunk by explicit paths; never `git add -A` unless the user said "commit everything":
 
 ```bash
-git add -A
-git status --short
-git commit -m "<imperative summary>"
+git add <paths for this chunk>
+git status --short          # confirm staged scope before every commit
+git commit -m "<type(scope): imperative summary>"
 ```
 
-Skip `git commit` when no changes are staged.
+Skip `git commit` when nothing is staged. The repo's `.githooks/pre-commit` runs `eslint --fix` + typecheck on staged code files and refuses partially staged files; fix causes instead of bypassing.
 
-## Merge To Main
+## Push
 
 ```bash
-git fetch --prune origin
-git switch main
-git pull --ff-only origin main
-git merge <source-branch>
-git push origin main
+git push origin "$(git branch --show-current)"
 ```
 
-Substitute `master` only when the repository has no `main` branch or clearly uses `master` as the integration branch.
+On rejection: `git fetch origin`, report the divergence, stop. No auto-rebase, no force push.
 
-## Pruning Checklist
-
-Delete local branches only when all conditions are true:
-
-1. `git branch --merged main` lists the branch.
-2. The branch is not `main`, `master`, the current branch, a release branch, or a protected branch.
-3. The branch name is expected from the just-completed work or is explicitly approved by the user.
-
-Use:
+## Sweep check (after push)
 
 ```bash
-git branch -d <branch>
+node scripts/sweep-check.mjs
 ```
 
-Delete remote branches only when the user explicitly requested pruning or confirms the exact branch list:
+If `SWEEP DUE`: offer the `commit-sweep` skill (`.agents/skills/commit-sweep`). It spends reviewer-CLI tokens; run only on explicit user confirmation.
 
-```bash
-git push origin --delete <branch>
-```
+## Never
 
-Never use `git branch -D`, `git push --force`, `git reset --hard`, or `git clean` in this workflow.
+`git merge` into `main` from this workflow, `git switch` to other branches, `git branch -d/-D`, `git push origin --delete`, `git push --force`, `git reset --hard`, `git clean`, `--no-verify` (unless the user explicitly asks).
