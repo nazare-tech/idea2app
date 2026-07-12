@@ -13,7 +13,11 @@
     "test": "node --import tsx --test 'src/**/*.test.ts' 'src/**/*.test.tsx'",
     "typecheck": "tsc --noEmit",
     "guard:chunky": "node ./scripts/guard-webpack-chunky.mjs",
-    "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs"
+    "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs",
+    "prepare": "git config core.hooksPath .githooks || exit 0",
+    "sweep:check": "node ./scripts/sweep-check.mjs",
+    "e2e": "playwright test",
+    "e2e:paid": "E2E_PAID_FLOWS=1 playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -50,6 +54,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",
     "@types/react": "^19",

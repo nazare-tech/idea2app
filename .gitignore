@@ -46,6 +46,8 @@ next-env.d.ts
 .npm-cache
 .playwright-cli/
 .playwright-mcp/
+/test-results/
+/playwright-report/
 .dmux/
 .claude/worktrees/
 output/
