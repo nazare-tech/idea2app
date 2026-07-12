@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { cn } from "@/lib/utils"
 import { HeaderBrand } from "@/components/layout/brand-wordmark"
 import { HeaderProfileMenu } from "@/components/layout/header-profile-menu"
 
@@ -14,6 +15,7 @@ interface HeaderProps {
   children?: ReactNode
   rightContent?: ReactNode
   profileMenuTriggerId?: string
+  className?: string
 }
 
 export function Header({
@@ -22,11 +24,12 @@ export function Header({
   children,
   rightContent,
   profileMenuTriggerId = "app-user-menu-trigger",
+  className,
 }: HeaderProps) {
   const brand = <HeaderBrand />
 
   return (
-    <header className="grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-strong bg-background px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+    <header className={cn("grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-strong bg-background px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]", className)}>
       <div className="flex min-w-0 items-center gap-4">
         {children ?? brand}
       </div>

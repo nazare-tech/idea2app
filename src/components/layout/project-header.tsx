@@ -3,9 +3,12 @@
 
 import { useState, useRef, useEffect, type MouseEvent } from "react"
 import Link from "next/link"
-import { Pencil } from "lucide-react"
+import { ChevronLeft, Pencil } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { HeaderBrand } from "@/components/layout/brand-wordmark"
 import { Header } from "@/components/layout/header"
+import { HeaderProfileMenu } from "@/components/layout/header-profile-menu"
+import { useReducedMotion } from "@/hooks/use-reduced-motion"
 
 interface ProjectHeaderProps {
   projectName: string
@@ -19,6 +22,8 @@ interface ProjectHeaderProps {
     full_name?: string
     avatar_url?: string
   }
+  /** Mobile chrome auto-hide state; the desktop header never hides. */
+  mobileChromeHidden?: boolean
 }
 
 export function ProjectHeader({
@@ -29,7 +34,9 @@ export function ProjectHeader({
   onFinishRename,
   isSavingName,
   user,
+  mobileChromeHidden = false,
 }: ProjectHeaderProps) {
+  const reduceMotion = useReducedMotion()
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(projectName)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -109,12 +116,38 @@ export function ProjectHeader({
   )
 
   return (
-    <Header
-      user={user}
-      pageTitle={breadcrumb}
-      profileMenuTriggerId="project-user-menu-trigger"
-    >
-      <HeaderBrand onClick={navigateToProjects} />
-    </Header>
+    <>
+      {/* Mobile slim header (design: back, project name, profile — no overflow
+          menu). Overlays the scroller so hiding it frees the full viewport. */}
+      <div
+        className={cn(
+          "absolute inset-x-0 top-0 z-30 flex h-[52px] items-center gap-1 border-b border-border-strong bg-background pl-1.5 pr-3 lg:hidden",
+          !reduceMotion && "transition-transform duration-[280ms] ease-[var(--ease-out-expo)]",
+          mobileChromeHidden ? "-translate-y-[110%]" : "translate-y-0",
+        )}
+      >
+        <Link
+          href="/projects"
+          onClick={navigateToProjects}
+          aria-label="Back to projects"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-foreground transition-colors hover:bg-secondary"
+        >
+          <ChevronLeft aria-hidden="true" className="h-[22px] w-[22px]" />
+        </Link>
+        <span className="min-w-0 flex-1 truncate text-base font-semibold leading-5 text-foreground">
+          {projectName}
+        </span>
+        <HeaderProfileMenu user={user} triggerId="project-user-menu-trigger-mobile" />
+      </div>
+
+      <Header
+        user={user}
+        pageTitle={breadcrumb}
+        profileMenuTriggerId="project-user-menu-trigger"
+        className="hidden lg:grid"
+      >
+        <HeaderBrand onClick={navigateToProjects} />
+      </Header>
+    </>
   )
 }

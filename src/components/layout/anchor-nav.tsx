@@ -7,8 +7,7 @@ import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
 import type { DocumentType } from "@/lib/document-definitions"
 import type { DocumentGenerationDisplayState } from "@/lib/document-generation-display-status"
-
-type NavStatus = "done" | "in_progress" | "pending" | "needs_retry"
+import { StatusMarker, StatusText, type NavStatus } from "@/components/layout/nav-status"
 
 interface AnchorNavProps {
   /** Navigation items after any document-pane visibility filtering */
@@ -23,73 +22,6 @@ interface AnchorNavProps {
   onNavigate: (sectionId: string) => void
   /** Callback when user manually generates or retries a document module. */
   onGenerateDocument?: (docType: DocumentType) => void
-}
-
-function SpinnerIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={cn("animate-spin", className)}
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-    >
-      <circle
-        cx="6"
-        cy="6"
-        r="4.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeDasharray="20"
-        strokeDashoffset="5"
-      />
-    </svg>
-  )
-}
-
-function StatusMarker({
-  status,
-}: {
-  status: NavStatus
-}) {
-  const markerColor = status === "done"
-    ? "bg-[#22C55E]"
-    : status === "in_progress"
-      ? "bg-primary"
-      : status === "needs_retry"
-        ? "bg-destructive"
-      : "bg-[#C9C1B8]"
-
-  return <span aria-hidden="true" className={cn("h-4 w-1 shrink-0 rounded-sm", markerColor)} />
-}
-
-function StatusText({
-  status,
-  displayState,
-  derived = false,
-}: {
-  status: NavStatus
-  displayState?: DocumentGenerationDisplayState
-  derived?: boolean
-}) {
-  if (status === "in_progress") {
-    return (
-      <span className="inline-flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em]">
-        <SpinnerIcon className="h-3 w-3" />
-        <span>Generating</span>
-      </span>
-    )
-  }
-
-  // Derived items have no queue item to retry; the honest label is that the
-  // assembled content is incomplete, not that a generation step failed.
-  if (status === "needs_retry") return <span>{derived ? "Incomplete" : "Needs retry"}</span>
-  if (displayState?.displayStatus === "waiting") return <span>Waiting</span>
-  if (displayState?.displayStatus === "queued") return <span>Queued</span>
-  if (status === "done") return <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#22C55E] opacity-60" />
-  return null
 }
 
 /**
@@ -320,7 +252,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
   return (
     <nav
       ref={setNavRef}
-      className="workspace-anchor-nav flex w-full shrink-0 gap-2 overflow-x-auto border-b border-[#E2DDD6] bg-background px-4 py-3 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6 lg:py-5"
+      className="workspace-anchor-nav hidden w-full shrink-0 gap-2 overflow-x-auto border-b border-[#E2DDD6] bg-background px-4 py-3 lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6 lg:py-5"
     >
       {/* Document tabs */}
       {navItems.map((item) => (

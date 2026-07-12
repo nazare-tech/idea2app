@@ -19,6 +19,7 @@ import {
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { cn } from "@/lib/utils"
 import { UpgradeCtaLink } from "@/components/analytics/upgrade-cta-link"
+import { useReducedMotion } from "@/hooks/use-reduced-motion"
 
 interface ComposerMessage {
   id: number
@@ -34,6 +35,12 @@ interface ProjectComposerProps {
   activeDocKey: string
   /** Free-plan gate: render an upgrade CTA instead of the chat input. */
   upgradeRequired?: boolean
+  /** Mobile chrome auto-hide state; the FAB drops with the peek bar. */
+  mobileChromeHidden?: boolean
+  /** Mobile documents sheet open: the FAB rides above the sheet. */
+  mobileLifted?: boolean
+  /** Lets the workspace react to the composer opening (e.g. close the documents sheet). */
+  onOpenChange?: (open: boolean) => void
 }
 
 const MAX_INPUT_HEIGHT_PX = 132
@@ -91,6 +98,43 @@ const CHIP_ICONS = {
   question: <CircleHelp className="h-[15px] w-[15px]" />,
 } as const
 
+/**
+ * Mobile "Ask this project" floating action button (design: 54px red circle,
+ * bottom-right, riding above whichever bottom chrome is showing). The 60dvh
+ * lift matches MOBILE_DOCUMENT_SHEET_HEIGHT_CLASS in mobile-document-bar.tsx —
+ * Tailwind's JIT needs the literal here.
+ */
+function AskProjectFab({
+  onClick,
+  chromeHidden,
+  lifted,
+  reduceMotion,
+}: {
+  onClick: () => void
+  chromeHidden: boolean
+  lifted: boolean
+  reduceMotion: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Ask this project"
+      className={cn(
+        "absolute right-4 z-[45] flex h-[54px] w-[54px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(15,23,42,0.18)] lg:hidden",
+        !reduceMotion && "transition-[bottom] duration-[280ms] ease-[var(--ease-out-expo)]",
+        lifted
+          ? "bottom-[calc(60dvh+0.875rem)]"
+          : chromeHidden
+            ? "bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
+            : "bottom-[calc(env(safe-area-inset-bottom)+4.25rem)]",
+      )}
+    >
+      <Sparkle aria-hidden="true" className="h-[22px] w-[22px]" />
+    </button>
+  )
+}
+
 function SuggestionChip({
   icon,
   label,
@@ -117,7 +161,11 @@ export function ProjectComposer({
   projectName,
   activeDocKey,
   upgradeRequired = false,
+  mobileChromeHidden = false,
+  mobileLifted = false,
+  onOpenChange,
 }: ProjectComposerProps) {
+  const reduceMotion = useReducedMotion()
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<ComposerMessage[]>([])
@@ -140,13 +188,20 @@ export function ProjectComposer({
   const waitingForFirstToken =
     streaming && (!lastMessage || lastMessage.role === "user" || !lastMessage.text)
 
-  // Focus the input when the composer opens.
+  // Focus the input when the composer opens. preventScroll: focusing must not
+  // scroll the overflow-hidden workspace wrapper, which would drag the mobile
+  // sheet (positioned absolute within it) off-screen.
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      inputRef.current?.focus()
+      inputRef.current?.focus({ preventScroll: true })
     }
     wasOpenRef.current = open
   }, [open])
+
+  // The workspace closes the mobile documents sheet when the composer opens.
+  useEffect(() => {
+    onOpenChange?.(open)
+  }, [open, onOpenChange])
 
   // Track whether the user is near the bottom of the conversation. Only an
   // upward scroll (scrollTop decreasing) pauses autoscroll; landing back near
@@ -327,31 +382,85 @@ export function ProjectComposer({
     inputRef.current?.focus()
   }, [])
 
-  // Free-plan gate: the composer is a paid feature. Render a compact upgrade
-  // bar in place of the chat input; the API enforces the same rule.
+  // Free-plan gate: the composer is a paid feature. Desktop keeps the compact
+  // upgrade bar; mobile gets the same FAB, opening an upgrade bottom sheet.
+  // The API enforces the same rule.
   if (upgradeRequired) {
     return (
-      <div
-        data-testid="project-composer-upgrade"
-        className="pointer-events-none absolute bottom-4 left-1/2 z-40 flex w-[min(724px,calc(100%-32px))] -translate-x-1/2 flex-col sm:bottom-6 sm:w-[min(724px,calc(100%-72px))]"
-      >
-        <div className="pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
-          <span className={cn(kickerClass, "inline-flex shrink-0 items-center gap-[7px] text-primary")}>
-            <Sparkle className="h-[13px] w-[13px]" />
-            Ask this project
-          </span>
-          <p className="m-0 min-w-0 flex-1 text-sm leading-snug text-muted-foreground">
-            Chat with your project documents on a paid plan.
-          </p>
-          <UpgradeCtaLink
-            surface="project_composer"
-            projectId={projectId}
-            className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Upgrade
-          </UpgradeCtaLink>
+      <>
+        {!open && (
+          <AskProjectFab
+            onClick={() => setOpen(true)}
+            chromeHidden={mobileChromeHidden}
+            lifted={mobileLifted}
+            reduceMotion={reduceMotion}
+          />
+        )}
+        {open && (
+          <div className="absolute inset-0 z-40 lg:hidden" data-testid="project-composer-upgrade-sheet">
+            <div
+              aria-hidden="true"
+              onClick={() => setOpen(false)}
+              className="absolute inset-0 bg-foreground/45"
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Ask this project"
+              className="absolute inset-x-0 bottom-0 rounded-t-2xl bg-card px-[18px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3.5 shadow-[0_-4px_20px_rgba(15,23,42,0.12)]"
+              style={reduceMotion ? undefined : { animation: "composerSheetUp .3s var(--ease-out-expo)" }}
+            >
+              <style>{`@keyframes composerSheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}`}</style>
+              <div className="flex items-center gap-2.5">
+                <span className={cn(kickerClass, "inline-flex items-center gap-[7px] text-primary")}>
+                  <Sparkle className="h-[13px] w-[13px]" />
+                  Ask this project
+                </span>
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close"
+                  className="inline-flex h-[26px] w-[26px] items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  <X className="h-[15px] w-[15px]" />
+                </button>
+              </div>
+              <p className="mb-4 mt-3 text-sm leading-snug text-muted-foreground">
+                Chat with your project documents on a paid plan.
+              </p>
+              <UpgradeCtaLink
+                surface="project_composer"
+                projectId={projectId}
+                className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Upgrade
+              </UpgradeCtaLink>
+            </div>
+          </div>
+        )}
+        <div
+          data-testid="project-composer-upgrade"
+          className="pointer-events-none absolute bottom-4 left-1/2 z-40 hidden w-[min(724px,calc(100%-32px))] -translate-x-1/2 flex-col sm:bottom-6 sm:w-[min(724px,calc(100%-72px))] lg:flex"
+        >
+          <div className="pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
+            <span className={cn(kickerClass, "inline-flex shrink-0 items-center gap-[7px] text-primary")}>
+              <Sparkle className="h-[13px] w-[13px]" />
+              Ask this project
+            </span>
+            <p className="m-0 min-w-0 flex-1 text-sm leading-snug text-muted-foreground">
+              Chat with your project documents on a paid plan.
+            </p>
+            <UpgradeCtaLink
+              surface="project_composer"
+              projectId={projectId}
+              className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Upgrade
+            </UpgradeCtaLink>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -364,19 +473,47 @@ export function ProjectComposer({
   )
 
   return (
+    <>
+      {/* Mobile: the collapsed composer is a FAB; opening it shows a bottom
+          sheet over a dark overlay. Desktop (lg+) keeps the command bar. */}
+      {!open && (
+        <AskProjectFab
+          onClick={() => setOpen(true)}
+          chromeHidden={mobileChromeHidden}
+          lifted={mobileLifted}
+          reduceMotion={reduceMotion}
+        />
+      )}
+      {open && (
+        <div
+          aria-hidden="true"
+          onClick={() => setOpen(false)}
+          className="absolute inset-0 z-[39] bg-foreground/45 lg:hidden"
+        />
+      )}
     <div
       data-testid="project-composer"
-      className="pointer-events-none absolute bottom-4 left-1/2 z-40 flex w-[min(724px,calc(100%-32px))] -translate-x-1/2 flex-col sm:bottom-6 sm:w-[min(724px,calc(100%-72px))]"
+      className={cn(
+        "pointer-events-none absolute z-40 flex-col",
+        "lg:bottom-6 lg:left-1/2 lg:flex lg:w-[min(724px,calc(100%-72px))] lg:-translate-x-1/2",
+        open ? "inset-x-0 bottom-0 flex lg:inset-x-auto" : "hidden",
+      )}
     >
       <style>{`
         @keyframes composerUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes composerDot{0%,80%,100%{opacity:.22}40%{opacity:1}}
+        @keyframes composerSheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
         /* The composer card is the focus surface; the input itself is borderless per design. */
         [data-testid="project-composer"] textarea:focus-visible{outline:none}
       `}</style>
       <div
         ref={cardRef}
-        className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
+        className={cn(
+          "pointer-events-auto flex flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-[0_4px_20px_rgba(15,23,42,0.06)] lg:rounded-2xl",
+          open &&
+            "max-lg:h-[70dvh] max-lg:border-x-0 max-lg:border-b-0 max-lg:pb-[env(safe-area-inset-bottom)] max-lg:shadow-[0_-4px_20px_rgba(15,23,42,0.12)]",
+          open && !reduceMotion && "max-lg:animate-[composerSheetUp_.3s_var(--ease-out-expo)]",
+        )}
       >
         {open && (
           <>
@@ -412,10 +549,11 @@ export function ProjectComposer({
               </div>
             </div>
 
-            {/* Conversation body */}
+            {/* Conversation body: bounded below the desktop command bar, the
+                flexible middle region of the mobile sheet. */}
             <div
               ref={panelRef}
-              className="max-h-[46vh] overflow-y-auto overflow-x-hidden px-[18px] pb-[18px]"
+              className="overflow-y-auto overflow-x-hidden px-[18px] pb-[18px] max-lg:min-h-0 max-lg:flex-1 lg:max-h-[46vh]"
             >
               {!hasConversation && !streaming && (
                 <div style={{ animation: "composerUp .28s var(--ease-out-expo)" }}>
@@ -536,7 +674,7 @@ export function ProjectComposer({
               }}
               placeholder="Ask anything about this project…"
               maxLength={4000}
-              className="max-h-[132px] flex-1 resize-none border-none bg-transparent px-1 py-2 text-[14.5px] leading-normal text-foreground outline-none placeholder:text-muted-foreground"
+              className="max-h-[132px] flex-1 resize-none border-none bg-transparent px-1 py-2 text-base leading-normal text-foreground outline-none placeholder:text-muted-foreground lg:text-[14.5px]"
             />
             <button
               type="button"
@@ -573,5 +711,6 @@ export function ProjectComposer({
         </div>
       </div>
     </div>
+    </>
   )
 }

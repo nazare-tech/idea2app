@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Hanken_Grotesk, Fira_Mono } from "next/font/google"
 import "./globals.css"
 
@@ -15,6 +15,14 @@ const firaMono = Fira_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
 })
+
+// viewport-fit=cover lets the workspace's bottom chrome pad itself with
+// env(safe-area-inset-bottom) on notched devices and in-browser Safari.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+}
 
 export const metadata: Metadata = {
   title: "Maker Compass - Transform Your Business Ideas into Reality",

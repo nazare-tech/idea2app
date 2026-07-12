@@ -15,6 +15,9 @@ import {
 } from "@/lib/document-sections"
 import { GenerateAllHydrator } from "@/components/workspace/generate-all-hydrator"
 import { ProjectComposer } from "@/components/workspace/project-composer"
+import { MobileDocumentBar } from "@/components/workspace/mobile-document-bar"
+import { useHideOnScrollChrome } from "@/components/workspace/use-hide-on-scroll-chrome"
+import { useReducedMotion } from "@/hooks/use-reduced-motion"
 import type { QueueItem } from "@/stores/generate-all-store"
 import {
   buildDocumentGenerationDisplayStates,
@@ -177,6 +180,18 @@ export function ProjectWorkspace({
     setActiveDocument,
     loadWorkspaceDocuments,
   })
+
+  // Mobile chrome (slim header + document peek bar) hides on scroll down and
+  // returns on scroll up; sheets pin it, reduced-motion users never lose it.
+  const reduceMotion = useReducedMotion()
+  const [documentsSheetOpen, setDocumentsSheetOpen] = useState(false)
+  const { hidden: mobileChromeHidden, suppress: suppressChromeHide } = useHideOnScrollChrome(
+    scrollContainerRef,
+    { disabled: documentsSheetOpen || reduceMotion },
+  )
+  const handleComposerOpenChange = useCallback((composerOpen: boolean) => {
+    if (composerOpen) setDocumentsSheetOpen(false)
+  }, [])
 
   useEffect(() => {
     setActiveDocument(resolveWorkspaceDocumentTab(searchParams.get("tab")))
@@ -842,8 +857,11 @@ export function ProjectWorkspace({
   })
   const handleTrackedScrollNavigate = useCallback((targetId: string) => {
     trackWorkspaceNavClick(targetId)
+    // The programmatic jump must not read as a scroll-down that hides the
+    // freshly used mobile chrome.
+    suppressChromeHide()
     handleScrollNavigate(targetId)
-  }, [handleScrollNavigate, trackWorkspaceNavClick])
+  }, [handleScrollNavigate, suppressChromeHide, trackWorkspaceNavClick])
 
   const handleGenerationStepComplete = useCallback((completedDocTypes: DocumentType[]) => {
     const docTypes = completedDocTypes.length > 0
@@ -860,7 +878,7 @@ export function ProjectWorkspace({
         onStepComplete={handleGenerationStepComplete}
         getDocumentStatus={getDocumentStatus}
       />
-      <div className="flex flex-col h-screen">
+      <div className="relative flex h-dvh flex-col">
         <ProjectHeader
           projectName={projectName}
           isNameSet={isNameSet}
@@ -872,11 +890,12 @@ export function ProjectWorkspace({
           }}
           isSavingName={false}
           user={user as { email?: string; full_name?: string; avatar_url?: string }}
+          mobileChromeHidden={mobileChromeHidden}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
           {isWorkspaceLoading ? (
-            <div className="pointer-events-none absolute inset-x-0 top-16 z-10 h-0.5 overflow-hidden bg-transparent">
+            <div className="pointer-events-none absolute inset-x-0 top-[52px] z-10 h-0.5 overflow-hidden bg-transparent lg:top-16">
               <div className="h-full w-1/3 animate-[workspaceLoad_1s_ease-in-out_infinite] bg-primary/70" />
             </div>
           ) : null}
@@ -898,11 +917,25 @@ export function ProjectWorkspace({
               streamingContents={streamingContents}
               onGenerateDocument={handleGenerateDocument}
             />
+            <MobileDocumentBar
+              navItems={visibleNavItems}
+              documentStatuses={navDocumentStatuses}
+              documentDisplayStates={navDocumentDisplayStates}
+              activeItem={activeComposerNavItem}
+              activeSectionId={activeSectionId}
+              hidden={mobileChromeHidden}
+              open={documentsSheetOpen}
+              onOpenChange={setDocumentsSheetOpen}
+              onNavigate={handleTrackedScrollNavigate}
+            />
             <ProjectComposer
               projectId={project.id}
               projectName={projectName}
               activeDocKey={activeComposerNavItem.key}
               upgradeRequired={!composerEnabled}
+              mobileChromeHidden={mobileChromeHidden}
+              mobileLifted={documentsSheetOpen}
+              onOpenChange={handleComposerOpenChange}
             />
           </div>
         </div>
