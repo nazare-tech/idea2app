@@ -144,7 +144,7 @@ END UNTRUSTED CONTEXT"
 # Refuse external review when the scoped diff itself looks like it contains a
 # real credential. Names such as OPENROUTER_API_KEY are allowed; value-shaped
 # private keys/tokens are not.
-if printf '%s' "$REVIEW_MATERIAL" | grep -Eqi -- '-----BEGIN ([A-Z ]+ )?PRIVATE KEY-----|(^|[^A-Za-z0-9])(sk_(live|test)_|sk-proj-|rk_live_|sk-ant-|ghp_|github_pat_|xox[baprs]-|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,})[A-Za-z0-9_=-]{8,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|postgres(ql)?://[^[:space:]@]+:[^[:space:]@]+@|(API_KEY|SECRET|TOKEN)[[:space:]]*[:=][[:space:]]*"?[A-Za-z0-9_=-]{24,}'; then
+if printf '%s' "$REVIEW_MATERIAL" | grep -Eqi -- '-----BEGIN ([A-Z ]+ )?PRIVATE KEY-----|(^|[^A-Za-z0-9])(sk_(live|test)_|sk-proj-|rk_live_|sk-ant-|sk-or(-v[0-9]+)?-|ghp_|github_pat_|xox[baprs]-|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,})[A-Za-z0-9_=-]{8,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|postgres(ql)?://[^[:space:]@]+:[^[:space:]@]+@|(API_KEY|SECRET|TOKEN)[[:space:]]*[:=][[:space:]]*"?[A-Za-z0-9_=-]{24,}'; then
   echo "review input contains secret-like material; refusing external review" >&2
   exit 4
 fi

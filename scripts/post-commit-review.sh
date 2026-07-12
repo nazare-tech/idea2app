@@ -142,22 +142,30 @@ classify_failure() {
 }
 
 if ! IMPLEMENTER="$(resolve_implementer)"; then
-  write_status "skipped" "unknown" "" "" "unknown_implementer"
-  printf 'agent-review: SKIPPED %s — unknown implementer; set AGENT_IMPLEMENTER=codex|claude\n' "$COMMIT" >&2
+  IMPLEMENTER=""
+fi
+REVIEWER=""
+if [ -n "$IMPLEMENTER" ]; then
+  REVIEWER="$(reviewer_for "$IMPLEMENTER")"
+fi
+
+if ! has_reviewable_paths; then
+  write_status "skipped" "${IMPLEMENTER:-unknown}" "$REVIEWER" "" "no_reviewable_paths"
+  printf 'agent-review: SKIPPED %s — no reviewable code paths\n' "$COMMIT" >&2
   exit 0
 fi
 
-REVIEWER="$(reviewer_for "$IMPLEMENTER")"
+# A code commit without a resolvable implementer is an unreviewed commit, not a
+# quiet skip: exit non-zero so the post-commit hook reports it loudly.
+if [ -z "$IMPLEMENTER" ]; then
+  write_status "skipped" "unknown" "" "" "unknown_implementer"
+  printf 'agent-review: SKIPPED %s — unknown implementer; commit is NOT REVIEWED. Set AGENT_IMPLEMENTER=codex|claude and rerun scripts/post-commit-review.sh %s\n' "$COMMIT" "$COMMIT" >&2
+  exit 1
+fi
 
 if [ "${SKIP_AGENT_REVIEW:-}" = "1" ]; then
   write_status "skipped" "$IMPLEMENTER" "$REVIEWER" "" "explicit_skip"
   printf 'agent-review: SKIPPED %s — SKIP_AGENT_REVIEW=1\n' "$COMMIT" >&2
-  exit 0
-fi
-
-if ! has_reviewable_paths; then
-  write_status "skipped" "$IMPLEMENTER" "$REVIEWER" "" "no_reviewable_paths"
-  printf 'agent-review: SKIPPED %s — no reviewable code paths\n' "$COMMIT" >&2
   exit 0
 fi
 
@@ -173,6 +181,11 @@ case "$TIMEOUT_SECONDS" in
   ''|*[!0-9]*) TIMEOUT_SECONDS=1200 ;;
 esac
 if [ "$TIMEOUT_SECONDS" -lt 1 ]; then TIMEOUT_SECONDS=1200; fi
+
+MAX_OUTPUT_BYTES="${AGENT_REVIEW_MAX_OUTPUT_BYTES:-1000000}"
+case "$MAX_OUTPUT_BYTES" in
+  ''|*[!0-9]*) MAX_OUTPUT_BYTES=1000000 ;;
+esac
 
 TIMEOUT_MARKER="${REVIEW_DIR}/${COMMIT}.timeout"
 rm -f "$OUTPUT_PATH" "$STDERR_PATH" "$TEMP_OUTPUT" "$TIMEOUT_MARKER"
@@ -202,25 +215,45 @@ perl -MPOSIX -e 'POSIX::setsid(); exec {$ARGV[0]} @ARGV or die "exec failed: $!"
   --out "$OUTPUT_PATH" \
   >"$TEMP_OUTPUT" 2>"$STDERR_PATH" &
 REVIEW_PID=$!
+# Watchdog: enforce the wall-clock timeout, and kill a runaway reviewer as
+# soon as its streamed stdout/stderr artifacts cross the output byte cap
+# instead of letting it fill the disk until it exits on its own. An oversize
+# kill leaves no timeout marker; the post-wait size check classifies it as
+# output_too_large.
 node -e '
   const fs = require("node:fs")
   const pid = Number(process.argv[1])
   const marker = process.argv[2]
   const timeoutMs = Number(process.argv[3]) * 1000
-  setTimeout(() => {
-    try {
-      process.kill(-pid, 0)
-    } catch {
-      process.exit(0)
-    }
-    fs.writeFileSync(marker, "")
+  const capBytes = Number(process.argv[4])
+  const watchedFiles = process.argv.slice(5)
+  const groupAlive = () => {
+    try { process.kill(-pid, 0); return true } catch { return false }
+  }
+  const killGroup = () => {
     try { process.kill(-pid, "SIGTERM") } catch {}
     setTimeout(() => {
       try { process.kill(-pid, "SIGKILL") } catch {}
       process.exit(0)
     }, 2000)
+  }
+  const fileSize = (file) => {
+    try { return fs.statSync(file).size } catch { return 0 }
+  }
+  const sizePoll = setInterval(() => {
+    if (!groupAlive()) process.exit(0)
+    if (watchedFiles.some((file) => fileSize(file) > capBytes)) {
+      clearInterval(sizePoll)
+      killGroup()
+    }
+  }, 2000)
+  setTimeout(() => {
+    clearInterval(sizePoll)
+    if (!groupAlive()) process.exit(0)
+    fs.writeFileSync(marker, "")
+    killGroup()
   }, timeoutMs)
-' "$REVIEW_PID" "$TIMEOUT_MARKER" "$TIMEOUT_SECONDS" &
+' "$REVIEW_PID" "$TIMEOUT_MARKER" "$TIMEOUT_SECONDS" "$MAX_OUTPUT_BYTES" "$TEMP_OUTPUT" "$STDERR_PATH" &
 WATCHDOG_PID=$!
 
 wait "$REVIEW_PID"
@@ -244,10 +277,6 @@ set -e
 # wrappers may only write stdout, so the captured stream is the final source.
 mv "$TEMP_OUTPUT" "$OUTPUT_PATH"
 
-MAX_OUTPUT_BYTES="${AGENT_REVIEW_MAX_OUTPUT_BYTES:-1000000}"
-case "$MAX_OUTPUT_BYTES" in
-  ''|*[!0-9]*) MAX_OUTPUT_BYTES=1000000 ;;
-esac
 OUTPUT_BYTES="$(wc -c <"$OUTPUT_PATH" | tr -d ' ')"
 STDERR_BYTES="$(wc -c <"$STDERR_PATH" | tr -d ' ')"
 if [ "$OUTPUT_BYTES" -gt "$MAX_OUTPUT_BYTES" ] || [ "$STDERR_BYTES" -gt "$MAX_OUTPUT_BYTES" ]; then

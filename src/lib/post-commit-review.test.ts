@@ -57,6 +57,7 @@ async function installFakeReviewer(
     stderr?: string
     exitCode?: number
     delaySeconds?: number
+    floodBytes?: number
     missingFromReviewRoot?: string
     resistantChildPidPath?: string
   } = {},
@@ -72,6 +73,7 @@ for argument in "$@"; do
 done
 ${options.missingFromReviewRoot ? `if [ -e "$review_root/${options.missingFromReviewRoot}" ]; then echo "sensitive file entered review root" >&2; exit 9; fi` : ""}
 ${options.resistantChildPidPath ? `sh -c 'trap "" TERM HUP; while :; do sleep 1; done' & child_pid=$!; echo "$child_pid" > "${options.resistantChildPidPath}"; wait "$child_pid"` : ""}
+${options.floodBytes ? `yes x | head -c ${options.floodBytes}` : ""}
 ${options.delaySeconds ? `sleep ${options.delaySeconds}` : ""}
 ${options.output ? `printf '%s\\n' '${options.output}'` : ""}
 ${options.stderr ? `printf '%s\\n' '${options.stderr}' >&2` : ""}
@@ -332,20 +334,50 @@ for (const failure of [
   })
 }
 
-test("unknown implementer skips loudly instead of guessing a reviewer", async () => {
+test("unknown implementer on a code commit fails loudly instead of guessing a reviewer", async () => {
   const repo = await createRepo()
-  const sha = await commitFile(repo, ".githooks/example")
+  const docsSha = await commitFile(repo, "docs/notes.md", "notes\n")
   const invocationPath = await installFakeReviewer(repo, { output: "NO FINDINGS" })
 
+  const docsResult = runReview(repo)
+  assert.equal(docsResult.status, 0, docsResult.stderr)
+  const docsStatus = await readStatus(repo, docsSha)
+  assert.equal(docsStatus.status, "skipped")
+  assert.equal(docsStatus.reason, "no_reviewable_paths")
+
+  const codeSha = await commitFile(repo, ".githooks/example")
   const result = runReview(repo)
 
-  assert.equal(result.status, 0, result.stderr)
-  assert.match(result.stderr, new RegExp(sha))
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr, new RegExp(codeSha))
+  assert.match(result.stderr, /NOT REVIEWED/)
   await assert.rejects(readFile(invocationPath, "utf8"), { code: "ENOENT" })
-  const status = await readStatus(repo, sha)
+  const status = await readStatus(repo, codeSha)
   assert.equal(status.status, "skipped")
   assert.equal(status.reason, "unknown_implementer")
   assert.equal(status.reviewer, null)
+})
+
+test("runaway reviewer output is killed and classified output_too_large before timeout", async () => {
+  const repo = await createRepo()
+  const sha = await commitFile(repo, "src/example.ts")
+  await installFakeReviewer(repo, { floodBytes: 100000, delaySeconds: 30 })
+
+  const startedAt = Date.now()
+  const result = runReview(repo, "codex", {
+    AGENT_REVIEW_MAX_OUTPUT_BYTES: "4096",
+    AGENT_REVIEW_TIMEOUT_SECONDS: "120",
+  })
+
+  assert.equal(result.status, 2, result.stderr)
+  assert.ok(Date.now() - startedAt < 25_000, "runaway reviewer must be killed by the size poll, not the timeout")
+  assert.match(result.stderr, /output exceeded/)
+  const status = await readStatus(repo, sha)
+  assert.equal(status.status, "failed")
+  assert.equal(status.failureClass, "output_too_large")
+  const artifact = await readFile(path.join(repo, `.git/agent-reviews/${sha}.txt`), "utf8")
+  assert.match(artifact, /\[review artifact truncated\]/)
+  assert.ok(artifact.length < 6000)
 })
 
 test("agent reviewer dry runs both CLIs with project context and model tools disabled", async () => {
@@ -392,6 +424,21 @@ test("agent reviewer refuses to export a diff containing secret-like material", 
   assert.equal(result.status, 4)
   assert.match(result.stderr, /secret-like material/)
   assert.doesNotMatch(result.stderr, /sk_live_/)
+
+  const openRouterSha = await commitFile(
+    repo,
+    "src/openrouter.ts",
+    'export const leaked = "sk-or-v1-0123456789abcdef0123456789abcdef"\n',
+  )
+  const openRouterResult = spawnSync(
+    "bash",
+    ["scripts/agent-review.sh", "--dry-run", "--implementer", "codex", "--range", `${openRouterSha}^..${openRouterSha}`],
+    { cwd: repo, encoding: "utf8" },
+  )
+
+  assert.equal(openRouterResult.status, 4)
+  assert.match(openRouterResult.stderr, /secret-like material/)
+  assert.doesNotMatch(openRouterResult.stderr, /sk-or-v1/)
 })
 
 test("agent reviewer never dereferences a tracked symlink into host files", async () => {
