@@ -1,11 +1,12 @@
 # Claude Code Project Instructions
 
 ## Source of Truth: AGENTS.md
-**IMPORTANT:** Read `AGENTS.md` in the repo root before responding to every message. It is the single source of truth for project rules: primary context (`PROJECT_CONTEXT.md`), rules, workflow (plan files in `docs/plans/`, `/holistic-implementation`, Recommendation A selection, architecture improvement opportunities, backend-change-history), transcript sanitization, Linear evidence rules, UI verification and `ui-evidence/` screenshot requirements, standardized intake test cases, and the skills list.
+**IMPORTANT:** Read `AGENTS.md` in the repo root before responding to every message. It is a short router: core rules plus a table pointing to the doc each task type needs (planning workflow, UI verification, review personas and cross-model review, testing docs, transcript/Linear formats, sweep skill). Follow the router — read the doc your task needs, not everything. System knowledge lives in `docs/systems/` (indexed by `PROJECT_CONTEXT.md`); every doc starts with a 7-line greppable header, so `head -7` and `grep -ril` are the discovery tools.
 
 Notes when applying `AGENTS.md` as Claude Code:
 - It is written addressing "Codex"; every rule applies equally to Claude Code.
-- Where it names Codex-specific tooling (Codex Chrome plugin, `agent.browsers.list()`, Codex in-app browser), use the Claude Code equivalents (claude-in-chrome MCP tools, Browser preview tools). The intent — real Chrome, real local dev server, real auth via `.env.e2e.local`, evidence saved under `ui-evidence/<date>/<task-slug>/` — is unchanged.
+- Where routed docs name Codex-specific tooling (Codex Chrome plugin, `agent.browsers.list()`, Codex in-app browser), use the Claude Code equivalents (claude-in-chrome MCP tools, Browser preview tools). The intent — real Chrome, real local dev server, real auth via `.env.e2e.local`, evidence saved under `ui-evidence/<date>/<task-slug>/` — is unchanged.
+- In `scripts/agent-review.sh` terms, work you implement has `--implementer claude`, so the cross-model reviewer is Codex (gpt-5.6-terra, medium reasoning).
 
 This file adds only the Claude-specific design context below. If `AGENTS.md` and this file conflict, ask which one wins.
 
