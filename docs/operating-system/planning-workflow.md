@@ -55,7 +55,7 @@ Include an architecture improvement review that confirms selected opportunities 
 
 Every code commit receives automatic opposite-CLI persona review. At wrap-up, collect `.git/agent-reviews/` statuses, verify/remediate findings, and review remediation commits; run a manual working-tree review only for code not yet covered by a commit. See `docs/operating-system/review-personas.md`.
 
-After the commit/review/remediation batch, run `scripts/sweep-check.mjs --json`. If net code growth is at least 1,000 lines, invoke `commit-sweep` automatically in the active agent before push. The sweep applies `thermo-nuclear-code-quality-review` across the marker range and does not call a duplicate cross-model range reviewer.
+After the commit/review/remediation batch, run `node scripts/sweep-check.mjs --json`. If net code growth is at least 1,000 lines, invoke `commit-sweep` automatically in the active agent before push. The sweep applies `thermo-nuclear-code-quality-review` across the marker range and does not call a duplicate cross-model range reviewer.
 
 ## Backend change history
 

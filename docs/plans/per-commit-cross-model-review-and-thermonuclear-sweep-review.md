@@ -67,6 +67,24 @@
 - Accepted minor: capped private review artifacts remain in `.git/agent-reviews/` until manually removed. Automatic retention deletion was not added because project rules require consent before deleting existing files.
 - Accepted minor: a very small signal race exists between spawning the session leader and `setsid`; durable interrupted status and process-group tests cover normal failure paths.
 
+## Per-Commit Review Round 1 (post-landing, 2026-07-12)
+
+First live run of the hook over the landing batch (6 commits). Codex reviewed 5; the Pika skill-pack commit failed review with `input_too_large` and is disclosed as unreviewed.
+
+Accepted and fixed:
+
+- Major, security (`53611ac`): secret gate missed OpenRouter `sk-or-v1-...` keys. Added `sk-or(-v[0-9]+)?-` to the token prefix alternation plus a red-green test committing an OpenRouter-shaped key.
+- Major, product UX (`53611ac`): a code commit from a non-agent terminal recorded `skipped/unknown_implementer` and exited 0, so the hook stayed quiet. Runner now checks reviewable paths first; a code commit with an unknown implementer still records the skip but exits non-zero so the post-commit hook prints the NOT REVIEWED warning. Docs-only commits from unknown terminals stay quiet successes.
+- Major, performance (`53611ac`): the 1 MB output cap was enforced only after reviewer exit. The watchdog now polls artifact sizes every 2 s and TERM/KILLs the reviewer process group on crossing the cap; post-wait classification stays `output_too_large`. Covered by a runaway-reviewer test asserting kill well before timeout.
+- Major, maintainability (`adb2e8d`): `planning-workflow.md` invoked `scripts/sweep-check.mjs` without `node`. Fixed to `node scripts/sweep-check.mjs --json`.
+- Major (narrowed), product UX (`fc3b9d6`): marketing-idea-capture could claim a saved path without verifying the save. Steps 4/6 now require read-back verification and explicit failure reporting with full content in chat; CLI failure is a save failure, never a silent filesystem fallback.
+
+Rejected with reasons:
+
+- Rejected, security (`fc3b9d6`, marketing-idea-capture auto-persistence without consent): the skill exists to capture the user's own marketing ideas into their own vault; AGENTS.md routes only messages the user explicitly frames as marketing ideas, so the framing is the consent. Adding a confirmation step would defeat the capture workflow the user designed.
+- Rejected, AI-smells (`fc3b9d6`, thermo-nuclear skill fixes findings before presenting them): deliberate design. The sweep skill's contract (commit-sweep, AGENTS.md automation section) is fix-then-report inside the pre-authorized sweep; remediation is not an unrequested side effect.
+- Not accepted as stated, security (`53611ac` generic assignment "excludes hyphens"): the `[A-Za-z0-9_=-]` value class already includes `-`; only the missing `sk-or-` prefix was real and is fixed.
+
 ## Remediation Checklist
 
 - [x] Route every code/workflow commit to the opposite CLI.
