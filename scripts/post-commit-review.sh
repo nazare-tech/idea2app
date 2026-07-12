@@ -215,8 +215,8 @@ perl -MPOSIX -e 'POSIX::setsid(); exec {$ARGV[0]} @ARGV or die "exec failed: $!"
   --out "$OUTPUT_PATH" \
   >"$TEMP_OUTPUT" 2>"$STDERR_PATH" &
 REVIEW_PID=$!
-# Watchdog: enforce the wall-clock timeout, and kill a runaway reviewer as
-# soon as its streamed stdout/stderr artifacts cross the output byte cap
+# Watchdog: enforce the wall-clock timeout, and kill a runaway reviewer within
+# 500ms of its streamed stdout/stderr artifacts crossing the output byte cap
 # instead of letting it fill the disk until it exits on its own. An oversize
 # kill leaves no timeout marker; the post-wait size check classifies it as
 # output_too_large.
@@ -246,7 +246,7 @@ node -e '
       clearInterval(sizePoll)
       killGroup()
     }
-  }, 2000)
+  }, 500)
   setTimeout(() => {
     clearInterval(sizePoll)
     if (!groupAlive()) process.exit(0)
@@ -280,14 +280,20 @@ mv "$TEMP_OUTPUT" "$OUTPUT_PATH"
 OUTPUT_BYTES="$(wc -c <"$OUTPUT_PATH" | tr -d ' ')"
 STDERR_BYTES="$(wc -c <"$STDERR_PATH" | tr -d ' ')"
 if [ "$OUTPUT_BYTES" -gt "$MAX_OUTPUT_BYTES" ] || [ "$STDERR_BYTES" -gt "$MAX_OUTPUT_BYTES" ]; then
+  # Truncate with a bounded read: never load a runaway artifact whole.
   REVIEW_CAP="$MAX_OUTPUT_BYTES" node -e '
     const fs = require("node:fs")
     for (const file of process.argv.slice(1)) {
       const cap = Number(process.env.REVIEW_CAP)
-      const data = fs.readFileSync(file)
-      if (data.length <= cap) continue
+      let size = 0
+      try { size = fs.statSync(file).size } catch { continue }
+      if (size <= cap) continue
+      const fd = fs.openSync(file, "r")
+      const head = Buffer.alloc(cap)
+      const bytesRead = fs.readSync(fd, head, 0, cap, 0)
+      fs.closeSync(fd)
       fs.writeFileSync(file, Buffer.concat([
-        data.subarray(0, cap),
+        head.subarray(0, bytesRead),
         Buffer.from("\n[review artifact truncated]\n"),
       ]))
     }
