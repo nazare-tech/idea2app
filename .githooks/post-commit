@@ -1,0 +1,5 @@
+#!/bin/sh
+# Post-commit: print a loud notice when net +1000 lines of code have landed
+# since the last commit sweep. Never blocks the commit, never calls paid APIs.
+node scripts/sweep-check.mjs --notify 2>/dev/null || true
+exit 0

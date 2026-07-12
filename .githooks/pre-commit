@@ -1,0 +1,40 @@
+#!/bin/sh
+# Pre-commit: eslint --fix staged JS/TS files (re-staging fixes), then typecheck.
+# Bypass in emergencies with: git commit --no-verify
+set -e
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' || true)
+
+if [ -z "$STAGED" ]; then
+  # Docs/asset-only commit: nothing to lint or typecheck.
+  exit 0
+fi
+
+# Refuse partially staged code files: re-staging after eslint --fix would
+# silently pull their unstaged hunks (possibly unfinished work or secrets)
+# into the commit. Stage them fully or stash the unstaged part first.
+UNSTAGED=$(git diff --name-only)
+PARTIAL=""
+for f in $STAGED; do
+  case "
+$UNSTAGED
+" in *"
+$f
+"*) PARTIAL="$PARTIAL $f" ;; esac
+done
+if [ -n "$PARTIAL" ]; then
+  echo "pre-commit: refusing to run eslint --fix over partially staged files:" >&2
+  for f in $PARTIAL; do echo "  $f" >&2; done
+  echo "Stage them fully (git add <file>) or stash the unstaged part (git stash -k), then retry." >&2
+  exit 1
+fi
+
+echo "pre-commit: eslint --fix on staged files..."
+# --no-warn-ignored: staged files matched by eslint ignores must not fail the hook
+echo "$STAGED" | tr '\n' '\0' | xargs -0 npx eslint --fix --no-warn-ignored --max-warnings=0
+echo "$STAGED" | tr '\n' '\0' | xargs -0 git add
+
+echo "pre-commit: typecheck..."
+npm run --silent typecheck
+
+exit 0
