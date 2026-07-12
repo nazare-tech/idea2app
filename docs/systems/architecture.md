@@ -152,12 +152,17 @@ The project workspace (`/projects/[projectRef]`) uses a dashboard document layou
 │ First Version Plan │ First Version Plan markdown/streaming state
 │ Design Mockups     │ Mockup renderer / progress state
 └──────────────┴───────────────────┴──────────────────────────────┘
-  300px rail on desktop; horizontal rail on small screens
+  300px rail at lg+ (desktop and landscape tablets). Below lg (phones,
+  portrait tablets): slim back/name/profile header, bottom peek bar that
+  opens a documents sheet (all documents + subsections), and an
+  "Ask this project" FAB; header and peek bar hide on scroll down and
+  return on scroll up (useHideOnScrollChrome).
 ```
 
 - **`DashboardShell`** — authenticated app shell rendered by `src/app/(dashboard)/layout.tsx`; receives the current user profile server-side and keeps credit balances out of the visible shell.
 - **`ProjectHeader`** — per-project header with editable project name and account affordances.
-- **`AnchorNav`** — scroll-aware document rail. It renders `Queued`, `Generating`, `Needs retry`, or ready check marks from `DocumentGenerationDisplayState`.
+- **`AnchorNav`** — scroll-aware document rail, rendered at `lg+` only. It renders `Queued`, `Generating`, `Needs retry`, or ready check marks from `DocumentGenerationDisplayState`. Status marker/text primitives live in `src/components/layout/nav-status.tsx`, shared with the mobile bottom chrome.
+- **`MobileDocumentBar`** (`src/components/workspace/mobile-document-bar.tsx`) — below `lg`: a curved-top peek bar naming the document in view (status marker + label) that opens a bottom sheet listing every document with its subsections and generation status; taps route through the same `handleScrollNavigate` path as the rail. The "Ask this project" composer collapses to a red FAB that rides above the peek bar or the open sheet, and expands into its own bottom sheet. Chrome hide-on-scroll lives in `use-hide-on-scroll-chrome.ts`; sheets and bottom chrome pad with `env(safe-area-inset-bottom)` (root layout sets `viewport-fit=cover`, shells use `h-dvh`).
 - **`ScrollableContent`** — renders Overview, Market Research, Product Plan, First Version Plan, and Design Mockups as stacked sections. Below-the-fold sections are driven by a section registry (label, intrinsic size, content/status renderers) with containment derived from each nav item's `sourceType` in `document-sections.ts`; it defers those sections by one animation frame, applies browser `content-visibility` containment to inactive heavy documents, and uses generation placeholders when content is not saved yet.
 - **`ProjectWorkspace`** — slim orchestrator component for the workspace shell and render mapping. Hooks own the heavy behavior: `useWorkspaceDocuments` for lazy `/workspace` loading, `usePersistedGenerationState` for local generation flags, `useWorkspaceScrollSync` for hash/scroll state, `useGenerateAllHydration` for store selectors, and `useDocumentGeneration` for manual document/mockup generation.
 

@@ -90,6 +90,10 @@ Rejected with reasons:
 - Accepted narrowed, performance (`ac28d06c`, 2 s poll called "non-enforcing"): tightened the size poll to 500 ms and made truncation a bounded `cap`-byte read so oversized artifacts can never be loaded whole. Rejected the suggested full stream-boundary rewrite: piping reviewer stdout through a capper would surrender the process-group handle the watchdog kills, and a 500 ms window bounds worst-case growth to well under memory-relevant sizes while keeping kill semantics intact.
 - Accepted, data integrity (`ca962657`): save verification now requires reading the exact note back and confirming the verbatim source idea; folder listing explicitly disqualified.
 
+## Per-Commit Review Round 3 (2026-07-12)
+
+- Minor (`abca0cb3`, third narrowing of the same save-verification finding): applied the requested precision (verification must match the `## Raw idea` section, not any echo of the idea) but stopped the per-round commit loop here under the three-materially-unchanged-rounds rule; the edit ships with the session's wrap-up docs commit. `e13ec77f` (500 ms poll + bounded truncation) passed review with no findings.
+
 ## Remediation Checklist
 
 - [x] Route every code/workflow commit to the opposite CLI.

@@ -1,6 +1,6 @@
 # Plan: Project Page Mobile and Tablet Layout
 
-Status: implementing
+Status: implemented (2026-07-12, see project-page-mobile-review.md)
 Date: 2026-07-12
 Source design: Claude Design project `7582cab2-733d-44f9-96fb-74038be8207e`, file `Project Page Mobile.dc.html` ("Mobile project page redesign").
 

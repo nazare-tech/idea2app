@@ -23,7 +23,7 @@ Run this workflow when the user explicitly says “this is a marketing idea,” 
 3. Choose a concise date-prefixed kebab-case filename: `YYYY-MM-DD-<idea-slug>.md`. If a note already exists, create a versioned sibling rather than overwriting it.
 4. Create the capture folder if absent and create the note through the configured Obsidian CLI. If a CLI command fails or is unavailable, treat it as a save failure; never silently fall back to direct filesystem writes.
 5. Fill the note using the template below. Preserve the user’s source idea verbatim. Label unverified claims as needing research; do not invent results, customer quotes, or statistics.
-6. Verify by reading the exact note back and confirming it contains the user's verbatim source idea before reporting a path; a filename existing in a folder listing is not verification. Return the same usable content in chat, starting with the top recommendation and the saved note path. If creation or verification failed, say so explicitly and deliver the full note content in chat instead of claiming a saved path.
+6. Verify by reading the exact note back and confirming its `## Raw idea` section equals the user's verbatim source idea before reporting a path; a filename existing in a folder listing, or the idea merely echoed elsewhere in the draft, is not verification. Return the same usable content in chat, starting with the top recommendation and the saved note path. If creation or verification failed, say so explicitly and deliver the full note content in chat instead of claiming a saved path.
 
 ## Format Selection
 
