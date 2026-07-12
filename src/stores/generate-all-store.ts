@@ -191,27 +191,70 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
     }`
   }
 
-  async function doPoll() {
-    try {
-      const res = await fetch(buildStatusUrl())
-      if (!res.ok) {
-        poller.schedule()
-        return
-      }
-      const { queue: dbRow, streamingPreview } = await res.json()
-      if (!dbRow) {
-        poller.schedule()
-        return
-      }
+  interface StatusPayload {
+    dbRow: {
+      status: string
+      queue?: QueueItem[]
+      current_index?: number
+      started_at?: string | null
+      error_info?: { message?: string } | null
+      needs_execute?: boolean
+    } | null
+    streamingPreview: unknown
+  }
 
-      const prevQueue = prevQueueRef.current ?? store.getState().queue
-      const incomingQueue: QueueItem[] = dbRow.queue ?? []
-      if (dbRow.started_at) {
-        pollStartedAtRef.current = new Date(dbRow.started_at).getTime()
+  async function fetchStatus(): Promise<StatusPayload> {
+    const res = await fetch(buildStatusUrl())
+    if (!res.ok) {
+      const error = new Error(`Generate All status returned ${res.status}`)
+      // 4xx means the request itself is wrong (auth, bad project) — no
+      // amount of retrying fixes it. 5xx and network errors are transient.
+      if (res.status >= 400 && res.status < 500) {
+        throw Object.assign(error, { permanent: true })
       }
+      throw error
+    }
+    const { queue: dbRow, streamingPreview } = await res.json()
+    return { dbRow, streamingPreview }
+  }
 
-      // Detect newly-completed steps and notify the workspace to refresh the
-      // exact document collections that should now have saved content.
+  /**
+   * Fetch the status payload, retrying transient failures with backoff
+   * (1s, 2s, 4s, 8s). Only the fetch retries; callers apply state exactly
+   * once, so a retry can never replay side effects.
+   */
+  async function fetchStatusWithRetry(maxAttempts = 5): Promise<StatusPayload> {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await fetchStatus()
+      } catch (err) {
+        if (attempt >= maxAttempts || (err instanceof Error && "permanent" in err)) {
+          throw err
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** (attempt - 1)))
+      }
+    }
+  }
+
+  /**
+   * The single interpretation of a status payload: trusts the server's
+   * computed status/current_index (computeQueueStatus runs in the status
+   * route against live items), merges streaming previews, and notifies the
+   * workspace about newly-completed steps. Used by hydrate and every poll,
+   * so the two can never disagree about what a payload means.
+   */
+  function applyStatusPayload(dbRow: NonNullable<StatusPayload["dbRow"]>, streamingPreview: unknown) {
+    const incomingQueue: QueueItem[] = dbRow.queue ?? []
+    if (dbRow.started_at) {
+      pollStartedAtRef.current = new Date(dbRow.started_at).getTime()
+    }
+
+    // Detect newly-completed steps and notify the workspace to refresh the
+    // exact document collections that should now have saved content. Only
+    // meaningful against a previous snapshot: hydrate establishes the
+    // baseline, subsequent polls diff against it.
+    const prevQueue = prevQueueRef.current
+    if (prevQueue) {
       const prevByDocType = new Map(prevQueue.map((item) => [item.docType, item]))
       const newlyCompletedDocTypes = incomingQueue
         .filter((item) => {
@@ -225,39 +268,56 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       if (newlyCompletedDocTypes.length > 0) {
         onStepCompleteRef.current?.(newlyCompletedDocTypes)
       }
+    }
+    prevQueueRef.current = incomingQueue
 
-      prevQueueRef.current = incomingQueue
+    const newStatus = dbRow.status as GenerateAllStatus
 
-      const newStatus = dbRow.status as GenerateAllStatus
+    store.setState({
+      queue: incomingQueue,
+      currentIndex: dbRow.current_index ?? 0,
+      startedAt: dbRow.started_at ? new Date(dbRow.started_at) : null,
+      status: newStatus,
+      error: dbRow.error_info?.message ?? null,
+      streamingPreviews: mergeStreamingPreview(
+        store.getState().streamingPreviews,
+        streamingPreview,
+      ),
+      streamingCompetitorSources: mergeStreamingCompetitorSources(
+        store.getState().streamingCompetitorSources,
+        streamingPreview,
+      ),
+    })
 
-      store.setState({
-        queue: incomingQueue,
-        currentIndex: dbRow.current_index ?? 0,
-        status: newStatus,
-        error: dbRow.error_info?.message ?? null,
-        streamingPreviews: mergeStreamingPreview(
-          store.getState().streamingPreviews,
-          streamingPreview,
-        ),
-        streamingCompetitorSources: mergeStreamingCompetitorSources(
-          store.getState().streamingCompetitorSources,
-          streamingPreview,
-        ),
-      })
+    return newStatus
+  }
 
-      // Continue polling only while running
-      if (newStatus === "running") {
-        const hasPendingWork = incomingQueue.some((item) => item.status === "pending")
-        const hasGeneratingWork = incomingQueue.some((item) => item.status === "generating")
-        if ((dbRow.needs_execute || hasPendingWork) && !hasGeneratingWork && executeRetryCountRef.current < 3) {
-          executeRetryCountRef.current += 1
-          void kickOffExecute()
-        }
-        poller.schedule()
-      } else {
-        poller.stop()
-        localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
+  /** Keep polling while running (re-kicking a dead executor), stop otherwise. */
+  function continueOrStopPolling(dbRow: NonNullable<StatusPayload["dbRow"]>, status: GenerateAllStatus) {
+    if (status === "running") {
+      const incomingQueue: QueueItem[] = dbRow.queue ?? []
+      const hasPendingWork = incomingQueue.some((item) => item.status === "pending")
+      const hasGeneratingWork = incomingQueue.some((item) => item.status === "generating")
+      if ((dbRow.needs_execute || hasPendingWork) && !hasGeneratingWork && executeRetryCountRef.current < 3) {
+        executeRetryCountRef.current += 1
+        void kickOffExecute()
       }
+      poller.schedule()
+    } else {
+      poller.stop()
+      localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
+    }
+  }
+
+  async function doPoll() {
+    try {
+      const { dbRow, streamingPreview } = await fetchStatus()
+      if (!dbRow) {
+        poller.schedule()
+        return
+      }
+      const status = applyStatusPayload(dbRow, streamingPreview)
+      continueOrStopPolling(dbRow, status)
     } catch {
       // Network hiccup — retry
       poller.schedule()
@@ -309,137 +369,46 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
       // Hydrate is the single entry point that starts polling: if its one
       // status fetch dies (transient 500, dev-server recompile, network blip)
-      // the workspace would otherwise never update again. Retry transient
-      // failures with backoff before giving up.
-      const MAX_HYDRATE_ATTEMPTS = 5
-      for (let attempt = 1; attempt <= MAX_HYDRATE_ATTEMPTS; attempt += 1) {
+      // the workspace would otherwise never update again. The retry lives in
+      // the fetch alone so state application and side effects run once.
+      let payload: StatusPayload
       try {
-        const res = await fetch(buildStatusUrl())
-        if (!res.ok) throw new Error(`Generate All status returned ${res.status}`)
-        const { queue: dbRow, streamingPreview } = await res.json()
+        payload = await fetchStatusWithRetry()
+      } catch (err) {
+        console.error("Failed to hydrate Generate All state:", err)
+        localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
+        set(() => ({ status: "idle" }))
+        return
+      }
 
-        if (!dbRow) {
-          if (flag === "true") {
-            localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
-            set(() => ({ status: "idle" }))
-          }
-          return
-        }
-
-        // Auto-cancel stale running queues (>30 min old)
-        if (dbRow.status === "running") {
-          pollStartedAtRef.current = dbRow.started_at
-            ? new Date(dbRow.started_at).getTime()
-            : Date.now()
-
-          const startedMs = pollStartedAtRef.current
-          const thirtyMin = 30 * 60 * 1000
-          if (Date.now() - startedMs > thirtyMin) {
-            await fetch("/api/generate-all/cancel", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ projectId }),
-            })
-            localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
-            set(() => ({ status: "idle" }))
-            return
-          }
-        }
-
-        // Restore terminal states
-        if (
-          dbRow.status === "completed" ||
-          dbRow.status === "partial" ||
-          dbRow.status === "cancelled" ||
-          dbRow.status === "error"
-        ) {
-          set(() => ({
-            queue: dbRow.queue,
-            currentIndex: dbRow.current_index,
-            startedAt: dbRow.started_at ? new Date(dbRow.started_at) : null,
-            status: dbRow.status as GenerateAllStatus,
-            error: dbRow.error_info?.message ?? null,
-          }))
+      const { dbRow, streamingPreview } = payload
+      if (!dbRow) {
+        if (flag === "true") {
           localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
-          return
-        }
-
-        // Resume running queue
-        if (dbRow.status === "running") {
-          const getStatus = getDocStatusRef.current
-          const hydratedQueue: QueueItem[] = (dbRow.queue as QueueItem[]).map((item) => {
-            if (item.status === "pending" || item.status === "generating") {
-              const currentStatus = getStatus?.(item.docType)
-              if (currentStatus === "done") {
-                return { ...item, status: "done" as const }
-              }
-              return item.status === "generating"
-                ? item
-                : { ...item, status: "pending" as const }
-            }
-            return item
-          })
-
-          const nextPending = hydratedQueue.findIndex((item) => item.status === "pending")
-          const hasGenerating = hydratedQueue.some((item) => item.status === "generating")
-
-          if (nextPending === -1 && !hasGenerating) {
-            set(() => ({
-              queue: hydratedQueue,
-              currentIndex: hydratedQueue.length,
-              startedAt: dbRow.started_at ? new Date(dbRow.started_at) : null,
-              status: "completed",
-            }))
-            await fetch("/api/generate-all/update", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                projectId,
-                queue: hydratedQueue,
-                current_index: hydratedQueue.length,
-                status: "completed",
-                completed_at: new Date().toISOString(),
-              }),
-            })
-            localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
-          } else {
-            // The execute route is still running on the server — resume polling.
-            // nextPending can be -1 while an item is still generating (e.g. the
-            // last document); point currentIndex at the generating item then.
-            const currentIndex =
-              nextPending === -1
-                ? hydratedQueue.findIndex((item) => item.status === "generating")
-                : nextPending
-            set((state) => ({
-              queue: hydratedQueue,
-              currentIndex,
-              startedAt: dbRow.started_at ? new Date(dbRow.started_at) : null,
-              status: "running",
-              streamingPreviews: mergeStreamingPreview(state.streamingPreviews, streamingPreview),
-              streamingCompetitorSources: mergeStreamingCompetitorSources(
-                state.streamingCompetitorSources,
-                streamingPreview,
-              ),
-            }))
-            localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
-            if (!hasGenerating) {
-              void kickOffExecute()
-            }
-            poller.schedule()
-          }
+          set(() => ({ status: "idle" }))
         }
         return
-      } catch (err) {
-        if (attempt === MAX_HYDRATE_ATTEMPTS) {
-          console.error("Failed to hydrate Generate All state:", err)
+      }
+
+      // First-load special: auto-cancel a running queue abandoned >30 min ago
+      // (tab closed mid-run and never reopened).
+      if (dbRow.status === "running") {
+        const startedMs = dbRow.started_at ? new Date(dbRow.started_at).getTime() : Date.now()
+        if (Date.now() - startedMs > 30 * 60 * 1000) {
+          await fetch("/api/generate-all/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ projectId }),
+          })
           localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
           set(() => ({ status: "idle" }))
           return
         }
-        // Transient failure: back off and retry (1s, 2s, 4s, 8s).
-        await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** (attempt - 1)))
       }
-      }
+
+      const status = applyStatusPayload(dbRow, streamingPreview)
+      localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
+      continueOrStopPolling(dbRow, status)
     },
 
     startGenerateAll: async () => {
