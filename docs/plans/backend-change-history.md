@@ -23,6 +23,19 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-07-11: Thermo-nuclear review remediation (webhook lease, queue partial clears, status payload contract)
+
+- Plan: docs/plans/thermo-nuclear-review-remediation-plan.md
+- Review: docs/plans/thermo-nuclear-review-remediation-review.md
+- Durable source of truth: `stripe_webhook_events.received_at` remains the lease token, now owned end to end by `src/lib/stripe/webhook-lease.ts` (claim + `finalizeWebhookEvent(lease, outcome)` with a single fence definition). `generation_queue_items.partial_content`/`partial_metadata` are cleared atomically inside the terminal status update and every preview write is fenced on `status = 'generating'`. The generate-all status route's server-computed `status`/`current_index` is the only interpretation of queue state the client uses.
+- Schema or data-shape changes: No migration. `/api/generate-all/status` response moves live competitor sources from `streamingPreview.competitorSources` to a sibling top-level `streamingCompetitorSources` array (old clients simply see no links until the saved row loads). `/api/generate-all/update` (PATCH) is deleted; its only caller was the hydrate completion write that server-side `computeQueueStatus` already makes redundant.
+- Auth, RLS, or permission changes: None.
+- Runtime/API behavior changes: A Stripe webhook whose handler succeeded but whose processed-status write failed no longer gets stamped `failed` (which was immediately reclaimable and re-ran side effects); the row stays `processing` and the route returns 500 into Stripe's retry path. Lease loss to a legitimate reclaim logs at warn instead of error. Stale-recovery and retry resets clear the dead run's partial content/metadata so a new attempt never serves the previous attempt's preview. Client hydrate retries only the status fetch (fail-fast on 4xx) and can no longer replay the auto-cancel POST or execute kick.
+- Migration or deployment steps: Code deploy only.
+- Verification: 614 unit tests (new coverage: webhook lease finalization outcomes incl. lost-lease and missing-row, partial writer fence/throttle/failure-isolation, recovery clears, competitor-source metadata round-trip, intake answer helpers); typecheck, production build; authed real-flow checks via the supabase-cookie script (status route new shape 200, /projects/new wizard render, /projects dashboard); Motion Lab live check of streaming reveal and competitor mention links; evidence under ui-evidence/2026-07-11/thermo-nuclear-remediation/.
+- Rollback or recovery: Revert the individual commits (each chunk is standalone: f0a0b6ba, 04b50288, dec025f0, 5ced34a3, 953aa641, 0914c814, c7c67608, b0ad5456). No data changes to recover.
+- Follow-ups: Generic per-docType streaming metadata channel deferred until a second consumer exists. Pre-existing eslint error in workspace-document-frame.tsx (set-state-in-effect) left untouched.
+
 ## 2026-07-11: Streaming preview competitor sources (generation_queue_items.partial_metadata)
 
 - Plan: docs/plans/streaming-competitor-links-and-marquee-width-plan.md
