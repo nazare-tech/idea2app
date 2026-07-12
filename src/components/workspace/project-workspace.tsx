@@ -927,6 +927,7 @@ export function ProjectWorkspace({
               open={documentsSheetOpen}
               onOpenChange={setDocumentsSheetOpen}
               onNavigate={handleTrackedScrollNavigate}
+              onGenerateDocument={handleGenerateDocument}
             />
             <ProjectComposer
               projectId={project.id}

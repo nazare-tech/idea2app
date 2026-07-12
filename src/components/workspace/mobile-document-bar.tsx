@@ -5,10 +5,11 @@
 // anchor rail on phones and portrait tablets.
 "use client"
 
-import { useEffect } from "react"
-import { ChevronUp, X } from "lucide-react"
+import { useEffect, useRef } from "react"
+import { ChevronUp, Play, RotateCcw, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { DocumentNavItem } from "@/lib/document-sections"
+import type { DocumentType } from "@/lib/document-definitions"
 import type { DocumentGenerationDisplayState } from "@/lib/document-generation-display-status"
 import { StatusMarker, StatusText, type NavStatus } from "@/components/layout/nav-status"
 import { useReducedMotion } from "@/hooks/use-reduced-motion"
@@ -28,6 +29,8 @@ interface MobileDocumentBarProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onNavigate: (sectionId: string) => void
+  /** Generate/retry a document; mobile parity with the desktop rail action. */
+  onGenerateDocument?: (docType: DocumentType) => void
 }
 
 export function MobileDocumentBar({
@@ -40,19 +43,51 @@ export function MobileDocumentBar({
   open,
   onOpenChange,
   onNavigate,
+  onGenerateDocument,
 }: MobileDocumentBarProps) {
   const reduceMotion = useReducedMotion()
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
 
   const getStatus = (item: DocumentNavItem): NavStatus =>
     documentStatuses[item.key] || documentStatuses[item.sourceType] || "pending"
 
+  // Modal semantics for the sheet: Escape closes, focus starts inside, Tab
+  // cycles within, and focus returns to the opener on close.
   useEffect(() => {
     if (!open) return
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    closeButtonRef.current?.focus({ preventScroll: true })
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onOpenChange(false)
+      if (event.key === "Escape") {
+        onOpenChange(false)
+        return
+      }
+      if (event.key !== "Tab") return
+      const root = sheetRef.current
+      if (!root) return
+      const focusables = root.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      )
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      const active = document.activeElement
+      if (event.shiftKey && (active === first || !root.contains(active))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (active === last || !root.contains(active))) {
+        event.preventDefault()
+        first.focus()
+      }
     }
+
     document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+      previouslyFocused?.focus?.({ preventScroll: true })
+    }
   }, [open, onOpenChange])
 
   const navigateAndClose = (targetId: string) => {
@@ -99,6 +134,7 @@ export function MobileDocumentBar({
             style={reduceMotion ? undefined : { animation: "mobileSheetFade .2s ease" }}
           />
           <div
+            ref={sheetRef}
             role="dialog"
             aria-modal="true"
             aria-label="Project documents"
@@ -114,6 +150,7 @@ export function MobileDocumentBar({
               </span>
               <div className="flex-1" />
               <button
+                ref={closeButtonRef}
                 type="button"
                 onClick={() => onOpenChange(false)}
                 aria-label="Close document list"
@@ -127,41 +164,64 @@ export function MobileDocumentBar({
               {navItems.map((item) => {
                 const status = getStatus(item)
                 const isActiveDoc = activeItem.key === item.key
+                const displayState = documentDisplayStates[item.key]
+                // Same action policy as the desktop rail (AnchorNavTab): idle
+                // pending documents offer Generate, failed ones offer Retry.
+                const showGenerate = displayState?.displayStatus === "idle" && status === "pending" && !item.derived
+                const showRetry = status === "needs_retry" && !item.derived
+                const actionLabel = showRetry ? "Retry" : showGenerate ? "Generate" : null
+                const ActionIcon = showRetry ? RotateCcw : Play
                 return (
                   <div key={item.key} className="mb-0.5">
-                    <button
-                      type="button"
-                      onClick={() => navigateAndClose(item.key)}
-                      aria-current={isActiveDoc && !activeSectionId ? "location" : undefined}
+                    <div
                       className={cn(
-                        "flex w-full items-center gap-2.5 rounded-md border px-2.5 py-3 text-left transition-colors",
+                        "flex w-full items-center gap-2.5 rounded-md border px-2.5 transition-colors",
                         isActiveDoc
                           ? "border-primary/30 bg-primary/[0.08]"
                           : "border-transparent hover:bg-secondary",
                       )}
                     >
                       <StatusMarker status={status} />
-                      <span
+                      <button
+                        type="button"
+                        onClick={() => navigateAndClose(item.key)}
+                        aria-current={isActiveDoc && !activeSectionId ? "location" : undefined}
                         className={cn(
-                          "min-w-0 flex-1 truncate text-[15px] text-foreground",
+                          "min-w-0 flex-1 truncate py-3 text-left text-[15px] text-foreground",
                           isActiveDoc ? "font-bold" : "font-medium",
                         )}
                       >
                         {item.label}
-                      </span>
-                      <span
-                        className={cn(
-                          "shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
-                          status === "needs_retry" ? "text-destructive" : "text-[#8A8480]",
-                        )}
-                      >
-                        <StatusText
-                          status={status}
-                          displayState={documentDisplayStates[item.key]}
-                          derived={item.derived}
-                        />
-                      </span>
-                    </button>
+                      </button>
+                      {actionLabel && onGenerateDocument ? (
+                        <button
+                          type="button"
+                          onClick={() => onGenerateDocument(item.sourceType)}
+                          className={cn(
+                            "inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors",
+                            showRetry
+                              ? "border-destructive bg-destructive text-primary-foreground"
+                              : "border-[#D8CEC5] bg-card text-[#5D5551]",
+                          )}
+                        >
+                          <ActionIcon aria-hidden="true" className="h-3 w-3" />
+                          <span>{actionLabel}</span>
+                        </button>
+                      ) : (
+                        <span
+                          className={cn(
+                            "shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
+                            status === "needs_retry" ? "text-destructive" : "text-[#8A8480]",
+                          )}
+                        >
+                          <StatusText
+                            status={status}
+                            displayState={displayState}
+                            derived={item.derived}
+                          />
+                        </span>
+                      )}
+                    </div>
 
                     {item.sections.length > 0 && (
                       <div className="mb-1 ml-[15px] border-l border-[#E5DCD4] pl-2">
