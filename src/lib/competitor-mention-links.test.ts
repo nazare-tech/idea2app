@@ -3,6 +3,9 @@ import assert from "node:assert/strict"
 
 import {
   buildCompetitorMentionSegments,
+  buildCompetitorSourceMetadata,
+  getCompetitorSourcesFromMetadata,
+  mergeStreamingCompetitorSources,
   normalizeCompetitorSources,
 } from "./competitor-mention-links"
 
@@ -82,4 +85,42 @@ test("bounds hostile source lists before building the matcher", () => {
 
   assert.equal(normalized.length, 50)
   assert.equal(normalized.some((source) => source.name.length > 120), false)
+})
+
+test("buildCompetitorSourceMetadata round-trips through the metadata reader", () => {
+  const sources = [
+    { name: "Enterpret", url: "https://www.enterpret.com/" },
+    { name: "Productboard", url: "https://www.productboard.com/" },
+  ]
+
+  assert.deepEqual(
+    getCompetitorSourcesFromMetadata(buildCompetitorSourceMetadata(sources)),
+    sources
+  )
+})
+
+test("mergeStreamingCompetitorSources replaces on non-empty payloads and is sticky otherwise", () => {
+  const first = [
+    { name: "Enterpret", url: "https://www.enterpret.com/" },
+    { name: "Productboard", url: "https://www.productboard.com/" },
+  ]
+
+  const adopted = mergeStreamingCompetitorSources([], first)
+  assert.deepEqual(adopted, first)
+
+  // Absent or empty payloads (no streaming item this poll) keep what we have.
+  assert.equal(mergeStreamingCompetitorSources(adopted, undefined), adopted)
+  assert.equal(mergeStreamingCompetitorSources(adopted, []), adopted)
+  assert.equal(mergeStreamingCompetitorSources(adopted, "junk"), adopted)
+
+  // The server always sends the whole current set: a replaced run's smaller
+  // set wins outright.
+  const replaced = [{ name: "Dovetail", url: "https://dovetail.com/" }]
+  assert.deepEqual(mergeStreamingCompetitorSources(adopted, replaced), replaced)
+
+  // Malformed entries are dropped by the shared validator.
+  assert.deepEqual(
+    mergeStreamingCompetitorSources([], [{ name: "Ok", url: "https://ok.com" }, { name: 5 }, "junk"]),
+    [{ name: "Ok", url: "https://ok.com/" }]
+  )
 })

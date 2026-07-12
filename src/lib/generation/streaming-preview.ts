@@ -10,20 +10,10 @@
 
 import { isPlanningTextDocType, type PlanningTextDocType } from "@/lib/document-definitions"
 
-export type StreamingPreviewPayload = (
+export type StreamingPreviewPayload =
   | { docType: PlanningTextDocType; mode: "full"; content: string }
   | { docType: PlanningTextDocType; mode: "suffix"; baseLength: number; content: string }
   | { docType: PlanningTextDocType; mode: "unchanged"; totalLength: number }
-) & {
-  /**
-   * Competitive only: live competitor source pairs (validated server-side
-   * from generation_queue_items.partial_metadata) so the streaming renderer
-   * can link competitor mentions before the saved analyses row exists. Sent
-   * whole on every poll while present (a few hundred bytes); not part of the
-   * text delta protocol.
-   */
-  competitorSources?: { name: string; url: string }[]
-}
 
 /**
  * Server side: decide what to send for the currently streaming document
@@ -105,30 +95,4 @@ export function mergeStreamingPreview(
   // because the server only sends a shorter full body for a replaced run.
   if (payload.mode !== "full" && existing.length >= payload.content.length) return previous
   return { ...previous, [docType]: payload.content }
-}
-
-/**
- * Client side: fold the competitive source pairs riding on a streaming
- * preview payload. Sticky once seen (links must never disappear mid-stream);
- * a larger set wins so late-arriving pairs can still land.
- */
-export function mergeStreamingCompetitorSources(
-  previous: { name: string; url: string }[],
-  incoming: unknown,
-): { name: string; url: string }[] {
-  if (!incoming || typeof incoming !== "object") return previous
-  const payload = incoming as { docType?: unknown; competitorSources?: unknown }
-  if (payload.docType !== "competitive") return previous
-  if (!Array.isArray(payload.competitorSources)) return previous
-
-  const sources = payload.competitorSources.filter(
-    (source): source is { name: string; url: string } =>
-      Boolean(
-        source &&
-        typeof source === "object" &&
-        typeof (source as { name?: unknown }).name === "string" &&
-        typeof (source as { url?: unknown }).url === "string",
-      ),
-  )
-  return sources.length > previous.length ? sources : previous
 }

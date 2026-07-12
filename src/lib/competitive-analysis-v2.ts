@@ -3,6 +3,7 @@ import {
   getSafeExternalHttpUrl,
   hasCompetitorSourceMetadata,
   mergeCompetitorSources,
+  normalizeCompetitorSources,
   type CompetitorSource,
 } from "@/lib/competitor-mention-links"
 
@@ -602,17 +603,28 @@ function getSection(
 export function getCompetitiveAnalysisStructuredData(
   parsed: CompetitiveAnalysisV2ParseResult,
   metadata?: JsonLike,
-  options?: { allowParsedSourceFallback?: boolean }
+  options?: {
+    allowParsedSourceFallback?: boolean
+    /**
+     * Additional source candidates validated exactly like metadata sources.
+     * Used by the streaming renderer, which holds live server-streamed pairs
+     * instead of a saved analyses row.
+     */
+    extraSources?: unknown
+  }
 ): CompetitiveAnalysisStructuredData {
   const { sections, competitorEntries } = parsed
   const parsedCompetitors = parseCompetitorProfiles(competitorEntries)
   const metadataSources = getCompetitorSourcesFromMetadata(metadata)
-  const hasSourceMetadata = hasCompetitorSourceMetadata(metadata)
+  const extraSources = normalizeCompetitorSources(options?.extraSources)
+  const hasSourceMetadata =
+    hasCompetitorSourceMetadata(metadata) || extraSources.length > 0
   const allowParsedSourceFallback =
     options?.allowParsedSourceFallback !== false &&
     !hasSourceMetadata
   const competitorSources = mergeCompetitorSources(
     metadataSources,
+    extraSources,
     allowParsedSourceFallback
       ? parsedCompetitors.map((competitor) => ({
           name: competitor.heading,

@@ -18,9 +18,12 @@ import {
 } from "@/lib/generation/generate-all-helpers"
 import {
   encodeStreamingPreviewLengths,
-  mergeStreamingCompetitorSources,
   mergeStreamingPreview,
 } from "@/lib/generation/streaming-preview"
+import {
+  mergeStreamingCompetitorSources,
+  type CompetitorSource,
+} from "@/lib/competitor-mention-links"
 import { createVisibilityAwarePoller } from "@/lib/visibility-aware-poller"
 
 // Re-export types so consumers keep working
@@ -89,7 +92,7 @@ interface GenerateAllState {
    * (server-validated, from generation_queue_items.partial_metadata). Retained
    * once seen, like streamingPreviews, so links never disappear mid-stream.
    */
-  streamingCompetitorSources: { name: string; url: string }[]
+  streamingCompetitorSources: CompetitorSource[]
 }
 
 interface GenerateAllActions {
@@ -201,6 +204,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       needs_execute?: boolean
     } | null
     streamingPreview: unknown
+    streamingCompetitorSources: unknown
   }
 
   async function fetchStatus(): Promise<StatusPayload> {
@@ -214,8 +218,8 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       }
       throw error
     }
-    const { queue: dbRow, streamingPreview } = await res.json()
-    return { dbRow, streamingPreview }
+    const { queue: dbRow, streamingPreview, streamingCompetitorSources } = await res.json()
+    return { dbRow, streamingPreview, streamingCompetitorSources }
   }
 
   /**
@@ -243,7 +247,11 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
    * workspace about newly-completed steps. Used by hydrate and every poll,
    * so the two can never disagree about what a payload means.
    */
-  function applyStatusPayload(dbRow: NonNullable<StatusPayload["dbRow"]>, streamingPreview: unknown) {
+  function applyStatusPayload(
+    dbRow: NonNullable<StatusPayload["dbRow"]>,
+    streamingPreview: unknown,
+    streamingCompetitorSources: unknown,
+  ) {
     const incomingQueue: QueueItem[] = dbRow.queue ?? []
     if (dbRow.started_at) {
       pollStartedAtRef.current = new Date(dbRow.started_at).getTime()
@@ -285,7 +293,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
       ),
       streamingCompetitorSources: mergeStreamingCompetitorSources(
         store.getState().streamingCompetitorSources,
-        streamingPreview,
+        streamingCompetitorSources,
       ),
     })
 
@@ -311,12 +319,12 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
 
   async function doPoll() {
     try {
-      const { dbRow, streamingPreview } = await fetchStatus()
+      const { dbRow, streamingPreview, streamingCompetitorSources } = await fetchStatus()
       if (!dbRow) {
         poller.schedule()
         return
       }
-      const status = applyStatusPayload(dbRow, streamingPreview)
+      const status = applyStatusPayload(dbRow, streamingPreview, streamingCompetitorSources)
       continueOrStopPolling(dbRow, status)
     } catch {
       // Network hiccup — retry
@@ -381,7 +389,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
         return
       }
 
-      const { dbRow, streamingPreview } = payload
+      const { dbRow, streamingPreview, streamingCompetitorSources } = payload
       if (!dbRow) {
         if (flag === "true") {
           localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
@@ -406,7 +414,7 @@ function createGenerateAllStore(projectId: string): StoreApi<GenerateAllStore> {
         }
       }
 
-      const status = applyStatusPayload(dbRow, streamingPreview)
+      const status = applyStatusPayload(dbRow, streamingPreview, streamingCompetitorSources)
       localStorage.removeItem(LOCAL_STORAGE_KEY(projectId))
       continueOrStopPolling(dbRow, status)
     },

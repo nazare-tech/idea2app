@@ -20,6 +20,7 @@ import {
   resolveFailedGenerationCreditStatus,
 } from "@/lib/generation/queue-credit-flow"
 import { refundGenerationQueueItemCredits } from "@/lib/generation/queue-billing"
+import { buildCompetitorSourceMetadata } from "@/lib/competitor-mention-links"
 import {
   claimGenerationQueueItem,
   computeQueueStatus,
@@ -552,9 +553,7 @@ async function executeQueueItem({
         onCompetitorSources:
           partialWriter && claimed.doc_type === "competitive"
             ? (sources) => {
-                void partialWriter.writeMetadata({
-                  live_research: { competitor_sources: sources },
-                })
+                void partialWriter.writeMetadata(buildCompetitorSourceMetadata(sources))
               }
             : undefined,
       })

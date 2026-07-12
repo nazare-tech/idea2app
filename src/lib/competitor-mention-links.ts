@@ -1,4 +1,6 @@
-export interface CompetitorSource {
+// Type alias (not interface) so the shape stays assignable to Json when the
+// pairs are persisted into metadata columns.
+export type CompetitorSource = {
   name: string
   url: string
 }
@@ -103,6 +105,30 @@ export function getCompetitorSourcesFromMetadata(
   return normalizeCompetitorSources(
     metadata.live_research.competitor_sources
   )
+}
+
+/**
+ * The wire/storage shape read back by getCompetitorSourcesFromMetadata.
+ * Writers (the generate-all executor's partial_metadata) build it here so
+ * the contract lives in one module instead of as convention.
+ */
+export function buildCompetitorSourceMetadata(sources: CompetitorSource[]) {
+  return { live_research: { competitor_sources: sources } }
+}
+
+/**
+ * Client side: fold the live competitor sources riding on a generate-all
+ * status response into store state. Sticky once seen (links must never
+ * disappear mid-stream while the server has no streaming item), and a
+ * non-empty payload replaces outright: the server always sends the whole
+ * current set, so last-write-wins tracks run replacement correctly.
+ */
+export function mergeStreamingCompetitorSources(
+  previous: CompetitorSource[],
+  incoming: unknown
+): CompetitorSource[] {
+  const sources = normalizeCompetitorSources(incoming)
+  return sources.length > 0 ? sources : previous
 }
 
 export function hasCompetitorSourceMetadata(metadata: unknown) {

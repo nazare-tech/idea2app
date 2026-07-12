@@ -29,6 +29,7 @@ import {
 } from "@/components/analysis/planning-document-blocks"
 import { WorkspaceDocumentFrame as DocumentWrapper } from "@/components/layout/workspace-document-frame"
 import type { DocumentType } from "@/lib/document-definitions"
+import type { CompetitorSource } from "@/lib/competitor-mention-links"
 import { SCROLLABLE_NAV_ITEMS } from "@/lib/document-sections"
 import type { StreamStage } from "@/lib/parse-document-stream"
 import type {
@@ -71,7 +72,7 @@ interface ScrollableContentProps {
      * Live competitor source pairs for the competitive stream so mention
      * links render before the saved analyses row exists.
      */
-    competitiveSources?: { name: string; url: string }[]
+    competitiveSources?: CompetitorSource[]
   }
   onGenerateDocument?: (docType: DocumentType) => void
 }

@@ -22,6 +22,7 @@ import {
   getActiveDocumentIdentityForDocumentType,
 } from "@/lib/active-document-policy"
 import { logError, logInfo, type LogContext } from "@/lib/logger"
+import type { CompetitorSource } from "@/lib/competitor-mention-links"
 
 type ServerSupabaseClient = SupabaseClient<Database>
 
@@ -54,30 +55,28 @@ export interface GenerateProjectDocumentInput {
    * synthesis stream starts) with the competitor source pairs that will also
    * be saved to analyses.metadata, so the streaming preview can link mentions.
    */
-  onCompetitorSources?: (sources: { name: string; url: string }[]) => void
+  onCompetitorSources?: (sources: CompetitorSource[]) => void
 }
 
 /**
  * Accumulate streamed tokens so the caller sees the growing document, not
- * individual deltas. Passing onToken switches a pipeline's final synthesis
- * call to streaming mode.
+ * individual deltas. Pipelines switch to streaming mode only when onToken is
+ * present, so an undefined member behaves exactly like an omitted key.
  */
 function buildStreamCallbacks(
   onPartialContent?: (content: string) => void,
-  onCompetitorSources?: (sources: { name: string; url: string }[]) => void,
+  onCompetitorSources?: (sources: CompetitorSource[]) => void,
 ) {
   if (!onPartialContent && !onCompetitorSources) return undefined
   let streamedContent = ""
   return {
-    ...(onPartialContent
-      ? {
-          onToken: (token: string) => {
-            streamedContent += token
-            onPartialContent(streamedContent)
-          },
-        }
-      : {}),
-    ...(onCompetitorSources ? { onCompetitorSources } : {}),
+    onToken:
+      onPartialContent &&
+      ((token: string) => {
+        streamedContent += token
+        onPartialContent(streamedContent)
+      }),
+    onCompetitorSources,
   }
 }
 

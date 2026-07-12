@@ -29,6 +29,7 @@ import { getReasoningParams, withReasoningHeadroom } from "@/lib/generation-mode
 import {
   getSafeExternalHttpUrl,
   normalizeCompetitorSources,
+  type CompetitorSource,
 } from "@/lib/competitor-mention-links"
 import type { Json } from "@/types/database"
 
@@ -90,7 +91,7 @@ export interface StreamCallbacks {
    * will be saved to analyses.metadata.live_research.competitor_sources, so
    * the streaming UI can link competitor mentions from the first token.
    */
-  onCompetitorSources?: (sources: { name: string; url: string }[]) => void
+  onCompetitorSources?: (sources: CompetitorSource[]) => void
 }
 
 type TavilyExtractStatus =
@@ -538,12 +539,9 @@ function buildCompetitorSourcePairs(research: {
   providerUsed: CompetitorResearchProvider
   competitors: Array<{ name: string; url: string }>
   evidenceResults: TavilyExtractResult[]
-}): { name: string; url: string }[] {
+}): CompetitorSource[] {
   return research.providerUsed === "openrouter_exa"
-    ? normalizeCompetitorSources(research.competitors).map((source) => ({
-        name: source.name,
-        url: source.url,
-      }))
+    ? normalizeCompetitorSources(research.competitors)
     : buildCompetitorSourcesMetadata(research.competitors, research.evidenceResults)
 }
 
@@ -722,19 +720,16 @@ function isMissingProviderConfigError(error: unknown) {
 export function buildCompetitorSourcesMetadata(
   competitors: Array<{ name: string; url: string }>,
   extractedResults: Array<{ url: string }>
-) {
+): CompetitorSource[] {
   const extractedUrls = new Set(
     extractedResults
       .map((result) => getSafeExternalHttpUrl(result.url))
       .filter((url): url is string => Boolean(url))
   )
 
-  return normalizeCompetitorSources(competitors)
-    .filter((source) => extractedUrls.has(source.url))
-    .map((source) => ({
-      name: source.name,
-      url: source.url,
-    }))
+  return normalizeCompetitorSources(competitors).filter((source) =>
+    extractedUrls.has(source.url)
+  )
 }
 
 export function getCompetitorSearchStatus(

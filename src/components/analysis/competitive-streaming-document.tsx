@@ -31,6 +31,7 @@ import {
   sanitizeLiveSectionContent,
   type StreamingCompetitiveParseResult,
 } from "@/lib/competitive-analysis-streaming"
+import type { CompetitorSource } from "@/lib/competitor-mention-links"
 
 export type CompetitiveStreamingVariant = "block-commit" | "skeleton" | "ticker" | "live-fill"
 
@@ -57,7 +58,7 @@ interface CompetitiveStreamingDocumentProps {
    * (from generation_queue_items.partial_metadata), so competitor mention
    * links render during streaming instead of only after the saved row loads.
    */
-  competitorSources?: { name: string; url: string }[]
+  competitorSources?: CompetitorSource[]
 }
 
 const TOTAL_SECTIONS = COMPETITIVE_DETAIL_SECTION_CONFIGS.length
@@ -67,7 +68,7 @@ function buildStructuredData(
   /** Active (still-growing) section to expose to the designed renderers, live-fill only */
   liveSection?: { name: NonNullable<StreamingCompetitiveParseResult["sections"][number]["name"]>; content: string } | null,
   /** Server-streamed competitor source pairs; validated through the metadata path */
-  competitorSources?: { name: string; url: string }[]
+  competitorSources?: CompetitorSource[]
 ) {
   const sections: CompetitiveAnalysisV2ParseResult["sections"] = {}
   for (const section of parse.sections) {
@@ -87,16 +88,12 @@ function buildStructuredData(
     errors: [],
   }
 
-  // Shape the streamed pairs exactly like saved analyses metadata so the same
-  // validation (syntactic public http(s), fail-closed) applies. The parsed-URL
+  // The streamed pairs go through the same validation as saved analyses
+  // metadata (syntactic public http(s), fail-closed). The parsed-URL
   // fallback stays off: streaming never promotes model-authored H3 URLs.
-  const metadataLike =
-    competitorSources && competitorSources.length > 0
-      ? { live_research: { competitor_sources: competitorSources } }
-      : undefined
-
-  return getCompetitiveAnalysisStructuredData(parsedLike, metadataLike, {
+  return getCompetitiveAnalysisStructuredData(parsedLike, undefined, {
     allowParsedSourceFallback: false,
+    extraSources: competitorSources,
   })
 }
 
