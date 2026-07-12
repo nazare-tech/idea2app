@@ -2,9 +2,12 @@
 implemented: false
 implemented_at: null
 implementation_summary: null
+superseded_by: stripe-live-rollout-plan.md
 ---
 
 # Stripe Live Mode Switch Plan
+
+> Superseded: the live-mode switch shipped via `stripe-live-rollout-plan.md` / `stripe-live-rollout-review.md`. Kept for history; do not re-open.
 
 ## Goal
 

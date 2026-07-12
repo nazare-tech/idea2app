@@ -3,7 +3,7 @@ Credit system and billing: credit cost table (document generation is project-bun
 Consumption and refunds run through consume_credits, add_credits, get_credit_balance, and refund_credits; costs come from src/lib/token-economics.ts getTokenCost().
 Subscription plans: Free 10 credits, Starter 100 ($19/mo, $105/6mo, $194/yr), Pro 500 ($49/mo, $270/6mo, $499/yr), Enterprise 2,500 with checkout disabled.
 plan_prices.stripe_price_id is authoritative per billing interval; plans.stripe_price_id is a legacy monthly default; live IDs live in Supabase/Stripe, not source.
-Stripe details: account acct_1TfXV9RZYXj2bJrB, API version 2026-01-28.clover, getStripeClient() singleton in src/lib/stripe.ts, profiles.stripe_customer_id linking.
+Stripe details: account acct_1TfXV9RZYXj2bJrB, API version 2026-01-28.clover, getStripeClient() singleton in src/lib/stripe/index.ts, profiles.stripe_customer_id linking.
 Webhooks use SUPABASE_SERVICE_ROLE_KEY with stripe_webhook_events dedupe, grant_subscription_credits_once() and reverse_subscription_credits_once(); billing UI at /billing.
 ---
 
@@ -45,7 +45,7 @@ Webhooks use SUPABASE_SERVICE_ROLE_KEY with stripe_webhook_events dedupe, grant_
 
 - **Account**: Makercompass (`acct_1TfXV9RZYXj2bJrB`); local development may use test mode, production must use live-mode keys and live `plan_prices`
 - **API Version**: `2026-01-28.clover`
-- **Singleton Client**: `src/lib/stripe.ts` — lazy-initialized Stripe instance via `getStripeClient()` with a `Proxy` export for ergonomic access
+- **Singleton Client**: `src/lib/stripe/index.ts` — lazy-initialized Stripe instance via `getStripeClient()` with a `Proxy` export for ergonomic access
 - **Customer Linking**: Stripe customer ID stored in `profiles.stripe_customer_id`; created on first checkout, reused only when Stripe metadata ownership matches the authenticated user, and replaced when stale test-mode/deleted IDs cannot be retrieved with the active Stripe key. Browser roles cannot write this protected column; Checkout persists it through the service-role client.
 - **Checkout Flow**: Server-side redirect to Stripe-hosted checkout (no Stripe.js Elements needed); selected interval comes from `plan_prices`
 - **Customer Portal Configuration**: The default live portal configuration supports invoice history, customer/payment-method updates, cancellation, and production return URL `https://makercompass.com/billing`.

@@ -68,12 +68,16 @@ src/
 │   │   └── ...
 │   ├── layout/                   # Layout components
 │   │   ├── header.tsx            # Legacy dashboard header (retained)
-│   │   ├── anchor-nav.tsx        # Scroll workspace nav with durable generation status labels
+│   │   ├── anchor-nav.tsx        # Scroll workspace nav with durable generation status labels (lg+)
+│   │   ├── nav-status.tsx        # Shared document status marker/text primitives (rail + mobile chrome)
 │   │   ├── scrollable-content.tsx # Scroll workspace document renderer
 │   ├── workspace/                # Workspace orchestration
 │   │   ├── project-workspace.tsx      # Lazy-loading scroll workspace orchestrator
+│   │   ├── mobile-document-bar.tsx    # Mobile peek bar + documents bottom sheet (below lg)
+│   │   ├── use-hide-on-scroll-chrome.ts # Mobile chrome hide-on-scroll hook
 │   │   ├── use-workspace-documents.ts # Lazy document loading hook
 │   │   ├── use-workspace-scroll-sync.ts # Workspace hash/scroll sync hook
+│   │   ├── use-workspace-product-analytics.ts # Workspace behavioral analytics hook
 │   │   ├── use-persisted-generation-state.ts # Local generation persistence hook
 │   │   ├── use-document-generation.ts # Manual document/mockup generation hook
 │   │   └── generate-all-hydrator.tsx  # Keeps store callbacks fresh; triggers hydrate() once per project
@@ -91,7 +95,7 @@ src/
 │   │   ├── client.ts             # Browser client
 │   │   ├── server.ts             # Server-side client
 │   │   └── middleware.ts         # Auth middleware logic
-│   ├── stripe.ts                 # Stripe singleton
+│   ├── stripe/                   # Stripe singleton (index.ts) + webhook-lease, checkout-plan, subscription-sync helpers
 │   ├── analysis-pipelines.ts     # In-house analysis orchestration (market research, Product Plan, First Version Plan, tech spec)
 │   ├── intake/                   # Idea intake types, context, questions, summaries
 │   ├── mockups/                  # Mockup design plans, drafts, recovery, OpenRouter image pipeline/format
@@ -280,7 +284,7 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [src/lib/product-analytics/client.ts](src/lib/product-analytics/client.ts) | Browser session identity, bounded batching/retry, unload flushing, and upgrade attribution |
 | [src/lib/product-analytics/server.ts](src/lib/product-analytics/server.ts) | Best-effort idempotent trusted lifecycle event recorder with server-side plan/environment enrichment |
 | [src/app/api/product-events/route.ts](src/app/api/product-events/route.ts) | Authenticated, same-origin, rate-limited behavioral-event ingestion with project ownership enforcement |
-| [src/lib/stripe/webhook-claim.ts](src/lib/stripe/webhook-claim.ts) | Testable Stripe webhook idempotency claim/reclaim helper |
+| [src/lib/stripe/webhook-lease.ts](src/lib/stripe/webhook-lease.ts) | Testable Stripe webhook idempotency lease helper (claim/finalize with fence tokens) |
 | [src/lib/stripe/checkout-plan.ts](src/lib/stripe/checkout-plan.ts) | Checkout plan-price eligibility helper |
 | [src/lib/supabase/current-user.ts](src/lib/supabase/current-user.ts) | Cached server-side current-user helper shared by dashboard layout and pages |
 | [src/lib/supabase/server.ts](src/lib/supabase/server.ts) | Server-side Supabase client |
@@ -308,8 +312,3 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [supabase/migrations/20260710000100_create_product_event_analytics.sql](supabase/migrations/20260710000100_create_product_event_analytics.sql) | Service-only product event store, production analysis views, indexes, and fixed 180-day cleanup schedule. |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Deprecated setup guide for the removed Prompt tab AI chat feature |
 
----
-
-**End of PROJECT_CONTEXT.md**
-
-*This document serves as the comprehensive reference for understanding and working with the Maker Compass codebase. Keep it updated as the project evolves.*
