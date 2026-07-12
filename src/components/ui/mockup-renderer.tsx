@@ -10,6 +10,7 @@ import { extractMockupOptions } from "@/lib/mockups/format-contract"
 import { parseOpenRouterImageMockupContent, type OpenRouterImageMockupContent } from "@/lib/mockups/openrouter-image-format"
 import type { MockupOptionStatus } from "@/lib/document-generation-display-status"
 import { trackClientProductEvent } from "@/lib/product-analytics/client"
+import { isUuid } from "@/lib/product-analytics/contracts"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1576,5 +1577,5 @@ export function MockupRenderer({
 }
 
 function isAnalyticsProjectId(projectId: string | undefined): projectId is string {
-  return Boolean(projectId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
+  return isUuid(projectId)
 }

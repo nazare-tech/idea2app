@@ -20,6 +20,8 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { cn } from "@/lib/utils"
 import { UpgradeCtaLink } from "@/components/analytics/upgrade-cta-link"
 import { useReducedMotion } from "@/hooks/use-reduced-motion"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import { useSheetModalFocus } from "@/hooks/use-sheet-modal-focus"
 
 interface ComposerMessage {
   id: number
@@ -166,6 +168,9 @@ export function ProjectComposer({
   onOpenChange,
 }: ProjectComposerProps) {
   const reduceMotion = useReducedMotion()
+  // Mount-level breakpoint split (not CSS hiding): a hidden-but-mounted
+  // UpgradeCtaLink would record phantom upgrade_cta_viewed impressions.
+  const isDesktop = useMediaQuery("(min-width: 1024px)")
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<ComposerMessage[]>([])
@@ -382,13 +387,27 @@ export function ProjectComposer({
     inputRef.current?.focus()
   }, [])
 
+  // Mobile sheets get full modal semantics (Escape, focus trap, restore).
+  // Desktop keeps the non-modal command bar, so the workspace scroll-spy's
+  // aria-modal guard must not engage there.
+  const upgradeSheetRef = useRef<HTMLDivElement>(null)
+  const upgradeCloseButtonRef = useRef<HTMLButtonElement>(null)
+  const closeComposer = useCallback(() => setOpen(false), [])
+  const mobileSheetActive = open && !isDesktop
+  useSheetModalFocus(upgradeSheetRef, upgradeRequired && mobileSheetActive, {
+    onClose: closeComposer,
+    initialFocusRef: upgradeCloseButtonRef,
+  })
+  // The chat sheet manages its own initial focus (the textarea autofocus).
+  useSheetModalFocus(cardRef, !upgradeRequired && mobileSheetActive, { onClose: closeComposer })
+
   // Free-plan gate: the composer is a paid feature. Desktop keeps the compact
   // upgrade bar; mobile gets the same FAB, opening an upgrade bottom sheet.
   // The API enforces the same rule.
   if (upgradeRequired) {
     return (
       <>
-        {!open && (
+        {!isDesktop && !open && (
           <AskProjectFab
             onClick={() => setOpen(true)}
             chromeHidden={mobileChromeHidden}
@@ -396,7 +415,7 @@ export function ProjectComposer({
             reduceMotion={reduceMotion}
           />
         )}
-        {open && (
+        {!isDesktop && open && (
           <div className="absolute inset-0 z-40 lg:hidden" data-testid="project-composer-upgrade-sheet">
             <div
               aria-hidden="true"
@@ -404,6 +423,7 @@ export function ProjectComposer({
               className="absolute inset-0 bg-foreground/45"
             />
             <div
+              ref={upgradeSheetRef}
               role="dialog"
               aria-modal="true"
               aria-label="Ask this project"
@@ -418,6 +438,7 @@ export function ProjectComposer({
                 </span>
                 <div className="flex-1" />
                 <button
+                  ref={upgradeCloseButtonRef}
                   type="button"
                   onClick={() => setOpen(false)}
                   aria-label="Close"
@@ -439,9 +460,10 @@ export function ProjectComposer({
             </div>
           </div>
         )}
+        {isDesktop && (
         <div
           data-testid="project-composer-upgrade"
-          className="pointer-events-none absolute bottom-4 left-1/2 z-40 hidden w-[min(724px,calc(100%-32px))] -translate-x-1/2 flex-col sm:bottom-6 sm:w-[min(724px,calc(100%-72px))] lg:flex"
+          className="pointer-events-none absolute bottom-6 left-1/2 z-40 flex w-[min(724px,calc(100%-72px))] -translate-x-1/2 flex-col"
         >
           <div className="pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
             <span className={cn(kickerClass, "inline-flex shrink-0 items-center gap-[7px] text-primary")}>
@@ -460,6 +482,7 @@ export function ProjectComposer({
             </UpgradeCtaLink>
           </div>
         </div>
+        )}
       </>
     )
   }
@@ -476,7 +499,7 @@ export function ProjectComposer({
     <>
       {/* Mobile: the collapsed composer is a FAB; opening it shows a bottom
           sheet over a dark overlay. Desktop (lg+) keeps the command bar. */}
-      {!open && (
+      {!isDesktop && !open && (
         <AskProjectFab
           onClick={() => setOpen(true)}
           chromeHidden={mobileChromeHidden}
@@ -484,7 +507,7 @@ export function ProjectComposer({
           reduceMotion={reduceMotion}
         />
       )}
-      {open && (
+      {!isDesktop && open && (
         <div
           aria-hidden="true"
           onClick={() => setOpen(false)}
@@ -508,6 +531,9 @@ export function ProjectComposer({
       `}</style>
       <div
         ref={cardRef}
+        role={mobileSheetActive ? "dialog" : undefined}
+        aria-modal={mobileSheetActive ? "true" : undefined}
+        aria-label={mobileSheetActive ? "Ask this project" : undefined}
         className={cn(
           "pointer-events-auto flex flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-[0_4px_20px_rgba(15,23,42,0.06)] lg:rounded-2xl",
           open &&

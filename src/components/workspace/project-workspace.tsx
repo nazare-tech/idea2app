@@ -774,16 +774,20 @@ export function ProjectWorkspace({
     competitiveSources: generateAllStreamingCompetitorSources,
   }
 
-  const aiPromptsReadiness = getAiPromptsReadiness({
+  // Parses both plan documents; memoized because workspace renders fire on
+  // every scroll-spy section change and generation poll.
+  const prdSettled = Boolean(scrollableDocuments.prd.content) &&
+    !scrollableDocuments.prd.isGenerating &&
+    !scrollableDocuments.prd.isLoading
+  const mvpSettled = Boolean(scrollableDocuments.mvp.content) &&
+    !scrollableDocuments.mvp.isGenerating &&
+    !scrollableDocuments.mvp.isLoading
+  const aiPromptsReadiness = useMemo(() => getAiPromptsReadiness({
     prdContent: scrollableDocuments.prd.content,
     mvpContent: scrollableDocuments.mvp.content,
-    prdSettled: Boolean(scrollableDocuments.prd.content) &&
-      !scrollableDocuments.prd.isGenerating &&
-      !scrollableDocuments.prd.isLoading,
-    mvpSettled: Boolean(scrollableDocuments.mvp.content) &&
-      !scrollableDocuments.mvp.isGenerating &&
-      !scrollableDocuments.mvp.isLoading,
-  })
+    prdSettled,
+    mvpSettled,
+  }), [scrollableDocuments.prd.content, scrollableDocuments.mvp.content, prdSettled, mvpSettled])
 
   // Build status map for AnchorNav (keyed by sourceType)
   const navDocumentStatuses: Record<string, LegacyDocumentStatus | "needs_retry"> = {}

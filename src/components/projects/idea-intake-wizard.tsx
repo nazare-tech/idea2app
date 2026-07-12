@@ -53,6 +53,9 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
   // Guards async actions against stale-closure double fires (double click,
   // Enter + click in one tick). Mirrors `phase`; transition() keeps them in sync.
   const phaseRef = useRef<WizardPhase>("idea")
+  // Monotonic id so an in-flight question generation can detect it was
+  // superseded (Back + edited idea + Next) and drop its stale result.
+  const generationRequestIdRef = useRef(0)
   const [idea, setIdea] = useState("")
   const [lastGeneratedIdea, setLastGeneratedIdea] = useState("")
   const [questionSet, setQuestionSet] = useState<IntakeQuestionSet | null>(null)
@@ -151,6 +154,14 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
     setQuestionSet(null)
     setAnswers({})
     transition("generating-questions")
+    const requestId = ++generationRequestIdRef.current
+    // A result is stale when the user went Back mid-generation (phase left
+    // "generating-questions") or re-submitted an edited idea (newer request).
+    // Applying it would yank them forward and pair old-idea questions with
+    // the new idea text.
+    const isStale = () =>
+      generationRequestIdRef.current !== requestId ||
+      phaseRef.current !== "generating-questions"
     try {
       const response = await fetch("/api/intake/questions", {
         method: "POST",
@@ -158,6 +169,7 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
         body: JSON.stringify({ idea: normalizedIdea }),
       })
       const data = await response.json().catch(() => null)
+      if (isStale()) return
 
       if (!response.ok) {
         throw new Error(data?.error || "Failed to generate questions")
@@ -177,6 +189,7 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
       setLastGeneratedIdea(normalizedIdea)
       transition("questions")
     } catch (err) {
+      if (isStale()) return
       setError(err instanceof Error ? err.message : "Failed to generate questions")
       transition("questions-failed")
     }

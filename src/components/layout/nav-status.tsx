@@ -9,6 +9,32 @@ import type { DocumentGenerationDisplayState } from "@/lib/document-generation-d
 
 export type NavStatus = "done" | "in_progress" | "pending" | "needs_retry"
 
+/** Status resolution shared by the rail and the mobile sheet: nav-key entry
+ * (derived items like ai-prompts) wins over the sourceType entry. */
+export function resolveNavStatus(
+  item: { key: string; sourceType: string },
+  documentStatuses: Record<string, NavStatus>,
+): NavStatus {
+  return documentStatuses[item.key] || documentStatuses[item.sourceType] || "pending"
+}
+
+/** Generate/Retry affordance policy shared by the rail and the mobile sheet:
+ * idle pending documents offer Generate, failed ones offer Retry; derived
+ * items (assembled, not generated) offer neither. */
+export function getDocumentAction(
+  item: { derived?: boolean },
+  status: NavStatus,
+  displayState?: DocumentGenerationDisplayState,
+) {
+  const showGenerate = displayState?.displayStatus === "idle" && status === "pending" && !item.derived
+  const showRetry = status === "needs_retry" && !item.derived
+  return {
+    showGenerate,
+    showRetry,
+    actionLabel: showRetry ? "Retry" : showGenerate ? "Generate" : null,
+  } as const
+}
+
 export function SpinnerIcon({ className }: { className?: string }) {
   return (
     <svg

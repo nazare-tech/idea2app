@@ -7,7 +7,13 @@ import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
 import type { DocumentType } from "@/lib/document-definitions"
 import type { DocumentGenerationDisplayState } from "@/lib/document-generation-display-status"
-import { StatusMarker, StatusText, type NavStatus } from "@/components/layout/nav-status"
+import {
+  getDocumentAction,
+  resolveNavStatus,
+  StatusMarker,
+  StatusText,
+  type NavStatus,
+} from "@/components/layout/nav-status"
 
 interface AnchorNavProps {
   /** Navigation items after any document-pane visibility filtering */
@@ -53,9 +59,7 @@ export function AnchorNavTab({
   const isInProgress = status === "in_progress"
   const isPending = status === "pending"
   const hasIssue = status === "needs_retry"
-  const showGenerateAction = displayState?.displayStatus === "idle" && isPending && !item.derived
-  const showRetryAction = hasIssue && !item.derived
-  const actionLabel = showRetryAction ? "Retry" : showGenerateAction ? "Generate" : null
+  const { showRetry: showRetryAction, actionLabel } = getDocumentAction(item, status, displayState)
   const ActionIcon = showRetryAction ? RotateCcw : Play
 
   const containerStyle = hasIssue
@@ -179,9 +183,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
   onNavigate,
   onGenerateDocument,
 }, ref) {
-  const getStatus = (item: DocumentNavItem): NavStatus => {
-    return documentStatuses[item.key] || documentStatuses[item.sourceType] || "pending"
-  }
+  const getStatus = (item: DocumentNavItem): NavStatus => resolveNavStatus(item, documentStatuses)
 
   const navRef = useRef<HTMLElement | null>(null)
   const setNavRef = useCallback((node: HTMLElement | null) => {

@@ -5,14 +5,21 @@
 // anchor rail on phones and portrait tablets.
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useCallback, useRef } from "react"
 import { ChevronUp, Play, RotateCcw, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { DocumentNavItem } from "@/lib/document-sections"
 import type { DocumentType } from "@/lib/document-definitions"
 import type { DocumentGenerationDisplayState } from "@/lib/document-generation-display-status"
-import { StatusMarker, StatusText, type NavStatus } from "@/components/layout/nav-status"
+import {
+  getDocumentAction,
+  resolveNavStatus,
+  StatusMarker,
+  StatusText,
+  type NavStatus,
+} from "@/components/layout/nav-status"
 import { useReducedMotion } from "@/hooks/use-reduced-motion"
+import { useSheetModalFocus } from "@/hooks/use-sheet-modal-focus"
 
 /** Sheet height is fixed (not content-driven) so the composer FAB can ride a
  * deterministic distance above it, mirroring the design's behavior. */
@@ -49,46 +56,10 @@ export function MobileDocumentBar({
   const sheetRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
 
-  const getStatus = (item: DocumentNavItem): NavStatus =>
-    documentStatuses[item.key] || documentStatuses[item.sourceType] || "pending"
+  const getStatus = (item: DocumentNavItem): NavStatus => resolveNavStatus(item, documentStatuses)
 
-  // Modal semantics for the sheet: Escape closes, focus starts inside, Tab
-  // cycles within, and focus returns to the opener on close.
-  useEffect(() => {
-    if (!open) return
-    const previouslyFocused = document.activeElement as HTMLElement | null
-    closeButtonRef.current?.focus({ preventScroll: true })
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onOpenChange(false)
-        return
-      }
-      if (event.key !== "Tab") return
-      const root = sheetRef.current
-      if (!root) return
-      const focusables = root.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      )
-      if (focusables.length === 0) return
-      const first = focusables[0]
-      const last = focusables[focusables.length - 1]
-      const active = document.activeElement
-      if (event.shiftKey && (active === first || !root.contains(active))) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && (active === last || !root.contains(active))) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown)
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown)
-      previouslyFocused?.focus?.({ preventScroll: true })
-    }
-  }, [open, onOpenChange])
+  const closeSheet = useCallback(() => onOpenChange(false), [onOpenChange])
+  useSheetModalFocus(sheetRef, open, { onClose: closeSheet, initialFocusRef: closeButtonRef })
 
   const navigateAndClose = (targetId: string) => {
     onNavigate(targetId)
@@ -165,11 +136,7 @@ export function MobileDocumentBar({
                 const status = getStatus(item)
                 const isActiveDoc = activeItem.key === item.key
                 const displayState = documentDisplayStates[item.key]
-                // Same action policy as the desktop rail (AnchorNavTab): idle
-                // pending documents offer Generate, failed ones offer Retry.
-                const showGenerate = displayState?.displayStatus === "idle" && status === "pending" && !item.derived
-                const showRetry = status === "needs_retry" && !item.derived
-                const actionLabel = showRetry ? "Retry" : showGenerate ? "Generate" : null
+                const { showRetry, actionLabel } = getDocumentAction(item, status, displayState)
                 const ActionIcon = showRetry ? RotateCcw : Play
                 return (
                   <div key={item.key} className="mb-0.5">

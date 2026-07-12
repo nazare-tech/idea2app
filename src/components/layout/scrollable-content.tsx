@@ -365,12 +365,16 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
     const competitiveStreamingSources = streamingContents?.competitiveSources
     const prdStreamingContent = streamingContents?.prd ?? null
     const mvpStreamingContent = streamingContents?.mvp ?? null
-    const aiPromptsReadiness = getAiPromptsReadiness({
+    // Parses both plan documents; memoized because this component re-renders
+    // on every scroll-spy section change and generation poll.
+    const prdSettled = Boolean(prdData?.content) && !prdData?.isGenerating && !prdData?.isLoading
+    const mvpSettled = Boolean(mvpData?.content) && !mvpData?.isGenerating && !mvpData?.isLoading
+    const aiPromptsReadiness = React.useMemo(() => getAiPromptsReadiness({
       prdContent: prdData?.content,
       mvpContent: mvpData?.content,
-      prdSettled: Boolean(prdData?.content) && !prdData?.isGenerating && !prdData?.isLoading,
-      mvpSettled: Boolean(mvpData?.content) && !mvpData?.isGenerating && !mvpData?.isLoading,
-    })
+      prdSettled,
+      mvpSettled,
+    }), [prdData?.content, mvpData?.content, prdSettled, mvpSettled])
     // While the source plans are queued or generating, the AI Prompts section
     // renders its real containers with queued placeholders instead of a
     // generic status module.
