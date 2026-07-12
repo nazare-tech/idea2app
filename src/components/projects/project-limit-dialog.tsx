@@ -7,14 +7,24 @@ import * as Dialog from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import type { ProjectAllowanceStatus } from "@/lib/project-allowance"
 
 const BILLING_PATH = "/billing"
+
+/**
+ * The slice of the server-computed allowance status these components need.
+ * Callers pass the status object straight through instead of re-plumbing
+ * individual primitives every time the dialog copy needs another field.
+ */
+export type ProjectAllowanceSummary = Pick<
+  ProjectAllowanceStatus,
+  "canCreate" | "used" | "planName"
+>
 
 interface ProjectLimitDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  used: number
-  planName: string
+  allowance: ProjectAllowanceSummary
 }
 
 function buildCountLine(used: number, planName: string) {
@@ -28,7 +38,7 @@ function buildCountLine(used: number, planName: string) {
  * behavior via onOpenChange (dismiss in place, or route away for the /projects/new
  * gate).
  */
-export function ProjectLimitDialog({ open, onOpenChange, used, planName }: ProjectLimitDialogProps) {
+export function ProjectLimitDialog({ open, onOpenChange, allowance }: ProjectLimitDialogProps) {
   const router = useRouter()
 
   const handleUpgrade = () => {
@@ -59,7 +69,7 @@ export function ProjectLimitDialog({ open, onOpenChange, used, planName }: Proje
             You&apos;ve used all your projects
           </Dialog.Title>
           <Dialog.Description className="mt-3 text-sm leading-relaxed text-text-secondary">
-            {buildCountLine(used, planName)} Upgrade your plan to start another project.
+            {buildCountLine(allowance.used, allowance.planName)} Upgrade your plan to start another project.
           </Dialog.Description>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
@@ -87,9 +97,7 @@ export function ProjectLimitDialog({ open, onOpenChange, used, planName }: Proje
 }
 
 interface NewProjectButtonProps {
-  canCreate: boolean
-  used: number
-  planName: string
+  allowance: ProjectAllowanceSummary
   className?: string
   label?: string
 }
@@ -100,15 +108,13 @@ interface NewProjectButtonProps {
  * upgrade dialog in place instead of navigating.
  */
 export function NewProjectButton({
-  canCreate,
-  used,
-  planName,
+  allowance,
   className,
   label = "New Project",
 }: NewProjectButtonProps) {
   const [open, setOpen] = useState(false)
 
-  if (canCreate) {
+  if (allowance.canCreate) {
     return (
       <Link href="/projects/new" className="shrink-0" prefetch={false}>
         <Button className={className}>{label}</Button>
@@ -121,7 +127,7 @@ export function NewProjectButton({
       <Button type="button" className={className} onClick={() => setOpen(true)} data-testid="new-project-blocked">
         {label}
       </Button>
-      <ProjectLimitDialog open={open} onOpenChange={setOpen} used={used} planName={planName} />
+      <ProjectLimitDialog open={open} onOpenChange={setOpen} allowance={allowance} />
     </>
   )
 }
@@ -131,13 +137,7 @@ export function NewProjectButton({
  * (deep link or landing handoff), show the upgrade dialog and route back to the
  * projects dashboard on dismiss so the wizard is never usable past the limit.
  */
-export function ProjectLimitRouteGate({
-  used,
-  planName,
-}: {
-  used: number
-  planName: string
-}) {
+export function ProjectLimitRouteGate({ allowance }: { allowance: ProjectAllowanceSummary }) {
   const router = useRouter()
   const [open, setOpen] = useState(true)
 
@@ -149,8 +149,7 @@ export function ProjectLimitRouteGate({
           setOpen(next)
           if (!next) router.push("/projects")
         }}
-        used={used}
-        planName={planName}
+        allowance={allowance}
       />
     </div>
   )

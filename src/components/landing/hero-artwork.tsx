@@ -7,16 +7,17 @@ import Image from "next/image"
 const PARALLAX_STRENGTH = 20
 /** How far layers fly outward from the hero center as you scroll away. */
 const SCATTER_DISTANCE = 480
-/** Center of the 1920x720 artwork box; layers scatter away from this point. */
+/** The artwork box is 1920x720; layers scatter away from its center. */
+const BOX_WIDTH = 1920
 const CENTER_X = 960
 const CENTER_Y = 360
 
 /**
  * Figma frame 362:12585 (1497.7px wide) mapped into the centered artwork box.
- * The box stretches to the viewport when wider than 1920px, so left-side notes
- * anchor with `left` offsets and right-side notes with `right` offsets — both
- * clusters hug the screen edges instead of floating inward on wide displays.
- * `left`/`top` here stay in 1920-box coordinates for the scatter vectors.
+ * `left`/`top` are 1920-box coordinates (also used for the scatter vectors);
+ * the render derives each note's anchor from them: left-side notes anchor with
+ * `left` offsets, right-side notes with `right = 1920 - left - width`, so both
+ * clusters hug the screen edges when the box stretches past 1920px.
  */
 const heroLayers: {
   src: string
@@ -25,7 +26,6 @@ const heroLayers: {
   left: number
   top: number
   side: "left" | "right"
-  className: string
 }[] = [
   {
     src: "/landing/hero/362-12586_note.png",
@@ -34,7 +34,6 @@ const heroLayers: {
     left: 27,
     top: 161,
     side: "left",
-    className: "left-[27px] top-[161px] h-[274px] w-[259px]",
   },
   {
     src: "/landing/hero/362-12587_note.png",
@@ -43,7 +42,6 @@ const heroLayers: {
     left: 86,
     top: 7,
     side: "left",
-    className: "left-[86px] top-[7px] h-[277px] w-[371px]",
   },
   {
     src: "/landing/hero/362-12588_note.png",
@@ -52,7 +50,6 @@ const heroLayers: {
     left: 217,
     top: 291,
     side: "left",
-    className: "left-[217px] top-[291px] h-[340px] w-[286px]",
   },
   {
     src: "/landing/hero/362-12589_note.png",
@@ -61,7 +58,6 @@ const heroLayers: {
     left: 237,
     top: 195,
     side: "left",
-    className: "left-[237px] top-[195px] h-[208px] w-[198px]",
   },
   {
     src: "/landing/hero/362-12590_note.png",
@@ -70,7 +66,6 @@ const heroLayers: {
     left: -5,
     top: 252,
     side: "left",
-    className: "left-[-5px] top-[252px] h-[281px] w-[101px]",
   },
   {
     src: "/landing/hero/362-12591_note.png",
@@ -79,7 +74,6 @@ const heroLayers: {
     left: 110,
     top: 309,
     side: "left",
-    className: "left-[110px] top-[309px] h-[237px] w-[152px]",
   },
   {
     src: "/landing/hero/362-12592_note.png",
@@ -88,7 +82,6 @@ const heroLayers: {
     left: 40,
     top: 473,
     side: "left",
-    className: "left-[40px] top-[473px] h-[240px] w-[270px]",
   },
   {
     src: "/landing/hero/362-12593_note.png",
@@ -97,7 +90,6 @@ const heroLayers: {
     left: 238,
     top: 487,
     side: "left",
-    className: "left-[238px] top-[487px] h-[206px] w-[178px]",
   },
   {
     src: "/landing/hero/362-12594_note.png",
@@ -106,7 +98,6 @@ const heroLayers: {
     left: 372,
     top: 400,
     side: "left",
-    className: "left-[372px] top-[400px] h-[145px] w-[154px]",
   },
   {
     src: "/landing/hero/362-12595_note.png",
@@ -115,7 +106,6 @@ const heroLayers: {
     left: 1596,
     top: 442,
     side: "right",
-    className: "right-[16px] top-[442px] h-[256px] w-[308px]",
   },
   {
     src: "/landing/hero/362-12596_note.png",
@@ -124,7 +114,6 @@ const heroLayers: {
     left: 1453,
     top: 437,
     side: "right",
-    className: "right-[268px] top-[437px] h-[222px] w-[199px]",
   },
   {
     src: "/landing/hero/362-12597_note.png",
@@ -133,7 +122,6 @@ const heroLayers: {
     left: 1495,
     top: 42,
     side: "right",
-    className: "right-[58px] top-[42px] h-[295px] w-[367px]",
   },
   {
     src: "/landing/hero/362-12598_note.png",
@@ -142,7 +130,6 @@ const heroLayers: {
     left: 1711,
     top: -7,
     side: "right",
-    className: "right-[16px] top-[-7px] h-[192px] w-[193px]",
   },
   {
     src: "/landing/hero/362-12599_note.png",
@@ -151,7 +138,6 @@ const heroLayers: {
     left: 1726,
     top: 171,
     side: "right",
-    className: "right-[16px] top-[171px] h-[278px] w-[178px]",
   },
   {
     src: "/landing/hero/362-12600_note.png",
@@ -160,7 +146,6 @@ const heroLayers: {
     left: 1412,
     top: 191,
     side: "right",
-    className: "right-[269px] top-[191px] h-[278px] w-[239px]",
   },
   {
     src: "/landing/hero/362-12601_note.png",
@@ -169,7 +154,6 @@ const heroLayers: {
     left: 1604,
     top: 315,
     side: "right",
-    className: "right-[77px] top-[315px] h-[230px] w-[239px]",
   },
 ]
 
@@ -292,8 +276,16 @@ export function HeroArtwork() {
       {heroLayers.map((layer, index) => (
         <div
           key={layer.src}
-          className={`absolute ${layer.className} ${layer.side === "left" ? "hero-enter-left" : "hero-enter-right"}`}
-          style={{ animationDelay: `${120 + (index % 5) * 70}ms` }}
+          className={`absolute ${layer.side === "left" ? "hero-enter-left" : "hero-enter-right"}`}
+          style={{
+            top: layer.top,
+            width: layer.width,
+            height: layer.height,
+            ...(layer.side === "left"
+              ? { left: layer.left }
+              : { right: BOX_WIDTH - layer.left - layer.width }),
+            animationDelay: `${120 + (index % 5) * 70}ms`,
+          }}
         >
           <Image
             src={layer.src}

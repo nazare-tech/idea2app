@@ -19,24 +19,16 @@
 // Re-run whenever you want the landing samples to reflect newer generated content.
 
 import { createClient } from "@supabase/supabase-js"
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs"
+import { writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
 
 import { LANDING_PREVIEW_CAPTURES } from "../src/lib/landing-preview-captures.mjs"
+import { loadEnvFileIntoProcess } from "./lib/env.mjs"
 
 const root = process.cwd()
 
-// Minimal .env.local loader so the script works without extra dependencies
 function loadEnvLocal() {
-  const envPath = path.join(root, ".env.local")
-  if (!existsSync(envPath)) return
-  const lines = readFileSync(envPath, "utf8").split("\n")
-  for (const line of lines) {
-    const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (match && !process.env[match[1]]) {
-      process.env[match[1]] = match[2].replace(/^"|"$/g, "").trim()
-    }
-  }
+  loadEnvFileIntoProcess(path.join(root, ".env.local"))
 }
 
 let supabase = null

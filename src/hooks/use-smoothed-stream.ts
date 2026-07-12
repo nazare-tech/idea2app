@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 
+import { useReducedMotion } from "@/hooks/use-reduced-motion"
+
 // Reveal pacing. The tick runs every ~50ms, so words-per-tick maps to
 // words-per-second at 20x: 2 -> ~40wps baseline (energetic but readable),
 // 5 -> ~100wps hard cap so a large poll backlog drains visibly instead of
@@ -71,12 +73,10 @@ export function useSmoothedStream(
     targetRef.current = target
   }, [target])
 
+  const prefersReducedMotion = useReducedMotion()
+
   useEffect(() => {
     if (!enabled) return
-
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches
 
     const interval = window.setInterval(() => {
       setVisibleLength((current) => {
@@ -87,7 +87,7 @@ export function useSmoothedStream(
     }, tickMs)
 
     return () => window.clearInterval(interval)
-  }, [enabled, tickMs])
+  }, [enabled, prefersReducedMotion, tickMs])
 
   const clampedLength = Math.min(visibleLength, target.length)
 

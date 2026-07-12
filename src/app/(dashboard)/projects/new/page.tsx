@@ -39,12 +39,7 @@ export default async function NewProjectPage({ searchParams }: NewProjectPagePro
   // reasons fall through to the wizard (the create route re-checks allowance).
   const allowanceStatus = await getProjectAllowanceStatus(supabase, user.id)
   if (!allowanceStatus.canCreate && allowanceStatus.reason === "limit_reached") {
-    return (
-      <ProjectLimitRouteGate
-        used={allowanceStatus.used}
-        planName={allowanceStatus.planName}
-      />
-    )
+    return <ProjectLimitRouteGate allowance={allowanceStatus} />
   }
 
   return <IdeaIntakeWizard pendingToken={pendingToken ?? null} autoStartQuestions={autoStartQuestions} />

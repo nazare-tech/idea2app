@@ -82,9 +82,7 @@ export default async function ProjectsPage() {
           descriptionClassName="text-xl font-semibold leading-tight text-text-primary sm:text-2xl"
           actions={(
             <NewProjectButton
-              canCreate={allowanceStatus.canCreate}
-              used={allowanceStatus.used}
-              planName={allowanceStatus.planName}
+              allowance={allowanceStatus}
               className="h-9 bg-primary px-4 text-sm text-primary-foreground"
             />
           )}

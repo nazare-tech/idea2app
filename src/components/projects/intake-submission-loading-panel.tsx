@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { Marquee } from "@/components/ui/marquee"
+import { useReducedMotion } from "@/hooks/use-reduced-motion"
 
 // Single post-submit loader (Intake Flow Option 1). One large message rotates at
 // a fixed cadence while a thin red line fills; the redirect to the workspace is
@@ -46,20 +47,6 @@ export function getLoaderLineWidth(
   if (messageCount <= 0) return 0
   const pct = (Math.max(0, elapsedMs) / Math.max(1, intervalMs * messageCount)) * 100
   return Math.min(100, pct)
-}
-
-function subscribeReducedMotion(callback: () => void) {
-  const query = window.matchMedia("(prefers-reduced-motion: reduce)")
-  query.addEventListener("change", callback)
-  return () => query.removeEventListener("change", callback)
-}
-
-function useReducedMotion() {
-  return useSyncExternalStore(
-    subscribeReducedMotion,
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    () => false,
-  )
 }
 
 export function IntakeSubmissionLoadingPanel({

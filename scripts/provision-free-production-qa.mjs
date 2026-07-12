@@ -1,8 +1,10 @@
 import { randomBytes } from "node:crypto"
-import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 import { createClient } from "@supabase/supabase-js"
+
+import { parseEnvFile } from "./lib/env.mjs"
 
 const ROOT = resolve(import.meta.dirname, "..")
 const APP_ENV_PATH = resolve(ROOT, ".env.local")
@@ -10,29 +12,6 @@ const E2E_ENV_PATH = resolve(ROOT, ".env.e2e.local")
 const QA_ENV_PATH = resolve(ROOT, ".env.production-qa.local")
 const CONFIRMATION_FLAG = "--confirm-production"
 const EXPECTED_PRODUCTION_SUPABASE_HOST = "meahkrbbmmytntzzlguk.supabase.co"
-
-function parseEnvFile(path) {
-  if (!existsSync(path)) return {}
-
-  return Object.fromEntries(
-    readFileSync(path, "utf8")
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith("#") && line.includes("="))
-      .map((line) => {
-        const separator = line.indexOf("=")
-        const key = line.slice(0, separator).trim()
-        let value = line.slice(separator + 1).trim()
-        if (
-          (value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))
-        ) {
-          value = value.slice(1, -1)
-        }
-        return [key, value]
-      }),
-  )
-}
 
 function deriveQaEmail(sourceEmail) {
   const match = /^([^@]+)@(gmail\.com|googlemail\.com)$/i.exec(sourceEmail)
