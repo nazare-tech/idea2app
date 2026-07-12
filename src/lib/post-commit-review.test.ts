@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { chmod, cp, mkdtemp, mkdir, readFile, realpath, stat, symlink, writeFile } from "node:fs/promises"
+import { chmod, cp, mkdtemp, mkdir, readdir, readFile, realpath, stat, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { spawn, spawnSync } from "node:child_process"
@@ -143,10 +143,8 @@ test("routes Codex commits to Claude review with exact immutable commit range", 
     args[5],
   ])
   assert.match(args[5] ?? "", /agent-review\./)
-  assert.deepEqual(args.slice(6), [
-    "--out",
-    path.join(gitDirectory, `agent-reviews/${sha}.txt`),
-  ])
+  // The runner's captured stdout stream is the single artifact writer; no --out.
+  assert.deepEqual(args.slice(6), [])
   const { timestamp, ...status } = await readStatus(repo, sha)
   assert.match(timestamp, /^\d{4}-\d{2}-\d{2}T/)
   assert.deepEqual(status, {
@@ -356,6 +354,57 @@ test("unknown implementer on a code commit fails loudly instead of guessing a re
   assert.equal(status.status, "skipped")
   assert.equal(status.reason, "unknown_implementer")
   assert.equal(status.reviewer, null)
+})
+
+test("unresolvable commit argument fails fast without a ledger entry", async () => {
+  const repo = await createRepo()
+  await installFakeReviewer(repo, { output: "NO FINDINGS" })
+
+  const result = runReview(repo, "codex", {}, "deadbeef123")
+
+  assert.equal(result.status, 2)
+  assert.match(result.stderr, /unknown commit/)
+  const entries = await readdir(path.join(repo, ".git/agent-reviews")).catch(() => [])
+  assert.deepEqual(entries.filter((name) => name.startsWith("deadbeef")), [])
+})
+
+test("size-cap kill escalates to SIGKILL for TERM-resistant flooders", async () => {
+  const repo = await createRepo()
+  const sha = await commitFile(repo, "src/example.ts")
+  const pidPath = path.join(repo, ".git/flooder.pid")
+  // A TERM-immune child floods stdout; the leader dies on the size-cap TERM,
+  // so only the unconditional post-wait group SIGKILL can stop the child.
+  const reviewerPath = path.join(repo, "scripts/agent-review.sh")
+  await writeFile(
+    reviewerPath,
+    `#!/bin/sh
+sh -c 'trap "" TERM HUP; while :; do printf "%08192d" 0; done' &
+child=$!
+echo "$child" > "${pidPath}"
+wait "$child"
+`,
+  )
+  await chmod(reviewerPath, 0o755)
+
+  const result = runReview(repo, "codex", {
+    AGENT_REVIEW_MAX_OUTPUT_BYTES: "4096",
+    AGENT_REVIEW_TIMEOUT_SECONDS: "120",
+  })
+
+  assert.equal(result.status, 2, result.stderr)
+  assert.match(result.stderr, /output exceeded/)
+  const flooderPid = Number((await readFile(pidPath, "utf8")).trim())
+  assert.ok(Number.isInteger(flooderPid) && flooderPid > 0)
+  await new Promise((resolve) => setTimeout(resolve, 1500))
+  let flooderAlive = true
+  try {
+    process.kill(flooderPid, 0)
+  } catch {
+    flooderAlive = false
+  }
+  assert.equal(flooderAlive, false, "TERM-resistant flooder must be SIGKILLed")
+  const artifact = await stat(path.join(repo, `.git/agent-reviews/${sha}.txt`))
+  assert.ok(artifact.size < 8192, `artifact must stay truncated, got ${artifact.size}`)
 })
 
 test("runaway reviewer output is killed and classified output_too_large before timeout", async () => {

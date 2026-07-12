@@ -15,16 +15,22 @@ fi
 # into the commit. Stage them fully or stash the unstaged part first.
 UNSTAGED=$(git diff --name-only)
 PARTIAL=""
-for f in $STAGED; do
+# Iterate by line, not word-split: a spaced filename must not fragment and
+# slip past this guard.
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
   case "
 $UNSTAGED
 " in *"
 $f
-"*) PARTIAL="$PARTIAL $f" ;; esac
-done
+"*) PARTIAL="$PARTIAL
+$f" ;; esac
+done <<EOF
+$STAGED
+EOF
 if [ -n "$PARTIAL" ]; then
   echo "pre-commit: refusing to run eslint --fix over partially staged files:" >&2
-  for f in $PARTIAL; do echo "  $f" >&2; done
+  printf '%s\n' "$PARTIAL" | sed -e '/^$/d' -e 's/^/  /' >&2
   echo "Stage them fully (git add <file>) or stash the unstaged part (git stash -k), then retry." >&2
   exit 1
 fi

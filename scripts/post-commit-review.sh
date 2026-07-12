@@ -12,7 +12,10 @@ umask 077
 cd "$(dirname "$0")/.."
 
 COMMIT="${1:-HEAD}"
-COMMIT="$(git rev-parse "$COMMIT")"
+if ! COMMIT="$(git rev-parse --verify --quiet "${COMMIT}^{commit}")"; then
+  printf 'post-commit-review: unknown commit %s; nothing recorded\n' "${1:-HEAD}" >&2
+  exit 2
+fi
 REVIEW_DIR="$(git rev-parse --absolute-git-dir)/agent-reviews"
 mkdir -p "$REVIEW_DIR"
 
@@ -118,6 +121,10 @@ changed_files() {
 }
 
 has_reviewable_paths() {
+  # "What counts as code/workflow" is also encoded (as git pathspecs, an
+  # intentionally narrower code-only set) in scripts/sweep-check.mjs; when
+  # adding a new code root, update both or commits get reviewed but never
+  # counted toward sweeps (or vice versa).
   changed_files | grep -Eq '^(src/|scripts/|supabase/|supabase-migrations/|e2e/|\.githooks/|\.agents/skills/|\.claude/skills/|docs/operating-system/(review-personas|planning-workflow|doc-conventions)\.md$|AGENTS\.md$|CLAUDE\.md$|package\.json$|tsconfig\.json$|next\.config\.)'
 }
 
@@ -212,7 +219,6 @@ perl -MPOSIX -e 'POSIX::setsid(); exec {$ARGV[0]} @ARGV or die "exec failed: $!"
   --implementer "$IMPLEMENTER" \
   --range "$REVIEW_RANGE" \
   --review-root "$SNAPSHOT_ROOT" \
-  --out "$OUTPUT_PATH" \
   >"$TEMP_OUTPUT" 2>"$STDERR_PATH" &
 REVIEW_PID=$!
 # Watchdog: enforce the wall-clock timeout, and kill a runaway reviewer within
@@ -265,6 +271,11 @@ else
   kill "$WATCHDOG_PID" 2>/dev/null || true
   wait "$WATCHDOG_PID" 2>/dev/null || true
 fi
+# The session leader exiting does not prove the group is gone: a TERM-trapping
+# descendant of a size-capped reviewer can outlive the leader (the size-poll
+# kill path cancels the watchdog's pending SIGKILL above) and keep regrowing
+# the artifact through its inherited fd. Always finish with a group SIGKILL.
+kill -KILL -- "-$REVIEW_PID" 2>/dev/null || true
 WATCHDOG_PID=""
 REVIEW_PID=""
 if [ -f "$TIMEOUT_MARKER" ]; then
@@ -273,8 +284,8 @@ if [ -f "$TIMEOUT_MARKER" ]; then
 fi
 set -e
 
-# agent-review.sh writes OUTPUT_PATH through tee. Test doubles and future
-# wrappers may only write stdout, so the captured stream is the final source.
+# The captured stdout stream is the single canonical artifact source; the
+# wrapper's --out/tee path stays reserved for manual human invocations.
 mv "$TEMP_OUTPUT" "$OUTPUT_PATH"
 
 OUTPUT_BYTES="$(wc -c <"$OUTPUT_PATH" | tr -d ' ')"

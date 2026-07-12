@@ -49,7 +49,11 @@ else
 fi
 
 if [ -z "$IMPLEMENTER" ]; then
-  if [ "${CLAUDECODE:-}" = "1" ]; then
+  # Same detection contract as scripts/post-commit-review.sh: explicit
+  # AGENT_IMPLEMENTER wins, then known runtimes, never a guess.
+  if [ -n "${AGENT_IMPLEMENTER:-}" ]; then
+    IMPLEMENTER="$AGENT_IMPLEMENTER"
+  elif [ "${CLAUDECODE:-}" = "1" ]; then
     IMPLEMENTER="claude"
   elif [ -n "${CODEX_THREAD_ID:-}" ]; then
     IMPLEMENTER="codex"
@@ -87,13 +91,33 @@ else
 fi
 
 REVIEW_CONTEXT=""
-CONTEXT_REV="HEAD"
+# Full-file context must match the diff's end state: for a commit range that
+# is the range's right-hand rev, not HEAD (a manual re-review of an older
+# range would otherwise pair old hunks with newer file bodies). WORKING_TREE
+# keeps HEAD: context is the committed base under the uncommitted diff.
+if [ "$RANGE" = "WORKING_TREE" ]; then
+  CONTEXT_REV="HEAD"
+else
+  CONTEXT_REV="${RANGE##*..}"
+  [ -n "$CONTEXT_REV" ] || CONTEXT_REV="HEAD"
+fi
+APPENDED_CONTEXT_FILES="
+"
 append_context_file() {
   local file="$1"
   case "$file" in
     *.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs|*.sh|*.md|*.json|*.sql|*.yml|*.yaml|*.toml|*.css|*.scss|*.html) ;;
     *) return 0 ;;
   esac
+  # Changed files and the docs/systems sweep can both name the same path; a
+  # duplicate append double-counts bytes toward the input cap.
+  case "$APPENDED_CONTEXT_FILES" in
+    *"
+${file}
+"*) return 0 ;;
+  esac
+  APPENDED_CONTEXT_FILES="${APPENDED_CONTEXT_FILES}${file}
+"
   local entry mode object_type
   entry="$(git ls-tree "$CONTEXT_REV" -- "$file")"
   if [ -z "$entry" ]; then return 0; fi

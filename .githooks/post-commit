@@ -8,5 +8,7 @@ if ! scripts/post-commit-review.sh HEAD; then
   echo "post-commit: cross-model review failed; this commit is NOT REVIEWED. See .git/agent-reviews/." >&2
 fi
 
-node scripts/sweep-check.mjs --notify 2>/dev/null || true
+# No stderr silencing: a broken sweep marker must stay visible, or the +1000
+# sweep trigger dies silently for manual commits.
+node scripts/sweep-check.mjs --notify || true
 exit 0
