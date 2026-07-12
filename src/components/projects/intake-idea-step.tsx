@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
-import { IntakeMarquee } from "@/components/projects/intake-marquee"
+import { Marquee } from "@/components/ui/marquee"
 import {
   WIZARD_PRIMARY_BUTTON_CLASS,
   WizardError,
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 
 // One drifting marquee row per duration; the example pool is chunked evenly
 // across them, so adding ideas never requires touching slice indexes.
-const EXAMPLE_ROW_DURATIONS = ["50s", "60s", "43s"]
+const EXAMPLE_ROW_DURATIONS_SECONDS = [50, 60, 43]
 
 function chunkEvenly<T>(items: T[], chunkCount: number): T[][] {
   const size = Math.ceil(items.length / chunkCount)
@@ -24,7 +24,7 @@ function chunkEvenly<T>(items: T[], chunkCount: number): T[][] {
   ).filter((chunk) => chunk.length > 0)
 }
 
-const EXAMPLE_ROWS = chunkEvenly(INTAKE_EXAMPLE_IDEAS, EXAMPLE_ROW_DURATIONS.length)
+const EXAMPLE_ROWS = chunkEvenly(INTAKE_EXAMPLE_IDEAS, EXAMPLE_ROW_DURATIONS_SECONDS.length)
 
 interface IntakeIdeaStepProps {
   idea: string
@@ -145,7 +145,7 @@ export function IntakeIdeaStep({
             <ExampleIdeaRow
               key={index}
               ideas={ideas}
-              duration={EXAMPLE_ROW_DURATIONS[index]}
+              durationSeconds={EXAMPLE_ROW_DURATIONS_SECONDS[index]}
               disabled={locked}
               onPick={onIdeaChange}
             />
@@ -158,17 +158,17 @@ export function IntakeIdeaStep({
 
 function ExampleIdeaRow({
   ideas,
-  duration,
+  durationSeconds,
   disabled,
   onPick,
 }: {
   ideas: IntakeExampleIdea[]
-  duration: string
+  durationSeconds: number
   disabled: boolean
   onPick: (description: string) => void
 }) {
   return (
-    <IntakeMarquee duration={duration}>
+    <Marquee durationSeconds={durationSeconds}>
       {ideas.map((idea) => (
         <button
           key={idea.id}
@@ -180,6 +180,6 @@ function ExampleIdeaRow({
           {idea.title}
         </button>
       ))}
-    </IntakeMarquee>
+    </Marquee>
   )
 }

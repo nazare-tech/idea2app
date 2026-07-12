@@ -1,12 +1,11 @@
 import Image from "next/image"
 
+import { Marquee } from "@/components/ui/marquee"
+
 /** Purely informational, not interactive: the visible text is the accessible name, so the logo image is decorative. */
-function ToolLogo({ name, src, ariaHidden = false }: { name: string; src: string; ariaHidden?: boolean }) {
+function ToolLogo({ name, src }: { name: string; src: string }) {
   return (
-    <div
-      className="flex h-[92px] w-[152px] shrink-0 flex-col items-center justify-center gap-3 border border-border-subtle bg-white px-4"
-      aria-hidden={ariaHidden ? "true" : undefined}
-    >
+    <div className="mr-3 flex h-[92px] w-[152px] shrink-0 flex-col items-center justify-center gap-3 border border-border-subtle bg-white px-4">
       <Image
         src={src}
         alt=""
@@ -20,20 +19,14 @@ function ToolLogo({ name, src, ariaHidden = false }: { name: string; src: string
   )
 }
 
-/** Duplicates the row once so a -50% translate loops seamlessly. The duplicate pass is hidden from assistive tech. */
 export function ToolLogoMarquee({ tools }: { tools: { name: string; src: string }[] }) {
   return (
-    <div className="landing-logo-marquee mt-4">
-      <div className="landing-logo-marquee__track">
-        {[...tools, ...tools].map((tool, index) => (
-          <ToolLogo
-            key={`${tool.name}-${index}`}
-            name={tool.name}
-            src={tool.src}
-            ariaHidden={index >= tools.length}
-          />
+    <div className="mt-4">
+      <Marquee durationSeconds={42} fadeWidthPx={48}>
+        {tools.map((tool) => (
+          <ToolLogo key={tool.name} name={tool.name} src={tool.src} />
         ))}
-      </div>
+      </Marquee>
     </div>
   )
 }

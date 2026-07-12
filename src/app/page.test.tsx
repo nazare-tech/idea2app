@@ -12,9 +12,11 @@ const tools = [
 test("ToolLogoMarquee hides the duplicated visual pass from assistive technology", () => {
   const html = renderToStaticMarkup(<ToolLogoMarquee tools={tools} />)
 
-  assert.equal((html.match(/aria-hidden="true"/g) ?? []).length, tools.length * 3)
+  // One aria-hidden per decorative logo image (both copies) plus the single
+  // inert duplicate-track wrapper.
+  assert.equal((html.match(/aria-hidden="true"/g) ?? []).length, tools.length * 2 + 1)
   assert.equal((html.match(/>Cursor</g) ?? []).length, 2)
-  assert.match(html, /aria-hidden="true"[^>]*><img/)
+  assert.match(html, /aria-hidden="true" inert=""/)
 })
 
 test("ToolLogoMarquee uses visible names instead of redundant logo alt text", () => {

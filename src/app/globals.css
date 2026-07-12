@@ -183,20 +183,27 @@ body {
   height: 0;
 }
 
-.landing-logo-marquee {
+/* Shared looping marquee (src/components/ui/marquee.tsx): landing tool logos,
+   intake example-idea rows, loader artifact row. Duration and fade width come
+   from per-instance custom properties; the duplicated track scrolls -50% for
+   a seamless loop and pauses on hover. */
+.ui-marquee {
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent);
-  mask-image: linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black var(--marquee-fade, 120px), black calc(100% - var(--marquee-fade, 120px)), transparent);
+  mask-image: linear-gradient(to right, transparent, black var(--marquee-fade, 120px), black calc(100% - var(--marquee-fade, 120px)), transparent);
 }
 
-.landing-logo-marquee__track {
+.ui-marquee__track {
   display: flex;
   width: max-content;
-  gap: 0.75rem;
-  animation: landing-logo-marquee-scroll 42s linear infinite;
+  animation: ui-marquee-scroll var(--marquee-duration, 45s) linear infinite;
 }
 
-@keyframes landing-logo-marquee-scroll {
+.ui-marquee:hover .ui-marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes ui-marquee-scroll {
   from {
     transform: translateX(0);
   }
@@ -206,11 +213,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-logo-marquee__track {
-    animation: none;
-  }
-
-  .landing-logo-marquee {
+  .ui-marquee {
     overflow-x: auto;
     -webkit-mask-image: none;
     mask-image: none;
@@ -218,49 +221,13 @@ body {
     -ms-overflow-style: none;
   }
 
-  .landing-logo-marquee::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
-}
-
-/* Intake example-idea rows + loader artifact row (Intake Flow Option 1).
-   Duration is set per row via the --intake-marquee-duration custom property so
-   the three example rows can drift at different speeds. Reuses the shared
-   landing-logo-marquee-scroll keyframe (0 -> -50%) with a duplicated track. */
-.intake-marquee {
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(to right, transparent, black 120px, black calc(100% - 120px), transparent);
-  mask-image: linear-gradient(to right, transparent, black 120px, black calc(100% - 120px), transparent);
-}
-
-.intake-marquee__track {
-  display: flex;
-  width: max-content;
-  animation: landing-logo-marquee-scroll var(--intake-marquee-duration, 45s) linear infinite;
-}
-
-.intake-marquee:hover .intake-marquee__track {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .intake-marquee {
-    overflow-x: auto;
-    -webkit-mask-image: none;
-    mask-image: none;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .intake-marquee::-webkit-scrollbar {
+  .ui-marquee::-webkit-scrollbar {
     display: none;
     width: 0;
     height: 0;
   }
 
-  .intake-marquee__track {
+  .ui-marquee__track {
     animation: none;
   }
 }

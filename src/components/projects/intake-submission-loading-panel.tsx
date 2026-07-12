@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 
-import { IntakeMarquee } from "@/components/projects/intake-marquee"
+import { Marquee } from "@/components/ui/marquee"
 
 // Single post-submit loader (Intake Flow Option 1). One large message rotates at
 // a fixed cadence while a thin red line fills; the redirect to the workspace is
@@ -146,11 +146,11 @@ export function IntakeSubmissionLoadingPanel({
             status message above is the announced progress signal). The marquee
             clamps itself to the width of one card set and centers. */}
         <div aria-hidden="true">
-          <IntakeMarquee duration="45s">
+          <Marquee durationSeconds={45}>
             {LOADER_ARTIFACT_CARDS.map((card, index) => (
               <LoaderArtifactCard key={index} kind={card.kind} label={card.label} />
             ))}
-          </IntakeMarquee>
+          </Marquee>
         </div>
       </div>
     </div>
