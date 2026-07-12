@@ -36,6 +36,7 @@ const modeLabels: Record<
     subtitle: string
     submit: string
     loading: string
+    google: string
     alternateLine: string
     alternateAction: string
   }
@@ -45,6 +46,7 @@ const modeLabels: Record<
     subtitle: "Sign in to continue to Maker Compass.",
     submit: "Sign in",
     loading: "Signing in...",
+    google: "Sign in with Google",
     alternateLine: "Don't have an account?",
     alternateAction: "Create account",
   },
@@ -53,6 +55,7 @@ const modeLabels: Record<
     subtitle: "Join Maker Compass and start building.",
     submit: "Create account",
     loading: "Creating account...",
+    google: "Sign up with Google",
     alternateLine: "Already have an account?",
     alternateAction: "Sign in",
   },
@@ -212,7 +215,7 @@ export function AuthFormContent({
           className={uiStylePresets.authSocialButton}
         >
           <Image src="/google-logo.svg" alt="Google" width={16} height={16} className="h-4 w-4" />
-          Continue with Google
+          {copy.google}
         </button>
 
         <div className="mt-5 flex items-center gap-4 text-xs text-text-secondary">
