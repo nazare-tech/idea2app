@@ -1,0 +1,91 @@
+import type { IntakeAnswer, IntakeQuestion } from "@/lib/intake/types"
+
+/** In-progress answer for one intake question, before submission shaping. */
+export type AnswerDraft = {
+  selectedOptionIds: string[]
+  otherSelected: boolean
+  otherText: string
+  text: string
+}
+
+export type AnswerState = Record<string, AnswerDraft>
+
+export function emptyAnswer(): AnswerDraft {
+  return {
+    selectedOptionIds: [],
+    otherSelected: false,
+    otherText: "",
+    text: "",
+  }
+}
+
+export function toggleOption(
+  question: IntakeQuestion,
+  draft: AnswerDraft,
+  optionId: string
+): AnswerDraft {
+  if (question.selectionMode === "single") {
+    return {
+      ...draft,
+      selectedOptionIds: draft.selectedOptionIds.includes(optionId) ? [] : [optionId],
+      otherSelected: false,
+      otherText: "",
+    }
+  }
+
+  const selected = new Set(draft.selectedOptionIds)
+  if (selected.has(optionId)) {
+    selected.delete(optionId)
+  } else {
+    selected.add(optionId)
+  }
+
+  return {
+    ...draft,
+    selectedOptionIds: [...selected],
+  }
+}
+
+export function toggleOther(question: IntakeQuestion, draft: AnswerDraft): AnswerDraft {
+  if (question.selectionMode === "single") {
+    return {
+      ...draft,
+      selectedOptionIds: [],
+      otherSelected: !draft.otherSelected,
+      otherText: draft.otherSelected ? "" : draft.otherText,
+    }
+  }
+
+  return {
+    ...draft,
+    otherSelected: !draft.otherSelected,
+    otherText: draft.otherSelected ? "" : draft.otherText,
+  }
+}
+
+export function shouldShowOtherInput(question: IntakeQuestion, answer: AnswerDraft) {
+  if (!question.allowOther) return false
+  if (question.selectionMode !== "single") return false
+  return answer.otherSelected
+}
+
+export function hasAnswer(question: IntakeQuestion, answer: AnswerDraft | undefined) {
+  if (!answer) return false
+  if (question.selectionMode === "text") return answer.text.trim().length > 0
+  return answer.selectedOptionIds.length > 0 || answer.otherText.trim().length > 0
+}
+
+export function buildAnswers(questions: IntakeQuestion[], answers: AnswerState): IntakeAnswer[] {
+  return questions.map((question) => {
+    const answer = answers[question.id] ?? emptyAnswer()
+    return {
+      questionId: question.id,
+      ...(question.selectionMode === "text"
+        ? { text: answer.text.trim() }
+        : {
+            ...(answer.selectedOptionIds.length > 0 ? { selectedOptionIds: answer.selectedOptionIds } : {}),
+            ...(answer.otherSelected && answer.otherText.trim() ? { otherText: answer.otherText.trim() } : {}),
+          }),
+    }
+  })
+}

@@ -2,52 +2,44 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Loader2 } from "lucide-react"
 
+import { IntakeIdeaStep } from "@/components/projects/intake-idea-step"
+import { IntakeQuestionStep } from "@/components/projects/intake-question-step"
 import { IntakeSubmissionLoadingPanel } from "@/components/projects/intake-submission-loading-panel"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Spinner } from "@/components/ui/spinner"
-import { Textarea } from "@/components/ui/textarea"
-import { IntakeMarquee } from "@/components/projects/intake-marquee"
-import { INTAKE_EXAMPLE_IDEAS, type IntakeExampleIdea } from "@/lib/intake/examples"
+import {
+  buildAnswers,
+  emptyAnswer,
+  hasAnswer,
+  type AnswerDraft,
+  type AnswerState,
+} from "@/lib/intake/answers"
 import { validateIdeaInput } from "@/lib/intake/idea-validation"
-import { shouldSubmitOnEnter } from "@/lib/intake/keyboard-submit"
-import type { IntakeAnswer, IntakeQuestion, IntakeQuestionSet } from "@/lib/intake/types"
-import { cn } from "@/lib/utils"
+import { waitForFirstStreamedToken } from "@/lib/intake/wait-for-first-token"
+import type { IntakeQuestionSet } from "@/lib/intake/types"
 
 const SESSION_IDEA_KEY = "makercompass:intake:draft"
 const MIN_INTAKE_QUESTIONS = 4
 const MAX_INTAKE_QUESTIONS = 7
-const WIZARD_TOTAL_STEPS = 2
 
-// Skeleton placeholders shown while questions generate (Step 2 reveal).
-const SKELETON_TITLE_WIDTHS = ["58%", "44%", "66%", "50%"]
-const QUESTION_REVEAL_STAGGER_MS = 90
-
-type WizardStep = "idea" | "questions"
-
-type AnswerDraft = {
-  selectedOptionIds: string[]
-  otherSelected: boolean
-  otherText: string
-  text: string
-}
-
-type AnswerState = Record<string, AnswerDraft>
+/**
+ * The wizard's single mode. Every screen decision derives from this union
+ * (plus `error`, which can accompany "idea" and "questions-failed"):
+ * - idea: step 1, editing the idea brief
+ * - generating-questions: step 2 with skeleton cards, request in flight
+ * - questions: step 2 with the generated question set
+ * - questions-failed: step 2 with nothing to answer and a Retry action
+ * - creating: submission loading panel until the workspace has live content
+ */
+type WizardPhase =
+  | "idea"
+  | "generating-questions"
+  | "questions"
+  | "questions-failed"
+  | "creating"
 
 interface IdeaIntakeWizardProps {
   pendingToken?: string | null
   autoStartQuestions?: boolean
-}
-
-function emptyAnswer(): AnswerDraft {
-  return {
-    selectedOptionIds: [],
-    otherSelected: false,
-    otherText: "",
-    text: "",
-  }
 }
 
 function normalizeIdea(value: string) {
@@ -57,16 +49,21 @@ function normalizeIdea(value: string) {
 export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: IdeaIntakeWizardProps) {
   const router = useRouter()
   const autoStartAttemptedRef = useRef(false)
-  const questionsRequestLockRef = useRef(false)
-  const [step, setStep] = useState<WizardStep>("idea")
+  const [phase, setPhase] = useState<WizardPhase>("idea")
+  // Guards async actions against stale-closure double fires (double click,
+  // Enter + click in one tick). Mirrors `phase`; transition() keeps them in sync.
+  const phaseRef = useRef<WizardPhase>("idea")
   const [idea, setIdea] = useState("")
   const [lastGeneratedIdea, setLastGeneratedIdea] = useState("")
   const [questionSet, setQuestionSet] = useState<IntakeQuestionSet | null>(null)
   const [answers, setAnswers] = useState<AnswerState>({})
   const [isLoadingPending, setIsLoadingPending] = useState(Boolean(pendingToken))
-  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false)
-  const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const transition = useCallback((next: WizardPhase) => {
+    phaseRef.current = next
+    setPhase(next)
+  }, [])
 
   const normalizedIdea = useMemo(() => normalizeIdea(idea), [idea])
   const ideaValidation = useMemo(() => validateIdeaInput(idea), [idea])
@@ -77,9 +74,9 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
       ? ideaValidation.message
       : null
   const questions = questionSet?.questions ?? []
-  const allQuestionsAnswered = questions.length > 0 && questions.every((question) => hasAnswer(question, answers[question.id]))
-  const isIdeaStepLocked = isLoadingPending || isGeneratingQuestions
-  const isIdeaSubmitDisabled = !canContinue || isIdeaStepLocked
+  const allQuestionsAnswered =
+    questions.length > 0 && questions.every((question) => hasAnswer(question, answers[question.id]))
+  const isIdeaStepLocked = isLoadingPending || phase === "generating-questions"
 
   useEffect(() => {
     let cancelled = false
@@ -140,22 +137,20 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
   }
 
   const generateQuestions = useCallback(async () => {
-    if (!canContinue || questionsRequestLockRef.current) return
+    if (!canContinue || phaseRef.current === "generating-questions") return
     setError(null)
 
     // Same idea, questions already generated: just reveal them.
     if (questionSet && normalizedIdea === lastGeneratedIdea) {
-      setStep("questions")
+      transition("questions")
       return
     }
 
     // Reveal Step 2 immediately with skeleton question cards, then generate,
     // so the wait reads as "writing your questions" instead of a stalled button.
-    questionsRequestLockRef.current = true
     setQuestionSet(null)
     setAnswers({})
-    setStep("questions")
-    setIsGeneratingQuestions(true)
+    transition("generating-questions")
     try {
       const response = await fetch("/api/intake/questions", {
         method: "POST",
@@ -180,22 +175,15 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
       setQuestionSet(data.questionSet)
       setAnswers({})
       setLastGeneratedIdea(normalizedIdea)
+      transition("questions")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate questions")
-    } finally {
-      questionsRequestLockRef.current = false
-      setIsGeneratingQuestions(false)
+      transition("questions-failed")
     }
-  }, [canContinue, lastGeneratedIdea, normalizedIdea, questionSet])
+  }, [canContinue, lastGeneratedIdea, normalizedIdea, questionSet, transition])
 
   useEffect(() => {
-    if (
-      !autoStartQuestions ||
-      autoStartAttemptedRef.current ||
-      isLoadingPending ||
-      isCreatingProject ||
-      isGeneratingQuestions
-    ) {
+    if (!autoStartQuestions || autoStartAttemptedRef.current || isLoadingPending || phase !== "idea") {
       return
     }
 
@@ -211,15 +199,7 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
     }
 
     void generateQuestions()
-  }, [
-    autoStartQuestions,
-    canContinue,
-    generateQuestions,
-    idea,
-    isCreatingProject,
-    isGeneratingQuestions,
-    isLoadingPending,
-  ])
+  }, [autoStartQuestions, canContinue, generateQuestions, idea, isLoadingPending, phase])
 
   const setAnswer = (questionId: string, updater: (draft: AnswerDraft) => AnswerDraft) => {
     setAnswers((prev) => ({
@@ -228,55 +208,10 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
     }))
   }
 
-  // Keep the submission loading panel up until the first Market Research
-  // token has streamed, so the workspace opens with live content instead of
-  // an empty generating state. Escape hatches so the user is never stranded:
-  // the queue ends without streaming (error/cancelled/completed), the
-  // competitive item settles without partial content, or the deadline passes.
-  const FIRST_TOKEN_POLL_INTERVAL_MS = 1200
-  const FIRST_TOKEN_WAIT_LIMIT_MS = 60_000
-
-  const waitForFirstStreamedToken = async (projectId: string) => {
-    const deadline = Date.now() + FIRST_TOKEN_WAIT_LIMIT_MS
-
-    while (Date.now() < deadline) {
-      try {
-        const response = await fetch(
-          `/api/generate-all/status?projectId=${encodeURIComponent(projectId)}`
-        )
-        const data = await response.json().catch(() => null)
-
-        if (response.ok && data) {
-          const streamed = data.streamingPreview?.content
-          if (typeof streamed === "string" && streamed.length > 0) return
-
-          const queueStatus = data.queue?.status
-          if (queueStatus && !["queued", "pending", "running"].includes(queueStatus)) return
-
-          const competitiveItem = Array.isArray(data.queue?.queue)
-            ? data.queue.queue.find(
-                (item: { docType?: string; status?: string }) => item?.docType === "competitive"
-              )
-            : null
-          if (
-            competitiveItem?.status &&
-            !["pending", "generating"].includes(competitiveItem.status)
-          ) {
-            return
-          }
-        }
-      } catch {
-        // Transient network error: keep polling until the deadline.
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, FIRST_TOKEN_POLL_INTERVAL_MS))
-    }
-  }
-
   const createProject = async () => {
-    if (!questionSet || !allQuestionsAnswered || isCreatingProject) return
+    if (!questionSet || !allQuestionsAnswered || phaseRef.current === "creating") return
     setError(null)
-    setIsCreatingProject(true)
+    transition("creating")
 
     try {
       const response = await fetch("/api/projects/create-from-intake", {
@@ -323,453 +258,41 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create project")
-      setIsCreatingProject(false)
+      transition("questions")
     }
   }
 
-  if (isCreatingProject) {
+  if (phase === "creating") {
     return <IntakeSubmissionLoadingPanel />
   }
 
-  if (step === "idea") {
+  if (phase === "idea") {
     return (
-      <div
-        data-testid="idea-intake-wizard"
-        className="flex min-h-[calc(100vh-112px)] flex-col bg-background pt-6 pb-24 text-text-primary"
-      >
-        <div className="px-4 sm:px-8 lg:px-14">
-          <section className="mx-auto w-full max-w-[760px]">
-            <div className="rounded-lg border border-border-subtle bg-card p-5 sm:p-8 lg:p-10">
-              <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-                Step 1 of {WIZARD_TOTAL_STEPS}
-              </p>
-              <h2 className="mt-2 font-[family:var(--font-display)] text-[2.25rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
-                Idea Brief
-              </h2>
-              <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
-                Describe your business idea in a few sentences
-              </p>
-
-              <div className="mt-6">
-                <label htmlFor="idea-brief" className="sr-only">
-                  What are you building?
-                </label>
-                <Textarea
-                  id="idea-brief"
-                  data-testid="intake-idea-textarea"
-                  value={idea}
-                  onChange={(event) => updateIdea(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (
-                      !shouldSubmitOnEnter(
-                        {
-                          key: event.key,
-                          shiftKey: event.shiftKey,
-                          repeat: event.repeat,
-                          isComposing: event.nativeEvent.isComposing,
-                        },
-                        isIdeaSubmitDisabled
-                      )
-                    ) {
-                      return
-                    }
-
-                    event.preventDefault()
-                    void generateQuestions()
-                  }}
-                  enterKeyHint="go"
-                  placeholder="Example: A product intelligence tool that turns support tickets, sales calls, and customer chats into roadmap priorities..."
-                  className="min-h-[190px] border-border-strong bg-white text-[15px] leading-relaxed"
-                  disabled={isIdeaStepLocked}
-                />
-                {ideaHint && !isIdeaStepLocked && (
-                  <p className="mt-2 text-[13px] leading-snug text-text-secondary" data-testid="intake-idea-hint">
-                    {ideaHint}
-                  </p>
-                )}
-              </div>
-
-              {isLoadingPending && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-text-secondary">
-                  <Spinner size="sm" />
-                  Loading your saved idea...
-                </div>
-              )}
-            </div>
-
-            <WizardError error={error} />
-
-            <div className="mt-5 flex justify-stretch sm:justify-end">
-              <Button
-                type="button"
-                onClick={generateQuestions}
-                disabled={isIdeaSubmitDisabled}
-                className="h-11 w-full rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10 sm:w-auto"
-                data-testid="intake-continue"
-              >
-                Next
-              </Button>
-            </div>
-          </section>
-        </div>
-
-        {/* Scrolling example ideas: three drifting rows, hidden while the idea
-            step is locked (e.g. restoring a saved idea). */}
-        <div
-          className={cn(
-            "mt-14 w-full transition-opacity duration-200",
-            isIdeaStepLocked && "pointer-events-none opacity-0"
-          )}
-          aria-hidden={isIdeaStepLocked}
-        >
-          <p className="mb-5 text-center font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-            Start from any idea
-          </p>
-          <div className="flex flex-col gap-3">
-            <ExampleIdeaRow
-              ideas={INTAKE_EXAMPLE_IDEAS.slice(0, 4)}
-              duration="50s"
-              disabled={isIdeaStepLocked}
-              onPick={updateIdea}
-            />
-            <ExampleIdeaRow
-              ideas={INTAKE_EXAMPLE_IDEAS.slice(4, 8)}
-              duration="60s"
-              disabled={isIdeaStepLocked}
-              onPick={updateIdea}
-            />
-            <ExampleIdeaRow
-              ideas={INTAKE_EXAMPLE_IDEAS.slice(8, 12)}
-              duration="43s"
-              disabled={isIdeaStepLocked}
-              onPick={updateIdea}
-            />
-          </div>
-        </div>
-      </div>
+      <IntakeIdeaStep
+        idea={idea}
+        onIdeaChange={updateIdea}
+        onSubmit={() => void generateQuestions()}
+        hint={ideaHint}
+        error={error}
+        locked={isIdeaStepLocked}
+        submitDisabled={!canContinue || isIdeaStepLocked}
+        isLoadingPending={isLoadingPending}
+      />
     )
   }
 
-  const showSkeletons = isGeneratingQuestions || (questions.length === 0 && !error)
-  const showRetry = !isGeneratingQuestions && questions.length === 0 && Boolean(error)
-
   return (
-    <div
-      data-testid="idea-intake-wizard"
-      className="min-h-full bg-background px-4 py-6 text-text-primary sm:px-8 lg:px-14"
-    >
-      <section className="mx-auto w-full max-w-[760px]">
-        <div className="rounded-lg border border-border-subtle bg-card p-5 sm:p-8 lg:p-10">
-          <div className="mb-6">
-            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-text-muted">
-              Step 2 of {WIZARD_TOTAL_STEPS}
-            </p>
-            <h2 className="mt-2 font-[family:var(--font-display)] text-[2.2rem] font-semibold leading-[0.98] tracking-[-0.04em] text-text-primary sm:text-5xl">
-              Tell us a bit more
-            </h2>
-            <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-text-secondary">
-              {isGeneratingQuestions
-                ? "Reading your idea and writing questions worth answering..."
-                : "These questions will help build a better plan for your business"}
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {showSkeletons
-              ? SKELETON_TITLE_WIDTHS.map((width, index) => (
-                  <SkeletonQuestionCard key={`skeleton-${index}`} titleWidth={width} />
-                ))
-              : questions.map((question, index) => (
-                  <div
-                    key={question.id}
-                    className="animate-fade-up"
-                    style={{ animationDelay: `${index * QUESTION_REVEAL_STAGGER_MS}ms` }}
-                  >
-                    <QuestionCard
-                      question={question}
-                      answer={answers[question.id] ?? emptyAnswer()}
-                      onAnswerChange={(updater) => setAnswer(question.id, updater)}
-                    />
-                  </div>
-                ))}
-          </div>
-
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setStep("idea")}
-              disabled={isCreatingProject}
-              className="h-11 rounded-md border-text-primary bg-transparent px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-text-primary hover:bg-background sm:h-10"
-              data-testid="intake-back"
-            >
-              Back
-            </Button>
-            {showRetry ? (
-              <Button
-                type="button"
-                onClick={generateQuestions}
-                className="h-11 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10"
-                data-testid="intake-retry-questions"
-              >
-                Retry
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                onClick={createProject}
-                disabled={!allQuestionsAnswered || isCreatingProject}
-                className="h-11 rounded-md bg-text-primary px-[18px] font-[family:var(--font-display)] text-[13px] font-medium text-white hover:bg-text-primary/90 sm:h-10"
-                data-testid="intake-create-project"
-              >
-                {isCreatingProject ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Creating project
-                  </>
-                ) : (
-                  "Create project"
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <WizardError error={error} />
-      </section>
-    </div>
-  )
-}
-
-function QuestionCard({
-  question,
-  answer,
-  onAnswerChange,
-}: {
-  question: IntakeQuestion
-  answer: AnswerDraft
-  onAnswerChange: (updater: (draft: AnswerDraft) => AnswerDraft) => void
-}) {
-  return (
-    <article className="rounded-lg border border-border-subtle bg-white p-[18px]">
-      <div className="min-w-0">
-        <div className="flex items-baseline justify-between gap-4">
-          <h3 className="font-[family:var(--font-display)] text-xl font-bold leading-snug tracking-[-0.015em] text-[#0D1320]">
-            {question.question}
-          </h3>
-          {question.selectionMode !== "text" && (
-            <span className="shrink-0 font-mono text-[10px] font-medium uppercase tracking-[0.18em] whitespace-nowrap text-text-muted">
-              {question.selectionMode === "multiple" ? "Pick a few" : "Pick one"}
-            </span>
-          )}
-        </div>
-        {question.helperText && (
-          <p className="mt-1 text-xs leading-relaxed text-text-secondary">{question.helperText}</p>
-        )}
-
-        {question.selectionMode === "text" ? (
-          <Textarea
-            value={answer.text}
-            onChange={(event) =>
-              onAnswerChange((draft) => ({ ...draft, text: event.target.value }))
-            }
-            placeholder="Write a short answer..."
-            className="mt-4 min-h-[104px] border-border-strong bg-white"
-          />
-        ) : (
-          <>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {question.options.map((option) => {
-                const selected = answer.selectedOptionIds.includes(option.id)
-                const isMulti = question.selectionMode === "multiple"
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role={isMulti ? "checkbox" : undefined}
-                    aria-checked={isMulti ? selected : undefined}
-                    aria-pressed={isMulti ? undefined : selected}
-                    onClick={() =>
-                      onAnswerChange((draft) => toggleOption(question, draft, option.id))
-                    }
-                    className={cn(
-                      "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0 sm:py-1.5",
-                      // Multi-select keeps a white chip with a leading checkbox; only
-                      // single-select inverts to a solid fill when chosen.
-                      isMulti
-                        ? cn(
-                            "bg-white text-text-primary",
-                            selected ? "border-text-primary" : "border-border-subtle hover:border-text-primary"
-                          )
-                        : selected
-                          ? "border-text-primary bg-text-primary text-white"
-                          : "border-border-subtle bg-white text-text-primary hover:border-text-primary"
-                    )}
-                  >
-                    {isMulti && (
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "mr-[7px] inline-flex size-[13px] shrink-0 items-center justify-center rounded-[3px] border-[1.5px] transition-colors",
-                          selected ? "border-text-primary bg-text-primary" : "border-[#CCC2B8] bg-white"
-                        )}
-                      >
-                        {selected && <Check className="size-[9px] text-white" strokeWidth={4} />}
-                      </span>
-                    )}
-                    <span>{option.label}</span>
-                  </button>
-                )
-              })}
-              {question.allowOther && question.selectionMode === "single" && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    onAnswerChange((draft) => toggleOther(question, draft))
-                  }
-                  className={cn(
-                    "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0 sm:py-1.5",
-                    answer.otherSelected
-                      ? "border-text-primary bg-text-primary text-white"
-                      : "border-border-subtle bg-white text-text-primary hover:border-text-primary"
-                  )}
-                >
-                  Other
-                </button>
-              )}
-            </div>
-            {question.allowOther && shouldShowOtherInput(question, answer) && (
-              <Input
-                value={answer.otherText}
-                onChange={(event) =>
-                  onAnswerChange((draft) => ({ ...draft, otherText: event.target.value }))
-                }
-                placeholder="Type another answer..."
-                className="mt-3 border-border-strong bg-white"
-              />
-            )}
-          </>
-        )}
-      </div>
-    </article>
-  )
-}
-
-function toggleOption(question: IntakeQuestion, draft: AnswerDraft, optionId: string): AnswerDraft {
-  if (question.selectionMode === "single") {
-    return {
-      ...draft,
-      selectedOptionIds: draft.selectedOptionIds.includes(optionId) ? [] : [optionId],
-      otherSelected: false,
-      otherText: "",
-    }
-  }
-
-  const selected = new Set(draft.selectedOptionIds)
-  if (selected.has(optionId)) {
-    selected.delete(optionId)
-  } else {
-    selected.add(optionId)
-  }
-
-  return {
-    ...draft,
-    selectedOptionIds: [...selected],
-  }
-}
-
-function toggleOther(question: IntakeQuestion, draft: AnswerDraft): AnswerDraft {
-  if (question.selectionMode === "single") {
-    return {
-      ...draft,
-      selectedOptionIds: [],
-      otherSelected: !draft.otherSelected,
-      otherText: draft.otherSelected ? "" : draft.otherText,
-    }
-  }
-
-  return {
-    ...draft,
-    otherSelected: !draft.otherSelected,
-    otherText: draft.otherSelected ? "" : draft.otherText,
-  }
-}
-
-function shouldShowOtherInput(question: IntakeQuestion, answer: AnswerDraft) {
-  if (!question.allowOther) return false
-  if (question.selectionMode !== "single") return false
-  return answer.otherSelected
-}
-
-function hasAnswer(question: IntakeQuestion, answer: AnswerDraft | undefined) {
-  if (!answer) return false
-  if (question.selectionMode === "text") return answer.text.trim().length > 0
-  return answer.selectedOptionIds.length > 0 || answer.otherText.trim().length > 0
-}
-
-function buildAnswers(questions: IntakeQuestion[], answers: AnswerState): IntakeAnswer[] {
-  return questions.map((question) => {
-    const answer = answers[question.id] ?? emptyAnswer()
-    return {
-      questionId: question.id,
-      ...(question.selectionMode === "text"
-        ? { text: answer.text.trim() }
-        : {
-            ...(answer.selectedOptionIds.length > 0 ? { selectedOptionIds: answer.selectedOptionIds } : {}),
-            ...(answer.otherSelected && answer.otherText.trim() ? { otherText: answer.otherText.trim() } : {}),
-          }),
-    }
-  })
-}
-
-function ExampleIdeaRow({
-  ideas,
-  duration,
-  disabled,
-  onPick,
-}: {
-  ideas: IntakeExampleIdea[]
-  duration: string
-  disabled: boolean
-  onPick: (description: string) => void
-}) {
-  return (
-    <IntakeMarquee duration={duration}>
-      {ideas.map((idea) => (
-        <button
-          key={idea.id}
-          type="button"
-          disabled={disabled}
-          onClick={() => onPick(idea.description)}
-          className="mr-3 inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-border-subtle bg-white px-[18px] py-[9px] text-[13px] font-medium text-text-primary transition-colors hover:border-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed"
-        >
-          {idea.title}
-        </button>
-      ))}
-    </IntakeMarquee>
-  )
-}
-
-function SkeletonQuestionCard({ titleWidth }: { titleWidth: string }) {
-  return (
-    <article className="rounded-lg border border-border-subtle bg-white p-[18px]" aria-hidden="true">
-      <div className="intake-skeleton h-4 rounded" style={{ width: titleWidth }} />
-      <div className="intake-skeleton mt-2.5 h-2.5 w-[34%] rounded" />
-      <div className="mt-4 flex flex-wrap gap-2">
-        {["112px", "88px", "136px", "96px"].map((width, index) => (
-          <div key={index} className="intake-skeleton h-[30px] rounded-md" style={{ width }} />
-        ))}
-      </div>
-    </article>
-  )
-}
-
-function WizardError({ error }: { error: string | null }) {
-  if (!error) return null
-
-  return (
-    <p className="mt-4 rounded-md border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-      {error}
-    </p>
+    <IntakeQuestionStep
+      generating={phase === "generating-questions"}
+      failed={phase === "questions-failed"}
+      questions={questions}
+      answers={answers}
+      error={error}
+      createDisabled={!allQuestionsAnswered}
+      onAnswerChange={setAnswer}
+      onBack={() => transition("idea")}
+      onRetry={() => void generateQuestions()}
+      onCreate={() => void createProject()}
+    />
   )
 }
