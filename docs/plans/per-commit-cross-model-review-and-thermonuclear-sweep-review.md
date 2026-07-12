@@ -85,6 +85,11 @@ Rejected with reasons:
 - Rejected, AI-smells (`fc3b9d6`, thermo-nuclear skill fixes findings before presenting them): deliberate design. The sweep skill's contract (commit-sweep, AGENTS.md automation section) is fix-then-report inside the pre-authorized sweep; remediation is not an unrequested side effect.
 - Not accepted as stated, security (`53611ac` generic assignment "excludes hyphens"): the `[A-Za-z0-9_=-]` value class already includes `-`; only the missing `sk-or-` prefix was real and is fixed.
 
+## Per-Commit Review Round 2 (2026-07-12)
+
+- Accepted narrowed, performance (`ac28d06c`, 2 s poll called "non-enforcing"): tightened the size poll to 500 ms and made truncation a bounded `cap`-byte read so oversized artifacts can never be loaded whole. Rejected the suggested full stream-boundary rewrite: piping reviewer stdout through a capper would surrender the process-group handle the watchdog kills, and a 500 ms window bounds worst-case growth to well under memory-relevant sizes while keeping kill semantics intact.
+- Accepted, data integrity (`ca962657`): save verification now requires reading the exact note back and confirming the verbatim source idea; folder listing explicitly disqualified.
+
 ## Remediation Checklist
 
 - [x] Route every code/workflow commit to the opposite CLI.
