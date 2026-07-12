@@ -22,7 +22,7 @@ This file is a router: core rules and pointers only. Written addressing Codex; e
 |---|---|
 | Substantial feature / refactor / bug fix / architecture | `docs/operating-system/planning-workflow.md` (plan files in `docs/plans/`, Recommendation A policy, `/holistic-implementation`) |
 | Any UI, visual, user-flow, or user-visible backend change | `docs/operating-system/ui-verification.md` (real Chrome, `.env.e2e.local` auth, `ui-evidence/<date>/<task-slug>/`, Idea 1.1 intake test cases) |
-| Wrap-up review of substantial work | `docs/operating-system/review-personas.md` + `scripts/agent-review.sh` (cross-model: Claude work → codex gpt-5.6-terra medium; Codex work → claude Opus 4.8 high thinking) |
+| Committing or wrap-up review | `.agents/skills/commit/SKILL.md` + `docs/operating-system/review-personas.md` (every code commit: Claude work → Codex; Codex work → Claude) |
 | Backend / database / Supabase / auth / webhook / data-shape change | `docs/operating-system/planning-workflow.md` § backend change history → `docs/plans/backend-change-history.md` |
 | Writing or updating tests | `docs/testing/test-inventory.md` and `docs/testing/e2e-guide.md` |
 | New user-visible feature, flow, entitlement, or lifecycle transition | `docs/operating-system/product-analytics-event-taxonomy.md`; typed registry `src/lib/product-analytics/contracts.ts` (no autocapture, content, PII, URLs, DOM data, or raw error strings in events) |
@@ -34,10 +34,11 @@ This file is a router: core rules and pointers only. Written addressing Codex; e
 
 ## Automation already active
 
-- **Git hooks** (`.githooks/`, activated by `npm install` via the `prepare` script): pre-commit runs `eslint --fix` on staged files + typecheck; post-commit prints a sweep notice at net +1000 added code lines. Hooks never spend money.
-- **Cross-model review** is required at wrap-up of substantial work; invoke via `scripts/agent-review.sh` (never from hooks — it costs tokens).
+- **Git hooks** (`.githooks/`, activated by `npm install` via `prepare`): pre-commit runs `eslint --fix` + typecheck; post-commit synchronously spends reviewer-CLI tokens on every code commit, persists status under `.git/agent-reviews/`, then prints the +1000 sweep notice.
+- **Cross-model review**: every code/workflow commit gets the six-persona opposite-CLI review. Verify/remediate findings before push; if reviewer quota/network/auth fails, continue but name every unreviewed SHA and never claim full review coverage.
+- **Thermonuclear sweep**: after a commit batch and its review fixes, the active agent automatically runs the same-model `commit-sweep` when net code growth is ≥1000 lines; no duplicate cross-model range review.
 - Branch discipline: keep working on the current branch unless explicitly asked otherwise.
 
 ## Skills
 
-Skills live in `.agents/skills/` (Codex) with symlinks in `.claude/skills/` (Claude Code); each self-describes in its `SKILL.md`. Invoke with `/skill-name` or by describing the need. Repo-critical: `/holistic-implementation` (default for substantial work), `commit-sweep`, `marketing-idea-capture`.
+Skills live in `.agents/skills/` (Codex) with symlinks in `.claude/skills/` (Claude Code); each self-describes in its `SKILL.md`. Invoke with `/skill-name` or by describing the need. Repo-critical: `/holistic-implementation` (default for substantial work), `commit`, `commit-sweep`, `thermo-nuclear-code-quality-review`, `marketing-idea-capture`.

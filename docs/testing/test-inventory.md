@@ -1,6 +1,6 @@
 # Test Inventory
 Unit tests run with `npm test`: the Node built-in test runner via tsx (`node --import tsx --test 'src/**/*.test.ts' 'src/**/*.test.tsx'`), no Jest/Vitest.
-86 test files sit colocated beside their source under `src/`; component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
+87 test files sit colocated beside their source under `src/`; component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
 Heaviest coverage: intake question generation/validation, market research provider fallbacks (Exa/Perplexity/Tavily), streaming parsers, prompt contracts.
 Also covered: planning document renderers/requests, mockup image pipeline and drafts, Stripe checkout/webhooks/credits, product analytics, workspace UI policy.
 UNCOVERED: 32 of 34 API route handlers (only two deprecated 410 routes have tests), auth flows, Supabase clients/middleware, and dashboard/landing pages.
@@ -99,6 +99,7 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 - `src/lib/logger.test.ts` — structured JSON logging: context sanitization/truncation, error normalization, secret and provider-body redaction, request id propagation
 - `src/lib/openrouter-timeout.test.ts` — OpenRouter timeout envelopes vs route limits, abort/timeout error detection, and user-facing timeout message formatting
 - `src/lib/parse-document-stream.test.ts` — parseDocumentStream warns on malformed NDJSON in development and stays quiet in other environments
+- `src/lib/post-commit-review.test.ts` — post-commit cross-model review runner: exact-SHA routing, code-path filtering, durable pass/findings/failure/skip status, and reviewer outage classification using temporary repositories and fake reviewer scripts
 - `src/lib/rate-limit.test.ts` — checkRateLimit in-memory fallback limiting and Redis REST usage when env vars are configured
 - `src/lib/read-request-body.test.ts` — readRequestTextWithLimit byte caps: rejects streamed overflow and oversized declared content-length before reading
 - `src/lib/safe-redirect.test.ts` — sanitizeInternalRedirect/getSafeAuthRedirect: path allowlist, dot-segment normalization, rejection of absolute URLs, backslashes, control chars

@@ -1,17 +1,19 @@
 # Review Personas and Cross-Model Review
 Defines the six review personas (maintainability, security, performance, AI-smells, product/founder UX, data & billing integrity), what each hunts for, and the system docs each owns.
 Cross-model review routing: work implemented by Claude is reviewed by Codex CLI (gpt-5.6-terra, reasoning medium); work implemented by Codex is reviewed by Claude CLI (Opus 4.8, high thinking).
-The single entry point is scripts/agent-review.sh, which auto-detects the implementer, builds the persona-aware prompt, and shells out to the other CLI read-only.
-Reviews happen at wrap-up of substantial work (see planning-workflow.md) and during commit sweeps (.agents/skills/commit-sweep); findings land in the review artifact in docs/plans/.
+Every code commit triggers scripts/post-commit-review.sh, which persists pass/findings/failure status under .git/agent-reviews/ and invokes scripts/agent-review.sh with a bounded diff and no model tools.
+At wrap-up, agents verify and remediate all per-commit findings; net +1000 sweeps stay in the current agent and apply thermo-nuclear-code-quality-review.
 Each persona owns docs/systems/ files and must flag stale docs as findings; doc drift is a review defect, not a nice-to-have (see doc-conventions.md self-healing rule).
 Reviewer output contract: severity-tagged findings with file:line, a concrete failure scenario, and a suggested fix; no praise, no restating the diff.
 ---
 
 ## When cross-model review runs
 
-1. **Wrap-up of substantial work**: after implementation and self-review, before marking a plan implemented. Feed the working-tree diff or commit range.
-2. **Commit sweeps**: the `commit-sweep` skill (triggered at net +1000 added lines, `scripts/sweep-check.mjs`) runs a persona sweep across the whole range.
+1. **Every code commit**: synchronous `post-commit` review of the immutable `<sha>^..<sha>` range; docs-only commits skip paid review.
+2. **Wrap-up of substantial work**: collect every commit status, verify/deduplicate findings against final `HEAD`, remediate accepted findings, and review remediation commits too. Run a manual working-tree review only when uncommitted code remains.
 3. **On request**: "get a second opinion on this diff."
+
+The net-plus-1,000-line `commit-sweep` is intentionally not another cross-model range review. The active agent applies the repo-local thermonuclear skill after the per-commit review/remediation batch.
 
 The reviewing model must not be the implementing model.
 
@@ -25,14 +27,14 @@ The reviewing model must not be the implementing model.
 Always invoke through the wrapper so incantations stay in one place:
 
 ```bash
-scripts/agent-review.sh                        # auto-detect implementer, review working tree + last commit
+scripts/agent-review.sh                        # auto-detect known Codex/Claude runtime; error if unknown
 scripts/agent-review.sh --range abc123..HEAD   # review a commit range
 scripts/agent-review.sh --implementer codex    # force routing (reviewer = claude)
 scripts/agent-review.sh --personas security,performance
 scripts/agent-review.sh --dry-run              # print the exact reviewer command without spending tokens
 ```
 
-The reviewer runs read-only (`codex exec --sandbox read-only` / `claude -p` restricted to read tools). Reviews cost CLI tokens; they are never triggered automatically by git hooks, only by an agent or the user.
+The wrapper builds a bounded diff/full-changed-file/system-doc bundle inside a temporary depth-two fetch of the immutable SHA and parent; no remote is stored. It rejects secret-like input, embeds the authoritative persona contract, then launches each CLI from a fresh empty non-repo directory with filesystem/shell/browser/app tools and project customizations disabled. Ignored/untracked files, dirty future chunks, unrelated history, repo instructions, and host environment data are unavailable to the model. Results live at `.git/agent-reviews/<sha>.{json,txt,stderr}` with private file modes and a 1 MB per-artifact cap. Quota, rate-limit, network, auth, timeout, snapshot, input/output-size, sensitive-input, or reviewer failure marks that SHA unreviewed; never substitute silently or report a pass.
 
 ## Personas
 

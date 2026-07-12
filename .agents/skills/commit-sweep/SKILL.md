@@ -1,11 +1,11 @@
 ---
 name: commit-sweep
-description: Cross-commit code sweep triggered when net +1000 lines of code have landed since the last sweep. Reviews the whole commit range with persona lenses and a cross-model reviewer, writes a report to docs/reviews/, and advances the sweep marker. Trigger phrases - "run a commit sweep", "sweep recent commits", "/commit-sweep", or the post-commit SWEEP DUE notice.
+description: This skill should be used when net +1000 lines of code have landed since the last sweep, when the commit workflow detects a due sweep, or when the user asks to sweep recent commits. It runs a same-agent thermonuclear cross-commit audit, remediates findings, writes a report, and advances the sweep marker.
 ---
 
 # Commit Sweep
 
-A periodic higher-altitude review across many commits, looking for problems no single-commit review can see: duplication introduced in separate commits, contract drift between prompt/parser/renderer, doc rot, dead code accumulation, and creeping architecture violations.
+A periodic higher-altitude review across many commits. Every code commit already received an opposite-CLI persona review; this sweep stays in the current agent and applies thermonuclear standards to problems no isolated commit review can see: structural complexity growth, duplication across commits, contract drift, doc rot, dead code, weak tests, and creeping architecture violations.
 
 ## Trigger
 
@@ -17,19 +17,22 @@ A periodic higher-altitude review across many commits, looking for problems no s
 
 1. **Scope.** `node scripts/sweep-check.mjs --json` → note `marker`, `commits`, `net`. The range under review is `<marker>..HEAD`.
 2. **Survey the range.** `git log --stat <marker>..HEAD` and read the plan/review artifacts in `docs/plans/` created during the range. Build a short list of themes (which systems changed most).
-3. **Cross-cutting self-review.** Inspect the range with these lenses (details in `docs/operating-system/review-personas.md`):
+3. **Thermonuclear cross-cutting review.** Load and apply `.agents/skills/thermo-nuclear-code-quality-review/SKILL.md` to the range, plus these lenses (details in `docs/operating-system/review-personas.md`):
+   - structural simplification/code-judo opportunities, spaghetti growth, unjustified files crossing 1,000 lines, weak abstractions, casts, and boundary leaks
    - duplication introduced across different commits (helpers that should merge)
    - contract drift: prompts vs parsers vs renderers vs docs
    - dead or orphaned code left by refactors in the range
    - `docs/systems/*.md` freshness against actual behavior changes (self-healing rule)
    - test coverage for the range's new code paths; false-confidence tests
    - security/billing regressions that individual reviews marked deferred and forgot
-4. **Cross-model review.** Run `scripts/agent-review.sh --range <marker>..HEAD --out /tmp/sweep-review.txt` (routing per `docs/operating-system/review-personas.md`; costs reviewer-CLI tokens). Merge its findings with yours, deduplicated, each verified against the actual code before inclusion.
-5. **Report.** Write `docs/reviews/commit-sweep-<YYYY-MM-DD>.md` with the 7-line greppable header (`docs/operating-system/doc-conventions.md`), the range and line stats, themed findings with severity and file:line, and a triage table (fix now / Linear issue / rejected with reason). Fix small BLOCKER/MAJOR items immediately when safe; file Linear issues for the rest per `docs/operating-system/linear-issue-format.md`.
-6. **Advance the marker.** Write the current `git rev-parse HEAD` into `docs/reviews/.last-sweep-commit`. Commit the report and marker together with the message `chore(sweep): commit sweep <date> (<range summary>)`.
+4. **Verify and remediate.** Verify every finding against actual code and earlier triage. Fix safe findings, prioritizing every BLOCKER/MAJOR; run relevant tests. Commit code fixes before advancing the marker. Each code-fix commit must receive and clear its automatic opposite-CLI persona review. File Linear issues for remaining actionable work per `docs/operating-system/linear-issue-format.md`; record rejected findings with reasons.
+5. **Fresh-eyes passes.** Re-read the range and remediation twice. Confirm structural opportunities landed, deferred items remain justified, and no fix introduced new duplication, brittle contracts, authorization gaps, non-idempotent paths, or recovery blind spots.
+6. **Report.** Write `docs/reviews/commit-sweep-<YYYY-MM-DD>.md` with the 7-line greppable header (`docs/operating-system/doc-conventions.md`), range and line stats, themed findings with severity and file:line, verification, and a triage table (fixed / Linear issue / rejected with reason).
+7. **Advance the marker.** After code remediation and its per-commit reviews are complete, write that code `HEAD` SHA into `docs/reviews/.last-sweep-commit`. Commit report and marker together with `chore(sweep): commit sweep <date> (<range summary>)`. This docs-only meta commit does not trigger paid persona review.
 
 ## Rules
 
-- Never run the paid cross-model step from a hook or unattended schedule; a sweep is always an explicit agent/user action.
+- Do not run a second cross-model range reviewer during the sweep; per-code-commit cross-model persona reviews already provide that lens.
+- When invoked by the commit workflow because `due` is true, run automatically in the active agent without asking again.
 - Do not re-litigate findings already triaged in the range's review artifacts unless the code shows the triage was wrong.
 - A sweep that finds nothing still produces a (short) report and advances the marker; silence is not evidence of a sweep.
