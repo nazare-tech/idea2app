@@ -88,3 +88,4 @@ src/lib/stitch/test-fixture.json
 # AI Agent artifacts
 .superpowers/
 .tmp/
+__pycache__/
