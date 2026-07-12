@@ -14,10 +14,15 @@ export function useSheetModalFocus(
   {
     onClose,
     initialFocusRef,
+    restoreFocusRef,
   }: {
     onClose: () => void
     /** Focus this element on open; omit when the sheet manages its own initial focus. */
     initialFocusRef?: RefObject<HTMLElement | null>
+    /** Focus this element on close (e.g. the opener FAB). Without it the hook
+     * restores whatever was focused when the sheet activated, which is wrong
+     * when a sibling autofocus effect ran first. */
+    restoreFocusRef?: RefObject<HTMLElement | null>
   },
 ) {
   useEffect(() => {
@@ -52,7 +57,12 @@ export function useSheetModalFocus(
     document.addEventListener("keydown", handleKeyDown)
     return () => {
       document.removeEventListener("keydown", handleKeyDown)
-      previouslyFocused?.focus?.({ preventScroll: true })
+      // The restore target (opener FAB) is unmounted while the sheet is open
+      // and only exists again at cleanup time, so it must be read here, not
+      // captured at effect setup (that would always capture null).
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const restoreTarget = restoreFocusRef?.current ?? previouslyFocused
+      restoreTarget?.focus?.({ preventScroll: true })
     }
-  }, [active, containerRef, initialFocusRef, onClose])
+  }, [active, containerRef, initialFocusRef, onClose, restoreFocusRef])
 }

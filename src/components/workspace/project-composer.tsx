@@ -111,14 +111,18 @@ function AskProjectFab({
   chromeHidden,
   lifted,
   reduceMotion,
+  fabRef,
 }: {
   onClick: () => void
   chromeHidden: boolean
   lifted: boolean
   reduceMotion: boolean
+  /** Lets the sheet focus hook restore focus to this opener on close. */
+  fabRef?: React.RefObject<HTMLButtonElement | null>
 }) {
   return (
     <button
+      ref={fabRef}
       type="button"
       onClick={onClick}
       aria-label="Ask this project"
@@ -392,14 +396,20 @@ export function ProjectComposer({
   // aria-modal guard must not engage there.
   const upgradeSheetRef = useRef<HTMLDivElement>(null)
   const upgradeCloseButtonRef = useRef<HTMLButtonElement>(null)
+  const fabRef = useRef<HTMLButtonElement>(null)
   const closeComposer = useCallback(() => setOpen(false), [])
   const mobileSheetActive = open && !isDesktop
   useSheetModalFocus(upgradeSheetRef, upgradeRequired && mobileSheetActive, {
     onClose: closeComposer,
     initialFocusRef: upgradeCloseButtonRef,
+    restoreFocusRef: fabRef,
   })
-  // The chat sheet manages its own initial focus (the textarea autofocus).
-  useSheetModalFocus(cardRef, !upgradeRequired && mobileSheetActive, { onClose: closeComposer })
+  // The chat sheet manages its own initial focus (the textarea autofocus);
+  // close restores focus to the FAB, not the by-then-hidden textarea.
+  useSheetModalFocus(cardRef, !upgradeRequired && mobileSheetActive, {
+    onClose: closeComposer,
+    restoreFocusRef: fabRef,
+  })
 
   // Free-plan gate: the composer is a paid feature. Desktop keeps the compact
   // upgrade bar; mobile gets the same FAB, opening an upgrade bottom sheet.
@@ -413,6 +423,7 @@ export function ProjectComposer({
             chromeHidden={mobileChromeHidden}
             lifted={mobileLifted}
             reduceMotion={reduceMotion}
+            fabRef={fabRef}
           />
         )}
         {!isDesktop && open && (
@@ -505,6 +516,7 @@ export function ProjectComposer({
           chromeHidden={mobileChromeHidden}
           lifted={mobileLifted}
           reduceMotion={reduceMotion}
+          fabRef={fabRef}
         />
       )}
       {!isDesktop && open && (

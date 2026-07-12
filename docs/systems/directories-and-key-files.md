@@ -95,12 +95,11 @@ src/
 │   │   ├── client.ts             # Browser client
 │   │   ├── server.ts             # Server-side client
 │   │   └── middleware.ts         # Auth middleware logic
-│   ├── stripe/                   # Stripe singleton (index.ts) + webhook-lease, checkout-plan, subscription-sync helpers
 │   ├── analysis-pipelines.ts     # In-house analysis orchestration (market research, Product Plan, First Version Plan, tech spec)
 │   ├── intake/                   # Idea intake types, context, questions, summaries
 │   ├── mockups/                  # Mockup design plans, drafts, recovery, OpenRouter image pipeline/format
 │   ├── generation/               # Generate All / generation queue services, billing, onboarding rows
-│   ├── stripe/                   # Stripe singleton (index.ts) + checkout/webhook/subscription helpers
+│   ├── stripe/                   # Stripe singleton (index.ts) + webhook-lease, checkout-plan, subscription-sync helpers
 │   ├── prompt-lab/               # Dev Prompt Lab composition (index.ts), shared labels, default state
 │   ├── waitlist.ts               # Waitlist business rules and validation
 │   ├── openrouter.ts             # Shared OpenRouter client singleton (all server-side OpenRouter calls)
