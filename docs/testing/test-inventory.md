@@ -10,12 +10,12 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 ## Intake
 
 - `src/components/projects/intake-submission-loading-panel.test.tsx` — loader message-index and line-width timing math plus rendered kicker/artifact labels of IntakeSubmissionLoadingPanel
-- `src/lib/intake/answers.test.ts` — toggleOption/toggleOther/hasAnswer/buildAnswers: single vs multi select state transitions and trimmed submission payload shaping
+- `src/lib/intake/answers.test.ts` — toggleOption/toggleOther/toggleDecideForMe/supportsAnswerEscapeHatches/hasAnswer/buildAnswers: single vs multi select state transitions, decide-for-me exclusivity, escape-hatch eligibility, and trimmed submission payload shaping
 - `src/lib/intake/idea-validation.test.ts` — validateIdeaInput character floor (30-char boundary), word-count minimum, whitespace normalization, and max-length cap
 - `src/lib/intake/keyboard-submit.test.ts` — shouldSubmitOnEnter: plain Enter submits; Shift+Enter, IME composition, key repeat, and disabled state do not
 - `src/lib/intake/question-count.test.ts` — getProjectIntakeQuestionCountError accepts three to five wizard questions and rejects too few or too many
 - `src/lib/intake/question-generation.test.ts` — parseIntakeQuestionSet/generateIntakeQuestions: model JSON parsing, canonical platform question normalization, rejection verdicts, retry rules
-- `src/lib/intake/required-questions.test.ts` — ensureRequiredPlatformQuestion canonicalization/dedup and validateRequiredPlatformAnswer single-selection rules
+- `src/lib/intake/required-questions.test.ts` — ensureRequiredPlatformQuestion canonicalization/dedup and validateRequiredPlatformAnswer single-selection rules including decide-for-me rejection
 - `src/lib/intake/summary.test.ts` — buildProjectIntakePayload, summarizeIntakeAnswers, buildProjectSummary, and formatProjectIntakeForAi payload/summary shaping
 - `src/lib/landing-intake-handoff.test.ts` — buildLandingIntakeNextPath/buildLandingAuthModalPath: intake token plus autostart query ordering and safe signin next paths
 

@@ -68,7 +68,7 @@ Checkout source attribution is trusted only after the server correlates its attr
 
 | Event | Meaning |
 |---|---|
-| `project_created` | Trusted server event after the project, intake, and onboarding queue were durably created. |
+| `project_created` | Trusted server event after the project, intake, and onboarding queue were durably created. Intake creations carry optional `decideForMeCount`/`otherAnswerCount` (0-7) measuring escape-hatch adoption on intake questions. |
 | `generation_started` | Trusted queue/run or direct-generation start. |
 | `generation_step_completed` | Trusted document step reached a successful durable terminal state. |
 | `generation_completed` | Trusted generation run reached a complete terminal state. |

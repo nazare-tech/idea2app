@@ -439,3 +439,20 @@ Captured through the real `/projects/new` UI while verifying OpenRouter-managed 
 
 Evidence:
 - `ui-evidence/2026-07-10/openrouter-exa-market-research/fresh-idea-1-1-direct-competitors.png`
+
+### 2026-07-18 Decide-for-me + Universal Other Escape Hatches: Idea 1.1
+
+Captured through the real `/projects/new` UI (Playwright, e2e sign-in) while verifying the new UI-owned escape hatches: every non-platform choice question now appends `Decide for me` (exclusive, stored as `decideForMe: true`) and `Other` (free text; multi-select combines it with picks). Stopped before `Create project` per rule 6; Create-armed state was asserted (`isDisabled: false`).
+
+| Idea variant | Question text | Answer used | Option ID when stable |
+| --- | --- | --- | --- |
+| 1.1 | Where will people use the first version? | Desktop website | `desktop-web` |
+| 1.1 | Who is the primary buyer or user for the first version? | Decide for me |  |
+| 1.1 | Which data sources must the first version support? | First option + Other: "Custom answer typed during verification" |  |
+| 1.1 | How do you plan to monetize? | Decide for me |  |
+| 1.1 | Which integrations are must-haves at launch? | Decide for me |  |
+| 1.1 | How technical are you or your founding team? | Decide for me |  |
+
+Evidence:
+- `ui-evidence/2026-07-18/intake-decide-for-me-other/01-step2-all-chips.png`
+- `ui-evidence/2026-07-18/intake-decide-for-me-other/02-answered-create-armed.png`
