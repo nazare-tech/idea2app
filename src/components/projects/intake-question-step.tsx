@@ -258,6 +258,7 @@ function QuestionCard({
                         onAnswerChange((draft) => ({ ...draft, otherText: event.target.value }))
                       }
                       placeholder="Your answer..."
+                      aria-label={`Custom answer for: ${question.question}`}
                       maxLength={INTAKE_OTHER_TEXT_MAX_LENGTH}
                       autoFocus
                       // Chip-sized so it reads as one more option in the row,
