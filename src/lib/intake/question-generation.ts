@@ -254,12 +254,6 @@ function parseQuestion(questionValue: unknown, questionIndex: number): IntakeQue
     ])
   }
 
-  if (selectionMode === "multiple" && allowOther) {
-    throw new IntakeQuestionParseError([
-      `question ${questionIndex + 1} multiple-choice questions cannot allow Other`,
-    ])
-  }
-
   const duplicateOptionIds = findDuplicateIds(options.map((optionItem) => optionItem.id))
   if (duplicateOptionIds.length > 0) {
     throw new IntakeQuestionParseError([

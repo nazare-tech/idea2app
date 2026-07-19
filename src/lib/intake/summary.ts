@@ -9,6 +9,12 @@ import {
 
 const SUMMARY_MAX_ANSWER_LENGTH = 180
 
+/**
+ * Rendered wherever a delegated answer needs prose (dashboard summary and
+ * downstream AI context), so it must read as an instruction to the AI.
+ */
+const DECIDE_FOR_ME_ANSWER_TEXT = "Decide for me (pick the best fit for this idea)"
+
 export function buildProjectIntakePayload(
   input: BuildProjectIntakePayloadInput
 ): ProjectIntakePayload {
@@ -68,12 +74,17 @@ function normalizeAnswers(answers: IntakeAnswer[]): IntakeAnswer[] {
       questionId: normalizeWhitespace(answer.questionId),
       ...(selectedOptionIds && selectedOptionIds.length > 0 ? { selectedOptionIds } : {}),
       ...(answer.otherText ? { otherText: normalizeWhitespace(answer.otherText) } : {}),
+      ...(answer.decideForMe ? { decideForMe: true } : {}),
       ...(answer.text ? { text: normalizeWhitespace(answer.text) } : {}),
     }
   })
 }
 
 function answerToText(question: IntakeQuestion, answer: IntakeAnswer): string {
+  if (answer.decideForMe) {
+    return DECIDE_FOR_ME_ANSWER_TEXT
+  }
+
   const pieces: string[] = []
   const selectedOptionIds = answer.selectedOptionIds ?? []
 

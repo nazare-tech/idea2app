@@ -320,7 +320,7 @@ test("parseIntakeQuestionSet: rejects standalone text questions", () => {
   )
 })
 
-test("parseIntakeQuestionSet: rejects Other on multiple-choice questions", () => {
+test("parseIntakeQuestionSet: accepts Other on multiple-choice questions", () => {
   const multipleWithOther = JSON.stringify({
     questions: [
       {
@@ -366,10 +366,11 @@ test("parseIntakeQuestionSet: rejects Other on multiple-choice questions", () =>
     ],
   })
 
-  assert.throws(
-    () => parseIntakeQuestionSet(multipleWithOther),
-    /multiple-choice questions cannot allow Other/
-  )
+  const questionSet = parseIntakeQuestionSet(multipleWithOther)
+  const multiQuestion = questionSet.questions.find((question) => question.id === "model")
+
+  assert.equal(multiQuestion?.selectionMode, "multiple")
+  assert.equal(multiQuestion?.allowOther, true)
 })
 
 test("parseIntakeQuestionSet: rejects when a chip question has too many options", () => {

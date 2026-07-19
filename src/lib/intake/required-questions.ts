@@ -74,7 +74,7 @@ export function validateRequiredPlatformAnswer(questions: IntakeQuestion[], answ
     return "Selected platform is not supported"
   }
 
-  if (platformAnswer.otherText || platformAnswer.text) {
+  if (platformAnswer.otherText || platformAnswer.text || platformAnswer.decideForMe) {
     return "Platform must be selected from the supported choices"
   }
 

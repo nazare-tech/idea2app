@@ -129,3 +129,20 @@ test("validateRequiredPlatformAnswer: rejects missing and multi-selected platfor
     /exactly one/i,
   )
 })
+
+test("validateRequiredPlatformAnswer: rejects delegated (decide-for-me) platform answers", () => {
+  const questions = ensureRequiredPlatformQuestion(baseQuestions)
+
+  assert.match(
+    validateRequiredPlatformAnswer(questions, [
+      { questionId: "primary-platform", decideForMe: true },
+    ]) ?? "",
+    /exactly one/i,
+  )
+  assert.match(
+    validateRequiredPlatformAnswer(questions, [
+      { questionId: "primary-platform", selectedOptionIds: ["desktop-web"], decideForMe: true },
+    ]) ?? "",
+    /supported choices/i,
+  )
+})

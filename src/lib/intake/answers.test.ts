@@ -6,6 +6,8 @@ import {
   emptyAnswer,
   hasAnswer,
   shouldShowOtherInput,
+  supportsAnswerEscapeHatches,
+  toggleDecideForMe,
   toggleOption,
   toggleOther,
 } from "@/lib/intake/answers"
@@ -48,7 +50,7 @@ test("toggleOption: multiple select accumulates and removes", () => {
 })
 
 test("toggleOther: single select clears options and resets text on deselect", () => {
-  const single = question({ allowOther: true })
+  const single = question()
   const on = toggleOther(single, { ...emptyAnswer(), selectedOptionIds: ["a"] })
   assert.deepEqual(on.selectedOptionIds, [])
   assert.equal(on.otherSelected, true)
@@ -58,17 +60,56 @@ test("toggleOther: single select clears options and resets text on deselect", ()
   assert.equal(off.otherText, "")
 })
 
-test("shouldShowOtherInput: only for single-select questions that allow other", () => {
-  const answer = { ...emptyAnswer(), otherSelected: true }
-  assert.equal(shouldShowOtherInput(question({ allowOther: true }), answer), true)
-  assert.equal(shouldShowOtherInput(question(), answer), false)
+test("toggleOther: multiple select keeps existing picks alongside Other", () => {
+  const multi = question({ selectionMode: "multiple" })
+  const on = toggleOther(multi, { ...emptyAnswer(), selectedOptionIds: ["a", "b"] })
+  assert.deepEqual(on.selectedOptionIds, ["a", "b"])
+  assert.equal(on.otherSelected, true)
+
+  const off = toggleOther(multi, { ...on, otherText: "typed" })
+  assert.deepEqual(off.selectedOptionIds, ["a", "b"])
+  assert.equal(off.otherSelected, false)
+  assert.equal(off.otherText, "")
+})
+
+test("toggleDecideForMe: exclusive with picks and Other in both directions", () => {
+  const single = question()
+  const delegated = toggleDecideForMe({
+    ...emptyAnswer(),
+    selectedOptionIds: ["a"],
+    otherSelected: true,
+    otherText: "typed",
+  })
+  assert.equal(delegated.decideForMe, true)
+  assert.deepEqual(delegated.selectedOptionIds, [])
+  assert.equal(delegated.otherSelected, false)
+  assert.equal(delegated.otherText, "")
+
+  assert.equal(toggleDecideForMe(delegated).decideForMe, false)
+  assert.equal(toggleOption(single, delegated, "a").decideForMe, false)
+  assert.equal(toggleOther(single, delegated).decideForMe, false)
   assert.equal(
-    shouldShowOtherInput(question({ allowOther: true, selectionMode: "multiple" }), answer),
+    toggleOther(question({ selectionMode: "multiple" }), delegated).decideForMe,
     false
   )
 })
 
-test("hasAnswer: text questions need text, choice questions need a pick or other text", () => {
+test("supportsAnswerEscapeHatches: choice questions except the platform question", () => {
+  assert.equal(supportsAnswerEscapeHatches(question()), true)
+  assert.equal(supportsAnswerEscapeHatches(question({ selectionMode: "multiple" })), true)
+  assert.equal(supportsAnswerEscapeHatches(question({ selectionMode: "text" })), false)
+  assert.equal(supportsAnswerEscapeHatches(question({ id: "primary-platform" })), false)
+})
+
+test("shouldShowOtherInput: any eligible choice question with Other selected", () => {
+  const answer = { ...emptyAnswer(), otherSelected: true }
+  assert.equal(shouldShowOtherInput(question(), answer), true)
+  assert.equal(shouldShowOtherInput(question({ selectionMode: "multiple" }), answer), true)
+  assert.equal(shouldShowOtherInput(question(), emptyAnswer()), false)
+  assert.equal(shouldShowOtherInput(question({ id: "primary-platform" }), answer), false)
+})
+
+test("hasAnswer: text questions need text, choice questions need a pick, other text, or delegation", () => {
   const text = question({ selectionMode: "text" })
   assert.equal(hasAnswer(text, undefined), false)
   assert.equal(hasAnswer(text, { ...emptyAnswer(), text: "  " }), false)
@@ -78,6 +119,7 @@ test("hasAnswer: text questions need text, choice questions need a pick or other
   assert.equal(hasAnswer(single, emptyAnswer()), false)
   assert.equal(hasAnswer(single, { ...emptyAnswer(), selectedOptionIds: ["a"] }), true)
   assert.equal(hasAnswer(single, { ...emptyAnswer(), otherText: "custom" }), true)
+  assert.equal(hasAnswer(single, { ...emptyAnswer(), decideForMe: true }), true)
 })
 
 test("buildAnswers: shapes submissions and trims, omitting empty fields", () => {
@@ -85,18 +127,21 @@ test("buildAnswers: shapes submissions and trims, omitting empty fields", () => 
     question({ id: "choice" }),
     question({ id: "other", allowOther: true }),
     question({ id: "free", selectionMode: "text" }),
+    question({ id: "delegated" }),
     question({ id: "untouched" }),
   ]
   const answers = buildAnswers(questions, {
     choice: { ...emptyAnswer(), selectedOptionIds: ["a"] },
     other: { ...emptyAnswer(), otherSelected: true, otherText: "  custom  " },
     free: { ...emptyAnswer(), text: "  freeform  " },
+    delegated: { ...emptyAnswer(), decideForMe: true },
   })
 
   assert.deepEqual(answers, [
     { questionId: "choice", selectedOptionIds: ["a"] },
     { questionId: "other", otherText: "custom" },
     { questionId: "free", text: "freeform" },
+    { questionId: "delegated", decideForMe: true },
     { questionId: "untouched" },
   ])
 })

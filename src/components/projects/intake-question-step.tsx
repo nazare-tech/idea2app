@@ -14,17 +14,25 @@ import {
 import {
   emptyAnswer,
   shouldShowOtherInput,
+  supportsAnswerEscapeHatches,
+  toggleDecideForMe,
   toggleOption,
   toggleOther,
   type AnswerDraft,
   type AnswerState,
 } from "@/lib/intake/answers"
-import type { IntakeQuestion } from "@/lib/intake/types"
+import { INTAKE_OTHER_TEXT_MAX_LENGTH, type IntakeQuestion } from "@/lib/intake/types"
 import { cn } from "@/lib/utils"
 
 // Skeleton placeholders shown while questions generate.
 const SKELETON_TITLE_WIDTHS = ["58%", "44%", "66%", "50%"]
 const QUESTION_REVEAL_STAGGER_MS = 90
+
+const CHIP_BASE_CLASS =
+  "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0 sm:py-1.5"
+const CHIP_SELECTED_CLASS = "border-text-primary bg-text-primary text-white"
+const CHIP_UNSELECTED_CLASS =
+  "border-border-subtle bg-white text-text-primary hover:border-text-primary"
 
 interface IntakeQuestionStepProps {
   /** Skeleton cards while the question set is being written. */
@@ -183,7 +191,7 @@ function QuestionCard({
                       onAnswerChange((draft) => toggleOption(question, draft, option.id))
                     }
                     className={cn(
-                      "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0 sm:py-1.5",
+                      CHIP_BASE_CLASS,
                       // Multi-select keeps a white chip with a leading checkbox; only
                       // single-select inverts to a solid fill when chosen.
                       isMulti
@@ -192,56 +200,92 @@ function QuestionCard({
                             selected ? "border-text-primary" : "border-border-subtle hover:border-text-primary"
                           )
                         : selected
-                          ? "border-text-primary bg-text-primary text-white"
-                          : "border-border-subtle bg-white text-text-primary hover:border-text-primary"
+                          ? CHIP_SELECTED_CLASS
+                          : CHIP_UNSELECTED_CLASS
                     )}
                   >
-                    {isMulti && (
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "mr-[7px] inline-flex size-[13px] shrink-0 items-center justify-center rounded-[3px] border-[1.5px] transition-colors",
-                          selected ? "border-text-primary bg-text-primary" : "border-[#CCC2B8] bg-white"
-                        )}
-                      >
-                        {selected && <Check className="size-[9px] text-white" strokeWidth={4} />}
-                      </span>
-                    )}
+                    {isMulti && <ChipCheckbox selected={selected} />}
                     <span>{option.label}</span>
                   </button>
                 )
               })}
-              {question.allowOther && question.selectionMode === "single" && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    onAnswerChange((draft) => toggleOther(question, draft))
-                  }
-                  className={cn(
-                    "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0 sm:py-1.5",
-                    answer.otherSelected
-                      ? "border-text-primary bg-text-primary text-white"
-                      : "border-border-subtle bg-white text-text-primary hover:border-text-primary"
+              {supportsAnswerEscapeHatches(question) && (
+                <>
+                  <button
+                    type="button"
+                    aria-pressed={answer.decideForMe}
+                    onClick={() => onAnswerChange((draft) => toggleDecideForMe(draft))}
+                    className={cn(
+                      CHIP_BASE_CLASS,
+                      answer.decideForMe ? CHIP_SELECTED_CLASS : CHIP_UNSELECTED_CLASS
+                    )}
+                  >
+                    Decide for me
+                  </button>
+                  <button
+                    type="button"
+                    role={question.selectionMode === "multiple" ? "checkbox" : undefined}
+                    aria-checked={
+                      question.selectionMode === "multiple" ? answer.otherSelected : undefined
+                    }
+                    aria-pressed={
+                      question.selectionMode === "multiple" ? undefined : answer.otherSelected
+                    }
+                    onClick={() => onAnswerChange((draft) => toggleOther(question, draft))}
+                    className={cn(
+                      CHIP_BASE_CLASS,
+                      question.selectionMode === "multiple"
+                        ? cn(
+                            "bg-white text-text-primary",
+                            answer.otherSelected
+                              ? "border-text-primary"
+                              : "border-border-subtle hover:border-text-primary"
+                          )
+                        : answer.otherSelected
+                          ? CHIP_SELECTED_CLASS
+                          : CHIP_UNSELECTED_CLASS
+                    )}
+                  >
+                    {question.selectionMode === "multiple" && (
+                      <ChipCheckbox selected={answer.otherSelected} />
+                    )}
+                    <span>Other</span>
+                  </button>
+                  {shouldShowOtherInput(question, answer) && (
+                    <Input
+                      value={answer.otherText}
+                      onChange={(event) =>
+                        onAnswerChange((draft) => ({ ...draft, otherText: event.target.value }))
+                      }
+                      placeholder="Your answer..."
+                      maxLength={INTAKE_OTHER_TEXT_MAX_LENGTH}
+                      autoFocus
+                      // Chip-sized so it reads as one more option in the row,
+                      // not a separate form control below the group.
+                      className="h-11 w-[240px] max-w-full rounded-md border-border-strong bg-white px-3 py-2 text-xs sm:h-auto sm:py-1.5"
+                    />
                   )}
-                >
-                  Other
-                </button>
+                </>
               )}
             </div>
-            {question.allowOther && shouldShowOtherInput(question, answer) && (
-              <Input
-                value={answer.otherText}
-                onChange={(event) =>
-                  onAnswerChange((draft) => ({ ...draft, otherText: event.target.value }))
-                }
-                placeholder="Type another answer..."
-                className="mt-3 border-border-strong bg-white"
-              />
-            )}
           </>
         )}
       </div>
     </article>
+  )
+}
+
+function ChipCheckbox({ selected }: { selected: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "mr-[7px] inline-flex size-[13px] shrink-0 items-center justify-center rounded-[3px] border-[1.5px] transition-colors",
+        selected ? "border-text-primary bg-text-primary" : "border-[#CCC2B8] bg-white"
+      )}
+    >
+      {selected && <Check className="size-[9px] text-white" strokeWidth={4} />}
+    </span>
   )
 }
 

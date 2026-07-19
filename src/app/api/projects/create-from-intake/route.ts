@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server"
 
 import { getOpenRouterClient } from "@/lib/openrouter"
-import type { IntakeAnswer, IntakeQuestion, ProjectIntakeSource } from "@/lib/intake/types"
+import {
+  INTAKE_OTHER_TEXT_MAX_LENGTH,
+  type IntakeAnswer,
+  type IntakeQuestion,
+  type ProjectIntakeSource,
+} from "@/lib/intake/types"
 import { validateIdeaInput } from "@/lib/intake/idea-validation"
 import { formatProjectIntakeForAi } from "@/lib/intake/context"
 import { validateRequiredPlatformAnswer } from "@/lib/intake/required-questions"
@@ -21,7 +26,7 @@ import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger
 import { recordServerProductEvent } from "@/lib/product-analytics/server"
 
 const MAX_ANSWER_LENGTH = 1000
-const MAX_OTHER_LENGTH = 300
+const MAX_OTHER_LENGTH = INTAKE_OTHER_TEXT_MAX_LENGTH
 const PROJECT_NAME_MODEL =
   process.env.OPENROUTER_PROJECT_NAME_MODEL ||
   process.env.OPENROUTER_CHAT_MODEL ||
@@ -119,12 +124,22 @@ function validateAnswers(questions: IntakeQuestion[], value: unknown): {
 
     const text = normalizeText(item.text, MAX_ANSWER_LENGTH)
     const otherText = normalizeText(item.otherText, MAX_OTHER_LENGTH)
+    const decideForMe = item.decideForMe === true
 
     if (question.selectionMode === "text") {
       if (!text) {
         return { answers: [], error: "Text questions require an answer" }
       }
       answers.push({ questionId, text })
+      continue
+    }
+
+    // Delegated answers carry no selections; anything else the client sent
+    // alongside the flag is dropped so the stored shape stays unambiguous.
+    // The required platform question rejects delegation later, in
+    // validateRequiredPlatformAnswer.
+    if (decideForMe) {
+      answers.push({ questionId, decideForMe: true })
       continue
     }
 
@@ -143,10 +158,6 @@ function validateAnswers(questions: IntakeQuestion[], value: unknown): {
 
     if (uniqueOptionIds.length === 0 && !otherText) {
       return { answers: [], error: "Every question requires an answer" }
-    }
-
-    if (otherText && !question.allowOther) {
-      return { answers: [], error: "This question does not allow an Other answer" }
     }
 
     answers.push({
@@ -254,18 +265,6 @@ export async function POST(request: Request) {
       { status: 400 }
     )
   }
-  if (questions.some((question) => question.selectionMode === "multiple" && question.allowOther)) {
-    logWarn("CreateFromIntake", "validation_failed", {
-      ...userLogContext,
-      reason: "multiple_choice_other_present",
-      questionCount: questions.length,
-    })
-    return NextResponse.json(
-      { error: "Multiple-choice questions cannot include an Other answer" },
-      { status: 400 }
-    )
-  }
-
   const answerResult = validateAnswers(questions, body.answers)
   if (answerResult.error) {
     logWarn("CreateFromIntake", "validation_failed", {
@@ -514,7 +513,11 @@ export async function POST(request: Request) {
       userId: user.id,
       projectId: project.id,
       planName: lockedAllowance.planName,
-      properties: { creationSource: "intake" },
+      properties: {
+        creationSource: "intake",
+        decideForMeCount: answerResult.answers.filter((answer) => answer.decideForMe).length,
+        otherAnswerCount: answerResult.answers.filter((answer) => answer.otherText).length,
+      },
     }),
     recordServerProductEvent({
       eventName: "generation_started",

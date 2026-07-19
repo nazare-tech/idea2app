@@ -109,7 +109,11 @@ export interface ProductEventPropertyMap {
   prompt_file_downloaded: { fileName: PromptFileName; surface: ArtifactSurface }
   upgrade_cta_viewed: { surface: UpgradeSurface; experimentVariant?: string }
   upgrade_cta_clicked: { surface: UpgradeSurface; experimentVariant?: string }
-  project_created: { creationSource: "intake" | "dashboard" }
+  project_created: {
+    creationSource: "intake" | "dashboard"
+    decideForMeCount?: number
+    otherAnswerCount?: number
+  }
   generation_started: { runId: string; mode: GenerationMode }
   generation_step_completed: {
     runId: string
@@ -182,7 +186,12 @@ export const PRODUCT_EVENT_REGISTRY = {
   prompt_file_downloaded: client(true, promptActionRules()),
   upgrade_cta_viewed: client(false, upgradeRules()),
   upgrade_cta_clicked: client(false, upgradeRules()),
-  project_created: server(true, { creationSource: enumRule(["intake", "dashboard"] as const) }),
+  project_created: server(true, {
+    creationSource: enumRule(["intake", "dashboard"] as const),
+    // Escape-hatch adoption on intake questions; capped by the 7-question max.
+    decideForMeCount: optionalRule((value) => isIntegerInRange(value, 0, 7)),
+    otherAnswerCount: optionalRule((value) => isIntegerInRange(value, 0, 7)),
+  }),
   generation_started: server(true, generationRules()),
   generation_step_completed: server(true, { ...generationRules(), documentType: enumRule(GENERATION_DOCUMENT_TYPES), durationMs: positiveDurationRule }),
   generation_completed: server(true, { ...generationRules(), durationMs: positiveDurationRule }),

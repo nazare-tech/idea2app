@@ -3,6 +3,13 @@ export const PROJECT_INTAKE_SCHEMA_VERSION = "idea-intake-v1" as const
 
 export const INTAKE_SELECTION_MODES = ["single", "multiple", "text"] as const
 
+/**
+ * Cap for the custom "Other" answer, shared by the chip-sized wizard input
+ * (maxLength) and the create-from-intake server normalization: a short
+ * phrase, not a pasted paragraph.
+ */
+export const INTAKE_OTHER_TEXT_MAX_LENGTH = 100
+
 export type IntakeQuestionSchemaVersion = typeof INTAKE_QUESTION_SCHEMA_VERSION
 export type ProjectIntakeSchemaVersion = typeof PROJECT_INTAKE_SCHEMA_VERSION
 export type IntakeSelectionMode = (typeof INTAKE_SELECTION_MODES)[number]
@@ -40,6 +47,8 @@ export interface IntakeAnswer {
   questionId: string
   selectedOptionIds?: string[]
   otherText?: string
+  /** User delegated this choice: downstream AI picks the best option. */
+  decideForMe?: boolean
   text?: string
 }
 

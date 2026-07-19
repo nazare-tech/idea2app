@@ -40,8 +40,8 @@ Rules:
 - Use "single" when one chip should be selected and "multiple" when several chips can be selected.
 - Never use standalone text input questions.
 - Include 3-6 concise chip options for every question.
-- Set allowOther true only when a custom answer is genuinely useful.
-- Set allowOther false for every "multiple" question.
+- Set allowOther to true for every question. The UI automatically adds "Other" (free text) and "Decide for me" answers to each question.
+- Never include chip options like "Other", "Not sure", "No preference", "You decide", or "Decide for me"; the UI already provides those escape hatches.
 - Chip labels must be short enough for UI chips, ideally 1-4 words.
 - Ask practical questions that make the downstream Product Plan, First Version Plan, market research, and app generation more specific.`
 

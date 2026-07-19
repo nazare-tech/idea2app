@@ -84,6 +84,25 @@ test("summarizeIntakeAnswers: resolves selected option ids to labels", () => {
   assert.equal(items[2].answer, "Subscription, Usage based")
 })
 
+test("summarizeIntakeAnswers: renders delegated answers as an explicit AI instruction", () => {
+  const items = summarizeIntakeAnswers(questions, [
+    { questionId: "business-model", decideForMe: true },
+  ])
+
+  assert.equal(items[2].answer, "Decide for me (pick the best fit for this idea)")
+})
+
+test("buildProjectIntakePayload: keeps the decideForMe flag through normalization", () => {
+  const payload = buildProjectIntakePayload({
+    originalIdea: "AI inventory planning for bakeries",
+    questions,
+    answers: [{ questionId: "business-model", decideForMe: true }],
+    createdAt: "2026-04-23T12:00:00.000Z",
+  })
+
+  assert.deepEqual(payload.answers[0], { questionId: "business-model", decideForMe: true })
+})
+
 test("buildProjectSummary: creates a human-readable dashboard description", () => {
   const payload = buildProjectIntakePayload({
     originalIdea: "AI inventory planning for bakeries",
