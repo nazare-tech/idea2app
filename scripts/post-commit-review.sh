@@ -148,28 +148,30 @@ find_reusable_review() {
       const path = require("node:path")
       let entries = []
       try { entries = fs.readdirSync(process.env.REVIEW_DIR).filter((name) => name.endsWith(".json")).sort() } catch {}
+      // Artifacts are only opened for entries whose cheap metadata already
+      // matches, so a long-lived ledger costs one JSON parse per entry, not
+      // a full artifact read; oversized artifacts are skipped via stat.
+      const MAX_ARTIFACT_BYTES = 5_000_000
       for (const name of entries) {
         try {
           const value = JSON.parse(fs.readFileSync(path.join(process.env.REVIEW_DIR, name), "utf8"))
-          const artifactPath = path.join(process.env.REVIEW_DIR, `${value.commit}.txt`)
           const validCommit = /^[0-9a-f]{40,64}$/.test(value.commit ?? "")
-          let artifactValid = false
-          try {
-            const artifact = fs.readFileSync(artifactPath, "utf8").trim()
-            artifactValid = value.status === "passed"
-              ? artifact === "NO FINDINGS"
-              : value.status === "findings" && artifact.length > 0 && artifact !== "NO FINDINGS"
-          } catch {}
           if (
-            validCommit &&
-            value.commit !== process.env.REVIEW_COMMIT &&
-            value.patchId === process.env.REVIEW_PATCH_ID &&
-            value.parent === process.env.REVIEW_PARENT &&
-            value.tree === process.env.REVIEW_TREE &&
-            value.reviewer === process.env.REVIEWER &&
-            (value.status === "passed" || value.status === "findings") &&
-            artifactValid
-          ) {
+            !validCommit ||
+            value.commit === process.env.REVIEW_COMMIT ||
+            value.patchId !== process.env.REVIEW_PATCH_ID ||
+            value.parent !== process.env.REVIEW_PARENT ||
+            value.tree !== process.env.REVIEW_TREE ||
+            value.reviewer !== process.env.REVIEWER ||
+            (value.status !== "passed" && value.status !== "findings")
+          ) continue
+          const artifactPath = path.join(process.env.REVIEW_DIR, `${value.commit}.txt`)
+          if (fs.statSync(artifactPath).size > MAX_ARTIFACT_BYTES) continue
+          const artifact = fs.readFileSync(artifactPath, "utf8").trim()
+          const artifactValid = value.status === "passed"
+            ? artifact === "NO FINDINGS"
+            : artifact.length > 0 && artifact !== "NO FINDINGS"
+          if (artifactValid) {
             process.stdout.write(`${value.commit}\t${value.status}\n`)
             process.exit(0)
           }
