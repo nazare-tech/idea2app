@@ -17,19 +17,6 @@ export interface StreamingPlanningSection {
   complete: boolean
 }
 
-export interface StreamingPlanningMarkdown {
-  /**
-   * Markdown that is safe to render through the designed block renderers:
-   * the preamble, every complete section, and the sanitized tail of the
-   * still-growing section.
-   */
-  markdown: string
-  /** All H2 headings seen so far, in stream order */
-  headings: string[]
-  /** Heading of the still-growing section (null when finished or none) */
-  activeHeading: string | null
-}
-
 const H2_PATTERN = /^##\s+(.+)$/
 
 /**
@@ -110,34 +97,4 @@ export function sanitizeStreamingPlanningTail(content: string) {
     result = result.slice(0, lastMarker) + result.slice(lastMarker + 2)
   }
   return result.trimEnd()
-}
-
-/**
- * Build the markdown a streaming planning document should render right now:
- * preamble + complete sections verbatim + the active section with a
- * sanitized tail.
- */
-export function buildStreamingPlanningMarkdown(
-  content: string,
-  { finished }: { finished: boolean },
-): StreamingPlanningMarkdown {
-  const { preamble, sections } = parseStreamingPlanningDocument(content, { finished })
-
-  const parts: string[] = []
-  if (preamble) parts.push(preamble)
-
-  let activeHeading: string | null = null
-  for (const section of sections) {
-    const body = section.complete
-      ? section.content
-      : sanitizeStreamingPlanningTail(section.content)
-    if (!section.complete) activeHeading = section.heading
-    parts.push(`## ${section.heading}\n\n${body}`.trimEnd())
-  }
-
-  return {
-    markdown: parts.join("\n\n"),
-    headings: sections.map((section) => section.heading),
-    activeHeading,
-  }
 }

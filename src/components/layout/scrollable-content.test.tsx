@@ -2,7 +2,31 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import { renderToStaticMarkup } from "react-dom/server"
 
-import { ScrollableContent } from "./scrollable-content"
+import { getDocumentSectionBodyMode, ScrollableContent } from "./scrollable-content"
+
+test("document section fallback keeps content and stream precedence explicit", () => {
+  assert.equal(getDocumentSectionBodyMode({
+    renderDeferred: true,
+    hasContent: true,
+    hasStreaming: true,
+    displayStatus: "generating",
+    isLoading: true,
+  }), "content")
+  assert.equal(getDocumentSectionBodyMode({
+    renderDeferred: true,
+    hasContent: false,
+    hasStreaming: true,
+    displayStatus: "generating",
+    isLoading: true,
+  }), "streaming")
+  assert.equal(getDocumentSectionBodyMode({
+    renderDeferred: true,
+    hasContent: false,
+    hasStreaming: false,
+    displayStatus: "needs_retry",
+    isLoading: true,
+  }), "status")
+})
 
 test("ScrollableContent mounts the derived AI Prompts workspace section after mockups", () => {
   const html = renderToStaticMarkup(

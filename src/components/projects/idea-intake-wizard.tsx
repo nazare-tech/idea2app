@@ -79,7 +79,7 @@ export function IdeaIntakeWizard({ pendingToken, autoStartQuestions = false }: I
   const questions = questionSet?.questions ?? []
   const allQuestionsAnswered =
     questions.length > 0 && questions.every((question) => hasAnswer(question, answers[question.id]))
-  const isIdeaStepLocked = isLoadingPending || phase === "generating-questions"
+  const isIdeaStepLocked = isLoadingPending
 
   useEffect(() => {
     let cancelled = false

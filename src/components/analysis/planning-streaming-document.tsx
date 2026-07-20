@@ -15,8 +15,8 @@ import {
 } from "@/lib/planning-document-streaming"
 import { useSmoothedStream } from "@/hooks/use-smoothed-stream"
 import {
-  displayFontClass,
   getSectionByAlias,
+  StreamingSkeletonSection,
 } from "@/components/analysis/planning-blocks-shared"
 import {
   CurrentPrdDocumentBlocks,
@@ -39,23 +39,6 @@ interface PlanningStreamingDocumentProps {
   className?: string
   /** Disable the internal word-by-word reveal (dev tooling that pre-smooths) */
   smoothTail?: boolean
-}
-
-function StreamingSkeletonSection({ title }: { title: string }) {
-  return (
-    <section aria-hidden="true">
-      <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
-        <p className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#C9C1B8]")}>
-          {title}
-        </p>
-      </div>
-      <div className="space-y-3">
-        <div className="h-3 w-[92%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-        <div className="h-3 w-[84%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-        <div className="h-3 w-[55%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-      </div>
-    </section>
-  )
 }
 
 export function PlanningStreamingDocument({

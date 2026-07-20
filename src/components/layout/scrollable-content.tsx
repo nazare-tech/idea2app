@@ -155,7 +155,7 @@ function GenerationStatusModule({
           <button
             type="button"
             onClick={() => onGenerateDocument(state.docType)}
-            className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-md border border-primary bg-primary px-8 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-md border border-primary bg-primary px-8 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
             <RotateCcw aria-hidden="true" className="h-5 w-5" />
             <span>Retry</span>
@@ -283,43 +283,82 @@ const NAV_SOURCE_TYPES = new Map<string, DocumentType>(
 )
 
 /** One below-the-fold workspace document section. */
-interface DeferredSection {
-  navKey: string
+interface DocumentSectionBodyConfig {
   label: string
-  /** Height estimate for content-visibility containment (containIntrinsicSize) */
-  intrinsicSize: string
   /** Document whose loading/generating status drives skeletons and retries */
   statusData?: DocumentData
   /** AI Prompts also shows a skeleton while its other source (Product Plan) loads */
   skeletonFallbackData?: DocumentData
   hasContent: boolean
   renderContent: () => React.ReactNode
+  /** Present only when the stream is eligible to replace status UI. */
+  renderStreaming?: () => React.ReactNode
   /** Mockups render their own progress module instead of the generic status */
   renderStatus?: (state: DocumentGenerationDisplayState) => React.ReactNode
 }
 
-/** Shared skeleton/content/status/empty fallback chain for deferred sections. */
-function DeferredSectionBody({
-  section,
+interface DeferredSection extends DocumentSectionBodyConfig {
+  navKey: string
+  /** Height estimate for content-visibility containment (containIntrinsicSize) */
+  intrinsicSize: string
+}
+
+export function getDocumentSectionBodyMode({
   renderDeferred,
+  hasContent,
+  hasStreaming,
+  displayStatus,
+  isLoading,
+}: {
+  renderDeferred: boolean
+  hasContent: boolean
+  hasStreaming: boolean
+  displayStatus?: DocumentGenerationDisplayState["displayStatus"]
+  isLoading: boolean
+}): "deferred" | "content" | "streaming" | "status" | "skeleton" | "empty" {
+  if (!renderDeferred) return "deferred"
+  if (hasContent) return "content"
+  if (hasStreaming) return "streaming"
+  if (displayStatus && displayStatus !== "idle") return "status"
+  if (isLoading) return "skeleton"
+  return "empty"
+}
+
+/** Shared content/stream/status/skeleton/empty chain for every document section. */
+function DocumentSectionBody({
+  section,
+  renderDeferred = true,
   onGenerateDocument,
 }: {
-  section: DeferredSection
-  renderDeferred: boolean
+  section: DocumentSectionBodyConfig
+  renderDeferred?: boolean
   onGenerateDocument?: (docType: DocumentType) => void
 }) {
   const { label, statusData, skeletonFallbackData } = section
+  const mode = getDocumentSectionBodyMode({
+    renderDeferred,
+    hasContent: section.hasContent,
+    hasStreaming: Boolean(section.renderStreaming),
+    displayStatus: statusData?.displayState?.displayStatus,
+    isLoading: Boolean(
+      statusData?.isGenerating || statusData?.isLoading || skeletonFallbackData?.isLoading,
+    ),
+  })
 
-  if (!renderDeferred) {
+  if (mode === "deferred") {
     return <DocumentSkeleton label={label} />
   }
 
-  if (section.hasContent) {
+  if (mode === "content") {
     return <>{section.renderContent()}</>
   }
 
+  if (mode === "streaming" && section.renderStreaming) {
+    return <>{section.renderStreaming()}</>
+  }
+
   const displayState = statusData?.displayState
-  if (displayState && displayState.displayStatus !== "idle") {
+  if (mode === "status" && displayState) {
     if (section.renderStatus) {
       return <>{section.renderStatus(displayState)}</>
     }
@@ -332,7 +371,7 @@ function DeferredSectionBody({
     )
   }
 
-  if (statusData?.isGenerating || statusData?.isLoading || skeletonFallbackData?.isLoading) {
+  if (mode === "skeleton") {
     return <DocumentSkeleton label={label} mode={getSkeletonMode(statusData ?? skeletonFallbackData)} />
   }
 
@@ -418,22 +457,19 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         // The live-fill variant promises the full section skeleton from the
         // first token, so no separate generating module is needed once the
         // stream exists.
-        renderStatus: (state) =>
-          competitiveStreamingContent ? (
-            <CompetitiveStreamingDocument
-              content={competitiveStreamingContent}
-              finished={false}
-              variant="live-fill"
-              parts="detail"
-              competitorSources={competitiveStreamingSources}
-            />
-          ) : (
-            <GenerationStatusModule
-              label="Market Research"
-              state={state}
-              onGenerateDocument={onGenerateDocument}
-            />
-          ),
+        renderStreaming:
+          competitiveStreamingContent &&
+          competitiveData?.displayState &&
+          competitiveData.displayState.displayStatus !== "idle"
+            ? () => (
+                <CompetitiveStreamingDocument
+                  content={competitiveStreamingContent}
+                  finished={false}
+                  parts="detail"
+                  competitorSources={competitiveStreamingSources}
+                />
+              )
+            : undefined,
       },
       {
         navKey: "prd",
@@ -446,21 +482,17 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         ),
         // Live-stream the Product Plan through its designed blocks while the
         // onboarding queue writes it.
-        renderStatus: (state) =>
-          prdStreamingContent ? (
-            <PlanningStreamingDocument
-              docType="prd"
-              content={prdStreamingContent}
-              finished={false}
-              projectId={projectId}
-            />
-          ) : (
-            <GenerationStatusModule
-              label="Product Plan"
-              state={state}
-              onGenerateDocument={onGenerateDocument}
-            />
-          ),
+        renderStreaming:
+          prdStreamingContent && prdData?.displayState && prdData.displayState.displayStatus !== "idle"
+            ? () => (
+                <PlanningStreamingDocument
+                  docType="prd"
+                  content={prdStreamingContent}
+                  finished={false}
+                  projectId={projectId}
+                />
+              )
+            : undefined,
       },
       {
         navKey: "mvp",
@@ -471,21 +503,17 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
         renderContent: () => (
           <MvpPlanDocumentBlocks content={mvpData!.content!} projectId={projectId} />
         ),
-        renderStatus: (state) =>
-          mvpStreamingContent ? (
-            <PlanningStreamingDocument
-              docType="mvp"
-              content={mvpStreamingContent}
-              finished={false}
-              projectId={projectId}
-            />
-          ) : (
-            <GenerationStatusModule
-              label="First Version Plan"
-              state={state}
-              onGenerateDocument={onGenerateDocument}
-            />
-          ),
+        renderStreaming:
+          mvpStreamingContent && mvpData?.displayState && mvpData.displayState.displayStatus !== "idle"
+            ? () => (
+                <PlanningStreamingDocument
+                  docType="mvp"
+                  content={mvpStreamingContent}
+                  finished={false}
+                  projectId={projectId}
+                />
+              )
+            : undefined,
       },
       {
         navKey: "mockups",
@@ -526,40 +554,42 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
       },
     ]
 
-    return (
-      <div
-        ref={ref}
-        className="flex-1 space-y-8 overflow-y-auto bg-background px-3 pt-16 pb-[calc(5.5rem+env(safe-area-inset-bottom))] [scroll-padding-top:60px] sm:px-6 sm:pt-[68px] lg:px-8 lg:pt-4 lg:pb-32 lg:[scroll-padding-top:0px]"
-      >
-        {/* Executive Summary — rendered immediately (first visible section) */}
-        <DocumentWrapper navKey="executive-summary">
-          {competitiveData?.content ? (
-            <CompetitiveOverviewSection
-              content={competitiveData.content}
-              metadata={competitiveData.metadata}
-              projectId={projectId}
-              projectName={projectName}
-            />
-          ) : competitiveStreamingContent ? (
+    const executiveSummarySection: DocumentSectionBodyConfig = {
+      label: "Executive Summary",
+      statusData: competitiveData,
+      hasContent: Boolean(competitiveData?.content),
+      renderContent: () => (
+        <CompetitiveOverviewSection
+          content={competitiveData!.content!}
+          metadata={competitiveData!.metadata}
+          projectId={projectId}
+          projectName={projectName}
+        />
+      ),
+      renderStreaming: competitiveStreamingContent
+        ? () => (
             <CompetitiveStreamingDocument
               content={competitiveStreamingContent}
               finished={false}
-              variant="live-fill"
               parts="overview"
               projectName={projectName}
               competitorSources={competitiveStreamingSources}
             />
-          ) : competitiveData?.displayState && competitiveData.displayState.displayStatus !== "idle" ? (
-            <GenerationStatusModule
-              label="Executive Summary"
-              state={competitiveData.displayState}
-              onGenerateDocument={onGenerateDocument}
-            />
-          ) : competitiveData?.isGenerating || competitiveData?.isLoading ? (
-            <DocumentSkeleton label="Executive Summary" mode={getSkeletonMode(competitiveData)} />
-          ) : (
-            <EmptyState label="Executive Summary" />
-          )}
+          )
+        : undefined,
+    }
+
+    return (
+      <div
+        ref={ref}
+        className="flex-1 space-y-8 overflow-y-auto bg-background px-3 pt-[calc(var(--workspace-mobile-header-height)+0.75rem)] pb-[calc(5.5rem+env(safe-area-inset-bottom))] [scroll-padding-top:calc(var(--workspace-mobile-header-height)+0.5rem)] sm:px-6 sm:pt-[calc(var(--workspace-mobile-header-height)+1rem)] lg:px-8 lg:pt-4 lg:pb-32 lg:[scroll-padding-top:0px]"
+      >
+        {/* Executive Summary — rendered immediately (first visible section) */}
+        <DocumentWrapper navKey="executive-summary">
+          <DocumentSectionBody
+            section={executiveSummarySection}
+            onGenerateDocument={onGenerateDocument}
+          />
         </DocumentWrapper>
 
         {/* All sections below are deferred to next animation frame */}
@@ -571,7 +601,7 @@ export const ScrollableContent = forwardRef<HTMLDivElement, ScrollableContentPro
             performanceContain={activeDocument !== NAV_SOURCE_TYPES.get(section.navKey)}
             intrinsicSize={section.intrinsicSize}
           >
-            <DeferredSectionBody
+            <DocumentSectionBody
               section={section}
               renderDeferred={renderDeferred}
               onGenerateDocument={onGenerateDocument}

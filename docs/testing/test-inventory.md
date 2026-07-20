@@ -1,6 +1,6 @@
 # Test Inventory
 Unit tests run with `npm test`: the Node built-in test runner via tsx (`node --import tsx --test 'src/**/*.test.ts' 'src/**/*.test.tsx'`), no Jest/Vitest.
-87 test files sit colocated beside their source under `src/`; component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
+91 test files sit colocated beside their source under `src/`; component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
 Heaviest coverage: intake question generation/validation, market research provider fallbacks (Exa/Perplexity/Tavily), streaming parsers, prompt contracts.
 Also covered: planning document renderers/requests, mockup image pipeline and drafts, Stripe checkout/webhooks/credits, product analytics, workspace UI policy.
 UNCOVERED: 32 of 34 API route handlers (only two deprecated 410 routes have tests), auth flows, Supabase clients/middleware, and dashboard/landing pages.
@@ -22,6 +22,7 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 ## Market Research / Competitive Analysis
 
 - `src/components/analysis/competitive-analysis-document.test.tsx` — competitive v2 document renderer: modules-first layout, verified source mention links, positioning scale, fallback profiles, legacy markdown fallback
+- `src/components/analysis/competitive-streaming-document.test.tsx` — live Market Research streaming renderer: active designed blocks, verified source links, titled skeleton contract, and Executive Summary fill
 - `src/lib/analysis-pipelines.test.ts` — research orchestration: Exa-primary provider chain, Perplexity/Tavily fallback provenance, progress stages, live-research prompt context from search results
 - `src/lib/competitive-analysis-prompt.test.ts` — competitive analysis prompt contract: exec summary guidance, untrusted delimited excerpts, workspace section ownership, scored positioning evidence
 - `src/lib/competitive-analysis-streaming.test.ts` — streamed competitive markdown: H2-boundary section completion, alias headings, safe-tail withholding of partial tables/bold/headings
@@ -35,9 +36,11 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 
 - `src/components/analysis/ai-prompts-document-blocks.test.tsx` — AiPromptsDocumentBlocks queued placeholders while source plans generate and incomplete labels for settled missing sections
 - `src/components/analysis/first-version-plan-blocks.test.tsx` — MvpPlanDocumentBlocks rendering contract and buildAiPromptFiles paste-ready handoff files (sub-agents.md, project-context.md stack rules)
+- `src/components/analysis/first-version-plan-view-model.test.ts` — First Version Plan table/list, risk-label, scope, nested-card, and tactical-shortcut derivation
 - `src/components/analysis/planning-document-blocks.test.tsx` — planning document barrel re-exports the Product Plan and First Version renderers
-- `src/components/analysis/planning-streaming-document.test.tsx` — PlanningStreamingDocument renders arrived sections as designed blocks and remaining expected titles as skeletons
+- `src/components/analysis/planning-streaming-document.test.tsx` — PlanningStreamingDocument assembles and sanitizes shipped partial markdown, renders arrived sections as designed blocks, and keeps remaining expected titles as skeletons
 - `src/components/analysis/product-plan-blocks.test.tsx` — PrdDocumentBlocks persona cards, current prompt/navigation contract sections, and markdown fallback for loose legacy content
+- `src/components/analysis/product-plan-view-model.test.ts` — Product Plan timeline detail parsing, title normalization, and cumulative week-range derivation
 - `src/lib/ai-prompts-readiness.test.ts` — getAiPromptsReadiness derived-document states (waiting/partial/incomplete/ready) computed from PRD and MVP source content
 - `src/lib/planning-document-requests.first-version-plan.test.ts` — buildFirstVersionPlanPromptRequest keeps full Product Plan context untruncated and matches Prompt Lab default prompt construction
 - `src/lib/planning-document-requests.product-plan.test.ts` — buildProductPlanPromptRequest keeps full Market Research context untruncated and matches Prompt Lab default prompt construction
@@ -99,7 +102,8 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 - `src/lib/logger.test.ts` — structured JSON logging: context sanitization/truncation, error normalization, secret and provider-body redaction, request id propagation
 - `src/lib/openrouter-timeout.test.ts` — OpenRouter timeout envelopes vs route limits, abort/timeout error detection, and user-facing timeout message formatting
 - `src/lib/parse-document-stream.test.ts` — parseDocumentStream warns on malformed NDJSON in development and stays quiet in other environments
-- `src/lib/post-commit-review.test.ts` — post-commit cross-model review runner: exact-SHA routing, code-path filtering, durable pass/findings/failure/skip status, and reviewer outage classification using temporary repositories and fake reviewer scripts
+- `src/lib/code-path-classification.test.ts` — shared post-commit/sweep path classification covers code/workflow roots while excluding ordinary docs and lockfiles
+- `src/lib/post-commit-review.test.ts` — post-commit cross-model review runner: exact-SHA routing, code-path filtering, amend-equivalent patch reuse, durable pass/findings/failure/skip status, and reviewer outage classification using temporary repositories and fake reviewer scripts
 - `src/lib/rate-limit.test.ts` — checkRateLimit in-memory fallback limiting and Redis REST usage when env vars are configured
 - `src/lib/read-request-body.test.ts` — readRequestTextWithLimit byte caps: rejects streamed overflow and oversized declared content-length before reading
 - `src/lib/safe-redirect.test.ts` — sanitizeInternalRedirect/getSafeAuthRedirect: path allowlist, dot-segment normalization, rejection of absolute URLs, backslashes, control chars

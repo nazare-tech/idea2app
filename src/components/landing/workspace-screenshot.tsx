@@ -109,7 +109,6 @@ export function WorkspaceScreenshot({
           status="done"
           activeSectionId={activeSectionId}
           onNavigate={() => {}}
-          expandSubTabs
         />
       </div>
 

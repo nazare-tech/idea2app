@@ -3,15 +3,18 @@
 // Streaming preview of a Market Research document while it is being
 // generated. Complete markdown sections render through the exact same
 // designed block components production uses (via
-// COMPETITIVE_DETAIL_SECTION_CONFIGS); the still-growing tail streams as
-// prose following the block-commit rule: text may appear mid-sentence,
-// structure (tables, cards) never renders half-finished.
+// COMPETITIVE_DETAIL_SECTION_CONFIGS); the active recognized section fills
+// its designed block while later sections remain titled skeletons.
 
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { useSmoothedStream } from "@/hooks/use-smoothed-stream"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
-import { displayFontClass } from "@/components/analysis/planning-blocks-shared"
+import {
+  displayFontClass,
+  StreamingSkeletonBars,
+  StreamingSkeletonSection,
+} from "@/components/analysis/planning-blocks-shared"
 import {
   COMPETITIVE_DETAIL_SECTION_CONFIGS,
   CompetitiveOverviewBody,
@@ -33,22 +36,19 @@ import {
 } from "@/lib/competitive-analysis-streaming"
 import type { CompetitorSource } from "@/lib/competitor-mention-links"
 
-export type CompetitiveStreamingVariant = "block-commit" | "skeleton" | "ticker" | "live-fill"
-
 /**
  * Which portion of the document to render. The workspace splits the stream
  * across its Executive Summary ("overview") and Market Research ("detail")
- * sections; the Motion Lab renders everything in one place ("full").
+ * sections; callers choose the workspace section they are rendering.
  */
-export type CompetitiveStreamingParts = "full" | "overview" | "detail"
+export type CompetitiveStreamingParts = "overview" | "detail"
 
 interface CompetitiveStreamingDocumentProps {
   /** Raw partial (or complete) competitive-analysis markdown; smoothing happens inside */
   content: string
   /** True once the generation stream has ended */
   finished: boolean
-  variant: CompetitiveStreamingVariant
-  parts?: CompetitiveStreamingParts
+  parts: CompetitiveStreamingParts
   projectName?: string
   className?: string
   /** Disable the internal word-by-word reveal (dev tooling that pre-smooths) */
@@ -95,15 +95,6 @@ function buildStructuredData(
     allowParsedSourceFallback: false,
     extraSources: competitorSources,
   })
-}
-
-function StreamStatusLabel({ label }: { label: string }) {
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-primary">
-      <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-primary motion-reduce:animate-none" />
-      {label}
-    </span>
-  )
 }
 
 function StreamingSectionHeader({
@@ -199,39 +190,10 @@ function LiveFillSection({
   )
 }
 
-function SkeletonBars() {
-  return (
-    <div className="space-y-3" aria-hidden="true">
-      <div className="h-3 w-[92%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-      <div className="h-3 w-[84%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-      <div className="h-3 w-[55%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-    </div>
-  )
-}
-
-function SkeletonSection({ title, index }: { title: string; index?: number }) {
-  return (
-    <section aria-hidden="true">
-      <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
-        <p className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#C9C1B8]")}>
-          {title}
-        </p>
-        {typeof index === "number" ? (
-          <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#D8CEC5]">
-            {String(index).padStart(2, "0")} / {String(TOTAL_SECTIONS).padStart(2, "0")}
-          </p>
-        ) : null}
-      </div>
-      <SkeletonBars />
-    </section>
-  )
-}
-
 export function CompetitiveStreamingDocument({
   content,
   finished,
-  variant,
-  parts = "full",
+  parts,
   projectName,
   className,
   smoothTail = true,
@@ -244,15 +206,14 @@ export function CompetitiveStreamingDocument({
     () => parseStreamingCompetitiveAnalysis(content, { finished }),
     [content, finished]
   )
-  const liveFill = variant === "live-fill"
   const structured = useMemo(() => {
     const active = parse.activeSection
     const liveSection =
-      liveFill && active?.name
+      active?.name
         ? { name: active.name, content: sanitizeLiveSectionContent(active.content) }
         : null
     return buildStructuredData(parse, liveSection, competitorSources)
-  }, [parse, liveFill, competitorSources])
+  }, [parse, competitorSources])
 
   const executiveComplete = parse.completeSectionNames.has("Executive Summary")
   const activeSection = parse.activeSection
@@ -265,10 +226,6 @@ export function CompetitiveStreamingDocument({
     resetKey: activeSection?.heading ?? null,
   })
   const activeTail = reveal ? smoothedActiveBody : activeSection?.content ?? ""
-  const showProseTail = variant !== "ticker" && !liveFill && activeSection !== null
-  const showOverview = parts !== "detail"
-  const showDetail = parts !== "overview"
-
   const configComplete = (config: CompetitiveDetailSectionConfig) =>
     config.v2Sections.every((name) => parse.completeSectionNames.has(name))
 
@@ -282,7 +239,7 @@ export function CompetitiveStreamingDocument({
       {/* Executive Summary. The standalone workspace section ("overview")
           mirrors the saved document exactly: same top-level header, no inner
           H2, so the swap to the saved document does not reflow. */}
-      {showOverview && parts === "overview" ? (
+      {parts === "overview" ? (
         <section id="executive-summary" className="flex flex-col gap-y-3 gap-x-0">
           <TopLevelDocumentHeader
             title="Executive Summary"
@@ -292,37 +249,15 @@ export function CompetitiveStreamingDocument({
             <div className="stream-snap-in">
               <CompetitiveOverviewBody structured={structured} projectName={projectName} />
             </div>
-          ) : liveFill &&
-            activeSection?.name === "Executive Summary" &&
+          ) : activeSection?.name === "Executive Summary" &&
             liveSectionHasRenderableData(null, activeSection.content) ? (
             <div className="stream-snap-in">
               <CompetitiveOverviewBody structured={structured} projectName={projectName} />
             </div>
-          ) : showProseTail && activeSection?.name === "Executive Summary" ? (
-            <ActiveStreamingSection title="Executive Summary" rawContent={activeTail} />
           ) : (
-            <SkeletonBars />
+            <StreamingSkeletonBars />
           )}
         </section>
-      ) : null}
-
-      {showOverview && parts !== "overview" ? (
-        executiveComplete ? (
-          <section className="stream-snap-in">
-            <StreamingSectionHeader title="Executive Summary" />
-            <CompetitiveOverviewBody structured={structured} projectName={projectName} />
-          </section>
-        ) : showProseTail && activeSection?.name === "Executive Summary" ? (
-          <ActiveStreamingSection title="Executive Summary" rawContent={activeTail} />
-        ) : liveFill &&
-          activeSection?.name === "Executive Summary" &&
-          liveSectionHasRenderableData(null, activeSection.content) ? (
-          <LiveFillSection title="Executive Summary">
-            <CompetitiveOverviewBody structured={structured} projectName={projectName} />
-          </LiveFillSection>
-        ) : variant === "skeleton" || liveFill ? (
-          <SkeletonSection title="Executive Summary" />
-        ) : null
       ) : null}
 
       {/* Standalone Market Research section: same top-level header the saved
@@ -335,7 +270,7 @@ export function CompetitiveStreamingDocument({
       ) : null}
 
       {/* Designed detail sections, in contract order */}
-      {showDetail
+      {parts === "detail"
         ? COMPETITIVE_DETAIL_SECTION_CONFIGS.map((config, index) => {
             if (configComplete(config)) {
               return (
@@ -353,19 +288,7 @@ export function CompetitiveStreamingDocument({
               )
             }
 
-            if (showProseTail && index === activeConfigIndex && activeSection) {
-              return (
-                <ActiveStreamingSection
-                  key={config.id}
-                  title={config.title}
-                  index={index + 1}
-                  rawContent={activeTail}
-                />
-              )
-            }
-
             if (
-              liveFill &&
               index === activeConfigIndex &&
               activeSection?.name &&
               liveSectionHasRenderableData(config, activeSection.content)
@@ -377,25 +300,21 @@ export function CompetitiveStreamingDocument({
               )
             }
 
-            if (variant === "skeleton" || liveFill) {
-              return <SkeletonSection key={config.id} title={config.title} index={index + 1} />
-            }
-
-            return null
+            return (
+              <StreamingSkeletonSection
+                key={config.id}
+                title={config.title}
+                index={index + 1}
+                total={TOTAL_SECTIONS}
+              />
+            )
           })
         : null}
 
       {/* A recognized document can stream sections we do not map to a designed
           block (unknown headings); show them as prose so nothing is lost. */}
-      {showDetail && (showProseTail || liveFill) && activeSection && activeSection.name === null ? (
+      {parts === "detail" && activeSection && activeSection.name === null ? (
         <ActiveStreamingSection title={activeSection.heading} rawContent={activeTail} />
-      ) : null}
-
-      {/* Before the first heading arrives */}
-      {showOverview && parse.sections.length === 0 && !finished && variant !== "skeleton" && !liveFill ? (
-        <div className="flex items-center gap-3 border border-dashed border-[#D8CEC5] bg-[#FAFAFA] px-5 py-4">
-          <StreamStatusLabel label="Starting market research" />
-        </div>
       ) : null}
       </div>
     </CompetitorMentionLinksProvider>

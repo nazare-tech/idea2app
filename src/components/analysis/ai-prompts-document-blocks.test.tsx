@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 
-import { AiPromptsDocumentBlocks } from "@/components/analysis/first-version-plan-blocks"
+import { AiPromptsDocumentBlocks } from "@/components/analysis/ai-prompts-document-blocks"
 
 test("AiPromptsDocumentBlocks shows queued placeholders while a source plan is still generating", () => {
   const html = renderToStaticMarkup(

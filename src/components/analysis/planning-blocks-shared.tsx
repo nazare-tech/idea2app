@@ -13,7 +13,9 @@ import type {
 import {
   extractSectionsByHeading,
   normalizeHeading,
+  splitLabeledText,
   stripInlineMarkdown,
+  stripHorizontalRulesFromMarkdown,
 } from "@/lib/planning-document-parser"
 import { cn } from "@/lib/utils"
 
@@ -24,13 +26,50 @@ export interface PlanningDocumentProps {
 
 export const displayFontClass = "font-[family:var(--font-display)]"
 
-export function stripHorizontalRulesFromMarkdown(content: string) {
-  return content
-    .split("\n")
-    .filter((line) => !/^\s*-{3,}\s*$/.test(line))
-    .join("\n")
-    .trim()
+export function StreamingSkeletonBars() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      <div className="h-3 w-[92%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
+      <div className="h-3 w-[84%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
+      <div className="h-3 w-[55%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
+    </div>
+  )
 }
+
+export function StreamingSkeletonSection({
+  title,
+  index,
+  total,
+}: {
+  title: string
+  index?: number
+  total?: number
+}) {
+  const showCounter = typeof index === "number" && typeof total === "number"
+
+  return (
+    <section aria-hidden="true">
+      <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
+        <p className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#C9C1B8]")}>
+          {title}
+        </p>
+        {showCounter ? (
+          <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#D8CEC5]">
+            {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
+          </p>
+        ) : null}
+      </div>
+      <StreamingSkeletonBars />
+    </section>
+  )
+}
+
+export {
+  getCurrentSectionTitle,
+  getTableCell,
+  splitLabeledText,
+  stripHorizontalRulesFromMarkdown,
+} from "@/lib/planning-document-parser"
 
 export function PlanningMarkdownRenderer({
   content,
@@ -167,17 +206,6 @@ export function ParagraphStack({
       ))}
     </div>
   )
-}
-
-export function splitLabeledText(value: string) {
-  const cleaned = value.replace(/^>\s*/, "").trim()
-  const match = cleaned.match(/^([^:]{2,96}):\s*(.*)$/)
-  if (!match) return null
-
-  return {
-    label: match[1].trim(),
-    body: match[2].trim().replace(/^>\s*/, ""),
-  }
 }
 
 export function buildItemGroups(items: string[]) {
@@ -357,14 +385,6 @@ export function hasNarrativeContent(narrative: PlanningNarrativeTable) {
   )
 }
 
-export function getTableCell(row: string[], headers: string[], aliases: string[]) {
-  const normalizedAliases = aliases.map((alias) => alias.toLowerCase())
-  const index = headers.findIndex((header) =>
-    normalizedAliases.some((alias) => header.toLowerCase().includes(alias)),
-  )
-
-  return index >= 0 ? row[index] ?? "" : ""
-}
 export function MarkdownSectionCard({
   title,
   kicker,
@@ -445,22 +465,6 @@ export function getSectionByAlias(sections: PlanningDocumentSection[], aliases: 
 
 export function isCurrentPromptDocument(content: string, aliases: string[]) {
   return countRecognizedSections(extractSectionsByHeading(content, 2), aliases) >= 3
-}
-
-export function getCurrentSectionTitle(heading: string) {
-  const cleaned = stripInlineMarkdown(heading)
-    .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
-    .replace(/\s*\/\s*/g, " / ")
-    .trim()
-
-  return cleaned
-    .split(" ")
-    .map((word) =>
-      /^(?:MVP|PRD|AI|API|UX|UI)$/.test(word.toUpperCase())
-        ? word.toUpperCase()
-        : `${word.slice(0, 1).toUpperCase()}${word.slice(1)}`,
-    )
-    .join(" ")
 }
 
 export function getStatValue(item: string, index: number) {

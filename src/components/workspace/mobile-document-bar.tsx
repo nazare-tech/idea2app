@@ -21,10 +21,6 @@ import {
 import { useReducedMotion } from "@/hooks/use-reduced-motion"
 import { useSheetModalFocus } from "@/hooks/use-sheet-modal-focus"
 
-/** Sheet height is fixed (not content-driven) so the composer FAB can ride a
- * deterministic distance above it, mirroring the design's behavior. */
-export const MOBILE_DOCUMENT_SHEET_HEIGHT_CLASS = "h-[60dvh]"
-
 interface MobileDocumentBarProps {
   navItems: DocumentNavItem[]
   documentStatuses: Record<string, NavStatus>
@@ -95,13 +91,12 @@ export function MobileDocumentBar({
       {open && (
         <div className="absolute inset-0 z-40 lg:hidden">
           <style>{`
-            @keyframes mobileSheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
             @keyframes mobileSheetFade{from{opacity:0}to{opacity:1}}
           `}</style>
           <div
             aria-hidden="true"
             onClick={() => onOpenChange(false)}
-            className="absolute inset-0 bg-foreground/45"
+            className="workspace-sheet-overlay"
             style={reduceMotion ? undefined : { animation: "mobileSheetFade .2s ease" }}
           />
           <div
@@ -110,10 +105,9 @@ export function MobileDocumentBar({
             aria-modal="true"
             aria-label="Project documents"
             className={cn(
-              "absolute inset-x-0 bottom-0 flex flex-col rounded-t-2xl bg-card pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(15,23,42,0.12)]",
-              MOBILE_DOCUMENT_SHEET_HEIGHT_CLASS,
+              "absolute inset-x-0 bottom-0 flex h-[var(--workspace-document-sheet-height)] flex-col rounded-t-2xl bg-card pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(15,23,42,0.12)]",
             )}
-            style={reduceMotion ? undefined : { animation: "mobileSheetUp .3s var(--ease-out-expo)" }}
+            style={reduceMotion ? undefined : { animation: "workspace-sheet-up .3s var(--ease-out-expo)" }}
           >
             <div className="flex shrink-0 items-center gap-2 py-2 pl-[18px] pr-2">
               <span className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-text-secondary">

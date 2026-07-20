@@ -2,7 +2,6 @@ import test from "node:test"
 import assert from "node:assert/strict"
 
 import {
-  buildStreamingPlanningMarkdown,
   parseStreamingPlanningDocument,
   sanitizeStreamingPlanningTail,
 } from "@/lib/planning-document-streaming"
@@ -55,31 +54,6 @@ test("sanitize drops a lone unclosed bold marker", () => {
   )
 })
 
-test("committed markdown keeps complete sections verbatim and sanitizes the tail", () => {
-  const content = [
-    "# First Version Plan",
-    "",
-    "## MVP Summary",
-    "",
-    "A complete summary.",
-    "",
-    "## Target User and Problem",
-    "",
-    "Solo founders **who",
-  ].join("\n")
-
-  const result = buildStreamingPlanningMarkdown(content, { finished: false })
-
-  assert.match(result.markdown, /# First Version Plan/)
-  assert.match(result.markdown, /## MVP Summary\n\nA complete summary\./)
-  assert.match(result.markdown, /## Target User and Problem/)
-  // The unclosed bold marker is dropped so the tail streams as plain prose.
-  assert.match(result.markdown, /Solo founders who/)
-  assert.doesNotMatch(result.markdown, /\*\*/)
-  assert.equal(result.activeHeading, "Target User and Problem")
-  assert.deepEqual(result.headings, ["MVP Summary", "Target User and Problem"])
-})
-
 test("a trailing partially-streamed heading line is withheld until its newline arrives", () => {
   const content = [
     "## MVP Summary",
@@ -89,15 +63,20 @@ test("a trailing partially-streamed heading line is withheld until its newline a
     "## Core User Fl",
   ].join("\n")
 
-  const streaming = buildStreamingPlanningMarkdown(content, { finished: false })
-  assert.deepEqual(streaming.headings, ["MVP Summary"])
-  assert.doesNotMatch(streaming.markdown, /Core User Fl/)
+  const streaming = parseStreamingPlanningDocument(content, { finished: false })
+  assert.deepEqual(streaming.sections.map((section) => section.heading), ["MVP Summary"])
 
   // The newline after the heading commits it.
-  const committed = buildStreamingPlanningMarkdown(`${content}\n`, { finished: false })
-  assert.deepEqual(committed.headings, ["MVP Summary", "Core User Fl"])
+  const committed = parseStreamingPlanningDocument(`${content}\n`, { finished: false })
+  assert.deepEqual(
+    committed.sections.map((section) => section.heading),
+    ["MVP Summary", "Core User Fl"],
+  )
 
   // A finished document keeps its final heading even without a trailing newline.
-  const finished = buildStreamingPlanningMarkdown(content, { finished: true })
-  assert.deepEqual(finished.headings, ["MVP Summary", "Core User Fl"])
+  const finished = parseStreamingPlanningDocument(content, { finished: true })
+  assert.deepEqual(
+    finished.sections.map((section) => section.heading),
+    ["MVP Summary", "Core User Fl"],
+  )
 })

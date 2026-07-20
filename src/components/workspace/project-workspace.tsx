@@ -899,7 +899,7 @@ export function ProjectWorkspace({
 
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
           {isWorkspaceLoading ? (
-            <div className="pointer-events-none absolute inset-x-0 top-[52px] z-10 h-0.5 overflow-hidden bg-transparent lg:top-16">
+            <div className="pointer-events-none absolute inset-x-0 top-[var(--workspace-mobile-header-height)] z-10 h-0.5 overflow-hidden bg-transparent lg:top-[var(--workspace-desktop-header-height)]">
               <div className="h-full w-1/3 animate-[workspaceLoad_1s_ease-in-out_infinite] bg-primary/70" />
             </div>
           ) : null}

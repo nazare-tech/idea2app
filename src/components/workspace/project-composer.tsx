@@ -102,9 +102,7 @@ const CHIP_ICONS = {
 
 /**
  * Mobile "Ask this project" floating action button (design: 54px red circle,
- * bottom-right, riding above whichever bottom chrome is showing). The 60dvh
- * lift matches MOBILE_DOCUMENT_SHEET_HEIGHT_CLASS in mobile-document-bar.tsx —
- * Tailwind's JIT needs the literal here.
+ * bottom-right, riding above whichever bottom chrome is showing).
  */
 function AskProjectFab({
   onClick,
@@ -130,7 +128,7 @@ function AskProjectFab({
         "absolute right-4 z-[45] flex h-[54px] w-[54px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(15,23,42,0.18)] lg:hidden",
         !reduceMotion && "transition-[bottom] duration-[280ms] ease-[var(--ease-out-expo)]",
         lifted
-          ? "bottom-[calc(60dvh+0.875rem)]"
+          ? "bottom-[calc(var(--workspace-document-sheet-height)+0.875rem)]"
           : chromeHidden
             ? "bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
             : "bottom-[calc(env(safe-area-inset-bottom)+4.25rem)]",
@@ -431,7 +429,7 @@ export function ProjectComposer({
             <div
               aria-hidden="true"
               onClick={() => setOpen(false)}
-              className="absolute inset-0 bg-foreground/45"
+              className="workspace-sheet-overlay"
             />
             <div
               ref={upgradeSheetRef}
@@ -439,9 +437,8 @@ export function ProjectComposer({
               aria-modal="true"
               aria-label="Ask this project"
               className="absolute inset-x-0 bottom-0 rounded-t-2xl bg-card px-[18px] pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3.5 shadow-[0_-4px_20px_rgba(15,23,42,0.12)]"
-              style={reduceMotion ? undefined : { animation: "composerSheetUp .3s var(--ease-out-expo)" }}
+              style={reduceMotion ? undefined : { animation: "workspace-sheet-up .3s var(--ease-out-expo)" }}
             >
-              <style>{`@keyframes composerSheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}`}</style>
               <div className="flex items-center gap-2.5">
                 <span className={cn(kickerClass, "inline-flex items-center gap-[7px] text-primary")}>
                   <Sparkle className="h-[13px] w-[13px]" />
@@ -523,7 +520,7 @@ export function ProjectComposer({
         <div
           aria-hidden="true"
           onClick={() => setOpen(false)}
-          className="absolute inset-0 z-[39] bg-foreground/45 lg:hidden"
+          className="workspace-sheet-overlay z-[39] lg:hidden"
         />
       )}
     <div
@@ -537,7 +534,6 @@ export function ProjectComposer({
       <style>{`
         @keyframes composerUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes composerDot{0%,80%,100%{opacity:.22}40%{opacity:1}}
-        @keyframes composerSheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
         /* The composer card is the focus surface; the input itself is borderless per design. */
         [data-testid="project-composer"] textarea:focus-visible{outline:none}
       `}</style>
@@ -549,8 +545,8 @@ export function ProjectComposer({
         className={cn(
           "pointer-events-auto flex flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-[0_4px_20px_rgba(15,23,42,0.06)] lg:rounded-2xl",
           open &&
-            "max-lg:h-[70dvh] max-lg:border-x-0 max-lg:border-b-0 max-lg:pb-[env(safe-area-inset-bottom)] max-lg:shadow-[0_-4px_20px_rgba(15,23,42,0.12)]",
-          open && !reduceMotion && "max-lg:animate-[composerSheetUp_.3s_var(--ease-out-expo)]",
+            "max-lg:h-[var(--workspace-composer-sheet-height)] max-lg:border-x-0 max-lg:border-b-0 max-lg:pb-[env(safe-area-inset-bottom)] max-lg:shadow-[0_-4px_20px_rgba(15,23,42,0.12)]",
+          open && !reduceMotion && "max-lg:animate-[workspace-sheet-up_.3s_var(--ease-out-expo)]",
         )}
       >
         {open && (

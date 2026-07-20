@@ -29,7 +29,7 @@ export function Header({
   const brand = <HeaderBrand />
 
   return (
-    <header className={cn("grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-strong bg-background px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]", className)}>
+    <header className={cn("grid h-[var(--workspace-desktop-header-height)] shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-strong bg-background px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]", className)}>
       <div className="flex min-w-0 items-center gap-4">
         {children ?? brand}
       </div>

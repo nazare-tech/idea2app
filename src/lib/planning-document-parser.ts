@@ -58,6 +58,50 @@ export function normalizeHeading(value: string) {
     .trim()
 }
 
+export function stripHorizontalRulesFromMarkdown(content: string) {
+  return content
+    .split("\n")
+    .filter((line) => !/^\s*-{3,}\s*$/.test(line))
+    .join("\n")
+    .trim()
+}
+
+export function splitLabeledText(value: string) {
+  const cleaned = value.replace(/^>\s*/, "").trim()
+  const match = cleaned.match(/^([^:]{2,96}):\s*(.*)$/)
+  if (!match) return null
+
+  return {
+    label: match[1].trim(),
+    body: match[2].trim().replace(/^>\s*/, ""),
+  }
+}
+
+export function getTableCell(row: string[], headers: string[], aliases: string[]) {
+  const normalizedAliases = aliases.map((alias) => alias.toLowerCase())
+  const index = headers.findIndex((header) =>
+    normalizedAliases.some((alias) => header.toLowerCase().includes(alias)),
+  )
+
+  return index >= 0 ? row[index] ?? "" : ""
+}
+
+export function getCurrentSectionTitle(heading: string) {
+  const cleaned = stripInlineMarkdown(heading)
+    .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
+    .replace(/\s*\/\s*/g, " / ")
+    .trim()
+
+  return cleaned
+    .split(" ")
+    .map((word) =>
+      /^(?:MVP|PRD|AI|API|UX|UI)$/.test(word.toUpperCase())
+        ? word.toUpperCase()
+        : `${word.slice(0, 1).toUpperCase()}${word.slice(1)}`,
+    )
+    .join(" ")
+}
+
 export function splitBlocks(content: string) {
   return cleanPlanningContent(content)
     .split(/\n\s*\n/)

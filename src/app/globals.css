@@ -24,7 +24,11 @@
   --destructive-foreground: #FFFFFF;
   --border: #E8DDD5;
   --input: #E8DDD5;
-  --ring: #DC2626;
+  /* Focus indicator: warm dark gray (matches --text-secondary). Action Red
+     is reserved for primary actions and commit affordances, never focus. */
+  --ring: #4A4040;
+  --ring-soft: rgba(74,64,64,0.35);
+  --ring-faint: rgba(74,64,64,0.03);
   --radius: 0.5rem;
 
   /* Warm Horizon accent palette */
@@ -83,6 +87,13 @@
   --motion-duration-fast: 150ms;
   --motion-duration-base: 200ms;
   --motion-duration-slow: 300ms;
+
+  /* Workspace chrome geometry. Keep sheet/FAB/header/rail offsets coupled to
+     named values instead of repeating viewport literals across components. */
+  --workspace-mobile-header-height: 52px;
+  --workspace-desktop-header-height: 64px;
+  --workspace-document-sheet-height: 60dvh;
+  --workspace-composer-sheet-height: 70dvh;
 }
 
 @theme inline {
@@ -105,6 +116,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-ring-soft: var(--ring-soft);
+  --color-ring-faint: var(--ring-faint);
   --color-sidebar-bg: var(--sidebar-bg);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-muted: var(--sidebar-muted);
@@ -250,9 +263,10 @@ body {
   }
 }
 
-/* Selection */
+/* Selection: warm neutral wash, consistent with the gray focus system.
+   Action Red is reserved for primary actions. */
 ::selection {
-  background: rgba(220, 38, 38, 0.2);
+  background: rgba(74, 64, 64, 0.18);
   color: #1C1917;
 }
 
@@ -421,6 +435,17 @@ body {
 
 .hero-enter-right {
   animation: hero-enter-right 0.9s var(--motion-ease-out-expo) backwards;
+}
+
+.workspace-sheet-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(in oklab, var(--foreground) 45%, transparent);
+}
+
+@keyframes workspace-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 /* Streaming document generation: committed blocks snap in, prose shows a caret */

@@ -42,7 +42,6 @@ export function AnchorNavTab({
   displayState,
   onNavigate,
   onGenerateDocument,
-  expandSubTabs = false,
   onNavClick,
 }: {
   item: DocumentNavItem
@@ -51,8 +50,6 @@ export function AnchorNavTab({
   displayState?: DocumentGenerationDisplayState
   onNavigate: (id: string) => void
   onGenerateDocument?: (docType: DocumentType) => void
-  /** Show sub-tabs at every viewport width (workspace hides them below lg) */
-  expandSubTabs?: boolean
   /** Lets the rail suppress scroll-follow right after a click (workspace only) */
   onNavClick?: () => void
 }) {
@@ -100,7 +97,7 @@ export function AnchorNavTab({
   }
 
   return (
-    <div className={cn("min-w-[168px] shrink-0 rounded-md p-2 transition-colors lg:min-w-0 lg:shrink", containerStyle)}>
+    <div className={cn("min-w-0 shrink rounded-md p-2 transition-colors", containerStyle)}>
       {/* Tab title row */}
       <div className="flex min-h-8 w-full items-center gap-2">
         <StatusMarker status={status} />
@@ -110,7 +107,7 @@ export function AnchorNavTab({
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => handleNavClick(event, item.key)}
           aria-label={`${item.label}, ${status.replace("_", " ")}`}
-          className="min-w-0 flex-1 cursor-pointer rounded-sm text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0"
+          className="min-w-0 flex-1 cursor-pointer rounded-sm text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0"
         >
           <span className={cn("block truncate text-base font-bold", titleColor)}>
             {item.label}
@@ -124,7 +121,7 @@ export function AnchorNavTab({
             onGenerateDocument(item.sourceType)
           }}
           className={cn(
-            "inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+            "inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
             hasIssue
               ? "border-destructive bg-destructive text-primary-foreground hover:bg-destructive/90"
               : "border-[#D8CEC5] bg-[#FFFFFE] text-[#5D5551] hover:border-primary/50 hover:text-primary",
@@ -144,7 +141,7 @@ export function AnchorNavTab({
       </div>
 
       {/* Sub-tabs */}
-      <div className={cn("mt-1 ml-[11px] border-l pl-2", expandSubTabs ? "block" : "hidden lg:block", connectorColor)}>
+      <div className={cn("mt-1 ml-[11px] border-l pl-2", connectorColor)}>
         {item.sections.map((section, idx) => {
           const isActiveSub = activeSectionId === section.id
           // In-progress items: vary opacity by position
@@ -160,7 +157,7 @@ export function AnchorNavTab({
               onClick={(event) => handleNavClick(event, section.id)}
               aria-current={isActiveSub ? "location" : undefined}
               className={cn(
-                "block w-full cursor-pointer rounded-sm px-2 py-1 text-left text-[13px] transition-[background-color,color] hover:bg-[#F5F0EB] hover:text-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0",
+                "block w-full cursor-pointer rounded-sm px-2 py-1 text-left text-[13px] transition-[background-color,color] hover:bg-[#F5F0EB] hover:text-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0",
                 isActiveSub
                   ? "bg-[#1C1917] font-semibold text-[#FAFAFA] hover:bg-[#1C1917] hover:text-[#FAFAFA]"
                   : cn(subColor, inProgressOpacity)
@@ -208,18 +205,9 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
     if (!nav) return
     if (Date.now() < suppressFollowUntilRef.current) return
 
-    let target = nav.querySelector<HTMLElement>(
+    const target = nav.querySelector<HTMLElement>(
       `[data-nav-target="${CSS.escape(activeSectionId)}"]`,
     )
-    if (target && target.getBoundingClientRect().height === 0) {
-      // Sub-tabs are hidden below lg; follow the owning document tab instead.
-      const owner = navItems.find((item) =>
-        item.sections.some((section) => section.id === activeSectionId),
-      )
-      target = owner
-        ? nav.querySelector<HTMLElement>(`[data-nav-target="${CSS.escape(owner.key)}"]`)
-        : null
-    }
     if (!target) return
 
     const navRect = nav.getBoundingClientRect()
@@ -234,27 +222,15 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
       top = rect.bottom - (navRect.bottom - marginY)
     }
 
-    // Horizontal rail (small screens): keep the active tab a little clear of
-    // the side edges too.
-    const marginX = Math.min(rect.width, 48)
-    let left = 0
-    if (nav.scrollWidth > nav.clientWidth) {
-      if (rect.left < navRect.left + marginX) {
-        left = rect.left - (navRect.left + marginX)
-      } else if (rect.right > navRect.right - marginX) {
-        left = rect.right - (navRect.right - marginX)
-      }
-    }
-
-    if (top === 0 && left === 0) return
+    if (top === 0) return
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    nav.scrollBy({ top, left, behavior: reduceMotion ? "auto" : "smooth" })
+    nav.scrollBy({ top, behavior: reduceMotion ? "auto" : "smooth" })
   }, [activeSectionId, navItems])
 
   return (
     <nav
       ref={setNavRef}
-      className="workspace-anchor-nav hidden w-full shrink-0 gap-2 overflow-x-auto border-b border-[#E2DDD6] bg-background px-4 py-3 lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-64px)] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6 lg:py-5"
+      className="workspace-anchor-nav hidden shrink-0 bg-background lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-var(--workspace-desktop-header-height))] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-[#E2DDD6] lg:px-6 lg:py-5"
     >
       {/* Document tabs */}
       {navItems.map((item) => (
