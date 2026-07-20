@@ -12,7 +12,7 @@ const CompetitorMatcherContext =
   createContext<CompiledCompetitorMentionMatcher>(EMPTY_MATCHER)
 
 export const competitorLinkClassName =
-  "text-primary underline decoration-primary/45 underline-offset-[3px] transition-colors hover:text-primary/80 hover:decoration-primary/80 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2"
+  "text-primary underline decoration-primary/45 underline-offset-[3px] transition-colors hover:text-primary/80 hover:decoration-primary/80 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-2"
 
 export function CompetitorMentionLinksProvider({
   sources,

@@ -1,6 +1,6 @@
 export const uiStylePresets = {
   authFieldInput:
-    "h-12 bg-white border-border-subtle text-text-primary placeholder:text-text-muted focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-0",
+    "h-12 bg-white border-border-subtle text-text-primary placeholder:text-text-muted focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-0",
   authErrorPill:
     "rounded-lg border border-[#FDECEA] bg-[#FDECEA] px-3 py-2 text-sm text-destructive",
   authSocialButton:

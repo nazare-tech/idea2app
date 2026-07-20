@@ -54,7 +54,7 @@ export function HeaderProfileMenu({
           type="button"
           id={triggerId}
           aria-label={`Open profile menu for ${profileLabel}`}
-          className="inline-flex h-10 items-center gap-1 rounded-full text-text-primary transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
+          className="inline-flex h-10 items-center gap-1 rounded-full text-text-primary transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2"
         >
           <span className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-full border border-border-strong bg-white p-px">
             <Avatar className="h-8 w-8 rounded-full">

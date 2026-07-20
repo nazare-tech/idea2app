@@ -175,7 +175,7 @@ function ExampleIdeaRow({
           type="button"
           disabled={disabled}
           onClick={() => onPick(idea.description)}
-          className="mr-3 inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-border-subtle bg-white px-[18px] py-[9px] text-[13px] font-medium text-text-primary transition-colors hover:border-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed"
+          className="mr-3 inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-border-subtle bg-white px-[18px] py-[9px] text-[13px] font-medium text-text-primary transition-colors hover:border-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed"
         >
           {idea.title}
         </button>

@@ -25,7 +25,7 @@ interface StackedTabNavProps {
 
 function getItemClasses(isActive: boolean, disabled: boolean, isLast: boolean) {
   return cn(
-    "flex min-h-11 w-auto min-w-[160px] shrink-0 items-center gap-3 px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset sm:px-6 lg:w-full lg:min-w-0",
+    "flex min-h-11 w-auto min-w-[160px] shrink-0 items-center gap-3 px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset sm:px-6 lg:w-full lg:min-w-0",
     disabled && "cursor-not-allowed opacity-50 pointer-events-none",
     isActive
       ? "border border-primary/30 bg-primary/10"

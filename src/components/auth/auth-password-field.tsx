@@ -44,7 +44,7 @@ export function AuthPasswordField({
         type="button"
         onClick={() => setShowPassword((current) => !current)}
         disabled={disabled}
-        className="absolute right-1 top-[26px] flex h-11 w-11 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40"
+        className="absolute right-1 top-[26px] flex h-11 w-11 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-40"
         aria-label={showPassword ? "Hide password" : "Show password"}
         aria-pressed={showPassword}
       >

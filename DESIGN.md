@@ -130,7 +130,7 @@ A tinted-neutral surface carrying one strong accent. Warm secondary accents (cor
 
 ### Primary
 
-- **Action Red** (`#DC2626`, oklch ~57% 0.245 27): The only brand color that earns the privilege of saturation. Used on primary buttons, the wordmark mark, the live-progress line in the Build Map, the `:focus-visible` ring, and the active state of progress affordances. Anywhere the user is being asked to commit, the red appears. Anywhere a screen is just informing, the red is absent.
+- **Action Red** (`#DC2626`, oklch ~57% 0.245 27): The only brand color that earns the privilege of saturation. Used on primary buttons, the wordmark mark, the live-progress line in the Build Map, and the active state of progress affordances. Anywhere the user is being asked to commit, the red appears. Anywhere a screen is just informing, the red is absent. Focus indicators are NOT red: `:focus-visible` rings use the warm dark gray `--ring` (`#4A4040`, matching Ink Secondary), because focus is navigation, not commitment.
 
 ### Neutral
 
@@ -216,7 +216,7 @@ A button is a commitment, sized to be obvious from across the screen.
 
 ### Inputs
 
-Inputs are quiet at rest and assertive when focused. The focus state is a controlled red-tinted glow, never an outline.
+Inputs are quiet at rest and assertive when focused. The focus state is a controlled warm-gray glow (`--ring` #4A4040 border, `--ring-soft` ring, `--ring-faint` wash), never an outline and never Action Red: red stays reserved for primary actions.
 
 - **Shape:** `rounded-xl` (12px) — softer than buttons, because inputs are surfaces you live inside while typing.
 - **Style:** `surface-soft` (rgba white 3%) background on dark surfaces; Card White on light. `Border Strong` resting border.

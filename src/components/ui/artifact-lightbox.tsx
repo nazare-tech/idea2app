@@ -21,7 +21,7 @@ export function ArtifactActionButton({
       type="button"
       aria-label={label}
       title={label}
-      className="grid h-8 w-8 place-items-center border border-[#E8DDD5] bg-white text-[#4A4040] transition-colors hover:border-[#D8CEC5] hover:bg-[#F8F4F1] hover:text-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      className="grid h-8 w-8 place-items-center border border-[#E8DDD5] bg-white text-[#4A4040] transition-colors hover:border-[#D8CEC5] hover:bg-[#F8F4F1] hover:text-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       onClick={onClick}
     >
       {children}

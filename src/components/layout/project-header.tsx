@@ -88,7 +88,7 @@ export function ProjectHeader({
             if (e.key === "Enter") { e.preventDefault(); void finishEdit() }
             if (e.key === "Escape") { setDraft(projectName); setIsEditing(false) }
           }}
-          className="h-8 w-[min(24rem,40vw)] rounded-lg border border-border-strong bg-card px-2.5 text-base font-semibold leading-5 text-foreground outline-none focus:border-primary/60 focus:bg-accent-primary-faint focus:ring-2 focus:ring-accent-primary-light"
+          className="h-8 w-[min(24rem,40vw)] rounded-lg border border-border-strong bg-card px-2.5 text-base font-semibold leading-5 text-foreground outline-none focus:border-ring/60 focus:bg-ring-faint focus:ring-2 focus:ring-ring-soft"
           disabled={isSavingName}
         />
       ) : isNameSet ? (
@@ -121,7 +121,7 @@ export function ProjectHeader({
           menu). Overlays the scroller so hiding it frees the full viewport. */}
       <div
         className={cn(
-          "absolute inset-x-0 top-0 z-30 flex h-[52px] items-center gap-1 border-b border-border-strong bg-background pl-1.5 pr-3 lg:hidden",
+          "absolute inset-x-0 top-0 z-30 flex h-[var(--workspace-mobile-header-height)] items-center gap-1 border-b border-border-strong bg-background pl-1.5 pr-3 lg:hidden",
           !reduceMotion && "transition-transform duration-[280ms] ease-[var(--ease-out-expo)]",
           mobileChromeHidden ? "-translate-y-[110%]" : "translate-y-0",
         )}

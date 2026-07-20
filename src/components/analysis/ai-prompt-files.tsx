@@ -600,7 +600,7 @@ export function AiPromptFileGrid({
             <button
               type="button"
               aria-label={`Open ${file.fileName} preview`}
-              className="flex flex-1 flex-col items-start gap-2 px-5 pb-4 pt-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex flex-1 flex-col items-start gap-2 px-5 pb-4 pt-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
               onClick={() => {
                 setActiveFile(file)
                 trackPromptAction("prompt_file_opened", file, "card")

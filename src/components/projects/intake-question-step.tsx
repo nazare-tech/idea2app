@@ -29,7 +29,7 @@ const SKELETON_TITLE_WIDTHS = ["58%", "44%", "66%", "50%"]
 const QUESTION_REVEAL_STAGGER_MS = 90
 
 const CHIP_BASE_CLASS =
-  "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0 sm:py-1.5"
+  "inline-flex min-h-11 max-w-full items-center rounded-md border px-3 py-2 text-left text-xs font-medium whitespace-normal break-words transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0 sm:py-1.5"
 const CHIP_SELECTED_CLASS = "border-text-primary bg-text-primary text-white"
 const CHIP_UNSELECTED_CLASS =
   "border-border-subtle bg-white text-text-primary hover:border-text-primary"

@@ -251,7 +251,7 @@
       "refersTo": "button-primary",
       "description": "Default commitment button. Action Red, used wherever the user is asked to commit.",
       "html": "<button class=\"ds-btn-primary\">Get Started</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 10px 20px; background: #DC2626; color: #FFFFFF; border: none; border-radius: 6px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: -0.005em; cursor: pointer; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1), transform 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-primary:hover { background: #B91C1C; } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #DC2626; outline-offset: 2px; }"
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 10px 20px; background: #DC2626; color: #FFFFFF; border: none; border-radius: 6px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: -0.005em; cursor: pointer; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1), transform 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-primary:hover { background: #B91C1C; } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #4A4040; outline-offset: 2px; }"
     },
     {
       "name": "Outline Button",
@@ -259,7 +259,7 @@
       "refersTo": "button-outline",
       "description": "Secondary commitment. Used alongside Primary in dual-CTA layouts.",
       "html": "<button class=\"ds-btn-outline\">See How It Works</button>",
-      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 10px 20px; background: #FFFFFF; color: #1C1917; border: 1px solid #EAE0D8; border-radius: 6px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: -0.005em; cursor: pointer; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-outline:hover { background: rgba(245, 240, 235, 0.5); } .ds-btn-outline:focus-visible { outline: 2px solid #DC2626; outline-offset: 2px; }"
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 10px 20px; background: #FFFFFF; color: #1C1917; border: 1px solid #EAE0D8; border-radius: 6px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: -0.005em; cursor: pointer; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-outline:hover { background: rgba(245, 240, 235, 0.5); } .ds-btn-outline:focus-visible { outline: 2px solid #4A4040; outline-offset: 2px; }"
     },
     {
       "name": "Ghost Button",
@@ -273,9 +273,9 @@
       "name": "Text Input",
       "kind": "input",
       "refersTo": "input",
-      "description": "Default text field. Quiet at rest, red-tinted glow on focus.",
+      "description": "Default text field. Quiet at rest, warm-gray glow on focus (Action Red is reserved for primary actions).",
       "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Enter your idea\" />",
-      "css": ".ds-input { display: block; width: 100%; height: 44px; padding: 10px 16px; background: #FFFFFF; color: #1C1917; border: 1px solid #E8DDD5; border-radius: 12px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-input::placeholder { color: #4A4040; } .ds-input:focus-visible { outline: none; border-color: rgba(220, 38, 38, 0.3); background: rgba(220, 38, 38, 0.02); box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15); } .ds-input:disabled { opacity: 0.4; cursor: not-allowed; }"
+      "css": ".ds-input { display: block; width: 100%; height: 44px; padding: 10px 16px; background: #FFFFFF; color: #1C1917; border: 1px solid #E8DDD5; border-radius: 12px; font-family: 'Sora', system-ui, sans-serif; font-size: 14px; transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-input::placeholder { color: #4A4040; } .ds-input:focus-visible { outline: none; border-color: #4A4040; background: rgba(74, 64, 64, 0.03); box-shadow: 0 0 0 4px rgba(74, 64, 64, 0.15); } .ds-input:disabled { opacity: 0.4; cursor: not-allowed; }"
     },
     {
       "name": "Product Card",

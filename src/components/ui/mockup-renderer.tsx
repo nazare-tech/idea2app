@@ -961,7 +961,7 @@ function OpenRouterImageMockupViewer({
               <button
                 type="button"
                 aria-label={`Open ${conceptLabel} mockup in lightbox`}
-                className="block w-full cursor-zoom-in rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="block w-full cursor-zoom-in rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 onClick={() => {
                   if (isAnalyticsProjectId(projectId)) {
                     trackClientProductEvent("mockup_concept_opened", {
