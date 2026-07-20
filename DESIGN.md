@@ -220,7 +220,7 @@ Inputs are quiet at rest and assertive when focused. The focus state is a contro
 
 - **Shape:** `rounded-xl` (12px) — softer than buttons, because inputs are surfaces you live inside while typing.
 - **Style:** `surface-soft` (rgba white 3%) background on dark surfaces; Card White on light. `Border Strong` resting border.
-- **Focus:** `Action Red` light ring (`rgba(220, 38, 38, 0.4)`), border shifts to `Action Red Mid`, background tints with `rgba(220, 38, 38, 0.02)`. The shift is subtle; the input feels alive, not alarmed.
+- **Focus:** warm-gray glow: `--ring-soft` ring (`rgba(74, 64, 64, 0.35)`), border shifts to `--ring` (#4A4040), background tints with `--ring-faint` (`rgba(74, 64, 64, 0.03)`). The shift is subtle; the input feels alive, not alarmed. Never Action Red.
 - **Placeholder:** `Text Secondary`. Disabled: 40% opacity, `cursor: not-allowed`.
 
 ### Cards
