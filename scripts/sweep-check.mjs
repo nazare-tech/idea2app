@@ -18,6 +18,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SWEEP_PATHSPECS } from "./code-path-classification.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const MARKER_PATH = join(repoRoot, "docs/reviews/.last-sweep-commit");
@@ -25,18 +26,6 @@ const THRESHOLD = Number(process.env.SWEEP_THRESHOLD ?? 1000);
 
 // Code that counts toward the sweep trigger. Docs, evidence, lockfiles, and
 // generated artifacts are deliberately excluded.
-const PATHSPECS = [
-  "src",
-  "scripts",
-  "supabase",
-  "supabase-migrations",
-  "e2e",
-  ".githooks",
-  ":(exclude)**/*.md",
-  ":(exclude)**/*.lock",
-  ":(exclude)package-lock.json",
-];
-
 const args = new Set(process.argv.slice(2));
 const git = (...a) =>
   execFileSync("git", a, { cwd: repoRoot, encoding: "utf8" }).trim();
@@ -60,7 +49,7 @@ try {
   process.exit(2);
 }
 
-const numstat = git("diff", "--numstat", `${marker}..HEAD`, "--", ...PATHSPECS);
+const numstat = git("diff", "--numstat", `${marker}..HEAD`, "--", ...SWEEP_PATHSPECS);
 let added = 0;
 let deleted = 0;
 let files = 0;

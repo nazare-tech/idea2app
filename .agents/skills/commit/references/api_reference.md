@@ -22,7 +22,7 @@ git status --short          # confirm staged scope before every commit
 git commit -m "<type(scope): imperative summary>"
 ```
 
-Skip `git commit` when nothing is staged. The repo's `.githooks/pre-commit` runs `eslint --fix` + typecheck on staged code files and refuses partially staged files; fix causes instead of bypassing. After commit, `.githooks/post-commit` runs the opposite-CLI persona review for code paths and saves `.git/agent-reviews/<sha>.json` plus reviewer output. Read that status before continuing to push.
+Skip `git commit` when nothing is staged. The repo's `.githooks/pre-commit` runs `eslint --fix` + typecheck on staged code files and refuses partially staged files; fix causes instead of bypassing. After commit, `.githooks/post-commit` runs the opposite-CLI persona review for code paths and saves `.git/agent-reviews/<sha>.json` plus reviewer output. Message-only rewrites may reuse a matching successful review when patch, parent, resulting tree, reviewer, and artifact all match; reused entries record `reason: duplicate_patch` plus `duplicateOf`. Read that status before continuing to push.
 
 ## Review and remediate
 

@@ -36,6 +36,12 @@ scripts/agent-review.sh --dry-run              # print the exact reviewer comman
 
 Two layers with distinct guarantees. The wrapper (`agent-review.sh`) builds a bounded diff/full-changed-file/system-doc bundle from regular Git blobs, rejects secret-like input, embeds the authoritative persona contract, and launches each CLI from a fresh empty non-repo directory with filesystem/shell/browser/app tools and project customizations disabled. The runner (`post-commit-review.sh`) adds the isolation and the ledger: a temporary depth-two fetch of the immutable SHA and parent (no remote stored, so ignored/untracked files and dirty future chunks never enter the review root), plus results at `.git/agent-reviews/<sha>.{json,txt,stderr}` with private file modes and a 1 MB per-artifact cap. A manual wrapper invocation against the live repo gets the bundle/secret/tool guarantees but not the snapshot or the ledger. Quota, rate-limit, network, auth, timeout, snapshot, input/output-size, sensitive-input, or reviewer failure marks that SHA unreviewed; never substitute silently or report a pass.
 
+### Ledger patch identity and review reuse
+
+Code-review ledger entries may include optional `patchId`, `parent`, and `tree` fields. The runner computes `patchId` with `git patch-id --stable`, records the commit's first parent in `parent`, and records the exact resulting tree SHA in `tree`. Before spending another reviewer call, it may reuse a prior `passed` or `findings` result only when patch ID, parent, tree, reviewer, and result-artifact semantics all match. This deliberately narrow rule covers message-only rewrites while preventing whitespace-insensitive patch-ID collisions or reuse after a patch is rebased onto different surrounding code. Reused entries preserve the original result and output under the new SHA and add `reason: "duplicate_patch"` plus `duplicateOf: <reviewed-sha>`.
+
+Patch-ID/tree calculation, ledger parsing, missing or incoherent source artifacts, legacy entries, failed/skipped reviews, or any other reuse ambiguity fails open: the runner performs a fresh review. Code-path classifier failure fails closed as an unreviewed commit; only its explicit no-match exit becomes a docs-only skip. Optional fields keep old ledger entries valid without migration.
+
 ## Personas
 
 Each persona is a lens the reviewer must adopt in turn. Each owns system docs: if the reviewed change contradicts an owned doc and did not update it, that is a finding.

@@ -26,6 +26,10 @@ TEMP_OUTPUT="${REVIEW_DIR}/${COMMIT}.tmp"
 SNAPSHOT_ROOT=""
 REVIEW_PID=""
 WATCHDOG_PID=""
+PATCH_ID=""
+PARENT_COMMIT=""
+TREE_ID=""
+DUPLICATE_OF=""
 
 cleanup() {
   if [ -n "$SNAPSHOT_ROOT" ] && [ -d "$SNAPSHOT_ROOT" ]; then
@@ -71,6 +75,10 @@ write_status() {
   FAILURE_CLASS="$failure_class" \
   REVIEW_REASON="$reason" \
   REVIEW_COMMIT="$COMMIT" \
+  REVIEW_PATCH_ID="$PATCH_ID" \
+  REVIEW_PARENT="$PARENT_COMMIT" \
+  REVIEW_TREE="$TREE_ID" \
+  REVIEW_DUPLICATE_OF="$DUPLICATE_OF" \
   REVIEW_TIMESTAMP="$(timestamp)" \
     node -e '
       const fs = require("node:fs")
@@ -83,6 +91,10 @@ write_status() {
       }
       if (process.env.FAILURE_CLASS) value.failureClass = process.env.FAILURE_CLASS
       if (process.env.REVIEW_REASON) value.reason = process.env.REVIEW_REASON
+      if (process.env.REVIEW_PATCH_ID) value.patchId = process.env.REVIEW_PATCH_ID
+      if (process.env.REVIEW_PARENT) value.parent = process.env.REVIEW_PARENT
+      if (process.env.REVIEW_TREE) value.tree = process.env.REVIEW_TREE
+      if (process.env.REVIEW_DUPLICATE_OF) value.duplicateOf = process.env.REVIEW_DUPLICATE_OF
       const target = process.argv[1]
       const temporary = `${target}.${process.pid}.tmp`
       fs.writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`)
@@ -121,11 +133,50 @@ changed_files() {
 }
 
 has_reviewable_paths() {
-  # "What counts as code/workflow" is also encoded (as git pathspecs, an
-  # intentionally narrower code-only set) in scripts/sweep-check.mjs; when
-  # adding a new code root, update both or commits get reviewed but never
-  # counted toward sweeps (or vice versa).
-  changed_files | grep -Eq '^(src/|scripts/|supabase/|supabase-migrations/|e2e/|\.githooks/|\.agents/skills/|\.claude/skills/|docs/operating-system/(review-personas|planning-workflow|doc-conventions)\.md$|AGENTS\.md$|CLAUDE\.md$|package\.json$|tsconfig\.json$|next\.config\.)'
+  changed_files | node scripts/code-path-classification.mjs --reviewable-stdin
+}
+
+find_reusable_review() {
+  REVIEW_DIR="$REVIEW_DIR" \
+  REVIEW_COMMIT="$COMMIT" \
+  REVIEW_PATCH_ID="$PATCH_ID" \
+  REVIEW_PARENT="$PARENT_COMMIT" \
+  REVIEW_TREE="$TREE_ID" \
+  REVIEWER="$REVIEWER" \
+    node -e '
+      const fs = require("node:fs")
+      const path = require("node:path")
+      let entries = []
+      try { entries = fs.readdirSync(process.env.REVIEW_DIR).filter((name) => name.endsWith(".json")).sort() } catch {}
+      for (const name of entries) {
+        try {
+          const value = JSON.parse(fs.readFileSync(path.join(process.env.REVIEW_DIR, name), "utf8"))
+          const artifactPath = path.join(process.env.REVIEW_DIR, `${value.commit}.txt`)
+          const validCommit = /^[0-9a-f]{40,64}$/.test(value.commit ?? "")
+          let artifactValid = false
+          try {
+            const artifact = fs.readFileSync(artifactPath, "utf8").trim()
+            artifactValid = value.status === "passed"
+              ? artifact === "NO FINDINGS"
+              : value.status === "findings" && artifact.length > 0 && artifact !== "NO FINDINGS"
+          } catch {}
+          if (
+            validCommit &&
+            value.commit !== process.env.REVIEW_COMMIT &&
+            value.patchId === process.env.REVIEW_PATCH_ID &&
+            value.parent === process.env.REVIEW_PARENT &&
+            value.tree === process.env.REVIEW_TREE &&
+            value.reviewer === process.env.REVIEWER &&
+            (value.status === "passed" || value.status === "findings") &&
+            artifactValid
+          ) {
+            process.stdout.write(`${value.commit}\t${value.status}\n`)
+            process.exit(0)
+          }
+        } catch {}
+      }
+      process.exit(1)
+    '
 }
 
 classify_failure() {
@@ -156,11 +207,21 @@ if [ -n "$IMPLEMENTER" ]; then
   REVIEWER="$(reviewer_for "$IMPLEMENTER")"
 fi
 
-if ! has_reviewable_paths; then
-  write_status "skipped" "${IMPLEMENTER:-unknown}" "$REVIEWER" "" "no_reviewable_paths"
-  printf 'agent-review: SKIPPED %s — no reviewable code paths\n' "$COMMIT" >&2
-  exit 0
-fi
+has_reviewable_paths
+CLASSIFICATION_STATUS=$?
+case "$CLASSIFICATION_STATUS" in
+  0) ;;
+  3)
+    write_status "skipped" "${IMPLEMENTER:-unknown}" "$REVIEWER" "" "no_reviewable_paths"
+    printf 'agent-review: SKIPPED %s — no reviewable code paths\n' "$COMMIT" >&2
+    exit 0
+    ;;
+  *)
+    write_status "failed" "${IMPLEMENTER:-unknown}" "$REVIEWER" "path_classification_error"
+    printf 'agent-review: FAILED %s — code-path classification failed; commit is NOT REVIEWED\n' "$COMMIT" >&2
+    exit 2
+    ;;
+esac
 
 # A code commit without a resolvable implementer is an unreviewed commit, not a
 # quiet skip: exit non-zero so the post-commit hook reports it loudly.
@@ -177,10 +238,38 @@ if [ "${SKIP_AGENT_REVIEW:-}" = "1" ]; then
 fi
 
 if git rev-parse "${COMMIT}^" >/dev/null 2>&1; then
+  PARENT_COMMIT="$(git rev-parse "${COMMIT}^")"
   REVIEW_RANGE="${COMMIT}^..${COMMIT}"
 else
   EMPTY_TREE="$(git hash-object -t tree /dev/null)"
+  PARENT_COMMIT="$EMPTY_TREE"
   REVIEW_RANGE="${EMPTY_TREE}..${COMMIT}"
+fi
+TREE_ID="$(git rev-parse "${COMMIT}^{tree}")"
+
+# Stable patch identity is optional. Any calculation or ledger ambiguity falls
+# through to a fresh review instead of risking an unsafe skip.
+PATCH_ID="$(git show --format= --binary "$COMMIT" 2>/dev/null | git patch-id --stable 2>/dev/null | awk 'NR == 1 { print $1 }' || true)"
+if [ -n "$PATCH_ID" ]; then
+  REUSABLE_REVIEW="$(find_reusable_review 2>/dev/null || true)"
+  if [ -n "$REUSABLE_REVIEW" ]; then
+    DUPLICATE_COMMIT="${REUSABLE_REVIEW%%	*}"
+    DUPLICATE_STATUS="${REUSABLE_REVIEW#*	}"
+    if [ "$DUPLICATE_COMMIT" != "$REUSABLE_REVIEW" ] &&
+       { [ "$DUPLICATE_STATUS" = "passed" ] || [ "$DUPLICATE_STATUS" = "findings" ]; }; then
+      DUPLICATE_OF="$DUPLICATE_COMMIT"
+      if cp "${REVIEW_DIR}/${DUPLICATE_COMMIT}.txt" "$OUTPUT_PATH"; then
+        : >"$STDERR_PATH"
+        write_status "$DUPLICATE_STATUS" "$IMPLEMENTER" "$REVIEWER" "" "duplicate_patch"
+        printf 'agent-review: REUSED %s — same patch as %s (%s reviewed %s)\n' \
+          "$COMMIT" "$DUPLICATE_COMMIT" "$REVIEWER" "$IMPLEMENTER" >&2
+        exit 0
+      fi
+      # Source artifact disappeared between lookup and copy. Clear reuse state
+      # and perform the normal review rather than recording false coverage.
+      DUPLICATE_OF=""
+    fi
+  fi
 fi
 
 TIMEOUT_SECONDS="${AGENT_REVIEW_TIMEOUT_SECONDS:-1200}"

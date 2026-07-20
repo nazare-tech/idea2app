@@ -12,7 +12,8 @@ Automatic post-commit review intentionally spends opposite-CLI reviewer tokens f
 | Script | Purpose | Invocation |
 |---|---|---|
 | `agent-review.sh` | Routes a bounded diff and embedded persona contract to the opposite CLI with model tools disabled. | `scripts/agent-review.sh [--range A..B] [--review-root DIR] [--personas x,y] [--dry-run]` |
-| `post-commit-review.sh` | Reviews one immutable commit from a temporary depth-two tracked-files-only fetch, saves private capped `.git/agent-reviews/<sha>.{json,txt,stderr}`, and classifies outages/timeouts. | `scripts/post-commit-review.sh [commit-sha]` (normally automatic; timeout 1200s, input 1.5 MB, output 1 MB) |
+| `post-commit-review.sh` | Reviews one immutable commit from a temporary depth-two tracked-files-only fetch, saves private capped `.git/agent-reviews/<sha>.{json,txt,stderr}`, reuses amend-equivalent reviewed patches, and classifies outages/timeouts. | `scripts/post-commit-review.sh [commit-sha]` (normally automatic; timeout 1200s, input 1.5 MB, output 1 MB) |
+| `code-path-classification.mjs` | Shared source for post-commit reviewability and sweep code pathspecs. | `node scripts/code-path-classification.mjs --reviewable-stdin` |
 | `sweep-check.mjs` | Net added-lines-of-code counter since last sweep marker (`docs/reviews/.last-sweep-commit`); powers the commit-sweep trigger. | `node scripts/sweep-check.mjs [--notify\|--json]` |
 | `export-landing-sample.mjs` | Exports sample document/mockup content from a real project into `public/landing/samples/`; can capture feature preview PNGs. | see script header |
 | `guard-webpack-chunky.mjs` | Post-build guard against oversized webpack vendor chunks. | `npm run guard:chunky` |

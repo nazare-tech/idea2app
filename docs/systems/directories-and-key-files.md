@@ -223,8 +223,11 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [src/lib/active-document-policy.ts](src/lib/active-document-policy.ts) | Shared active-document identity and lookup helper used to prevent duplicate default document generation across direct APIs and Generate All/onboarding |
 | [src/components/analysis/competitive-analysis-document.tsx](src/components/analysis/competitive-analysis-document.tsx) | Market Research v2 hybrid modules/markdown renderer with legacy notice and upgrade CTA |
 | [src/components/analysis/planning-document-blocks.tsx](src/components/analysis/planning-document-blocks.tsx) | Temporary barrel that re-exports Product Plan and First Version Plan block renderers |
+| [src/components/analysis/ai-prompts-document-blocks.tsx](src/components/analysis/ai-prompts-document-blocks.tsx) | Derived AI Prompts document renderer with recommended-tool and prompt-file sections |
 | [src/components/analysis/product-plan-blocks.tsx](src/components/analysis/product-plan-blocks.tsx) | Product Plan block renderer using the PRD parser/view-model layer, designed PRD sections, personas, user stories, requirements, timeline, and follow-through cards |
+| [src/components/analysis/product-plan-view-model.ts](src/components/analysis/product-plan-view-model.ts) | Product Plan timeline parsing and derived display data shared by the renderer and unit tests |
 | [src/components/analysis/first-version-plan-blocks.tsx](src/components/analysis/first-version-plan-blocks.tsx) | First Version Plan block renderer using the MVP parser/view-model layer, scope, feature, build-sequence, validation, and guardrail sections |
+| [src/components/analysis/first-version-plan-view-model.ts](src/components/analysis/first-version-plan-view-model.ts) | First Version Plan parsing and derived display rows/cards shared by the renderer and unit tests |
 | [src/components/analysis/planning-blocks-shared.tsx](src/components/analysis/planning-blocks-shared.tsx) | Shared layout primitives and markdown fallback helpers for Product Plan and First Version Plan renderers |
 | [src/components/ui/markdown-renderer.tsx](src/components/ui/markdown-renderer.tsx) | Markdown renderer with lazy syntax highlighting, responsive table column sizing, and sanitized beautiful-mermaid diagrams with expand/pan/zoom controls |
 | [src/components/ui/mockup-renderer.tsx](src/components/ui/mockup-renderer.tsx) | Mockup renderer for OpenRouter storyboard images with screen captions, json-render specs/patches, safe legacy-format notices, and legacy ASCII mockups |
@@ -310,4 +313,3 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [supabase/migrations/20260711000000_add_subscriptions_user_unique.sql](supabase/migrations/20260711000000_add_subscriptions_user_unique.sql) | Guarded schema repair enforcing one `subscriptions` row per user so webhook `ON CONFLICT (user_id)` upserts are atomic and replay-safe. |
 | [supabase/migrations/20260710000100_create_product_event_analytics.sql](supabase/migrations/20260710000100_create_product_event_analytics.sql) | Service-only product event store, production analysis views, indexes, and fixed 180-day cleanup schedule. |
 | [PROMPT_CHAT_SETUP.md](PROMPT_CHAT_SETUP.md) | Deprecated setup guide for the removed Prompt tab AI chat feature |
-

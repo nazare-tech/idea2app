@@ -9,6 +9,7 @@ import test from "node:test"
 const projectRoot = path.resolve(import.meta.dirname, "../..")
 const runnerSource = path.join(projectRoot, "scripts/post-commit-review.sh")
 const agentReviewerSource = path.join(projectRoot, "scripts/agent-review.sh")
+const pathClassifierSource = path.join(projectRoot, "scripts/code-path-classification.mjs")
 
 type ReviewStatus = {
   commit: string
@@ -18,6 +19,10 @@ type ReviewStatus = {
   timestamp: string
   failureClass?: string
   reason?: string
+  patchId?: string
+  parent?: string
+  tree?: string
+  duplicateOf?: string
 }
 
 function git(repo: string, ...args: string[]) {
@@ -30,6 +35,7 @@ async function createRepo() {
   const repo = await mkdtemp(path.join(tmpdir(), "post-commit-review-"))
   await mkdir(path.join(repo, "scripts"), { recursive: true })
   await cp(runnerSource, path.join(repo, "scripts/post-commit-review.sh"))
+  await cp(pathClassifierSource, path.join(repo, "scripts/code-path-classification.mjs"))
   await chmod(path.join(repo, "scripts/post-commit-review.sh"), 0o755)
 
   git(repo, "init", "-q")
@@ -145,8 +151,11 @@ test("routes Codex commits to Claude review with exact immutable commit range", 
   assert.match(args[5] ?? "", /agent-review\./)
   // The runner's captured stdout stream is the single artifact writer; no --out.
   assert.deepEqual(args.slice(6), [])
-  const { timestamp, ...status } = await readStatus(repo, sha)
+  const { timestamp, patchId, parent, tree, ...status } = await readStatus(repo, sha)
   assert.match(timestamp, /^\d{4}-\d{2}-\d{2}T/)
+  assert.match(patchId ?? "", /^[0-9a-f]{40,64}$/)
+  assert.equal(parent, git(repo, "rev-parse", `${sha}^`))
+  assert.equal(tree, git(repo, "rev-parse", `${sha}^{tree}`))
   assert.deepEqual(status, {
     commit: sha,
     implementer: "codex",
@@ -234,6 +243,7 @@ test("reviews a root code commit against the empty tree", async () => {
   const repo = await mkdtemp(path.join(tmpdir(), "post-commit-review-root-"))
   await mkdir(path.join(repo, "scripts"), { recursive: true })
   await cp(runnerSource, path.join(repo, "scripts/post-commit-review.sh"))
+  await cp(pathClassifierSource, path.join(repo, "scripts/code-path-classification.mjs"))
   await chmod(path.join(repo, "scripts/post-commit-review.sh"), 0o755)
   git(repo, "init", "-q")
   git(repo, "config", "user.email", "test@example.com")
@@ -265,6 +275,118 @@ test("can retry an older commit by fetching that SHA and its parent", async () =
   assert.equal(result.status, 0, result.stderr)
   assert.match(await readFile(invocationPath, "utf8"), new RegExp(olderSha))
   assert.equal((await readStatus(repo, olderSha)).status, "passed")
+})
+
+test("reuses a successful review for an amend-equivalent patch", async () => {
+  const repo = await createRepo()
+  const originalSha = await commitFile(repo, "src/example.ts")
+  const invocationPath = await installFakeReviewer(repo, { output: "NO FINDINGS" })
+
+  const originalResult = runReview(repo, "codex")
+  assert.equal(originalResult.status, 0, originalResult.stderr)
+  await readFile(invocationPath, "utf8")
+
+  await writeFile(invocationPath, "")
+  git(repo, "commit", "--amend", "-qm", "rewrite message only")
+  const amendedSha = git(repo, "rev-parse", "HEAD")
+  assert.notEqual(amendedSha, originalSha)
+
+  const amendedResult = runReview(repo, "codex")
+  assert.equal(amendedResult.status, 0, amendedResult.stderr)
+  assert.equal((await readFile(invocationPath, "utf8")).trim(), "")
+  const status = await readStatus(repo, amendedSha)
+  assert.equal(status.status, "passed")
+  assert.equal(status.reason, "duplicate_patch")
+  assert.equal(status.duplicateOf, originalSha)
+  assert.match(status.patchId ?? "", /^[0-9a-f]{40,64}$/)
+  assert.equal(status.parent, (await readStatus(repo, originalSha)).parent)
+  assert.equal(
+    (await readFile(path.join(repo, `.git/agent-reviews/${amendedSha}.txt`), "utf8")).trim(),
+    "NO FINDINGS",
+  )
+})
+
+test("reviews an amended commit when its patch content changes", async () => {
+  const repo = await createRepo()
+  const originalSha = await commitFile(repo, "src/example.ts")
+  const invocationPath = await installFakeReviewer(repo, { output: "NO FINDINGS" })
+  assert.equal(runReview(repo, "codex").status, 0)
+
+  await writeFile(invocationPath, "")
+  await writeFile(path.join(repo, "src/example.ts"), "export const value = 2\n")
+  git(repo, "add", "src/example.ts")
+  git(repo, "commit", "--amend", "-qm", "change patch")
+  const amendedSha = git(repo, "rev-parse", "HEAD")
+  assert.notEqual(amendedSha, originalSha)
+
+  const result = runReview(repo, "codex")
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(await readFile(invocationPath, "utf8"), new RegExp(amendedSha))
+  const status = await readStatus(repo, amendedSha)
+  assert.equal(status.status, "passed")
+  assert.equal(status.duplicateOf, undefined)
+})
+
+test("does not reuse a stable patch id when whitespace changes the resulting tree", async () => {
+  const repo = await createRepo()
+  const originalSha = await commitFile(
+    repo,
+    "src/example.py",
+    "def value():\n    if True:\n        return 1\n",
+  )
+  const invocationPath = await installFakeReviewer(repo, { output: "NO FINDINGS" })
+  assert.equal(runReview(repo, "codex").status, 0)
+
+  await writeFile(invocationPath, "")
+  await writeFile(
+    path.join(repo, "src/example.py"),
+    "def value():\n    if True:\n            return 1\n",
+  )
+  git(repo, "add", "src/example.py")
+  git(repo, "commit", "--amend", "-qm", "whitespace changes semantics")
+  const amendedSha = git(repo, "rev-parse", "HEAD")
+
+  assert.notEqual(amendedSha, originalSha)
+  const originalStatus = await readStatus(repo, originalSha)
+  const result = runReview(repo, "codex")
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(await readFile(invocationPath, "utf8"), new RegExp(amendedSha))
+  const amendedStatus = await readStatus(repo, amendedSha)
+  assert.equal(amendedStatus.patchId, originalStatus.patchId)
+  assert.notEqual(amendedStatus.tree, originalStatus.tree)
+  assert.equal(amendedStatus.duplicateOf, undefined)
+})
+
+test("fails closed when code-path classification cannot run", async () => {
+  const repo = await createRepo()
+  const sha = await commitFile(repo, "src/example.ts")
+  await writeFile(path.join(repo, "scripts/code-path-classification.mjs"), "syntax error !!!\n")
+  await installFakeReviewer(repo, { output: "NO FINDINGS" })
+
+  const result = runReview(repo, "codex")
+
+  assert.equal(result.status, 2)
+  assert.match(result.stderr, /classification failed/)
+  const status = await readStatus(repo, sha)
+  assert.equal(status.status, "failed")
+  assert.equal(status.failureClass, "path_classification_error")
+})
+
+test("performs a fresh review when a reusable artifact is corrupt", async () => {
+  const repo = await createRepo()
+  const originalSha = await commitFile(repo, "src/example.ts")
+  const invocationPath = await installFakeReviewer(repo, { output: "NO FINDINGS" })
+  assert.equal(runReview(repo, "codex").status, 0)
+  await writeFile(path.join(repo, `.git/agent-reviews/${originalSha}.txt`), "")
+
+  await writeFile(invocationPath, "")
+  git(repo, "commit", "--amend", "-qm", "message-only amend")
+  const amendedSha = git(repo, "rev-parse", "HEAD")
+  const result = runReview(repo, "codex")
+
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(await readFile(invocationPath, "utf8"), new RegExp(amendedSha))
+  assert.equal((await readStatus(repo, amendedSha)).duplicateOf, undefined)
 })
 
 test("times out a hung reviewer and records the unreviewed SHA", async () => {
