@@ -123,8 +123,37 @@ generated `.next/types/validator.ts` still referencing the deleted route),
 eslint clean on all changed files, 654 tests pass, full browser sweep re-run
 with no console or page errors and no horizontal overflow at 1440 or 390.
 
-# Open items
+# Cross-model review coverage
 
-- **Cross-model review.** The post-commit opposite-CLI persona review
-  (Claude work → Codex) fires on commit; collect and remediate its findings
-  before relying on this as fully reviewed.
+Shipped as `81daf2d5..a71d320e` on `main`.
+
+| Commit | Subject | Codex review |
+|---|---|---|
+| `2c91315d` | feat(landing): scroll-driven feature section with compass rail | **failed, not reviewed** |
+| `cb5b3481` | feat(landing): ship the new testimonial attribution | findings (1, remediated by `2ce503c1`) |
+| `2ce503c1` | fix(landing): mark the testimonial avatar decorative | passed (`duplicate_patch` reuse after a message-only amend) |
+| `8bf81358` | chore(landing): drop the orphaned preview capture pipeline | passed |
+| `a71d320e` | docs(plans): landing v2 plan and review artifacts | skipped, `no_reviewable_paths` (docs only) |
+
+**`2c91315d` carries no cross-model review.** The post-commit hook first failed
+with `usage_limit`; a manual retry through `scripts/agent-review.sh` failed with
+`Codex ran out of room in the model's context window`. The commit is roughly
+1,400 added lines plus the preview-pipeline deletions, which is past the
+reviewer's input budget, and `scripts/agent-review.sh` only accepts a commit
+range, so the diff cannot be narrowed without rewriting history. Splitting it
+was considered and declined by the user on 2026-07-26: the commit was already
+pushed, so splitting would have meant rewriting five published commits and
+force-pushing `main`.
+
+This is the largest and least externally scrutinised change in the batch. It has
+the automated checks and the browser evidence above, and nothing else. If it is
+ever revisited, review it in slices by file:
+`src/lib/landing-feature-stage.ts` (data), `feature-stage-card.tsx`
+(presentation), `feature-scrollytelling.tsx` plus the `landing-scrolly-*` CSS
+(the rAF loop, where the real risk is), `compass-mark.tsx` with
+`site-footer.tsx`, and `page.tsx` with the deletions.
+
+The one pre-existing unpushed commit that went up with this batch,
+`f0068e5a` (feat(skills): add portable Maker Compass workflow, implemented by
+Codex), is also unreviewed: its record shows `failed` / `input_too_large` from
+2026-07-25.
