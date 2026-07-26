@@ -237,7 +237,9 @@ export function TestimonialBand() {
         <div ref={profileRef} className="mt-4 flex items-center gap-3 pl-0 sm:pl-10">
           <Image
             src="/landing/testimonial-avatar.png"
-            alt="Rohan Mehta"
+            /* The name is visible right beside it, so the photo is decorative. */
+            alt=""
+            aria-hidden="true"
             width={96}
             height={96}
             className="size-12 shrink-0 rounded-full object-cover"
