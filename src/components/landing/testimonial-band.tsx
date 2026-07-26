@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import Image from "next/image"
 
 const SPARK_PATH =
   "M0 220C77 207 111 190 139 166C165 143 201 150 191 173C183 191 161 180 164 156C169 122 201 96 256 79C292 68 312 45 330 0"
@@ -234,9 +235,15 @@ export function TestimonialBand() {
         </div>
 
         <div ref={profileRef} className="mt-4 flex items-center gap-3 pl-0 sm:pl-10">
-          <div className="size-12 shrink-0 rounded-full bg-[#E5E7EB]" aria-hidden="true" />
+          <Image
+            src="/landing/testimonial-avatar.png"
+            alt="Rohan Mehta"
+            width={96}
+            height={96}
+            className="size-12 shrink-0 rounded-full object-cover"
+          />
           <div className="text-sm leading-[1.55]">
-            <p className="font-bold">Dipesh Dave</p>
+            <p className="font-bold">Rohan Mehta</p>
             <p>Indie founder</p>
           </div>
         </div>
