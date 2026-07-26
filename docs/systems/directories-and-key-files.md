@@ -197,12 +197,13 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [src/app/api/dev/prompt-lab/drafts/route.ts](src/app/api/dev/prompt-lab/drafts/route.ts) | Dev-only endpoint for listing and saving Prompt Lab prompt drafts |
 | [src/app/api/dev/prompt-lab/runs/route.ts](src/app/api/dev/prompt-lab/runs/route.ts) | Dev-only endpoint for listing recent Prompt Lab runs |
 | [src/app/api/dev/prompt-lab/mockup-image/route.ts](src/app/api/dev/prompt-lab/mockup-image/route.ts) | Dev-only proxy for private mockup images associated with Prompt Lab runs |
-| [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering, authenticated-user redirect, desktop-gated hero artwork, and static feature preview captures |
+| [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering, authenticated-user redirect, desktop-gated hero artwork, and the scroll-driven features section |
 | [src/components/landing/hero-artwork.tsx](src/components/landing/hero-artwork.tsx) | Desktop-gated layered raster hero artwork using optimized `next/image` assets from `public/landing/hero/` |
-| [src/components/landing/feature-product-preview.tsx](src/components/landing/feature-product-preview.tsx) | Landing feature visual renderer using static optimized captures from `public/landing/samples/previews/`, with a live-preview dev flag |
-| [src/components/landing/feature-product-preview-live.tsx](src/components/landing/feature-product-preview-live.tsx) | Dev-only live iframe preview renderer used when `NEXT_PUBLIC_LANDING_LIVE_PREVIEWS=1` |
-| [src/app/landing-preview/[navKey]/page.tsx](src/app/landing-preview/[navKey]/page.tsx) | Capture source route for landing feature previews |
-| [scripts/export-landing-sample.mjs](scripts/export-landing-sample.mjs) | Exports landing sample content and captures static feature preview images from local preview routes |
+| [src/components/landing/feature-scrollytelling.tsx](src/components/landing/feature-scrollytelling.tsx) | Scroll-driven landing features section: sticky card stage, pinned copy column, and the fixed compass rail, all on one rAF loop |
+| [src/components/landing/feature-stage-card.tsx](src/components/landing/feature-stage-card.tsx) | Renders one card on the feature stage (competitor, persona, step, mockup image, or prompt) |
+| [src/lib/landing-feature-stage.ts](src/lib/landing-feature-stage.ts) | Card copy, per-breakpoint stage geometry, feature block copy, and compass rail labels for the features section |
+| [src/components/landing/compass-mark.tsx](src/components/landing/compass-mark.tsx) | Animated compass glyph above the landing bottom CTA |
+| [scripts/export-landing-sample.mjs](scripts/export-landing-sample.mjs) | Exports landing sample content and mockup storyboard images from a real project |
 | [src/components/landing/waitlist-form.tsx](src/components/landing/waitlist-form.tsx) | Public waitlist email capture form for the landing page |
 | [src/app/api/prompt-chat/route.ts](src/app/api/prompt-chat/route.ts) | Deprecated Prompt Chat endpoint; returns `410 Gone` |
 | [src/app/api/analysis/[type]/route.ts](src/app/api/analysis/[type]/route.ts) | Analysis generation using in-house pipelines |
@@ -239,8 +240,6 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [src/components/pricing/manage-subscription-button.tsx](src/components/pricing/manage-subscription-button.tsx) | Billing page client island for Stripe portal access |
 | [src/lib/billing-page-data.ts](src/lib/billing-page-data.ts) | Billing plan/price display helpers typed directly against the generated Database row types (no runtime normalization layer) |
 | [src/lib/visibility-aware-poller.ts](src/lib/visibility-aware-poller.ts) | Reusable visibility-aware polling scheduler (hidden-tab suppression, immediate poll on refocus) used by the Generate All store |
-| [src/lib/landing-preview-captures.mjs](src/lib/landing-preview-captures.mjs) | Single manifest for landing feature preview captures, shared by the export script and the landing page |
-| [src/components/landing/preview-frame.tsx](src/components/landing/preview-frame.tsx) | Shared landing preview frame chrome used by static capture and dev live-iframe variants |
 | [src/hooks/use-auth-signout.ts](src/hooks/use-auth-signout.ts) | Shared client hook for Supabase sign-out + redirect |
 | [src/hooks/use-copy-feedback.ts](src/hooks/use-copy-feedback.ts) | Shared hook for clipboard copy feedback state |
 | [src/lib/credits.ts](src/lib/credits.ts) | Shared credit formatting and unlimited-credit helpers |

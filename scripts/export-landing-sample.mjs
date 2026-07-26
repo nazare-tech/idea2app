@@ -7,14 +7,10 @@
 // Usage:
 //   node scripts/export-landing-sample.mjs                            # survey: list candidate projects
 //   node scripts/export-landing-sample.mjs --project <id>             # export fixtures for one project
-//   node scripts/export-landing-sample.mjs --capture-previews-only    # capture current /landing-preview routes
-//   node scripts/export-landing-sample.mjs --project <id> --capture-previews
-//                                                                  # export fixtures, then capture previews
 //
 // Outputs (export mode):
 //   src/lib/landing-sample-content.ts        generated fixture module (do not edit by hand)
 //   public/landing/samples/mockup-*.png      one storyboard image per mockup option
-//   public/landing/samples/previews/*.png    static landing feature preview captures
 //
 // Re-run whenever you want the landing samples to reflect newer generated content.
 
@@ -22,7 +18,6 @@ import { createClient } from "@supabase/supabase-js"
 import { writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
 
-import { LANDING_PREVIEW_CAPTURES } from "../src/lib/landing-preview-captures.mjs"
 import { loadEnvFileIntoProcess } from "./lib/env.mjs"
 
 const root = process.cwd()
@@ -200,59 +195,10 @@ async function exportProject(projectId) {
   console.log("  wrote src/lib/landing-sample-content.ts")
 }
 
-async function captureLandingPreviews() {
-  const baseUrl = (process.env.LANDING_PREVIEW_BASE_URL || "http://localhost:3000").replace(/\/$/, "")
-  const previewsDir = path.join(root, "public", "landing", "samples", "previews")
-  mkdirSync(previewsDir, { recursive: true })
-
-  let chromium
-  try {
-    ;({ chromium } = await import("playwright"))
-  } catch {
-    throw new Error("Playwright is not available. Install project dependencies or set NEXT_PUBLIC_LANDING_LIVE_PREVIEWS=1 for live previews.")
-  }
-
-  const browser = await chromium.launch({ headless: true })
-  try {
-    const page = await browser.newPage({
-      viewport: { width: 1280, height: 960 },
-      deviceScaleFactor: 1,
-    })
-
-    for (const capture of LANDING_PREVIEW_CAPTURES) {
-      const searchParams = new URLSearchParams({ active: capture.activeSectionId })
-      const url = `${baseUrl}/landing-preview/${encodeURIComponent(capture.navKey)}?${searchParams.toString()}`
-      const outputPath = path.join(previewsDir, capture.fileName)
-
-      await page.goto(url, { waitUntil: "networkidle", timeout: 60000 })
-      await page.waitForFunction(
-        () => document.querySelector('[data-landing-preview-ready="true"]'),
-        null,
-        { timeout: 60000 },
-      )
-      await page.evaluate(() => document.fonts?.ready)
-      await page.screenshot({
-        path: outputPath,
-        clip: { x: 0, y: 0, width: 768, height: 576 },
-      })
-      console.log(`  captured ${capture.fileName}`)
-    }
-  } finally {
-    await browser.close()
-  }
-}
-
 const projectFlagIndex = process.argv.indexOf("--project")
-const shouldCapturePreviews = process.argv.includes("--capture-previews")
-const capturePreviewsOnly = process.argv.includes("--capture-previews-only")
 
-if (capturePreviewsOnly) {
-  await captureLandingPreviews()
-} else if (projectFlagIndex !== -1) {
+if (projectFlagIndex !== -1) {
   await exportProject(process.argv[projectFlagIndex + 1])
-  if (shouldCapturePreviews) {
-    await captureLandingPreviews()
-  }
 } else {
   await survey()
 }
