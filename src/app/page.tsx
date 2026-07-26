@@ -15,10 +15,10 @@ import { AuthModal } from "@/components/auth/auth-modal"
 import { HeroArtwork } from "@/components/landing/hero-artwork"
 import { TestimonialBand } from "@/components/landing/testimonial-band"
 import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
-import { FeatureProductPreview } from "@/components/landing/feature-product-preview"
-import { FeatureCard } from "@/components/landing/feature-card"
+import { FeatureScrollytelling } from "@/components/landing/feature-scrollytelling"
 import { PricingSection } from "@/components/landing/pricing-section"
 import { FaqSection } from "@/components/landing/faq-section"
+import { CompassMark } from "@/components/landing/compass-mark"
 import { SiteFooter } from "@/components/landing/site-footer"
 
 const navLinks = [
@@ -45,84 +45,6 @@ const handoffTools = [
   { name: "Tabnine", src: "/logos/tabnine.png" },
   { name: "Gemini", src: "/logos/googlegemini.svg" },
   { name: "JetBrains", src: "/logos/jetbrains.svg" },
-]
-
-interface FeatureSection {
-  eyebrow: string
-  title: string
-  description: string
-  bullets: { label: string; body: string }[]
-    /** Workspace nav item captured as the section's product visual */
-  navKey: string
-  /** Subsection shown in its active state */
-  activeSectionId: string
-}
-
-const featureSections: FeatureSection[] = [
-  {
-    eyebrow: "01 / Market Research",
-    title: "Know the market before you build.",
-    description: "Competitors, pricing, positioning, and open gaps, mapped before you commit a sprint.",
-    bullets: [
-      { label: "Competitive scan", body: "Direct and indirect competitors, mapped with pricing and positioning." },
-      { label: "Audience segments", body: "Who to build for first, and how they talk about the problem." },
-      { label: "Differentiation wedges", body: "Where the open lane is for your specific idea." },
-    ],
-    // Static capture generated from the workspace preview route.
-    // Feature Comparison is the showcase section until live competitor search
-    // is fixed; switch activeSectionId to "market-research-direct-competitors"
-    // and re-export the sample data once competitor profiles generate again.
-    navKey: "market-research",
-    activeSectionId: "market-research-feature-matrix",
-  },
-  {
-    eyebrow: "02 / Product Plan",
-    title: "Turn the idea into a buildable plan.",
-    description: "Personas, user stories, and grouped requirements your coding agent can build from.",
-    bullets: [
-      { label: "Three user personas", body: "Grounded in the research, not guessed at." },
-      { label: "User stories and requirements", body: "Grouped and ready for a coding agent to scope." },
-      { label: "Release plan", body: "What ships first, and what waits for later." },
-    ],
-    navKey: "prd",
-    activeSectionId: "prd-user-personas",
-  },
-  {
-    eyebrow: "03 / First Version Plan",
-    title: "Scope the first release like a builder.",
-    description: "A realistic build sequence with validation steps and guardrails against scope creep.",
-    bullets: [
-      { label: "Build sequence", body: "A realistic order of operations for the first release." },
-      { label: "Validation plan", body: "How you will know the first version actually works." },
-      { label: "Scope guardrails", body: "What is explicitly out, so scope creep does not sneak back in." },
-    ],
-    navKey: "mvp",
-    activeSectionId: "mvp-validation-plan",
-  },
-  {
-    eyebrow: "04 / Design Mockups",
-    title: "Three UI directions, side by side.",
-    description: "Compare three takes on the same core screens, then hand off the one you pick.",
-    bullets: [
-      { label: "Three UI directions", body: "Same core screens, three different visual takes." },
-      { label: "Side by side comparison", body: "Pick a direction without re-briefing a designer." },
-      { label: "Ready to hand off", body: "The chosen direction becomes the build reference." },
-    ],
-    navKey: "mockups",
-    activeSectionId: "mockups-concept-1",
-  },
-  {
-    eyebrow: "05 / AI Prompts",
-    title: "A brief your coding agent can run with.",
-    description: "A recommended build tool, guardrails, and a ready-to-paste first prompt.",
-    bullets: [
-      { label: "Recommended build tool", body: "A concrete pick with the reasoning and starting cost." },
-      { label: "Next prompt", body: "A first prompt built from your plans, ready to paste." },
-      { label: "Guardrails and build sequence", body: "Constraints and an order of work that keep the agent on track." },
-    ],
-    navKey: "ai-prompts",
-    activeSectionId: "ai-prompts-recommended-build-tool",
-  },
 ]
 
 const container = "mx-auto w-full max-w-[1320px] px-4 sm:px-8 lg:px-14"
@@ -256,29 +178,9 @@ export default async function LandingPage() {
         </section>
       </SectionCard>
 
-      <SectionCard>
-        <section id="features" className="py-3">
-          <h2 className="max-w-[760px] text-[2rem] leading-[0.98] tracking-[-0.06em] font-semibold sm:text-[2.65rem] lg:text-[3.35rem]">
-            From idea to momentum, without the usual excuses
-          </h2>
-
-          <div className="mt-10 space-y-10">
-            {featureSections.map((section, index) => (
-              <FeatureCard
-                key={section.eyebrow}
-                eyebrow={section.eyebrow}
-                title={section.title}
-                description={section.description}
-                bullets={section.bullets}
-                imageOnRight={index % 2 === 0}
-              >
-                {/* Static workspace capture generated from the exported sample project. */}
-                <FeatureProductPreview navKey={section.navKey} activeSectionId={section.activeSectionId} />
-              </FeatureCard>
-            ))}
-          </div>
-        </section>
-      </SectionCard>
+      {/* Feature walkthrough: sticky card stage + pinned copy, scroll-driven.
+          Owns its own <section id="features"> and the fixed compass rail. */}
+      <FeatureScrollytelling />
 
       <SectionCard>
         <TestimonialBand />
@@ -295,6 +197,7 @@ export default async function LandingPage() {
       {/* Bottom CTA */}
       <section className="border-t border-border-subtle py-16 md:py-20">
         <div className={`${container} text-center`}>
+          <CompassMark />
           <h2 className="mx-auto max-w-[860px] text-[2rem] leading-[0.96] tracking-[-0.06em] font-semibold sm:text-[3rem] lg:text-[4rem]">
             {waitlistMode ? "Secure your spot before it fills up." : "Turn your next idea into a build plan."}
           </h2>

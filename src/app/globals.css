@@ -437,6 +437,108 @@ body {
   animation: hero-enter-right 0.9s var(--motion-ease-out-expo) backwards;
 }
 
+/* Landing feature scrollytelling.
+   Geometry-heavy enough that calc() in a stylesheet beats Tailwind arbitrary
+   values. Behaviour lives in components/landing/feature-scrollytelling.tsx. */
+.landing-scrolly {
+  margin-top: 8px;
+  display: grid;
+  /* Stage gets the room; the text column is a narrow pinned rail beside it. */
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.6fr);
+  gap: 56px;
+  align-items: start;
+}
+
+.landing-scrolly-sticky {
+  position: sticky;
+  top: 92px;
+  height: calc(100vh - 128px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* Bleeds the stage left, out of the 1320px container and up to the viewport
+   edge, so the cards read as artwork rather than as a boxed screenshot. */
+.landing-scrolly-frame {
+  width: calc(100% + (100vw - min(100vw, 1320px)) / 2 + clamp(16px, 4vw, 56px) - 32px);
+  max-width: calc((100vh - 168px) * 1.366);
+  margin: 0 0 0 calc(32px - (100vw - min(100vw, 1320px)) / 2 - clamp(16px, 4vw, 56px));
+}
+
+/* Each block is a scroll stop; the copy itself is crossfaded in one grid cell. */
+.landing-scrolly-block {
+  min-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px 0;
+  box-sizing: border-box;
+}
+
+.landing-scrolly-swap {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  /* Portrait "flow" card sets slide in from past the screen edge. The section
+     spans the full viewport at this width, so clipping here clips exactly at
+     the edges without a page-level horizontal scrollbar. `clip` (not `hidden`)
+     keeps the sticky column sticky and leaves the vertical axis alone. Desktop
+     is excluded on purpose: there the stage bleeds left out of the container. */
+  .landing-scrolly-section {
+    overflow-x: clip;
+  }
+
+  .landing-scrolly {
+    display: block;
+  }
+
+  /* The stage becomes a strip pinned under the header, with the copy below it. */
+  .landing-scrolly-sticky {
+    position: sticky;
+    top: 78px;
+    height: auto;
+    z-index: 2;
+    background: var(--background);
+    padding: 8px 0 16px;
+  }
+
+  .landing-scrolly-frame {
+    width: 100%;
+    max-width: min(100%, calc((100svh - 128px - max(160px, min(230px, 25svh))) * 0.75));
+    margin: 0 auto;
+  }
+
+  .landing-scrolly-swap {
+    display: block;
+    height: max(160px, min(230px, 25svh));
+  }
+
+  /* Kept in the flow to give the section its scroll length, but the swap panels
+     above are what the reader (and the accessibility tree) actually get. */
+  .landing-scrolly-block {
+    min-height: max(72vh, 640px);
+    visibility: hidden;
+  }
+
+  /* The portrait canvas is wider relative to its cards, so prompt cards get
+     proportionally larger type and more visible body text. */
+  .landing-stage-prompt-title {
+    font-size: 40px;
+  }
+
+  .landing-stage-prompt-meta,
+  .landing-stage-prompt-body {
+    font-size: 26px;
+  }
+
+  .landing-stage-prompt-clip {
+    max-height: 820px;
+  }
+}
+
 .workspace-sheet-overlay {
   position: absolute;
   inset: 0;
