@@ -74,7 +74,7 @@ src/
 │   ├── workspace/                # Workspace orchestration
 │   │   ├── project-workspace.tsx      # Lazy-loading scroll workspace orchestrator
 │   │   ├── mobile-document-bar.tsx    # Mobile peek bar + documents bottom sheet (below lg)
-│   │   ├── use-hide-on-scroll-chrome.ts # Mobile chrome hide-on-scroll hook
+│   │   ├── use-hide-on-scroll-chrome.ts # Slim mobile header hide-on-scroll hook
 │   │   ├── use-workspace-documents.ts # Lazy document loading hook
 │   │   ├── use-workspace-scroll-sync.ts # Workspace hash/scroll sync hook
 │   │   ├── use-workspace-product-analytics.ts # Workspace behavioral analytics hook
@@ -199,6 +199,7 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [src/app/api/dev/prompt-lab/mockup-image/route.ts](src/app/api/dev/prompt-lab/mockup-image/route.ts) | Dev-only proxy for private mockup images associated with Prompt Lab runs |
 | [src/app/page.tsx](src/app/page.tsx) | Landing page with dynamic signup vs waitlist CTA rendering, authenticated-user redirect, desktop-gated hero artwork, and the scroll-driven features section |
 | [src/components/landing/hero-artwork.tsx](src/components/landing/hero-artwork.tsx) | Desktop-gated layered raster hero artwork using optimized `next/image` assets from `public/landing/hero/` |
+| [src/components/landing/hero-reel-arc.tsx](src/components/landing/hero-reel-arc.tsx) | Full-bleed band of ten normalized transparent mobile-device cutouts repeated around the crown of a 3000px circle at the foot of the hero; versioned RGBA assets live in `public/landing/hero-reel/`, CSS supplies the alpha-aware shadow, and one keyframe spins the wheel |
 | [src/components/landing/feature-scrollytelling.tsx](src/components/landing/feature-scrollytelling.tsx) | Scroll-driven landing features section: sticky card stage, pinned copy column, and the fixed compass rail, all on one rAF loop |
 | [src/components/landing/feature-stage-card.tsx](src/components/landing/feature-stage-card.tsx) | Renders one card on the feature stage (competitor, persona, step, mockup image, or prompt) |
 | [src/lib/landing-feature-stage.ts](src/lib/landing-feature-stage.ts) | Card copy, per-breakpoint stage geometry, feature block copy, and compass rail labels for the features section |
@@ -242,6 +243,7 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [src/lib/visibility-aware-poller.ts](src/lib/visibility-aware-poller.ts) | Reusable visibility-aware polling scheduler (hidden-tab suppression, immediate poll on refocus) used by the Generate All store |
 | [src/hooks/use-auth-signout.ts](src/hooks/use-auth-signout.ts) | Shared client hook for Supabase sign-out + redirect |
 | [src/hooks/use-copy-feedback.ts](src/hooks/use-copy-feedback.ts) | Shared hook for clipboard copy feedback state |
+| [src/hooks/use-keyboard-inset.ts](src/hooks/use-keyboard-inset.ts) | Publishes the on-screen keyboard height as `--workspace-keyboard-inset` (visual-viewport based) so bottom-anchored mobile sheets lift above it on iOS Safari |
 | [src/lib/credits.ts](src/lib/credits.ts) | Shared credit formatting and unlimited-credit helpers |
 | [src/lib/project-allowance.ts](src/lib/project-allowance.ts) | Project allowance resolver for free lifetime limits, paid monthly/subscription windows, plan-field/features fallback, and unmetered internal plans |
 | [src/lib/project-allowance.test.ts](src/lib/project-allowance.test.ts) | Node test coverage for allowance windows, free lifetime limits, plan parsing, unlimited plans, and failure cases |
