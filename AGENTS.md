@@ -21,7 +21,8 @@ This file is a router: core rules and pointers only. Written addressing Codex; e
 | When the task involves... | Read first |
 |---|---|
 | Substantial feature / refactor / bug fix / architecture | `docs/operating-system/planning-workflow.md` (plan files in `docs/plans/`, Recommendation A policy, `/holistic-implementation`) |
-| Any UI, visual, user-flow, or user-visible backend change | `docs/operating-system/ui-verification.md` (real Chrome, `.env.e2e.local` auth, `ui-evidence/<date>/<task-slug>/`, Idea 1.1 intake test cases) |
+| Any UI, visual, user-flow, or user-visible backend change | `.agents/skills/ui-verification/SKILL.md` + `docs/operating-system/ui-verification.md` (real Chrome, `.env.e2e.local` auth, `ui-evidence/<date>/<task-slug>/`, Idea 1.1 intake test cases) |
+| Watching, diagnosing, fixing, or looping on pull-request CI | `.agents/skills/ci-operator/SKILL.md` (one front door for watch / fix / loop; `gh pr checks` is source of truth) |
 | Committing or wrap-up review | `.agents/skills/commit/SKILL.md` + `docs/operating-system/review-personas.md` (every code commit: Claude work → Codex; Codex work → Claude) |
 | Backend / database / Supabase / auth / webhook / data-shape change | `docs/operating-system/planning-workflow.md` § backend change history → `docs/plans/backend-change-history.md` |
 | Writing or updating tests | `docs/testing/test-inventory.md` and `docs/testing/e2e-guide.md` |
@@ -38,7 +39,8 @@ This file is a router: core rules and pointers only. Written addressing Codex; e
 - **Cross-model review**: every code/workflow commit gets the six-persona opposite-CLI review. Verify/remediate findings before push; if reviewer quota/network/auth fails, continue but name every unreviewed SHA and never claim full review coverage.
 - **Thermonuclear sweep**: after a commit batch and its review fixes, the active agent automatically runs the same-model `commit-sweep` when net code growth is ≥1000 lines; no duplicate cross-model range review.
 - Branch discipline: keep working on the current branch unless explicitly asked otherwise.
+- Project routers supersede legacy global `ci-watcher`, `fix-ci`, `loop-on-ci`, `run-smoke-tests`, and `control-ui` triggers here. Route matching work through `ci-operator` or `ui-verification`; keep plugin-owned GitHub, Playwright, Browser, and Chrome drivers external.
 
 ## Skills
 
-Skills live in `.agents/skills/` (Codex) with symlinks in `.claude/skills/` (Claude Code); each self-describes in its `SKILL.md`. Invoke with `/skill-name` or by describing the need. Repo-critical: `/holistic-implementation` (default for substantial work), `commit`, `commit-sweep`, `thermo-nuclear-code-quality-review`, `marketing-idea-capture`.
+Skills live in `.agents/skills/` (Codex) with symlinks in `.claude/skills/` (Claude Code); each self-describes in its `SKILL.md`. Invoke with `/skill-name` or by describing the need. Repo-critical: `/holistic-implementation` (default for substantial work), `commit`, `commit-sweep`, `thermo-nuclear-code-quality-review`, `ui-verification`, `ci-operator`, `marketing-idea-capture`.
