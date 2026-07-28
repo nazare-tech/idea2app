@@ -18,6 +18,8 @@ Automatic post-commit review intentionally spends opposite-CLI reviewer tokens f
 | `export-landing-sample.mjs` | Exports sample document/mockup content from a real project into `public/landing/samples/`; can capture feature preview PNGs. | see script header |
 | `guard-webpack-chunky.mjs` | Post-build guard against oversized webpack vendor chunks. | `npm run guard:chunky` |
 | `provision-free-production-qa.mjs` | Provisions the confirmed Free production QA identity for no-charge checkout tests. | see script header |
+| `build-mobile-screen-gallery.mjs` | Splits Maker Compass two-phone mobile storyboards into standalone screen crops and builds a static gallery; requires local ImageMagick. | `node scripts/build-mobile-screen-gallery.mjs --root <batch-root> [--crop-map <json>] [--out <html>]` |
+| `normalize-hero-reel-cutouts.mjs` | Removes edge-connected chroma from the ten image-edited hero phones and normalizes them to transparent 8-bit 576×1008 canvases with equal 880px device height; validates all outputs before safe publication and requires local ImageMagick. | `node scripts/normalize-hero-reel-cutouts.mjs --input-dir <dir> --output-dir <dir>` |
 
 Git hooks (versioned in `.githooks/`, activated by `npm install` through the `prepare` script):
 
