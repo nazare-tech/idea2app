@@ -9,8 +9,12 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('version','?'\\)\\)\")"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "shadcn"
   ],
-  "enableAllProjectMcpServers": true
+  "skillOverrides": {
+    "4k-vfx": "off",
+    "anime-soccer": "off"
+  }
 }
