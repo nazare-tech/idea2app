@@ -1,0 +1,574 @@
+<meta charset="utf-8">
+<title>Mockup brand bank preview</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 48px; font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; color: #18181b; background: #fafafa; }
+  h1 { font-size: 30px; letter-spacing: -0.02em; margin: 0 0 8px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.18em; color: #71717a; margin: 48px 0 16px; font-family: ui-monospace, monospace; }
+  .lede { color: #52525b; max-width: 70ch; margin: 0 0 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .kit { background: #fff; border: 1px solid #e4e4e7; padding: 20px; }
+  .kit header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .kit h3 { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
+  .kit code { font-size: 11px; color: #71717a; white-space: nowrap; }
+  .archetype { font-size: 13px; color: #52525b; margin: 8px 0 16px; min-height: 3.2em; }
+  .swatches { display: flex; gap: 4px; margin-bottom: 16px; }
+  .swatch { flex: 1; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 4px; text-align: center; color: #52525b; border: 1px solid #e4e4e7; }
+  .swatch.accent { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .mini { background: var(--canvas); border: 1px solid var(--border); padding: 12px; margin-bottom: 16px; }
+  .mini-bar { height: 8px; width: 40%; background: var(--accent); border-radius: calc(var(--radius) / 2); margin-bottom: 10px; }
+  .mini-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .mini-cell { flex: 1; height: 22px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); }
+  .mini-cell.wide { flex: 2.4; }
+  .mini-cta { margin-top: 6px; background: var(--accent); color: var(--accent-text); border: 0; border-radius: var(--radius); padding: 7px 14px; font-size: 12px; font-family: inherit; }
+  dl { margin: 0; font-size: 12px; }
+  dl > div { display: flex; gap: 8px; padding: 4px 0; border-top: 1px solid #f4f4f5; }
+  dt { color: #a1a1aa; min-width: 62px; }
+  dd { margin: 0; color: #3f3f46; }
+  .triad { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid #ececef; }
+  .triad-id { font-size: 12px; color: #a1a1aa; min-width: 76px; }
+  .triad-chips { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+  .triad-chip { padding: 8px 12px; min-width: 190px; display: flex; flex-direction: column; gap: 1px; }
+  .triad-chip strong { font-size: 13px; }
+  .triad-chip span { font-size: 10px; opacity: 0.85; }
+  .triad-meta { font-size: 11px; color: #71717a; font-family: ui-monospace, monospace; white-space: nowrap; }
+  .deny { columns: 2; column-gap: 32px; font-size: 13px; color: #3f3f46; max-width: 900px; }
+  .deny li { margin-bottom: 6px; break-inside: avoid; }
+</style>
+<h1>Mockup brand bank</h1>
+<p class="lede">Fifteen design directions for generated product mockups. Each kit leads with a structural archetype and only then picks a hue, because color is the last differentiator, not the first. Exactly one kit is blue.</p>
+
+<h2>Kits</h2>
+<div class="grid">
+  <article class="kit" style="--accent:#c13d34;--accent-text:#ffffff;--canvas:#fdf9f9;--border:#e3dcdb;--text:#201917;--muted:#76706f;--radius:2px">
+    <header>
+      <h3>Field Manual</h3>
+      <code>#c13d34 &middot; hue 28</code>
+    </header>
+    <p class="archetype">Technical console. Dense data grid, hairline rules, monospace numerics, no decorative chrome.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#fdf9f9">Canvas</span>
+      <span class="swatch" style="background:#e3dcdb">Border</span>
+      <span class="swatch" style="background:#76706f;color:#fff">Muted</span>
+      <span class="swatch" style="background:#201917;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>IBM Plex Sans + IBM Plex Mono</dd></div>
+      <div><dt>Radius</dt><dd>2px</dd></div>
+      <div><dt>Surface</dt><dd>flat-bordered</dd></div>
+      <div><dt>Density</dt><dd>High</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.57:1 &middot; on-accent 5.27:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#ba5d1d;--accent-text:#ffffff;--canvas:#fcf9f8;--border:#e3ddd9;--text:#1f1916;--muted:#76706d;--radius:8px">
+    <header>
+      <h3>Kiln</h3>
+      <code>#ba5d1d &middot; hue 50</code>
+    </header>
+    <p class="archetype">Artisan catalogue. Generous margins, large product imagery, quiet toolbars pushed to the edges.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#fcf9f8">Canvas</span>
+      <span class="swatch" style="background:#e3ddd9">Border</span>
+      <span class="swatch" style="background:#76706d;color:#fff">Muted</span>
+      <span class="swatch" style="background:#1f1916;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Fraunces + Inter</dd></div>
+      <div><dt>Radius</dt><dd>8px</dd></div>
+      <div><dt>Surface</dt><dd>soft-elevated</dd></div>
+      <div><dt>Density</dt><dd>Low</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.58:1 &middot; on-accent 4.5:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#925b0c;--accent-text:#ffffff;--canvas:#fcfaf7;--border:#e2ddd8;--text:#1e1a15;--muted:#75716d;--radius:0px">
+    <header>
+      <h3>Almanac</h3>
+      <code>#925b0c &middot; hue 68</code>
+    </header>
+    <p class="archetype">Editorial reader. Single measured column, footnote rail, typographic hierarchy doing all the work.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#fcfaf7">Canvas</span>
+      <span class="swatch" style="background:#e2ddd8">Border</span>
+      <span class="swatch" style="background:#75716d;color:#fff">Muted</span>
+      <span class="swatch" style="background:#1e1a15;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Source Serif 4 + Source Sans 3</dd></div>
+      <div><dt>Radius</dt><dd>0px</dd></div>
+      <div><dt>Surface</dt><dd>flat</dd></div>
+      <div><dt>Density</dt><dd>Low</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.61:1 &middot; on-accent 5.64:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#b48c05;--accent-text:#111111;--canvas:#fbfaf7;--border:#e0ded8;--text:#1d1a14;--muted:#73716c;--radius:6px">
+    <header>
+      <h3>Switchboard</h3>
+      <code>#b48c05 &middot; hue 88</code>
+    </header>
+    <p class="archetype">Operations board. Status-first columns, colored state pills, everything scannable in one glance.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#fbfaf7">Canvas</span>
+      <span class="swatch" style="background:#e0ded8">Border</span>
+      <span class="swatch" style="background:#73716c;color:#fff">Muted</span>
+      <span class="swatch" style="background:#1d1a14;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Space Grotesk + Inter</dd></div>
+      <div><dt>Radius</dt><dd>6px</dd></div>
+      <div><dt>Surface</dt><dd>flat-bordered</dd></div>
+      <div><dt>Density</dt><dd>High</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.63:1 &middot; on-accent 6.02:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#737406;--accent-text:#ffffff;--canvas:#fafaf7;--border:#deded9;--text:#1b1b15;--muted:#72726d;--radius:12px">
+    <header>
+      <h3>Commons</h3>
+      <code>#737406 &middot; hue 110</code>
+    </header>
+    <p class="archetype">Community feed. Avatar-led list, threaded replies, sticky composer at the bottom.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#fafaf7">Canvas</span>
+      <span class="swatch" style="background:#deded9">Border</span>
+      <span class="swatch" style="background:#72726d;color:#fff">Muted</span>
+      <span class="swatch" style="background:#1b1b15;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>General Sans + Inter</dd></div>
+      <div><dt>Radius</dt><dd>12px</dd></div>
+      <div><dt>Surface</dt><dd>soft-elevated</dd></div>
+      <div><dt>Density</dt><dd>Medium</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.54:1 &middot; on-accent 4.96:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#629742;--accent-text:#111111;--canvas:#f9fbf8;--border:#dcdfda;--text:#181c16;--muted:#6f736e;--radius:20px">
+    <header>
+      <h3>Greenhouse</h3>
+      <code>#629742 &middot; hue 135</code>
+    </header>
+    <p class="archetype">Soft consumer app. Rounded cards, oversized friendly headings, one primary action per screen.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#f9fbf8">Canvas</span>
+      <span class="swatch" style="background:#dcdfda">Border</span>
+      <span class="swatch" style="background:#6f736e;color:#fff">Muted</span>
+      <span class="swatch" style="background:#181c16;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Poppins + Inter</dd></div>
+      <div><dt>Radius</dt><dd>20px</dd></div>
+      <div><dt>Surface</dt><dd>soft-elevated</dd></div>
+      <div><dt>Density</dt><dd>Low</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.59:1 &middot; on-accent 5.42:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#267543;--accent-text:#ffffff;--canvas:#f8fbf9;--border:#dae0db;--text:#171c18;--muted:#6e736f;--radius:8px">
+    <header>
+      <h3>Trailhead</h3>
+      <code>#267543 &middot; hue 152</code>
+    </header>
+    <p class="archetype">Guided wizard. Numbered step rail on the left, one decision per panel, persistent progress summary.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#f8fbf9">Canvas</span>
+      <span class="swatch" style="background:#dae0db">Border</span>
+      <span class="swatch" style="background:#6e736f;color:#fff">Muted</span>
+      <span class="swatch" style="background:#171c18;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Public Sans + Inter</dd></div>
+      <div><dt>Radius</dt><dd>8px</dd></div>
+      <div><dt>Surface</dt><dd>bordered</dd></div>
+      <div><dt>Density</dt><dd>Medium</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.58:1 &middot; on-accent 5.66:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#038268;--accent-text:#ffffff;--canvas:#f8fbfa;--border:#d9e0dd;--text:#151c1a;--muted:#6d7371;--radius:4px">
+    <header>
+      <h3>Tide</h3>
+      <code>#038268 &middot; hue 172</code>
+    </header>
+    <p class="archetype">Analytics canvas. Chart-dominant, small-multiples grid, controls collapsed into a thin top bar.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#f8fbfa">Canvas</span>
+      <span class="swatch" style="background:#d9e0dd">Border</span>
+      <span class="swatch" style="background:#6d7371;color:#fff">Muted</span>
+      <span class="swatch" style="background:#151c1a;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Geist + Geist Mono</dd></div>
+      <div><dt>Radius</dt><dd>4px</dd></div>
+      <div><dt>Surface</dt><dd>flat-bordered</dd></div>
+      <div><dt>Density</dt><dd>High</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.63:1 &middot; on-accent 4.78:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#086b6c;--accent-text:#ffffff;--canvas:#f7fbfb;--border:#d8e0df;--text:#141c1c;--muted:#6c7373;--radius:4px">
+    <header>
+      <h3>Depot</h3>
+      <code>#086b6c &middot; hue 195</code>
+    </header>
+    <p class="archetype">Inventory workbench. Split master-detail, sticky filter sidebar, bulk-action toolbar.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#f7fbfb">Canvas</span>
+      <span class="swatch" style="background:#d8e0df">Border</span>
+      <span class="swatch" style="background:#6c7373;color:#fff">Muted</span>
+      <span class="swatch" style="background:#141c1c;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Barlow + Roboto Mono</dd></div>
+      <div><dt>Radius</dt><dd>4px</dd></div>
+      <div><dt>Surface</dt><dd>bordered</dd></div>
+      <div><dt>Density</dt><dd>High</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.61:1 &middot; on-accent 6.31:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#08798d;--accent-text:#ffffff;--canvas:#f7fbfc;--border:#d8dfe1;--text:#141c1e;--muted:#6d7374;--radius:10px">
+    <header>
+      <h3>Harbor</h3>
+      <code>#08798d &middot; hue 215</code>
+    </header>
+    <p class="archetype">Scheduling surface. Time-grid primary, drag targets, day and week toggle in the header.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#f7fbfc">Canvas</span>
+      <span class="swatch" style="background:#d8dfe1">Border</span>
+      <span class="swatch" style="background:#6d7374;color:#fff">Muted</span>
+      <span class="swatch" style="background:#141c1e;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Manrope + Inter</dd></div>
+      <div><dt>Radius</dt><dd>10px</dd></div>
+      <div><dt>Surface</dt><dd>soft-elevated</dd></div>
+      <div><dt>Density</dt><dd>Medium</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.6:1 &middot; on-accent 5.08:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#324a83;--accent-text:#ffffff;--canvas:#f9fafd;--border:#dbdee3;--text:#181b20;--muted:#6f7276;--radius:4px">
+    <header>
+      <h3>Ledger</h3>
+      <code>#324a83 &middot; hue 265</code>
+    </header>
+    <p class="archetype">Institutional record. Ruled tables, right-aligned figures, restrained serif headings, audit trail rail.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#f9fafd">Canvas</span>
+      <span class="swatch" style="background:#dbdee3">Border</span>
+      <span class="swatch" style="background:#6f7276;color:#fff">Muted</span>
+      <span class="swatch" style="background:#181b20;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Lora + IBM Plex Sans</dd></div>
+      <div><dt>Radius</dt><dd>4px</dd></div>
+      <div><dt>Surface</dt><dd>flat-bordered</dd></div>
+      <div><dt>Density</dt><dd>High</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.54:1 &middot; on-accent 8.6:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#6d54a8;--accent-text:#ffffff;--canvas:#fafafd;--border:#dedde3;--text:#1b1a20;--muted:#727176;--radius:10px">
+    <header>
+      <h3>Atrium</h3>
+      <code>#6d54a8 &middot; hue 295</code>
+    </header>
+    <p class="archetype">Workspace shell. Left nav plus content plus contextual right panel, three-pane and calm.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#fafafd">Canvas</span>
+      <span class="swatch" style="background:#dedde3">Border</span>
+      <span class="swatch" style="background:#727176;color:#fff">Muted</span>
+      <span class="swatch" style="background:#1b1a20;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Satoshi + Inter</dd></div>
+      <div><dt>Radius</dt><dd>10px</dd></div>
+      <div><dt>Surface</dt><dd>elevated</dd></div>
+      <div><dt>Density</dt><dd>Medium</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.59:1 &middot; on-accent 6.03:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#784184;--accent-text:#ffffff;--canvas:#fbf9fc;--border:#e0dce1;--text:#1d191e;--muted:#747074;--radius:6px">
+    <header>
+      <h3>Vellum</h3>
+      <code>#784184 &middot; hue 320</code>
+    </header>
+    <p class="archetype">Document studio. Page-like canvas floating on a tinted backdrop, formatting rail, print metaphor.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#fbf9fc">Canvas</span>
+      <span class="swatch" style="background:#e0dce1">Border</span>
+      <span class="swatch" style="background:#747074;color:#fff">Muted</span>
+      <span class="swatch" style="background:#1d191e;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Newsreader + Inter</dd></div>
+      <div><dt>Radius</dt><dd>6px</dd></div>
+      <div><dt>Surface</dt><dd>elevated</dd></div>
+      <div><dt>Density</dt><dd>Low</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.58:1 &middot; on-accent 7.27:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#bb2d8c;--accent-text:#ffffff;--canvas:#fcf9fb;--border:#e2dcdf;--text:#1f181c;--muted:#757073;--radius:0px">
+    <header>
+      <h3>Signal</h3>
+      <code>#bb2d8c &middot; hue 345</code>
+    </header>
+    <p class="archetype">Magazine cover. One enormous headline, full-bleed hero band, everything else deliberately small.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#fcf9fb">Canvas</span>
+      <span class="swatch" style="background:#e2dcdf">Border</span>
+      <span class="swatch" style="background:#757073;color:#fff">Muted</span>
+      <span class="swatch" style="background:#1f181c;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Archivo Expanded + Inter</dd></div>
+      <div><dt>Radius</dt><dd>0px</dd></div>
+      <div><dt>Surface</dt><dd>flat</dd></div>
+      <div><dt>Density</dt><dd>Medium</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.66:1 &middot; on-accent 5.43:1</dd></div>
+    </dl>
+  </article>
+  <article class="kit" style="--accent:#2f2c37;--accent-text:#ffffff;--canvas:#faf9fc;--border:#dfdde3;--text:#1b191f;--muted:#727176;--radius:0px">
+    <header>
+      <h3>Studio</h3>
+      <code>#2f2c37 &middot; hue 300</code>
+    </header>
+    <p class="archetype">Gallery shell. Near-monochrome, content is the only color, accent reserved for a single control.</p>
+    <div class="swatches">
+      <span class="swatch accent">Accent</span>
+      <span class="swatch" style="background:#faf9fc">Canvas</span>
+      <span class="swatch" style="background:#dfdde3">Border</span>
+      <span class="swatch" style="background:#727176;color:#fff">Muted</span>
+      <span class="swatch" style="background:#1b191f;color:#fff">Text</span>
+    </div>
+    <div class="mini">
+      <div class="mini-bar"></div>
+      <div class="mini-row"><span class="mini-cell wide"></span><span class="mini-cell"></span></div>
+      <div class="mini-row"><span class="mini-cell"></span><span class="mini-cell wide"></span></div>
+      <button class="mini-cta">Primary action</button>
+    </div>
+    <dl>
+      <div><dt>Type</dt><dd>Neue Haas Grotesk + Inter</dd></div>
+      <div><dt>Radius</dt><dd>0px</dd></div>
+      <div><dt>Surface</dt><dd>flat</dd></div>
+      <div><dt>Density</dt><dd>Low</dd></div>
+      <div><dt>Contrast</dt><dd>body 16.61:1 &middot; on-accent 13.67:1</dd></div>
+    </dl>
+  </article></div>
+
+<h2>Sample triads (deterministic per project id)</h2>
+
+    <div class="triad">
+      <code class="triad-id">8f14e45f</code>
+      <div class="triad-chips">
+      <div class="triad-chip" style="background:#324a83;color:#ffffff">
+        <strong>Ledger</strong>
+        <span>#324a83 &middot; hue 265</span>
+        <span>flat-bordered &middot; 4px</span>
+      </div>
+      <div class="triad-chip" style="background:#bb2d8c;color:#ffffff">
+        <strong>Signal</strong>
+        <span>#bb2d8c &middot; hue 345</span>
+        <span>flat &middot; 0px</span>
+      </div>
+      <div class="triad-chip" style="background:#ba5d1d;color:#ffffff">
+        <strong>Kiln</strong>
+        <span>#ba5d1d &middot; hue 50</span>
+        <span>soft-elevated &middot; 8px</span>
+      </div></div>
+      <span class="triad-meta">min hue gap 65&deg;</span>
+    </div>
+    <div class="triad">
+      <code class="triad-id">c9f0f895</code>
+      <div class="triad-chips">
+      <div class="triad-chip" style="background:#629742;color:#111111">
+        <strong>Greenhouse</strong>
+        <span>#629742 &middot; hue 135</span>
+        <span>soft-elevated &middot; 20px</span>
+      </div>
+      <div class="triad-chip" style="background:#086b6c;color:#ffffff">
+        <strong>Depot</strong>
+        <span>#086b6c &middot; hue 195</span>
+        <span>bordered &middot; 4px</span>
+      </div>
+      <div class="triad-chip" style="background:#324a83;color:#ffffff">
+        <strong>Ledger</strong>
+        <span>#324a83 &middot; hue 265</span>
+        <span>flat-bordered &middot; 4px</span>
+      </div></div>
+      <span class="triad-meta">min hue gap 60&deg;</span>
+    </div>
+    <div class="triad">
+      <code class="triad-id">45c48cce</code>
+      <div class="triad-chips">
+      <div class="triad-chip" style="background:#784184;color:#ffffff">
+        <strong>Vellum</strong>
+        <span>#784184 &middot; hue 320</span>
+        <span>elevated &middot; 6px</span>
+      </div>
+      <div class="triad-chip" style="background:#c13d34;color:#ffffff">
+        <strong>Field Manual</strong>
+        <span>#c13d34 &middot; hue 28</span>
+        <span>flat-bordered &middot; 2px</span>
+      </div>
+      <div class="triad-chip" style="background:#737406;color:#ffffff">
+        <strong>Commons</strong>
+        <span>#737406 &middot; hue 110</span>
+        <span>soft-elevated &middot; 12px</span>
+      </div></div>
+      <span class="triad-meta">min hue gap 68&deg;</span>
+    </div>
+    <div class="triad">
+      <code class="triad-id">d3d94468</code>
+      <div class="triad-chips">
+      <div class="triad-chip" style="background:#086b6c;color:#ffffff">
+        <strong>Depot</strong>
+        <span>#086b6c &middot; hue 195</span>
+        <span>bordered &middot; 4px</span>
+      </div>
+      <div class="triad-chip" style="background:#324a83;color:#ffffff">
+        <strong>Ledger</strong>
+        <span>#324a83 &middot; hue 265</span>
+        <span>flat-bordered &middot; 4px</span>
+      </div>
+      <div class="triad-chip" style="background:#bb2d8c;color:#ffffff">
+        <strong>Signal</strong>
+        <span>#bb2d8c &middot; hue 345</span>
+        <span>flat &middot; 0px</span>
+      </div></div>
+      <span class="triad-meta">min hue gap 70&deg;</span>
+    </div>
+    <div class="triad">
+      <code class="triad-id">6512bd43</code>
+      <div class="triad-chips">
+      <div class="triad-chip" style="background:#737406;color:#ffffff">
+        <strong>Commons</strong>
+        <span>#737406 &middot; hue 110</span>
+        <span>soft-elevated &middot; 12px</span>
+      </div>
+      <div class="triad-chip" style="background:#038268;color:#ffffff">
+        <strong>Tide</strong>
+        <span>#038268 &middot; hue 172</span>
+        <span>flat-bordered &middot; 4px</span>
+      </div>
+      <div class="triad-chip" style="background:#6d54a8;color:#ffffff">
+        <strong>Atrium</strong>
+        <span>#6d54a8 &middot; hue 295</span>
+        <span>elevated &middot; 10px</span>
+      </div></div>
+      <span class="triad-meta">min hue gap 62&deg;</span>
+    </div>
+    <div class="triad">
+      <code class="triad-id">c20ad4d7</code>
+      <div class="triad-chips">
+      <div class="triad-chip" style="background:#925b0c;color:#ffffff">
+        <strong>Almanac</strong>
+        <span>#925b0c &middot; hue 68</span>
+        <span>flat &middot; 0px</span>
+      </div>
+      <div class="triad-chip" style="background:#629742;color:#111111">
+        <strong>Greenhouse</strong>
+        <span>#629742 &middot; hue 135</span>
+        <span>soft-elevated &middot; 20px</span>
+      </div>
+      <div class="triad-chip" style="background:#086b6c;color:#ffffff">
+        <strong>Depot</strong>
+        <span>#086b6c &middot; hue 195</span>
+        <span>bordered &middot; 4px</span>
+      </div></div>
+      <span class="triad-meta">min hue gap 60&deg;</span>
+    </div>
+
+<h2>Anti-slop deny list</h2>
+<ul class="deny"><li>purple-to-blue gradient headers, hero bands, or buttons</li><li>glassmorphism, frosted panels, or translucent blurred overlays</li><li>teal or mint accents on white cards as the default look</li><li>Inter (or a generic geometric sans) used for every level of the hierarchy</li><li>a uniform large corner radius applied to every element on the screen</li><li>stacked soft drop shadows used as the only means of separation</li><li>emoji used as interface iconography</li><li>placeholder branding such as &quot;Acme&quot;, &quot;Acme Inc&quot;, or a generic abstract swoosh logo</li><li>decorative gradient meshes, blobs, or aurora backgrounds behind product UI</li><li>an &quot;AI-powered&quot; badge, sparkle icon, or similar marketing flourish</li></ul>
