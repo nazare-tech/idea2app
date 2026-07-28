@@ -13,6 +13,7 @@ import { ArrowRight } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { HeroArtwork } from "@/components/landing/hero-artwork"
+import { HeroReelArc } from "@/components/landing/hero-reel-arc"
 import { TestimonialBand } from "@/components/landing/testimonial-band"
 import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
 import { FeatureScrollytelling } from "@/components/landing/feature-scrollytelling"
@@ -141,9 +142,9 @@ export default async function LandingPage() {
           while letting the sticky notes stay visible below the hero boundary */}
       <section className="relative isolate overflow-x-clip">
         <HeroArtwork />
-        {/* min-h leaves ~150px of the next section peeking above the fold so the
-            tool marquee invites the first scroll (220 = 64px header + peek). */}
-        <div className={`${container} relative z-10 flex min-h-[560px] flex-col items-center justify-center py-16 md:min-h-[calc(100svh-220px)] lg:py-20`}>
+        {/* min-h leaves room for the taller reel arc below while preserving the
+            existing headline and idea-capture composition. */}
+        <div className={`${container} relative z-10 flex min-h-[460px] flex-col items-center justify-center py-16 md:min-h-[calc(100svh-526px)] lg:py-20`}>
           <h1 className="hero-enter-fade font-display mx-auto flex max-w-[980px] flex-col gap-1 text-center text-[2.75rem] font-semibold leading-[1.005] tracking-[-0.064em] text-text-primary sm:text-[3.5rem] lg:text-[4.25rem]">
             <span>Build your startup idea</span>
             <span>
@@ -166,6 +167,10 @@ export default async function LandingPage() {
             </p>
           )}
         </div>
+
+        {/* Full-bleed arc of real Maker Compass screens closing the hero,
+            directly above the handoff marquee. */}
+        <HeroReelArc />
       </section>
 
       {/* Trust bar: what Maker Compass hands off to, since there's no customer logo wall yet */}

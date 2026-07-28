@@ -82,6 +82,7 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 ## Workspace / UI Components
 
 - `src/app/page.test.tsx` — ToolLogoMarquee accessibility: duplicated visual pass hidden from assistive tech, visible names instead of redundant logo alt text
+- `src/components/landing/hero-reel-arc.test.tsx` — landing hero reel: ten unique shortlisted mobile screens repeated across 50 decorative image cards, with normalized RGBA PNG dimensions, alpha-capable color type, and SHA-256 integrity
 - `src/components/layout/anchor-nav.test.tsx` — AnchorNav lets a derived document override its source document status and never offers Retry for derived incomplete items
 - `src/components/layout/scrollable-content.test.tsx` — ScrollableContent workspace section order (AI Prompts after mockups) and below-fold containment of inactive document frames
 - `src/components/layout/workspace-document-frame.test.tsx` — WorkspaceDocumentFrame shell dimensions/padding and opt-in browser layout containment without changing anchors
