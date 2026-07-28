@@ -27,8 +27,6 @@ interface MobileDocumentBarProps {
   documentDisplayStates: Record<string, DocumentGenerationDisplayState>
   activeItem: DocumentNavItem
   activeSectionId: string | null
-  /** Chrome auto-hide state from useHideOnScrollChrome */
-  hidden: boolean
   open: boolean
   onOpenChange: (open: boolean) => void
   onNavigate: (sectionId: string) => void
@@ -42,7 +40,6 @@ export function MobileDocumentBar({
   documentDisplayStates,
   activeItem,
   activeSectionId,
-  hidden,
   open,
   onOpenChange,
   onNavigate,
@@ -64,14 +61,10 @@ export function MobileDocumentBar({
 
   return (
     <>
-      {/* Peek bar: curved top like a resting bottom sheet */}
-      <div
-        className={cn(
-          "absolute inset-x-0 bottom-0 z-30 lg:hidden",
-          !reduceMotion && "transition-transform duration-[280ms] ease-[var(--ease-out-expo)]",
-          hidden && !open ? "translate-y-[120%]" : "translate-y-0",
-        )}
-      >
+      {/* Peek bar: curved top like a resting bottom sheet. Unlike the slim
+          header it never hides on scroll: it is the only indicator of which
+          section is in view, so losing it costs the reader their place. */}
+      <div className="absolute inset-x-0 bottom-0 z-30 lg:hidden">
         <button
           type="button"
           onClick={() => onOpenChange(true)}

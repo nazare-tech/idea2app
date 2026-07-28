@@ -93,7 +93,24 @@
   --workspace-mobile-header-height: 52px;
   --workspace-desktop-header-height: 64px;
   --workspace-document-sheet-height: 60dvh;
-  --workspace-composer-sheet-height: 70dvh;
+  --workspace-composer-sheet-height: 92dvh;
+  /* Height of the on-screen keyboard, written by useKeyboardInset. Stays 0px
+     when no keyboard is up, and on browsers that resize the layout viewport
+     themselves (interactive-widget=resizes-content), so bottom-anchored sheets
+     can offset by it unconditionally. */
+  --workspace-keyboard-inset: 0px;
+  /* Resolved mobile composer sheet height: the target height, clamped so the
+     sheet never slides under the slim header or behind the keyboard. */
+  --workspace-composer-sheet-max-height: min(
+    var(--workspace-composer-sheet-height),
+    calc(100dvh - var(--workspace-keyboard-inset) - var(--workspace-mobile-header-height))
+  );
+  /* Bottom padding for a sheet that has already been lifted by the keyboard
+     inset: the notch inset only matters while the keyboard is down. */
+  --workspace-sheet-safe-bottom: max(
+    0px,
+    calc(env(safe-area-inset-bottom) - var(--workspace-keyboard-inset))
+  );
 }
 
 @theme inline {
@@ -185,12 +202,16 @@ body {
   background: rgba(0, 0, 0, 0.2);
 }
 
-.workspace-anchor-nav {
+/* Scrollable strips that should not show a scrollbar: the desktop anchor rail
+   and the mobile composer's single-row suggestion chips. */
+.workspace-anchor-nav,
+.hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.workspace-anchor-nav::-webkit-scrollbar {
+.workspace-anchor-nav::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
@@ -435,6 +456,94 @@ body {
 
 .hero-enter-right {
   animation: hero-enter-right 0.9s var(--motion-ease-out-expo) backwards;
+}
+
+/* Landing hero reel arc: transparent phone cutouts riding the top of a 3000px
+   circle, clipped to a short band so only the crown of the arc shows. Card
+   placement is trig done in components/landing/hero-reel-arc.tsx; the fixed
+   transparent slots and the spin live here.
+   `--reel-scale` shrinks the whole construction per breakpoint, so the trig in
+   the component never has to change. */
+.hero-reel-band {
+  --reel-scale: 1;
+  --reel-band-height: 350px;
+  /* Pushes the wheel down inside the band so the crown card clears the top edge
+     by a few px. 155 = half the 294px card height, plus 8px of breathing room.
+     The 48px of slack left at the bottom is what the flanking cards dip into
+     before the band clips them flat. */
+  --reel-wheel-offset: 155px;
+  --reel-card-width: 168px;
+  --reel-card-height: 294px;
+  --reel-diameter: 3000px;
+
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: calc(var(--reel-band-height) * var(--reel-scale));
+  justify-content: center;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.hero-reel-wheel {
+  position: relative;
+  width: var(--reel-diameter);
+  height: var(--reel-diameter);
+  flex: none;
+  margin-top: calc(var(--reel-wheel-offset) * var(--reel-scale));
+  transform: scale(var(--reel-scale));
+  transform-origin: center top;
+}
+
+.hero-reel-spin {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  /* Clockwise, so the cards drift left to right. ~3.3 degrees per second. */
+  animation: hero-reel-spin 110s linear infinite;
+}
+
+@keyframes hero-reel-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hero-reel-card {
+  position: absolute;
+  width: var(--reel-card-width);
+  height: var(--reel-card-height);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform-origin: center center;
+  pointer-events: none;
+}
+
+.hero-reel-card-image {
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(28, 25, 23, 0.18));
+}
+
+/* Narrower viewports see less of the arc, so shrink the whole construction to
+   keep a comparable number of cards in frame. Scaling the wheel scales the
+   radius too, which is why the trig in the component stays untouched. */
+@media (max-width: 1023px) {
+  .hero-reel-band {
+    --reel-scale: 0.85;
+  }
+}
+
+@media (max-width: 639px) {
+  .hero-reel-band {
+    --reel-scale: 0.62;
+  }
 }
 
 /* Landing feature scrollytelling.
@@ -1021,6 +1130,13 @@ body {
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;
+  }
+
+  /* Park the reel arc at its starting angle rather than letting the global
+     0.01ms override sprint it through a full revolution. */
+  .hero-reel-spin {
+    animation: none !important;
+    will-change: auto;
   }
 
   .shimmer {

@@ -181,8 +181,9 @@ export function ProjectWorkspace({
     loadWorkspaceDocuments,
   })
 
-  // Mobile chrome (slim header + document peek bar) hides on scroll down and
-  // returns on scroll up; sheets pin it, reduced-motion users never lose it.
+  // The slim mobile header hides on scroll down and returns on scroll up;
+  // sheets pin it, reduced-motion users never lose it. The document peek bar
+  // deliberately stays put so the section indicator is always readable.
   const reduceMotion = useReducedMotion()
   const [documentsSheetOpen, setDocumentsSheetOpen] = useState(false)
   const { hidden: mobileChromeHidden, suppress: suppressChromeHide } = useHideOnScrollChrome(
@@ -927,7 +928,6 @@ export function ProjectWorkspace({
               documentDisplayStates={navDocumentDisplayStates}
               activeItem={activeComposerNavItem}
               activeSectionId={activeSectionId}
-              hidden={mobileChromeHidden}
               open={documentsSheetOpen}
               onOpenChange={setDocumentsSheetOpen}
               onNavigate={handleTrackedScrollNavigate}
@@ -938,7 +938,6 @@ export function ProjectWorkspace({
               projectName={projectName}
               activeDocKey={activeComposerNavItem.key}
               upgradeRequired={!composerEnabled}
-              mobileChromeHidden={mobileChromeHidden}
               mobileLifted={documentsSheetOpen}
               onOpenChange={handleComposerOpenChange}
             />

@@ -18,10 +18,14 @@ const firaMono = Fira_Mono({
 
 // viewport-fit=cover lets the workspace's bottom chrome pad itself with
 // env(safe-area-inset-bottom) on notched devices and in-browser Safari.
+// interactive-widget=resizes-content shrinks the layout viewport when the
+// on-screen keyboard opens, so bottom-anchored sheets (the mobile composer)
+// stay above it. Safari ignores it; useKeyboardInset covers that case.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 }
 
 export const metadata: Metadata = {

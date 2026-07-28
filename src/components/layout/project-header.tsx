@@ -134,7 +134,9 @@ export function ProjectHeader({
         >
           <ChevronLeft aria-hidden="true" className="h-[22px] w-[22px]" />
         </Link>
-        <span className="min-w-0 flex-1 truncate text-base font-semibold leading-5 text-foreground">
+        {/* px-2 keeps the truncation ellipsis clear of the back arrow and the
+            profile avatar instead of running flush into them. */}
+        <span className="min-w-0 flex-1 truncate px-2 text-base font-semibold leading-5 text-foreground">
           {projectName}
         </span>
         <HeaderProfileMenu user={user} triggerId="project-user-menu-trigger-mobile" />

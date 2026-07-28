@@ -22,6 +22,7 @@ import { UpgradeCtaLink } from "@/components/analytics/upgrade-cta-link"
 import { useReducedMotion } from "@/hooks/use-reduced-motion"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useSheetModalFocus } from "@/hooks/use-sheet-modal-focus"
+import { useKeyboardInset } from "@/hooks/use-keyboard-inset"
 
 interface ComposerMessage {
   id: number
@@ -37,8 +38,6 @@ interface ProjectComposerProps {
   activeDocKey: string
   /** Free-plan gate: render an upgrade CTA instead of the chat input. */
   upgradeRequired?: boolean
-  /** Mobile chrome auto-hide state; the FAB drops with the peek bar. */
-  mobileChromeHidden?: boolean
   /** Mobile documents sheet open: the FAB rides above the sheet. */
   mobileLifted?: boolean
   /** Lets the workspace react to the composer opening (e.g. close the documents sheet). */
@@ -102,17 +101,17 @@ const CHIP_ICONS = {
 
 /**
  * Mobile "Ask this project" floating action button (design: 54px red circle,
- * bottom-right, riding above whichever bottom chrome is showing).
+ * bottom-right, riding above whichever bottom chrome is showing). The document
+ * peek bar is always on screen, so the resting offset clears it; only the
+ * expanded documents sheet lifts the button further.
  */
 function AskProjectFab({
   onClick,
-  chromeHidden,
   lifted,
   reduceMotion,
   fabRef,
 }: {
   onClick: () => void
-  chromeHidden: boolean
   lifted: boolean
   reduceMotion: boolean
   /** Lets the sheet focus hook restore focus to this opener on close. */
@@ -129,9 +128,7 @@ function AskProjectFab({
         !reduceMotion && "transition-[bottom] duration-[280ms] ease-[var(--ease-out-expo)]",
         lifted
           ? "bottom-[calc(var(--workspace-document-sheet-height)+0.875rem)]"
-          : chromeHidden
-            ? "bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
-            : "bottom-[calc(env(safe-area-inset-bottom)+4.25rem)]",
+          : "bottom-[calc(env(safe-area-inset-bottom)+4.25rem)]",
       )}
     >
       <Sparkle aria-hidden="true" className="h-[22px] w-[22px]" />
@@ -152,7 +149,7 @@ function SuggestionChip({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-2 text-[13.5px] font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-primary/[0.02]"
+      className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-border bg-background px-3.5 py-2 text-[13.5px] font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-primary/[0.02]"
     >
       <span className="shrink-0 text-muted-foreground">{icon}</span>
       {label}
@@ -165,7 +162,6 @@ export function ProjectComposer({
   projectName,
   activeDocKey,
   upgradeRequired = false,
-  mobileChromeHidden = false,
   mobileLifted = false,
   onOpenChange,
 }: ProjectComposerProps) {
@@ -174,6 +170,9 @@ export function ProjectComposer({
   // UpgradeCtaLink would record phantom upgrade_cta_viewed impressions.
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const [open, setOpen] = useState(false)
+  // Only the open mobile sheet needs to dodge the on-screen keyboard; the
+  // desktop command bar is never occluded by it.
+  useKeyboardInset(open && !isDesktop)
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<ComposerMessage[]>([])
   const [streaming, setStreaming] = useState(false)
@@ -418,7 +417,6 @@ export function ProjectComposer({
         {!isDesktop && !open && (
           <AskProjectFab
             onClick={() => setOpen(true)}
-            chromeHidden={mobileChromeHidden}
             lifted={mobileLifted}
             reduceMotion={reduceMotion}
             fabRef={fabRef}
@@ -510,7 +508,6 @@ export function ProjectComposer({
       {!isDesktop && !open && (
         <AskProjectFab
           onClick={() => setOpen(true)}
-          chromeHidden={mobileChromeHidden}
           lifted={mobileLifted}
           reduceMotion={reduceMotion}
           fabRef={fabRef}
@@ -528,7 +525,11 @@ export function ProjectComposer({
       className={cn(
         "pointer-events-none absolute z-40 flex-col",
         "lg:bottom-6 lg:left-1/2 lg:flex lg:w-[min(724px,calc(100%-72px))] lg:-translate-x-1/2",
-        open ? "inset-x-0 bottom-0 flex lg:inset-x-auto" : "hidden",
+        // On mobile the sheet is anchored above the on-screen keyboard rather
+        // than at the viewport bottom, so the textarea is never occluded.
+        open
+          ? "inset-x-0 bottom-[var(--workspace-keyboard-inset)] flex lg:inset-x-auto"
+          : "hidden",
       )}
     >
       <style>{`
@@ -545,7 +546,7 @@ export function ProjectComposer({
         className={cn(
           "pointer-events-auto flex flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-[0_4px_20px_rgba(15,23,42,0.06)] lg:rounded-2xl",
           open &&
-            "max-lg:h-[var(--workspace-composer-sheet-height)] max-lg:border-x-0 max-lg:border-b-0 max-lg:pb-[env(safe-area-inset-bottom)] max-lg:shadow-[0_-4px_20px_rgba(15,23,42,0.12)]",
+            "max-lg:h-[var(--workspace-composer-sheet-max-height)] max-lg:border-x-0 max-lg:border-b-0 max-lg:pb-[var(--workspace-sheet-safe-bottom)] max-lg:shadow-[0_-4px_20px_rgba(15,23,42,0.12)]",
           open && !reduceMotion && "max-lg:animate-[workspace-sheet-up_.3s_var(--ease-out-expo)]",
         )}
       >
@@ -595,7 +596,10 @@ export function ProjectComposer({
                     Ask anything about {projectName}. Answers read your generated
                     docs.
                   </p>
-                  <div className="mt-3.5 flex flex-wrap gap-2">
+                  {/* Below lg the chips ride in one scrollable row: stacking
+                      them vertically costs a whole line of sheet height on the
+                      viewport that has the least of it. Desktop keeps wrapping. */}
+                  <div className="hide-scrollbar mt-3.5 flex gap-2 overflow-x-auto pb-0.5 lg:flex-wrap lg:overflow-x-visible lg:pb-0">
                     {(SUGGESTION_CHIPS[activeDocKey] ?? DEFAULT_CHIPS).map((chip) => (
                       <SuggestionChip
                         key={chip.label}
