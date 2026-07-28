@@ -17,6 +17,8 @@ import { createHash } from "node:crypto"
 import { closeSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, readSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path"
 
+import { escapeHtml } from "./lib/html.mjs"
+
 const EXPECTED_DIRECTIONS = ["A", "B", "C"]
 const PLATFORM = "native-mobile-app"
 
@@ -84,15 +86,6 @@ function safeInputFile(root, path, expectedExtension) {
   const prefix = realRoot.endsWith(sep) ? realRoot : `${realRoot}${sep}`
   if (!realCandidate.startsWith(prefix)) throw new Error(`Input escapes run directory: ${path}`)
   return candidate
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;")
 }
 
 function imageMetadata(path) {

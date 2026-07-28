@@ -20,6 +20,8 @@ Automatic post-commit review intentionally spends opposite-CLI reviewer tokens f
 | `provision-free-production-qa.mjs` | Provisions the confirmed Free production QA identity for no-charge checkout tests. | see script header |
 | `build-mobile-screen-gallery.mjs` | Splits Maker Compass two-phone mobile storyboards into standalone screen crops and builds a static gallery; requires local ImageMagick. | `node scripts/build-mobile-screen-gallery.mjs --root <batch-root> [--crop-map <json>] [--out <html>]` |
 | `normalize-hero-reel-cutouts.mjs` | Removes edge-connected chroma from the ten image-edited hero phones and normalizes them to transparent 8-bit 576×1008 canvases with equal 880px device height; validates all outputs before safe publication and requires local ImageMagick. | `node scripts/normalize-hero-reel-cutouts.mjs --input-dir <dir> --output-dir <dir>` |
+| `recolor-mockup-skeletons.mjs` | Replaces the saturated indigo placeholder fill in the mockup storyboard skeletons with a neutral grey by walking raw pixels through sharp, un-blending anti-aliased edges so borders keep no colour fringe. Removes the hue anchor that biased every generated mockup toward blue. | `node scripts/recolor-mockup-skeletons.mjs [--grey r,g,b] [--suffix -grey]` |
+| `build-mockup-brand-bank.mjs` | Author-time generator for the mockup brand-direction bank: fifteen OKLCH-authored kits with gamut clamping, tinted neutrals, WCAG AA checks, and deterministic per-project triads. Emits `docs/plans/mockup-brand-bank.json` plus an HTML contact sheet for review. | `node scripts/build-mockup-brand-bank.mjs` |
 
 Git hooks (versioned in `.githooks/`, activated by `npm install` through the `prepare` script):
 

@@ -31,6 +31,8 @@
 
 import { writeFile } from "node:fs/promises"
 
+import { escapeHtml } from "./lib/html.mjs"
+
 /**
  * Fifteen kits. Hues are deliberately spread around the wheel with blue underweighted.
  *
@@ -392,12 +394,6 @@ const SAMPLE_PROJECT_IDS = [
   "6512bd43-d9ca-4e6b-8f2d-3c5a9e7b1d77",
   "c20ad4d7-6fe9-4770-9a1c-8b4e2f6a3c88",
 ]
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"]/g, (character) => (
-    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character]
-  ))
-}
 
 function renderKitCard(kit) {
   return `
