@@ -100,10 +100,18 @@
      can offset by it unconditionally. */
   --workspace-keyboard-inset: 0px;
   /* Resolved mobile composer sheet height: the target height, clamped so the
-     sheet never slides under the slim header or behind the keyboard. */
+     sheet never slides under the slim header or behind the keyboard. The inner
+     max() floors the available space at a small scrollable height: on a short
+     landscape viewport a tall keyboard can exceed 100dvh minus the header, and
+     a negative height is invalid CSS, so the declaration would be dropped and
+     the sheet would fall back to auto height behind the keyboard. */
+  --workspace-composer-sheet-min-height: 96px;
   --workspace-composer-sheet-max-height: min(
     var(--workspace-composer-sheet-height),
-    calc(100dvh - var(--workspace-keyboard-inset) - var(--workspace-mobile-header-height))
+    max(
+      var(--workspace-composer-sheet-min-height),
+      calc(100dvh - var(--workspace-keyboard-inset) - var(--workspace-mobile-header-height))
+    )
   );
   /* Bottom padding for a sheet that has already been lifted by the keyboard
      inset: the notch inset only matters while the keyboard is down. */

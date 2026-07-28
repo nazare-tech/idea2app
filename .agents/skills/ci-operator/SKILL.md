@@ -22,7 +22,7 @@ Default to `watch` when request asks only for status. Use `diagnose` for “why 
 
 1. Confirm current branch with `git branch --show-current`.
 2. Confirm GitHub CLI authentication with `gh auth status`.
-3. Resolve explicit pull-request number or URL when supplied; otherwise resolve current branch with `gh pr view --json number,url,headRefName`.
+3. Resolve explicit pull-request number or URL when supplied; otherwise resolve current branch with `gh pr view --json number,url,headRefName`. Retain the resolved number as `<pr>` and pass it to every later `gh pr` invocation; bare `gh pr` commands silently retarget the checked-out branch's pull request.
 4. Stop with exact missing prerequisite when authentication fails or branch has no pull request.
 5. Before `fix` or `loop`, compare target `headRefName` with checked-out branch. Stop instead of editing when they differ; never diagnose one pull request while changing another branch.
 
@@ -31,7 +31,7 @@ Default to `watch` when request asks only for status. Use `diagnose` for “why 
 Run:
 
 ```bash
-gh pr checks --json name,bucket,state,workflow,link
+gh pr checks <pr> --json name,bucket,state,workflow,link
 ```
 
 If installed `gh` rejects a field, rerun using fields listed by its error. Treat returned PR check set as authoritative; `gh run list` alone omits non-GitHub checks.
@@ -50,7 +50,7 @@ Use `github:gh-fix-ci` when available and task needs plugin-provided PR metadata
 2. When checks remain pending and user asked to wait, run:
 
    ```bash
-   gh pr checks --watch --fail-fast
+   gh pr checks <pr> --watch --fail-fast
    ```
 
 3. Re-read full check set after watch exits.

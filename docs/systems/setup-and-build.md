@@ -13,6 +13,7 @@ Also covers the git/PR workflow rules, Vercel and Docker deployment, guard-webpa
 
 - **Node.js**: Latest LTS version
 - **npm**: Latest version
+- **ImageMagick** (optional, image tooling only): required by `scripts/build-mobile-screen-gallery.mjs` and `scripts/normalize-hero-reel-cutouts.mjs`. Install with `brew install imagemagick` and verify with `magick -version`; both scripts exit with "ImageMagick is unavailable" without it. The app itself does not need it.
 - **Supabase Account**: For database and auth
 - **Stripe Account**: For payments (optional for dev)
 - **API Keys**: Anthropic, OpenRouter
