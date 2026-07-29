@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S npx tsx
 /**
  * Prepares a brand-variety review batch: for each Maker Compass case study, assigns a
  * deterministic kit triad from the brand bank and writes a brief that a Codex run turns
@@ -14,7 +14,7 @@
  * skeletons, different brand specification.
  *
  * Usage:
- *   node scripts/build-brand-variety-briefs.mjs [--runs <dir>] [--out <dir>]
+ *   npx tsx scripts/build-brand-variety-briefs.mts [--runs <dir>] [--out <dir>]
  */
 
 import { mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs"
@@ -23,7 +23,7 @@ import { join, resolve } from "node:path"
 // Runtime module, not a local re-implementation: the batch must exercise the exact kit
 // block the shipped pipeline sends, including the semantic status ramp, platform-aware
 // archetypes, and clash notes. Run this script with tsx so the TS import resolves:
-//   npx tsx scripts/build-brand-variety-briefs.mjs
+//   npx tsx scripts/build-brand-variety-briefs.mts
 import {
   formatMockupBrandKitForPrompt,
   selectMockupBrandTriad,
