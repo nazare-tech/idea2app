@@ -321,6 +321,9 @@ export async function runPromptLabArtifact({
           label: mockupOption,
           systemPromptOverride: systemPrompt,
           designPlan,
+          // Same seed the real pipeline uses, so planner-only previews show the exact
+          // brand kit a live run would apply.
+          projectId,
         })
         return {
           content: imagePrompts.userPrompt,

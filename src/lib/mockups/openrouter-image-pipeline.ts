@@ -19,6 +19,12 @@ import {
   type OpenRouterImageMockupOption,
 } from "@/lib/mockups/openrouter-image-format"
 import {
+  formatMockupAntiSlopRules,
+  formatMockupBrandKitForPrompt,
+  isMockupBrandDirectionsEnabled,
+  selectMockupBrandKitForOption,
+} from "@/lib/mockups/brand-directions"
+import {
   MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT,
   buildMockupGenerationBrief,
   buildMockupDesignPlanUserPrompt,
@@ -44,6 +50,9 @@ const MOCKUP_STORYBOARD_FRAME_COUNT = 2
 interface MockupStoryboardSkeleton {
   label: string
   publicPath: string
+  /** Same skeleton with the placeholder fill recolored to neutral grey; used when brand
+   * directions are enabled so the indigo fill cannot anchor the edit toward blue. */
+  neutralPublicPath: string
   aspectRatio: string
   aspectRatioDescription: string
   canvasDescription: string
@@ -56,6 +65,7 @@ const MOCKUP_STORYBOARD_SKELETONS: Record<MockupPrimaryPlatform, MockupStoryboar
   "desktop-web": {
     label: "desktop web Safari storyboard skeleton",
     publicPath: "/mockups/skeletons/desktop-web-storyboard-skeleton.png",
+    neutralPublicPath: "/mockups/skeletons/desktop-web-storyboard-skeleton-grey.png",
     aspectRatio: "21:9",
     aspectRatioDescription: "wide 21:9 landscape",
     canvasDescription: "4738x2030 white 21:9-ish canvas with two side-by-side desktop browser frames",
@@ -66,6 +76,7 @@ const MOCKUP_STORYBOARD_SKELETONS: Record<MockupPrimaryPlatform, MockupStoryboar
   "mobile-web": {
     label: "mobile web Safari storyboard skeleton",
     publicPath: "/mockups/skeletons/mobile-web-storyboard-skeleton.png",
+    neutralPublicPath: "/mockups/skeletons/mobile-web-storyboard-skeleton-grey.png",
     aspectRatio: "4:3",
     aspectRatioDescription: "near-4:3 landscape",
     canvasDescription: "2760x2030 white canvas with two side-by-side iPhone mobile browser frames",
@@ -76,6 +87,7 @@ const MOCKUP_STORYBOARD_SKELETONS: Record<MockupPrimaryPlatform, MockupStoryboar
   "native-mobile-app": {
     label: "native mobile app storyboard skeleton",
     publicPath: "/mockups/skeletons/native-mobile-app-storyboard-skeleton.png",
+    neutralPublicPath: "/mockups/skeletons/native-mobile-app-storyboard-skeleton-grey.png",
     aspectRatio: "4:3",
     aspectRatioDescription: "near-4:3 landscape",
     canvasDescription: "2760x2030 white canvas with two side-by-side native iPhone app frames",
@@ -86,6 +98,7 @@ const MOCKUP_STORYBOARD_SKELETONS: Record<MockupPrimaryPlatform, MockupStoryboar
   "native-desktop-app": {
     label: "native desktop app storyboard skeleton",
     publicPath: "/mockups/skeletons/native-desktop-app-storyboard-skeleton.png",
+    neutralPublicPath: "/mockups/skeletons/native-desktop-app-storyboard-skeleton-grey.png",
     aspectRatio: "21:9",
     aspectRatioDescription: "wide 21:9 landscape",
     canvasDescription: "4738x2030 white 21:9-ish canvas with two side-by-side native macOS app windows",
@@ -189,8 +202,21 @@ export function getOpenRouterMockupPlannerModel() {
     DEFAULT_PLANNER_MODEL
 }
 
+/**
+ * Resolves the skeleton for a platform. With brand directions enabled the neutral-grey
+ * variant is served and every "purple" mention becomes "grey": the indigo fill covers
+ * ~63% of the canvas and measurably anchored image edits toward blue, which was one of
+ * the root causes of every mockup landing in the same register.
+ */
 export function getMockupStoryboardSkeleton(platform: MockupPrimaryPlatform) {
-  return MOCKUP_STORYBOARD_SKELETONS[platform]
+  const skeleton = MOCKUP_STORYBOARD_SKELETONS[platform]
+  if (!isMockupBrandDirectionsEnabled()) return skeleton
+
+  return {
+    ...skeleton,
+    publicPath: skeleton.neutralPublicPath,
+    interiorDescription: skeleton.interiorDescription.replace("purple", "grey"),
+  }
 }
 
 function getMockupStoryboardSkeletonFilePath(platform: MockupPrimaryPlatform) {
@@ -529,6 +555,9 @@ async function generateAndStoreOption({
   if (!direction) {
     throw new Error(`Mockup design plan is missing direction ${config.label}`)
   }
+  const brandKit = isMockupBrandDirectionsEnabled()
+    ? selectMockupBrandKitForOption(projectId, config.label)
+    : null
   const storyboardPrompt = userPrompt || buildOpenRouterMockupImagePrompt({
     projectName,
     mvpPlan,
@@ -536,6 +565,9 @@ async function generateAndStoreOption({
     strategy: formatDirectionForPrompt(direction),
     label: config.label,
     designPlan,
+    brandKitBlock: brandKit
+      ? formatMockupBrandKitForPrompt(brandKit, designPlan.primaryPlatform)
+      : undefined,
   })
   const skeleton = getMockupStoryboardSkeleton(designPlan.primaryPlatform)
   const userMessageContent = buildOpenRouterMockupImageUserMessageContent({
@@ -562,7 +594,7 @@ async function generateAndStoreOption({
       messages: [
         {
           role: "system",
-          content: systemPrompt || OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
+          content: systemPrompt || buildOpenRouterImageMockupSystemPrompt(),
         },
         {
           role: "user",
@@ -810,6 +842,17 @@ function isAbortError(error: unknown) {
 export const OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT =
   "You generate production-quality static UI mockup images for software products. Return an image and a concise design rationale. Do not call external APIs. Do not mention implementation details."
 
+/**
+ * The effective image system prompt. With brand directions enabled it also carries the
+ * anti-slop deny list: the specific tells (gradient heroes, glassmorphism, teal-on-white
+ * card soup, uniform radius, emoji icons) that make generated UI read as AI output
+ * regardless of palette.
+ */
+export function buildOpenRouterImageMockupSystemPrompt() {
+  if (!isMockupBrandDirectionsEnabled()) return OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT
+  return `${OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT}\n\n${formatMockupAntiSlopRules()}`
+}
+
 function getMockupStoryboardFrameScreens(designPlan?: MockupDesignPlan): MockupDesignPlanScreen[] {
   const fallbackScreens: MockupDesignPlanScreen[] = [
     {
@@ -899,6 +942,7 @@ export function buildOpenRouterMockupImagePrompt({
   strategy,
   label,
   designPlan,
+  brandKitBlock,
 }: {
   projectName: string
   mvpPlan: string
@@ -906,6 +950,8 @@ export function buildOpenRouterMockupImagePrompt({
   strategy: string
   label: string
   designPlan?: MockupDesignPlan
+  /** Pre-rendered brand kit prompt block; present only when brand directions are enabled. */
+  brandKitBlock?: string
 }) {
   void _mvpPlan
 
@@ -924,7 +970,7 @@ Internal direction metadata only:
 
 Design strategy:
 ${strategy}
-
+${brandKitBlock ? `\n${brandKitBlock}\n` : ""}
 Primary platform:
 ${platform}
 
@@ -937,7 +983,7 @@ ${designPlan?.targetUser ?? "Primary MVP user"}
 Replace the existing "Text here" labels with exactly:
 - ${frameLabels}
 
-Frame content to place inside the existing purple placeholders:
+Frame content to place inside the existing ${isMockupBrandDirectionsEnabled() ? "grey" : "purple"} placeholders:
 ${formatMockupStoryboardFrameScreens(frameScreens)}
 ${foldedScreens ? `
 Later-flow details to fold into the second frame:
@@ -977,12 +1023,15 @@ export function buildMockupImagePromptForOption({
   label,
   systemPromptOverride,
   designPlan,
+  projectId,
 }: {
   projectName: string
   mvpPlan: string
   label: OpenRouterMockupOptionLabel
   systemPromptOverride?: string
   designPlan: MockupDesignPlan
+  /** Enables the brand kit block; without it the prompt has no deterministic seed. */
+  projectId?: string
 }): {
   systemPrompt: string
   userPrompt: string
@@ -996,6 +1045,9 @@ export function buildMockupImagePromptForOption({
   if (!direction) {
     throw new Error(`Mockup design plan is missing direction ${config.label}`)
   }
+  const brandKit = projectId && isMockupBrandDirectionsEnabled()
+    ? selectMockupBrandKitForOption(projectId, config.label)
+    : null
   const userPrompt = buildOpenRouterMockupImagePrompt({
     projectName,
     mvpPlan,
@@ -1003,11 +1055,14 @@ export function buildMockupImagePromptForOption({
     strategy: formatDirectionForPrompt(direction),
     label: config.label,
     designPlan,
+    brandKitBlock: brandKit
+      ? formatMockupBrandKitForPrompt(brandKit, designPlan.primaryPlatform)
+      : undefined,
   })
   const skeleton = getMockupStoryboardSkeleton(designPlan.primaryPlatform)
 
   return {
-    systemPrompt: systemPromptOverride || OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
+    systemPrompt: systemPromptOverride || buildOpenRouterImageMockupSystemPrompt(),
     userPrompt,
     skeletonAssetPath: skeleton.publicPath,
     skeletonLabel: skeleton.label,

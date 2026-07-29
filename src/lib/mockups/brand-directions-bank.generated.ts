@@ -1,0 +1,699 @@
+// GENERATED FILE - do not edit by hand.
+// Source: scripts/build-mockup-brand-bank.mjs (run: node scripts/build-mockup-brand-bank.mjs)
+// The review artifact for this data is docs/plans/mockup-brand-bank.json and its
+// contact sheet docs/plans/mockup-brand-bank-preview.html.
+
+import type { MockupBrandKit } from "./brand-directions"
+
+export const MOCKUP_BRAND_MIN_HUE_SEPARATION = 60
+
+export const MOCKUP_ANTI_SLOP_RULES: readonly string[] = [
+  "purple-to-blue gradient headers, hero bands, or buttons",
+  "glassmorphism, frosted panels, or translucent blurred overlays",
+  "teal or mint accents on white cards as the default look",
+  "Inter (or a generic geometric sans) used for every level of the hierarchy",
+  "a uniform large corner radius applied to every element on the screen",
+  "stacked soft drop shadows used as the only means of separation",
+  "emoji used as interface iconography",
+  "placeholder branding such as \"Acme\", \"Acme Inc\", or a generic abstract swoosh logo",
+  "decorative gradient meshes, blobs, or aurora backgrounds behind product UI",
+  "an \"AI-powered\" badge, sparkle icon, or similar marketing flourish"
+]
+
+export const MOCKUP_BRAND_KITS: readonly MockupBrandKit[] = [
+  {
+    "id": "field-manual",
+    "name": "Field Manual",
+    "archetype": {
+      "desktop": "Technical console. Dense data grid, hairline rules, monospace numerics, no decorative chrome.",
+      "mobile": "Technical console, mobile: dense single-column list with monospace numerics, segmented filter at top, no decorative chrome."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [
+      "error"
+    ],
+    "accentHex": "#c13d34",
+    "accentHoverHex": "#ac2722",
+    "accentOklch": "oklch(0.55 0.170 28)",
+    "accentHue": 28,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 5.27,
+    "neutralTintHue": 28,
+    "surfaces": {
+      "canvas": {
+        "hex": "#fdf9f9"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#e3dcdb"
+      },
+      "textMuted": {
+        "hex": "#76706f"
+      },
+      "textPrimary": {
+        "hex": "#201917"
+      }
+    },
+    "bodyContrast": 16.57,
+    "mutedContrast": 4.65,
+    "typePairing": "IBM Plex Sans + IBM Plex Mono",
+    "radius": 2,
+    "surface": "flat-bordered",
+    "density": "High"
+  },
+  {
+    "id": "kiln",
+    "name": "Kiln",
+    "archetype": {
+      "desktop": "Artisan catalogue. Generous margins, large product imagery, quiet toolbars pushed to the edges.",
+      "mobile": "Artisan catalogue, mobile: full-bleed imagery cards in one column, quiet floating action, toolbars collapse into the header."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [
+      "warning",
+      "error"
+    ],
+    "accentHex": "#ba5d1d",
+    "accentHoverHex": "#a44c03",
+    "accentOklch": "oklch(0.58 0.140 50)",
+    "accentHue": 50,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 4.5,
+    "neutralTintHue": 50,
+    "surfaces": {
+      "canvas": {
+        "hex": "#fcf9f8"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#e3ddd9"
+      },
+      "textMuted": {
+        "hex": "#76706d"
+      },
+      "textPrimary": {
+        "hex": "#1f1916"
+      }
+    },
+    "bodyContrast": 16.58,
+    "mutedContrast": 4.65,
+    "typePairing": "Fraunces + Inter",
+    "radius": 8,
+    "surface": "soft-elevated",
+    "density": "Low"
+  },
+  {
+    "id": "almanac",
+    "name": "Almanac",
+    "archetype": {
+      "desktop": "Editorial reader. Single measured column, footnote rail, typographic hierarchy doing all the work.",
+      "mobile": "Editorial reader, mobile: one measured text column, typographic hierarchy doing all the work, controls inside the flow, no tab bar clutter."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [
+      "warning"
+    ],
+    "accentHex": "#925b0c",
+    "accentHoverHex": "#7c4b02",
+    "accentOklch": "oklch(0.52 0.110 68)",
+    "accentHue": 68,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 5.64,
+    "neutralTintHue": 68,
+    "surfaces": {
+      "canvas": {
+        "hex": "#fcfaf7"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#e2ddd8"
+      },
+      "textMuted": {
+        "hex": "#75716d"
+      },
+      "textPrimary": {
+        "hex": "#1e1a15"
+      }
+    },
+    "bodyContrast": 16.61,
+    "mutedContrast": 4.65,
+    "typePairing": "Source Serif 4 + Source Sans 3",
+    "radius": 0,
+    "surface": "flat",
+    "density": "Low"
+  },
+  {
+    "id": "switchboard",
+    "name": "Switchboard",
+    "archetype": {
+      "desktop": "Operations board. Status-first columns, colored state pills, everything scannable in one glance.",
+      "mobile": "Operations board, mobile: status-first stacked rows with colored state pills, swipe-ready list items, sticky summary header."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [
+      "warning"
+    ],
+    "accentHex": "#b48c05",
+    "accentHoverHex": "#9e7b03",
+    "accentOklch": "oklch(0.66 0.134 88)",
+    "accentHue": 88,
+    "accentTextHex": "#111111",
+    "accentTextContrast": 6.02,
+    "neutralTintHue": 88,
+    "surfaces": {
+      "canvas": {
+        "hex": "#fbfaf7"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#e0ded8"
+      },
+      "textMuted": {
+        "hex": "#73716c"
+      },
+      "textPrimary": {
+        "hex": "#1d1a14"
+      }
+    },
+    "bodyContrast": 16.63,
+    "mutedContrast": 4.67,
+    "typePairing": "Space Grotesk + Inter",
+    "radius": 6,
+    "surface": "flat-bordered",
+    "density": "High"
+  },
+  {
+    "id": "commons",
+    "name": "Commons",
+    "archetype": {
+      "desktop": "Community feed. Avatar-led list, threaded replies, sticky composer at the bottom.",
+      "mobile": "Community feed, mobile: avatar-led vertical feed, threaded replies, sticky composer above the home indicator."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [],
+    "accentHex": "#737406",
+    "accentHoverHex": "#626202",
+    "accentOklch": "oklch(0.54 0.116 110)",
+    "accentHue": 110,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 4.96,
+    "neutralTintHue": 110,
+    "surfaces": {
+      "canvas": {
+        "hex": "#fafaf7"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#deded9"
+      },
+      "textMuted": {
+        "hex": "#72726d"
+      },
+      "textPrimary": {
+        "hex": "#1b1b15"
+      }
+    },
+    "bodyContrast": 16.54,
+    "mutedContrast": 4.62,
+    "typePairing": "General Sans + Inter",
+    "radius": 12,
+    "surface": "soft-elevated",
+    "density": "Medium"
+  },
+  {
+    "id": "greenhouse",
+    "name": "Greenhouse",
+    "archetype": {
+      "desktop": "Soft consumer app. Rounded cards, oversized friendly headings, one primary action per screen.",
+      "mobile": "Soft consumer app, mobile: rounded full-width cards, oversized friendly headings, one primary action pinned at the bottom."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [
+      "success"
+    ],
+    "accentHex": "#629742",
+    "accentHoverHex": "#51852f",
+    "accentOklch": "oklch(0.62 0.130 135)",
+    "accentHue": 135,
+    "accentTextHex": "#111111",
+    "accentTextContrast": 5.42,
+    "neutralTintHue": 135,
+    "surfaces": {
+      "canvas": {
+        "hex": "#f9fbf8"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#dcdfda"
+      },
+      "textMuted": {
+        "hex": "#6f736e"
+      },
+      "textPrimary": {
+        "hex": "#181c16"
+      }
+    },
+    "bodyContrast": 16.59,
+    "mutedContrast": 4.64,
+    "typePairing": "Poppins + Inter",
+    "radius": 20,
+    "surface": "soft-elevated",
+    "density": "Low"
+  },
+  {
+    "id": "trailhead",
+    "name": "Trailhead",
+    "archetype": {
+      "desktop": "Guided wizard. Numbered step rail on the left, one decision per panel, persistent progress summary.",
+      "mobile": "Guided wizard, mobile: one step per screen with a horizontal progress bar at the top and a full-width continue button at the bottom; never a side step-rail."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [
+      "success"
+    ],
+    "accentHex": "#267543",
+    "accentHoverHex": "#0d6332",
+    "accentOklch": "oklch(0.5 0.110 152)",
+    "accentHue": 152,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 5.66,
+    "neutralTintHue": 152,
+    "surfaces": {
+      "canvas": {
+        "hex": "#f8fbf9"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#dae0db"
+      },
+      "textMuted": {
+        "hex": "#6e736f"
+      },
+      "textPrimary": {
+        "hex": "#171c18"
+      }
+    },
+    "bodyContrast": 16.58,
+    "mutedContrast": 4.64,
+    "typePairing": "Public Sans + Inter",
+    "radius": 8,
+    "surface": "bordered",
+    "density": "Medium"
+  },
+  {
+    "id": "tide",
+    "name": "Tide",
+    "archetype": {
+      "desktop": "Analytics canvas. Chart-dominant, small-multiples grid, controls collapsed into a thin top bar.",
+      "mobile": "Analytics canvas, mobile: one chart per full-width card stacked vertically, horizontally swipeable chip filters, thin sticky top bar."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [
+      "success"
+    ],
+    "accentHex": "#038268",
+    "accentHoverHex": "#046e58",
+    "accentOklch": "oklch(0.54 0.104 172)",
+    "accentHue": 172,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 4.78,
+    "neutralTintHue": 172,
+    "surfaces": {
+      "canvas": {
+        "hex": "#f8fbfa"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#d9e0dd"
+      },
+      "textMuted": {
+        "hex": "#6d7371"
+      },
+      "textPrimary": {
+        "hex": "#151c1a"
+      }
+    },
+    "bodyContrast": 16.63,
+    "mutedContrast": 4.65,
+    "typePairing": "Geist + Geist Mono",
+    "radius": 4,
+    "surface": "flat-bordered",
+    "density": "High"
+  },
+  {
+    "id": "depot",
+    "name": "Depot",
+    "archetype": {
+      "desktop": "Inventory workbench. Split master-detail, sticky filter sidebar, bulk-action toolbar.",
+      "mobile": "Inventory workbench, mobile: searchable list-first master view, detail opens as its own screen, bulk actions in a bottom action bar."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [],
+    "accentHex": "#086b6c",
+    "accentHoverHex": "#055959",
+    "accentOklch": "oklch(0.48 0.080 195)",
+    "accentHue": 195,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 6.31,
+    "neutralTintHue": 195,
+    "surfaces": {
+      "canvas": {
+        "hex": "#f7fbfb"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#d8e0df"
+      },
+      "textMuted": {
+        "hex": "#6c7373"
+      },
+      "textPrimary": {
+        "hex": "#141c1c"
+      }
+    },
+    "bodyContrast": 16.61,
+    "mutedContrast": 4.64,
+    "typePairing": "Barlow + Roboto Mono",
+    "radius": 4,
+    "surface": "bordered",
+    "density": "High"
+  },
+  {
+    "id": "harbor",
+    "name": "Harbor",
+    "archetype": {
+      "desktop": "Scheduling surface. Time-grid primary, drag targets, day and week toggle in the header.",
+      "mobile": "Scheduling surface, mobile: vertical day timeline with hour rows, day/week toggle in the header, floating add action."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [],
+    "accentHex": "#08798d",
+    "accentHoverHex": "#046677",
+    "accentOklch": "oklch(0.53 0.092 215)",
+    "accentHue": 215,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 5.08,
+    "neutralTintHue": 215,
+    "surfaces": {
+      "canvas": {
+        "hex": "#f7fbfc"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#d8dfe1"
+      },
+      "textMuted": {
+        "hex": "#6d7374"
+      },
+      "textPrimary": {
+        "hex": "#141c1e"
+      }
+    },
+    "bodyContrast": 16.6,
+    "mutedContrast": 4.63,
+    "typePairing": "Manrope + Inter",
+    "radius": 10,
+    "surface": "soft-elevated",
+    "density": "Medium"
+  },
+  {
+    "id": "ledger",
+    "name": "Ledger",
+    "archetype": {
+      "desktop": "Institutional record. Ruled tables, right-aligned figures, restrained serif headings, audit trail rail.",
+      "mobile": "Institutional record, mobile: ruled single-column rows with right-aligned figures, serif section headings, sticky totals footer."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [],
+    "accentHex": "#324a83",
+    "accentHoverHex": "#233971",
+    "accentOklch": "oklch(0.42 0.100 265)",
+    "accentHue": 265,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 8.6,
+    "neutralTintHue": 265,
+    "surfaces": {
+      "canvas": {
+        "hex": "#f9fafd"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#dbdee3"
+      },
+      "textMuted": {
+        "hex": "#6f7276"
+      },
+      "textPrimary": {
+        "hex": "#181b20"
+      }
+    },
+    "bodyContrast": 16.54,
+    "mutedContrast": 4.63,
+    "typePairing": "Lora + IBM Plex Sans",
+    "radius": 4,
+    "surface": "flat-bordered",
+    "density": "High"
+  },
+  {
+    "id": "atrium",
+    "name": "Atrium",
+    "archetype": {
+      "desktop": "Workspace shell. Left nav plus content plus contextual right panel, three-pane and calm.",
+      "mobile": "Workspace shell, mobile: single-pane navigation with a bottom tab bar, contextual actions in a sheet instead of a side panel."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [],
+    "accentHex": "#6d54a8",
+    "accentHoverHex": "#5c4295",
+    "accentOklch": "oklch(0.51 0.130 295)",
+    "accentHue": 295,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 6.03,
+    "neutralTintHue": 295,
+    "surfaces": {
+      "canvas": {
+        "hex": "#fafafd"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#dedde3"
+      },
+      "textMuted": {
+        "hex": "#727176"
+      },
+      "textPrimary": {
+        "hex": "#1b1a20"
+      }
+    },
+    "bodyContrast": 16.59,
+    "mutedContrast": 4.65,
+    "typePairing": "Satoshi + Inter",
+    "radius": 10,
+    "surface": "elevated",
+    "density": "Medium"
+  },
+  {
+    "id": "vellum",
+    "name": "Vellum",
+    "archetype": {
+      "desktop": "Document studio. Page-like canvas floating on a tinted backdrop, formatting rail, print metaphor.",
+      "mobile": "Document studio, mobile: full-width page canvas on a tinted backdrop, formatting tools in a bottom toolbar, print metaphor kept."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [],
+    "accentHex": "#784184",
+    "accentHoverHex": "#663072",
+    "accentOklch": "oklch(0.47 0.120 320)",
+    "accentHue": 320,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 7.27,
+    "neutralTintHue": 320,
+    "surfaces": {
+      "canvas": {
+        "hex": "#fbf9fc"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#e0dce1"
+      },
+      "textMuted": {
+        "hex": "#747074"
+      },
+      "textPrimary": {
+        "hex": "#1d191e"
+      }
+    },
+    "bodyContrast": 16.58,
+    "mutedContrast": 4.65,
+    "typePairing": "Newsreader + Inter",
+    "radius": 6,
+    "surface": "elevated",
+    "density": "Low"
+  },
+  {
+    "id": "signal",
+    "name": "Signal",
+    "archetype": {
+      "desktop": "Magazine cover. One enormous headline, full-bleed hero band, everything else deliberately small.",
+      "mobile": "Magazine cover, mobile: one enormous headline block at top, full-bleed hero band, everything else deliberately small below."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [],
+    "accentHex": "#bb2d8c",
+    "accentHoverHex": "#a7107a",
+    "accentOklch": "oklch(0.55 0.200 345)",
+    "accentHue": 345,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 5.43,
+    "neutralTintHue": 345,
+    "surfaces": {
+      "canvas": {
+        "hex": "#fcf9fb"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#e2dcdf"
+      },
+      "textMuted": {
+        "hex": "#757073"
+      },
+      "textPrimary": {
+        "hex": "#1f181c"
+      }
+    },
+    "bodyContrast": 16.66,
+    "mutedContrast": 4.65,
+    "typePairing": "Archivo Expanded + Inter",
+    "radius": 0,
+    "surface": "flat",
+    "density": "Medium"
+  },
+  {
+    "id": "studio",
+    "name": "Studio",
+    "archetype": {
+      "desktop": "Gallery shell. Near-monochrome, content is the only color, accent reserved for a single control.",
+      "mobile": "Gallery shell, mobile: near-monochrome full-bleed content grid, accent reserved for a single control, chrome fades away."
+    },
+    "semantic": {
+      "success": "#21763c",
+      "warning": "#9d6304",
+      "error": "#ac312a"
+    },
+    "semanticClashes": [],
+    "accentHex": "#2f2c37",
+    "accentHoverHex": "#211d27",
+    "accentOklch": "oklch(0.3 0.020 300)",
+    "accentHue": 300,
+    "accentTextHex": "#ffffff",
+    "accentTextContrast": 13.67,
+    "neutralTintHue": 300,
+    "surfaces": {
+      "canvas": {
+        "hex": "#faf9fc"
+      },
+      "raised": {
+        "hex": "#ffffff"
+      },
+      "border": {
+        "hex": "#dfdde3"
+      },
+      "textMuted": {
+        "hex": "#727176"
+      },
+      "textPrimary": {
+        "hex": "#1b191f"
+      }
+    },
+    "bodyContrast": 16.61,
+    "mutedContrast": 4.61,
+    "typePairing": "Neue Haas Grotesk + Inter",
+    "radius": 0,
+    "surface": "flat",
+    "density": "Low"
+  }
+]

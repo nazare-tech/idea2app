@@ -2,11 +2,17 @@ import test from "node:test"
 import assert from "node:assert/strict"
 
 import {
+  formatMockupBrandKitForPrompt,
+  selectMockupBrandKitForOption,
+} from "@/lib/mockups/brand-directions"
+import {
   OPENROUTER_IMAGE_MOCKUP_STORYBOARD_SOURCE,
+  OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
   assertMockupImageMatchesSkeletonAspect,
   buildCanonicalMockupContentOption,
   buildOpenRouterMockupImageUserMessageContent,
   buildMockupImageProxyUrl,
+  buildOpenRouterImageMockupSystemPrompt,
   buildOpenRouterMockupImagePrompt,
   extractImageDataUrlFromOpenRouterChoice,
   getMockupStoryboardSkeleton,
@@ -334,19 +340,19 @@ test("getOpenRouterMockupImageMaxTokens: caps image calls by default", () => {
 test("getMockupStoryboardSkeleton: maps platforms to saved skeleton assets", () => {
   assert.equal(
     getMockupStoryboardSkeleton("mobile-web").publicPath,
-    "/mockups/skeletons/mobile-web-storyboard-skeleton.png",
+    "/mockups/skeletons/mobile-web-storyboard-skeleton-grey.png",
   )
   assert.equal(
     getMockupStoryboardSkeleton("native-mobile-app").publicPath,
-    "/mockups/skeletons/native-mobile-app-storyboard-skeleton.png",
+    "/mockups/skeletons/native-mobile-app-storyboard-skeleton-grey.png",
   )
   assert.equal(
     getMockupStoryboardSkeleton("native-desktop-app").publicPath,
-    "/mockups/skeletons/native-desktop-app-storyboard-skeleton.png",
+    "/mockups/skeletons/native-desktop-app-storyboard-skeleton-grey.png",
   )
   assert.equal(
     getMockupStoryboardSkeleton("desktop-web").publicPath,
-    "/mockups/skeletons/desktop-web-storyboard-skeleton.png",
+    "/mockups/skeletons/desktop-web-storyboard-skeleton-grey.png",
   )
   assert.equal(getMockupStoryboardSkeleton("desktop-web").aspectRatio, "21:9")
   assert.equal(getMockupStoryboardSkeleton("mobile-web").aspectRatio, "4:3")
@@ -475,7 +481,8 @@ test("buildOpenRouterMockupImagePrompt: adds strict desktop skeleton edit contra
   assert.match(prompt, /Safari browser chrome, macOS traffic-light dots/)
   assert.match(prompt, /"1\. Risk Dashboard"/)
   assert.match(prompt, /"2\. Account Detail"/)
-  assert.match(prompt, /Replace only the purple placeholder areas inside each Safari desktop frame/)
+  // Brand directions default on, so the resolved skeleton wording is grey.
+  assert.match(prompt, /Replace only the grey placeholder areas inside each Safari desktop frame/)
   assert.match(prompt, /Do not move, resize, crop, redraw, duplicate, or remove either frame/)
   assert.match(prompt, /Do not create a new storyboard layout, add a third frame/)
   assert.match(prompt, /same wide 21:9 landscape aspect ratio/)
@@ -541,5 +548,71 @@ test("getOpenRouterMockupImageTimeoutMs: defaults to the Pro generation timeout"
     } else {
       process.env.OPENROUTER_MOCKUP_IMAGE_TIMEOUT_MS = previous
     }
+  }
+})
+
+test("brand directions flag: grey skeleton and kit block when on, byte-identical legacy prompt when off", () => {
+  const buildArgs = (brandKitBlock?: string) => ({
+    projectName: "FlagCheck",
+    mvpPlan: "## First Version Plan\nCore flow.",
+    title: "Direction",
+    strategy: "Layout strategy under test.",
+    label: "A",
+    brandKitBlock,
+    designPlan: {
+      version: "mockup-design-plan-v1" as const,
+      primaryPlatform: "desktop-web" as const,
+      happyPathScenario: "A returning user completes the core flow.",
+      targetUser: "Primary user",
+      screens: [
+        {
+          name: "Screen One",
+          flowStep: 1,
+          caption: "One",
+          purpose: "First",
+          happyPathState: "Populated",
+          dataToShow: ["Item"],
+          priority: "P0",
+        },
+        {
+          name: "Screen Two",
+          flowStep: 2,
+          caption: "Two",
+          purpose: "Second",
+          happyPathState: "Populated",
+          dataToShow: ["Item"],
+          priority: "P0",
+        },
+      ],
+      directions: [],
+    },
+  })
+
+  const originalFlag = process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+  try {
+    process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = "0"
+    const legacySkeleton = getMockupStoryboardSkeleton("desktop-web")
+    assert.match(legacySkeleton.publicPath, /desktop-web-storyboard-skeleton\.png$/)
+    assert.match(legacySkeleton.interiorDescription, /purple placeholder areas/)
+    const legacyPrompt = buildOpenRouterMockupImagePrompt(buildArgs())
+    assert.match(legacyPrompt, /existing purple placeholders/)
+    assert.doesNotMatch(legacyPrompt, /Brand kit for this direction/)
+    assert.equal(buildOpenRouterImageMockupSystemPrompt(), OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT)
+
+    process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = "1"
+    const greySkeleton = getMockupStoryboardSkeleton("desktop-web")
+    assert.match(greySkeleton.publicPath, /desktop-web-storyboard-skeleton-grey\.png$/)
+    assert.match(greySkeleton.interiorDescription, /grey placeholder areas/)
+    const kit = selectMockupBrandKitForOption("flag-check-project", "A")
+    const brandPrompt = buildOpenRouterMockupImagePrompt(
+      buildArgs(formatMockupBrandKitForPrompt(kit, "desktop-web")),
+    )
+    assert.match(brandPrompt, /existing grey placeholders/)
+    assert.ok(brandPrompt.includes(kit.accentHex))
+    assert.ok(brandPrompt.includes(kit.archetype.desktop))
+    assert.match(buildOpenRouterImageMockupSystemPrompt(), /Never produce any of the following/)
+  } finally {
+    if (originalFlag === undefined) delete process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+    else process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = originalFlag
   }
 })

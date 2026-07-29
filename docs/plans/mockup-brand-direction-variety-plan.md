@@ -1,9 +1,25 @@
 ---
 title: Mockup brand direction variety
 created: 2026-07-26
-implemented: false
+implemented: true
+implemented_at: 2026-07-28T09:30:00Z
 area: mockups / AI generation
 ---
+
+> **Implementation summary (2026-07-28).** Implemented with one deliberate deviation from
+> Q3: brand kits are attached deterministically at prompt-build time, keyed by projectId,
+> instead of being added to the LLM design-plan schema. No schema, DB, or localStorage
+> change; a regenerated option always matches its siblings; `MOCKUP_BRAND_DIRECTIONS_ENABLED=0`
+> restores the old pipeline byte-for-byte. Validated first with a 60-image Codex batch over
+> the ten existing case studies (docs/plans/mockup-brand-bank-preview.html and
+> output/mockup-brand-variety/). That batch drove three additions beyond the plan:
+> platform-aware archetype text per kit (desktop step-rails were leaking into phone
+> frames), a shared semantic status ramp per impeccable's palette structure (the model
+> was inventing arbitrary greens), and a seeded-shuffle triad selection after the ring-walk
+> version concentrated 47% of selections on 3 of 15 kits. Q4 resolved: neutral skeletons
+> ship as new `-grey.png` assets created by scripts/recolor-mockup-skeletons.mjs (raw pixel
+> edit, originals untouched). Review artifact:
+> docs/plans/mockup-brand-direction-variety-review.md.
 
 # Mockup brand direction variety
 
@@ -275,5 +291,5 @@ calls of expected local QA cost, which the planning workflow explicitly permits.
 
 ## Status
 
-Plan only. Nothing implemented. Awaiting go-ahead, plus an explicit answer on Q4 (new `-v2`
-skeleton files) before phase 5.
+Implemented. See the implementation summary in the frontmatter block and the review
+artifact for verification, findings, and remediation.

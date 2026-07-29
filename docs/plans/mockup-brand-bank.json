@@ -3,7 +3,18 @@
     {
       "id": "field-manual",
       "name": "Field Manual",
-      "archetype": "Technical console. Dense data grid, hairline rules, monospace numerics, no decorative chrome.",
+      "archetype": {
+        "desktop": "Technical console. Dense data grid, hairline rules, monospace numerics, no decorative chrome.",
+        "mobile": "Technical console, mobile: dense single-column list with monospace numerics, segmented filter at top, no decorative chrome."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [
+        "error"
+      ],
       "accentHex": "#c13d34",
       "accentHoverHex": "#ac2722",
       "accentOklch": "oklch(0.55 0.170 28)",
@@ -43,7 +54,19 @@
     {
       "id": "kiln",
       "name": "Kiln",
-      "archetype": "Artisan catalogue. Generous margins, large product imagery, quiet toolbars pushed to the edges.",
+      "archetype": {
+        "desktop": "Artisan catalogue. Generous margins, large product imagery, quiet toolbars pushed to the edges.",
+        "mobile": "Artisan catalogue, mobile: full-bleed imagery cards in one column, quiet floating action, toolbars collapse into the header."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [
+        "warning",
+        "error"
+      ],
       "accentHex": "#ba5d1d",
       "accentHoverHex": "#a44c03",
       "accentOklch": "oklch(0.58 0.140 50)",
@@ -83,7 +106,18 @@
     {
       "id": "almanac",
       "name": "Almanac",
-      "archetype": "Editorial reader. Single measured column, footnote rail, typographic hierarchy doing all the work.",
+      "archetype": {
+        "desktop": "Editorial reader. Single measured column, footnote rail, typographic hierarchy doing all the work.",
+        "mobile": "Editorial reader, mobile: one measured text column, typographic hierarchy doing all the work, controls inside the flow, no tab bar clutter."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [
+        "warning"
+      ],
       "accentHex": "#925b0c",
       "accentHoverHex": "#7c4b02",
       "accentOklch": "oklch(0.52 0.110 68)",
@@ -123,7 +157,18 @@
     {
       "id": "switchboard",
       "name": "Switchboard",
-      "archetype": "Operations board. Status-first columns, colored state pills, everything scannable in one glance.",
+      "archetype": {
+        "desktop": "Operations board. Status-first columns, colored state pills, everything scannable in one glance.",
+        "mobile": "Operations board, mobile: status-first stacked rows with colored state pills, swipe-ready list items, sticky summary header."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [
+        "warning"
+      ],
       "accentHex": "#b48c05",
       "accentHoverHex": "#9e7b03",
       "accentOklch": "oklch(0.66 0.134 88)",
@@ -163,7 +208,16 @@
     {
       "id": "commons",
       "name": "Commons",
-      "archetype": "Community feed. Avatar-led list, threaded replies, sticky composer at the bottom.",
+      "archetype": {
+        "desktop": "Community feed. Avatar-led list, threaded replies, sticky composer at the bottom.",
+        "mobile": "Community feed, mobile: avatar-led vertical feed, threaded replies, sticky composer above the home indicator."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [],
       "accentHex": "#737406",
       "accentHoverHex": "#626202",
       "accentOklch": "oklch(0.54 0.116 110)",
@@ -203,7 +257,18 @@
     {
       "id": "greenhouse",
       "name": "Greenhouse",
-      "archetype": "Soft consumer app. Rounded cards, oversized friendly headings, one primary action per screen.",
+      "archetype": {
+        "desktop": "Soft consumer app. Rounded cards, oversized friendly headings, one primary action per screen.",
+        "mobile": "Soft consumer app, mobile: rounded full-width cards, oversized friendly headings, one primary action pinned at the bottom."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [
+        "success"
+      ],
       "accentHex": "#629742",
       "accentHoverHex": "#51852f",
       "accentOklch": "oklch(0.62 0.130 135)",
@@ -243,7 +308,18 @@
     {
       "id": "trailhead",
       "name": "Trailhead",
-      "archetype": "Guided wizard. Numbered step rail on the left, one decision per panel, persistent progress summary.",
+      "archetype": {
+        "desktop": "Guided wizard. Numbered step rail on the left, one decision per panel, persistent progress summary.",
+        "mobile": "Guided wizard, mobile: one step per screen with a horizontal progress bar at the top and a full-width continue button at the bottom; never a side step-rail."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [
+        "success"
+      ],
       "accentHex": "#267543",
       "accentHoverHex": "#0d6332",
       "accentOklch": "oklch(0.5 0.110 152)",
@@ -283,7 +359,18 @@
     {
       "id": "tide",
       "name": "Tide",
-      "archetype": "Analytics canvas. Chart-dominant, small-multiples grid, controls collapsed into a thin top bar.",
+      "archetype": {
+        "desktop": "Analytics canvas. Chart-dominant, small-multiples grid, controls collapsed into a thin top bar.",
+        "mobile": "Analytics canvas, mobile: one chart per full-width card stacked vertically, horizontally swipeable chip filters, thin sticky top bar."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [
+        "success"
+      ],
       "accentHex": "#038268",
       "accentHoverHex": "#046e58",
       "accentOklch": "oklch(0.54 0.104 172)",
@@ -323,7 +410,16 @@
     {
       "id": "depot",
       "name": "Depot",
-      "archetype": "Inventory workbench. Split master-detail, sticky filter sidebar, bulk-action toolbar.",
+      "archetype": {
+        "desktop": "Inventory workbench. Split master-detail, sticky filter sidebar, bulk-action toolbar.",
+        "mobile": "Inventory workbench, mobile: searchable list-first master view, detail opens as its own screen, bulk actions in a bottom action bar."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [],
       "accentHex": "#086b6c",
       "accentHoverHex": "#055959",
       "accentOklch": "oklch(0.48 0.080 195)",
@@ -363,7 +459,16 @@
     {
       "id": "harbor",
       "name": "Harbor",
-      "archetype": "Scheduling surface. Time-grid primary, drag targets, day and week toggle in the header.",
+      "archetype": {
+        "desktop": "Scheduling surface. Time-grid primary, drag targets, day and week toggle in the header.",
+        "mobile": "Scheduling surface, mobile: vertical day timeline with hour rows, day/week toggle in the header, floating add action."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [],
       "accentHex": "#08798d",
       "accentHoverHex": "#046677",
       "accentOklch": "oklch(0.53 0.092 215)",
@@ -403,7 +508,16 @@
     {
       "id": "ledger",
       "name": "Ledger",
-      "archetype": "Institutional record. Ruled tables, right-aligned figures, restrained serif headings, audit trail rail.",
+      "archetype": {
+        "desktop": "Institutional record. Ruled tables, right-aligned figures, restrained serif headings, audit trail rail.",
+        "mobile": "Institutional record, mobile: ruled single-column rows with right-aligned figures, serif section headings, sticky totals footer."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [],
       "accentHex": "#324a83",
       "accentHoverHex": "#233971",
       "accentOklch": "oklch(0.42 0.100 265)",
@@ -443,7 +557,16 @@
     {
       "id": "atrium",
       "name": "Atrium",
-      "archetype": "Workspace shell. Left nav plus content plus contextual right panel, three-pane and calm.",
+      "archetype": {
+        "desktop": "Workspace shell. Left nav plus content plus contextual right panel, three-pane and calm.",
+        "mobile": "Workspace shell, mobile: single-pane navigation with a bottom tab bar, contextual actions in a sheet instead of a side panel."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [],
       "accentHex": "#6d54a8",
       "accentHoverHex": "#5c4295",
       "accentOklch": "oklch(0.51 0.130 295)",
@@ -483,7 +606,16 @@
     {
       "id": "vellum",
       "name": "Vellum",
-      "archetype": "Document studio. Page-like canvas floating on a tinted backdrop, formatting rail, print metaphor.",
+      "archetype": {
+        "desktop": "Document studio. Page-like canvas floating on a tinted backdrop, formatting rail, print metaphor.",
+        "mobile": "Document studio, mobile: full-width page canvas on a tinted backdrop, formatting tools in a bottom toolbar, print metaphor kept."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [],
       "accentHex": "#784184",
       "accentHoverHex": "#663072",
       "accentOklch": "oklch(0.47 0.120 320)",
@@ -523,7 +655,16 @@
     {
       "id": "signal",
       "name": "Signal",
-      "archetype": "Magazine cover. One enormous headline, full-bleed hero band, everything else deliberately small.",
+      "archetype": {
+        "desktop": "Magazine cover. One enormous headline, full-bleed hero band, everything else deliberately small.",
+        "mobile": "Magazine cover, mobile: one enormous headline block at top, full-bleed hero band, everything else deliberately small below."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [],
       "accentHex": "#bb2d8c",
       "accentHoverHex": "#a7107a",
       "accentOklch": "oklch(0.55 0.200 345)",
@@ -563,7 +704,16 @@
     {
       "id": "studio",
       "name": "Studio",
-      "archetype": "Gallery shell. Near-monochrome, content is the only color, accent reserved for a single control.",
+      "archetype": {
+        "desktop": "Gallery shell. Near-monochrome, content is the only color, accent reserved for a single control.",
+        "mobile": "Gallery shell, mobile: near-monochrome full-bleed content grid, accent reserved for a single control, chrome fades away."
+      },
+      "semantic": {
+        "success": "#21763c",
+        "warning": "#9d6304",
+        "error": "#ac312a"
+      },
+      "semanticClashes": [],
       "accentHex": "#2f2c37",
       "accentHoverHex": "#211d27",
       "accentOklch": "oklch(0.3 0.020 300)",

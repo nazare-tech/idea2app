@@ -54,6 +54,9 @@ OPENROUTER_MOCKUP_IMAGE_MODEL=openai/gpt-5.4-image-2
 # OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO=21:9
 # OPENROUTER_MOCKUP_IMAGE_SIZE=1K
 OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS=16384
+# Brand-direction kits for mockup options (default on). Set 0 to restore the
+# pre-brand pipeline exactly: indigo skeletons, no kit block, no anti-slop rules.
+MOCKUP_BRAND_DIRECTIONS_ENABLED=1
 OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS=16384
 SUPABASE_MOCKUP_STORAGE_BUCKET=mockups
 

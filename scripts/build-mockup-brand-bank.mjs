@@ -32,6 +32,7 @@
 import { writeFile } from "node:fs/promises"
 
 import { escapeHtml } from "./lib/html.mjs"
+import { hueDistance, selectTriad as selectTriadFromBank } from "./lib/brand-triad.mjs"
 
 /**
  * Fifteen kits. Hues are deliberately spread around the wheel with blue underweighted.
@@ -44,7 +45,10 @@ const KITS = [
   {
     id: "field-manual",
     name: "Field Manual",
-    archetype: "Technical console. Dense data grid, hairline rules, monospace numerics, no decorative chrome.",
+    archetype: {
+      desktop: "Technical console. Dense data grid, hairline rules, monospace numerics, no decorative chrome.",
+      mobile: "Technical console, mobile: dense single-column list with monospace numerics, segmented filter at top, no decorative chrome.",
+    },
     accent: { l: 0.55, c: 0.17, h: 28 },
     typePairing: "IBM Plex Sans + IBM Plex Mono",
     radius: 2,
@@ -54,7 +58,10 @@ const KITS = [
   {
     id: "kiln",
     name: "Kiln",
-    archetype: "Artisan catalogue. Generous margins, large product imagery, quiet toolbars pushed to the edges.",
+    archetype: {
+      desktop: "Artisan catalogue. Generous margins, large product imagery, quiet toolbars pushed to the edges.",
+      mobile: "Artisan catalogue, mobile: full-bleed imagery cards in one column, quiet floating action, toolbars collapse into the header.",
+    },
     accent: { l: 0.58, c: 0.14, h: 50 },
     typePairing: "Fraunces + Inter",
     radius: 8,
@@ -64,7 +71,10 @@ const KITS = [
   {
     id: "almanac",
     name: "Almanac",
-    archetype: "Editorial reader. Single measured column, footnote rail, typographic hierarchy doing all the work.",
+    archetype: {
+      desktop: "Editorial reader. Single measured column, footnote rail, typographic hierarchy doing all the work.",
+      mobile: "Editorial reader, mobile: one measured text column, typographic hierarchy doing all the work, controls inside the flow, no tab bar clutter.",
+    },
     accent: { l: 0.52, c: 0.11, h: 68 },
     typePairing: "Source Serif 4 + Source Sans 3",
     radius: 0,
@@ -74,7 +84,10 @@ const KITS = [
   {
     id: "switchboard",
     name: "Switchboard",
-    archetype: "Operations board. Status-first columns, colored state pills, everything scannable in one glance.",
+    archetype: {
+      desktop: "Operations board. Status-first columns, colored state pills, everything scannable in one glance.",
+      mobile: "Operations board, mobile: status-first stacked rows with colored state pills, swipe-ready list items, sticky summary header.",
+    },
     accent: { l: 0.66, c: 0.15, h: 88 },
     typePairing: "Space Grotesk + Inter",
     radius: 6,
@@ -84,7 +97,10 @@ const KITS = [
   {
     id: "commons",
     name: "Commons",
-    archetype: "Community feed. Avatar-led list, threaded replies, sticky composer at the bottom.",
+    archetype: {
+      desktop: "Community feed. Avatar-led list, threaded replies, sticky composer at the bottom.",
+      mobile: "Community feed, mobile: avatar-led vertical feed, threaded replies, sticky composer above the home indicator.",
+    },
     accent: { l: 0.54, c: 0.12, h: 110 },
     typePairing: "General Sans + Inter",
     radius: 12,
@@ -94,7 +110,10 @@ const KITS = [
   {
     id: "greenhouse",
     name: "Greenhouse",
-    archetype: "Soft consumer app. Rounded cards, oversized friendly headings, one primary action per screen.",
+    archetype: {
+      desktop: "Soft consumer app. Rounded cards, oversized friendly headings, one primary action per screen.",
+      mobile: "Soft consumer app, mobile: rounded full-width cards, oversized friendly headings, one primary action pinned at the bottom.",
+    },
     accent: { l: 0.62, c: 0.13, h: 135 },
     typePairing: "Poppins + Inter",
     radius: 20,
@@ -104,7 +123,10 @@ const KITS = [
   {
     id: "trailhead",
     name: "Trailhead",
-    archetype: "Guided wizard. Numbered step rail on the left, one decision per panel, persistent progress summary.",
+    archetype: {
+      desktop: "Guided wizard. Numbered step rail on the left, one decision per panel, persistent progress summary.",
+      mobile: "Guided wizard, mobile: one step per screen with a horizontal progress bar at the top and a full-width continue button at the bottom; never a side step-rail.",
+    },
     accent: { l: 0.50, c: 0.11, h: 152 },
     typePairing: "Public Sans + Inter",
     radius: 8,
@@ -114,7 +136,10 @@ const KITS = [
   {
     id: "tide",
     name: "Tide",
-    archetype: "Analytics canvas. Chart-dominant, small-multiples grid, controls collapsed into a thin top bar.",
+    archetype: {
+      desktop: "Analytics canvas. Chart-dominant, small-multiples grid, controls collapsed into a thin top bar.",
+      mobile: "Analytics canvas, mobile: one chart per full-width card stacked vertically, horizontally swipeable chip filters, thin sticky top bar.",
+    },
     // 0.57 landed at 4.49:1 against white, a hair under AA. 0.54 clears it.
     accent: { l: 0.54, c: 0.11, h: 172 },
     typePairing: "Geist + Geist Mono",
@@ -125,7 +150,10 @@ const KITS = [
   {
     id: "depot",
     name: "Depot",
-    archetype: "Inventory workbench. Split master-detail, sticky filter sidebar, bulk-action toolbar.",
+    archetype: {
+      desktop: "Inventory workbench. Split master-detail, sticky filter sidebar, bulk-action toolbar.",
+      mobile: "Inventory workbench, mobile: searchable list-first master view, detail opens as its own screen, bulk actions in a bottom action bar.",
+    },
     accent: { l: 0.48, c: 0.09, h: 195 },
     typePairing: "Barlow + Roboto Mono",
     radius: 4,
@@ -135,7 +163,10 @@ const KITS = [
   {
     id: "harbor",
     name: "Harbor",
-    archetype: "Scheduling surface. Time-grid primary, drag targets, day and week toggle in the header.",
+    archetype: {
+      desktop: "Scheduling surface. Time-grid primary, drag targets, day and week toggle in the header.",
+      mobile: "Scheduling surface, mobile: vertical day timeline with hour rows, day/week toggle in the header, floating add action.",
+    },
     accent: { l: 0.53, c: 0.10, h: 215 },
     typePairing: "Manrope + Inter",
     radius: 10,
@@ -145,7 +176,10 @@ const KITS = [
   {
     id: "ledger",
     name: "Ledger",
-    archetype: "Institutional record. Ruled tables, right-aligned figures, restrained serif headings, audit trail rail.",
+    archetype: {
+      desktop: "Institutional record. Ruled tables, right-aligned figures, restrained serif headings, audit trail rail.",
+      mobile: "Institutional record, mobile: ruled single-column rows with right-aligned figures, serif section headings, sticky totals footer.",
+    },
     accent: { l: 0.42, c: 0.10, h: 265 },
     typePairing: "Lora + IBM Plex Sans",
     radius: 4,
@@ -155,7 +189,10 @@ const KITS = [
   {
     id: "atrium",
     name: "Atrium",
-    archetype: "Workspace shell. Left nav plus content plus contextual right panel, three-pane and calm.",
+    archetype: {
+      desktop: "Workspace shell. Left nav plus content plus contextual right panel, three-pane and calm.",
+      mobile: "Workspace shell, mobile: single-pane navigation with a bottom tab bar, contextual actions in a sheet instead of a side panel.",
+    },
     accent: { l: 0.51, c: 0.13, h: 295 },
     typePairing: "Satoshi + Inter",
     radius: 10,
@@ -165,7 +202,10 @@ const KITS = [
   {
     id: "vellum",
     name: "Vellum",
-    archetype: "Document studio. Page-like canvas floating on a tinted backdrop, formatting rail, print metaphor.",
+    archetype: {
+      desktop: "Document studio. Page-like canvas floating on a tinted backdrop, formatting rail, print metaphor.",
+      mobile: "Document studio, mobile: full-width page canvas on a tinted backdrop, formatting tools in a bottom toolbar, print metaphor kept.",
+    },
     accent: { l: 0.47, c: 0.12, h: 320 },
     typePairing: "Newsreader + Inter",
     radius: 6,
@@ -175,7 +215,10 @@ const KITS = [
   {
     id: "signal",
     name: "Signal",
-    archetype: "Magazine cover. One enormous headline, full-bleed hero band, everything else deliberately small.",
+    archetype: {
+      desktop: "Magazine cover. One enormous headline, full-bleed hero band, everything else deliberately small.",
+      mobile: "Magazine cover, mobile: one enormous headline block at top, full-bleed hero band, everything else deliberately small below.",
+    },
     accent: { l: 0.55, c: 0.20, h: 345 },
     typePairing: "Archivo Expanded + Inter",
     radius: 0,
@@ -185,7 +228,10 @@ const KITS = [
   {
     id: "studio",
     name: "Studio",
-    archetype: "Gallery shell. Near-monochrome, content is the only color, accent reserved for a single control.",
+    archetype: {
+      desktop: "Gallery shell. Near-monochrome, content is the only color, accent reserved for a single control.",
+      mobile: "Gallery shell, mobile: near-monochrome full-bleed content grid, accent reserved for a single control, chrome fades away.",
+    },
     accent: { l: 0.30, c: 0.02, h: 300 },
     typePairing: "Neue Haas Grotesk + Inter",
     radius: 0,
@@ -193,6 +239,24 @@ const KITS = [
     density: "Low",
   },
 ]
+
+/**
+ * Semantic status colors, per impeccable's palette structure (success / warning / error,
+ * used sparingly for status only). One shared ramp rather than per-kit hues: status
+ * colors must stay instantly recognizable across every direction, and the review batch
+ * showed the model reaching for arbitrary greens when none were specified. Lightness is
+ * chosen so each passes 4.5:1 as text on white.
+ *
+ * When a kit's accent lands within SEMANTIC_CLASH_DEGREES of one of these hues, the kit
+ * gets a note telling the model to lean on icons and position for that state instead of
+ * hue contrast.
+ */
+const SEMANTIC_OKLCH = {
+  success: { l: 0.50, c: 0.12, h: 150 },
+  warning: { l: 0.55, c: 0.12, h: 70 },
+  error: { l: 0.50, c: 0.16, h: 28 },
+}
+const SEMANTIC_CLASH_DEGREES = 30
 
 /**
  * The anti-slop deny list. These are the specific tells that make a generated interface
@@ -312,10 +376,19 @@ function expandKit(kit) {
   const onAccentBlack = contrastRatio(accent.hex, "#111111")
   const accentTextColor = onAccentWhite >= onAccentBlack ? "#ffffff" : "#111111"
 
+  const semantic = Object.fromEntries(
+    Object.entries(SEMANTIC_OKLCH).map(([role, oklch]) => [role, oklchToHex(oklch).hex]),
+  )
+  const semanticClashes = Object.entries(SEMANTIC_OKLCH)
+    .filter(([, oklch]) => hueDistance(oklch.h, kit.accent.h) < SEMANTIC_CLASH_DEGREES)
+    .map(([role]) => role)
+
   return {
     id: kit.id,
     name: kit.name,
     archetype: kit.archetype,
+    semantic,
+    semanticClashes,
     accentHex: accent.hex,
     accentHoverHex: accentHover.hex,
     accentOklch: `oklch(${kit.accent.l} ${accent.clampedChroma.toFixed(3)} ${kit.accent.h})`,
@@ -335,54 +408,7 @@ function expandKit(kit) {
 
 // --- Triad selection ---------------------------------------------------------------
 
-/** Stable, dependency-free hash so a project always resolves to the same triad. */
-function hashProjectId(projectId) {
-  let hash = 2166136261
-  for (let i = 0; i < projectId.length; i++) {
-    hash ^= projectId.charCodeAt(i)
-    hash = Math.imul(hash, 16777619)
-  }
-  return hash >>> 0
-}
-
-function hueDistance(a, b) {
-  const delta = Math.abs(a - b) % 360
-  return delta > 180 ? 360 - delta : delta
-}
-
 const MIN_HUE_SEPARATION = 60
-
-/**
- * Picks three kits for a project: deterministic from the project id, never two kits whose
- * accent hues sit within MIN_HUE_SEPARATION of each other, and never two identical surface
- * treatments. Walking the ring from a hashed offset keeps the choice stable while still
- * spreading different projects across the whole bank.
- */
-function selectTriad(kits, projectId) {
-  const start = hashProjectId(projectId) % kits.length
-  const chosen = []
-
-  for (let step = 0; step < kits.length && chosen.length < 3; step++) {
-    const candidate = kits[(start + step) % kits.length]
-
-    const hueClash = chosen.some(
-      (kit) => hueDistance(kit.accentHue, candidate.accentHue) < MIN_HUE_SEPARATION,
-    )
-    const surfaceClash = chosen.some((kit) => kit.surface === candidate.surface)
-
-    if (!hueClash && !surfaceClash) chosen.push(candidate)
-  }
-
-  // Relax the surface constraint if the hue constraint alone left us short.
-  for (let step = 0; step < kits.length && chosen.length < 3; step++) {
-    const candidate = kits[(start + step) % kits.length]
-    if (chosen.includes(candidate)) continue
-    if (chosen.some((kit) => hueDistance(kit.accentHue, candidate.accentHue) < MIN_HUE_SEPARATION)) continue
-    chosen.push(candidate)
-  }
-
-  return chosen
-}
 
 // --- Preview page ------------------------------------------------------------------
 
@@ -402,7 +428,7 @@ function renderKitCard(kit) {
       <h3>${escapeHtml(kit.name)}</h3>
       <code>${escapeHtml(kit.accentHex)} &middot; hue ${kit.accentHue}</code>
     </header>
-    <p class="archetype">${escapeHtml(kit.archetype)}</p>
+    <p class="archetype">${escapeHtml(kit.archetype.desktop)}</p>
     <div class="swatches">
       <span class="swatch accent">Accent</span>
       <span class="swatch" style="background:${kit.surfaces.canvas.hex}">Canvas</span>
@@ -452,7 +478,7 @@ function renderTriadRow(projectId, triad) {
 
 function renderPreview(kits) {
   const triads = SAMPLE_PROJECT_IDS
-    .map((id) => renderTriadRow(id, selectTriad(kits, id)))
+    .map((id) => renderTriadRow(id, selectTriadFromBank(kits, id, MIN_HUE_SEPARATION)))
     .join("")
 
   return `<meta charset="utf-8">
@@ -509,6 +535,39 @@ ${triads}
 
 // --- Main --------------------------------------------------------------------------
 
+/**
+ * Emits the reviewed bank as a frozen TypeScript constant so the runtime never parses
+ * JSON or recomputes color math. Regenerate with this script; do not hand-edit the
+ * generated file.
+ */
+/**
+ * The runtime bank carries only what the prompt builder consumes. clampedChroma is an
+ * authoring diagnostic (how far a hue was pulled into sRGB gamut) and stays in the JSON
+ * review artifact only.
+ */
+function runtimeKitProjection(kit) {
+  const surfaces = Object.fromEntries(
+    Object.entries(kit.surfaces).map(([role, value]) => [role, { hex: value.hex }]),
+  )
+  return { ...kit, surfaces }
+}
+
+function renderTypeScriptBank(kits) {
+  return `// GENERATED FILE - do not edit by hand.
+// Source: scripts/build-mockup-brand-bank.mjs (run: node scripts/build-mockup-brand-bank.mjs)
+// The review artifact for this data is docs/plans/mockup-brand-bank.json and its
+// contact sheet docs/plans/mockup-brand-bank-preview.html.
+
+import type { MockupBrandKit } from "./brand-directions"
+
+export const MOCKUP_BRAND_MIN_HUE_SEPARATION = ${MIN_HUE_SEPARATION}
+
+export const MOCKUP_ANTI_SLOP_RULES: readonly string[] = ${JSON.stringify(DENY_LIST, null, 2)}
+
+export const MOCKUP_BRAND_KITS: readonly MockupBrandKit[] = ${JSON.stringify(kits.map(runtimeKitProjection), null, 2)}
+`
+}
+
 async function main() {
   const kits = KITS.map(expandKit)
 
@@ -520,15 +579,17 @@ async function main() {
     `${JSON.stringify({ kits, denyList: DENY_LIST, minHueSeparation: MIN_HUE_SEPARATION }, null, 2)}\n`,
   )
   await writeFile("docs/plans/mockup-brand-bank-preview.html", renderPreview(kits))
+  await writeFile("src/lib/mockups/brand-directions-bank.generated.ts", renderTypeScriptBank(kits))
 
   console.log(`${kits.length} kits written to docs/plans/mockup-brand-bank.json`)
   console.log(`Preview: docs/plans/mockup-brand-bank-preview.html`)
+  console.log(`Runtime bank: src/lib/mockups/brand-directions-bank.generated.ts`)
   console.log(`Blue kits (hue 230-280): ${blueKits.length} of ${kits.length}`)
   console.log(`Contrast failures: ${failures.length ? failures.map((kit) => kit.name).join(", ") : "none"}`)
 
   console.log(`\nTriads by project id:`)
   for (const projectId of SAMPLE_PROJECT_IDS) {
-    const triad = selectTriad(kits, projectId)
+    const triad = selectTriadFromBank(kits, projectId, MIN_HUE_SEPARATION)
     const gaps = [
       hueDistance(triad[0].accentHue, triad[1].accentHue),
       hueDistance(triad[1].accentHue, triad[2].accentHue),
