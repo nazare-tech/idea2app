@@ -21,6 +21,9 @@ const connectSrc = [
 ].join(" ");
 
 const nextConfig: NextConfig = {
+  // Local UI verification may use IPv4 explicitly when another process owns
+  // localhost's IPv6 listener. Keep Next's client bundles and HMR available.
+  allowedDevOrigins: ["127.0.0.1"],
   images: {
     formats: ["image/avif", "image/webp"],
   },

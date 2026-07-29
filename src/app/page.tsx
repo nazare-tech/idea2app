@@ -12,7 +12,6 @@ import { isWaitlistMode } from "@/lib/waitlist"
 import { ArrowRight } from "lucide-react"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
-import { HeroArtwork } from "@/components/landing/hero-artwork"
 import { HeroReelArc } from "@/components/landing/hero-reel-arc"
 import { TestimonialBand } from "@/components/landing/testimonial-band"
 import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
@@ -138,10 +137,7 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      {/* overflow-x-clip keeps the 1920px artwork from causing a horizontal scrollbar
-          while letting the sticky notes stay visible below the hero boundary */}
       <section className="relative isolate overflow-x-clip">
-        <HeroArtwork />
         {/* min-h leaves room for the taller reel arc below while preserving the
             existing headline and idea-capture composition. */}
         <div className={`${container} relative z-10 flex min-h-[460px] flex-col items-center justify-center py-16 md:min-h-[calc(100svh-526px)] lg:py-20`}>

@@ -427,9 +427,8 @@ body {
   animation: fade-up 0.4s var(--motion-ease-out-expo) forwards;
 }
 
-/* Landing hero entrance motion: text fades in place, the idea input rises
-   from below, and the sticky notes slide in from their own side. `both`
-   keeps elements hidden through their animation-delay. */
+/* Landing hero entrance motion: text fades in place and the idea input rises
+   from below. `backwards` keeps elements hidden through their delay. */
 @keyframes hero-enter-fade {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -440,30 +439,12 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes hero-enter-left {
-  from { opacity: 0; transform: translateX(-48px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes hero-enter-right {
-  from { opacity: 0; transform: translateX(48px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
 .hero-enter-fade {
   animation: hero-enter-fade 0.9s var(--motion-ease-out-expo) backwards;
 }
 
 .hero-enter-up {
   animation: hero-enter-up 0.8s var(--motion-ease-out-expo) backwards;
-}
-
-.hero-enter-left {
-  animation: hero-enter-left 0.9s var(--motion-ease-out-expo) backwards;
-}
-
-.hero-enter-right {
-  animation: hero-enter-right 0.9s var(--motion-ease-out-expo) backwards;
 }
 
 /* Landing hero reel arc: transparent phone cutouts riding the top of a 3000px
@@ -1132,9 +1113,7 @@ body {
 
   .animate-fade-up,
   .hero-enter-fade,
-  .hero-enter-up,
-  .hero-enter-left,
-  .hero-enter-right {
+  .hero-enter-up {
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;

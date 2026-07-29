@@ -118,6 +118,8 @@ npm install
 npm run dev
 
 # Server runs at http://localhost:3000
+# http://127.0.0.1:3000 is also allowed for local UI verification when
+# localhost's IPv6 listener belongs to another process.
 # Hot module reload enabled
 ```
 
@@ -203,4 +205,3 @@ docker run -p 3000:3000 idea2app
 ```
 
 ---
-

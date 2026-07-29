@@ -120,7 +120,15 @@ function PromptBody({
   )
 }
 
-export function FeatureStageCard({ card, index }: { card: StageCard; index: number }) {
+export function FeatureStageCard({
+  card,
+  index,
+  initiallyVisible = false,
+}: {
+  card: StageCard
+  index: number
+  initiallyVisible?: boolean
+}) {
   const isImage = card.body.kind === "image"
 
   return (
@@ -134,8 +142,10 @@ export function FeatureStageCard({ card, index }: { card: StageCard; index: numb
         left: card.landscape.left,
         width: card.landscape.width,
         boxSizing: "border-box",
-        opacity: 0,
-        transform: `translateY(56px) scale(0.97) rotate(${card.rotation}deg)`,
+        opacity: initiallyVisible ? 1 : 0,
+        transform: initiallyVisible
+          ? `rotate(${card.rotation}deg)`
+          : `translateY(56px) scale(0.97) rotate(${card.rotation}deg)`,
         transition: `opacity 620ms ${EXPO}, transform 620ms ${EXPO}`,
         boxShadow: "0 18px 56px rgba(15, 23, 42, 0.12)",
         // Image cards are the artwork; everything else is a paper card.

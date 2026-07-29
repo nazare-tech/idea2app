@@ -167,9 +167,7 @@ export function FeatureScrollytelling() {
 
     let frame = 0
 
-    const tick = () => {
-      frame = requestAnimationFrame(tick)
-
+    const renderFrame = () => {
       const viewportHeight = window.innerHeight
       const sectionRect = section.getBoundingClientRect()
       const offScreen =
@@ -295,8 +293,23 @@ export function FeatureScrollytelling() {
       })
     }
 
+    const tick = () => {
+      renderFrame()
+      frame = requestAnimationFrame(tick)
+    }
+
+    // Establish a visible first frame synchronously. Background tabs may pause
+    // requestAnimationFrame, but scroll/resize events must still update the
+    // active artwork instead of leaving every card at its hidden rest state.
+    renderFrame()
     frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
+    window.addEventListener("scroll", renderFrame, { passive: true })
+    window.addEventListener("resize", renderFrame)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener("scroll", renderFrame)
+      window.removeEventListener("resize", renderFrame)
+    }
   }, [])
 
   return (
@@ -363,18 +376,23 @@ export function FeatureScrollytelling() {
                   className="absolute left-0 top-0 origin-top-left"
                   style={{ width: STAGE_LANDSCAPE.width, height: STAGE_LANDSCAPE.height }}
                 >
-                  {STAGE_SETS.map((set) => (
+                  {STAGE_SETS.map((set, setIndex) => (
                     <div
                       key={set.id}
                       data-stage-set
                       data-flow={set.flow ? "1" : undefined}
                       data-portrait-shift={set.flow?.portraitShiftPercent}
                       data-small-portrait-shift={set.flow?.smallPortraitShiftPercent}
-                      className="absolute inset-0 opacity-0"
+                      className={`absolute inset-0 ${setIndex === 0 ? "opacity-100" : "opacity-0"}`}
                       style={{ transition: `opacity 420ms ${EXPO}` }}
                     >
                       {set.cards.map((card, cardIndex) => (
-                        <FeatureStageCard key={card.id} card={card} index={cardIndex} />
+                        <FeatureStageCard
+                          key={card.id}
+                          card={card}
+                          index={cardIndex}
+                          initiallyVisible={setIndex === 0 && cardIndex === 0}
+                        />
                       ))}
                     </div>
                   ))}
