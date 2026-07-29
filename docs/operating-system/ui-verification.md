@@ -2,7 +2,7 @@
 Every UI, visual, user-flow, or user-visible backend change must be tested through the real local UI as a real user, with screenshot/video evidence under ui-evidence/<date>/<task-slug>/.
 No stubbing: never patch routes, stub providers, use fixtures, dummy env values, or bypass auth/database/image-generation to make verification faster; report blockers instead.
 Real Chrome (profile Plasma / Profile 1) via the browser plugin is the default; e2e sign-in uses E2E_TEST_EMAIL / E2E_TEST_PASSWORD from .env.e2e.local, values never printed or committed.
-Fresh-project evidence rule: loading, progressive generation, onboarding, or readiness UI changes need a NEW project created through the current real intake flow, not an old project.
+Fresh-project evidence rule is OPT-IN: creating a new project spends real OpenRouter credits, so it runs only when the user explicitly asks for fresh-project or generation-flow evidence.
 Standardized intake tests use Idea 1.1 from docs/guides/idea-intake-test-cases.md by default; new wizard questions get answered by that file's policies and logged there.
 Dev-server discipline: reuse or recover the real workspace dev server (stale .next/dev locks, occupied ports) and keep it running for the rest of the thread once started.
 ---
@@ -15,15 +15,17 @@ Dev-server discipline: reuse or recover the real workspace dev server (stale .ne
 - For backend changes, still look for the real user-facing UI path that proves the backend behavior when one exists, and include screenshots/video when useful. If only API/log/database verification is possible, explain why there is no meaningful UI evidence.
 - For backend or non-visual changes, verify behavior with the best available tests, logs, requests, or local validation before returning control.
 
-## Fresh-project evidence rule
+## Fresh-project evidence rule (explicit request only)
 
-For loading, progressive generation, onboarding progress, or derived-readiness UI changes: create a new project through the current real intake flow and capture the state during that project's generation. Older projects may reflect obsolete prompts, parsers, schemas, or section contracts; use them only as clearly labeled compatibility/regression evidence in addition to the fresh-project run.
+Creating a new project through the intake flow triggers real OpenRouter document and image generation and spends credits. Do NOT create new projects as part of routine UI verification. Default verification uses what does not spend: the landing page and static surfaces directly, existing projects for workspace chrome and layout changes, and the no-credit mockup fixture mode (`?mockupFixture=1` or `localStorage.makercompass_mockup_fixture_mode = "true"`) when mockup UI states are needed.
+
+Run the full fresh-project flow only when the user explicitly asks for it, or when the change under test IS the intake/generation flow itself and the user has approved the spend in this thread. When that runs: create the project through the current real intake flow and capture the state during generation; older projects may reflect obsolete prompts, parsers, schemas, or section contracts, so label them as compatibility evidence only.
 
 ## Standardized intake test cases
 
 - Use `docs/guides/idea-intake-test-cases.md` for repeatable intake/UI/report-generation tests; Idea 1.1 by default unless another variant is requested or comparing outputs materially helps.
 - When the intake wizard asks a new follow-up question, answer with the closest matching policy in that file, then append the exact question and answer to its observed question log.
-- When behavior under test depends on generation timing or current artifact structure, complete project creation with Idea 1.1 and use that fresh project as the primary QA artifact.
+- When behavior under test depends on generation timing or current artifact structure, and the user has asked for fresh-project evidence, complete project creation with Idea 1.1 and use that fresh project as the primary QA artifact.
 
 ## Evidence requirements
 

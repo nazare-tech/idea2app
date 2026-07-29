@@ -69,6 +69,10 @@ Follow project evidence location and naming rules. Capture:
 
 Exclude secrets and unrelated private information. Do not store privacy-sensitive screenshots, traces, or heap snapshots without user authorization.
 
+## Paid generation is opt-in
+
+Never create a new project through the intake flow, or trigger OpenRouter document/mockup generation, as part of routine UI verification: that path spends real credits. Verify with non-spending surfaces by default (landing page directly, existing projects for workspace chrome, mockup fixture mode `?mockupFixture=1` for mockup UI states). Run the fresh-project generation flow only when the user explicitly requests it in the current thread. Details: `docs/operating-system/ui-verification.md` fresh-project section.
+
 ## Blockers
 
 Stop and report blocker when required real dependency, authentication, browser connection, provider, data, or expected spend is unavailable or unsafe. Do not substitute a fake path and call it verified.

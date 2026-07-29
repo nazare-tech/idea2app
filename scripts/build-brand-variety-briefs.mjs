@@ -20,7 +20,14 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs"
 import { join, resolve } from "node:path"
 
-import { selectTriad } from "./lib/brand-triad.mjs"
+// Runtime module, not a local re-implementation: the batch must exercise the exact kit
+// block the shipped pipeline sends, including the semantic status ramp, platform-aware
+// archetypes, and clash notes. Run this script with tsx so the TS import resolves:
+//   npx tsx scripts/build-brand-variety-briefs.mjs
+import {
+  formatMockupBrandKitForPrompt,
+  selectMockupBrandTriad,
+} from "../src/lib/mockups/brand-directions"
 
 const DEFAULT_RUNS_DIR = "output/maker-compass-skill-runs/2026-07-22"
 const DEFAULT_OUT_DIR = "output/mockup-brand-variety"
@@ -48,41 +55,13 @@ function parseArgs(argv) {
   return args
 }
 
-function formatKit(kit, label) {
-  return `### Direction ${label} brand kit: ${kit.name}
-
-- Structural archetype (this drives the layout, not just the paint): ${kit.archetype.desktop}
-- On the mobile platform use this archetype instead: ${kit.archetype.mobile}
-- Accent, exact: ${kit.accentHex} (hover ${kit.accentHoverHex}). Text on accent: ${kit.accentTextHex}.
-- Accent covers roughly 10% of the screen. It belongs on the single primary action, active nav state, and key status marks. It is not a background.
-- Page canvas: ${kit.surfaces.canvas.hex}. Raised surfaces: ${kit.surfaces.raised.hex}. Borders/rules: ${kit.surfaces.border.hex}.
-- Primary text: ${kit.surfaces.textPrimary.hex}. Secondary/muted text: ${kit.surfaces.textMuted.hex}.
-- Neutrals are tinted toward hue ${kit.neutralTintHue}, not pure grey. Keep that cast in every surface.
-- Typography: ${kit.typePairing}. Use real hierarchy: display weight for headings, smaller and lighter for supporting text.
-- Corner radius: ${kit.radius}px on every element that has one. ${kit.radius === 0 ? "Sharp corners throughout." : ""}
-- Surface treatment: ${kit.surface}. ${surfaceGuidance(kit.surface)}
-- Density: ${kit.density}.`
-}
-
-function surfaceGuidance(surface) {
-  switch (surface) {
-    case "flat":
-      return "No shadows and no card borders. Separation comes from spacing and type scale alone."
-    case "bordered":
-      return "Separation comes from 1px rules and borders. No shadows."
-    case "flat-bordered":
-      return "Hairline rules only, no fills behind groups, no shadows."
-    case "soft-elevated":
-      return "Soft shadows on cards, no borders."
-    case "elevated":
-      return "Pronounced elevation on panels, minimal borders."
-    default:
-      return ""
-  }
-}
-
 function buildBrief({ title, triad, denyList }) {
-  const kitBlocks = triad.map((kit, index) => formatKit(kit, LABELS[index])).join("\n\n")
+  const kitBlocks = PLATFORMS.map((platform) => {
+    const blocks = triad.map((kit, index) =>
+      `### Direction ${LABELS[index]} (${platform}): ${kit.name}\n\n${formatMockupBrandKitForPrompt(kit, platform)}`,
+    ).join("\n\n")
+    return `## Brand kits for ${platform}\n\n${blocks}`
+  }).join("\n\n")
   const outputs = PLATFORMS.flatMap((platform) =>
     LABELS.map((label) => `- \`images/${platform}-option-${label.toLowerCase()}.png\` — ${platform}, Direction ${label}, kit "${triad[LABELS.indexOf(label)].name}"`),
   ).join("\n")
@@ -100,10 +79,11 @@ directions.
 
 ## What is new
 
-Each direction now also carries a brand kit. The kit is not decoration applied at the end:
-its structural archetype should shape how the screen is built, and the palette, typography,
-radius, and surface treatment then follow. Two directions for the same product must not be
-distinguishable only by colour.
+Each direction now also carries a brand kit, and the kit is platform-specific: use the
+block matching the platform you are generating. The kit is not decoration applied at the
+end: its structural archetype should shape how the screen is built, and the palette,
+typography, radius, and surface treatment then follow. Two directions for the same product
+must not be distinguishable only by colour.
 
 ${kitBlocks}
 
@@ -179,7 +159,7 @@ function main() {
     const designPlan = readFileSync(designPlanPath, "utf8")
     const title = designPlan.match(/^#\s*Mockup Design Plan:\s*(.+)$/m)?.[1]?.trim() ?? slug
 
-    const triad = selectTriad(bank.kits, slug, bank.minHueSeparation)
+    const triad = selectMockupBrandTriad(slug)
     const ideaDir = join(args.out, slug)
     mkdirSync(join(ideaDir, "images"), { recursive: true })
 
