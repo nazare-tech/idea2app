@@ -39,4 +39,4 @@ Git hooks (versioned in `.githooks/`, activated by `npm install` through the `pr
 2. **Self-documenting**: `--help` for anything with flags; otherwise a header comment stating purpose, usage, and side effects.
 3. **Safe by default**: read-only unless the name says otherwise; never print or log secrets (`.env*` values); exit non-zero on failure so hooks and agents can rely on exit codes.
 4. **Declare spend**: a script that calls a paid API or CLI must say so in its header. `post-commit-review.sh` is the sole project-authorized automatic paid path; new automatic spend still requires explicit user approval.
-5. **Plain bash or Node (`.mjs`)** so both Codex and Claude Code can run and modify them; no per-agent tooling assumptions.
+5. **Plain bash or Node (`.mjs`)** so both Codex and Claude Code can run and modify them; no per-agent tooling assumptions. Exception: a script that must import runtime TypeScript from `src/` (to exercise the exact production code path rather than a copy) uses a `.mts` extension and a `npx tsx` invocation, declared in its inventory row.
