@@ -104,7 +104,13 @@ function hueDistance(a, b) {
 }
 
 async function render(root, manifest) {
-  const ideas = (await Promise.all(manifest.ideas.map((idea) => renderIdea(root, idea)))).join("")
+  // Sequential per idea: unbounded Promise.all over 60 sharp decodes held every source
+  // image and data URI in memory at once. Within one idea only six thumbnails are live.
+  const renderedIdeas = []
+  for (const idea of manifest.ideas) {
+    renderedIdeas.push(await renderIdea(root, idea))
+  }
+  const ideas = renderedIdeas.join("")
 
   const allKits = manifest.ideas.flatMap((idea) => idea.kits)
   const swatches = [...new Map(allKits.map((kit) => [kit.name, kit])).values()]
