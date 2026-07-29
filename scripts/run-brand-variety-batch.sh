@@ -16,10 +16,11 @@ ROOT="${1:-output/mockup-brand-variety}"
 MAX_PARALLEL="${2:-3}"
 LOG_DIR="$ROOT/logs"
 
-# A non-numeric max-parallel would silently disable the throttle below and fan out
-# every idea's paid image calls at once.
-if ! [[ "$MAX_PARALLEL" =~ ^[1-9][0-9]*$ ]]; then
-  echo "max-parallel must be a positive integer, got: $MAX_PARALLEL" >&2
+# A non-numeric or oversized max-parallel would break or disable the throttle below
+# and fan out every idea's paid image calls at once. 10 is far above any sensible
+# concurrency for this batch; each idea already makes six image calls.
+if ! [[ "$MAX_PARALLEL" =~ ^[1-9][0-9]*$ ]] || [ "$MAX_PARALLEL" -gt 10 ]; then
+  echo "max-parallel must be an integer between 1 and 10, got: $MAX_PARALLEL" >&2
   exit 2
 fi
 
