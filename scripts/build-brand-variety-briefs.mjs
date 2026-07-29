@@ -51,7 +51,8 @@ function parseArgs(argv) {
 function formatKit(kit, label) {
   return `### Direction ${label} brand kit: ${kit.name}
 
-- Structural archetype (this drives the layout, not just the paint): ${kit.archetype}
+- Structural archetype (this drives the layout, not just the paint): ${kit.archetype.desktop}
+- On the mobile platform use this archetype instead: ${kit.archetype.mobile}
 - Accent, exact: ${kit.accentHex} (hover ${kit.accentHoverHex}). Text on accent: ${kit.accentTextHex}.
 - Accent covers roughly 10% of the screen. It belongs on the single primary action, active nav state, and key status marks. It is not a background.
 - Page canvas: ${kit.surfaces.canvas.hex}. Raised surfaces: ${kit.surfaces.raised.hex}. Borders/rules: ${kit.surfaces.border.hex}.
