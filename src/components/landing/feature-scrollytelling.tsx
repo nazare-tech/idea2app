@@ -298,17 +298,12 @@ export function FeatureScrollytelling() {
       frame = requestAnimationFrame(tick)
     }
 
-    // Establish a visible first frame synchronously. Background tabs may pause
-    // requestAnimationFrame, but scroll/resize events must still update the
-    // active artwork instead of leaving every card at its hidden rest state.
+    // Establish a visible first frame synchronously so the artwork never waits
+    // for the animation loop to leave its hidden rest state.
     renderFrame()
     frame = requestAnimationFrame(tick)
-    window.addEventListener("scroll", renderFrame, { passive: true })
-    window.addEventListener("resize", renderFrame)
     return () => {
       cancelAnimationFrame(frame)
-      window.removeEventListener("scroll", renderFrame)
-      window.removeEventListener("resize", renderFrame)
     }
   }, [])
 
