@@ -10,6 +10,7 @@ import {
   OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
   assertMockupImageMatchesSkeletonAspect,
   buildCanonicalMockupContentOption,
+  buildMockupStoryboardSkeletonDataUrl,
   buildOpenRouterMockupImageUserMessageContent,
   buildMockupImageProxyUrl,
   buildOpenRouterImageMockupSystemPrompt,
@@ -611,6 +612,24 @@ test("brand directions flag: grey skeleton and kit block when on, byte-identical
     assert.ok(brandPrompt.includes(kit.accentHex))
     assert.ok(brandPrompt.includes(kit.archetype.desktop))
     assert.match(buildOpenRouterImageMockupSystemPrompt(), /Never produce any of the following/)
+  } finally {
+    if (originalFlag === undefined) delete process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+    else process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = originalFlag
+  }
+})
+
+test("storyboard skeleton assets exist on disk for both flag states", () => {
+  const originalFlag = process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+  const platforms = ["desktop-web", "mobile-web", "native-mobile-app", "native-desktop-app"] as const
+  try {
+    for (const flag of ["1", "0"]) {
+      process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = flag
+      for (const platform of platforms) {
+        // Throws ENOENT if the resolved skeleton PNG is missing from public/.
+        const dataUrl = buildMockupStoryboardSkeletonDataUrl(platform)
+        assert.match(dataUrl, /^data:image\/png;base64,.{1000,}/)
+      }
+    }
   } finally {
     if (originalFlag === undefined) delete process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
     else process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = originalFlag

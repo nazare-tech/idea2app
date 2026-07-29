@@ -74,5 +74,11 @@ breaking schema change for zero validated benefit; rejected.
 
 ## Remediation status
 
-No cross-model review findings yet at write time (post-commit hook runs on commit). This file is
-updated if the commit review surfaces findings.
+Cross-model review of the feature commit returned one MAJOR finding: "grey skeleton assets are
+not included in the supplied commit, every mockup request will ENOENT."
+
+**Rejected as factually wrong on repo state**: all four `*-grey.png` assets were committed two
+days earlier in 14914fb6 and are tracked at HEAD; the reviewer only sees a single commit's diff
+and cannot observe previously landed assets. **Its suggested guard was adopted anyway**: a new
+test resolves every platform's skeleton under both flag states and reads the PNG from disk, so a
+missing asset now fails the suite instead of failing a paid generation run at request time.
