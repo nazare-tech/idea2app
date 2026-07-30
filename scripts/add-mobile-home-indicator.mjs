@@ -38,7 +38,11 @@ indigo skeletons are never touched.`
 function parseArgs(argv) {
   const args = { file: DEFAULT_FILE, help: false }
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === "--file" && argv[i + 1]) args.file = argv[++i]
+    if (argv[i] === "--file") {
+      const value = argv[i + 1]
+      if (!value || value.startsWith("-")) throw new Error(`--file needs a path value\n${USAGE}`)
+      args.file = argv[++i]
+    }
     else if (argv[i] === "--help" || argv[i] === "-h") args.help = true
     else throw new Error(`Unknown argument: ${argv[i]}\n${USAGE}`)
   }
