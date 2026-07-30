@@ -641,8 +641,8 @@ test("native-mobile skeleton carries the home-indicator safe-area rule when bran
   try {
     process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = "1"
     const mobile = getMockupStoryboardSkeleton("native-mobile-app")
-    assert.match(mobile.safeAreaRule ?? "", /home indicator/)
-    assert.match(mobile.safeAreaRule ?? "", /never place buttons/)
+    assert.match(mobile.safeAreaRule ?? "", /Reserve the bottom safe area/)
+    assert.match(mobile.safeAreaRule ?? "", /Do not draw an iOS home indicator/)
     // Desktop frames have no baked indicator, so no rule.
     assert.equal(getMockupStoryboardSkeleton("desktop-web").safeAreaRule, undefined)
 

@@ -18,6 +18,7 @@ import {
   type OpenRouterImageMockupContent,
   type OpenRouterImageMockupOption,
 } from "@/lib/mockups/openrouter-image-format"
+import { stampMockupHomeIndicator } from "@/lib/mockups/home-indicator"
 import {
   formatMockupAntiSlopRules,
   formatMockupBrandKitForPrompt,
@@ -226,7 +227,7 @@ export function getMockupStoryboardSkeleton(platform: MockupPrimaryPlatform) {
   // marked the safe area.
   if (platform === "native-mobile-app") {
     resolved.safeAreaRule =
-      "Each phone frame has a black iOS home indicator bar near its bottom edge. Keep the bar exactly where it is. The area behind and beside the bar is the bottom safe area: fill it with the app's background surface color (or, when a bottom sheet is open, that sheet's surface color), and never place buttons, tab bars, inputs, or any interactive element in that zone; bottom-anchored controls sit fully above the home indicator."
+      "Reserve the bottom safe area of each phone frame: the lowest ~34pt band above the frame's bottom edge contains no buttons, tab bars, inputs, text, or any interactive element. Fill that band with the app's background surface color (or, when a bottom sheet is open, that sheet's surface color). Do not draw an iOS home indicator bar; the system overlays it afterward."
   }
 
   return resolved
@@ -643,9 +644,29 @@ async function generateAndStoreOption({
     height: parsedImage.height,
     optionLabel: config.label,
   })
-  const storagePath = `${projectId}/${runId}/option-${config.label.toLowerCase()}-storyboard.${parsedImage.extension}`
+  // The home indicator is stamped deterministically after generation, the way iOS
+  // overlays it on app content: the model repaints every pixel of an image edit, so a
+  // bar baked into the skeleton came back at inconsistent heights and positions.
+  let uploadBuffer = parsedImage.buffer
+  let uploadContentType = parsedImage.contentType
+  let uploadExtension = parsedImage.extension
+  if (designPlan.primaryPlatform === "native-mobile-app" && isMockupBrandDirectionsEnabled()) {
+    try {
+      uploadBuffer = await stampMockupHomeIndicator(parsedImage.buffer)
+      uploadContentType = "image/png"
+      uploadExtension = "png"
+    } catch (error) {
+      // A failed stamp must not lose a paid generation; ship the unstamped image.
+      logError("OpenRouterMockup", "home_indicator_stamp_failed", error, {
+        projectId,
+        runId,
+        optionLabel: config.label,
+      })
+    }
+  }
+  const storagePath = `${projectId}/${runId}/option-${config.label.toLowerCase()}-storyboard.${uploadExtension}`
 
-  await uploadMockupImageWithRetry(storageSupabase, storagePath, parsedImage.buffer, parsedImage.contentType)
+  await uploadMockupImageWithRetry(storageSupabase, storagePath, uploadBuffer, uploadContentType)
   logInfo("OpenRouterMockup", "option_image_uploaded", {
     projectId,
     runId,
