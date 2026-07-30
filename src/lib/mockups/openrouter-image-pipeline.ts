@@ -18,7 +18,6 @@ import {
   type OpenRouterImageMockupContent,
   type OpenRouterImageMockupOption,
 } from "@/lib/mockups/openrouter-image-format"
-import { stampMockupHomeIndicator } from "@/lib/mockups/home-indicator"
 import {
   formatMockupAntiSlopRules,
   formatMockupBrandKitForPrompt,
@@ -54,9 +53,6 @@ interface MockupStoryboardSkeleton {
   /** Same skeleton with the placeholder fill recolored to neutral grey; used when brand
    * directions are enabled so the indigo fill cannot anchor the edit toward blue. */
   neutralPublicPath: string
-  /** Extra skeleton-contract bullet, present when the neutral variant carries baked
-   * safe-area chrome (the iOS home indicator) the model must respect. */
-  safeAreaRule?: string
   aspectRatio: string
   aspectRatioDescription: string
   canvasDescription: string
@@ -216,22 +212,11 @@ export function getMockupStoryboardSkeleton(platform: MockupPrimaryPlatform) {
   const skeleton = MOCKUP_STORYBOARD_SKELETONS[platform]
   if (!isMockupBrandDirectionsEnabled()) return skeleton
 
-  const resolved = {
+  return {
     ...skeleton,
     publicPath: skeleton.neutralPublicPath,
     interiorDescription: skeleton.interiorDescription.replace("purple", "grey"),
   }
-
-  // Native-mobile prompts reserve the bottom safe area (generated mockups previously
-  // placed buttons flush against the bottom edge); the exact home indicator is stamped
-  // onto the generated image afterward by stampMockupHomeIndicator, never baked into
-  // the skeleton, because the edit model repaints baked chrome inconsistently.
-  if (platform === "native-mobile-app") {
-    resolved.safeAreaRule =
-      "Reserve the bottom safe area of each phone frame: the lowest ~34pt band above the frame's bottom edge contains no buttons, tab bars, inputs, text, or any interactive element. Fill that band with the app's background surface color (or, when a bottom sheet is open, that sheet's surface color). Do not draw an iOS home indicator bar; the system overlays it afterward."
-  }
-
-  return resolved
 }
 
 function getMockupStoryboardSkeletonFilePath(platform: MockupPrimaryPlatform) {
@@ -645,48 +630,16 @@ async function generateAndStoreOption({
     height: parsedImage.height,
     optionLabel: config.label,
   })
-  // The home indicator is stamped deterministically after generation, the way iOS
-  // overlays it on app content: the model repaints every pixel of an image edit, so a
-  // bar baked into the skeleton came back at inconsistent heights and positions.
-  let uploadBuffer = parsedImage.buffer
-  let uploadContentType = parsedImage.contentType
-  let uploadExtension = parsedImage.extension
-  if (designPlan.primaryPlatform === "native-mobile-app" && isMockupBrandDirectionsEnabled()) {
-    try {
-      const stampedBuffer = await stampMockupHomeIndicator(parsedImage.buffer)
-      if (stampedBuffer.length > MAX_MOCKUP_IMAGE_BYTES) {
-        // PNG re-encoding of a compressed WebP/JPEG can cross the bucket limit; keep the
-        // paid generation by shipping the original bytes unstamped.
-        logWarn("OpenRouterMockup", "home_indicator_stamp_oversized", {
-          projectId,
-          runId,
-          optionLabel: config.label,
-          stampedBytes: stampedBuffer.length,
-        })
-      } else {
-        uploadBuffer = stampedBuffer
-        uploadContentType = "image/png"
-        uploadExtension = "png"
-      }
-    } catch (error) {
-      // A failed stamp must not lose a paid generation; ship the unstamped image.
-      logError("OpenRouterMockup", "home_indicator_stamp_failed", error, {
-        projectId,
-        runId,
-        optionLabel: config.label,
-      })
-    }
-  }
-  const storagePath = `${projectId}/${runId}/option-${config.label.toLowerCase()}-storyboard.${uploadExtension}`
+  const storagePath = `${projectId}/${runId}/option-${config.label.toLowerCase()}-storyboard.${parsedImage.extension}`
 
-  await uploadMockupImageWithRetry(storageSupabase, storagePath, uploadBuffer, uploadContentType)
+  await uploadMockupImageWithRetry(storageSupabase, storagePath, parsedImage.buffer, parsedImage.contentType)
   logInfo("OpenRouterMockup", "option_image_uploaded", {
     projectId,
     runId,
     model,
     optionLabel: config.label,
     storagePath,
-    contentType: uploadContentType,
+    contentType: parsedImage.contentType,
     width: parsedImage.width,
     height: parsedImage.height,
   })
@@ -697,7 +650,7 @@ async function generateAndStoreOption({
     imageUrl: buildMockupImageProxyUrl({ projectId, storagePath, draftRunId: runId }),
     storagePath,
     description: extractAssistantText(choice) || formatDirectionForPrompt(direction),
-    contentType: uploadContentType,
+    contentType: parsedImage.contentType,
     screens: frameScreens.map((screen) => ({
       name: screen.name,
       caption: screen.caption,
@@ -1042,7 +995,7 @@ Skeleton edit contract:
 - Return the edited image in the same ${skeleton.aspectRatioDescription} aspect ratio as the attached skeleton; do not return a square canvas or compressed version of the two frames.
 - Preserve ${skeleton.preservedStructure}.
 - Preserve ${skeleton.chromeDescription}.
-- Do not move, resize, crop, redraw, duplicate, or remove either frame.${skeleton.safeAreaRule ? `\n- ${skeleton.safeAreaRule}` : ""}
+- Do not move, resize, crop, redraw, duplicate, or remove either frame.
 - Do not create a new storyboard layout, add a third frame, add a fourth frame, add arrows, or add side rationale cards.
 - Replace only ${skeleton.interiorDescription} with the requested product UI.
 - Keep the two-screen side-by-side structure exactly as shown in the attached skeleton.

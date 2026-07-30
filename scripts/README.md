@@ -24,7 +24,6 @@ No script spends reviewer tokens automatically: plan evaluation and diff review 
 | `build-brand-variety-briefs.mts` | Prepares the brand-variety validation batch: assigns each case study its deterministic kit triad and writes per-idea generation briefs using the runtime kit prompt block. | `npx tsx scripts/build-brand-variety-briefs.mts [--runs <dir>] [--out <dir>]` |
 | `run-brand-variety-batch.sh` | Drives the validation batch through Codex image generation, three ideas at a time, skipping completed ideas on re-run. | `scripts/run-brand-variety-batch.sh [batch-root] [max-parallel]` |
 | `build-brand-variety-sheet.mjs` | Builds the self-contained review contact sheet (embedded thumbnails, kit captions) from a completed batch. | `node scripts/build-brand-variety-sheet.mjs [--root <dir>]` |
-| `stamp-home-indicator.mts` | Stamps the exact iOS home indicator onto generated native-mobile validation images via the runtime module the production pipeline uses post-generation. | `npx tsx scripts/stamp-home-indicator.mts --root <batch-root>` |
 | `build-mockup-brand-bank.mjs` | Author-time generator for the mockup brand-direction bank: fifteen OKLCH-authored kits with gamut clamping, tinted neutrals, WCAG AA checks, and deterministic per-project triads. Emits `docs/plans/mockup-brand-bank.json` plus an HTML contact sheet for review. | `node scripts/build-mockup-brand-bank.mjs` |
 
 Git hooks (versioned in `.githooks/`, activated by `npm install` through the `prepare` script):
