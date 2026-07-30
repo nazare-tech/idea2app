@@ -29,10 +29,18 @@ const PLACEHOLDER = { r: 212, g: 212, b: 212 }
 const IPHONE_POINT_WIDTH = 393
 const INDICATOR_PT = { width: 134, height: 5, radius: 2.5, bottomGap: 8 }
 
+const USAGE = `Usage: node scripts/add-mobile-home-indicator.mjs [--file <skeleton.png>]
+
+Bakes an iOS home indicator into the grey native-mobile storyboard skeleton
+(default: ${DEFAULT_FILE}). Edits the file in place; idempotent. The original
+indigo skeletons are never touched.`
+
 function parseArgs(argv) {
-  const args = { file: DEFAULT_FILE }
+  const args = { file: DEFAULT_FILE, help: false }
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--file" && argv[i + 1]) args.file = argv[++i]
+    else if (argv[i] === "--help" || argv[i] === "-h") args.help = true
+    else throw new Error(`Unknown argument: ${argv[i]}\n${USAGE}`)
   }
   return args
 }
@@ -77,7 +85,11 @@ function findInteriors(data, info) {
 }
 
 async function main() {
-  const { file } = parseArgs(process.argv.slice(2))
+  const { file, help } = parseArgs(process.argv.slice(2))
+  if (help) {
+    console.log(USAGE)
+    return
+  }
 
   const { data, info } = await sharp(file).raw().toBuffer({ resolveWithObject: true })
   const interiors = findInteriors(data, info)
