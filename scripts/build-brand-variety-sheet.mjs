@@ -24,16 +24,19 @@ import sharp from "sharp"
 import { escapeHtml } from "./lib/html.mjs"
 
 /**
- * Thumbnails are embedded as data URIs so the sheet is a single portable file. The
- * originals are 2.5-4.3 MB each and 60 of them will not travel; 900px JPEGs keep layout,
- * hierarchy, and palette legible at roughly 2% of the weight, and each card links out to
- * the full-resolution PNG for anything that needs a closer look.
+ * Every image is embedded as a data URI so the sheet is one portable file that works
+ * wherever it is downloaded: relative file links broke the expanded view the moment the
+ * HTML left the repo folder. Grid cells use a compact thumbnail; clicking opens the same
+ * embedded image at inspection width in a built-in lightbox, so nothing references the
+ * filesystem.
  */
-const THUMB_WIDTH = 900
-const THUMB_QUALITY = 72
+const THUMB_WIDTH = 760
+const THUMB_QUALITY = 68
+const FULL_WIDTH = 1800
+const FULL_QUALITY = 78
 
-async function thumbnailDataUri(path) {
-  const buffer = await sharp(path).resize(THUMB_WIDTH).jpeg({ quality: THUMB_QUALITY }).toBuffer()
+async function jpegDataUri(path, width, quality) {
+  const buffer = await sharp(path).resize(width, null, { withoutEnlargement: true }).jpeg({ quality }).toBuffer()
   return `data:image/jpeg;base64,${buffer.toString("base64")}`
 }
 
@@ -56,8 +59,9 @@ async function renderCell(root, idea, platform, kit) {
   const relative = `${idea.slug}/images/${platform.key}-option-${kit.label.toLowerCase()}.png`
   const present = existsSync(join(root, relative))
 
+  const alt = escapeHtml(`${idea.title} ${platform.label} option ${kit.label}, kit ${kit.name}`)
   const body = present
-    ? `<a href="${escapeHtml(relative)}" target="_blank"><img loading="lazy" src="${await thumbnailDataUri(join(root, relative))}" alt="${escapeHtml(`${idea.title} ${platform.label} option ${kit.label}, kit ${kit.name}`)}"></a>`
+    ? `<a href="#" class="zoom" data-full="${await jpegDataUri(join(root, relative), FULL_WIDTH, FULL_QUALITY)}"><img loading="lazy" src="${await jpegDataUri(join(root, relative), THUMB_WIDTH, THUMB_QUALITY)}" alt="${alt}"></a>`
     : `<div class="missing">not generated</div>`
 
   return `
@@ -148,6 +152,10 @@ async function render(root, manifest) {
   figcaption code { font-size: 10px; color: #8a837b; }
   .chip { width: 13px; height: 13px; flex: none; }
   @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+  dialog.lightbox { max-width: 96vw; max-height: 96vh; padding: 0; border: 0; background: transparent; }
+  dialog.lightbox::backdrop { background: rgba(20, 18, 16, 0.88); }
+  dialog.lightbox img { display: block; max-width: 96vw; max-height: 92vh; width: auto; height: auto; cursor: zoom-out; }
+  dialog.lightbox figcaption { color: #d6d3cf; font-size: 12px; text-align: center; padding: 8px 0 0; }
 </style>
 <h1>Mockup brand variety review</h1>
 <p class="lede">Ten real Maker Compass ideas, each rendered three ways from the fifteen-kit brand
@@ -156,6 +164,24 @@ brand specification is new. Read across a row for within-idea variety, and down 
 across-idea variety, which is what the current pipeline fails.</p>
 <div class="legend">${swatches}</div>
 ${ideas}
+<dialog class="lightbox" id="lightbox"><figure style="margin:0"><img id="lightbox-img" alt=""><figcaption id="lightbox-cap"></figcaption></figure></dialog>
+<script>
+  const dialog = document.getElementById("lightbox")
+  const dialogImg = document.getElementById("lightbox-img")
+  const dialogCap = document.getElementById("lightbox-cap")
+  document.addEventListener("click", (event) => {
+    const zoom = event.target.closest("a.zoom")
+    if (zoom) {
+      event.preventDefault()
+      dialogImg.src = zoom.dataset.full
+      dialogCap.textContent = zoom.querySelector("img")?.alt ?? ""
+      dialog.showModal()
+      return
+    }
+    if (dialog.open && (event.target === dialog || event.target === dialogImg)) dialog.close()
+  })
+  dialog.addEventListener("close", () => { dialogImg.src = "" })
+</script>
 `
 }
 

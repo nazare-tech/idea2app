@@ -27,7 +27,9 @@ import { join, resolve } from "node:path"
 import {
   formatMockupBrandKitForPrompt,
   selectMockupBrandTriad,
+  type MockupBrandKit,
 } from "../src/lib/mockups/brand-directions"
+import type { MockupPrimaryPlatform } from "../src/lib/mockups/design-plan"
 
 const DEFAULT_RUNS_DIR = "output/maker-compass-skill-runs/2026-07-22"
 const DEFAULT_OUT_DIR = "output/mockup-brand-variety"
@@ -41,12 +43,12 @@ const BANK_PATH = "docs/plans/mockup-brand-bank.json"
 const SKELETONS = {
   "native-mobile-app": "public/mockups/skeletons/native-mobile-app-storyboard-skeleton-grey.png",
   "desktop-web": "public/mockups/skeletons/desktop-web-storyboard-skeleton-grey.png",
-}
+} satisfies Partial<Record<MockupPrimaryPlatform, string>>
 
-const PLATFORMS = Object.keys(SKELETONS)
+const PLATFORMS = Object.keys(SKELETONS) as (keyof typeof SKELETONS)[]
 const LABELS = ["A", "B", "C"]
 
-function parseArgs(argv) {
+function parseArgs(argv: string[]) {
   const args = { runs: DEFAULT_RUNS_DIR, out: DEFAULT_OUT_DIR }
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--runs" && argv[i + 1]) args.runs = argv[++i]
@@ -55,9 +57,9 @@ function parseArgs(argv) {
   return args
 }
 
-function buildBrief({ title, triad, denyList }) {
+function buildBrief({ title, triad, denyList }: { title: string; triad: readonly MockupBrandKit[]; denyList: string[] }) {
   const kitBlocks = PLATFORMS.map((platform) => {
-    const blocks = triad.map((kit, index) =>
+    const blocks = triad.map((kit: MockupBrandKit, index: number) =>
       `### Direction ${LABELS[index]} (${platform}): ${kit.name}\n\n${formatMockupBrandKitForPrompt(kit, platform)}`,
     ).join("\n\n")
     return `## Brand kits for ${platform}\n\n${blocks}`
@@ -108,7 +110,7 @@ Rules, unchanged from the existing workflow:
 
 ## Do not produce any of these
 
-${denyList.map((rule) => `- ${rule}`).join("\n")}
+${denyList.map((rule: string) => `- ${rule}`).join("\n")}
 
 ## How to generate (read this, it is where the first run failed)
 
@@ -195,7 +197,7 @@ function main() {
   for (const [name, count] of [...usage.entries()].sort((a, b) => b[1] - a[1])) {
     console.log(`  ${name.padEnd(14)} ${"#".repeat(count)} ${count}`)
   }
-  console.log(`Kits never used: ${bank.kits.filter((kit) => !usage.has(kit.name)).map((kit) => kit.name).join(", ") || "none"}`)
+  console.log(`Kits never used: ${bank.kits.filter((kit: MockupBrandKit) => !usage.has(kit.name)).map((kit: MockupBrandKit) => kit.name).join(", ") || "none"}`)
 }
 
 main()
