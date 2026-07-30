@@ -1,12 +1,12 @@
 #!/bin/sh
-# Post-commit: synchronously review each code commit with the opposite agent
-# CLI, then print a loud notice when the +1000-line thermonuclear sweep is due.
-# Review outages cannot undo an existing commit, so the runner records the
-# unreviewed SHA under .git/agent-reviews; the active workflow continues but
-# must disclose the review gap. Docs-only commits do not spend reviewer tokens.
-if ! scripts/post-commit-review.sh HEAD; then
-  echo "post-commit: cross-model review failed; this commit is NOT REVIEWED. See .git/agent-reviews/." >&2
-fi
+# Post-commit: print a loud notice when the +1000-line thermonuclear sweep is
+# due. Nothing here spends reviewer tokens and nothing here blocks the commit.
+#
+# Cross-model review no longer runs per commit. It runs once per substantial
+# task as a blocking plan evaluation (scripts/agent-review.sh --plan), and code
+# review is the same-model thermonuclear sweep plus on-demand diff review
+# (scripts/agent-review.sh --range / scripts/post-commit-review.sh <sha>).
+# See docs/operating-system/review-personas.md.
 
 # No stderr silencing: a broken sweep marker must stay visible, or the +1000
 # sweep trigger dies silently for manual commits.

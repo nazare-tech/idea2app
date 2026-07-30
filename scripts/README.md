@@ -1,19 +1,19 @@
 # Agent Tool Scripts
 Inventory of repo automation scripts plus the conventions for building new agent tools; agents are expected to grow this folder whenever a task repeats.
-Key tools: agent-review.sh routes opposite-CLI persona review; post-commit-review.sh records per-code-commit status; sweep-check.mjs detects the net +1000 thermonuclear trigger.
-Hooks in .githooks/ (pre-commit eslint --fix + typecheck; post-commit paid cross-model review + sweep notice) are activated by npm prepare via core.hooksPath.
+Key tools: agent-review.sh routes cross-model plan evaluation (--plan) and on-demand diff review (--range); post-commit-review.sh reviews one commit with a ledger; sweep-check.mjs detects the net +1000 thermonuclear trigger.
+Hooks in .githooks/ (pre-commit eslint --fix + typecheck; post-commit sweep notice only) are activated by npm prepare via core.hooksPath; no hook spends reviewer tokens.
 Other scripts: export-landing-sample.mjs (landing sample content + preview captures), guard-webpack-chunky.mjs (build guard), provision-free-production-qa.mjs (QA identity).
 Conventions: every script self-documents with --help or a header comment, never prints secrets, exits non-zero on failure, and gets a row in the inventory table below.
-Automatic post-commit review intentionally spends opposite-CLI reviewer tokens for code commits; docs-only commits skip it, and failures are stored locally and reported.
+No script spends reviewer tokens automatically: plan evaluation and diff review are both invoked deliberately by the active agent or the user.
 ---
 
 ## Inventory
 
 | Script | Purpose | Invocation |
 |---|---|---|
-| `agent-review.sh` | Routes a bounded diff and embedded persona contract to the opposite CLI with model tools disabled. | `scripts/agent-review.sh [--range A..B] [--review-root DIR] [--personas x,y] [--dry-run]` |
-| `post-commit-review.sh` | Reviews one immutable commit from a temporary depth-two tracked-files-only fetch, saves private capped `.git/agent-reviews/<sha>.{json,txt,stderr}`, reuses amend-equivalent reviewed patches, and classifies outages/timeouts. | `scripts/post-commit-review.sh [commit-sha]` (normally automatic; timeout 1200s, input 1.5 MB, output 1 MB) |
-| `code-path-classification.mjs` | Shared source for post-commit reviewability and sweep code pathspecs. | `node scripts/code-path-classification.mjs --reviewable-stdin` |
+| `agent-review.sh` | Routes bounded material and an embedded reviewer contract to the opposite CLI with model tools disabled. `--plan` evaluates a plan file (working tree, plus docs `head -7` headers) before code exists; `--range` reviews a diff. Mutually exclusive. | `scripts/agent-review.sh --plan docs/plans/x-plan.md [--out FILE]` or `scripts/agent-review.sh [--range A..B] [--review-root DIR] [--personas x,y] [--dry-run]` |
+| `post-commit-review.sh` | Reviews one immutable commit from a temporary depth-two tracked-files-only fetch, saves private capped `.git/agent-reviews/<sha>.{json,txt,stderr}`, reuses amend-equivalent reviewed patches, and classifies outages/timeouts. No longer called by any hook. | `scripts/post-commit-review.sh [commit-sha]` (on demand; timeout 1200s, input 1.5 MB, output 1 MB) |
+| `code-path-classification.mjs` | Shared source for on-demand commit reviewability and sweep code pathspecs. | `node scripts/code-path-classification.mjs --reviewable-stdin` |
 | `sweep-check.mjs` | Net added-lines-of-code counter since last sweep marker (`docs/reviews/.last-sweep-commit`); powers the commit-sweep trigger. | `node scripts/sweep-check.mjs [--notify\|--json]` |
 | `export-landing-sample.mjs` | Exports sample document/mockup content from a real project into `public/landing/samples/`; can capture feature preview PNGs. | see script header |
 | `guard-webpack-chunky.mjs` | Post-build guard against oversized webpack vendor chunks. | `npm run guard:chunky` |
@@ -32,12 +32,12 @@ Git hooks (versioned in `.githooks/`, activated by `npm install` through the `pr
 | Hook | Behavior |
 |---|---|
 | `pre-commit` | `eslint --fix` on staged JS/TS (re-stages fixes), then `npm run typecheck`. Skips doc-only commits. Bypass: `git commit --no-verify`. |
-| `post-commit` | Synchronously reviews code commits with the opposite CLI, records status locally, then prints the net ≥1000 sweep notice. Docs-only commits skip paid review. |
+| `post-commit` | Prints the net ≥1000 sweep notice. Nothing else: no reviewer call, no token spend, no blocking. |
 
 ## Conventions for new scripts
 
 1. **Build a tool when a task repeats.** If you compose the same multi-step incantation twice, turn it into a script here and add it to the inventory table in the same commit.
 2. **Self-documenting**: `--help` for anything with flags; otherwise a header comment stating purpose, usage, and side effects.
 3. **Safe by default**: read-only unless the name says otherwise; never print or log secrets (`.env*` values); exit non-zero on failure so hooks and agents can rely on exit codes.
-4. **Declare spend**: a script that calls a paid API or CLI must say so in its header. `post-commit-review.sh` is the sole project-authorized automatic paid path; new automatic spend still requires explicit user approval.
+4. **Declare spend**: a script that calls a paid API or CLI must say so in its header. There is currently no automatic paid path: `agent-review.sh` and `post-commit-review.sh` spend reviewer tokens only when invoked deliberately, and any new automatic spend requires explicit user approval.
 5. **Plain bash or Node (`.mjs`)** so both Codex and Claude Code can run and modify them; no per-agent tooling assumptions. Exception: a script that must import runtime TypeScript from `src/` (to exercise the exact production code path rather than a copy) uses a `.mts` extension and a `npx tsx` invocation, declared in its inventory row.
