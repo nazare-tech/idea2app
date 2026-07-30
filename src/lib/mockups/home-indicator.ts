@@ -6,7 +6,8 @@
  * positions because the model redraws it approximately. iOS itself treats the indicator
  * as a system overlay on top of app content, so the faithful fix is the same move: the
  * prompt reserves the bottom safe area, and the exact bar is composited onto the
- * generated image afterward at fixed, scaled coordinates.
+ * generated image afterward, anchored to the frame's detected bottom outline (the model
+ * can drift the frame a few percent from the skeleton position).
  *
  * The bar color adapts per frame the way the OS does: near-black on light surfaces,
  * near-white on dark ones, decided by sampling the generated pixels under the bar.
@@ -40,17 +41,64 @@ interface StampBar {
   height: number
 }
 
-function computeBars(imageWidth: number, imageHeight: number): StampBar[] {
+/**
+ * Finds the frame's real interior bottom in the generated image. The model can drift the
+ * phone frame a few percent from the skeleton position; a stamp at fixed coordinates then
+ * lands on the black device border (observed as a white bar breaking the outline). The
+ * device border is the strongest horizontal dark line in the band, so we search a window
+ * around the expected bottom for the topmost row of that line and place the bar above it.
+ * Falls back to the skeleton-scaled position when no line is found.
+ */
+function detectInteriorBottom(
+  data: Buffer,
+  info: { width: number; height: number; channels: number },
+  bandX0: number,
+  bandX1: number,
+  expectedBottom: number,
+) {
+  const searchTop = Math.max(0, Math.round(expectedBottom - info.height * 0.08))
+  const searchBottom = Math.min(info.height - 1, Math.round(expectedBottom + info.height * 0.04))
+  // Sample the middle half of the band so the frame's rounded corners do not dilute rows.
+  const x0 = Math.round(bandX0 + (bandX1 - bandX0) * 0.25)
+  const x1 = Math.round(bandX0 + (bandX1 - bandX0) * 0.75)
+
+  let outlineTop: number | null = null
+  for (let y = searchTop; y <= searchBottom; y++) {
+    let dark = 0
+    for (let x = x0; x < x1; x++) {
+      const index = (y * info.width + x) * info.channels
+      const lum = 0.2126 * data[index] + 0.7152 * data[index + 1] + 0.0722 * data[index + 2]
+      if (lum < 80) dark++
+    }
+    if (dark / (x1 - x0) > 0.6) {
+      outlineTop = y
+      break
+    }
+  }
+
+  return outlineTop !== null ? outlineTop - 1 : Math.round(expectedBottom)
+}
+
+function computeBars(
+  data: Buffer,
+  info: { width: number; height: number; channels: number },
+): StampBar[] {
   return FRAME_INTERIORS.map((frame) => {
-    const scaleX = imageWidth / SKELETON.width
-    const scaleY = imageHeight / SKELETON.height
+    const scaleX = info.width / SKELETON.width
+    const scaleY = info.height / SKELETON.height
     const frameWidth = (frame.x1 - frame.x0) * scaleX
     const pointScale = frameWidth / IPHONE_POINT_WIDTH
 
     const width = Math.max(24, Math.round(INDICATOR_PT.width * pointScale))
     const height = Math.max(4, Math.round(INDICATOR_PT.height * pointScale))
     const centerX = ((frame.x0 + frame.x1) / 2) * scaleX
-    const bottom = frame.bottom * scaleY
+    const bottom = detectInteriorBottom(
+      data,
+      info,
+      frame.x0 * scaleX,
+      frame.x1 * scaleX,
+      frame.bottom * scaleY,
+    )
 
     return {
       left: Math.round(centerX - width / 2),
@@ -90,7 +138,7 @@ function regionLuminance(
 export async function stampMockupHomeIndicator(imageBuffer: Buffer): Promise<Buffer<ArrayBuffer>> {
   const image = sharp(imageBuffer)
   const { data, info } = await image.raw().toBuffer({ resolveWithObject: true })
-  const bars = computeBars(info.width, info.height)
+  const bars = computeBars(data, info)
 
   const rects = bars
     .map((bar) => {

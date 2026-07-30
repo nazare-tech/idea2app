@@ -48,7 +48,11 @@ async function main() {
     for (const name of readdirSync(imagesDir)) {
       if (!/^native-mobile-app-option-[abc]\.png$/.test(name)) continue
       const path = join(imagesDir, name)
-      const output = await stampMockupHomeIndicator(readFileSync(path))
+      // Stamp from the pristine backup when one exists, so re-running after a stamper
+      // fix never bakes an earlier, wrongly placed bar into the result.
+      const backupPath = `${path}.orig`
+      if (!existsSync(backupPath)) writeFileSync(backupPath, readFileSync(path))
+      const output = await stampMockupHomeIndicator(readFileSync(backupPath))
       writeFileSync(path, output)
       stamped++
       console.log(`stamped ${entry.name}/${name}`)
