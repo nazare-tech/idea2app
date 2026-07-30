@@ -22,19 +22,24 @@ git status --short          # confirm staged scope before every commit
 git commit -m "<type(scope): imperative summary>"
 ```
 
-Skip `git commit` when nothing is staged. The repo's `.githooks/pre-commit` runs `eslint --fix` + typecheck on staged code files and refuses partially staged files; fix causes instead of bypassing. After commit, `.githooks/post-commit` runs the opposite-CLI persona review for code paths and saves `.git/agent-reviews/<sha>.json` plus reviewer output. Message-only rewrites may reuse a matching successful review when patch, parent, resulting tree, reviewer, and artifact all match; reused entries record `reason: duplicate_patch` plus `duplicateOf`. Read that status before continuing to push.
+Skip `git commit` when nothing is staged. The repo's `.githooks/pre-commit` runs `eslint --fix` + typecheck on staged code files and refuses partially staged files; fix causes instead of bypassing. `.githooks/post-commit` only prints the sweep notice: no reviewer runs, nothing blocks.
 
-## Review and remediate
+## Review and sweep
 
-Collect every created SHA's local status. Verify/deduplicate `findings`, fix accepted items, and commit remediation; remediation code commits are reviewed too. Continue when the reviewer is unavailable, but report exact SHAs for `failed`, `unknown_implementer`, or `explicit_skip` results and never call them reviewed.
+Self-review the finished diff (`git diff <base>..HEAD`) as a reviewer rather than the author, and fix what that turns up. For auth, RLS, webhook, billing, or migration diffs, get a cross-model second opinion on demand:
 
-Then run:
+```bash
+scripts/agent-review.sh --range <base>..HEAD          # bounded, tools disabled, costs reviewer tokens
+scripts/post-commit-review.sh <sha>                   # one immutable commit, isolated snapshot + ledger
+```
+
+Never call an unavailable or failed reviewer a pass. Then run:
 
 ```bash
 node scripts/sweep-check.mjs --json
 ```
 
-When `due` is true, invoke `commit-sweep` automatically in the current agent. It applies thermonuclear review across the marker range; do not call a duplicate cross-model range reviewer.
+When `due` is true, invoke `commit-sweep` automatically. It fans thermonuclear review across the marker range using parallel read-only finder subagents, verifies and remediates in this agent, and is the only automatic code review in this repo.
 
 ## Push
 

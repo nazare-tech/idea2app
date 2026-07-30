@@ -6,7 +6,7 @@
 Notes when applying `AGENTS.md` as Claude Code:
 - It is written addressing "Codex"; every rule applies equally to Claude Code.
 - Where routed docs name Codex-specific tooling (Codex Chrome plugin, `agent.browsers.list()`, Codex in-app browser), use the Claude Code equivalents (claude-in-chrome MCP tools, Browser preview tools). The intent — real Chrome, real local dev server, real auth via `.env.e2e.local`, evidence saved under `ui-evidence/<date>/<task-slug>/` — is unchanged.
-- In `scripts/agent-review.sh` terms, work you implement has `--implementer claude`, so the cross-model reviewer is Codex (gpt-5.6-terra, medium reasoning).
+- In `scripts/agent-review.sh` terms, work you implement has `--implementer claude`, so the cross-model reviewer is Codex (gpt-5.6-terra, medium reasoning). That review runs once per substantial task on the plan file (`--plan docs/plans/<task>-plan.md`, blocking, before implementation), not per commit.
 
 This file adds only the Claude-specific design context below. If `AGENTS.md` and this file conflict, ask which one wins.
 

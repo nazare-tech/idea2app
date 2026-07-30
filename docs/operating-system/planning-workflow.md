@@ -1,6 +1,6 @@
 # Planning Workflow
 Rules for plan and review artifacts in docs/plans/, the Recommendation A auto-selection policy, Architecture Improvement Opportunities, and backend-change-history.md.
-Substantial work runs through /holistic-implementation: plan file first, implement without waiting on answers, verify, review, remediate, then mark the plan implemented.
+Substantial work runs through /holistic-implementation: plan file first, blocking cross-model plan evaluation (scripts/agent-review.sh --plan), then implement, verify, remediate, and mark the plan implemented.
 Recommendation A is chosen for every open question unless docs/plans/recommendation-selection-rules.md, the user's prompt, or a hard safety constraint points elsewhere.
 Every substantial plan needs goal, assumptions, A/B decisions with trade-offs, phases, test strategy, rollback notes, a candid multi-perspective critique, and change-impact analysis.
 Backend, database, Supabase, auth/RLS, webhook, persistence, or data-shape changes must also append to docs/plans/backend-change-history.md with verification and rollback notes.
@@ -30,6 +30,20 @@ Actively look for scoped improvements that make the implementation more reusable
 
 Include the framework-agnostic Runtime and Change-Impact Analysis required by `/holistic-implementation`. For Maker Compass, explicitly apply it to: AI generation, polling/streaming, queues and partial-content persistence, shared client state, client-server payloads, cache invalidation, billing-adjacent data, and real-flow verification. The canonical template lives in the global skill; do not duplicate it here.
 
+## Cross-model plan evaluation (blocking)
+
+Once the plan file is written and before implementation starts, run the opposite CLI against it:
+
+```bash
+scripts/agent-review.sh --plan docs/plans/<task>-plan.md --out docs/plans/<task>-plan-eval.md
+```
+
+This is the repo's one automatic cross-model step. Fold accepted findings into the plan (a plan is meant to change), record rejections with reasons, then implement. `NO FINDINGS` is a clean result; a reviewer outage means the plan is unevaluated and must be reported as such, never re-reviewed by the implementing model and called coverage. Skip it only for work small enough that it does not warrant a plan file at all. Lenses and routing: `docs/operating-system/review-personas.md`.
+
+Re-run the evaluation if the plan changes materially afterwards (new phase, reversed decision, widened scope): an evaluation of a superseded plan is not coverage of what you build.
+
+Plan evaluation replaced per-commit cross-model review. Do not expect a reviewer verdict on individual commits. Risk is not measured in lines: diffs touching auth, RLS, webhooks, billing, or migrations get an on-demand cross-model diff review before push at any size (`docs/operating-system/review-personas.md` § sensitive paths).
+
 ## Recommendation A policy
 
 Do not wait for answers to clarifying questions by default. Pick Recommendation A for each open question and continue through implementation, verification, review, and remediation, unless an existing rule in `docs/plans/recommendation-selection-rules.md`, the user's prompt, or a hard safety constraint clearly points to another option.
@@ -53,9 +67,9 @@ For code or behavior changes, create or update a review artifact in `docs/plans/
 
 Include an architecture improvement review that confirms selected opportunities landed, records why deferred opportunities remain deferred, and calls out any new duplication, brittle contracts, non-idempotent paths, authorization gaps, or recovery blind spots found during review.
 
-Every code commit receives automatic opposite-CLI persona review. At wrap-up, collect `.git/agent-reviews/` statuses, verify/remediate findings, and review remediation commits; run a manual working-tree review only for code not yet covered by a commit. See `docs/operating-system/review-personas.md`.
+Commits are not reviewed by the opposite CLI. Record the plan-evaluation outcome in the review artifact, then the implementing agent's own verification and self-review of the finished diff. Ask for an on-demand cross-model diff review (`scripts/agent-review.sh --range <base>..HEAD`) when the change touches auth, RLS, webhooks, billing, or migrations, and note in the artifact whether one was run. See `docs/operating-system/review-personas.md`.
 
-After the commit/review/remediation batch, run `node scripts/sweep-check.mjs --json`. If net code growth is at least 1,000 lines, invoke `commit-sweep` automatically in the active agent before push. The sweep applies `thermo-nuclear-code-quality-review` across the marker range and does not call a duplicate cross-model range reviewer.
+After the commit batch, run `node scripts/sweep-check.mjs --json`. If net code growth is at least 1,000 lines, invoke `commit-sweep` automatically in the active agent before push. The sweep applies `thermo-nuclear-code-quality-review` across the marker range through parallel read-only finder subagents, then verifies and remediates in the dispatching agent; it is the only automatic code review, so it carries the full weight.
 
 ## Backend change history
 

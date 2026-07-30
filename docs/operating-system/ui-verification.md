@@ -4,7 +4,7 @@ No stubbing: never patch routes, stub providers, use fixtures, dummy env values,
 Real Chrome (profile Plasma / Profile 1) via the browser plugin is the default; e2e sign-in uses E2E_TEST_EMAIL / E2E_TEST_PASSWORD from .env.e2e.local, values never printed or committed.
 Fresh-project evidence rule is OPT-IN: creating a new project spends real OpenRouter credits, so it runs only when the user explicitly asks for fresh-project or generation-flow evidence.
 Standardized intake tests use Idea 1.1 from docs/guides/idea-intake-test-cases.md by default; new wizard questions get answered by that file's policies and logged there.
-Dev-server discipline: reuse or recover the real workspace dev server (stale .next/dev locks, occupied ports) and keep it running for the rest of the thread once started.
+Dev-server discipline: exactly one long-lived `next dev` per thread, reused or recovered (stale .next/dev locks, occupied ports) and never killed at task end.
 ---
 
 ## Core rules
@@ -50,4 +50,8 @@ When sign-in is required, read `.env.e2e.local` (`E2E_TEST_EMAIL`, `E2E_TEST_PAS
 
 - Use this actual workspace and its real local environment. No copied workspaces, no dummy env values to bypass env/auth/database/dev-server problems.
 - If a port appears occupied but the route is unreachable, inspect the listener and recover stale Next dev processes or `.next/dev` cache before blaming browser tooling. If a dev-server lock blocks startup, verify whether a server is actually reachable; if not, fix the stale lock or run on another port.
-- Once a dev server is started for verification, keep it running for the rest of the thread unless asked to stop or it is clearly unsafe. If UI navigation fails or times out, first verify the dev server is still reachable before diagnosing browser tooling.
+- **One long-lived server per thread, never killed at task end.** The first verification in a thread starts `next dev`; every later verification in that thread reuses it, including verifications for unrelated tasks. Stop it only when the user asks or it is clearly broken/unsafe. Restarting per task pays the cold-compile cost again for nothing, which is the single largest avoidable delay in the verification loop.
+- **Reuse before starting.** Probe the expected port first and reuse a reachable server rather than starting a second one on another port. Only an unreachable listener or a stale `.next/dev` lock justifies recovery or a different port.
+- **Do not kill a server you did not start.** Concurrent threads each own one server, so an unfamiliar `next dev` on another port belongs to another thread; leave it alone.
+- Restart only when the change requires it (env vars, `next.config`, middleware, dependency install). Ordinary source edits are picked up by hot reload; a restart there is wasted time.
+- If UI navigation fails or times out, first verify the dev server is still reachable before diagnosing browser tooling.

@@ -36,6 +36,8 @@ Apply this prompt:
 6. Verify every finding against actual code before including it.
 7. Fix safe findings, run relevant tests, then repeat two fresh-eyes passes.
 
+For a multi-commit range, split the lenses above across parallel read-only finder subagents rather than reading everything serially: one lens group per finder, dispatched in a single batch, each reporting severity-tagged findings and editing nothing. Verification, deduplication, triage, and every edit stay with the dispatching agent. `.agents/skills/commit-sweep/SKILL.md` defines the standard finder groups and the finder preamble.
+
 ## Approval Bar
 
 Do not approve merely because tests pass. Approval requires:
