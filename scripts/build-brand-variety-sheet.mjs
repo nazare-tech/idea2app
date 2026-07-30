@@ -26,17 +26,15 @@ import { escapeHtml } from "./lib/html.mjs"
 /**
  * Every image is embedded as a data URI so the sheet is one portable file that works
  * wherever it is downloaded: relative file links broke the expanded view the moment the
- * HTML left the repo folder. Grid cells use a compact thumbnail; clicking opens the same
- * embedded image at inspection width in a built-in lightbox, so nothing references the
- * filesystem.
+ * HTML left the repo folder. Each image is encoded exactly once at inspection width; the
+ * grid shows it CSS-downscaled and the built-in lightbox shows the same data URI at full
+ * size, so portability does not double the payload.
  */
-const THUMB_WIDTH = 760
-const THUMB_QUALITY = 68
-const FULL_WIDTH = 1800
-const FULL_QUALITY = 78
+const IMAGE_WIDTH = 1500
+const IMAGE_QUALITY = 72
 
-async function jpegDataUri(path, width, quality) {
-  const buffer = await sharp(path).resize(width, null, { withoutEnlargement: true }).jpeg({ quality }).toBuffer()
+async function jpegDataUri(path) {
+  const buffer = await sharp(path).resize(IMAGE_WIDTH, null, { withoutEnlargement: true }).jpeg({ quality: IMAGE_QUALITY }).toBuffer()
   return `data:image/jpeg;base64,${buffer.toString("base64")}`
 }
 
@@ -61,7 +59,7 @@ async function renderCell(root, idea, platform, kit) {
 
   const alt = escapeHtml(`${idea.title} ${platform.label} option ${kit.label}, kit ${kit.name}`)
   const body = present
-    ? `<a href="#" class="zoom" data-full="${await jpegDataUri(join(root, relative), FULL_WIDTH, FULL_QUALITY)}"><img loading="lazy" src="${await jpegDataUri(join(root, relative), THUMB_WIDTH, THUMB_QUALITY)}" alt="${alt}"></a>`
+    ? `<a href="#" class="zoom"><img loading="lazy" src="${await jpegDataUri(join(root, relative))}" alt="${alt}"></a>`
     : `<div class="missing">not generated</div>`
 
   return `
@@ -173,8 +171,9 @@ ${ideas}
     const zoom = event.target.closest("a.zoom")
     if (zoom) {
       event.preventDefault()
-      dialogImg.src = zoom.dataset.full
-      dialogCap.textContent = zoom.querySelector("img")?.alt ?? ""
+      const source = zoom.querySelector("img")
+      dialogImg.src = source?.src ?? ""
+      dialogCap.textContent = source?.alt ?? ""
       dialog.showModal()
       return
     }
