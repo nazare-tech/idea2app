@@ -102,6 +102,11 @@ Rules, unchanged from the existing workflow:
 - Preserve the exact canvas, white background, both frame positions and sizes, captions,
   shadows, alignment, and device or browser chrome.
 - Replace only the two grey placeholder interiors and the two "Text here" caption labels.
+- Mobile frames only: each phone has a black iOS home indicator bar near its bottom edge.
+  Keep the bar exactly where it is. Fill the area behind and beside it with the app's
+  background surface color (or the open bottom sheet's surface color when one is shown),
+  and never place buttons, tab bars, inputs, or any interactive element in that zone;
+  bottom-anchored controls sit fully above the home indicator.
 - Keep exactly two frames. No third frame, no arrows, no rationale cards, no direction labels.
 - Keep all generated UI inside the frame interiors.
 - Show populated happy-path states with realistic data, never empty states.

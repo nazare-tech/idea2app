@@ -53,6 +53,9 @@ interface MockupStoryboardSkeleton {
   /** Same skeleton with the placeholder fill recolored to neutral grey; used when brand
    * directions are enabled so the indigo fill cannot anchor the edit toward blue. */
   neutralPublicPath: string
+  /** Extra skeleton-contract bullet, present when the neutral variant carries baked
+   * safe-area chrome (the iOS home indicator) the model must respect. */
+  safeAreaRule?: string
   aspectRatio: string
   aspectRatioDescription: string
   canvasDescription: string
@@ -212,11 +215,21 @@ export function getMockupStoryboardSkeleton(platform: MockupPrimaryPlatform) {
   const skeleton = MOCKUP_STORYBOARD_SKELETONS[platform]
   if (!isMockupBrandDirectionsEnabled()) return skeleton
 
-  return {
+  const resolved = {
     ...skeleton,
     publicPath: skeleton.neutralPublicPath,
     interiorDescription: skeleton.interiorDescription.replace("purple", "grey"),
   }
+
+  // The grey native-mobile skeleton carries a baked iOS home indicator; generated
+  // mockups previously placed buttons flush against the bottom edge because nothing
+  // marked the safe area.
+  if (platform === "native-mobile-app") {
+    resolved.safeAreaRule =
+      "Each phone frame has a black iOS home indicator bar near its bottom edge. Keep the bar exactly where it is. The area behind and beside the bar is the bottom safe area: fill it with the app's background surface color (or, when a bottom sheet is open, that sheet's surface color), and never place buttons, tab bars, inputs, or any interactive element in that zone; bottom-anchored controls sit fully above the home indicator."
+  }
+
+  return resolved
 }
 
 function getMockupStoryboardSkeletonFilePath(platform: MockupPrimaryPlatform) {
@@ -995,7 +1008,7 @@ Skeleton edit contract:
 - Return the edited image in the same ${skeleton.aspectRatioDescription} aspect ratio as the attached skeleton; do not return a square canvas or compressed version of the two frames.
 - Preserve ${skeleton.preservedStructure}.
 - Preserve ${skeleton.chromeDescription}.
-- Do not move, resize, crop, redraw, duplicate, or remove either frame.
+- Do not move, resize, crop, redraw, duplicate, or remove either frame.${skeleton.safeAreaRule ? `\n- ${skeleton.safeAreaRule}` : ""}
 - Do not create a new storyboard layout, add a third frame, add a fourth frame, add arrows, or add side rationale cards.
 - Replace only ${skeleton.interiorDescription} with the requested product UI.
 - Keep the two-screen side-by-side structure exactly as shown in the attached skeleton.
