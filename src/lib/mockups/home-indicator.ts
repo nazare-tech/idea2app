@@ -62,21 +62,38 @@ function detectInteriorBottom(
   const x0 = Math.round(bandX0 + (bandX1 - bandX0) * 0.25)
   const x1 = Math.round(bandX0 + (bandX1 - bandX0) * 0.75)
 
-  let outlineTop: number | null = null
-  for (let y = searchTop; y <= searchBottom; y++) {
+  const isDarkRow = (y: number) => {
     let dark = 0
     for (let x = x0; x < x1; x++) {
       const index = (y * info.width + x) * info.channels
       const lum = 0.2126 * data[index] + 0.7152 * data[index + 1] + 0.0722 * data[index + 2]
       if (lum < 80) dark++
     }
-    if (dark / (x1 - x0) > 0.6) {
-      outlineTop = y
+    return dark / (x1 - x0) > 0.6
+  }
+
+  // Scan bottom-up: below the frame is always the white storyboard canvas, so the first
+  // dark row from below is unambiguously the border's bottom edge. A top-down scan would
+  // mistake a dark-mode interior or a dark footer inside the window for the border.
+  let borderBottom: number | null = null
+  for (let y = searchBottom; y >= searchTop; y--) {
+    if (isDarkRow(y)) {
+      borderBottom = y
       break
     }
   }
+  if (borderBottom === null) return Math.round(expectedBottom)
 
-  return outlineTop !== null ? outlineTop - 1 : Math.round(expectedBottom)
+  // Walk up through the border. Its thickness is bounded; if the dark run continues past
+  // the cap (a dark interior touching the border), stop there so the bar still lands
+  // inside the frame instead of drifting upward.
+  const maxBorderThickness = Math.max(6, Math.round(info.height * 0.02))
+  let outlineTop = borderBottom
+  while (outlineTop > searchTop && borderBottom - outlineTop < maxBorderThickness && isDarkRow(outlineTop - 1)) {
+    outlineTop--
+  }
+
+  return outlineTop - 1
 }
 
 function computeBars(
