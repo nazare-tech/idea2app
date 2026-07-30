@@ -222,9 +222,10 @@ export function getMockupStoryboardSkeleton(platform: MockupPrimaryPlatform) {
     interiorDescription: skeleton.interiorDescription.replace("purple", "grey"),
   }
 
-  // The grey native-mobile skeleton carries a baked iOS home indicator; generated
-  // mockups previously placed buttons flush against the bottom edge because nothing
-  // marked the safe area.
+  // Native-mobile prompts reserve the bottom safe area (generated mockups previously
+  // placed buttons flush against the bottom edge); the exact home indicator is stamped
+  // onto the generated image afterward by stampMockupHomeIndicator, never baked into
+  // the skeleton, because the edit model repaints baked chrome inconsistently.
   if (platform === "native-mobile-app") {
     resolved.safeAreaRule =
       "Reserve the bottom safe area of each phone frame: the lowest ~34pt band above the frame's bottom edge contains no buttons, tab bars, inputs, text, or any interactive element. Fill that band with the app's background surface color (or, when a bottom sheet is open, that sheet's surface color). Do not draw an iOS home indicator bar; the system overlays it afterward."
@@ -652,9 +653,21 @@ async function generateAndStoreOption({
   let uploadExtension = parsedImage.extension
   if (designPlan.primaryPlatform === "native-mobile-app" && isMockupBrandDirectionsEnabled()) {
     try {
-      uploadBuffer = await stampMockupHomeIndicator(parsedImage.buffer)
-      uploadContentType = "image/png"
-      uploadExtension = "png"
+      const stampedBuffer = await stampMockupHomeIndicator(parsedImage.buffer)
+      if (stampedBuffer.length > MAX_MOCKUP_IMAGE_BYTES) {
+        // PNG re-encoding of a compressed WebP/JPEG can cross the bucket limit; keep the
+        // paid generation by shipping the original bytes unstamped.
+        logWarn("OpenRouterMockup", "home_indicator_stamp_oversized", {
+          projectId,
+          runId,
+          optionLabel: config.label,
+          stampedBytes: stampedBuffer.length,
+        })
+      } else {
+        uploadBuffer = stampedBuffer
+        uploadContentType = "image/png"
+        uploadExtension = "png"
+      }
     } catch (error) {
       // A failed stamp must not lose a paid generation; ship the unstamped image.
       logError("OpenRouterMockup", "home_indicator_stamp_failed", error, {
@@ -673,7 +686,7 @@ async function generateAndStoreOption({
     model,
     optionLabel: config.label,
     storagePath,
-    contentType: parsedImage.contentType,
+    contentType: uploadContentType,
     width: parsedImage.width,
     height: parsedImage.height,
   })
@@ -684,7 +697,7 @@ async function generateAndStoreOption({
     imageUrl: buildMockupImageProxyUrl({ projectId, storagePath, draftRunId: runId }),
     storagePath,
     description: extractAssistantText(choice) || formatDirectionForPrompt(direction),
-    contentType: parsedImage.contentType,
+    contentType: uploadContentType,
     screens: frameScreens.map((screen) => ({
       name: screen.name,
       caption: screen.caption,
