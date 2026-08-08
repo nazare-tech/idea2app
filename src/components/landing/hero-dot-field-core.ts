@@ -1,11 +1,11 @@
 /**
- * Pure logic for the landing dot field: deterministic lattice/cluster layout,
- * wedge-site selection, angle damping, and protected-zone alpha falloffs. No
+ * Pure logic for the landing line field: deterministic lattice/cluster layout,
+ * magnetic line orientation, angle damping, and protected-zone alpha falloffs. No
  * DOM or canvas access, so everything here is unit tested;
  * `hero-dot-field.tsx` owns rendering and lifecycle.
  *
  * Reference look (docs/plans/hero-dot-field-cursor-compass-plan.md): a static
- * dot lattice arranged in irregular map-like clusters.
+ * short-line lattice arranged in irregular map-like clusters.
  */
 
 export interface FieldDot {
@@ -17,22 +17,9 @@ export interface FieldDot {
 
 export interface DotField {
   dots: FieldDot[]
-  /** Indices into `dots` that render as micro compass wedges. */
-  wedgeIndices: number[]
   cols: number
   rows: number
   pitch: number
-}
-
-/** mulberry32: tiny deterministic PRNG, returns floats in [0, 1). */
-export function mulberry32(seed: number): () => number {
-  let a = seed >>> 0
-  return () => {
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
 }
 
 /** Integer-lattice hash noise in [0, 1), deterministic per (seed, x, y). */
@@ -64,12 +51,6 @@ export interface BuildFieldOptions {
   height: number
   pitch: number
   seed: number
-  /** Roughly one wedge per this many cluster dots. */
-  wedgeRatio?: number
-  /** Minimum pixel distance between wedge sites. */
-  wedgeSpacing?: number
-  /** Hard cap on wedge count. */
-  wedgeMax?: number
 }
 
 /**
@@ -79,9 +60,6 @@ export interface BuildFieldOptions {
  */
 export function buildField(options: BuildFieldOptions): DotField {
   const { width, height, pitch, seed } = options
-  const wedgeRatio = options.wedgeRatio ?? 40
-  const wedgeSpacing = options.wedgeSpacing ?? 120
-  const wedgeMax = options.wedgeMax ?? 20
 
   const cols = Math.max(0, Math.floor(width / pitch))
   const rows = Math.max(0, Math.floor(height / pitch))
@@ -103,21 +81,7 @@ export function buildField(options: BuildFieldOptions): DotField {
     }
   }
 
-  // Deterministic wedge sites: sparse picks with minimum spacing.
-  const rng = mulberry32(seed ^ 0x5f356495)
-  const wedgeIndices: number[] = []
-  for (let i = 0; i < dots.length; i++) {
-    if (wedgeIndices.length >= wedgeMax) break
-    if (rng() >= 1 / wedgeRatio) continue
-    const d = dots[i]
-    const tooClose = wedgeIndices.some((j) => {
-      const w = dots[j]
-      return Math.hypot(w.x - d.x, w.y - d.y) < wedgeSpacing
-    })
-    if (!tooClose) wedgeIndices.push(i)
-  }
-
-  return { dots, wedgeIndices, cols, rows, pitch }
+  return { dots, cols, rows, pitch }
 }
 
 /** Shortest-arc angular damping. Returns the new angle in radians. */
@@ -129,6 +93,26 @@ export function dampAngle(current: number, target: number, rate: number, dt: num
   // Exponential approach, frame-rate independent.
   const t = 1 - Math.exp(-rate * dt)
   return current + delta * t
+}
+
+/**
+ * Aligns a directionless short line tangentially to a cursor-centered magnetic
+ * ring. A line has 180° rotational symmetry, so its shortest turn wraps at π.
+ */
+export function magneticLineAngle(
+  x: number,
+  y: number,
+  cursorX: number,
+  cursorY: number,
+  strength: number,
+  restAngle: number
+): number {
+  if (strength <= 0 || (x === cursorX && y === cursorY)) return restAngle
+  const tangent = Math.atan2(y - cursorY, x - cursorX) + Math.PI / 2
+  let delta = (tangent - restAngle) % Math.PI
+  if (delta > Math.PI / 2) delta -= Math.PI
+  if (delta < -Math.PI / 2) delta += Math.PI
+  return restAngle + delta * Math.min(1, strength)
 }
 
 /** Hermite smoothstep on [edge0, edge1], clamped to [0, 1]. */
