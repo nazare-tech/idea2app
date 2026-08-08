@@ -1,7 +1,7 @@
 # Hero Build Map (Landing v2 hero artwork)
 Replaces the hero's HeroReelArc with the "build map" node diagram from Claude Design project "Landing page desktop mockup", file `Maker Compass Landing v2.dc.html`.
 Adds one client component plus keyframes; no backend, auth, billing, or data-shape change.
-Source of truth is `docs/design-imports/maker-compass-landing-v2.dc.html` (committed with this plan); scenario cycling copy is decorative sample content.
+The original visual reference was the local, gitignored `docs/design-imports/maker-compass-landing-v2.dc.html`; committed geometry and copy now live in `src/lib/landing-hero-build-map.ts`. Scenario cycling copy is decorative sample content.
 Scope: `src/components/landing/hero-build-map.tsx` (new), `src/app/page.tsx` (swap), `src/app/globals.css` (keyframes), `src/lib/landing-hero-build-map.ts` (new data module), `docs/systems/directories-and-key-files.md`, `docs/testing/test-inventory.md`.
 Cross-model plan evaluation: `docs/plans/hero-build-map-plan-eval.md`.
 UI evidence: `ui-evidence/2026-07-29/hero-build-map/`.
@@ -19,7 +19,7 @@ The artwork carries the product's core claim (one line in, four artifacts plus p
 
 ## Assumptions
 
-1. The design file is authoritative for geometry, type sizes, colors, delays, and copy. It is committed at `docs/design-imports/maker-compass-landing-v2.dc.html`, sha256 `06fe2f3c3b9ecf1e8127fcf61b586e43c7772b2254e8dc64dd43f0ec6b84785f`, exported from Claude Design project `107533b6-3cad-4c1d-8f43-50ca3d40f04f` ("Landing page desktop mockup"), file `Maker Compass Landing v2.dc.html`. Where design hex values already exist as repo tokens, the tokens are used (identical values, see mapping below).
+1. The local design file guided initial geometry, type sizes, colors, delays, and copy; it remains intentionally gitignored. The committed implementation in `src/lib/landing-hero-build-map.ts` is the reproducible source of truth. Where design hex values already exist as repo tokens, the tokens are used (identical values, see mapping below).
 2. Scenario copy (SignalDesk / barber booking / freelance invoices) is illustrative sample content, same standing as the existing feature-stage sample content. No product claim depends on it.
 3. `public/landing/samples/mockup-option-{a,b,c}.png` already exist in the repo (verified) and are reused for the Design node.
 4. Competitor favicons come from `https://www.google.com/s2/favicons?...`, the pattern already shipped in `feature-stage-card.tsx`, so CSP `img-src ... https:` already allows it.
