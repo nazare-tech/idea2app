@@ -2,11 +2,11 @@
 
 import { useEffect, useRef } from "react"
 
+import { COMPASS_WEDGE_TIP_ANGLE, traceCompassWedge } from "@/lib/compass-geometry"
 import {
   buildField,
   computeShouldAnimate,
   dampAngle,
-  magneticLineAngle,
   protectedZoneAlpha,
   smoothstep,
   type DotField,
@@ -18,25 +18,23 @@ const PITCH = 26
 // Default seed chosen by scanning 6000 candidates for left/right cluster
 // balance across hero widths 1024-1680 (worst-case halves within 3%).
 const DEFAULT_SEED = 633
-// The experiment keeps the former 2.4px dot diameter as line width and makes
-// each line five diameters tall.
-const DOT_DIAMETER = 2.4
-const LINE_WIDTH = DOT_DIAMETER
-const LINE_LENGTH = DOT_DIAMETER * 5
-const LINE_ALPHA = 0.3
+const DOT_RADIUS = 1.2
+const DOT_ALPHA = 0.3
+const WEDGE_SIZE = 11
+const WEDGE_ALPHA = 0.5
 // Cursor interaction.
-const MAGNETIC_RADIUS = 168
-const MAGNETIC_RING_RADII = [52, 104, 156]
-const LINE_TURN_RATE = 7 // exponential rate per second
+const CURSOR_RADIUS = 140
+const CURSOR_LERP = 8 // exponential rate per second
+const WEDGE_TURN_RATE = 6 // exponential rate per second
 // Ink: tinted neutral matching the landing text ramp.
 const INK = "23, 23, 28"
 // Wedges rest pointing north (up) when no cursor has been seen.
 const NORTH = -Math.PI / 2
 
 /**
- * Ambient section background: a deterministic short-line lattice in map-like
- * clusters. Cursor-centered magnetic rings rotate nearby lines tangentially.
- * Each field is absolutely
+ * Ambient section background: a deterministic dot lattice in map-like
+ * clusters, dots that react to cursor proximity, and sparse micro compass
+ * wedges that rotate to point at the cursor. Each field is absolutely
  * positioned inside its owning section, so native document or sticky layout
  * movement carries the artwork without a second scroll loop. Decorative only:
  * `aria-hidden`, no pointer events, renders nothing without JS, static under
@@ -58,17 +56,22 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
     const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
 
     // --- Mutable animation state (refs only, never React state) ---
-    let field: DotField = { dots: [], cols: 0, rows: 0, pitch: PITCH }
-    let lineAngles: number[] = []
+    let field: DotField = { dots: [], wedgeIndices: [], cols: 0, rows: 0, pitch: PITCH }
+    let wedgeAngles: number[] = []
     let protectRects: ProtectedRect[] = []
     let width = 0
     let height = 0
+    const wedgePath = new Path2D()
+    traceCompassWedge(wedgePath, WEDGE_SIZE)
+
+    // Cursor: target from pointer events, smoothed position for drawing.
     // `hasCursor` flips on the first mouse/pen event, so hybrid touch devices
-    // with a trackpad still get the interactive variant. Rings stay directly
-    // under the pointer; only line rotation is damped.
+    // with a trackpad still get the interactive variant.
     let hasCursor = false
     let cursorX = 0
     let cursorY = 0
+    let targetX = 0
+    let targetY = 0
 
     let isIntersecting = false
     let rafId = 0
@@ -109,7 +112,7 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
         pitch: PITCH,
         seed,
       })
-      lineAngles = field.dots.map(() => NORTH)
+      wedgeAngles = field.wedgeIndices.map(() => NORTH)
       measureProtectedZones()
     }
 
@@ -122,45 +125,49 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
       return a
     }
 
-    const lineTargetAngle = (dot: DotField["dots"][number]) => {
-      if (!hasCursor) return NORTH
-      const strength = smoothstep(MAGNETIC_RADIUS, 0, Math.hypot(dot.x - cursorX, dot.y - cursorY))
-      return magneticLineAngle(dot.x, dot.y, cursorX, cursorY, strength, NORTH)
-    }
-
     const draw = (dt: number) => {
       ctx.clearRect(0, 0, width, height)
 
-      // Short lines brighten, lengthen, and align tangentially near the rings.
-      for (const [index, dot] of field.dots.entries()) {
+      // Smooth the cursor toward its target (frame-rate independent).
+      if (hasCursor) {
+        const t = 1 - Math.exp(-CURSOR_LERP * dt)
+        cursorX += (targetX - cursorX) * t
+        cursorY += (targetY - cursorY) * t
+      }
+
+      // Dots with cursor proximity lift.
+      for (const dot of field.dots) {
         const zone = baseAlpha(dot.x, dot.y)
         if (zone <= 0.01) continue
         let lift = 0
         if (hasCursor) {
           const dist = Math.hypot(dot.x - cursorX, dot.y - cursorY)
-          lift = smoothstep(MAGNETIC_RADIUS, 0, dist)
+          lift = smoothstep(CURSOR_RADIUS, 0, dist)
         }
-        lineAngles[index] = dampAngle(lineAngles[index], lineTargetAngle(dot), LINE_TURN_RATE, dt)
-        const scale = 1 + 0.4 * lift
-        ctx.globalAlpha = zone * (LINE_ALPHA + 0.35 * lift)
+        ctx.globalAlpha = zone * (DOT_ALPHA + 0.35 * lift)
         ctx.fillStyle = `rgb(${INK})`
-        ctx.save()
-        ctx.translate(dot.x, dot.y)
-        ctx.rotate(lineAngles[index])
-        ctx.fillRect((-LINE_LENGTH * scale) / 2, (-LINE_WIDTH * scale) / 2, LINE_LENGTH * scale, LINE_WIDTH * scale)
-        ctx.restore()
+        ctx.beginPath()
+        ctx.arc(dot.x, dot.y, DOT_RADIUS * (1 + 0.6 * lift), 0, Math.PI * 2)
+        ctx.fill()
       }
 
-      if (hasCursor) {
-        ctx.strokeStyle = `rgb(${INK})`
-        ctx.lineWidth = 1
-        MAGNETIC_RING_RADII.forEach((radius, index) => {
-          ctx.globalAlpha = 0.16 - index * 0.035
-          ctx.beginPath()
-          ctx.arc(cursorX, cursorY, radius, 0, Math.PI * 2)
-          ctx.stroke()
-        })
-      }
+      // Micro compass wedges pointing at the cursor (north until one exists).
+      ctx.fillStyle = `rgb(${INK})`
+      field.wedgeIndices.forEach((dotIndex, i) => {
+        const dot = field.dots[dotIndex]
+        const target = hasCursor
+          ? Math.atan2(cursorY - dot.y, cursorX - dot.x)
+          : NORTH
+        wedgeAngles[i] = dampAngle(wedgeAngles[i], target, WEDGE_TURN_RATE, dt)
+        const zone = baseAlpha(dot.x, dot.y)
+        if (zone <= 0.01) return
+        ctx.save()
+        ctx.translate(dot.x, dot.y)
+        ctx.rotate(wedgeAngles[i] - COMPASS_WEDGE_TIP_ANGLE)
+        ctx.globalAlpha = zone * WEDGE_ALPHA
+        ctx.fill(wedgePath)
+        ctx.restore()
+      })
 
       ctx.globalAlpha = 1
     }
@@ -174,9 +181,12 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
     }
 
     const isSettled = () => {
-      return field.dots.every((dot, index) =>
-        angleDelta(lineAngles[index], lineTargetAngle(dot)) < 0.002
-      )
+      if (hasCursor && Math.hypot(targetX - cursorX, targetY - cursorY) > 0.1) return false
+      return field.wedgeIndices.every((dotIndex, index) => {
+        const dot = field.dots[dotIndex]
+        const target = hasCursor ? Math.atan2(cursorY - dot.y, cursorX - dot.x) : NORTH
+        return angleDelta(wedgeAngles[index], target) < 0.002
+      })
     }
 
     const frame = (time: number) => {
@@ -229,10 +239,12 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
         onPointerLeave()
         return
       }
-      cursorX = event.clientX - rect.left
-      cursorY = event.clientY - rect.top
+      targetX = event.clientX - rect.left
+      targetY = event.clientY - rect.top
       if (!hasCursor) {
         hasCursor = true
+        cursorX = targetX
+        cursorY = targetY
       }
       startLoop()
     }
@@ -244,7 +256,7 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
     const onReducedMotionChange = () => {
       if (reducedMotionQuery.matches) {
         hasCursor = false
-        lineAngles.fill(NORTH)
+        wedgeAngles.fill(NORTH)
       }
       syncLoop()
     }

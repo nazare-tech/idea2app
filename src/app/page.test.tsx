@@ -40,7 +40,7 @@ test("FeatureScrollytelling has visible first-paint artwork before its motion lo
   assert.match(html, /data-hero-dot-field="true"/)
 })
 
-test("landing magnetic line field is a section background that moves with native layout", () => {
+test("landing dot field is a section background that moves with native layout", () => {
   const html = renderToStaticMarkup(<HeroDotField />)
 
   assert.match(html, /data-hero-dot-field="true"/)

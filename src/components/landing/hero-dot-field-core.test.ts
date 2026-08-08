@@ -5,9 +5,13 @@ import {
   buildField,
   computeShouldAnimate,
   dampAngle,
-  magneticLineAngle,
   protectedZoneAlpha,
 } from "./hero-dot-field-core"
+import {
+  COMPASS_WEDGE_POINTS,
+  compassWedgePathD,
+  traceCompassWedge,
+} from "@/lib/compass-geometry"
 
 const FIELD_OPTS = { width: 1200, height: 600, pitch: 26, seed: 20260802 }
 
@@ -24,6 +28,20 @@ test("buildField clusters: keeps a fraction of the lattice, not all or none", ()
   assert.ok(field.dots.length < cells * 0.9, `no gaps: ${field.dots.length}/${cells}`)
 })
 
+test("buildField wedge sites are sparse, capped, and spaced apart", () => {
+  const field = buildField({ ...FIELD_OPTS, wedgeSpacing: 120, wedgeMax: 20 })
+  assert.ok(field.wedgeIndices.length > 0, "no wedges picked")
+  assert.ok(field.wedgeIndices.length <= 20)
+  for (const i of field.wedgeIndices) {
+    for (const j of field.wedgeIndices) {
+      if (i === j) continue
+      const a = field.dots[i]
+      const b = field.dots[j]
+      assert.ok(Math.hypot(a.x - b.x, a.y - b.y) >= 120, `wedges ${i},${j} too close`)
+    }
+  }
+})
+
 test("dampAngle converges to the target", () => {
   let angle = 0
   for (let i = 0; i < 600; i++) angle = dampAngle(angle, 2, 8, 1 / 60)
@@ -37,15 +55,6 @@ test("dampAngle takes the short arc across the wrap", () => {
   const target = Math.PI - 0.1
   const next = dampAngle(start, target, 8, 1 / 60)
   assert.ok(next < start, `expected movement below ${start}, got ${next}`)
-})
-
-test("magneticLineAngle turns short lines tangent to cursor rings", () => {
-  const north = -Math.PI / 2
-  // Above a cursor-centered ring, its tangent is horizontal.
-  assert.ok(Math.abs(magneticLineAngle(0, -20, 0, 0, 1, north)) < 1e-9)
-  // At zero strength and ring center, the resting vertical direction holds.
-  assert.equal(magneticLineAngle(0, -20, 0, 0, 0, north), north)
-  assert.equal(magneticLineAngle(0, 0, 0, 0, 1, north), north)
 })
 
 test("protectedZoneAlpha: 0 inside the rect, 1 far outside, clamped", () => {
@@ -71,4 +80,28 @@ test("computeShouldAnimate: full transition truth table", () => {
   for (const [i, h, r, expected] of cases) {
     assert.equal(computeShouldAnimate(i, h, r), expected, `(${i},${h},${r})`)
   }
+})
+
+test("compass geometry: path d matches the shared points and canvas trace is centered", () => {
+  const d = compassWedgePathD()
+  assert.equal(d, "M 843.88 71.68 L 552.47 952.32 L 445.89 708.6 L 180.12 719.65 Z")
+
+  const points: Array<[string, number, number]> = []
+  traceCompassWedge(
+    {
+      moveTo: (x, y) => points.push(["M", x, y]),
+      lineTo: (x, y) => points.push(["L", x, y]),
+      closePath: () => points.push(["Z", 0, 0]),
+    },
+    10
+  )
+  assert.equal(points.length, COMPASS_WEDGE_POINTS.length + 1)
+  // Centered on the centroid: vertex mean is ~0, and the longest vertex
+  // distance is half the requested size.
+  const verts = points.filter(([c]) => c !== "Z")
+  const meanX = verts.reduce((s, [, x]) => s + x, 0) / verts.length
+  const meanY = verts.reduce((s, [, , y]) => s + y, 0) / verts.length
+  assert.ok(Math.abs(meanX) < 1e-9 && Math.abs(meanY) < 1e-9)
+  const maxR = Math.max(...verts.map(([, x, y]) => Math.hypot(x, y)))
+  assert.ok(Math.abs(maxR - 5) < 1e-9)
 })
