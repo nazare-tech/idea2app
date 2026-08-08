@@ -9,10 +9,11 @@ import { WaitlistForm } from "@/components/landing/waitlist-form"
 import { createServiceClient } from "@/lib/supabase/service"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { isWaitlistMode } from "@/lib/waitlist"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/components/icons/brand-icons"
 import { BrandWordmark } from "@/components/layout/brand-wordmark"
 import { AuthModal } from "@/components/auth/auth-modal"
-import { HeroReelArc } from "@/components/landing/hero-reel-arc"
+import { HeroBuildMap } from "@/components/landing/hero-build-map"
+import { HeroDotField } from "@/components/landing/hero-dot-field"
 import { TestimonialBand } from "@/components/landing/testimonial-band"
 import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
 import { FeatureScrollytelling } from "@/components/landing/feature-scrollytelling"
@@ -49,8 +50,13 @@ const handoffTools = [
 
 const container = "mx-auto w-full max-w-[1320px] px-4 sm:px-8 lg:px-14"
 
-function SectionCard({ children }: { children: ReactNode }) {
-  return <section className={`${container} py-8 md:py-10`}>{children}</section>
+function SectionCard({ children, dotSeed }: { children: ReactNode; dotSeed: number }) {
+  return (
+    <section className="relative isolate py-8 md:py-10">
+      <HeroDotField seed={dotSeed} />
+      <div className={`${container} relative z-10`}>{children}</div>
+    </section>
+  )
 }
 
 /**
@@ -101,7 +107,8 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-text-primary">
-      <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
+      <div>
+        <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
         {/* Landing-only header inset: content aligns with the 1320px box edges
             (1368 - 2x24 padding = 1320), wider than the hero text container.
             The dashboard header is a separate component and keeps its padding. */}
@@ -135,26 +142,36 @@ export default async function LandingPage() {
             )}
           </div>
         </div>
-      </header>
+        </header>
 
-      <section className="relative isolate overflow-x-clip">
-        {/* min-h leaves room for the taller reel arc below while preserving the
-            existing headline and idea-capture composition. */}
-        <div className={`${container} relative z-10 flex min-h-[460px] flex-col items-center justify-center py-16 md:min-h-[calc(100svh-526px)] lg:py-20`}>
-          <h1 className="hero-enter-fade font-display mx-auto flex max-w-[980px] flex-col gap-1 text-center text-[2.75rem] font-semibold leading-[1.005] tracking-[-0.064em] text-text-primary sm:text-[3.5rem] lg:text-[4.25rem]">
+      <section className="relative isolate overflow-clip">
+        <HeroDotField seed={633} />
+        {/* No min-h: the build map below sizes itself, so the hero copy sits at
+            its natural height instead of reserving a band for the artwork. */}
+        <div
+          className={`${container} relative z-10 flex flex-col items-center justify-start`}
+          // Design clamps rather than breakpoint steps: the top pad tracks
+          // viewport height, so short laptop screens keep more of the build map
+          // above the fold.
+          style={{ paddingTop: "clamp(48px, 7svh, 92px)", paddingBottom: "clamp(24px, 3vw, 40px)" }}
+        >
+          <h1 data-dot-field-protect className="hero-enter-fade font-display mx-auto flex max-w-[980px] flex-col gap-1 text-center text-[2.75rem] font-semibold leading-[1.005] tracking-[-0.064em] text-text-primary sm:text-[3.5rem] lg:text-[4.25rem]">
             <span>Build your startup idea</span>
             <span>
               this weekend, not <span className="italic text-primary">someday.</span>
             </span>
           </h1>
 
-          <p className="hero-enter-fade mx-auto mt-6 max-w-[698px] text-center text-base font-light leading-[1.3] text-text-secondary [animation-delay:120ms] sm:text-[20px]">
+          <p data-dot-field-protect className="hero-enter-fade mx-auto mt-6 max-w-[698px] text-center text-base font-light leading-[1.3] text-text-secondary [animation-delay:120ms] sm:text-[20px]">
             Get market research, a PRD, design mockups, and comprehensive prompts to convert your ideas into a
             working app in minutes.
           </p>
 
           <div className="hero-enter-up mt-10 flex w-full justify-center [animation-delay:240ms] lg:mt-14">
-            {waitlistMode ? <WaitlistForm showSecondary /> : <LandingIdeaCapture isAuthenticated={isAuthenticated} />}
+            {/* Protect marker width matches the widest CTA variant (652px idea box) */}
+            <div data-dot-field-protect className="flex w-full max-w-[652px] justify-center">
+              {waitlistMode ? <WaitlistForm showSecondary /> : <LandingIdeaCapture isAuthenticated={isAuthenticated} />}
+            </div>
           </div>
 
           {waitlistMode && (
@@ -164,13 +181,16 @@ export default async function LandingPage() {
           )}
         </div>
 
-        {/* Full-bleed arc of real Maker Compass screens closing the hero,
-            directly above the handoff marquee. */}
-        <HeroReelArc />
+        {/* Build map closing the hero: one idea in, four artifacts and a prompt
+            out. `hero-reel-arc.tsx` is the previous artwork, kept unreferenced
+            on disk so it can be restored without recovering its assets. */}
+        <div className="relative z-10">
+          <HeroBuildMap />
+        </div>
       </section>
 
       {/* Trust bar: what Maker Compass hands off to, since there's no customer logo wall yet */}
-      <SectionCard>
+      <SectionCard dotSeed={967}>
         <section aria-label="Where Maker Compass hands off" className="py-3 text-center">
           <p className="mx-auto max-w-[620px] text-[15px] leading-[1.25] text-text-secondary">
             High quality prompts that you can use with your favorite AI coding tool.
@@ -183,21 +203,22 @@ export default async function LandingPage() {
           Owns its own <section id="features"> and the fixed compass rail. */}
       <FeatureScrollytelling />
 
-      <SectionCard>
+      <SectionCard dotSeed={1499}>
         <TestimonialBand />
       </SectionCard>
 
-      <SectionCard>
+      <SectionCard dotSeed={2039}>
         <PricingSection waitlistMode={waitlistMode} />
       </SectionCard>
 
-      <SectionCard>
+      <SectionCard dotSeed={2609}>
         <FaqSection />
       </SectionCard>
 
       {/* Bottom CTA */}
-      <section className="border-t border-border-subtle py-16 md:py-20">
-        <div className={`${container} text-center`}>
+      <section className="relative isolate border-t border-border-subtle py-16 md:py-20">
+        <HeroDotField seed={3181} />
+        <div className={`${container} relative z-10 text-center`}>
           <CompassMark />
           <h2 className="mx-auto max-w-[860px] text-[2rem] leading-[0.96] tracking-[-0.06em] font-semibold sm:text-[3rem] lg:text-[4rem]">
             {waitlistMode ? "Secure your spot before it fills up." : "Turn your next idea into a build plan."}
@@ -227,11 +248,17 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <SiteFooter />
+      <div className="relative isolate">
+        <HeroDotField seed={3761} />
+        <div className="relative z-10">
+          <SiteFooter />
+        </div>
+      </div>
 
-      <Suspense>
-        <AuthModal />
-      </Suspense>
+        <Suspense>
+          <AuthModal />
+        </Suspense>
+      </div>
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 
 import { FeatureStageCard } from "@/components/landing/feature-stage-card"
+import { HeroDotField } from "@/components/landing/hero-dot-field"
 import {
   FEATURE_BLOCKS,
   RAIL_LABELS,
@@ -357,8 +358,9 @@ export function FeatureScrollytelling() {
         className="landing-scrolly-section mx-auto box-border w-full max-w-[1320px] scroll-mt-20 px-4 py-10 sm:px-8 lg:px-14"
       >
         <div ref={gridRef} className="landing-scrolly">
-          <div className="landing-scrolly-sticky">
-            <div className="landing-scrolly-frame">
+          <div className="landing-scrolly-sticky isolate">
+            <HeroDotField seed={1297} />
+            <div className="landing-scrolly-frame relative z-10">
               {/* Illustrative: the feature copy alongside carries the message. */}
               <div
                 ref={stageRef}
@@ -396,7 +398,7 @@ export function FeatureScrollytelling() {
             </div>
 
             {/* Mobile copy. Hidden at >= 1024px, where the pinned column takes over. */}
-            <div className="landing-scrolly-swap relative mt-6 overflow-hidden">
+            <div className="landing-scrolly-swap relative z-10 mt-6 overflow-hidden">
               {FEATURE_BLOCKS.map((block) => (
                 <div
                   key={block.eyebrow}

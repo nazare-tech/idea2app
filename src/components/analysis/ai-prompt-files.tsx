@@ -1,7 +1,8 @@
 "use client"
 
 import React from "react"
-import { Check, Copy, Download, FileText } from "lucide-react"
+import { Copy, Download, FileText } from "lucide-react"
+import { Check } from "@/components/icons/brand-icons"
 
 import {
   ArtifactActionButton,

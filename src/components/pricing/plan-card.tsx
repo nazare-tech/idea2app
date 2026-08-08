@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Check } from "lucide-react"
+import { Check } from "@/components/icons/brand-icons"
 
 /**
  * Shared plan card used by the landing pricing grid and the billing page.

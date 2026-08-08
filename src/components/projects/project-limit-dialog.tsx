@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import * as Dialog from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
+import { X } from "@/components/icons/brand-icons"
 
 import { Button } from "@/components/ui/button"
 import type { ProjectAllowanceStatus } from "@/lib/project-allowance"

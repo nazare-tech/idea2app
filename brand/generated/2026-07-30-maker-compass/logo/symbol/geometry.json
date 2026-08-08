@@ -1,0 +1,77 @@
+{
+  "rotation_deg": 32,
+  "viewbox": 1024,
+  "files": [
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red.svg",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-black.svg",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-cream.svg",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-white.svg",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red-small.svg",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red-16.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red-32.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red-64.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red-128.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red-256.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red-512.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red-1024.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-red-2048.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-black-16.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-black-32.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-black-64.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-black-128.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-black-256.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-black-512.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-black-1024.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-black-2048.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-cream-16.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-cream-32.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-cream-64.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-cream-128.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-cream-256.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-cream-512.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-cream-1024.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-cream-2048.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-white-16.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-white-32.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-white-64.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-white-128.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-white-256.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-white-512.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-white-1024.png",
+    "/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/brand/generated/2026-07-30-maker-compass/logo/symbol/symbol-white-2048.png"
+  ],
+  "geometry": {
+    "notched": [
+      [
+        843.88,
+        71.68
+      ],
+      [
+        552.47,
+        952.32
+      ],
+      [
+        445.89,
+        708.6
+      ],
+      [
+        180.12,
+        719.65
+      ]
+    ],
+    "solid": [
+      [
+        843.88,
+        71.68
+      ],
+      [
+        552.47,
+        952.32
+      ],
+      [
+        180.12,
+        719.65
+      ]
+    ]
+  }
+}

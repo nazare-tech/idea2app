@@ -6,7 +6,8 @@
 "use client"
 
 import { useCallback, useRef } from "react"
-import { ChevronUp, Play, RotateCcw, X } from "lucide-react"
+import { ChevronUp, Play, RotateCcw } from "lucide-react"
+import { X } from "@/components/icons/brand-icons"
 import { cn } from "@/lib/utils"
 import type { DocumentNavItem } from "@/lib/document-sections"
 import type { DocumentType } from "@/lib/document-definitions"

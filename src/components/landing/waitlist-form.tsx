@@ -4,7 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowRight, CheckCircle } from "lucide-react"
+import { CheckCircle } from "lucide-react"
+import { ArrowRight } from "@/components/icons/brand-icons"
 
 interface WaitlistFormProps {
   /** Show the "See How It Works" secondary button below the form (hero usage). */

@@ -33,8 +33,8 @@ export const metadata: Metadata = {
   description: "AI-powered platform to analyze business ideas, generate product plans, technical specs, and deploy working applications.",
   keywords: ["business ideas", "market research", "product plan", "technical specs", "app generation", "AI"],
   icons: {
-    icon: [{ url: "/maker-compass-logo.svg", type: "image/svg+xml" }],
-    shortcut: ["/maker-compass-logo.svg"],
+    icon: [{ url: "/maker-compass-mark.svg", type: "image/svg+xml" }],
+    shortcut: ["/maker-compass-mark.svg"],
   },
 }
 

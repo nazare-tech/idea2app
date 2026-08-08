@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import * as Dialog from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
+import { X } from "@/components/icons/brand-icons"
 import { AuthFormContent, type AuthMode } from "@/components/auth/auth-form-content"
 import { getSafeAuthRedirect } from "@/lib/safe-redirect"
 

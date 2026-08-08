@@ -4,6 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server"
 
 import { ToolLogoMarquee } from "@/components/landing/tool-logo-marquee"
 import { FeatureScrollytelling } from "@/components/landing/feature-scrollytelling"
+import { HeroDotField } from "@/components/landing/hero-dot-field"
+import { SiteFooter } from "@/components/landing/site-footer"
 
 const tools = [
   { name: "Cursor", src: "/logos/cursor.svg" },
@@ -35,4 +37,20 @@ test("FeatureScrollytelling has visible first-paint artwork before its motion lo
   assert.equal((html.match(/data-stage-card/g) ?? []).length, 18)
   assert.match(html, /data-stage-set[^>]*class="absolute inset-0 opacity-100"/)
   assert.match(html, /data-stage-card[^>]*style="[^"]*opacity:1/)
+  assert.match(html, /data-hero-dot-field="true"/)
+})
+
+test("landing dot field is a section background that moves with native layout", () => {
+  const html = renderToStaticMarkup(<HeroDotField />)
+
+  assert.match(html, /data-hero-dot-field="true"/)
+  assert.match(html, /class="[^"]*absolute[^"]*inset-0[^"]*"/)
+})
+
+test("public footer does not render the retired compass watermark", () => {
+  const html = renderToStaticMarkup(<SiteFooter />)
+
+  assert.doesNotMatch(html, /viewBox="0 0 47\.9971 33\.5966"/)
+  assert.doesNotMatch(html, /-bottom-\[150px\]/)
+  assert.match(html, /bg-\[#F5F0EB\]\/80/)
 })

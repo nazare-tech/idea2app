@@ -1,0 +1,76 @@
+/* Maker Compass design tokens.
+ * Generated from DESIGN.json + DESIGN.md - do not hand-edit.
+ * Paste into your global stylesheet's :root.
+ */
+:root {
+  /* Color */
+  --color-action-red: #DC2626;
+  --color-action-red-hover: #B91C1C;
+  --color-workshop-black: #1C1917;
+  --color-text-primary: #1C1917;
+  --color-text-secondary: #4A4040;
+  --color-text-muted: #8A8480;
+  --color-background: #FAFAFA;
+  --color-card-white: #FFFFFF;
+  --color-warm-paper: #F5F0EB;
+  --color-border-subtle: #EAE0D8;
+  --color-border-strong: #E8DDD5;
+  --color-warm-coral: #F4A261;
+  --color-warm-sand: #E9C46A;
+  --color-warm-ember: #D95F3B;
+  --color-success: #22C55E;
+  --color-info: #3B82F6;
+  --color-destructive: #C0392B;
+
+  /* Type */
+  --font-display: "Hanken Grotesk", system-ui, sans-serif;
+  --font-body: "Hanken Grotesk", system-ui, sans-serif;
+  --font-label: "Fira Mono", ui-monospace, monospace;
+  --font-size-display: clamp(2.5rem, 6vw, 4.5rem);
+  --font-size-headline: clamp(2rem, 4vw, 3.35rem);
+  --font-size-title: 1.5rem;
+  --font-size-body: 1rem;
+  --font-size-label: 0.6875rem;
+  --font-weight-display: 800;
+  --font-weight-headline: 800;
+  --font-weight-title: 700;
+  --font-weight-body: 400;
+  --font-weight-label: 500;
+  --line-height-display: 0.95;
+  --line-height-headline: 0.98;
+  --line-height-title: 1.2;
+  --line-height-body: 1.6;
+  --line-height-label: 1.2;
+  --letter-spacing-display: -0.05em;
+  --letter-spacing-headline: -0.05em;
+  --letter-spacing-title: -0.02em;
+  --letter-spacing-body: normal;
+  --letter-spacing-label: 0.18em;
+
+  /* Space */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+
+  /* Radius */
+  --radius-none: 0;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Elevation */
+  --shadow-ambient-soft: 0 4px 20px rgba(15, 23, 42, 0.06);
+
+  /* Motion */
+  --motion-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --motion-ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-duration-feedback: 100ms;
+  --motion-duration-state: 200ms;
+  --motion-duration-entrance: 550ms;
+  --motion-duration-orchestration: 3s;
+}

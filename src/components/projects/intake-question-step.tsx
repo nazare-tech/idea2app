@@ -1,6 +1,6 @@
 "use client"
 
-import { Check } from "lucide-react"
+import { Check } from "@/components/icons/brand-icons"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

@@ -26,9 +26,21 @@ export function BrandWordmark({
   return (
     <Link href={href} onClick={onClick} className={cn("inline-flex items-center gap-2.5", className)}>
       <HeaderLogo href={href} size={logoSize} className={logoClassName} linked={false} />
-      <span className={cn("text-base ui-font-semibold tracking-[0.05em]", labelClassName)}>
-        {label}
-      </span>
+      {label === APP_BRAND_NAME ? (
+        // Brand wordmark per the 2026-07-30 kit: set solid, `Maker` at weight
+        // 800 against `Compass` at 500, tracking -0.045em. The weight break is
+        // the ownable detail; screen readers still get "Maker Compass" whole.
+        // Weight and tracking sit on the inner spans so caller `labelClassName`
+        // (size, colour, truncation) cannot flatten the break via twMerge.
+        <span aria-label={APP_BRAND_NAME} className={cn("text-base", labelClassName)}>
+          <span aria-hidden="true" className="font-extrabold tracking-[-0.045em]">Maker</span>
+          <span aria-hidden="true" className="font-medium tracking-[-0.045em]">Compass</span>
+        </span>
+      ) : (
+        <span className={cn("text-base ui-font-semibold tracking-[0.05em]", labelClassName)}>
+          {label}
+        </span>
+      )}
     </Link>
   )
 }
@@ -49,7 +61,9 @@ export function HeaderBrand({
       onClick={onClick}
       logoSize={APP_HEADER_LOGO_SIZE}
       className={cn("min-w-0 gap-2", className)}
-      labelClassName="truncate text-sm font-bold uppercase leading-5 tracking-normal text-text-secondary"
+      // The old preset shouted MAKER COMPASS in uppercase chrome; the kit's
+      // wordmark carries its own hierarchy, so the header now renders it as-is.
+      labelClassName="truncate text-sm leading-5 text-text-secondary"
     />
   )
 }

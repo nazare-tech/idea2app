@@ -2,7 +2,8 @@
 
 import React from "react"
 import { createPortal } from "react-dom"
-import { Check, Copy, Download, FileText, X } from "lucide-react"
+import { Copy, Download, FileText } from "lucide-react"
+import { Check, X } from "@/components/icons/brand-icons"
 
 /**
  * Small square icon button used in artifact cards and the lightbox header.

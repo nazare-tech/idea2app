@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
+import { ArrowRight } from "@/components/icons/brand-icons"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"

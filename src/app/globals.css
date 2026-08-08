@@ -447,6 +447,62 @@ body {
   animation: hero-enter-up 0.8s var(--motion-ease-out-expo) backwards;
 }
 
+/* Landing hero build map: five artifact nodes wired by drawn connectors.
+   Geometry lives in lib/landing-hero-build-map.ts; each element carries its own
+   animation-delay inline, so these classes only own the motion itself.
+   Nodes rise, joints fade, connectors draw themselves along a 600-unit dash. */
+@keyframes hero-node-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-node-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hero-node-draw {
+  from { stroke-dashoffset: 600; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* Hard on/off, not a pulse: a text caret does not ease. */
+@keyframes hero-node-caret {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+
+.hero-node-up {
+  animation: hero-node-up 0.8s var(--motion-ease-out-expo) backwards;
+}
+
+.hero-node-fade {
+  animation: hero-node-fade 0.6s var(--motion-ease-out-expo) backwards;
+}
+
+.hero-node-draw {
+  stroke-dasharray: 600;
+  animation: hero-node-draw 1.1s var(--motion-ease-out-expo) backwards;
+}
+
+.hero-node-caret {
+  animation: hero-node-caret 1.1s steps(1) infinite;
+}
+
+/* The tall variant packs its label pairs into narrow columns; below 640px they
+   stack instead of colliding. */
+@media (max-width: 640px) {
+  .hero-node-label {
+    flex-direction: column;
+    gap: 3px;
+    line-height: 1.15;
+  }
+
+  .hero-node-label span {
+    letter-spacing: 0.1em;
+  }
+}
+
 /* Landing hero reel arc: transparent phone cutouts riding the top of a 3000px
    circle, clipped to a short band so only the crown of the arc shows. Card
    placement is trig done in components/landing/hero-reel-arc.tsx; the fixed
@@ -1113,9 +1169,23 @@ body {
 
   .animate-fade-up,
   .hero-enter-fade,
-  .hero-enter-up {
+  .hero-enter-up,
+  .hero-node-up,
+  .hero-node-fade {
     opacity: 1 !important;
     transform: none !important;
+    animation: none !important;
+  }
+
+  /* Show the connectors fully drawn, and stop the caret mid-blink instead of
+     letting the global 0.01ms override strobe it. */
+  .hero-node-draw {
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+
+  .hero-node-caret {
+    opacity: 1 !important;
     animation: none !important;
   }
 
