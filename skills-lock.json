@@ -1,11 +1,11 @@
 {
   "version": 1,
   "skills": {
-    "4k-vfx": {
-      "source": "Pika-Labs/Pika-Plugins",
+    "animate-text": {
+      "source": "pixel-point/animate-text",
       "sourceType": "github",
-      "skillPath": "skills/4k-vfx/SKILL.md",
-      "computedHash": "1fbe135846958250180d3df25c9725b92471c8e7348de10e87f84825bf06b845"
+      "skillPath": "skills/animate-text/SKILL.md",
+      "computedHash": "7724b6f42dc2c33a98d48ca592402aed596830a55d469e83b3c5970d478e25ed"
     },
     "anime-soccer": {
       "source": "Pika-Labs/Pika-Plugins",
@@ -35,7 +35,7 @@
       "source": "Pika-Labs/Pika-Plugins",
       "sourceType": "github",
       "skillPath": "skills/build-a-brand/SKILL.md",
-      "computedHash": "6275ebc100d7136ea30b9b49b35e1370bc3ea457534f5e9d49ca42ef8428605a"
+      "computedHash": "0c6e16d94c7652e0eb8f6713eadfd1ff7b4aba522daf995c53bc655d1976ae79"
     },
     "cavecrew": {
       "source": "JuliusBrussee/caveman",
@@ -83,7 +83,7 @@
       "source": "Pika-Labs/Pika-Plugins",
       "sourceType": "github",
       "skillPath": "skills/content-director/SKILL.md",
-      "computedHash": "9918008976a08a81f73131af683896efe39c26bab1d7dc11def3448598a2b2b8"
+      "computedHash": "ae95155e3e4698d44c799fd78130f98300ba5c9b406b9f2dcd337c8661eb028f"
     },
     "explainer": {
       "source": "Pika-Labs/Pika-Plugins",
@@ -125,7 +125,7 @@
       "source": "Pika-Labs/Pika-Plugins",
       "sourceType": "github",
       "skillPath": "skills/persona-builder/SKILL.md",
-      "computedHash": "66e127c86cb152b893c0ce64ae816907d16d850f9d75b2c8017eb08af48416c3"
+      "computedHash": "18bd62e9ee4668be007cc6b8548eb776dce1884b2621e0cd8397bc0ce9029941"
     },
     "podcast": {
       "source": "Pika-Labs/Pika-Plugins",
@@ -154,7 +154,7 @@
       "source": "Pika-Labs/Pika-Plugins",
       "sourceType": "github",
       "skillPath": "skills/vfx/SKILL.md",
-      "computedHash": "7e593205252420ddbc76f62fe3293ea6501166d2b48b57f2b47f8104ecb1c29f"
+      "computedHash": "9403e9a5a2459e246968fda587d40d5b196384fce3fdfbecaff9fde01caa2dff"
     },
     "viral-hook": {
       "source": "Pika-Labs/Pika-Plugins",

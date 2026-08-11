@@ -11,7 +11,7 @@
 ## Upstream Evidence
 
 - Cursor Team Kit CI targets last changed on 2026-04-30; smoke/control targets last changed on 2026-02-17 and 2026-04-30. Audited repository commit: `ba7b5907843e1e21ec692418c180e1f912cbf7d3`.
-- Pika `vfx`, `4k-vfx`, `build-a-brand`, `persona-builder`, and `content-director` changed on 2026-07-09 and 2026-07-20. Kept separate.
+- Pika `vfx`, `4k-vfx`, `build-a-brand`, `persona-builder`, and `content-director` changed on 2026-07-09 and 2026-07-20. This review originally kept them separate; the 2026-07-29 follow-up retained `vfx` and retired `4k-vfx` after verified contract coverage.
 - Caveman published 16 releases through 2026-07-03. Local files match current upstream. Kept separate.
 - Impeccable changed through 2026-07-26 and local copy is stale. Kept separate.
 - Theme Factory is path-stable but distinct. Kept separate.
@@ -47,7 +47,7 @@
 
 ## Code Review Findings
 
-- P1 legacy global triggers remain installed outside repository. Mitigated inside this project through explicit `AGENTS.md` supersession. Global deletion or overwrite requires separate user approval.
+- Resolved 2026-07-29: user approved retirement after each legacy global trigger received positive coverage in `ci-operator` or `ui-verification`; recoverable copies were moved outside skill discovery.
 - P1 starter-kit copy could not be updated because `project-starter-kit/` disappeared concurrently. Recreating it was rejected as unsafe.
 - P2 local Playwright skill is stale. Router fails safely instead of vendoring or silently following broken installation guidance. Updating external skill remains separate work.
 - No remaining project-router correctness finding after remediation.
@@ -77,5 +77,5 @@
 - [x] Add provenance URLs, audited commit, and MIT license.
 - [x] Add Claude discovery symlinks.
 - [x] Supersede legacy global triggers inside current project.
-- [ ] Retire or replace legacy global skills after explicit approval.
+- [x] Retire or replace legacy global skills after explicit approval.
 - [ ] Port routers into starter kit after its directory is restored or relocated.

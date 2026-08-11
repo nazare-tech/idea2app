@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "purpose": "Audit metadata for bundled skills; this file does not auto-update them.",
+  "bundleHashAlgorithm": "SHA-256 over sorted lines containing the relative path, two spaces, the file SHA-256, and a newline.",
+  "skills": {
+    "build-a-brand": {
+      "source": "https://github.com/Pika-Labs/Pika-Plugins",
+      "sourcePath": "skills/build-a-brand",
+      "auditedRevision": "f27b3ba28a7be7c5f3a74d8fdd54b770f5d8157b",
+      "upstreamSkillSha256": "26a2a415073d44bca214534755177719e3bebc27856ea5c34a18f18b10b703a4",
+      "upstreamBundleSha256": "940132b1f21cb9d7291c7d9a671038018c796d685958c7294203b8e681a41317",
+      "vendoredBundleSha256": "ae081f58ac5c54c06b02824b2abe75c30219270bcbb37cfeee310ea0313c8074",
+      "license": "Apache-2.0",
+      "localOverrides": [
+        "Frontmatter description is normalized to one YAML line for compatibility with the bundled validator.",
+        "Repository-marked projects keep canonical state in brand/brand.md.",
+        "Generated packages stay under brand/generated/ instead of Desktop.",
+        "Populated canonical brand files are never overwritten."
+      ]
+    },
+    "ci-operator": {
+      "source": "https://github.com/cursor/plugins",
+      "auditedRevision": "ba7b5907843e1e21ec692418c180e1f912cbf7d3",
+      "sourcePaths": [
+        "cursor-team-kit/agents/ci-watcher.md",
+        "cursor-team-kit/skills/fix-ci/SKILL.md",
+        "cursor-team-kit/skills/loop-on-ci/SKILL.md"
+      ],
+      "upstreamInputBundleSha256": "813eae4e3bf35941f7739381d7fdbc7ca9cc89083f8620402d75df79f1a87bfa",
+      "vendoredBundleSha256": "17cb6762025582e70d4f0cb05c4ed901222a5c73180ce7fc45bed99fdcdeaa53",
+      "license": "See .agents/skills/ci-operator/LICENSE.txt",
+      "localOverrides": [
+        "Consolidates ci-watcher, fix-ci, and loop-on-ci as one project router.",
+        "GitHub and CI-provider integrations remain externally managed."
+      ]
+    },
+    "ui-verification": {
+      "source": "https://github.com/cursor/plugins",
+      "auditedRevision": "ba7b5907843e1e21ec692418c180e1f912cbf7d3",
+      "sourcePaths": [
+        "cursor-team-kit/skills/run-smoke-tests/SKILL.md",
+        "cursor-team-kit/skills/control-ui/SKILL.md"
+      ],
+      "upstreamInputBundleSha256": "9aa150d7da7b9ad234ae979aa91c50b2b067547b1ff35836f01dd4b32b70adfc",
+      "vendoredBundleSha256": "b9b6120fd1969225a941b098b0ea82482dc5449811a4c99e4a7e4d407c4586d5",
+      "license": "See .agents/skills/ui-verification/LICENSE.txt",
+      "localOverrides": [
+        "Consolidates run-smoke-tests and control-ui as one project router.",
+        "Replaces project-specific paid-generation fixture guidance with a generic paid/production-action opt-in gate.",
+        "Browser, Chrome, and Playwright drivers remain externally managed."
+      ]
+    },
+    "marketing-idea-capture": {
+      "source": "starter-kit-local",
+      "vendoredBundleSha256": "ec1b3d91667f0d83090b1d41b6f513b3933a925b9f06e0dcd9dcf8f10e5571eb",
+      "license": "Project template",
+      "localOverrides": [
+        "Repository-local storage only.",
+        "Concise capture by default; developed channel drafts are opt-in.",
+        "marketing/README.md designates the repository as the destination.",
+        "Developed prose invokes marketing-writing-style while raw ideas remain verbatim."
+      ]
+    },
+    "marketing-writing-style": {
+      "source": "starter-kit-local",
+      "vendoredBundleSha256": "b607555f6bdf3e6c8c48ab77184436b316cecd55dd9e1920b6f476ac8c065b07",
+      "license": "Project template",
+      "localOverrides": [
+        "Preserves the founder-supplied writing constraints verbatim as the source policy.",
+        "Applies to agent-written marketing prose, not raw ideas, quotations, code, facts requiring exact wording, or legal text.",
+        "Routes drafting, rewriting, editing, and critique through one portable spoken-voice standard."
+      ]
+    }
+  }
+}

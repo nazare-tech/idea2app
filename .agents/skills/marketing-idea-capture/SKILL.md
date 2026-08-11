@@ -1,63 +1,70 @@
 ---
 name: marketing-idea-capture
-description: This skill should be used when a user labels a message as a marketing idea or marketing message, or asks to turn an idea into personal-brand or Maker Compass marketing content. It captures the idea in Obsidian through the configured CLI and produces ranked platform recommendations, hooks, scripts, and social drafts.
+description: This skill should be used when a user labels a message as a marketing idea or marketing message, asks to save a marketing idea, or asks to develop one into publishable content. It stores the source idea in the designated repository's marketing folder, creates a concise capture by default, and expands into channel drafts only when requested.
 ---
 
-# Marketing-Idea Capture
+# Marketing Idea Capture
+
+Capture marketing thinking in the project that owns it. Do not send it to an external notes app, a global notes directory, or a publishing service.
 
 ## Trigger
 
-Run this workflow when the user explicitly says “this is a marketing idea,” “marketing message,” or clearly asks to turn a raw idea into personal-brand or Maker Compass marketing content.
+Run this workflow before replying when the user says “this is a marketing idea,” “marketing message,” “save/capture this marketing idea,” or clearly asks to turn an idea into marketing content.
 
-## Source of Truth
+Select one mode:
 
-- Use Obsidian vault `/Users/Mukul/Documents/openclaw`.
-- Store new captures in `Content Ideas & Marketing/`, never in `Resources/Personal Brand & Social Media`, `Resources/MakerCompass/Marketing`, or `Resources/Marketing-Strategy`; those are inspiration/reference material.
-- Use the configured Obsidian CLI to create folders and notes. Do not replace it with direct filesystem writes.
-- Run `/opt/homebrew/bin/obsidian` with `vault=openclaw`. Ensure Obsidian is running before executing a command; otherwise the CLI cannot connect.
+- **Capture** (default): preserve the idea and add only enough structure to make it useful later.
+- **Develop**: use only when the user asks for scripts, posts, a campaign, or publishable drafts.
 
-## Workflow
+Never publish, schedule, message, upload, or create an external draft unless the user separately authorizes that action.
 
-1. Infer whether the idea serves the personal brand, Maker Compass, or both. Default to both: lead with personal experience and use a light Maker Compass CTA only when relevant.
-2. Read relevant inspiration notes in the vault only when they materially help with voice, positioning, or prior coverage. Never overwrite them.
-3. Choose a concise date-prefixed kebab-case filename: `YYYY-MM-DD-<idea-slug>.md`. If a note already exists, create a versioned sibling rather than overwriting it.
-4. Create the capture folder if absent and create the note through the configured Obsidian CLI. If a CLI command fails or is unavailable, treat it as a save failure; never silently fall back to direct filesystem writes.
-5. Fill the note using the template below. Preserve the user’s source idea verbatim. Label unverified claims as needing research; do not invent results, customer quotes, or statistics.
-6. Verify by reading the exact note back and confirming its `## Raw idea` section equals the user's verbatim source idea before reporting a path; a filename existing in a folder listing, or the idea merely echoed elsewhere in the draft, is not verification. Return the same usable content in chat, starting with the top recommendation and the saved note path. If creation or verification failed, say so explicitly and deliver the full note content in chat instead of claiming a saved path.
+## Resolve The Destination
 
-## Format Selection
+1. Resolve the repository root with `git rev-parse --show-toplevel`.
+2. The repository is a valid marketing destination only when `marketing/README.md` exists and states that this repository owns its marketing captures.
+3. If the marker is missing, ask the user to confirm the intended repository before writing. After confirmation, create the marker and folder structure first.
+4. If no Git root exists, do not silently use the active workspace. Explain that the capture would be unversioned and ask for an explicit persistent project directory.
+5. Read `brand/brand.md` when present and populated. Use it for audience, voice, positioning, and naming; do not invent missing brand decisions.
 
-Rank the three best publishing formats for this specific idea. Consider audience intent, how much proof/story the idea needs, production effort, and reuse value.
+## Path Contract
 
-- Treat **short vertical video** as TikTok, Instagram Reels, and YouTube Shorts by default.
-- Consider X single posts, X threads, LinkedIn posts, LinkedIn articles, long-form YouTube, newsletters, carousels, or a blog post when they better fit.
-- Give a one-sentence reason and a suggested distribution plan for each rank.
-- For each selected format, supply two distinct publishable options. Do not force an X article over an X post/thread unless depth, evergreen search value, and evidence support it.
+Write captures beneath:
 
-## Hook Standard
+```text
+marketing/ideas/YYYY/MM/YYYY-MM-DD-<idea-slug>.md
+```
 
-Use `content-research-writer` guidance: make hooks specific, audience-relevant, curious, and value-promising. Produce two different angles rather than shallow rewrites. Prefer a concrete tension, surprising observation, contrarian point of view, or short story over generic “here are five tips” openings.
+Use a short kebab-case slug. If the path exists, allocate `-v2`, `-v3`, and so on. Never overwrite.
 
-## Required Draft Pack
+Related work belongs in:
 
-Every capture includes:
+- `marketing/drafts/` — developed channel-ready drafts
+- `marketing/campaigns/` — multi-asset campaign plans and launch packages
+- `marketing/research/` — sources, claim checks, audience evidence, and examples
 
-1. A ranked top-three format recommendation with two options per format.
-2. Two short-video scripts. Include hook, spoken script, on-screen text/shot beats, CTA, and recommended duration. Make them usable for TikTok, Reels, and Shorts.
-3. Two LinkedIn post drafts.
-4. Two X single-post drafts.
-5. Two X thread drafts, each with a hook post, numbered body posts, and CTA.
-6. A brief repurposing note stating how to adapt the strongest option for Instagram, TikTok, YouTube, LinkedIn, and X.
+The capture file remains the source record even when developed outputs are stored elsewhere.
 
-Keep draft copy clean and editable. Use placeholders for facts, links, screenshots, or product claims that need confirmation.
+## Capture Workflow
 
-## Obsidian Note Template
+1. Preserve the user's source idea verbatim. Do not polish the raw text.
+2. Infer the likely audience and brand only when supported by the current conversation or `brand/brand.md`; otherwise use `unknown`.
+3. Write the compact capture template below.
+4. Label facts, statistics, customer claims, and examples that lack evidence as research needs.
+5. Re-read the exact saved file.
+6. Verify that `## Raw idea` contains the user's verbatim source text before reporting success.
+7. Return the saved repository-relative path, the strongest recommended format, and the next useful action.
+
+If creation or verification fails, state the failure and return the proposed capture in chat. Never claim a path was saved merely because the filename exists.
+
+## Capture Template
 
 ```markdown
 ---
 created: YYYY-MM-DD
 status: idea
-brand: personal | maker-compass | both
+brand: <brand-name | unknown>
+audience: <primary audience | unknown>
+channels: [<likely-channel>, <likely-channel>]
 ---
 
 # <Working title>
@@ -68,73 +75,50 @@ brand: personal | maker-compass | both
 
 ## Content angle
 
-<Audience, tension, promise, and CTA>
+<Audience tension, useful promise, point of view, and natural CTA>
 
-## Top formats
+## Best formats
 
-1. **<Format>** — <why now / why this audience>
-   - Option A: <angle>
-   - Option B: <angle>
-2. **<Format>** — <why>
-   - Option A: <angle>
-   - Option B: <angle>
-3. **<Format>** — <why>
-   - Option A: <angle>
-   - Option B: <angle>
+1. **<Format>** — <why it fits>
+2. **<Format>** — <why it fits>
+3. **<Format>** — <why it fits>
 
-## Video scripts
+## Hooks
 
-### Script A — <angle>
-- Hook:
-- Duration:
-- Spoken script:
-- On-screen text / shots:
-- CTA:
-
-### Script B — <angle>
-- Hook:
-- Duration:
-- Spoken script:
-- On-screen text / shots:
-- CTA:
-
-## LinkedIn
-
-### Option A
-<draft>
-
-### Option B
-<draft>
-
-## X single posts
-
-### Option A
-<draft>
-
-### Option B
-<draft>
-
-## X threads
-
-### Option A
-1/ <hook>
-
-### Option B
-1/ <hook>
-
-## Repurposing
-
-<Platform-specific adaptation note>
+- <Hook with a concrete tension, observation, or result>
+- <Distinct hook from another angle>
 
 ## Research / proof to collect
 
-- [ ] <Claim, source, screenshot, example, or metric needed>
+- [ ] <Claim, source, screenshot, customer evidence, example, or metric needed>
+
+## Next action
+
+<The smallest useful next step>
 ```
 
-## CLI Configuration
+## Develop Mode
 
-```text
-Command: /opt/homebrew/bin/obsidian
-Vault option: vault=openclaw
-Configured on: 2026-07-11
-```
+When the user explicitly asks to develop the idea:
+
+1. Create or update the capture first.
+2. Choose only the formats that fit the idea and audience. Do not generate every channel by habit.
+3. Use `content-director` when available and the request needs format-specific art direction. Keep this skill responsible for repository storage and verification.
+4. Store developed work under `marketing/drafts/YYYY/MM/<capture-slug>/`, linking back to the source capture.
+5. A full multi-platform pack may include:
+   - Two short-video scripts with hook, spoken copy, shot/on-screen beats, duration, and CTA
+   - Two LinkedIn posts
+   - Two X posts
+   - Two X threads
+   - A concise repurposing plan
+6. Use placeholders for facts, links, screenshots, or product claims that need confirmation.
+
+Campaign-level work belongs under `marketing/campaigns/<campaign-slug>/`, with the source capture linked at the top.
+
+## Quality Bar
+
+- Hooks are specific, audience-relevant, and meaningfully different.
+- The raw idea is verbatim and clearly separated from agent interpretation.
+- Recommendations are ranked; volume is not a substitute for judgment.
+- Drafts follow the repository's populated brand foundation.
+- No machine-specific absolute paths appear in saved content or instructions.

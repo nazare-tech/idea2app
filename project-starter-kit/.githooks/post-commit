@@ -1,0 +1,14 @@
+#!/bin/sh
+# Post-commit: print a loud notice when the +1000-line thermonuclear sweep is
+# due. Nothing here spends reviewer tokens and nothing here blocks the commit.
+#
+# Cross-model review no longer runs per commit. It runs once per substantial
+# task as a blocking plan evaluation (scripts/agent-review.sh --plan), and code
+# review is the same-model thermonuclear sweep plus on-demand diff review
+# (scripts/agent-review.sh --range / scripts/post-commit-review.sh <sha>).
+# See docs/operating-system/review-personas.md.
+
+# No stderr silencing: a broken sweep marker must stay visible, or the +1000
+# sweep trigger dies silently for manual commits.
+node scripts/sweep-check.mjs --notify || true
+exit 0

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "purpose": "Durable metadata for deliberate local changes applied after upstream skill refreshes. Check this file before replacing a listed skill.",
+  "bundleHashAlgorithm": "SHA-256 over sorted lines containing the relative path, two spaces, the file SHA-256, and a newline.",
+  "skills": {
+    "build-a-brand": {
+      "source": "https://github.com/Pika-Labs/Pika-Plugins",
+      "sourcePath": "skills/build-a-brand",
+      "auditedRevision": "f27b3ba28a7be7c5f3a74d8fdd54b770f5d8157b",
+      "upstreamBundleSha256": "940132b1f21cb9d7291c7d9a671038018c796d685958c7294203b8e681a41317",
+      "localBundleSha256": "5505cf7a2f26a72dfbd4eea23bab77ed8345e3ae9c9f79de5120ff42efd56ef9",
+      "overrides": [
+        "Normalize the frontmatter description to one line for compatibility with the repository validator.",
+        "When brand/README.md designates the repository, keep canonical state in brand/brand.md and generated packages under brand/generated/.",
+        "Never overwrite a populated canonical brand file; write a candidate and request promotion."
+      ]
+    },
+    "vfx": {
+      "source": "https://github.com/Pika-Labs/Pika-Plugins",
+      "sourcePath": "skills/vfx",
+      "auditedRevision": "f27b3ba28a7be7c5f3a74d8fdd54b770f5d8157b",
+      "upstreamBundleSha256": "43ec6aeed9b2e6f2c9f204fd0feeb08f52bb356fa85aa4bb06dbcfc5386f1d90",
+      "localBundleSha256": "6354a74b268e8166eb4fe4d668ede231d4144993516a12f446d864a44ba8f53e",
+      "overrides": [
+        "Remove the obsolete pointer to the retired 4k-vfx sibling.",
+        "Keep 4K selection, Seedance standard-model routing, cost approval, and failure recovery inside the surviving vfx skill."
+      ]
+    }
+  }
+}

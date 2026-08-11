@@ -137,7 +137,7 @@ No existing leaf is removed. Reverting consists only of removing newly added rou
 
 ### Kept Separate
 
-- `vfx` and `4k-vfx`: active Pika upstream updates on 2026-07-09 and 2026-07-20. General `vfx` already supports 720p, 1080p, and 4K; fixed-4K sibling remains intentionally maintained upstream.
+- `vfx` and `4k-vfx`: active Pika upstream updates on 2026-07-09 and 2026-07-20. This audit originally kept them separate. Superseded on 2026-07-29 by the user-approved decision to retain general `vfx` and retire the redundant fixed-4K sibling after a field-by-field coverage check.
 - `build-a-brand`, `persona-builder`, and `content-director`: active Pika upstream sync on 2026-07-20. Keep updateable.
 - Caveman suite: 16 releases through 2026-07-03; local copies match current upstream. `caveman-help` already provides suite discovery.
 - `impeccable`: actively maintained and locally stale; upstream already consolidated its own command family.

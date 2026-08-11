@@ -1,0 +1,67 @@
+#!/bin/sh
+# Pre-commit: run the project's fixer over staged code files (re-staging fixes),
+# then the project's typecheck. Both are configured below; with neither set the
+# hook is a no-op so a fresh project can commit on day one.
+# Bypass in emergencies with: git commit --no-verify
+set -e
+
+# ---------------------------------------------------------------- config ----
+# Files considered code by this hook (extension regex, ERE).
+CODE_FILE_PATTERN='\.(ts|tsx|js|jsx|mjs|cjs)$'
+# Fixer run over the staged code files, which are appended as arguments.
+# Leave empty to skip. Example: 'npx eslint --fix --no-warn-ignored --max-warnings=0'
+LINT_CMD=''
+# Whole-project typecheck, run with no arguments. Leave empty to skip.
+# Example: 'npm run --silent typecheck'
+TYPECHECK_CMD=''
+# ------------------------------------------------------------ end config ----
+
+if [ -z "$LINT_CMD" ] && [ -z "$TYPECHECK_CMD" ]; then
+  echo "pre-commit: no LINT_CMD/TYPECHECK_CMD configured in .githooks/pre-commit; skipping checks." >&2
+  exit 0
+fi
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -E "$CODE_FILE_PATTERN" || true)
+
+if [ -z "$STAGED" ]; then
+  # Docs/asset-only commit: nothing to lint or typecheck.
+  exit 0
+fi
+
+if [ -n "$LINT_CMD" ]; then
+  # Refuse partially staged code files: re-staging after the fixer would
+  # silently pull their unstaged hunks (possibly unfinished work or secrets)
+  # into the commit. Stage them fully or stash the unstaged part first.
+  UNSTAGED=$(git diff --name-only)
+  PARTIAL=""
+  # Iterate by line, not word-split: a spaced filename must not fragment and
+  # slip past this guard.
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case "
+$UNSTAGED
+" in *"
+$f
+"*) PARTIAL="$PARTIAL
+$f" ;; esac
+  done <<EOF
+$STAGED
+EOF
+  if [ -n "$PARTIAL" ]; then
+    echo "pre-commit: refusing to run the fixer over partially staged files:" >&2
+    printf '%s\n' "$PARTIAL" | sed -e '/^$/d' -e 's/^/  /' >&2
+    echo "Stage them fully (git add <file>) or stash the unstaged part (git stash -k), then retry." >&2
+    exit 1
+  fi
+
+  echo "pre-commit: $LINT_CMD on staged files..."
+  echo "$STAGED" | tr '\n' '\0' | xargs -0 $LINT_CMD
+  echo "$STAGED" | tr '\n' '\0' | xargs -0 git add
+fi
+
+if [ -n "$TYPECHECK_CMD" ]; then
+  echo "pre-commit: $TYPECHECK_CMD..."
+  $TYPECHECK_CMD
+fi
+
+exit 0

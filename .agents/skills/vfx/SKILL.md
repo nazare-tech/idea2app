@@ -1,6 +1,7 @@
 ---
 name: vfx
 description: >-
+  Use when the user asks for vfx or a task matching the examples below.
   Turn a plain video clip into a cinematic AI-VFX shot at 1080p by default
   (or 4K / 720p on request). Give Claude a video and the change you want; it
   reads EVERY frame via local contact sheets and understands the audio,
@@ -21,8 +22,6 @@ required-capabilities:
 # vfx
 
 Maps a video-to-video VFX move onto the Pika MCP's **Seedance reference-to-video**, at **1080p by default** (bump to 4K, or drop to 720p, only if the user asks). The user hands you a clip + the change they want; you **read EVERY frame** (locally extracted with ffmpeg and tiled into contact sheets) **and understand the audio** (speech + music + SFX + ambience), author a Seedance-faithful prompt that locks the original (face, gestures, camera move) and time-codes the change to the right beat, then re-render the **same shot** with the VFX baked in. **One run produces one clip** for one requested change.
-
-> For a 4K-only version of this skill with no resolution choice, see `/pika:4k-vfx`.
 
 ## How it works — why reading EVERY frame (and the audio) is the mechanism (do not skip the reading pass)
 Seedance treats the reference video as a **motion/style anchor, NOT a pixel-locked base** — it does not copy the input frame-for-frame, it re-generates the shot guided by your prompt. So fidelity comes from the **PROMPT**: the more exhaustively the prompt describes the original (subject identity, exact gestures, camera move, framing, lighting, palette, wardrobe) **and the audio** (dialogue + lip-sync, music/SFX beats), the more the output reads as the *same* shot with the change layered on, at any resolution. **Reading EVERY frame — not a sample — is how you build that exhaustive description:** you locally extract all frames with ffmpeg, tile them 25-to-a-contact-sheet (5×5), and analyze every sheet so the prompt is built from the *entire* timeline rather than a handful of stills. Skip the read (or read only a sample) and the output drifts — a different face, a different camera move, a different room, a missed motion beat. The reading pass — all frames + the audio — IS the skill.
