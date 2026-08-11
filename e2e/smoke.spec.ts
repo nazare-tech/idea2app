@@ -30,9 +30,9 @@ async function expectProjectCardGeometry(page: Page, expectedColumnCount: 1 | 2)
   expect(await cards.count(), "authenticated E2E account must retain an existing project").toBeGreaterThan(0);
   expect(await dotField.count()).toBe(1);
   await expect(dotField).toHaveAttribute("data-dot-field-ready", "true");
+  await expect(dotField).toHaveAttribute("data-wedge-count", "0");
   expect(await dotField.getAttribute("data-compass-wedges")).toBe("false");
   expect(await dotField.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe("none");
-  expect(await page.locator("[data-compass-wedge]").count()).toBe(0);
   expect(await grid.evaluate((element) => {
     const style = getComputedStyle(element);
     return [style.columnGap, style.rowGap];

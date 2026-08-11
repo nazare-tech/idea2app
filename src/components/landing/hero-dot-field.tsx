@@ -120,6 +120,7 @@ export function HeroDotField({
         seed,
         wedgeMax: showCompassWedges ? undefined : 0,
       })
+      canvas.dataset.wedgeCount = String(field.wedgeIndices.length)
       wedgeAngles = field.wedgeIndices.map(() => NORTH)
       measureProtectedZones()
     }
@@ -320,6 +321,7 @@ export function HeroDotField({
       document.documentElement.removeEventListener("pointerleave", onPointerLeave)
       window.removeEventListener("blur", onPointerLeave)
       delete canvas.dataset.dotFieldReady
+      delete canvas.dataset.wedgeCount
     }
   }, [seed, showCompassWedges])
 

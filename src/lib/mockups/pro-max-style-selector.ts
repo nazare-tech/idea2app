@@ -10,7 +10,6 @@ import {
   PRO_MAX_FIELD_CAPS,
   PRO_MAX_STYLE_SELECTION_MAX_BYTES,
   PRO_MAX_TREATMENT_PROMPT_MAX_CHARS,
-  type MockupStyleDirectionLabel,
   type MockupStyleSelection,
   type ProMaxDensity,
   type ProMaxTreatmentTier,
@@ -401,10 +400,6 @@ export function parseMockupStyleSelection(value: unknown): MockupStyleSelection 
     try { candidate = JSON.parse(value) } catch { return null }
   }
   return isMockupStyleSelection(candidate) ? candidate : null
-}
-
-export function getMockupStyleTreatment(selection: MockupStyleSelection, label: MockupStyleDirectionLabel) {
-  return selection.treatments[label]
 }
 
 export function formatMockupStyleTreatmentForPrompt(treatment: ProMaxVisualTreatment, platform: MockupPrimaryPlatform) {

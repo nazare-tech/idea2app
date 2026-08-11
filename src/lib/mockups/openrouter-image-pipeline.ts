@@ -57,10 +57,6 @@ const DEFAULT_PLANNER_MAX_TOKENS = 16_384
 const MOCKUP_STORYBOARD_FRAME_COUNT = 2
 const MAX_STYLE_PROMPT_DELTA_CHARS = 1_800
 
-type StyleAwareMockupDesignPlan = MockupDesignPlan & {
-  styleSelection?: MockupStyleSelection
-}
-
 interface MockupStoryboardSkeleton {
   label: string
   publicPath: string
@@ -228,11 +224,11 @@ export function attachMockupStyleSelection({
   freshRun,
   productContext,
 }: {
-  designPlan: StyleAwareMockupDesignPlan
+  designPlan: MockupDesignPlan
   projectId: string
   freshRun: boolean
   productContext?: string
-}): StyleAwareMockupDesignPlan {
+}): MockupDesignPlan {
   if (designPlan.styleSelection) return designPlan
   if (!isMockupBrandDirectionsEnabled()) return designPlan
 
@@ -643,7 +639,7 @@ async function generateAndStoreOption({
   if (!direction) {
     throw new Error(`Mockup design plan is missing direction ${config.label}`)
   }
-  const styleSelection = (designPlan as StyleAwareMockupDesignPlan).styleSelection
+  const styleSelection = designPlan.styleSelection
   const useNeutralSkeleton = Boolean(styleSelection) || isMockupBrandDirectionsEnabled()
   const styleTreatmentBlock = styleSelection
     ? buildMockupStyleTreatmentBlock(
@@ -1198,7 +1194,7 @@ export function buildMockupImagePromptForOption({
         productContext: buildMockupStyleProductContext({ projectName, mvpPlan }),
       })
     : designPlan
-  const styleSelection = (resolvedDesignPlan as StyleAwareMockupDesignPlan).styleSelection
+  const styleSelection = resolvedDesignPlan.styleSelection
   const useNeutralSkeleton = Boolean(styleSelection) || isMockupBrandDirectionsEnabled()
   const userPrompt = buildOpenRouterMockupImagePrompt({
     projectName,

@@ -1,7 +1,7 @@
 # API Endpoints
 API endpoints overview: auth callback, GET/POST /api/waitlist, deprecated /api/chat and /api/prompt-chat (410 Gone), and /api/projects/[id] GET/PATCH routes.
 POST /api/analysis/[type] runs competitive-analysis, prd, mvp-plan, and tech-spec pipelines with getTokenCost() credit pricing and a 540s route maxDuration.
-Mockup routes: /api/mockups/generate (openrouter-image-v2 content, 800s), the /api/mockups/image auth proxy, and PATCH /api/mockups/[id]; /api/generate-app is removed.
+Mockup routes: generate/generate-option/finalize persist server-resolved storyboard plans, /api/mockups/image proxies auth media, and PATCH updates rows.
 Dev Prompt Lab: /dev/prompt-lab page plus /api/dev/prompt-lab context/run/drafts/runs/mockup-image endpoints, local development only, 240s/480s text timeouts.
 Generate All: /api/generate-all start/execute/status/update/cancel plus /api/projects/[id]/onboarding-status, dependency chain competitive to prd to mvp to mockups.
 Stripe: /api/stripe/checkout, /api/stripe/portal, and /api/stripe/webhook handling checkout.session.completed, subscription updates, invoice.paid, charge.refunded.
@@ -80,6 +80,17 @@ Stripe: /api/stripe/checkout, /api/stripe/portal, and /api/stripe/webhook handli
   - Uses a hidden design plan plus OpenRouter image generation for 3 static storyboard alternatives
   - Route `maxDuration`: 800s
   - Generation logic lives in `src/lib/mockups/openrouter-image-pipeline.ts` and is shared with server-side document generation
+
+- **POST /api/mockups/generate-option**: Generate one manual OpenRouter storyboard option
+  - Body: `{ projectId, mvpPlan, projectName, runId, optionLabel, designPlan? }`
+  - Requires authentication and project ownership; validates the option label and run id, then resolves one bounded server-controlled style triad for a fresh plan or verifies a transported selection by exact reconstruction from the pinned catalog
+  - Persists the generated option and authoritative design plan in `mockup_option_drafts`; browser-authored treatment prose is never trusted directly
+  - Returns the generated option plus the server-resolved design plan; provider and validation failures use bounded error responses
+
+- **POST /api/mockups/finalize**: Finalize three saved storyboard options
+  - Body: `{ projectId, runId, options }`
+  - Requires authentication and project ownership, reloads the A/B/C draft rows, requires their non-null design plans to agree, validates storage paths/options, and gives the server-authored draft plan precedence over browser transport
+  - Writes the canonical mockup row using the existing JSON fields and removes the completed draft rows; malformed, incomplete, mismatched, or oversized inputs fail before finalization
 
 - **GET /api/mockups/image**: Proxy stored OpenRouter mockup images through the server
   - Query: `projectId`, `path`, optional `mockupId`

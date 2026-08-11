@@ -9,7 +9,7 @@
       "auditedRevision": "f27b3ba28a7be7c5f3a74d8fdd54b770f5d8157b",
       "upstreamSkillSha256": "26a2a415073d44bca214534755177719e3bebc27856ea5c34a18f18b10b703a4",
       "upstreamBundleSha256": "940132b1f21cb9d7291c7d9a671038018c796d685958c7294203b8e681a41317",
-      "vendoredBundleSha256": "ae081f58ac5c54c06b02824b2abe75c30219270bcbb37cfeee310ea0313c8074",
+      "vendoredBundleSha256": "95d60f9525759f9e16a88842ef065ab529cb156af3c899b09413d517fa6f5c2b",
       "license": "Apache-2.0",
       "localOverrides": [
         "Frontmatter description is normalized to one YAML line for compatibility with the bundled validator.",

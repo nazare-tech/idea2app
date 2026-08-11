@@ -1,6 +1,3 @@
-import type { MockupPrimaryPlatform } from "@/lib/mockups/design-plan"
-
-export const PRO_MAX_CATALOG_VERSION = "ui-ux-pro-max-v2.14.1" as const
 export const PRO_MAX_STYLE_SELECTION_MAX_BYTES = 8_192
 export const PRO_MAX_TREATMENT_PROMPT_MAX_CHARS = 1_600
 
@@ -29,10 +26,10 @@ export interface ProMaxVisualTreatment {
   palette: {
     background: string
     surface: string
-      primary: string
-      accent: string
-      onAccent: string
-      text: string
+    primary: string
+    accent: string
+    onAccent: string
+    text: string
     muted: string
     border: string
     destructive: string
@@ -62,10 +59,4 @@ export interface MockupStyleSelection {
   source: "promax" | "legacy-bank"
   catalogVersion: string
   treatments: ProMaxTreatmentTriad
-}
-
-export interface ProMaxStyleSelectorContext {
-  projectId: string
-  productContext: string
-  primaryPlatform: MockupPrimaryPlatform
 }
