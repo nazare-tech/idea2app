@@ -1,6 +1,6 @@
 # Review Personas and Cross-Model Review
 Defines the six review personas (maintainability, security, performance, AI-smells, product/founder UX, data & billing integrity), what each hunts for, and the system docs each owns.
-Cross-model routing: work implemented by Claude is reviewed by Codex CLI (gpt-5.6-terra, reasoning medium); work implemented by Codex is reviewed by Claude CLI (Opus 4.8, high thinking).
+Cross-model routing: work implemented by Claude is reviewed by Codex CLI (gpt-5.6-terra, reasoning medium); work implemented by Codex is reviewed by Claude CLI (Opus 5 through the `opus` alias, effort medium; never Fable).
 Cross-model review runs once per substantial task as a blocking plan evaluation (`scripts/agent-review.sh --plan <plan-file>`) before implementation, not per commit.
 Automatic code review is the same-model net-plus-1000-line commit-sweep, fanned out across parallel read-only finder subagents by persona; diff-level cross-model review is on demand only.
 Each persona owns docs/systems/ files and must flag stale docs as findings; doc drift is a review defect, not a nice-to-have (see doc-conventions.md self-healing rule).
@@ -60,7 +60,7 @@ Both modes use the same routing table.
 | Implementer | Reviewer CLI | Model | Effort |
 |---|---|---|---|
 | Claude (Claude Code) | `codex exec` | `gpt-5.6-terra` | `model_reasoning_effort=medium` |
-| Codex | `claude -p` | `claude-opus-4-8` | high thinking (`MAX_THINKING_TOKENS=32000`) |
+| Codex | `claude -p` | Opus 5 (`opus` alias; never Fable) | `--effort medium` |
 
 Always invoke through the wrapper so incantations stay in one place:
 

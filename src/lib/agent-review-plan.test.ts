@@ -35,6 +35,17 @@ test("plan mode builds a bounded plan prompt and routes to the opposite CLI", as
   assert.match(result.stdout, /DRY RUN — would pipe a \d+-byte bounded review prompt/)
 })
 
+test("Codex plans route to Opus at medium effort and never Fable", async () => {
+  const planPath = await writePlan("# Plan: thing\n\n## Goal\n\nDo the thing.\n")
+  const result = runWrapper("--implementer", "codex", "--plan", planPath, "--dry-run")
+
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stderr, /reviewer=claude -p \(Opus 5 via opus alias, medium effort/)
+  assert.match(result.stdout, /--model opus/)
+  assert.match(result.stdout, /--effort medium/)
+  assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /fable/i)
+})
+
 test("plan mode sends more than the plan file, so system-doc headers are included", async () => {
   const planPath = await writePlan("# Plan: thing\n\n## Goal\n\nDo the thing.\n")
   const planBytes = (await stat(planPath)).size

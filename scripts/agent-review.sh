@@ -8,7 +8,7 @@
 #
 # Routes the review to the model that did NOT do the work:
 #   implementer claude  -> reviewer: codex exec, gpt-5.6-terra, reasoning effort medium
-#   implementer codex   -> reviewer: claude -p,  Opus 4.8, high thinking
+#   implementer codex   -> reviewer: claude -p, latest Opus (Opus 5), medium effort
 #
 # Usage:
 #   scripts/agent-review.sh [--implementer claude|codex]
@@ -315,9 +315,11 @@ if [ "$IMPLEMENTER" = "claude" ]; then
        --skip-git-repo-check -)
   ENV_PREFIX=()
 else
-  REVIEWER_DESC="claude -p (claude-opus-4-8, high thinking, tools disabled)"
-  CMD=(claude -p --model claude-opus-4-8 --safe-mode --setting-sources "" --strict-mcp-config --tools "")
-  ENV_PREFIX=(env MAX_THINKING_TOKENS=32000)
+  # Keep the reviewer on Claude's Opus family. The alias resolves the current
+  # Opus 5 model without permitting an automatic switch to Fable.
+  REVIEWER_DESC="claude -p (Opus 5 via opus alias, medium effort, tools disabled)"
+  CMD=(claude -p --model opus --effort medium --safe-mode --setting-sources "" --strict-mcp-config --tools "")
+  ENV_PREFIX=()
 fi
 
 echo "agent-review: implementer=${IMPLEMENTER} reviewer=${REVIEWER_DESC}" >&2
