@@ -1,0 +1,1436 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Maker Compass turns a rough product idea into a clear, evidence-backed first-version plan."
+    />
+    <title>Maker Compass — Build with direction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: #f4f1e8;
+        --paper-raised: #fcfbf7;
+        --ink: #18202a;
+        --ink-soft: #4f5966;
+        --blue: #2457e6;
+        --blue-dark: #173ba4;
+        --line: #d8d2c4;
+        --line-strong: #a39b8b;
+        --success: #287a56;
+        --white: #ffffff;
+        --shadow: 0 22px 60px rgba(24, 32, 42, 0.12);
+        --sans: "Public Sans", Arial, sans-serif;
+        --serif: "Newsreader", Georgia, serif;
+        --mono: "JetBrains Mono", "Courier New", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--paper);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      button,
+      a,
+      input {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      :focus-visible {
+        outline: 3px solid var(--blue);
+        outline-offset: 4px;
+      }
+
+      .skip-link {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 50;
+        padding: 10px 14px;
+        background: var(--ink);
+        color: var(--white);
+        transform: translateY(-160%);
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .page-shell {
+        overflow: clip;
+      }
+
+      .site-header {
+        position: relative;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        min-height: 82px;
+        padding: 0 4vw;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        width: max-content;
+        color: var(--ink);
+        font-weight: 600;
+        letter-spacing: -0.035em;
+        text-decoration: none;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border: 1px solid var(--ink);
+        border-radius: 50%;
+      }
+
+      .brand-mark svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 30px;
+        font-size: 14px;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+      }
+
+      .nav-links a:hover {
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 6px;
+      }
+
+      .header-cta {
+        justify-self: end;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border: 1px solid var(--ink);
+        border-radius: 4px;
+        padding: 0 18px;
+        background: transparent;
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition:
+          background-color 180ms ease-out,
+          color 180ms ease-out,
+          border-color 180ms ease-out;
+        cursor: pointer;
+      }
+
+      .button:hover {
+        background: var(--ink);
+        color: var(--white);
+      }
+
+      .button-primary {
+        border-color: var(--blue);
+        background: var(--blue);
+        color: var(--white);
+      }
+
+      .button-primary:hover {
+        border-color: var(--blue-dark);
+        background: var(--blue-dark);
+      }
+
+      .button svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 1.8;
+      }
+
+      .section-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        column-gap: 20px;
+        width: min(1440px, 100%);
+        margin: 0 auto;
+        padding-inline: 4vw;
+      }
+
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 20px;
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        width: 26px;
+        height: 1px;
+        background: currentColor;
+        content: "";
+      }
+
+      .hero {
+        position: relative;
+        min-height: calc(100vh - 82px);
+        padding-block: clamp(64px, 9vw, 132px) 76px;
+      }
+
+      .hero::before {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background-image:
+          linear-gradient(rgba(24, 32, 42, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(24, 32, 42, 0.045) 1px, transparent 1px);
+        background-size: 32px 32px;
+        mask-image: linear-gradient(to bottom, black 0%, transparent 86%);
+        content: "";
+      }
+
+      .hero-copy {
+        grid-column: 1 / span 6;
+        align-self: center;
+        padding-right: clamp(0px, 3vw, 48px);
+      }
+
+      .hero h1 {
+        max-width: 760px;
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(54px, 7.2vw, 108px);
+        font-weight: 500;
+        letter-spacing: -0.055em;
+        line-height: 0.91;
+      }
+
+      .hero h1 em {
+        color: var(--blue);
+        font-weight: 400;
+      }
+
+      .hero-lede {
+        max-width: 590px;
+        margin: 32px 0 0;
+        color: var(--ink-soft);
+        font-size: clamp(17px, 1.5vw, 21px);
+        line-height: 1.55;
+      }
+
+      .idea-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        max-width: 640px;
+        margin-top: 36px;
+        padding: 7px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        background: var(--paper-raised);
+      }
+
+      .idea-field {
+        display: grid;
+        align-content: center;
+        gap: 1px;
+        min-width: 0;
+        padding: 5px 13px;
+      }
+
+      .idea-form label {
+        color: var(--ink-soft);
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .idea-form input {
+        min-width: 0;
+        min-height: 30px;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: var(--ink);
+      }
+
+      .idea-form input::placeholder {
+        color: #777f88;
+      }
+
+      .idea-form input:focus-visible {
+        outline-offset: 1px;
+      }
+
+      .form-note {
+        min-height: 24px;
+        margin: 10px 0 0;
+        color: var(--ink-soft);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .hero-map {
+        position: relative;
+        grid-column: 7 / -1;
+        min-height: 640px;
+        align-self: center;
+      }
+
+      .map-frame {
+        position: absolute;
+        inset: 0;
+        border: 1px solid var(--ink);
+        background: var(--paper-raised);
+        box-shadow: var(--shadow);
+      }
+
+      .map-frame::before {
+        position: absolute;
+        inset: 14px;
+        border: 1px solid var(--line);
+        pointer-events: none;
+        content: "";
+      }
+
+      .map-header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        height: 64px;
+        padding: 0 28px;
+        border-bottom: 1px solid var(--ink);
+      }
+
+      .map-header p,
+      .coordinate {
+        margin: 0;
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .map-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .map-status::before {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+        content: "";
+      }
+
+      .map-canvas {
+        position: relative;
+        height: calc(100% - 64px);
+        min-height: 574px;
+        overflow: hidden;
+        background-image: radial-gradient(rgba(24, 32, 42, 0.14) 1px, transparent 1px);
+        background-size: 16px 16px;
+      }
+
+      .route-line {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .route-line path {
+        fill: none;
+        stroke: var(--blue);
+        stroke-dasharray: 6 7;
+        stroke-width: 1.6;
+      }
+
+      .route-node {
+        position: absolute;
+        width: min(250px, 42%);
+        border: 1px solid var(--ink);
+        background: var(--paper-raised);
+        box-shadow: 7px 7px 0 rgba(36, 87, 230, 0.12);
+      }
+
+      .route-node header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .route-node strong {
+        display: block;
+        padding: 16px 16px 6px;
+        font-family: var(--serif);
+        font-size: clamp(19px, 1.8vw, 27px);
+        font-weight: 500;
+        line-height: 1.05;
+      }
+
+      .route-node p {
+        margin: 0;
+        padding: 0 16px 16px;
+        color: var(--ink-soft);
+        font-size: 12px;
+      }
+
+      .node-one {
+        top: 9%;
+        left: 8%;
+        transform: rotate(-1.2deg);
+      }
+
+      .node-two {
+        top: 38%;
+        right: 8%;
+        transform: rotate(1deg);
+      }
+
+      .node-three {
+        bottom: 8%;
+        left: 14%;
+        width: min(286px, 48%);
+        border-color: var(--blue);
+        box-shadow: 9px 9px 0 var(--blue);
+      }
+
+      .node-three header {
+        border-color: rgba(36, 87, 230, 0.25);
+        color: var(--blue);
+      }
+
+      .map-compass {
+        position: absolute;
+        right: 36px;
+        bottom: 30px;
+        display: grid;
+        width: 76px;
+        height: 76px;
+        place-items: center;
+        border: 1px solid var(--ink);
+        border-radius: 50%;
+        background: rgba(252, 251, 247, 0.92);
+      }
+
+      .map-compass svg {
+        width: 48px;
+        height: 48px;
+      }
+
+      .hero-footnote {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        margin-top: 68px;
+        border-top: 1px solid var(--line-strong);
+        border-bottom: 1px solid var(--line-strong);
+      }
+
+      .proof-point {
+        padding: 18px 24px 18px 0;
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .proof-point + .proof-point {
+        padding-left: 24px;
+        border-left: 1px solid var(--line-strong);
+      }
+
+      .proof-point span {
+        display: block;
+        margin-top: 6px;
+        font-family: var(--sans);
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: normal;
+        text-transform: none;
+      }
+
+      .outcomes {
+        padding-block: clamp(92px, 11vw, 170px);
+        background: var(--ink);
+        color: var(--paper-raised);
+      }
+
+      .section-intro {
+        grid-column: 1 / span 5;
+      }
+
+      .section-intro h2 {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(44px, 5.2vw, 76px);
+        font-weight: 500;
+        letter-spacing: -0.045em;
+        line-height: 0.98;
+      }
+
+      .section-intro p:not(.eyebrow) {
+        max-width: 460px;
+        margin: 24px 0 0;
+        color: #b8bec6;
+        font-size: 17px;
+      }
+
+      .outcome-list {
+        grid-column: 7 / -1;
+        border-top: 1px solid #414954;
+      }
+
+      .outcome-item {
+        display: grid;
+        grid-template-columns: 64px 1fr;
+        gap: 18px;
+        padding: 28px 0;
+        border-bottom: 1px solid #414954;
+      }
+
+      .outcome-number {
+        color: #939ba5;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .outcome-item h3 {
+        margin: 0 0 8px;
+        font-family: var(--serif);
+        font-size: 30px;
+        font-weight: 500;
+      }
+
+      .outcome-item p {
+        max-width: 560px;
+        margin: 0;
+        color: #b8bec6;
+      }
+
+      .artifact-section {
+        padding-block: clamp(92px, 12vw, 180px);
+      }
+
+      .artifact-heading {
+        grid-column: 1 / span 5;
+        position: sticky;
+        top: 40px;
+        align-self: start;
+      }
+
+      .artifact-heading h2 {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(44px, 5.4vw, 78px);
+        font-weight: 500;
+        letter-spacing: -0.05em;
+        line-height: 0.96;
+      }
+
+      .artifact-heading > p:not(.eyebrow) {
+        max-width: 430px;
+        margin: 24px 0 0;
+        color: var(--ink-soft);
+      }
+
+      .artifact-card {
+        grid-column: 6 / -1;
+        border: 1px solid var(--ink);
+        background: var(--paper-raised);
+        box-shadow: 12px 12px 0 rgba(24, 32, 42, 0.09);
+      }
+
+      .artifact-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 66px;
+        padding: 10px 14px 10px 22px;
+        border-bottom: 1px solid var(--ink);
+      }
+
+      .artifact-toolbar p {
+        margin: 0;
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .artifact-tabs {
+        display: flex;
+        gap: 4px;
+      }
+
+      .artifact-tab {
+        min-height: 44px;
+        border: 1px solid transparent;
+        border-radius: 3px;
+        padding: 0 14px;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .artifact-tab:hover {
+        border-color: var(--line);
+      }
+
+      .artifact-tab[aria-selected="true"] {
+        border-color: var(--ink);
+        background: var(--ink);
+        color: var(--white);
+      }
+
+      .artifact-body {
+        padding: clamp(28px, 4vw, 58px);
+      }
+
+      .artifact-panel[hidden] {
+        display: none;
+      }
+
+      .artifact-kicker {
+        margin: 0 0 12px;
+        color: var(--blue);
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .artifact-panel h3 {
+        max-width: 630px;
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(32px, 4vw, 54px);
+        font-weight: 500;
+        letter-spacing: -0.035em;
+        line-height: 1;
+      }
+
+      .artifact-summary {
+        max-width: 660px;
+        margin: 22px 0 34px;
+        color: var(--ink-soft);
+      }
+
+      .signal-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border-top: 1px solid var(--line-strong);
+        border-bottom: 1px solid var(--line-strong);
+      }
+
+      .signal {
+        padding: 18px;
+      }
+
+      .signal + .signal {
+        border-left: 1px solid var(--line-strong);
+      }
+
+      .signal span {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--ink-soft);
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .signal strong {
+        font-family: var(--serif);
+        font-size: 20px;
+        font-weight: 500;
+      }
+
+      .decision-list {
+        display: grid;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--line-strong);
+      }
+
+      .decision-list li {
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        gap: 16px;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .decision-list span:first-child {
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .decision-list strong {
+        font-size: 15px;
+      }
+
+      .decision-tag {
+        color: var(--success);
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .prompt-file-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .prompt-file {
+        min-height: 120px;
+        padding: 18px;
+        border: 1px solid var(--line-strong);
+        background: var(--paper);
+      }
+
+      .prompt-file svg {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 24px;
+        stroke: var(--blue);
+        stroke-width: 1.5;
+      }
+
+      .prompt-file strong {
+        display: block;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .method {
+        padding-block: clamp(90px, 11vw, 160px);
+        border-top: 1px solid var(--line-strong);
+      }
+
+      .method-heading {
+        grid-column: 1 / span 4;
+      }
+
+      .method-heading h2 {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(42px, 5vw, 72px);
+        font-weight: 500;
+        letter-spacing: -0.045em;
+        line-height: 0.98;
+      }
+
+      .method-steps {
+        grid-column: 6 / -1;
+      }
+
+      .method-step {
+        display: grid;
+        grid-template-columns: 80px 1fr;
+        gap: 22px;
+        padding: 28px 0;
+        border-top: 1px solid var(--line-strong);
+      }
+
+      .method-step:last-child {
+        border-bottom: 1px solid var(--line-strong);
+      }
+
+      .method-step > span {
+        color: var(--blue);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .method-step h3 {
+        margin: 0 0 8px;
+        font-size: 21px;
+      }
+
+      .method-step p {
+        max-width: 600px;
+        margin: 0;
+        color: var(--ink-soft);
+      }
+
+      .final-cta {
+        position: relative;
+        padding-block: clamp(90px, 13vw, 190px);
+        background: var(--blue);
+        color: var(--white);
+      }
+
+      .final-cta::after {
+        position: absolute;
+        top: 50%;
+        right: 6vw;
+        width: clamp(180px, 25vw, 390px);
+        aspect-ratio: 1;
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 50%;
+        transform: translateY(-50%);
+        content: "";
+      }
+
+      .final-copy {
+        position: relative;
+        z-index: 1;
+        grid-column: 1 / span 8;
+      }
+
+      .final-copy h2 {
+        max-width: 940px;
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(54px, 7.6vw, 110px);
+        font-weight: 500;
+        letter-spacing: -0.055em;
+        line-height: 0.9;
+      }
+
+      .final-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 36px;
+      }
+
+      .final-actions .button {
+        border-color: var(--white);
+        color: var(--white);
+      }
+
+      .final-actions .button:hover {
+        background: var(--white);
+        color: var(--blue);
+      }
+
+      .site-footer {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 24px;
+        min-height: 100px;
+        padding: 24px 4vw;
+        background: var(--ink);
+        color: var(--paper-raised);
+      }
+
+      .site-footer p {
+        margin: 0;
+        color: #aeb4bc;
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 22px;
+        font-size: 13px;
+      }
+
+      .footer-links a {
+        text-underline-offset: 4px;
+      }
+
+      @media (max-width: 1020px) {
+        .site-header {
+          grid-template-columns: 1fr auto;
+        }
+
+        .nav-links {
+          display: none;
+        }
+
+        .hero-copy {
+          grid-column: 1 / span 7;
+        }
+
+        .hero-map {
+          grid-column: 8 / -1;
+          min-height: 560px;
+        }
+
+        .route-node {
+          width: 70%;
+        }
+
+        .node-two {
+          right: 4%;
+        }
+
+        .node-three {
+          left: 8%;
+          width: 78%;
+        }
+
+        .section-intro,
+        .artifact-heading,
+        .method-heading {
+          grid-column: 1 / span 5;
+        }
+
+        .outcome-list,
+        .method-steps {
+          grid-column: 7 / -1;
+        }
+
+        .artifact-card {
+          grid-column: 6 / -1;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .site-header {
+          min-height: 70px;
+          padding-inline: 20px;
+        }
+
+        .header-cta {
+          min-height: 44px;
+          padding-inline: 12px;
+        }
+
+        .section-grid {
+          grid-template-columns: 1fr;
+          padding-inline: 20px;
+        }
+
+        .hero {
+          min-height: auto;
+          padding-top: 64px;
+        }
+
+        .hero-copy,
+        .hero-map,
+        .hero-footnote,
+        .section-intro,
+        .outcome-list,
+        .artifact-heading,
+        .artifact-card,
+        .method-heading,
+        .method-steps,
+        .final-copy {
+          grid-column: 1;
+        }
+
+        .hero h1 {
+          font-size: clamp(54px, 16vw, 78px);
+        }
+
+        .idea-form {
+          grid-template-columns: 1fr;
+        }
+
+        .idea-form .button {
+          width: 100%;
+        }
+
+        .hero-map {
+          min-height: 560px;
+          margin-top: 46px;
+        }
+
+        .hero-footnote {
+          grid-template-columns: 1fr;
+          margin-top: 52px;
+        }
+
+        .proof-point {
+          padding: 16px 0;
+        }
+
+        .proof-point + .proof-point {
+          padding-left: 0;
+          border-top: 1px solid var(--line-strong);
+          border-left: 0;
+        }
+
+        .outcome-list,
+        .artifact-card,
+        .method-steps {
+          margin-top: 56px;
+        }
+
+        .artifact-heading {
+          position: static;
+        }
+
+        .artifact-toolbar {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .artifact-tabs {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          width: 100%;
+        }
+
+        .artifact-tab {
+          padding-inline: 8px;
+        }
+
+        .signal-grid,
+        .prompt-file-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .signal + .signal {
+          border-top: 1px solid var(--line);
+          border-left: 0;
+        }
+
+        .decision-list li {
+          grid-template-columns: 28px 1fr;
+        }
+
+        .decision-tag {
+          grid-column: 2;
+        }
+
+        .final-cta::after {
+          top: auto;
+          right: -80px;
+          bottom: -100px;
+          transform: none;
+        }
+
+        .site-footer {
+          grid-template-columns: 1fr;
+          padding-inline: 20px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="#top" aria-label="Maker Compass home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="8.25" stroke="currentColor" />
+              <path d="m14.8 7.2-1.65 5.95L7.2 14.8l1.65-5.95 5.95-1.65Z" fill="#2457e6" />
+            </svg>
+          </span>
+          <span>Maker Compass</span>
+        </a>
+        <nav class="nav-links" aria-label="Primary navigation">
+          <a href="#outcomes">What you get</a>
+          <a href="#artifact">Example</a>
+          <a href="#method">How it works</a>
+        </nav>
+        <a class="button header-cta" href="#start">Start with an idea</a>
+      </header>
+
+      <main id="main">
+        <section class="hero section-grid" id="top">
+          <div class="hero-copy">
+            <p class="eyebrow">Product direction for serious builders</p>
+            <h1>Know what to build <em>before</em> you build it.</h1>
+            <p class="hero-lede">
+              Maker Compass turns a rough software idea into market context, a deliberate first-version
+              scope, product plans, mockups, and build-ready prompts.
+            </p>
+            <form class="idea-form" id="idea-form">
+              <div class="idea-field">
+                <label for="idea">Your rough idea</label>
+                <input
+                  id="idea"
+                  name="idea"
+                  type="text"
+                  placeholder="A tool that helps independent cafés…"
+                  autocomplete="off"
+                />
+              </div>
+              <button class="button button-primary" type="submit">
+                Find the first version
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12h14M14 7l5 5-5 5" stroke="currentColor" stroke-linecap="square" />
+                </svg>
+              </button>
+            </form>
+            <p class="form-note" id="form-note" role="status" aria-live="polite">
+              Concept prototype — no signup or submission.
+            </p>
+          </div>
+
+          <div class="hero-map" aria-label="Example idea planning path">
+            <div class="map-frame">
+              <div class="map-header">
+                <p>Route MC–001 / Product direction</p>
+                <p class="map-status">Ready to build</p>
+              </div>
+              <div class="map-canvas">
+                <svg class="route-line" viewBox="0 0 700 574" preserveAspectRatio="none" aria-hidden="true">
+                  <path d="M130 118 C 390 118, 300 270, 530 282 S 420 454, 200 476" />
+                </svg>
+                <article class="route-node node-one">
+                  <header><span>01</span><span>Rough idea</span></header>
+                  <strong>Shared ordering for local cafés</strong>
+                  <p>Useful premise. Audience and first proof still unclear.</p>
+                </article>
+                <article class="route-node node-two">
+                  <header><span>02</span><span>Market signal</span></header>
+                  <strong>Start with repeat lunch orders</strong>
+                  <p>Clear behavior, narrow audience, measurable value.</p>
+                </article>
+                <article class="route-node node-three">
+                  <header><span>03</span><span>First version</span></header>
+                  <strong>One café. Five teams. Four weeks.</strong>
+                  <p>Test repeat use before adding delivery or loyalty.</p>
+                </article>
+                <div class="map-compass" aria-hidden="true">
+                  <svg viewBox="0 0 48 48" fill="none">
+                    <circle cx="24" cy="24" r="20" stroke="currentColor" />
+                    <path d="m30 13-3.25 13.75L13 30l3.25-13.75L30 13Z" fill="#2457e6" />
+                    <circle cx="24" cy="24" r="2" fill="#18202a" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-footnote" aria-label="Maker Compass deliverables">
+            <div class="proof-point">Evidence <span>Competitors and market context</span></div>
+            <div class="proof-point">Decisions <span>Scope, risks, and first proof</span></div>
+            <div class="proof-point">Handoff <span>Mockups and build-ready prompts</span></div>
+          </div>
+        </section>
+
+        <section class="outcomes" id="outcomes">
+          <div class="section-grid">
+            <div class="section-intro">
+              <p class="eyebrow">What changes</p>
+              <h2>Less motion. More direction.</h2>
+              <p>Not another generator. A decision system for the difficult stretch between idea and build.</p>
+            </div>
+            <div class="outcome-list">
+              <article class="outcome-item">
+                <span class="outcome-number">01 / Context</span>
+                <div>
+                  <h3>See the market without drowning in research.</h3>
+                  <p>Relevant competitors, customer segments, entry risks, and credible ways to stand apart.</p>
+                </div>
+              </article>
+              <article class="outcome-item">
+                <span class="outcome-number">02 / Choice</span>
+                <div>
+                  <h3>Choose the smallest serious proof.</h3>
+                  <p>A first version built around one valuable behavior—not a backlog disguised as strategy.</p>
+                </div>
+              </article>
+              <article class="outcome-item">
+                <span class="outcome-number">03 / Handoff</span>
+                <div>
+                  <h3>Move from decision to build.</h3>
+                  <p>Mockups, technical direction, sequenced build steps, and prompts ready for your chosen tool.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="artifact-section section-grid" id="artifact">
+          <div class="artifact-heading">
+            <p class="eyebrow">One connected workspace</p>
+            <h2>Your idea becomes a usable brief.</h2>
+            <p>Every artifact sharpens the same decision. Explore a condensed example.</p>
+          </div>
+
+          <div class="artifact-card">
+            <div class="artifact-toolbar">
+              <p>Project / Neighbourhood lunch loop</p>
+              <div class="artifact-tabs" role="tablist" aria-label="Example project artifacts">
+                <button
+                  class="artifact-tab"
+                  id="tab-research"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="panel-research"
+                >
+                  Research
+                </button>
+                <button
+                  class="artifact-tab"
+                  id="tab-plan"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="panel-plan"
+                  tabindex="-1"
+                >
+                  First version
+                </button>
+                <button
+                  class="artifact-tab"
+                  id="tab-prompts"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="panel-prompts"
+                  tabindex="-1"
+                >
+                  Build files
+                </button>
+              </div>
+            </div>
+            <div class="artifact-body">
+              <section
+                class="artifact-panel"
+                id="panel-research"
+                role="tabpanel"
+                aria-labelledby="tab-research"
+              >
+                <p class="artifact-kicker">Entry assessment / promising with a narrow wedge</p>
+                <h3>Convenience is crowded. Collective ordering is not.</h3>
+                <p class="artifact-summary">
+                  Existing tools optimize delivery or loyalty. Few help small teams coordinate repeat pickup from
+                  neighbourhood cafés. That creates a focused behavioral wedge without building a logistics network.
+                </p>
+                <div class="signal-grid">
+                  <div class="signal"><span>Best customer</span><strong>Teams of 5–20</strong></div>
+                  <div class="signal"><span>Proof behavior</span><strong>2 orders / week</strong></div>
+                  <div class="signal"><span>Biggest risk</span><strong>Habit formation</strong></div>
+                </div>
+              </section>
+
+              <section
+                class="artifact-panel"
+                id="panel-plan"
+                role="tabpanel"
+                aria-labelledby="tab-plan"
+                hidden
+              >
+                <p class="artifact-kicker">First-version scope / four-week validation</p>
+                <h3>One ordering loop. No delivery, rewards, or marketplace.</h3>
+                <p class="artifact-summary">
+                  Prove that a team coordinator can start an order, collect five choices, and submit one café pickup
+                  twice in the same week.
+                </p>
+                <ol class="decision-list">
+                  <li><span>01</span><strong>Create a shared order link</strong><span class="decision-tag">Include</span></li>
+                  <li><span>02</span><strong>Collect individual menu choices</strong><span class="decision-tag">Include</span></li>
+                  <li><span>03</span><strong>Confirm one consolidated pickup</strong><span class="decision-tag">Include</span></li>
+                  <li><span>04</span><strong>Delivery routing and loyalty</strong><span class="decision-tag">Later</span></li>
+                </ol>
+              </section>
+
+              <section
+                class="artifact-panel"
+                id="panel-prompts"
+                role="tabpanel"
+                aria-labelledby="tab-prompts"
+                hidden
+              >
+                <p class="artifact-kicker">Build handoff / six connected files</p>
+                <h3>Start building without re-explaining the product.</h3>
+                <p class="artifact-summary">
+                  Each file carries product decisions, boundaries, acceptance criteria, and verification steps into
+                  your build environment.
+                </p>
+                <div class="prompt-file-grid">
+                  <div class="prompt-file">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h7l4 4v14H7V3Zm7 0v5h5" stroke="currentColor" /></svg>
+                    <strong>first-prompt.md</strong>
+                  </div>
+                  <div class="prompt-file">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h7l4 4v14H7V3Zm7 0v5h5" stroke="currentColor" /></svg>
+                    <strong>build-steps.md</strong>
+                  </div>
+                  <div class="prompt-file">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h7l4 4v14H7V3Zm7 0v5h5" stroke="currentColor" /></svg>
+                    <strong>acceptance-criteria.md</strong>
+                  </div>
+                  <div class="prompt-file">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h7l4 4v14H7V3Zm7 0v5h5" stroke="currentColor" /></svg>
+                    <strong>project-context.md</strong>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="method" id="method">
+          <div class="section-grid">
+            <div class="method-heading">
+              <p class="eyebrow">The route</p>
+              <h2>Four steps. One decision.</h2>
+            </div>
+            <div class="method-steps">
+              <article class="method-step">
+                <span>01 / Brief</span>
+                <div><h3>Bring the rough version.</h3><p>Describe the idea. Answer a few questions that materially change the plan.</p></div>
+              </article>
+              <article class="method-step">
+                <span>02 / Read</span>
+                <div><h3>Understand the terrain.</h3><p>Review market context, competitors, audience, risks, and ways to create a meaningful wedge.</p></div>
+              </article>
+              <article class="method-step">
+                <span>03 / Choose</span>
+                <div><h3>Commit to the first proof.</h3><p>Set scope, success conditions, sequence, and deliberate exclusions.</p></div>
+              </article>
+              <article class="method-step">
+                <span>04 / Build</span>
+                <div><h3>Carry decisions into execution.</h3><p>Use mockups and build files in your preferred coding or app-building environment.</p></div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="final-cta" id="start">
+          <div class="section-grid">
+            <div class="final-copy">
+              <p class="eyebrow">Choose a direction</p>
+              <h2>Give your idea a serious first step.</h2>
+              <div class="final-actions">
+                <a class="button" href="#top">Start with your idea</a>
+                <a class="button" href="#artifact">Review the example</a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p>Maker Compass / Concept 01 / Cartographic editorial</p>
+        <div class="footer-links">
+          <a href="#outcomes">What you get</a>
+          <a href="#method">Process</a>
+          <a href="#top">Back to top</a>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+      const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+
+      function activateTab(tab, focus = false) {
+        tabs.forEach((candidate) => {
+          const selected = candidate === tab;
+          candidate.setAttribute("aria-selected", String(selected));
+          candidate.tabIndex = selected ? 0 : -1;
+        });
+
+        panels.forEach((panel) => {
+          panel.hidden = panel.id !== tab.getAttribute("aria-controls");
+        });
+
+        if (focus) tab.focus();
+      }
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => activateTab(tab));
+        tab.addEventListener("keydown", (event) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          let nextIndex = index;
+          if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+          if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === "Home") nextIndex = 0;
+          if (event.key === "End") nextIndex = tabs.length - 1;
+          activateTab(tabs[nextIndex], true);
+        });
+      });
+
+      const ideaForm = document.querySelector("#idea-form");
+      const ideaInput = document.querySelector("#idea");
+      const formNote = document.querySelector("#form-note");
+
+      ideaForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const idea = ideaInput.value.trim();
+        formNote.textContent = idea
+          ? `Prototype only — “${idea.slice(0, 64)}${idea.length > 64 ? "…" : ""}” was not submitted.`
+          : "Add a rough idea first. Nothing will be submitted.";
+        if (!idea) ideaInput.focus();
+      });
+    </script>
+  </body>
+</html>

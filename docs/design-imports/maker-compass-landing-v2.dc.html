@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/maker-compass-design-system-53bc0328-d13b-405e-9c68-7d80486e70a5/tokens/colors.css">
+<link rel="stylesheet" href="_ds/maker-compass-design-system-53bc0328-d13b-405e-9c68-7d80486e70a5/tokens/typography.css">
+<link rel="stylesheet" href="_ds/maker-compass-design-system-53bc0328-d13b-405e-9c68-7d80486e70a5/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/maker-compass-design-system-53bc0328-d13b-405e-9c68-7d80486e70a5/styles.css">
+<script src="_ds/maker-compass-design-system-53bc0328-d13b-405e-9c68-7d80486e70a5/_ds_bundle.js"></script>
+<style>
+html,body{overflow-x:clip}
+body{margin:0;background:#FAFAFA;color:#1C1917;font-family:var(--font-sans,'Hanken Grotesk',system-ui,sans-serif);-webkit-font-smoothing:antialiased}
+a{color:#4A4040;text-decoration:none}
+a:hover{color:#1C1917}
+h1,h2,h3{text-wrap:balance}
+p{text-wrap:pretty}
+::selection{background:rgba(220,38,38,0.2);color:#1C1917}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.1);border-radius:3px}
+summary{list-style:none}
+summary::-webkit-details-marker{display:none}
+textarea::placeholder{color:#4A4040;opacity:1}
+textarea,button,input{font-family:inherit}
+@keyframes mclFade{from{opacity:0}to{opacity:1}}
+@keyframes mclUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes mclLeft{from{opacity:0;transform:translateX(-48px)}to{opacity:1;transform:translateX(0)}}
+@keyframes mclRight{from{opacity:0;transform:translateX(48px)}to{opacity:1;transform:translateX(0)}}
+@keyframes mclMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes mclNodeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes mclNodeFade{from{opacity:0}to{opacity:1}}
+@keyframes mclNodeDraw{from{stroke-dashoffset:600}to{stroke-dashoffset:0}}
+@keyframes mclCaret{0%,55%{opacity:1}56%,100%{opacity:0}}
+.mcl-node-tall{display:none}
+@media (max-width:640px){.mcl-node-tall [data-node] > div:first-child{flex-direction:column;gap:3px !important;line-height:1.15}.mcl-node-tall [data-node] span{letter-spacing:0.1em !important}}
+.mcl-mobile-only{display:none}
+.mcl-rail{display:none}
+@media (min-width:1280px){.mcl-rail{display:block}}
+@media (max-width:1023px){
+.mcl-node-wide{display:none !important}
+.mcl-node-tall{display:block !important}
+.mcl-desktop-only{display:none !important}
+.mcl-mobile-only{display:block !important}
+.mcl-scrolly-grid{display:block !important}
+.mcl-sticky-col{position:sticky !important;top:78px !important;height:auto !important;z-index:2;background:#FAFAFA;padding:8px 0 16px}
+.mcl-feature-block{min-height:max(72vh,640px) !important;visibility:hidden !important}
+.mcl-frame-wrap{max-width:min(100%,calc((100svh - 128px - max(160px,min(230px,25svh))) * 0.75)) !important;width:100% !important;margin:0 auto !important}
+.mcl-swap{height:max(160px,min(230px,25svh)) !important}
+.mcl-note-a{left:-14px !important;width:130px !important}
+.mcl-note-b{left:auto !important;right:-10px !important;width:100px !important}
+.mcl-pbody{max-height:820px !important}
+[data-cardset="4"] [data-card] h4{font-size:40px !important}
+[data-cardset="4"] [data-card] p{font-size:26px !important}
+}
+@media (max-width:767px){.mcl-md-hide{display:none !important}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}}
+</style>
+</helmet>
+
+<header data-screen-label="Site header" style="position:sticky;top:0;z-index:50;border-bottom:1px solid #EAE0D8;background:rgba(255,255,255,0.95);backdrop-filter:blur(4px)">
+  <div style="margin:0 auto;display:flex;min-height:64px;width:100%;max-width:1368px;align-items:center;justify-content:space-between;gap:12px;padding:0 24px;box-sizing:border-box">
+    <a href="#" style="display:inline-flex;align-items:center;gap:10px;color:#1C1917">
+      <img src="public/maker-compass-logo.svg" alt="Maker Compass" style="width:36px;height:36px;border-radius:2px;object-fit:contain">
+      <span style="font-size:18px;font-weight:600;letter-spacing:0.01em;color:#1C1917">Maker Compass</span>
+    </a>
+    <nav class="mcl-md-hide" style="display:flex;align-items:center;gap:32px">
+      <a href="#features" style="font-size:14px;font-weight:500;color:#1C1917" style-hover="color:#4A4040">Features</a>
+      <a href="#pricing" style="font-size:14px;font-weight:500;color:#1C1917" style-hover="color:#4A4040">Pricing</a>
+      <a href="#faq" style="font-size:14px;font-weight:500;color:#1C1917" style-hover="color:#4A4040">FAQ</a>
+    </nav>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button type="button" style="display:inline-flex;height:44px;align-items:center;justify-content:center;border-radius:6px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 24px;font-size:14px;font-weight:600;color:#1C1917;white-space:nowrap;cursor:pointer;transition:background-color 200ms cubic-bezier(0.16,1,0.3,1)" style-hover="background:#FAF6F2">Sign In</button>
+      <button type="button" style="display:inline-flex;height:44px;align-items:center;justify-content:center;border-radius:6px;border:none;background:#DC2626;padding:0 24px;font-size:14px;font-weight:600;color:#FFFFFF;white-space:nowrap;cursor:pointer;transition:background-color 200ms cubic-bezier(0.16,1,0.3,1)" style-hover="background:rgba(220,38,38,0.9)" style-active="transform:scale(0.98)">Get Started</button>
+    </div>
+  </div>
+</header>
+
+<div class="mcl-rail" data-rail aria-hidden="true" style="position:fixed;z-index:40;top:120px;bottom:120px;left:18px;width:44px;pointer-events:none;opacity:0;transform:translateX(-24px);transition:opacity 450ms cubic-bezier(0.16,1,0.3,1),transform 450ms cubic-bezier(0.16,1,0.3,1)">
+  <div style="position:absolute;top:0;bottom:0;left:3px;width:10px;background:repeating-linear-gradient(to bottom,#E8DDD5 0 2px,transparent 2px 18px)"></div>
+  <div data-rail-ms style="position:absolute;top:0;left:0;width:16px;height:2px;background:rgba(107,114,128,0.5);opacity:0;transform:translateX(-12px);transition:opacity 400ms cubic-bezier(0.16,1,0.3,1) 80ms,transform 400ms cubic-bezier(0.16,1,0.3,1) 80ms"></div>
+  <div data-rail-ms style="position:absolute;top:25%;left:0;width:16px;height:2px;background:rgba(107,114,128,0.5);opacity:0;transform:translateX(-12px);transition:opacity 400ms cubic-bezier(0.16,1,0.3,1) 160ms,transform 400ms cubic-bezier(0.16,1,0.3,1) 160ms"></div>
+  <div data-rail-ms style="position:absolute;top:50%;left:0;width:16px;height:2px;background:rgba(107,114,128,0.5);opacity:0;transform:translateX(-12px);transition:opacity 400ms cubic-bezier(0.16,1,0.3,1) 240ms,transform 400ms cubic-bezier(0.16,1,0.3,1) 240ms"></div>
+  <div data-rail-ms style="position:absolute;top:75%;left:0;width:16px;height:2px;background:rgba(107,114,128,0.5);opacity:0;transform:translateX(-12px);transition:opacity 400ms cubic-bezier(0.16,1,0.3,1) 320ms,transform 400ms cubic-bezier(0.16,1,0.3,1) 320ms"></div>
+  <div data-rail-ms style="position:absolute;top:calc(100% - 2px);left:0;width:16px;height:2px;background:rgba(107,114,128,0.5);opacity:0;transform:translateX(-12px);transition:opacity 400ms cubic-bezier(0.16,1,0.3,1) 400ms,transform 400ms cubic-bezier(0.16,1,0.3,1) 400ms"></div>
+  <div data-rail-line style="position:absolute;top:0;left:7px;width:2px;height:0;background:#DC2626"></div>
+  <div data-rail-dot style="position:absolute;top:0;left:4px;width:8px;height:8px;border-radius:50%;background:#DC2626;box-shadow:0 0 10px rgba(220,38,38,0.45);transition:opacity 300ms cubic-bezier(0.16,1,0.3,1)"></div>
+  <div data-rail-chip style="position:absolute;top:0;left:22px;writing-mode:vertical-rl;font-family:var(--font-mono);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280;white-space:nowrap">000&deg; / 01 RESEARCH</div>
+</div>
+
+<section data-screen-label="Hero" style="position:relative;isolation:isolate;overflow:clip;background:#FAFAFA">
+  <div style="position:relative;z-index:10;margin:0 auto;display:flex;width:100%;max-width:1320px;flex-direction:column;align-items:center;justify-content:flex-start;padding:clamp(48px,7svh,92px) clamp(16px,4vw,56px) clamp(24px,3vw,40px);box-sizing:border-box">
+    <h1 style="margin:0 auto;display:flex;max-width:980px;flex-direction:column;gap:4px;text-align:center;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:clamp(2.75rem,5.2vw,4.25rem);font-weight:600;line-height:1.005;letter-spacing:-0.064em;color:#1C1917;animation:mclFade 0.9s cubic-bezier(0.16,1,0.3,1) backwards">
+      <span>Build your startup idea</span>
+      <span>this weekend, not <em style="font-style:italic;color:#DC2626">someday.</em></span>
+    </h1>
+    <p style="margin:24px auto 0;max-width:698px;text-align:center;font-size:clamp(16px,1.7vw,20px);font-weight:300;line-height:1.3;color:#4A4040;animation:mclFade 0.9s cubic-bezier(0.16,1,0.3,1) 120ms backwards">Get market research, a PRD, design mockups, and comprehensive prompts to convert your ideas into a working app in minutes.</p>
+    <div data-idea-capture onBlur="{{ ideaBlur }}" style="position:relative;width:100%;max-width:652px;margin-top:clamp(40px,4vw,56px);border-radius:6px;border:1px solid #8A8480;background:#FFFFFF;padding:12px;text-align:left;box-sizing:border-box;animation:mclUp 0.8s cubic-bezier(0.16,1,0.3,1) 240ms backwards">
+      <textarea data-idea-input onFocus="{{ ideaFocus }}" placeholder="Describe what you want to build in a few sentences..." style="display:block;height:46px;width:calc(100% - 158px);resize:none;overflow:hidden;border-radius:6px;border:1px solid #E8DDD5;background:#FFFFFF;padding:12px 13px;font-size:15px;line-height:1.25;color:#1C1917;box-sizing:border-box;outline:none;transition:height 350ms cubic-bezier(0.16,1,0.3,1),width 350ms cubic-bezier(0.16,1,0.3,1)"></textarea>
+      <div data-idea-spacer aria-hidden="true" style="height:0;transition:height 350ms cubic-bezier(0.16,1,0.3,1)"></div>
+      <button type="button" style="position:absolute;bottom:12px;right:12px;display:inline-flex;height:46px;align-items:center;gap:8px;border-radius:6px;border:none;background:#1C1917;padding:0 20px;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer;transition:background-color 200ms cubic-bezier(0.16,1,0.3,1)" style-hover="background:rgba(28,25,23,0.85)">Get Started<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+    </div>
+  </div>
+  <div class="mcl-node-wide" style="width:100%;overflow:hidden">
+    <div style="position:relative;container-type:inline-size;margin:0 auto;width:100%;max-width:1760px;aspect-ratio:1760 / 760">
+      <svg viewBox="0 0 1760 760" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible">
+        <g fill="none" stroke="#E8DDD5" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round">
+          <path d="M340,320 C392,320 378,300 430,300" style="stroke-dasharray:600;animation:mclNodeDraw 1.1s cubic-bezier(0.16,1,0.3,1) 300ms backwards"></path>
+          <path d="M720,300 C778,300 752,420 810,420" style="stroke-dasharray:600;animation:mclNodeDraw 1.1s cubic-bezier(0.16,1,0.3,1) 410ms backwards"></path>
+          <path d="M1120,420 C1178,420 1152,205 1210,205" style="stroke-dasharray:600;animation:mclNodeDraw 1.1s cubic-bezier(0.16,1,0.3,1) 520ms backwards"></path>
+          <path d="M1120,420 C1178,420 1152,530 1210,530" style="stroke-dasharray:600;animation:mclNodeDraw 1.1s cubic-bezier(0.16,1,0.3,1) 630ms backwards"></path>
+        </g>
+      </svg>
+      <div style="position:absolute;left:19.3182%;top:42.1053%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 700ms backwards"></div>
+      <div style="position:absolute;left:24.4318%;top:39.4737%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 740ms backwards"></div>
+      <div style="position:absolute;left:40.9091%;top:39.4737%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 780ms backwards"></div>
+      <div style="position:absolute;left:46.0227%;top:55.2632%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 820ms backwards"></div>
+      <div style="position:absolute;left:63.6364%;top:55.2632%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 860ms backwards"></div>
+      <div style="position:absolute;left:68.7500%;top:26.9737%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 900ms backwards"></div>
+      <div style="position:absolute;left:68.7500%;top:69.7368%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 940ms backwards"></div>
+      <div data-node="idea" style="position:absolute;left:2.2727%;top:32.8947%;width:17.0455%;height:18.4211%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 80ms backwards">
+        <div style="position:absolute;bottom:100%;left:0;margin-bottom:10px;display:flex;align-items:baseline;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Idea</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">One line</span></div>
+        <div style="position:absolute;left:min(18px,3.4cqw);top:min(18px,3.4cqw);right:calc(min(18px,3.4cqw) * -1);bottom:calc(min(18px,3.4cqw) * -1);border:1px solid #EFE7E0;background:#FAFAFA"></div><div style="position:absolute;left:min(9px,1.7cqw);top:min(9px,1.7cqw);right:calc(min(9px,1.7cqw) * -1);bottom:calc(min(9px,1.7cqw) * -1);border:1px solid #E8DDD5;background:#FCFAF8"></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#FFFFFF"></div>
+        <div style="position:absolute;inset:0;overflow:hidden;padding:min(15px,2.2cqw) min(17px,2.5cqw);box-sizing:border-box">
+          <p style="margin:0;text-align:left;font-size:min(12px,3cqw);line-height:1.45;letter-spacing:-0.01em;color:#1C1917"><span style="font-family:'Fira Mono',monospace;color:#8A8480">&gt;&nbsp;</span><span data-bm-idea-text>Turn scattered customer feedback into a ranked roadmap for B2B SaaS teams.</span><span aria-hidden="true" style="display:inline-block;width:6px;height:0.9em;margin-left:3px;vertical-align:-0.08em;background:#DC2626;animation:mclCaret 1.1s steps(1) infinite"></span></p>
+        </div>
+      </div>
+      <div data-node="research" style="position:absolute;left:24.4318%;top:11.8421%;width:16.4773%;height:55.2632%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 180ms backwards">
+        <div style="position:absolute;bottom:100%;left:0;margin-bottom:10px;display:flex;align-items:baseline;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Research</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Competitive analysis</span></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#F5F0EB"></div>
+        <div data-bm-fade="0" data-bm-research style="position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:min(10px,1.3cqw);padding:min(16px,2.2cqw);box-sizing:border-box;opacity:1;transition:opacity 520ms cubic-bezier(0.16,1,0.3,1)">
+          <div data-bm-comp style="display:flex;align-items:center;gap:10px;border:1px solid #EAE0D8;background:#FFFFFF;padding:min(10px,1.4cqw) min(12px,1.7cqw)"><img src="https://www.google.com/s2/favicons?domain=productboard.com&amp;sz=64" alt="" style="width:18px;height:18px;flex:none;object-fit:contain"><span data-bm-comp-name style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:min(13px,2.9cqw);font-weight:700;letter-spacing:-0.02em;color:#1C1917">Productboard</span></div>
+          <div data-bm-comp style="display:flex;align-items:center;gap:10px;border:1px solid #EAE0D8;background:#FFFFFF;padding:min(10px,1.4cqw) min(12px,1.7cqw)"><img src="https://www.google.com/s2/favicons?domain=canny.io&amp;sz=64" alt="" style="width:18px;height:18px;flex:none;object-fit:contain"><span data-bm-comp-name style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:min(13px,2.9cqw);font-weight:700;letter-spacing:-0.02em;color:#1C1917">Canny</span></div>
+          <div data-bm-comp style="display:flex;align-items:center;gap:10px;border:1px solid #EAE0D8;background:#FFFFFF;padding:min(10px,1.4cqw) min(12px,1.7cqw)"><img src="https://www.google.com/s2/favicons?domain=aha.io&amp;sz=64" alt="" style="width:18px;height:18px;flex:none;object-fit:contain"><span data-bm-comp-name style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:min(13px,2.9cqw);font-weight:700;letter-spacing:-0.02em;color:#1C1917">Aha!</span></div>
+          <p style="margin:2px 0 0;font-family:'Fira Mono',monospace;font-size:min(9px,2.1cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">+ 9 more mapped</p>
+        </div>
+      </div>
+      <div data-node="plan" style="position:absolute;left:46.0227%;top:22.3684%;width:17.6136%;height:65.7895%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 280ms backwards">
+        <div style="position:absolute;bottom:100%;left:0;margin-bottom:10px;display:flex;align-items:baseline;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Plan</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Product plan</span></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#FFFFFF"></div>
+        <div data-bm-fade="1" data-bm-plan style="position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:min(10px,1.4cqw);padding:min(18px,2.4cqw);box-sizing:border-box;opacity:1;transition:opacity 520ms cubic-bezier(0.16,1,0.3,1)">
+          <p style="margin:0;font-family:'Fira Mono',monospace;font-size:min(9px,2.1cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Persona</p>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span data-bm-persona-ini style="display:flex;width:min(30px,4.5cqw);height:min(30px,4.5cqw);flex:none;align-items:center;justify-content:center;background:#1C1917;color:#FAFAFA;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:min(12px,2.4cqw);font-weight:700">MC</span>
+            <span style="display:flex;flex-direction:column;min-width:0">
+              <span data-bm-persona-name style="font-size:min(13px,2.9cqw);font-weight:700;letter-spacing:-0.02em;color:#1C1917;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Maya Chen</span>
+              <span data-bm-persona-role style="font-family:'Fira Mono',monospace;font-size:min(9px,2.1cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.12em;color:#8A8480;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Product Manager</span>
+            </span>
+          </div>
+          <div style="height:1px;flex:none;background:#EAE0D8;margin:min(4px,0.6cqw) 0"></div>
+          <p style="margin:0;font-family:'Fira Mono',monospace;font-size:min(9px,2.1cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Goals</p>
+          <div style="display:flex;align-items:baseline;gap:8px"><span style="flex:none;font-family:'Fira Mono',monospace;font-size:min(10px,2.2cqw);font-weight:500;color:#8A8480">G1</span><span data-bm-goal style="min-width:0;font-size:min(12px,2.7cqw);line-height:1.4;color:#4A4040">One inbox for every feedback source</span></div>
+          <div style="display:flex;align-items:baseline;gap:8px"><span style="flex:none;font-family:'Fira Mono',monospace;font-size:min(10px,2.2cqw);font-weight:500;color:#8A8480">G2</span><span data-bm-goal style="min-width:0;font-size:min(12px,2.7cqw);line-height:1.4;color:#4A4040">Themes ranked by revenue at stake</span></div>
+          <div style="display:flex;align-items:baseline;gap:8px"><span style="flex:none;font-family:'Fira Mono',monospace;font-size:min(10px,2.2cqw);font-weight:500;color:#8A8480">G3</span><span data-bm-goal style="min-width:0;font-size:min(12px,2.7cqw);line-height:1.4;color:#4A4040">A roadmap the team can defend</span></div>
+        </div>
+      </div>
+      <div data-node="mockups" style="position:absolute;left:68.7500%;top:9.2105%;width:20.4545%;height:35.5263%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 380ms backwards">
+        <div style="position:absolute;bottom:100%;left:0;margin-bottom:10px;display:flex;align-items:baseline;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Design</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Mockups</span></div>
+        <div style="position:absolute;left:min(18px,3.4cqw);top:min(18px,3.4cqw);right:calc(min(18px,3.4cqw) * -1);bottom:calc(min(18px,3.4cqw) * -1);border:1px solid #EFE7E0;background:#FAFAFA"></div><div style="position:absolute;left:min(9px,1.7cqw);top:min(9px,1.7cqw);right:calc(min(9px,1.7cqw) * -1);bottom:calc(min(9px,1.7cqw) * -1);border:1px solid #E8DDD5;background:#FCFAF8"></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#F5F0EB"></div>
+        <div data-bm-fade="2" style="position:absolute;inset:min(1px,0.2cqw);overflow:hidden;opacity:1;transition:opacity 520ms cubic-bezier(0.16,1,0.3,1)">
+          <img data-bm-mock="0" src="public/landing/samples/mockup-option-a.png" alt="Design mockup preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:10% 42%;opacity:1;transition:opacity 620ms cubic-bezier(0.16,1,0.3,1)">
+          <img data-bm-mock="1" src="public/landing/samples/mockup-option-b.png" alt="" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:10% 42%;opacity:0;transition:opacity 620ms cubic-bezier(0.16,1,0.3,1)">
+          <img data-bm-mock="2" src="public/landing/samples/mockup-option-c.png" alt="" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:10% 42%;opacity:0;transition:opacity 620ms cubic-bezier(0.16,1,0.3,1)">
+        </div>
+      </div>
+      <div data-node="prompt" style="position:absolute;left:68.7500%;top:55.2632%;width:23.8636%;height:28.9474%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 480ms backwards">
+        <div style="position:absolute;bottom:100%;left:0;margin-bottom:10px;display:flex;align-items:baseline;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Prompt</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Ready for your agent</span></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#FFFFFF"></div>
+        <div data-bm-fade="3" data-bm-prompt style="position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:min(12px,1.6cqw) min(18px,2.4cqw);box-sizing:border-box;opacity:1;transition:opacity 520ms cubic-bezier(0.16,1,0.3,1)">
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0;border-bottom:1px solid #F0E9E2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">signaldesk-brief.md</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0;border-bottom:1px solid #F0E9E2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">prd.md</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0;border-bottom:1px solid #F0E9E2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">personas.md</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0;border-bottom:1px solid #F0E9E2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">first-version-plan.md</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">prompt-01.md</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mcl-node-tall" style="width:100%;overflow:hidden">
+    <div style="position:relative;container-type:inline-size;margin:0 auto;width:100%;max-width:720px;aspect-ratio:800 / 1700">
+      <svg viewBox="0 0 800 1700" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible">
+        <g fill="none" stroke="#E8DDD5" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round">
+          <path d="M320,200 C320,272 410,278 410,350" style="stroke-dasharray:600;animation:mclNodeDraw 1.1s cubic-bezier(0.16,1,0.3,1) 300ms backwards"></path>
+          <path d="M410,620 C410,700 380,700 380,780" style="stroke-dasharray:600;animation:mclNodeDraw 1.1s cubic-bezier(0.16,1,0.3,1) 410ms backwards"></path>
+          <path d="M380,1110 C380,1182 410,1168 410,1240" style="stroke-dasharray:600;animation:mclNodeDraw 1.1s cubic-bezier(0.16,1,0.3,1) 520ms backwards"></path>
+          <path d="M410,1400 C410,1472 450,1458 450,1530" style="stroke-dasharray:600;animation:mclNodeDraw 1.1s cubic-bezier(0.16,1,0.3,1) 630ms backwards"></path>
+        </g>
+      </svg>
+      <div style="position:absolute;left:40.0000%;top:11.7647%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 700ms backwards"></div>
+      <div style="position:absolute;left:51.2500%;top:20.5882%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 740ms backwards"></div>
+      <div style="position:absolute;left:51.2500%;top:36.4706%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 780ms backwards"></div>
+      <div style="position:absolute;left:47.5000%;top:45.8824%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 820ms backwards"></div>
+      <div style="position:absolute;left:47.5000%;top:65.2941%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 860ms backwards"></div>
+      <div style="position:absolute;left:51.2500%;top:72.9412%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 900ms backwards"></div>
+      <div style="position:absolute;left:51.2500%;top:82.3529%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 940ms backwards"></div>
+      <div style="position:absolute;left:56.2500%;top:90.0000%;width:13px;height:13px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;transform:translate(-50%,-50%);z-index:3;animation:mclNodeFade 0.6s cubic-bezier(0.16,1,0.3,1) 980ms backwards"></div>
+      <div data-node="idea" style="position:absolute;left:3.7500%;top:5.8824%;width:36.2500%;height:8.2353%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 80ms backwards">
+        <div style="position:absolute;bottom:100%;left:0;margin-bottom:10px;display:flex;align-items:baseline;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Idea</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">One line</span></div>
+        <div style="position:absolute;left:min(18px,3.4cqw);top:min(18px,3.4cqw);right:calc(min(18px,3.4cqw) * -1);bottom:calc(min(18px,3.4cqw) * -1);border:1px solid #EFE7E0;background:#FAFAFA"></div><div style="position:absolute;left:min(9px,1.7cqw);top:min(9px,1.7cqw);right:calc(min(9px,1.7cqw) * -1);bottom:calc(min(9px,1.7cqw) * -1);border:1px solid #E8DDD5;background:#FCFAF8"></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#FFFFFF"></div>
+        <div style="position:absolute;inset:0;overflow:hidden;padding:min(15px,2.2cqw) min(17px,2.5cqw);box-sizing:border-box">
+          <p style="margin:0;text-align:left;font-size:min(12px,3cqw);line-height:1.45;letter-spacing:-0.01em;color:#1C1917"><span style="font-family:'Fira Mono',monospace;color:#8A8480">&gt;&nbsp;</span><span data-bm-idea-text>Turn scattered customer feedback into a ranked roadmap for B2B SaaS teams.</span><span aria-hidden="true" style="display:inline-block;width:6px;height:0.9em;margin-left:3px;vertical-align:-0.08em;background:#DC2626;animation:mclCaret 1.1s steps(1) infinite"></span></p>
+        </div>
+      </div>
+      <div data-node="research" style="position:absolute;left:51.2500%;top:17.6471%;width:41.2500%;height:21.1765%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 180ms backwards">
+        <div style="position:absolute;bottom:100%;right:0;margin-bottom:10px;display:flex;align-items:flex-end;justify-content:flex-end;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Research</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Competitive analysis</span></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#F5F0EB"></div>
+        <div data-bm-fade="0" data-bm-research style="position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:min(10px,1.3cqw);padding:min(16px,2.2cqw);box-sizing:border-box;opacity:1;transition:opacity 520ms cubic-bezier(0.16,1,0.3,1)">
+          <div data-bm-comp style="display:flex;align-items:center;gap:10px;border:1px solid #EAE0D8;background:#FFFFFF;padding:min(10px,1.4cqw) min(12px,1.7cqw)"><img src="https://www.google.com/s2/favicons?domain=productboard.com&amp;sz=64" alt="" style="width:18px;height:18px;flex:none;object-fit:contain"><span data-bm-comp-name style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:min(13px,2.9cqw);font-weight:700;letter-spacing:-0.02em;color:#1C1917">Productboard</span></div>
+          <div data-bm-comp style="display:flex;align-items:center;gap:10px;border:1px solid #EAE0D8;background:#FFFFFF;padding:min(10px,1.4cqw) min(12px,1.7cqw)"><img src="https://www.google.com/s2/favicons?domain=canny.io&amp;sz=64" alt="" style="width:18px;height:18px;flex:none;object-fit:contain"><span data-bm-comp-name style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:min(13px,2.9cqw);font-weight:700;letter-spacing:-0.02em;color:#1C1917">Canny</span></div>
+          <div data-bm-comp style="display:flex;align-items:center;gap:10px;border:1px solid #EAE0D8;background:#FFFFFF;padding:min(10px,1.4cqw) min(12px,1.7cqw)"><img src="https://www.google.com/s2/favicons?domain=aha.io&amp;sz=64" alt="" style="width:18px;height:18px;flex:none;object-fit:contain"><span data-bm-comp-name style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:min(13px,2.9cqw);font-weight:700;letter-spacing:-0.02em;color:#1C1917">Aha!</span></div>
+          <p style="margin:2px 0 0;font-family:'Fira Mono',monospace;font-size:min(9px,2.1cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">+ 9 more mapped</p>
+        </div>
+      </div>
+      <div data-node="plan" style="position:absolute;left:3.7500%;top:42.9412%;width:43.7500%;height:24.7059%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 280ms backwards">
+        <div style="position:absolute;bottom:100%;left:0;margin-bottom:10px;display:flex;align-items:baseline;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Plan</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Product plan</span></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#FFFFFF"></div>
+        <div data-bm-fade="1" data-bm-plan style="position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:min(10px,1.4cqw);padding:min(18px,2.4cqw);box-sizing:border-box;opacity:1;transition:opacity 520ms cubic-bezier(0.16,1,0.3,1)">
+          <p style="margin:0;font-family:'Fira Mono',monospace;font-size:min(9px,2.1cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Persona</p>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span data-bm-persona-ini style="display:flex;width:min(30px,4.5cqw);height:min(30px,4.5cqw);flex:none;align-items:center;justify-content:center;background:#1C1917;color:#FAFAFA;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:min(12px,2.4cqw);font-weight:700">MC</span>
+            <span style="display:flex;flex-direction:column;min-width:0">
+              <span data-bm-persona-name style="font-size:min(13px,2.9cqw);font-weight:700;letter-spacing:-0.02em;color:#1C1917;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Maya Chen</span>
+              <span data-bm-persona-role style="font-family:'Fira Mono',monospace;font-size:min(9px,2.1cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.12em;color:#8A8480;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Product Manager</span>
+            </span>
+          </div>
+          <div style="height:1px;flex:none;background:#EAE0D8;margin:min(4px,0.6cqw) 0"></div>
+          <p style="margin:0;font-family:'Fira Mono',monospace;font-size:min(9px,2.1cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Goals</p>
+          <div style="display:flex;align-items:baseline;gap:8px"><span style="flex:none;font-family:'Fira Mono',monospace;font-size:min(10px,2.2cqw);font-weight:500;color:#8A8480">G1</span><span data-bm-goal style="min-width:0;font-size:min(12px,2.7cqw);line-height:1.4;color:#4A4040">One inbox for every feedback source</span></div>
+          <div style="display:flex;align-items:baseline;gap:8px"><span style="flex:none;font-family:'Fira Mono',monospace;font-size:min(10px,2.2cqw);font-weight:500;color:#8A8480">G2</span><span data-bm-goal style="min-width:0;font-size:min(12px,2.7cqw);line-height:1.4;color:#4A4040">Themes ranked by revenue at stake</span></div>
+          <div style="display:flex;align-items:baseline;gap:8px"><span style="flex:none;font-family:'Fira Mono',monospace;font-size:min(10px,2.2cqw);font-weight:500;color:#8A8480">G3</span><span data-bm-goal style="min-width:0;font-size:min(12px,2.7cqw);line-height:1.4;color:#4A4040">A roadmap the team can defend</span></div>
+        </div>
+      </div>
+      <div data-node="mockups" style="position:absolute;left:51.2500%;top:70.0000%;width:42.5000%;height:14.7059%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 380ms backwards">
+        <div style="position:absolute;bottom:100%;right:0;margin-bottom:10px;display:flex;align-items:flex-end;justify-content:flex-end;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Design</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Mockups</span></div>
+        <div style="position:absolute;left:min(18px,3.4cqw);top:min(18px,3.4cqw);right:calc(min(18px,3.4cqw) * -1);bottom:calc(min(18px,3.4cqw) * -1);border:1px solid #EFE7E0;background:#FAFAFA"></div><div style="position:absolute;left:min(9px,1.7cqw);top:min(9px,1.7cqw);right:calc(min(9px,1.7cqw) * -1);bottom:calc(min(9px,1.7cqw) * -1);border:1px solid #E8DDD5;background:#FCFAF8"></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#F5F0EB"></div>
+        <div data-bm-fade="2" style="position:absolute;inset:min(1px,0.2cqw);overflow:hidden;opacity:1;transition:opacity 520ms cubic-bezier(0.16,1,0.3,1)">
+          <img data-bm-mock="0" src="public/landing/samples/mockup-option-a.png" alt="Design mockup preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:10% 42%;opacity:1;transition:opacity 620ms cubic-bezier(0.16,1,0.3,1)">
+          <img data-bm-mock="1" src="public/landing/samples/mockup-option-b.png" alt="" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:10% 42%;opacity:0;transition:opacity 620ms cubic-bezier(0.16,1,0.3,1)">
+          <img data-bm-mock="2" src="public/landing/samples/mockup-option-c.png" alt="" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:10% 42%;opacity:0;transition:opacity 620ms cubic-bezier(0.16,1,0.3,1)">
+        </div>
+      </div>
+      <div data-node="prompt" style="position:absolute;left:3.7500%;top:87.0588%;width:52.5000%;height:11.7647%;z-index:2;animation:mclNodeUp 0.8s cubic-bezier(0.16,1,0.3,1) 480ms backwards">
+        <div style="position:absolute;bottom:100%;left:0;margin-bottom:10px;display:flex;align-items:baseline;gap:12px;white-space:nowrap"><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#1C1917">Prompt</span><span style="font-family:'Fira Mono',monospace;font-size:min(11px,2.9cqw);font-weight:400;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Ready for your agent</span></div>
+        <div style="position:absolute;inset:0;border:1px solid #E8DDD5;background:#FFFFFF"></div>
+        <div data-bm-fade="3" data-bm-prompt style="position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:min(12px,1.6cqw) min(18px,2.4cqw);box-sizing:border-box;opacity:1;transition:opacity 520ms cubic-bezier(0.16,1,0.3,1)">
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0;border-bottom:1px solid #F0E9E2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">signaldesk-brief.md</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0;border-bottom:1px solid #F0E9E2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">prd.md</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0;border-bottom:1px solid #F0E9E2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">personas.md</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0;border-bottom:1px solid #F0E9E2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">first-version-plan.md</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:min(7px,0.9cqw) 0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8480" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg><span data-bm-file style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Fira Mono',monospace;font-size:min(11px,2.4cqw);color:#4A4040">prompt-01.md</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section data-screen-label="Tool marquee" style="margin:0 auto;width:100%;max-width:1320px;padding:32px clamp(16px,4vw,56px) 40px;box-sizing:border-box">
+  <div style="padding:12px 0;text-align:center">
+    <p style="margin:0 auto;max-width:620px;font-size:15px;line-height:1.25;color:#4A4040">High quality prompts that you can use with your favorite AI coding tool.</p>
+    <div style="margin-top:16px;position:relative;overflow:hidden">
+      <div style="display:flex;width:max-content;animation:mclMarquee 42s linear infinite">
+        <div style="display:flex;width:max-content;flex:none">
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/cursor.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Cursor</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/claudecode.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Claude Code</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/openai.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Codex</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/githubcopilot.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">GitHub Copilot</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/windsurf.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Windsurf</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/cline.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Cline</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/zedindustries.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Zed</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/warp.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Warp</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/devin.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Devin</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/lovable.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Lovable</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/v0.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">v0</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/bolt.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Bolt</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/replit.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Replit</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/sourcegraph.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Sourcegraph</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/tabnine.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Tabnine</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/googlegemini.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Gemini</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/jetbrains.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">JetBrains</span></div>
+        </div>
+        <div style="display:flex;width:max-content;flex:none" aria-hidden="true">
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/cursor.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Cursor</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/claudecode.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Claude Code</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/openai.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Codex</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/githubcopilot.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">GitHub Copilot</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/windsurf.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Windsurf</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/cline.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Cline</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/zedindustries.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Zed</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/warp.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Warp</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/devin.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Devin</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/lovable.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Lovable</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/v0.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">v0</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/bolt.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Bolt</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/replit.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Replit</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/sourcegraph.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Sourcegraph</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/tabnine.png" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Tabnine</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/googlegemini.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Gemini</span></div>
+          <div style="margin-right:12px;display:flex;height:92px;width:152px;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #EAE0D8;background:#FFFFFF;padding:0 16px;box-sizing:border-box"><img src="public/logos/jetbrains.svg" alt="" style="height:32px;width:96px;object-fit:contain;filter:grayscale(1);opacity:0.6"><span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">JetBrains</span></div>
+        </div>
+      </div>
+      <div style="pointer-events:none;position:absolute;top:0;bottom:0;left:0;width:48px;background:linear-gradient(to right,#FAFAFA,rgba(250,250,250,0))"></div>
+      <div style="pointer-events:none;position:absolute;top:0;bottom:0;right:0;width:48px;background:linear-gradient(to left,#FAFAFA,rgba(250,250,250,0))"></div>
+    </div>
+  </div>
+</section>
+
+<section id="features" data-screen-label="Features scrollytelling" style="margin:0 auto;width:100%;max-width:1320px;padding:40px clamp(16px,4vw,56px);box-sizing:border-box;scroll-margin-top:80px">
+  <div class="mcl-scrolly-grid" data-scrolly style="margin-top:8px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,0.6fr);gap:56px;align-items:start">
+    <div class="mcl-sticky-col" data-sticky-col style="position:sticky;top:92px;height:calc(100vh - 128px);display:flex;flex-direction:column;justify-content:center;min-width:0">
+      <div class="mcl-frame-wrap" style="perspective:1800px;width:calc(100% + (100vw - min(100vw,1320px)) / 2 + clamp(16px,4vw,56px) - 32px);max-width:calc((100vh - 168px) * 1.366);margin:0;margin-left:calc(32px - (100vw - min(100vw,1320px)) / 2 - clamp(16px,4vw,56px))">
+        <div data-tilt style="position:relative;transform-style:preserve-3d;transform:rotateX(2.5deg) rotateY(-7deg);will-change:transform">
+          <div data-stage aria-hidden="true" style="position:relative;width:100%;aspect-ratio:1120/820;overflow:hidden"><div data-stage-canvas style="position:absolute;top:0;left:0;width:1120px;height:820px;transform-origin:0 0"><div data-cardset="0" style="position:absolute;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity 420ms cubic-bezier(0.16,1,0.3,1)"><article data-card data-rot="-2" data-pos="10%,7%,44%" data-pp="4%,3%,78%" style="position:absolute;z-index:1;top:10%;left:7%;width:44%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(-2deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:center;gap:16px"><img src="https://www.google.com/s2/favicons?domain=productboard.com&amp;sz=128" alt="" style="width:48px;height:48px;flex:none;object-fit:contain"></img><h4 style="margin:0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:32px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">Productboard</h4></div><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">Feedback aggregation and roadmap prioritization for product orgs. Strong, but heavy for small teams.</p></article><article data-card data-rot="1.5" data-pos="22%,44%,44%" data-pp="26%,19%,78%" style="position:absolute;z-index:2;top:22%;left:44%;width:44%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(1.5deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:center;gap:16px"><img src="https://www.google.com/s2/favicons?domain=canny.io&amp;sz=128" alt="" style="width:48px;height:48px;flex:none;object-fit:contain"></img><h4 style="margin:0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:32px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">Canny</h4></div><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">Public feature-voting boards. Great capture, thin on synthesis.</p></article><article data-card data-rot="-1" data-pos="46%,14%,44%" data-pp="48%,5%,78%" style="position:absolute;z-index:3;top:46%;left:14%;width:44%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(-1deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:center;gap:16px"><img src="https://www.google.com/s2/favicons?domain=aha.io&amp;sz=128" alt="" style="width:48px;height:48px;flex:none;object-fit:contain"></img><h4 style="margin:0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:32px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">Aha!</h4></div><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">Enterprise roadmapping suite. Powerful, priced for VPs, not builders.</p></article><article data-card data-rot="2" data-pos="58%,48%,44%" data-pp="70%,17%,78%" style="position:absolute;z-index:4;top:58%;left:48%;width:44%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(2deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:center;gap:16px"><img src="https://www.google.com/s2/favicons?domain=uservoice.com&amp;sz=128" alt="" style="width:48px;height:48px;flex:none;object-fit:contain"></img><h4 style="margin:0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:32px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">UserVoice</h4></div><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">Enterprise feedback and NPS analytics. Long setup, longer contracts.</p></article></div><div data-cardset="1" style="position:absolute;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity 420ms cubic-bezier(0.16,1,0.3,1)"><article data-card data-rot="-1.5" data-pos="10%,8%,46%" data-pp="8%,4%,80%" style="position:absolute;z-index:1;top:10%;left:8%;width:46%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(-1.5deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:center;gap:18px"><span style="display:flex;width:64px;height:64px;flex:none;align-items:center;justify-content:center;background:#1C1917;color:#FAFAFA;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:24px;font-weight:700">MC</span><div><p style="margin:0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:28px;font-weight:700;letter-spacing:-0.02em;color:#1C1917">Maya Chen</p><p style="margin:3px 0 0;font-family:var(--font-mono);font-size:17px;font-weight:500;text-transform:uppercase;letter-spacing:0.14em;color:#8A8480">Product Manager</p></div></div><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">Owns the roadmap. Needs signal pulled out of the noise before quarterly planning.</p></article><article data-card data-rot="1.5" data-pos="34%,42%,46%" data-pp="36%,16%,80%" style="position:absolute;z-index:2;top:34%;left:42%;width:46%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(1.5deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:center;gap:18px"><span style="display:flex;width:64px;height:64px;flex:none;align-items:center;justify-content:center;background:#1C1917;color:#FAFAFA;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:24px;font-weight:700">RP</span><div><p style="margin:0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:28px;font-weight:700;letter-spacing:-0.02em;color:#1C1917">Raj Patel</p><p style="margin:3px 0 0;font-family:var(--font-mono);font-size:17px;font-weight:500;text-transform:uppercase;letter-spacing:0.14em;color:#8A8480">Customer Success Lead</p></div></div><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">First to hear churn risk. Wants complaints to actually reach the roadmap.</p></article><article data-card data-rot="-1" data-pos="58%,16%,46%" data-pp="64%,8%,80%" style="position:absolute;z-index:3;top:58%;left:16%;width:46%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(-1deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:center;gap:18px"><span style="display:flex;width:64px;height:64px;flex:none;align-items:center;justify-content:center;background:#1C1917;color:#FAFAFA;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:24px;font-weight:700">ER</span><div><p style="margin:0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:28px;font-weight:700;letter-spacing:-0.02em;color:#1C1917">Elena Ruiz</p><p style="margin:3px 0 0;font-family:var(--font-mono);font-size:17px;font-weight:500;text-transform:uppercase;letter-spacing:0.14em;color:#8A8480">Head of Product</p></div></div><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">Answers to the board. Needs prioritization she can defend.</p></article></div><div data-cardset="2" style="position:absolute;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity 420ms cubic-bezier(0.16,1,0.3,1)"><article data-card data-rot="-2" data-pos="10%,7%,44%" data-pp="4%,3%,78%" style="position:absolute;z-index:1;top:10%;left:7%;width:44%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(-2deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><p style="margin:0;font-family:var(--font-mono);font-size:17px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Step 01</p><h4 style="margin:12px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:32px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">Build the feedback inbox</h4><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">One channel in, tagged and searchable. Nothing else.</p></article><article data-card data-rot="1.5" data-pos="22%,44%,44%" data-pp="26%,19%,78%" style="position:absolute;z-index:2;top:22%;left:44%;width:44%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(1.5deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><p style="margin:0;font-family:var(--font-mono);font-size:17px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Step 02</p><h4 style="margin:12px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:32px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">Test with 10 PMs</h4><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">Hand-recruited from communities where they already complain.</p></article><article data-card data-rot="-1" data-pos="46%,14%,44%" data-pp="48%,5%,78%" style="position:absolute;z-index:3;top:46%;left:14%;width:44%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(-1deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><p style="margin:0;font-family:var(--font-mono);font-size:17px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Validation</p><h4 style="margin:12px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:32px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">5 of 10 return in week two</h4><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">The single signal that says keep going.</p></article><article data-card data-rot="2" data-pos="58%,48%,44%" data-pp="70%,17%,78%" style="position:absolute;z-index:4;top:58%;left:48%;width:44%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(2deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><p style="margin:0;font-family:var(--font-mono);font-size:17px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Out of scope</p><h4 style="margin:12px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:32px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">SSO, integrations, dashboards</h4><p style="margin:11px 0 0;font-size:23px;line-height:1.5;color:#4A4040">Named early so scope creep has nowhere to hide.</p></article></div><div data-cardset="3" data-flow="1" data-shift="188" data-pshift="416" style="position:absolute;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity 420ms cubic-bezier(0.16,1,0.3,1)"><article data-card data-rot="0" data-pos="6%,2%,70%" data-pp="5%,-50%,200%" style="position:absolute;z-index:1;top:22%;left:6%;width:88%;box-sizing:border-box;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(0deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><img src="public/landing/samples/mockup-option-a.png" alt="Mockup option A" class="mcl-crop" style="display:block;width:100%;height:auto;border:1.5px solid #E2DDD6"></img></article><article data-card data-rot="0" data-pos="31%,15%,70%" data-pp="5%,158%,200%" style="position:absolute;z-index:2;top:22%;left:100%;width:88%;box-sizing:border-box;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(0deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><img src="public/landing/samples/mockup-option-b.png" alt="Mockup option B" class="mcl-crop" style="display:block;width:100%;height:auto;border:1.5px solid #E2DDD6"></img></article><article data-card data-rot="0" data-pos="56%,28%,70%" data-pp="5%,366%,200%" style="position:absolute;z-index:3;top:22%;left:194%;width:88%;box-sizing:border-box;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(0deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><img src="public/landing/samples/mockup-option-c.png" alt="Mockup option C" class="mcl-crop" style="display:block;width:100%;height:auto;border:1.5px solid #E2DDD6"></img></article></div><div data-cardset="4" data-flow="1" data-shift="132" data-pshift="357" data-pshiftm="270" style="position:absolute;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity 420ms cubic-bezier(0.16,1,0.3,1)"><article data-card data-rot="0" data-pos="3%,0%,52%" data-pp="6%,-5.5%,111%" data-ppm="6%,8%,84%" style="position:absolute;z-index:1;top:6%;left:6%;width:52%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(0deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:15px"><p style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Prompt 01</p></div><h4 style="margin:8px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:24px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">Project brief</h4><div style="margin-top:14px;background:#F5F0EB;border:1px solid #EAE0D8;padding:18px 20px;max-height:560px;overflow:hidden" class="mcl-pbody"><p style="margin:0;font-family:var(--font-mono);font-size:15px;line-height:1.65;color:#6B6259"># Project brief<br>SignalDesk turns raw customer feedback into a prioritized roadmap for B2B SaaS teams.<br><br>## Context<br>The user is a PM who owns quarterly planning. Feedback lives in five tools and never makes it into one place.<br><br>## Goals<br>G1. One inbox for every feedback source<br>G2. Themes ranked by revenue at stake<br>G3. A roadmap the team can defend<br><br>## Non-goals<br>Surveys, NPS tooling, session replay...</p></div></article><article data-card data-rot="0" data-pos="9%,16%,52%" data-pp="6%,113.5%,111%" data-ppm="6%,98%,84%" style="position:absolute;z-index:2;top:6%;left:62%;width:52%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(0deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:15px"><p style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Prompt 02</p></div><h4 style="margin:8px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:24px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">PRD</h4><div style="margin-top:14px;background:#F5F0EB;border:1px solid #EAE0D8;padding:18px 20px;max-height:560px;overflow:hidden" class="mcl-pbody"><p style="margin:0;font-family:var(--font-mono);font-size:15px;line-height:1.65;color:#6B6259"># PRD<br><br>## Persona: Maya, PM<br>As a PM, I want feedback tagged by theme, so planning starts from evidence.<br><br>## Requirements<br>R1. Ingest from email, Slack, CSV<br>R2. Auto-tag by theme and weight<br>R3. Weight themes by ARR impact<br>R4. One-click export to Linear<br><br>## Acceptance<br>A tagged theme appears within 5s of ingest.<br>Weights recompute nightly.<br>Export round-trips without manual cleanup...</p></div></article><article data-card data-rot="0" data-pos="3%,32%,52%" data-pp="6%,232.5%,111%" data-ppm="6%,188%,84%" style="position:absolute;z-index:3;top:6%;left:118%;width:52%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(0deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:15px"><p style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Prompt 03</p></div><h4 style="margin:8px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:24px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">Tech spec</h4><div style="margin-top:14px;background:#F5F0EB;border:1px solid #EAE0D8;padding:18px 20px;max-height:560px;overflow:hidden" class="mcl-pbody"><p style="margin:0;font-family:var(--font-mono);font-size:15px;line-height:1.65;color:#6B6259"># Tech spec<br><br>## Stack<br>Next.js, Postgres, Prisma<br><br>## Data model<br>Feedback(id, source, theme, weight)<br>Theme(id, name, count)<br><br>## API<br>POST /ingest<br>GET /themes?sort=weight<br>POST /themes/:id/merge<br><br>## Jobs<br>Nightly reweight (cron)<br>Dedupe on ingest hash<br><br>## Auth<br>Deferred, single workspace...</p></div></article><article data-card data-rot="0" data-pos="9%,48%,52%" data-pp="6%,351.5%,111%" data-ppm="6%,278%,84%" style="position:absolute;z-index:4;top:6%;left:174%;width:52%;box-sizing:border-box;background:#FFFFFF;border:1.5px solid #EAE0D8;padding:28px 32px;box-shadow:0 18px 56px rgba(15,23,42,0.12);opacity:0;transform:translateY(56px) scale(0.97) rotate(0deg);transition:opacity 620ms cubic-bezier(0.16,1,0.3,1),transform 620ms cubic-bezier(0.16,1,0.3,1)"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:15px"><p style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#8A8480">Prompt 04</p><p style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.14em;color:#DC2626">Ready to paste</p></div><h4 style="margin:8px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:24px;font-weight:700;letter-spacing:-0.03em;color:#1C1917">First prompt</h4><div style="margin-top:14px;background:#F5F0EB;border:1px solid #EAE0D8;padding:18px 20px;max-height:560px;overflow:hidden" class="mcl-pbody"><p style="margin:0;font-family:var(--font-mono);font-size:15px;line-height:1.65;color:#6B6259"># First prompt<br>Build the first version described in the attached spec.<br><br>Start with the feedback inbox: one ingest endpoint, auto-tagging, and a themes list sorted by weight. Skip auth until it hurts.<br><br>Then: a theme detail view with source quotes, and a CSV import that maps columns interactively.<br><br>Ship when the inbox round-trips one real email end to end...</p></div></article></div></div></div>
+        </div>
+      </div>
+      <div class="mcl-mobile-only mcl-swap" style="position:relative;height:340px;margin-top:24px;overflow:hidden">
+        <div data-swap-panel style="position:absolute;top:0;right:0;left:0;opacity:0;transform:translateY(14px);transition:opacity 500ms cubic-bezier(0.16,1,0.3,1),transform 500ms cubic-bezier(0.16,1,0.3,1)">
+          <p style="margin:0;font-family:var(--font-mono);font-size:min(11px,2.9cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">01 / Market Research</p>
+          <h3 style="margin:12px 0 0;font-size:26px;font-weight:600;line-height:1.12;letter-spacing:-0.04em;color:#1C1917">Know the market before you build.</h3>
+          <p style="margin:12px 0 0;font-size:16px;line-height:1.55;color:#4A4040">Every direct competitor, their pricing, and the open gap for your idea, mapped before you commit a sprint.</p>
+        </div>
+        <div data-swap-panel style="position:absolute;top:0;right:0;left:0;opacity:0;transform:translateY(14px);transition:opacity 500ms cubic-bezier(0.16,1,0.3,1),transform 500ms cubic-bezier(0.16,1,0.3,1)">
+          <p style="margin:0;font-family:var(--font-mono);font-size:min(11px,2.9cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">02 / Product Plan</p>
+          <h3 style="margin:12px 0 0;font-size:26px;font-weight:600;line-height:1.12;letter-spacing:-0.04em;color:#1C1917">Know who you&rsquo;re building for.</h3>
+          <p style="margin:12px 0 0;font-size:16px;line-height:1.55;color:#4A4040">Three personas grounded in the research, with the user stories and requirements a coding agent can scope.</p>
+        </div>
+        <div data-swap-panel style="position:absolute;top:0;right:0;left:0;opacity:0;transform:translateY(14px);transition:opacity 500ms cubic-bezier(0.16,1,0.3,1),transform 500ms cubic-bezier(0.16,1,0.3,1)">
+          <p style="margin:0;font-family:var(--font-mono);font-size:min(11px,2.9cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">03 / First Version Plan</p>
+          <h3 style="margin:12px 0 0;font-size:26px;font-weight:600;line-height:1.12;letter-spacing:-0.04em;color:#1C1917">Scope the first release like a builder.</h3>
+          <p style="margin:12px 0 0;font-size:16px;line-height:1.55;color:#4A4040">A realistic build sequence, a validation plan, and what is explicitly out, so scope creep never sneaks back in.</p>
+        </div>
+        <div data-swap-panel style="position:absolute;top:0;right:0;left:0;opacity:0;transform:translateY(14px);transition:opacity 500ms cubic-bezier(0.16,1,0.3,1),transform 500ms cubic-bezier(0.16,1,0.3,1)">
+          <p style="margin:0;font-family:var(--font-mono);font-size:min(11px,2.9cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">04 / Design Mockups</p>
+          <h3 style="margin:12px 0 0;font-size:26px;font-weight:600;line-height:1.12;letter-spacing:-0.04em;color:#1C1917">Three UI directions, side by side.</h3>
+          <p style="margin:12px 0 0;font-size:16px;line-height:1.55;color:#4A4040">The same core screens in three visual takes. Pick one, and it becomes the build reference.</p>
+        </div>
+        <div data-swap-panel style="position:absolute;top:0;right:0;left:0;opacity:0;transform:translateY(14px);transition:opacity 500ms cubic-bezier(0.16,1,0.3,1),transform 500ms cubic-bezier(0.16,1,0.3,1)">
+          <p style="margin:0;font-family:var(--font-mono);font-size:min(11px,2.9cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">05 / AI Prompts</p>
+          <h3 style="margin:12px 0 0;font-size:26px;font-weight:600;line-height:1.12;letter-spacing:-0.04em;color:#1C1917">A brief your coding agent can run with.</h3>
+          <p style="margin:12px 0 0;font-size:16px;line-height:1.55;color:#4A4040">A recommended build tool and a first prompt built from your plans, ready to paste into your coding agent.</p>
+        </div>
+      </div>
+    </div>
+    <div data-text-col style="min-width:0">
+      <div data-text-pin style="position:relative">
+      <div class="mcl-feature-block" data-block="0" data-screen-label="Feature 01 Market Research" style="min-height:86vh;display:flex;flex-direction:column;justify-content:center;padding:24px 0;box-sizing:border-box">
+        <p data-line style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">01 / Market Research</p>
+        <h3 data-line style="margin:20px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:clamp(1.9rem,2.4vw,2.7rem);font-weight:600;line-height:1.1;letter-spacing:-0.05em;color:#1C1917">Know the market before you build.</h3>
+        <p data-line style="margin:20px 0 0;max-width:26em;font-size:clamp(1.05rem,1.3vw,1.25rem);line-height:1.55;color:#4A4040">Every direct competitor, their pricing, and the open gap for your idea, mapped before you commit a sprint.</p>
+      </div>
+      <div class="mcl-feature-block" data-block="1" data-screen-label="Feature 02 Product Plan" style="min-height:86vh;display:flex;flex-direction:column;justify-content:center;padding:24px 0;box-sizing:border-box">
+        <p data-line style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">02 / Product Plan</p>
+        <h3 data-line style="margin:20px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:clamp(1.9rem,2.4vw,2.7rem);font-weight:600;line-height:1.1;letter-spacing:-0.05em;color:#1C1917">Know who you&rsquo;re building for.</h3>
+        <p data-line style="margin:20px 0 0;max-width:26em;font-size:clamp(1.05rem,1.3vw,1.25rem);line-height:1.55;color:#4A4040">Three personas grounded in the research, with the user stories and requirements a coding agent can scope.</p>
+      </div>
+      <div class="mcl-feature-block" data-block="2" data-screen-label="Feature 03 First Version Plan" style="min-height:86vh;display:flex;flex-direction:column;justify-content:center;padding:24px 0;box-sizing:border-box">
+        <p data-line style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">03 / First Version Plan</p>
+        <h3 data-line style="margin:20px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:clamp(1.9rem,2.4vw,2.7rem);font-weight:600;line-height:1.1;letter-spacing:-0.05em;color:#1C1917">Scope the first release like a builder.</h3>
+        <p data-line style="margin:20px 0 0;max-width:26em;font-size:clamp(1.05rem,1.3vw,1.25rem);line-height:1.55;color:#4A4040">A realistic build sequence, a validation plan, and what is explicitly out, so scope creep never sneaks back in.</p>
+      </div>
+      <div class="mcl-feature-block" data-block="3" data-screen-label="Feature 04 Design Mockups" style="min-height:86vh;display:flex;flex-direction:column;justify-content:center;padding:24px 0;box-sizing:border-box">
+        <p data-line style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">04 / Design Mockups</p>
+        <h3 data-line style="margin:20px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:clamp(1.9rem,2.4vw,2.7rem);font-weight:600;line-height:1.1;letter-spacing:-0.05em;color:#1C1917">Three UI directions, side by side.</h3>
+        <p data-line style="margin:20px 0 0;max-width:26em;font-size:clamp(1.05rem,1.3vw,1.25rem);line-height:1.55;color:#4A4040">The same core screens in three visual takes. Pick one, and it becomes the build reference.</p>
+      </div>
+      <div class="mcl-feature-block" data-block="4" data-screen-label="Feature 05 AI Prompts" style="min-height:86vh;display:flex;flex-direction:column;justify-content:center;padding:24px 0;box-sizing:border-box">
+        <p data-line style="margin:0;font-family:var(--font-mono);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">05 / AI Prompts</p>
+        <h3 data-line style="margin:20px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:clamp(1.9rem,2.4vw,2.7rem);font-weight:600;line-height:1.1;letter-spacing:-0.05em;color:#1C1917">A brief your coding agent can run with.</h3>
+        <p data-line style="margin:20px 0 0;max-width:26em;font-size:clamp(1.05rem,1.3vw,1.25rem);line-height:1.55;color:#4A4040">A recommended build tool and a first prompt built from your plans, ready to paste into your coding agent.</p>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="margin:0 auto;width:100%;max-width:1320px;padding:40px clamp(16px,4vw,56px);box-sizing:border-box">
+  <section data-testimonial data-screen-label="Testimonial" style="position:relative;isolation:isolate;min-height:158px;overflow:hidden;background:#1C1917;padding:32px clamp(24px,6vw,120px);color:#FFFFFF">
+    <div style="position:relative;z-index:10;max-width:620px">
+      <div data-t-quote style="display:flex;align-items:flex-start;gap:16px;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-weight:700;line-height:1.18">
+        <span style="margin-top:-5px;width:26px;flex:none;font-size:52px;line-height:1;color:#DC2626">&ldquo;</span>
+        <p style="margin:0;max-width:560px;font-size:clamp(1.55rem,2.2vw,1.875rem);line-height:1.2">Makercompass is like having a co-founder who&rsquo;s obsessed with execution.</p>
+      </div>
+      <div data-t-profile style="margin-top:16px;display:flex;align-items:center;gap:12px;padding-left:40px">
+        <img src="uploads/pasted-1784428530269-0.png" alt="Rohan Mehta" style="width:48px;height:48px;flex:none;border-radius:50%;object-fit:cover"></img>
+        <div style="font-size:14px;line-height:1.55">
+          <p style="margin:0;font-weight:700">Rohan Mehta</p>
+          <p style="margin:0">Indie founder</p>
+        </div>
+      </div>
+    </div>
+    <svg data-t-spark class="mcl-md-hide" viewBox="0 0 330 220" fill="none" aria-hidden="true" style="pointer-events:none;position:absolute;top:-20px;right:clamp(0px,8vw,120px);height:calc(100% + 20px);width:auto;aspect-ratio:330/220;color:rgba(255,255,255,0.8)">
+      <path data-t-path d="M0 220C77 207 111 190 139 166C165 143 201 150 191 173C183 191 161 180 164 156C169 122 201 96 256 79C292 68 312 45 330 0" stroke="currentColor" stroke-width="2" stroke-dasharray="7 8" stroke-linecap="round"></path>
+      <ellipse data-t-dot cx="255" cy="80" rx="3.5" ry="3.5" fill="#DC2626" style="filter:drop-shadow(0 0 10px rgba(220,38,38,0.55))"></ellipse>
+    </svg>
+  </section>
+</section>
+
+<section id="pricing" data-screen-label="Pricing" style="margin:0 auto;width:100%;max-width:1320px;padding:40px clamp(16px,4vw,56px);box-sizing:border-box;scroll-margin-top:80px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px">
+    <h2 style="margin:0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:clamp(2rem,3.4vw,3.35rem);line-height:0.98;letter-spacing:-0.06em;font-weight:600;color:#1C1917">Pricing</h2>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+      <div style="display:inline-flex;align-items:center;gap:2px;border-radius:999px;background:#F5F0EB;padding:4px">
+        <button type="button" data-bill="monthly" onClick="{{ setMonthly }}" style="height:36px;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;padding:0 18px;font-size:13px;font-weight:600;color:#1C1917;cursor:pointer;transition:color 200ms,background-color 200ms">Monthly</button>
+        <button type="button" data-bill="yearly" onClick="{{ setYearly }}" style="height:36px;border-radius:999px;border:1px solid transparent;background:transparent;padding:0 18px;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer;transition:color 200ms,background-color 200ms">Yearly</button>
+      </div>
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.16em;color:#DC2626">Save 15% with yearly billing</span>
+    </div>
+  </div>
+  <div style="margin-top:32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px">
+    <article style="display:flex;flex-direction:column;border:1px solid #EAE0D8;background:#FFFFFF;padding:28px;color:#1C1917">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+        <h3 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Free</h3>
+      </div>
+      <p style="margin:20px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:52px;font-weight:700;line-height:1;letter-spacing:-0.05em;color:#1C1917">$0</p>
+      <p style="margin:8px 0 0;font-size:14px;color:#4A4040">per month</p>
+      <p style="margin:2px 0 0;font-size:13px;font-weight:600;color:#1C1917">free forever</p>
+      <div style="margin-top:24px">
+        <button type="button" style="height:44px;width:100%;border-radius:6px;border:1px solid #1C1917;background:#FFFFFF;font-size:14px;font-weight:600;color:#1C1917;cursor:pointer;transition:background-color 200ms" style-hover="background:#F5F0EB">Choose Free</button>
+      </div>
+      <p style="margin:28px 0 0;font-size:15px;font-weight:700">What's included:</p>
+      <div style="margin-top:4px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">1 lifetime project</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Bundled research, product plan, first-version plan, and mockups</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Competitive scan with audience segments</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Ready-to-paste AI prompts</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Community support</span></div>
+      </div>
+    </article>
+    <article style="display:flex;flex-direction:column;border:1px solid #EAE0D8;background:#FFFFFF;padding:28px;color:#1C1917">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+        <h3 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Starter</h3>
+      </div>
+      <p data-price="starter" style="margin:20px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:52px;font-weight:700;line-height:1;letter-spacing:-0.05em;color:#1C1917">$19</p>
+      <p style="margin:8px 0 0;font-size:14px;color:#4A4040">per month</p>
+      <p data-billnote="starter" style="margin:2px 0 0;font-size:13px;font-weight:600;color:#1C1917">billed monthly</p>
+      <div style="margin-top:24px">
+        <button type="button" style="height:44px;width:100%;border-radius:6px;border:1px solid #1C1917;background:#FFFFFF;font-size:14px;font-weight:600;color:#1C1917;cursor:pointer;transition:background-color 200ms" style-hover="background:#F5F0EB">Start Starter</button>
+      </div>
+      <p style="margin:28px 0 0;font-size:15px;font-weight:700">Everything in Free plus:</p>
+      <div style="margin-top:4px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">5 projects/mo</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Good AI models for research and generation</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Bundled planning docs for each new project</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Three design mockup directions per project</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Product plan + tech spec export</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #EAE0D8"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Recommended build tool + first prompt</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Email support</span></div>
+      </div>
+    </article>
+    <article style="display:flex;flex-direction:column;border:1px solid #E8DDD5;background:#F5F0EB;padding:28px;color:#1C1917">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+        <h3 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Pro</h3>
+        <span style="flex:none;white-space:nowrap;border-radius:999px;border:1px solid #E8DDD5;background:#FFFFFF;padding:4px 12px;font-family:var(--font-mono);font-size:min(11px,2.9cqw);text-transform:uppercase;letter-spacing:0.18em;color:#1C1917">Best Value</span>
+      </div>
+      <p data-price="pro" style="margin:20px 0 0;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:52px;font-weight:700;line-height:1;letter-spacing:-0.05em;color:#DC2626">$49</p>
+      <p style="margin:8px 0 0;font-size:14px;color:#4A4040">per month</p>
+      <p data-billnote="pro" style="margin:2px 0 0;font-size:13px;font-weight:600;color:#1C1917">billed monthly</p>
+      <div style="margin-top:24px">
+        <button type="button" style="height:44px;width:100%;border-radius:6px;border:none;background:#DC2626;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer;transition:background-color 200ms" style-hover="background:rgba(220,38,38,0.9)">Go Pro</button>
+      </div>
+      <p style="margin:28px 0 0;font-size:15px;font-weight:700">Everything in Starter plus:</p>
+      <div style="margin-top:4px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #E8DDD5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">10 projects/mo</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #E8DDD5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Best AI models for research and generation</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #E8DDD5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Bundled planning docs for heavier build cycles</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #E8DDD5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Deeper research with the thinking model</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #E8DDD5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Priority generation queue</span></div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex:none"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:14px;line-height:1.5;color:#4A4040">Priority support</span></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section id="faq" data-screen-label="FAQ" style="margin:0 auto;width:100%;max-width:1320px;padding:40px clamp(16px,4vw,56px);box-sizing:border-box;scroll-margin-top:80px">
+  <h2 style="margin:0;max-width:760px;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:clamp(2rem,3.4vw,3.35rem);line-height:0.98;letter-spacing:-0.06em;font-weight:600;color:#1C1917">Frequently asked questions</h2>
+  <div style="margin-top:40px;border-top:1px solid #EAE0D8">
+    <details data-faq style="border-bottom:1px solid #EAE0D8">
+      <summary style="display:flex;cursor:pointer;align-items:center;justify-content:space-between;gap:24px;padding:20px 0;text-align:left">
+        <span style="font-size:clamp(17px,1.5vw,19px);font-weight:600;letter-spacing:-0.01em;color:#1C1917">What do I get for each project?</span>
+        <svg data-faq-icon width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;transition:transform 300ms cubic-bezier(0.16,1,0.3,1)"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+      </summary>
+      <p style="margin:0;max-width:720px;padding-bottom:24px;font-size:15px;line-height:1.625;color:#4A4040">One intake produces market research, a product plan, a first version plan, three design mockup directions, and ready-to-paste AI prompts. Everything lives in one project workspace.</p>
+    </details>
+    <details data-faq style="border-bottom:1px solid #EAE0D8">
+      <summary style="display:flex;cursor:pointer;align-items:center;justify-content:space-between;gap:24px;padding:20px 0;text-align:left">
+        <span style="font-size:clamp(17px,1.5vw,19px);font-weight:600;letter-spacing:-0.01em;color:#1C1917">Do I need to know how to code?</span>
+        <svg data-faq-icon width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;transition:transform 300ms cubic-bezier(0.16,1,0.3,1)"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+      </summary>
+      <p style="margin:0;max-width:720px;padding-bottom:24px;font-size:15px;line-height:1.625;color:#4A4040">No. The output is structured for AI coding tools like Cursor, Claude Code, or Lovable. You download the prompt files, paste the first prompt into the tool we recommend, and build from there.</p>
+    </details>
+    <details data-faq style="border-bottom:1px solid #EAE0D8">
+      <summary style="display:flex;cursor:pointer;align-items:center;justify-content:space-between;gap:24px;padding:20px 0;text-align:left">
+        <span style="font-size:clamp(17px,1.5vw,19px);font-weight:600;letter-spacing:-0.01em;color:#1C1917">How long does generation take?</span>
+        <svg data-faq-icon width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;transition:transform 300ms cubic-bezier(0.16,1,0.3,1)"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+      </summary>
+      <p style="margin:0;max-width:720px;padding-bottom:24px;font-size:15px;line-height:1.625;color:#4A4040">Most projects finish in a few minutes. Generation runs on our servers, so you can close the tab and come back; nothing is lost.</p>
+    </details>
+    <details data-faq style="border-bottom:1px solid #EAE0D8">
+      <summary style="display:flex;cursor:pointer;align-items:center;justify-content:space-between;gap:24px;padding:20px 0;text-align:left">
+        <span style="font-size:clamp(17px,1.5vw,19px);font-weight:600;letter-spacing:-0.01em;color:#1C1917">Can I try it for free?</span>
+        <svg data-faq-icon width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;transition:transform 300ms cubic-bezier(0.16,1,0.3,1)"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+      </summary>
+      <p style="margin:0;max-width:720px;padding-bottom:24px;font-size:15px;line-height:1.625;color:#4A4040">Yes. The Free plan includes one lifetime project with the full bundle: research, plans, mockups, and prompts. No credit card required.</p>
+    </details>
+    <details data-faq style="border-bottom:1px solid #EAE0D8">
+      <summary style="display:flex;cursor:pointer;align-items:center;justify-content:space-between;gap:24px;padding:20px 0;text-align:left">
+        <span style="font-size:clamp(17px,1.5vw,19px);font-weight:600;letter-spacing:-0.01em;color:#1C1917">What happens when I hit my monthly project limit?</span>
+        <svg data-faq-icon width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;transition:transform 300ms cubic-bezier(0.16,1,0.3,1)"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+      </summary>
+      <p style="margin:0;max-width:720px;padding-bottom:24px;font-size:15px;line-height:1.625;color:#4A4040">Existing projects stay fully accessible. To start more projects in the same month, upgrade your plan; otherwise your allowance resets with the next billing month.</p>
+    </details>
+    <details data-faq style="border-bottom:1px solid #EAE0D8">
+      <summary style="display:flex;cursor:pointer;align-items:center;justify-content:space-between;gap:24px;padding:20px 0;text-align:left">
+        <span style="font-size:clamp(17px,1.5vw,19px);font-weight:600;letter-spacing:-0.01em;color:#1C1917">Can I cancel anytime?</span>
+        <svg data-faq-icon width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;transition:transform 300ms cubic-bezier(0.16,1,0.3,1)"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+      </summary>
+      <p style="margin:0;max-width:720px;padding-bottom:24px;font-size:15px;line-height:1.625;color:#4A4040">Yes. Manage or cancel your subscription from the billing page at any time; access continues through the period you have already paid for.</p>
+    </details>
+  </div>
+</section>
+
+<section data-cta-final data-screen-label="Bottom CTA" style="border-top:1px solid #EAE0D8;padding:clamp(64px,8vw,80px) 0">
+  <div style="margin:0 auto;width:100%;max-width:1320px;padding:0 clamp(16px,4vw,56px);box-sizing:border-box;text-align:center">
+    <div data-cta-compass aria-hidden="true" style="display:flex;justify-content:center;margin-bottom:28px">
+      <svg width="62" height="44" viewBox="0 0 47.9971 33.5966" fill="none">
+        <path data-cc-arc d="M40.6737 0.125786C40.8361 -0.0366426 41.0997 -0.0368826 41.2593 0.12833C45.4302 4.44601 47.997 10.3232 47.9971 16.8004L47.9893 17.4205C47.8313 23.6524 45.2967 29.2928 41.2594 33.4724C41.0998 33.6377 40.8361 33.6374 40.6737 33.4749L39.0976 31.8982C38.9353 31.7358 38.9356 31.4728 39.0947 31.3072C42.7115 27.5438 44.9356 22.4321 44.9356 16.8004C44.9355 11.1686 42.7117 6.05625 39.0948 2.29271C38.9357 2.12711 38.9354 1.8641 39.0978 1.70169L40.6737 0.125786Z" fill="#FF4000" style="opacity:0"></path>
+        <path data-cc-arc d="M8.90025 1.69748C9.06267 1.8599 9.06235 2.12295 8.90316 2.28855C5.28511 6.05223 3.06069 11.1655 3.06055 16.7982C3.06055 22.4298 5.28373 27.5424 8.90033 31.3059C9.05947 31.4715 9.05977 31.7345 8.89737 31.8969L7.32246 33.4718C7.16002 33.6343 6.89637 33.6345 6.73678 33.4693C2.56668 29.1515 0 23.2749 0 16.7982C0.000147854 10.3202 2.56703 4.44194 6.73873 0.124115C6.89833 -0.0410749 7.16194 -0.0408243 7.32436 0.121594L8.90025 1.69748Z" fill="#FF4000" style="opacity:0"></path>
+        <circle data-cc-dot cx="23.9986" cy="16.798" r="2.6" fill="#FF4000" style="opacity:0;transform:scale(0);transform-box:fill-box;transform-origin:center"></circle>
+      </svg>
+    </div>
+    <h2 style="margin:0 auto;max-width:860px;font-family:var(--font-display,'Hanken Grotesk',sans-serif);font-size:clamp(2rem,4.2vw,4rem);line-height:0.96;letter-spacing:-0.06em;font-weight:600;color:#1C1917">Turn your next idea into a build plan.</h2>
+    <p style="margin:24px auto 0;max-width:760px;font-size:clamp(17px,1.8vw,20px);line-height:1.5;color:#4A4040">Get early access and turn your next idea into research, plans, and mockups you can actually execute.</p>
+    <p style="margin:16px auto 0;max-width:640px;font-family:var(--font-mono);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">One intake. Four planning artifacts. Three mockup directions.</p>
+    <div style="margin-top:32px;display:flex;justify-content:center">
+      <button type="button" style="display:inline-flex;height:56px;align-items:center;gap:8px;border-radius:6px;border:none;background:#DC2626;padding:0 32px;font-size:16px;font-weight:600;color:#FFFFFF;cursor:pointer;transition:background-color 200ms cubic-bezier(0.16,1,0.3,1)" style-hover="background:rgba(220,38,38,0.9)" style-active="transform:scale(0.98)">Turn my idea into a plan<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+    </div>
+  </div>
+</section>
+
+<footer data-screen-label="Footer" style="position:relative;isolation:isolate;overflow:hidden;border-top:1px solid #EAE0D8;background:#F5F0EB">
+  <svg class="mcl-md-hide" aria-hidden="true" viewBox="0 0 47.9971 33.5966" fill="none" style="position:absolute;right:-170px;bottom:-150px;width:820px;height:574px;color:rgba(28,25,23,0.09);pointer-events:none">
+    <path d="M35.4533 27.6265C35.7032 28.034 35.2349 28.5024 34.8273 28.2525L25.1769 22.3101L26.6408 21.4097L31.0236 24.2075C31.2761 24.3687 31.571 24.0746 31.4103 23.8218L28.6154 19.4273L29.5089 17.9732L35.4533 27.6265ZM13.0226 5.28761L13.1759 5.34914L13.3742 5.47023L22.8146 11.2837L21.3517 12.1841L16.9806 9.39504C16.7281 9.23425 16.4332 9.52903 16.5939 9.78176L19.3771 14.1568L18.4826 15.6109L12.672 6.17238L12.55 5.97511L12.4894 5.81984C12.4281 5.51222 12.7149 5.22543 13.0226 5.28761Z" stroke="currentColor" stroke-width="0.08"></path>
+    <path d="M21.443 13.587L34.8006 5.37329C35.2075 5.1231 35.6749 5.59052 35.4248 5.99741L27.2118 19.3557C27.0476 19.6228 26.8228 19.8476 26.5556 20.0119L13.1973 28.2248C12.7904 28.475 12.323 28.0075 12.5732 27.6007L20.787 14.2431C20.9512 13.976 21.1759 13.7513 21.443 13.587Z" stroke="currentColor" stroke-width="0.08"></path>
+    <path d="M40.6737 0.125786C40.8361 -0.0366426 41.0997 -0.0368826 41.2593 0.12833C45.4302 4.44601 47.997 10.3232 47.9971 16.8004L47.9893 17.4205C47.8313 23.6524 45.2967 29.2928 41.2594 33.4724C41.0998 33.6377 40.8361 33.6374 40.6737 33.4749L39.0976 31.8982C38.9353 31.7358 38.9356 31.4728 39.0947 31.3072C42.7115 27.5438 44.9356 22.4321 44.9356 16.8004C44.9355 11.1686 42.7117 6.05625 39.0948 2.29271C38.9357 2.12711 38.9354 1.8641 39.0978 1.70169L40.6737 0.125786Z" stroke="currentColor" stroke-width="0.08"></path>
+    <path d="M8.90025 1.69748C9.06267 1.8599 9.06235 2.12295 8.90316 2.28855C5.28511 6.05223 3.06069 11.1655 3.06055 16.7982C3.06055 22.4298 5.28373 27.5424 8.90033 31.3059C9.05947 31.4715 9.05977 31.7345 8.89737 31.8969L7.32246 33.4718C7.16002 33.6343 6.89637 33.6345 6.73678 33.4693C2.56668 29.1515 0 23.2749 0 16.7982C0.000147854 10.3202 2.56703 4.44194 6.73873 0.124115C6.89833 -0.0410749 7.16194 -0.0408243 7.32436 0.121594L8.90025 1.69748Z" stroke="currentColor" stroke-width="0.08"></path>
+    <circle cx="23.9986" cy="16.798" r="1.45565" stroke="currentColor" stroke-width="0.08"></circle>
+    <circle cx="23.9986" cy="16.798" r="0.45" fill="#DC2626"></circle>
+  </svg>
+  <div style="position:relative;z-index:1;margin:0 auto;display:grid;width:100%;max-width:1320px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:40px;padding:56px clamp(16px,4vw,56px);box-sizing:border-box">
+    <div>
+      <a href="#" style="display:inline-flex;align-items:center;gap:10px;color:#1C1917">
+        <img src="public/maker-compass-logo.svg" alt="Maker Compass" style="width:32px;height:32px;border-radius:2px;object-fit:contain">
+        <span style="font-size:16px;font-weight:600;letter-spacing:0.01em;color:#1C1917">Maker Compass</span>
+      </a>
+      <p style="margin:16px 0 0;max-width:320px;font-size:14px;line-height:1.625;color:#4A4040">Turn a one-line idea into research, a product plan, mockups, and a first-version build plan you can hand to a coding agent.</p>
+    </div>
+    <div>
+      <p style="margin:0;font-family:var(--font-mono);font-size:min(11px,2.9cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Product</p>
+      <ul style="margin:16px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;font-size:14px">
+        <li><a href="#features" style="color:#4A4040" style-hover="color:#1C1917">Features</a></li>
+        <li><a href="#pricing" style="color:#4A4040" style-hover="color:#1C1917">Pricing</a></li>
+        <li><a href="#faq" style="color:#4A4040" style-hover="color:#1C1917">FAQ</a></li>
+      </ul>
+    </div>
+    <div>
+      <p style="margin:0;font-family:var(--font-mono);font-size:min(11px,2.9cqw);font-weight:500;text-transform:uppercase;letter-spacing:0.18em;color:#6B7280">Help</p>
+      <ul style="margin:16px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;font-size:14px">
+        <li><a href="#" style="color:#4A4040" style-hover="color:#1C1917">Contact us</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="position:relative;z-index:1;margin:0 auto;display:flex;min-height:64px;width:100%;max-width:1320px;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #EAE0D8;padding:0 clamp(16px,4vw,56px);box-sizing:border-box">
+    <span style="font-family:var(--font-mono);font-size:min(11px,2.9cqw);letter-spacing:0.18em;color:#6B7280">&copy; 2026 Maker Compass. All rights reserved.</span>
+    <nav style="display:flex;align-items:center;gap:24px;font-family:var(--font-mono);font-size:min(11px,2.9cqw);letter-spacing:0.18em">
+      <a href="#" style="color:#6B7280" style-hover="color:#1C1917">PRIVACY</a>
+      <a href="#" style="color:#6B7280" style-hover="color:#1C1917">TERMS</a>
+    </nav>
+  </div>
+</footer>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;textMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pinned&quot;,&quot;scroll&quot;],&quot;default&quot;:&quot;pinned&quot;,&quot;tsType&quot;:&quot;\&quot;pinned\&quot; | \&quot;scroll\&quot;&quot;,&quot;section&quot;:&quot;Feature scrollytelling&quot;},&quot;tiltMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;section&quot;,&quot;hover&quot;,&quot;both&quot;,&quot;off&quot;],&quot;default&quot;:&quot;off&quot;,&quot;tsType&quot;:&quot;\&quot;section\&quot; | \&quot;hover\&quot; | \&quot;both\&quot; | \&quot;off\&quot;&quot;,&quot;section&quot;:&quot;Feature scrollytelling&quot;},&quot;tiltIntensity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:2,&quot;step&quot;:0.1,&quot;default&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Feature scrollytelling&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      ideaFocus: () => { this.ideaExpanded = true; this.applyIdea(); },
+      ideaBlur: (e) => {
+        const next = e.relatedTarget;
+        if (!e.currentTarget.contains(next)) {
+          const el = document.querySelector("[data-idea-input]");
+          if (el && !el.value.trim()) { this.ideaExpanded = false; this.applyIdea(); }
+        }
+      },
+      setMonthly: () => this.setBilling("monthly"),
+      setYearly: () => this.setBilling("yearly"),
+    };
+  }
+
+  applyIdea() {
+    const el = document.querySelector("[data-idea-input]");
+    const sp = document.querySelector("[data-idea-spacer]");
+    if (!el) return;
+    const open = this.ideaExpanded || !this.ideaRow;
+    el.style.height = open ? "118px" : "46px";
+    el.style.width = open ? "100%" : "calc(100% - 158px)";
+    if (sp) sp.style.height = open ? "58px" : "0px";
+  }
+
+  setBilling(mode) {
+    const yearly = mode === "yearly";
+    const q = (s) => document.querySelector(s);
+    const starter = yearly ? 16 : 19, pro = yearly ? 42 : 49;
+    const sp = q('[data-price="starter"]'), pp = q('[data-price="pro"]');
+    if (sp) sp.textContent = "$" + starter;
+    if (pp) pp.textContent = "$" + pro;
+    const sn = q('[data-billnote="starter"]'), pn = q('[data-billnote="pro"]');
+    if (sn) sn.textContent = yearly ? ("billed annually as $" + starter * 12) : "billed monthly";
+    if (pn) pn.textContent = yearly ? ("billed annually as $" + pro * 12) : "billed monthly";
+    const mB = q('[data-bill="monthly"]'), yB = q('[data-bill="yearly"]');
+    const set = (b, on) => {
+      if (!b) return;
+      b.style.border = on ? "1px solid #E8DDD5" : "1px solid transparent";
+      b.style.background = on ? "#FFFFFF" : "transparent";
+      b.style.color = on ? "#1C1917" : "#6B7280";
+    };
+    set(mB, !yearly); set(yB, yearly);
+  }
+
+  componentDidMount() {
+    this.cleanup = [];
+    this.ideaExpanded = false;
+    const rowQuery = window.matchMedia("(min-width: 640px)");
+    const syncIdea = () => { this.ideaRow = rowQuery.matches; this.applyIdea(); };
+    rowQuery.addEventListener("change", syncIdea);
+    this.cleanup.push(() => rowQuery.removeEventListener("change", syncIdea));
+    syncIdea();
+    window.__mclGen = (window.__mclGen || 0) + 1;
+    this._gen = window.__mclGen;
+    this.setupScrolly();
+    this.setupRail();
+    this.setupTestimonial();
+    this.setupFaq();
+    this.setupBuildMap();
+  }
+
+  setupBuildMap() {
+    const gen = this._gen;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const S = [
+      { idea: "Turn scattered customer feedback into a ranked roadmap for B2B SaaS teams.",
+        comps: [["productboard.com", "Productboard"], ["canny.io", "Canny"], ["aha.io", "Aha!"]],
+        persona: ["MC", "Maya Chen", "Product Manager"],
+        goals: ["One inbox for every feedback source", "Themes ranked by revenue at stake", "A roadmap the team can defend"],
+        files: ["signaldesk-brief.md", "prd.md", "personas.md", "first-version-plan.md", "prompt-01.md"], mock: 0 },
+      { idea: "A booking app for independent barbers, with deposits that end no-shows.",
+        comps: [["getsquire.com", "Squire"], ["booksy.com", "Booksy"], ["fresha.com", "Fresha"]],
+        persona: ["DL", "Dre Lawson", "Shop Owner"],
+        goals: ["Clients book without the DM thread", "Deposits cut no-shows to near zero", "One clean week view per chair"],
+        files: ["chairbook-brief.md", "prd.md", "personas.md", "first-version-plan.md", "prompt-01.md"], mock: 1 },
+      { idea: "Invoices that chase late payments themselves, built for freelancers.",
+        comps: [["freshbooks.com", "FreshBooks"], ["hellobonsai.com", "Bonsai"], ["honeybook.com", "HoneyBook"]],
+        persona: ["SK", "Sana Khan", "Freelance Designer"],
+        goals: ["An invoice out in under a minute", "Reminders that send themselves", "Who owes what, at a glance"],
+        files: ["latepay-brief.md", "prd.md", "personas.md", "first-version-plan.md", "prompt-01.md"], mock: 2 },
+    ];
+    const all = (s) => Array.from(document.querySelectorAll(s));
+    const apply = (sc) => {
+      all("[data-bm-research]").forEach((box) => {
+        Array.from(box.querySelectorAll("[data-bm-comp]")).forEach((row, i) => {
+          const c = sc.comps[i]; if (!c) return;
+          const img = row.querySelector("img");
+          const nm = row.querySelector("[data-bm-comp-name]");
+          if (img) img.src = "https://www.google.com/s2/favicons?domain=" + c[0] + "&sz=64";
+          if (nm) nm.textContent = c[1];
+        });
+      });
+      all("[data-bm-persona-ini]").forEach((e) => { e.textContent = sc.persona[0]; });
+      all("[data-bm-persona-name]").forEach((e) => { e.textContent = sc.persona[1]; });
+      all("[data-bm-persona-role]").forEach((e) => { e.textContent = sc.persona[2]; });
+      all("[data-bm-plan]").forEach((box) => {
+        Array.from(box.querySelectorAll("[data-bm-goal]")).forEach((e, i) => { e.textContent = sc.goals[i] || ""; });
+      });
+      all("[data-bm-prompt]").forEach((box) => {
+        Array.from(box.querySelectorAll("[data-bm-file]")).forEach((e, i) => { e.textContent = sc.files[i] || ""; });
+      });
+      all("[data-bm-mock]").forEach((img) => {
+        img.style.opacity = img.getAttribute("data-bm-mock") === String(sc.mock) ? "1" : "0";
+      });
+    };
+    const alive = () => window.__mclGen === gen && !!document.querySelector("[data-bm-idea-text]");
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    let si = 0;
+    (async () => {
+      await wait(1700);
+      while (alive()) {
+        const sc = S[si % S.length];
+        all("[data-bm-fade]").forEach((f) => { f.style.opacity = "0"; });
+        all("[data-bm-idea-text]").forEach((e) => { e.textContent = ""; });
+        await wait(460); if (!alive()) return;
+        apply(sc);
+        for (let i = 1; i <= sc.idea.length; i++) {
+          all("[data-bm-idea-text]").forEach((e) => { e.textContent = sc.idea.slice(0, i); });
+          await wait(14 + Math.random() * 16); if (!alive()) return;
+        }
+        await wait(150); if (!alive()) return;
+        all("[data-bm-fade]").forEach((f) => {
+          const d = (parseInt(f.getAttribute("data-bm-fade"), 10) || 0) * 170;
+          setTimeout(() => { if (window.__mclGen === gen) f.style.opacity = "1"; }, d);
+        });
+        si += 1;
+        await wait(3800); if (!alive()) return;
+      }
+    })();
+  }
+
+  componentWillUnmount() {
+    // The legacy runtime can fire a spurious unmount right after mount while the
+    // DOM stays on screen; tearing down loops/listeners then kills the page.
+    // Only clean up if this instance was actually superseded or its DOM removed.
+    if (document.querySelector("[data-stage]") && window.__mclGen === this._gen) return;
+    (this.cleanup || []).forEach((fn) => { try { fn(); } catch (e) {} });
+  }
+
+  setupFaq() {
+    document.querySelectorAll("[data-faq]").forEach((d) => {
+      const handler = () => {
+        const ic = d.querySelector("[data-faq-icon]");
+        if (ic) ic.style.transform = d.open ? "rotate(45deg)" : "rotate(0deg)";
+      };
+      d.addEventListener("toggle", handler);
+      this.cleanup.push(() => d.removeEventListener("toggle", handler));
+    });
+  }
+
+  setupRail() {
+    let rail = document.querySelector("[data-rail]");
+    let feat = document.querySelector("[data-scrolly]");
+    if (rail && feat) {
+      let line = rail.querySelector("[data-rail-line]");
+      let dot = rail.querySelector("[data-rail-dot]");
+      let chip = rail.querySelector("[data-rail-chip]");
+      let ticks = Array.from(rail.querySelectorAll("[data-rail-ms]"));
+      const names = ["01 RESEARCH", "02 PLAN", "03 SCOPE", "04 MOCKUPS", "05 PROMPTS"];
+      const gen = this._gen;
+      let raf = 0;
+      const step = () => {
+        if (window.__mclGen !== gen) return;
+        raf = requestAnimationFrame(step);
+        if (!rail.isConnected) {
+          const r2 = document.querySelector("[data-rail]"), f2 = document.querySelector("[data-scrolly]");
+          if (r2 && f2) {
+            rail = r2; feat = f2;
+            line = rail.querySelector("[data-rail-line]"); dot = rail.querySelector("[data-rail-dot]");
+            chip = rail.querySelector("[data-rail-chip]"); ticks = Array.from(rail.querySelectorAll("[data-rail-ms]"));
+          } else return;
+        }
+        if (!rail.getClientRects().length) return;
+        const vh = innerHeight;
+        const r = feat.getBoundingClientRect();
+        const on = r.top <= 100 && r.bottom > vh * 0.85;
+        rail.style.opacity = on ? "1" : "0";
+        rail.style.transform = on ? "translateX(0)" : "translateX(-24px)";
+        ticks.forEach((t) => { t.style.opacity = on ? "1" : "0"; t.style.transform = on ? "translateX(0)" : "translateX(-12px)"; });
+        if (!on) return;
+        const total = Math.max(1, r.height - vh);
+        const p = Math.min(1, Math.max(0, -r.top / total));
+        const h = rail.clientHeight, y = p * h;
+        if (line) line.style.height = y.toFixed(1) + "px";
+        if (dot) dot.style.transform = "translateY(" + (y - 4).toFixed(1) + "px)";
+        if (chip) {
+          chip.textContent = String(Math.round(p * 360)).padStart(3, "0") + "\u00B0 / " + names[Math.min(4, Math.floor(p * 5))];
+          chip.style.transform = "translateY(" + Math.max(0, Math.min(y - 4, h - 130)).toFixed(1) + "px)";
+        }
+      };
+      raf = requestAnimationFrame(step);
+      this.cleanup.push(() => cancelAnimationFrame(raf));
+    }
+    const wrap = document.querySelector("[data-cta-compass]");
+    if (!wrap) return;
+    const arcs = Array.from(wrap.querySelectorAll("[data-cc-arc]"));
+    const cdot = wrap.querySelector("[data-cc-dot]");
+    const showFinal = () => { arcs.forEach((a) => { a.style.opacity = "1"; }); if (cdot) { cdot.style.opacity = "1"; cdot.style.transform = "scale(1)"; } };
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || !("IntersectionObserver" in window)) { showFinal(); return; }
+    const expo = "cubic-bezier(0.16, 1, 0.3, 1)";
+    const io = new IntersectionObserver((entries) => {
+      if (!entries[0] || !entries[0].isIntersecting) return;
+      io.disconnect();
+      arcs.forEach((a, i) => a.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: i * 120, easing: expo, fill: "forwards" }));
+      if (cdot) cdot.animate([{ opacity: 0, transform: "scale(0)" }, { opacity: 1, transform: "scale(1.25)", offset: 0.7 }, { opacity: 1, transform: "scale(1)" }], { duration: 620, delay: 300, easing: expo, fill: "forwards" });
+    }, { threshold: 0.6 });
+    io.observe(wrap);
+    this.cleanup.push(() => io.disconnect());
+  }
+
+  setupTestimonial() {
+    const expo = "cubic-bezier(0.16, 1, 0.3, 1)";
+    const tst = document.querySelector("[data-testimonial]");
+    if (!tst) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || !("IntersectionObserver" in window)) return;
+    const quote = tst.querySelector("[data-t-quote]");
+    const profile = tst.querySelector("[data-t-profile]");
+    const spark = tst.querySelector("[data-t-spark]");
+    const path = tst.querySelector("[data-t-path]");
+    const dot = tst.querySelector("[data-t-dot]");
+    [tst, quote, profile, spark].forEach((el) => { if (el) el.style.opacity = "0"; });
+    const io = new IntersectionObserver((entries) => {
+      const en = entries[0];
+      if (!en || !en.isIntersecting) return;
+      io.disconnect();
+      tst.animate([{ opacity: 0, transform: "translate3d(0,22px,0) scale(0.985)" }, { opacity: 1, transform: "none" }], { duration: 760, easing: expo, fill: "forwards" });
+      if (quote) quote.animate([{ opacity: 0, transform: "translate3d(-18px,0,0)" }, { opacity: 1, transform: "none" }], { duration: 720, delay: 120, easing: expo, fill: "forwards" });
+      if (profile) profile.animate([{ opacity: 0, transform: "translate3d(-10px,10px,0)" }, { opacity: 1, transform: "none" }], { duration: 620, delay: 260, easing: expo, fill: "forwards" });
+      if (spark) spark.animate([{ opacity: 0, transform: "translate3d(26px,-10px,0)" }, { opacity: 1, transform: "none" }], { duration: 820, delay: 220, easing: expo, fill: "forwards" });
+      if (path && dot) setTimeout(() => {
+        const total = path.getTotalLength();
+        dot.setAttribute("cx", "0"); dot.setAttribute("cy", "220");
+        const t0 = performance.now();
+        const step = (now) => {
+          const cycle = 5200;
+          const pr = ((now - t0) % cycle) / cycle;
+          const pt = path.getPointAtLength(total * pr);
+          dot.setAttribute("cx", String(pt.x)); dot.setAttribute("cy", String(pt.y));
+          dot.setAttribute("opacity", String(pr > 0.96 ? (1 - pr) / 0.04 : (pr < 0.04 ? pr / 0.04 : 1)));
+          this._tDotRaf = requestAnimationFrame(step);
+        };
+        this._tDotRaf = requestAnimationFrame(step);
+        this.cleanup.push(() => cancelAnimationFrame(this._tDotRaf));
+      }, 340);
+    }, { threshold: 0.45 });
+    io.observe(tst);
+    this.cleanup.push(() => io.disconnect());
+  }
+
+  setupScrolly() {
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => Array.from(document.querySelectorAll(s));
+    const expo = "cubic-bezier(0.16, 1, 0.3, 1)";
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const readProps = () => ({
+      tiltMode: this.props.tiltMode || "section",
+      intensity: this.props.tiltIntensity == null ? 1 : this.props.tiltIntensity,
+      textMode: this.props.textMode || "pinned",
+    });
+
+    // Hero parallax + scatter
+    const heroBox = $("[data-hero-box]");
+    const heroSection = heroBox ? heroBox.parentElement : null;
+    const heroLayers = $$("[data-hero-note]").map((el, i) => {
+      const left = parseFloat(el.dataset.l), top = parseFloat(el.dataset.t);
+      const w = parseFloat(el.dataset.w), h = parseFloat(el.dataset.h);
+      let vx = left + w / 2 - 960, vy = top + h / 2 - 360;
+      const len = Math.hypot(vx, vy) || 1; vx /= len; vy /= len;
+      return { img: el.querySelector("img"), vx, vy, depth: 0.5 + (((i * 37) % 10) / 10) * 0.9, rot: (((i * 13) % 9) - 4) * 1.1 };
+    });
+    let mx = 0, my = 0, cmx = 0, cmy = 0;
+    const onMove = (e) => { mx = (e.clientX / innerWidth) * 2 - 1; my = (e.clientY / innerHeight) * 2 - 1; };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    this.cleanup.push(() => window.removeEventListener("pointermove", onMove));
+
+    // Artifact card stage
+    let stageSets = Array.from(document.querySelectorAll("[data-cardset]")).map((g) => ({ g, cards: Array.from(g.querySelectorAll("[data-card]")) }));
+    let stageEl = document.querySelector("[data-stage]"), stageCanvas = document.querySelector("[data-stage-canvas]");
+
+    let blocks = $$("[data-block]");
+    let swaps = $$("[data-swap-panel]");
+    let tilt = $("[data-tilt]");
+    const stickyCol = $("[data-sticky-col]");
+    let textCol = $("[data-text-col]"), textPin = $("[data-text-pin]");
+    const desk = window.matchMedia("(min-width: 1024px)");
+    const mob = window.matchMedia("(max-width: 767px)");
+    let active = -2;
+    let pinnedNow = null;
+    const applyTextMode = (pin) => {
+      if (pin === pinnedNow || !textPin || !textCol) return;
+      pinnedNow = pin;
+      textCol.style.height = pin ? "calc(" + (blocks.length * 86) + "vh + 100vh - 128px)" : "";
+      textPin.style.position = pin ? "sticky" : "relative";
+      textPin.style.top = pin ? "92px" : "";
+      textPin.style.height = pin ? "calc(100vh - 128px)" : "";
+      textPin.style.display = pin ? "grid" : "";
+      textPin.style.alignContent = pin ? "center" : "";
+      blocks.forEach((b) => {
+        b.style.gridArea = pin ? "1 / 1" : "";
+        b.style.minHeight = pin ? "0" : "";
+        b.style.justifyContent = pin ? "flex-start" : "";
+        b.style.transition = pin ? "opacity 560ms " + expo + ", transform 560ms " + expo : "";
+        if (!pin) { b.style.opacity = ""; b.style.transform = ""; b.style.pointerEvents = ""; }
+      });
+      active = -2;
+    };
+
+    const setLineStyles = (block, on) => {
+      Array.from(block.querySelectorAll("[data-line]")).forEach((line, idx) => {
+        line.style.transition = "opacity 600ms " + expo + " " + (on ? idx * 80 : 0) + "ms, transform 600ms " + expo + " " + (on ? idx * 80 : 0) + "ms";
+        line.style.opacity = on ? "1" : "0.25";
+        line.style.transform = on ? "translateY(0)" : "translateY(10px)";
+      });
+    };
+
+    const applyActive = (idx) => {
+      if (idx === active) return;
+      active = idx;
+      blocks.forEach((b, i) => {
+        if (pinnedNow) {
+          const on = i === Math.max(0, idx);
+          b.style.opacity = on ? "1" : "0";
+          b.style.transform = on ? "translateY(0)" : "translateY(22px)";
+          b.style.pointerEvents = on ? "auto" : "none";
+          setLineStyles(b, on);
+        } else {
+          setLineStyles(b, idx < 0 ? true : i === idx);
+        }
+      });
+      swaps.forEach((s2, i) => {
+        const on = i === Math.max(0, idx);
+        s2.style.opacity = on ? "1" : "0";
+        s2.style.transform = on ? "translateY(0)" : "translateY(14px)";
+      });
+    };
+
+    let hmx = 0, hmy = 0;
+    if (stickyCol) {
+      const onHover = (e) => {
+        const r = stickyCol.getBoundingClientRect();
+        hmx = ((e.clientX - r.left) / Math.max(1, r.width)) * 2 - 1;
+        hmy = ((e.clientY - r.top) / Math.max(1, r.height)) * 2 - 1;
+      };
+      const onLeave = () => { hmx = 0; hmy = 0; };
+      stickyCol.addEventListener("pointermove", onHover);
+      stickyCol.addEventListener("pointerleave", onLeave);
+      this.cleanup.push(() => { stickyCol.removeEventListener("pointermove", onHover); stickyCol.removeEventListener("pointerleave", onLeave); });
+    }
+
+    const tiltSeq = [[0, 0], [0.9, -1.6], [-0.7, 1.4], [1.1, -0.9], [-0.8, 1.8], [0.6, -1.2]];
+    let tiltX = 2.5, tiltY = -7;
+    let raf = 0;
+    const gen = this._gen;
+    const tick = () => {
+      if (window.__mclGen !== gen) return;
+      raf = requestAnimationFrame(tick);
+      if ((stageEl && !stageEl.isConnected) || (blocks[0] && !blocks[0].isConnected)) {
+        stageSets = Array.from(document.querySelectorAll("[data-cardset]")).map((g) => ({ g, cards: Array.from(g.querySelectorAll("[data-card]")) }));
+        stageEl = document.querySelector("[data-stage]"); stageCanvas = document.querySelector("[data-stage-canvas]");
+        blocks = $$("[data-block]"); swaps = $$("[data-swap-panel]"); tilt = $("[data-tilt]");
+        textCol = $("[data-text-col]"); textPin = $("[data-text-pin]");
+        active = -2; pinnedNow = null;
+      }
+      const p = readProps();
+      const vh = innerHeight;
+      if (heroLayers.length && heroBox && heroBox.offsetParent && heroSection && !reduced) {
+        cmx += (mx - cmx) * 0.06; cmy += (my - cmy) * 0.06;
+        const heroH = heroSection.offsetHeight || 720;
+        const prog = Math.min(Math.max(scrollY / (heroH * 0.85), 0), 1);
+        const eased = prog * prog;
+        for (const L of heroLayers) {
+          const px = cmx * 20 * L.depth, py = cmy * 14 * L.depth;
+          const sx = L.vx * 480 * eased * L.depth, sy = L.vy * 384 * eased * L.depth;
+          L.img.style.transform = "translate3d(" + (px + sx) + "px," + (py + sy) + "px,0) rotate(" + (L.rot * eased) + "deg)";
+          L.img.style.opacity = String(1 - eased * 0.9);
+        }
+      }
+      if (!blocks.length) return;
+      let idx = -1, prog01 = 0;
+      const pinned = desk.matches && p.textMode !== "scroll";
+      applyTextMode(pinned);
+      if (pinned && textCol) {
+        const r = textCol.getBoundingClientRect();
+        const pinH = Math.min(r.height, vh - 128);
+        const span = Math.max(1, r.height - pinH);
+        const pos = ((92 - r.top) / span) * blocks.length;
+        idx = pos < 0 ? -1 : Math.min(blocks.length - 1, Math.floor(pos));
+        if (idx >= 0) prog01 = Math.min(1, Math.max(0, pos - idx));
+      } else {
+        const rects = blocks.map((b) => b.getBoundingClientRect());
+        for (let i = 0; i < rects.length; i++) { if (rects[i].top < vh * 0.52) idx = i; }
+        if (idx >= 0 && idx < rects.length - 1) {
+          prog01 = Math.min(1, Math.max(0, (vh * 0.52 - rects[idx].top) / Math.max(1, rects[idx + 1].top - rects[idx].top)));
+        } else if (idx === rects.length - 1) {
+          prog01 = Math.min(1, Math.max(0, (vh * 0.52 - rects[idx].top) / Math.max(1, rects[idx].height)));
+        }
+      }
+      applyActive(idx);
+      if (stageSets.length) {
+        const portrait = !desk.matches;
+        const cw = portrait ? 840 : 1120, ch = portrait ? 1120 : 820;
+        if (stageEl && stageCanvas) {
+          stageEl.style.aspectRatio = cw + " / " + ch;
+          stageEl.style.overflow = portrait ? "visible" : "hidden";
+          stageCanvas.style.width = cw + "px";
+          stageCanvas.style.height = ch + "px";
+          stageCanvas.style.transform = "scale(" + ((stageEl.clientWidth || cw) / cw) + ")";
+        }
+        const sIdx = Math.max(0, Math.min(stageSets.length - 1, idx < 0 ? 0 : idx));
+        stageSets.forEach((st2, i2) => {
+          const isOn = i2 === sIdx;
+          st2.g.style.opacity = isOn ? "1" : "0";
+          if (st2.g.dataset.flow === "1") {
+            if (!portrait) {
+              st2._x = 0;
+              st2.g.style.transform = "translateX(0px)";
+            } else {
+              const ms = parseFloat((mob.matches && st2.g.dataset.pshiftm) || st2.g.dataset.pshift) || 0;
+              const tx = (isOn && idx >= 0) ? Math.min(1, prog01 * 2.1) * ms / 100 * cw : 0;
+              if (st2._x == null) st2._x = tx;
+              st2._x += (tx - st2._x) * (reduced ? 1 : 0.2);
+              if (Math.abs(tx - st2._x) < 0.5) st2._x = tx;
+              st2.g.style.transform = "translateX(" + (-st2._x) + "px)";
+            }
+          }
+          st2.cards.forEach((c) => {
+            const ps = ((portrait ? ((mob.matches && c.dataset.ppm) || c.dataset.pp) : c.dataset.pos) || "").split(",");
+            if (ps.length === 3) { c.style.top = ps[0]; c.style.left = ps[1]; c.style.width = ps[2]; }
+          });
+        });
+        const st = stageSets[sIdx];
+        const n = st.cards.length;
+        const flowSet = st.g.dataset.flow === "1" && !desk.matches;
+        const count = idx < 0 ? 1 : Math.min(n, 1 + Math.floor(Math.min(0.999, prog01 * 1.6) * n));
+        st.cards.forEach((c, i2) => {
+          const on = flowSet || i2 < count;
+          c.style.opacity = on ? "1" : "0";
+          c.style.transform = on ? "rotate(" + (c.dataset.rot || "0") + "deg)" : "translateY(30px) scale(0.97) rotate(" + (c.dataset.rot || "0") + "deg)";
+        });
+      }
+      if (tilt) {
+        const seq = tiltSeq[Math.max(0, idx + 1)] || [0, 0];
+        let tx = 0, ty = 0;
+        if (p.tiltMode === "section" || p.tiltMode === "both") { tx = seq[0]; ty = seq[1]; }
+        let hx = 0, hy = 0;
+        if (p.tiltMode === "hover" || p.tiltMode === "both") { hx = -hmy * 3.2; hy = hmx * 4.2; }
+        const bx = p.tiltMode === "off" ? 0 : ((2.5 + tx) + hx) * p.intensity;
+        const by = p.tiltMode === "off" ? 0 : ((-7 + ty) + hy) * p.intensity;
+        tiltX += (bx - tiltX) * 0.08; tiltY += (by - tiltY) * 0.08;
+        tilt.style.transform = reduced ? "none" : "rotateX(" + tiltX.toFixed(3) + "deg) rotateY(" + tiltY.toFixed(3) + "deg)";
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    this.cleanup.push(() => cancelAnimationFrame(raf));
+  }
+}
+
+</script>
+</body>
+</html>
