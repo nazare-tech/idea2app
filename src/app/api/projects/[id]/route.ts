@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { trackAPIMetrics, MetricsTimer, getErrorType, getErrorMessage } from "@/lib/metrics-tracker"
 import { getProjectAllowanceStatus } from "@/lib/project-allowance"
 import { buildRequestLogContext, logError } from "@/lib/logger"
+import { validateProjectName } from "@/lib/project-name"
 
 export async function PATCH(
   request: Request,
@@ -33,14 +34,55 @@ export async function PATCH(
 
     userId = user.id
 
-    const body = await request.json()
-    const { description, name, status } = body
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      statusCode = 400
+      errorType = "validation_error"
+      errorMessage = "Invalid request body"
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+    }
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      statusCode = 400
+      errorType = "validation_error"
+      errorMessage = "Invalid request body"
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+    }
+
+    const { description, name, status } = body as Record<string, unknown>
 
     // Build update object
     const updates: Record<string, string> = {}
-    if (description !== undefined) updates.description = description
-    if (name !== undefined) updates.name = name
-    if (status !== undefined) updates.status = status
+    if (description !== undefined) {
+      if (typeof description !== "string") {
+        statusCode = 400
+        errorType = "validation_error"
+        errorMessage = "Description must be text"
+        return NextResponse.json({ error: "Description must be text" }, { status: 400 })
+      }
+      updates.description = description
+    }
+    if (name !== undefined) {
+      const validation = validateProjectName(name)
+      if (!validation.ok) {
+        statusCode = 400
+        errorType = "validation_error"
+        errorMessage = validation.error
+        return NextResponse.json({ error: validation.error }, { status: 400 })
+      }
+      updates.name = validation.name
+    }
+    if (status !== undefined) {
+      if (typeof status !== "string") {
+        statusCode = 400
+        errorType = "validation_error"
+        errorMessage = "Status must be text"
+        return NextResponse.json({ error: "Status must be text" }, { status: 400 })
+      }
+      updates.status = status
+    }
 
     if (Object.keys(updates).length === 0) {
       statusCode = 400

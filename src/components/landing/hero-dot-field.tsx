@@ -33,17 +33,22 @@ const NORTH = -Math.PI / 2
 
 /**
  * Ambient section background: a deterministic dot lattice in map-like
- * clusters, dots that react to cursor proximity, and sparse micro compass
- * wedges that rotate to point at the cursor. Each field is absolutely
- * positioned inside its owning section, so native document or sticky layout
- * movement carries the artwork without a second scroll loop. Decorative only:
- * `aria-hidden`, no pointer events, renders nothing without JS, static under
- * reduced motion.
+ * clusters, dots that react to cursor proximity, and optional sparse micro
+ * compass wedges that rotate to point at the cursor. Each field is absolutely
+ * positioned inside its owning section or viewport-bounded shell. Decorative
+ * only: `aria-hidden`, no pointer events, renders nothing without JS, static
+ * under reduced motion.
  *
  * Protected zones come from descendants marked `data-dot-field-protect`,
  * measured in the owning section's coordinates after resize.
  */
-export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
+export function HeroDotField({
+  seed = DEFAULT_SEED,
+  showCompassWedges = true,
+}: {
+  seed?: number
+  showCompassWedges?: boolean
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -62,7 +67,9 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
     let width = 0
     let height = 0
     const wedgePath = new Path2D()
-    traceCompassWedge(wedgePath, WEDGE_SIZE)
+    if (showCompassWedges) {
+      traceCompassWedge(wedgePath, WEDGE_SIZE)
+    }
 
     // Cursor: target from pointer events, smoothed position for drawing.
     // `hasCursor` flips on the first mouse/pen event, so hybrid touch devices
@@ -111,6 +118,7 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
         height,
         pitch: PITCH,
         seed,
+        wedgeMax: showCompassWedges ? undefined : 0,
       })
       wedgeAngles = field.wedgeIndices.map(() => NORTH)
       measureProtectedZones()
@@ -262,6 +270,7 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
     }
     rebuild()
     draw(0)
+    canvas.dataset.dotFieldReady = "true"
     // Hero entrance animations translate protected copy on mount, so its first
     // measurement can catch the CTA mid-rise. Other sections do not need this.
     const settleTimer = section.querySelector("[data-dot-field-protect]")
@@ -310,14 +319,16 @@ export function HeroDotField({ seed = DEFAULT_SEED }: { seed?: number }) {
       window.removeEventListener("pointermove", onPointerMove)
       document.documentElement.removeEventListener("pointerleave", onPointerLeave)
       window.removeEventListener("blur", onPointerLeave)
+      delete canvas.dataset.dotFieldReady
     }
-  }, [seed])
+  }, [seed, showCompassWedges])
 
   return (
     <canvas
       ref={canvasRef}
       aria-hidden="true"
       data-hero-dot-field
+      data-compass-wedges={showCompassWedges}
       className="pointer-events-none absolute inset-0 z-0"
     />
   )

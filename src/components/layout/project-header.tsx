@@ -9,6 +9,7 @@ import { HeaderBrand } from "@/components/layout/brand-wordmark"
 import { Header } from "@/components/layout/header"
 import { HeaderProfileMenu } from "@/components/layout/header-profile-menu"
 import { useReducedMotion } from "@/hooks/use-reduced-motion"
+import { PROJECT_NAME_MAX_LENGTH, validateProjectName } from "@/lib/project-name"
 
 interface ProjectHeaderProps {
   projectName: string
@@ -39,7 +40,9 @@ export function ProjectHeader({
   const reduceMotion = useReducedMotion()
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(projectName)
+  const [nameError, setNameError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const finishInFlightRef = useRef(false)
 
   useEffect(() => {
     setDraft(projectName)
@@ -50,12 +53,31 @@ export function ProjectHeader({
   }, [isEditing])
 
   const finishEdit = async () => {
-    const trimmed = draft.trim()
-    setIsEditing(false)
-    if (trimmed && trimmed !== projectName) {
-      await onFinishRename(trimmed)
-    } else {
+    if (finishInFlightRef.current) return
+
+    const validation = validateProjectName(draft)
+    if (!validation.ok) {
+      setNameError(validation.error)
+      return
+    }
+
+    if (validation.name === projectName) {
       setDraft(projectName)
+      setNameError(null)
+      setIsEditing(false)
+      return
+    }
+
+    setDraft(validation.name)
+    setNameError(null)
+    finishInFlightRef.current = true
+    try {
+      await onFinishRename(validation.name)
+      setIsEditing(false)
+    } catch {
+      setNameError("Unable to rename project. Please try again.")
+    } finally {
+      finishInFlightRef.current = false
     }
   }
 
@@ -79,22 +101,43 @@ export function ProjectHeader({
       </Link>
       <span className="text-sm font-normal leading-5 text-muted-foreground">/</span>
       {isEditing ? (
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => void finishEdit()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); void finishEdit() }
-            if (e.key === "Escape") { setDraft(projectName); setIsEditing(false) }
-          }}
-          className="h-8 w-[min(24rem,40vw)] rounded-lg border border-border-strong bg-card px-2.5 text-base font-semibold leading-5 text-foreground outline-none focus:border-ring/60 focus:bg-ring-faint focus:ring-2 focus:ring-ring-soft"
-          disabled={isSavingName}
-        />
+        <div className="relative">
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value)
+              if (nameError) setNameError(null)
+            }}
+            onBlur={() => void finishEdit()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); void finishEdit() }
+              if (e.key === "Escape") {
+                setDraft(projectName)
+                setNameError(null)
+                setIsEditing(false)
+              }
+            }}
+            maxLength={PROJECT_NAME_MAX_LENGTH}
+            aria-invalid={Boolean(nameError)}
+            aria-describedby={nameError ? "project-header-name-error" : undefined}
+            className="h-8 w-[min(24rem,40vw)] rounded-lg border border-border-strong bg-card px-2.5 text-base font-semibold leading-5 text-foreground outline-none focus:border-ring/60 focus:bg-ring-faint focus:ring-2 focus:ring-ring-soft"
+            disabled={isSavingName}
+          />
+          {nameError && (
+            <p
+              id="project-header-name-error"
+              role="alert"
+              className="absolute left-0 top-full z-40 mt-1 whitespace-nowrap rounded-md border border-border-strong bg-card px-2 py-1 text-xs text-destructive shadow-sm"
+            >
+              {nameError}
+            </p>
+          )}
+        </div>
       ) : isNameSet ? (
         <button
           type="button"
-          onClick={() => { setIsEditing(true); onStartRename() }}
+          onClick={() => { setNameError(null); setIsEditing(true); onStartRename() }}
           className="flex min-w-0 items-center gap-2 text-left"
         >
           <span

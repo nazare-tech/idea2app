@@ -42,6 +42,13 @@ test("buildField wedge sites are sparse, capped, and spaced apart", () => {
   }
 })
 
+test("buildField supports a dots-only field with no compass wedges", () => {
+  const field = buildField({ ...FIELD_OPTS, wedgeMax: 0 })
+
+  assert.ok(field.dots.length > 0)
+  assert.deepEqual(field.wedgeIndices, [])
+})
+
 test("dampAngle converges to the target", () => {
   let angle = 0
   for (let i = 0; i < 600; i++) angle = dampAngle(angle, 2, 8, 1 / 60)

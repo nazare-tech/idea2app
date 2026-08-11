@@ -1,4 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { validateProjectName } from "../src/lib/project-name";
+import { getProjectUrl } from "../src/lib/project-routing";
 
 // Free smoke tier: no AI calls, no credits, no project creation.
 // The paid intake flow lives in paid-intake.spec.ts behind E2E_PAID_FLOWS=1.
@@ -8,6 +10,145 @@ const IDEA_1_1 =
 
 const LANDING_IDEA_PLACEHOLDER =
   "Describe what you want to build in a few sentences...";
+
+async function signInFromLanding(page: Page, email: string, password: string) {
+  await page.goto("/");
+  await page.getByRole("banner").getByText("Sign In").first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await dialog.getByPlaceholder("you@example.com").fill(email);
+  await dialog.getByPlaceholder("Enter your password").fill(password);
+  await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL(/\/projects/, { timeout: 30_000 });
+}
+
+async function expectProjectCardGeometry(page: Page, expectedColumnCount: 1 | 2) {
+  const dotFieldShell = page.getByTestId("dashboard-project-dot-field-shell");
+  const dotField = dotFieldShell.locator("[data-hero-dot-field='true']");
+  const grid = page.getByTestId("dashboard-project-grid");
+  const cards = page.getByTestId("dashboard-project-card");
+  expect(await cards.count(), "authenticated E2E account must retain an existing project").toBeGreaterThan(0);
+  expect(await dotField.count()).toBe(1);
+  await expect(dotField).toHaveAttribute("data-dot-field-ready", "true");
+  expect(await dotField.getAttribute("data-compass-wedges")).toBe("false");
+  expect(await dotField.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe("none");
+  expect(await page.locator("[data-compass-wedge]").count()).toBe(0);
+  expect(await grid.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [style.columnGap, style.rowGap];
+  })).toEqual(["32px", "32px"]);
+  expect(await grid.evaluate((element) =>
+    getComputedStyle(element).gridTemplateColumns.split(" ").filter(Boolean).length,
+  )).toBe(expectedColumnCount);
+
+  const card = cards.first();
+  const details = card.getByTestId("dashboard-project-card-details");
+  const thumbnailSurface = card.locator("[data-thumbnail-state]");
+  const thumbnailCanvas = card.locator("[data-thumbnail-canvas='true']");
+  const actions = page.getByTestId("dashboard-project-card-actions");
+  const action = actions.first();
+  const actionIcon = action.locator("svg");
+  const [gridBox, cardBox, detailsBox, thumbnailCanvasBox, actionBox, actionIconBox] = await Promise.all([
+    grid.boundingBox(),
+    card.boundingBox(),
+    details.boundingBox(),
+    thumbnailCanvas.boundingBox(),
+    action.boundingBox(),
+    actionIcon.boundingBox(),
+  ]);
+
+  expect(gridBox).not.toBeNull();
+  expect(cardBox).not.toBeNull();
+  expect(detailsBox).not.toBeNull();
+  expect(thumbnailCanvasBox).not.toBeNull();
+  expect(actionBox).not.toBeNull();
+  expect(actionIconBox).not.toBeNull();
+  expect(Math.abs(cardBox!.height - 500)).toBeLessThanOrEqual(2);
+  expect(Math.abs(detailsBox!.height - 160.6)).toBeLessThanOrEqual(1);
+  expect(thumbnailCanvasBox!.height).toBeGreaterThanOrEqual(298);
+  expect(thumbnailCanvasBox!.height).toBeLessThanOrEqual(300);
+  expect(Math.abs(actionIconBox!.width - 16)).toBeLessThanOrEqual(1);
+  expect(Math.abs(actionIconBox!.height - 18)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cardBox!.x + cardBox!.width - actionIconBox!.x - actionIconBox!.width - 8)).toBeLessThanOrEqual(1);
+  expect(Math.abs(actionIconBox!.y - detailsBox!.y - 21.8)).toBeLessThanOrEqual(1);
+  if (expectedColumnCount === 2) {
+    expect(Math.abs(cardBox!.width - 648)).toBeLessThanOrEqual(2);
+  } else {
+    expect(cardBox!.width).toBeLessThanOrEqual(gridBox!.width);
+  }
+  expect(await card.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [style.borderTopWidth, style.backgroundColor];
+  })).toEqual(["0px", "rgba(0, 0, 0, 0)"]);
+  expect(await thumbnailSurface.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [
+      style.backgroundColor,
+      style.borderRadius,
+      style.paddingTop,
+      style.paddingRight,
+      style.paddingBottom,
+      style.paddingLeft,
+    ];
+  })).toEqual(["rgb(255, 255, 255)", "24px", "20px", "20px", "20px", "20px"]);
+  expect(await details.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [
+      style.borderTopWidth,
+      style.borderRightWidth,
+      style.borderBottomWidth,
+      style.borderLeftWidth,
+      style.backgroundColor,
+      style.paddingTop,
+      style.paddingRight,
+      style.paddingBottom,
+      style.paddingLeft,
+    ];
+  })).toEqual([
+    "0px",
+    "0px",
+    "0px",
+    "0px",
+    "rgba(0, 0, 0, 0)",
+    "20px",
+    "8px",
+    "20px",
+    "8px",
+  ]);
+  expect(await card.getByTestId("dashboard-project-card-title").evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [style.fontSize, style.fontWeight, style.lineHeight, style.textOverflow];
+  })).toEqual(["18px", "500", "normal", "clip"]);
+
+  const descriptionsUseFigmaClip = await page
+    .getByTestId("dashboard-project-card-description-slot")
+    .evaluateAll((slots) => slots.every((slot) => {
+      const description = slot.querySelector<HTMLElement>("[data-testid='dashboard-project-card-description']");
+      if (!description) return false;
+      const slotStyle = getComputedStyle(slot);
+      const descriptionStyle = getComputedStyle(description);
+      return Math.abs(slot.getBoundingClientRect().height - 72) <= 0.5
+        && slotStyle.overflowY === "hidden"
+        && descriptionStyle.fontSize === "14px"
+        && descriptionStyle.lineHeight === "normal"
+        && descriptionStyle.whiteSpace === "pre-wrap"
+        && descriptionStyle.getPropertyValue("-webkit-line-clamp") === "none"
+        && descriptionStyle.textOverflow === "clip";
+    }));
+  expect(descriptionsUseFigmaClip).toBe(true);
+
+  const contentIsContained = await page
+    .getByTestId("dashboard-project-card-details")
+    .evaluateAll((panels) => panels.every((panel) => {
+      const date = panel.querySelector<HTMLElement>("[data-testid='dashboard-project-card-created']");
+      if (!date || panel.scrollHeight > panel.clientHeight) return false;
+
+      const panelRect = panel.getBoundingClientRect();
+      const dateRect = date.getBoundingClientRect();
+      return dateRect.top >= panelRect.top && dateRect.bottom <= panelRect.bottom;
+    }));
+  expect(contentIsContained).toBe(true);
+}
 
 test("landing page renders hero, idea capture, and sign-in entry", async ({ page }) => {
   await page.goto("/");
@@ -37,20 +178,12 @@ test("sign in via auth modal and reach intake wizard step 1 validation", async (
   const password = process.env.E2E_TEST_PASSWORD;
   test.skip(!email || !password, "E2E_TEST_EMAIL / E2E_TEST_PASSWORD not set in .env.e2e.local");
 
-  await page.goto("/");
-  await page.getByRole("banner").getByText("Sign In").first().click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog).toBeVisible();
-  await dialog.getByPlaceholder("you@example.com").fill(email!);
-  await dialog.getByPlaceholder("Enter your password").fill(password!);
-  await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
-
-  // Authenticated users land on the projects dashboard.
-  await page.waitForURL(/\/projects/, { timeout: 30_000 });
+  await signInFromLanding(page, email!, password!);
 
   // Wizard step 1: Next respects the shared idea floor. We stop BEFORE
   // clicking Next so no AI question generation (paid) is triggered.
   await page.goto("/projects/new");
+  expect(await page.getByTestId("dashboard-project-dot-field-shell").count()).toBe(0);
   const wizardIdea = page.getByRole("textbox").first();
   await expect(wizardIdea).toBeVisible();
   const next = page.getByRole("button", { name: "Next", exact: true });
@@ -58,4 +191,170 @@ test("sign in via auth modal and reach intake wizard step 1 validation", async (
   await expect(next).toBeDisabled();
   await wizardIdea.fill(IDEA_1_1);
   await expect(next).toBeEnabled();
+});
+
+test("project cards expose navigation-safe rename and delete actions", async ({ page }) => {
+  test.setTimeout(90_000);
+  const email = process.env.E2E_TEST_EMAIL;
+  const password = process.env.E2E_TEST_PASSWORD;
+  test.skip(!email || !password, "E2E_TEST_EMAIL / E2E_TEST_PASSWORD not set in .env.e2e.local");
+
+  await signInFromLanding(page, email!, password!);
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await expectProjectCardGeometry(page, 2);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectProjectCardGeometry(page, 1);
+
+  const projectsUrl = page.url();
+  const cards = page.getByTestId("dashboard-project-card");
+  expect(await cards.count(), "rename focus-restoration check requires two retained projects").toBeGreaterThan(1);
+
+  const firstCard = cards.first();
+  const firstTitle = firstCard.getByTestId("dashboard-project-card-title");
+  const originalName = (await firstTitle.textContent())?.trim() ?? "";
+  const originalValidation = validateProjectName(originalName);
+  expect(
+    originalValidation.ok && originalValidation.name === originalName,
+    "retained project name must round-trip byte-for-byte before mutation",
+  ).toBe(true);
+
+  const originalHref = await firstCard.getAttribute("href");
+  const projectId = originalHref?.match(/[0-9a-f]{8}-[0-9a-f-]{27}/i)?.[0];
+  expect(projectId, "card href must contain the stable project UUID").toBeTruthy();
+
+  const firstActions = page.getByRole("button", { name: `Project actions for ${originalName}` });
+  await expect(firstActions).toBeVisible();
+  expect(await firstActions.evaluate((button) => button.closest("a"))).toBeNull();
+  expect(await firstCard.locator("[data-thumbnail-canvas='true'] button").count()).toBe(0);
+
+  await firstActions.click();
+  await expect(page.getByRole("menuitem", { name: "Rename", exact: true })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Delete", exact: true })).toBeVisible();
+  await page.getByRole("menuitem", { name: "Rename", exact: true }).click();
+
+  const renameDialog = page.getByRole("dialog", { name: "Rename" });
+  const renameInput = renameDialog.getByRole("textbox", { name: "Project name" });
+  await expect(renameDialog).toBeVisible();
+  await expect(renameInput).toHaveValue(originalName);
+  await expect(renameDialog.getByRole("button", { name: "Save", exact: true })).toBeVisible();
+  await renameDialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(renameDialog).not.toBeVisible();
+  expect(await page.evaluate(() => getComputedStyle(document.body).pointerEvents)).not.toBe("none");
+  await expect(firstActions).toBeFocused();
+
+  const secondActions = page.getByTestId("dashboard-project-card-actions").nth(1);
+  await secondActions.click();
+  await expect(page.getByRole("menuitem", { name: "Rename", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menuitem", { name: "Rename", exact: true })).not.toBeVisible();
+  await expect(secondActions).toBeFocused();
+
+  expect(
+    originalName.startsWith("RenameTest"),
+    "Another rename test appears to be using this project; refusing to overwrite its marker.",
+  ).toBe(false);
+
+  const markerName = `RenameTest${Date.now()}`.padEnd(80, "x").slice(0, 80);
+  const cleanupRequest = page.context().request;
+  let cleanupRequired = false;
+  try {
+    await firstActions.click();
+    await page.getByRole("menuitem", { name: "Rename", exact: true }).click();
+    await renameInput.fill(markerName);
+    cleanupRequired = true;
+    await renameDialog.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(renameDialog).not.toBeVisible();
+    await expect(firstTitle).toHaveText(markerName);
+
+    await page.reload();
+    const renamedCard = page
+      .getByTestId("dashboard-project-card")
+      .filter({ has: page.getByTestId("dashboard-project-card-title").filter({ hasText: markerName }) })
+      .first();
+    await expect(renamedCard).toBeVisible();
+    await expect(renamedCard).toHaveAttribute("href", getProjectUrl({ id: projectId!, name: markerName }));
+
+    const [titleBox, actionBox] = await Promise.all([
+      renamedCard.getByTestId("dashboard-project-card-title").boundingBox(),
+      page.getByRole("button", { name: `Project actions for ${markerName}` }).boundingBox(),
+    ]);
+    expect(titleBox).not.toBeNull();
+    expect(actionBox).not.toBeNull();
+    expect(titleBox!.x + titleBox!.width).toBeLessThanOrEqual(actionBox!.x + 0.5);
+
+    await page.getByRole("button", { name: `Project actions for ${markerName}` }).click();
+    await page.getByRole("menuitem", { name: "Rename", exact: true }).click();
+    await renameInput.fill(originalName);
+    await renameDialog.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(renameDialog).not.toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: `Project actions for ${originalName}` }),
+    ).toBeVisible();
+    cleanupRequired = false;
+  } finally {
+    if (cleanupRequired) {
+      let restored = false;
+      for (let attempt = 0; attempt < 2 && !restored; attempt += 1) {
+        const response = await cleanupRequest.patch(`/api/projects/${projectId}`, {
+          data: { name: originalName },
+        });
+        if (response.ok()) {
+          const result = await response.json();
+          restored = result?.data?.name === originalName;
+        }
+      }
+      if (!restored) {
+        throw new Error(`MANUAL RESTORE REQUIRED: project ${projectId} original name ${originalName}`);
+      }
+    }
+  }
+
+  const restoredActions = page.getByRole("button", { name: `Project actions for ${originalName}` });
+  await restoredActions.click();
+  await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
+  const destructiveHeading = page.getByRole("heading", {
+    name: /^(Delete project\?|Upgrade to delete projects)$/,
+  });
+  await expect(destructiveHeading).toBeVisible();
+  expect(page.url()).toBe(projectsUrl);
+
+  const cancelButton = page.getByRole("button", { name: /^(Cancel|Not now)$/ });
+  const cancelIsTopmost = await cancelButton.evaluate((button) => {
+    const rect = button.getBoundingClientRect();
+    return document.elementFromPoint(
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2,
+    )?.closest("button") === button;
+  });
+  expect(cancelIsTopmost).toBe(true);
+
+  await cancelButton.click();
+  await expect(destructiveHeading).not.toBeVisible();
+  expect(page.url()).toBe(projectsUrl);
+});
+
+test("project card overflow opens without touch tap-through", async ({ browser }) => {
+  const email = process.env.E2E_TEST_EMAIL;
+  const password = process.env.E2E_TEST_PASSWORD;
+  test.skip(!email || !password, "E2E_TEST_EMAIL / E2E_TEST_PASSWORD not set in .env.e2e.local");
+
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+  });
+  const page = await context.newPage();
+  try {
+    await signInFromLanding(page, email!, password!);
+    const projectsUrl = page.url();
+    const action = page.getByTestId("dashboard-project-card-actions").first();
+    await expect(action).toBeVisible();
+    await action.tap();
+    await expect(page.getByRole("menuitem", { name: "Rename", exact: true })).toBeVisible();
+    expect(page.url()).toBe(projectsUrl);
+  } finally {
+    await context.close();
+  }
 });

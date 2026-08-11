@@ -44,7 +44,15 @@ test("landing dot field is a section background that moves with native layout", 
   const html = renderToStaticMarkup(<HeroDotField />)
 
   assert.match(html, /data-hero-dot-field="true"/)
+  assert.match(html, /data-compass-wedges="true"/)
   assert.match(html, /class="[^"]*absolute[^"]*inset-0[^"]*"/)
+})
+
+test("dot field can render dots without compass wedges", () => {
+  const html = renderToStaticMarkup(<HeroDotField showCompassWedges={false} />)
+
+  assert.match(html, /data-hero-dot-field="true"/)
+  assert.match(html, /data-compass-wedges="false"/)
 })
 
 test("public footer does not render the retired compass watermark", () => {

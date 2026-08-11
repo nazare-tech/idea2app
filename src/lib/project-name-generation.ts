@@ -4,9 +4,9 @@ import {
   buildProjectNameUserPrompt,
 } from "./prompts/intake-wizard"
 import type { ProjectNameGenerationInput } from "@/lib/intake/types"
+import { PROJECT_NAME_MAX_LENGTH } from "@/lib/project-name"
 
 const MAX_PROJECT_NAME_WORDS = 6
-const MAX_PROJECT_NAME_LENGTH = 80
 
 const STOP_WORDS = new Set([
   "a",
@@ -107,7 +107,7 @@ export function sanitizeGeneratedProjectName(rawName: string, fallbackName = "Un
     .filter(Boolean)
     .slice(0, MAX_PROJECT_NAME_WORDS)
 
-  const titleCased = titleCaseWords(words).join(" ").slice(0, MAX_PROJECT_NAME_LENGTH).trim()
+  const titleCased = titleCaseWords(words).join(" ").slice(0, PROJECT_NAME_MAX_LENGTH).trim()
 
   if (!titleCased) {
     return fallbackName

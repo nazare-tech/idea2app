@@ -5,6 +5,8 @@ import { NewProjectButton } from "@/components/projects/project-limit-dialog"
 import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 import { getProjectUrl } from "@/lib/project-routing"
 import { getProjectAllowanceStatus } from "@/lib/project-allowance"
+import { deriveDashboardMockupThumbnailUrls } from "@/lib/mockups/dashboard-thumbnail"
+import { logError } from "@/lib/logger"
 import { getCurrentUser } from "@/lib/supabase/current-user"
 
 type ActiveProject = {
@@ -14,6 +16,8 @@ type ActiveProject = {
   href: string
   createdAt: string | null
   updatedAt: string | null
+  thumbnailUrl: string | null
+  thumbnailUnavailable: boolean
 }
 
 function getWelcomeName({
@@ -49,16 +53,37 @@ export default async function ProjectsPage() {
   ])
 
   const projectIds = (projects ?? []).map((project) => project.id)
-  const { data: projectIntakes } = projectIds.length > 0
-    ? await supabase
-        .from("project_intakes")
-        .select("project_id, original_idea")
-        .eq("user_id", user!.id)
-        .in("project_id", projectIds)
-    : { data: [] }
+  const projectDataResults = projectIds.length > 0
+    ? await Promise.all([
+        supabase
+          .from("project_intakes")
+          .select("project_id, original_idea")
+          .eq("user_id", user!.id)
+          .in("project_id", projectIds),
+        supabase
+          .from("mockups")
+          .select("id, project_id, content, created_at")
+          .in("project_id", projectIds)
+          .order("created_at", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: false }),
+      ])
+    : null
+  const projectIntakes = projectDataResults?.[0].data ?? []
+  const mockupRows = projectDataResults?.[1].data ?? []
+  const mockupQueryError = projectDataResults?.[1].error
+  if (mockupQueryError) {
+    logError("ProjectsPage", "mockup_thumbnail_query_failed", mockupQueryError, {
+      userId: user!.id,
+      projectCount: projectIds.length,
+    })
+  }
   const originalIdeaByProjectId = new Map(
     (projectIntakes ?? []).map((intake) => [intake.project_id, intake.original_idea])
   )
+  const thumbnailUrlsByProjectId = deriveDashboardMockupThumbnailUrls({
+    authorizedProjectIds: projectIds,
+    rows: mockupRows,
+  })
 
   const activeProjects: ActiveProject[] = (projects ?? []).map((project) => ({
     id: project.id,
@@ -67,6 +92,8 @@ export default async function ProjectsPage() {
     href: getProjectUrl(project),
     createdAt: project.created_at,
     updatedAt: project.updated_at,
+    thumbnailUrl: thumbnailUrlsByProjectId.get(project.id) ?? null,
+    thumbnailUnavailable: Boolean(mockupQueryError),
   }))
   const welcomeName = getWelcomeName({
     profileFullName: profileData?.full_name,
@@ -75,7 +102,7 @@ export default async function ProjectsPage() {
   })
 
   return (
-    <AppPageShell>
+    <AppPageShell className="bg-transparent">
       <section className="text-text-primary">
         <AppPageHeader
           description={`Welcome, ${welcomeName}`}
@@ -99,7 +126,10 @@ export default async function ProjectsPage() {
             </Link>
           </div>
         ) : (
-          <div className="mt-8 grid gap-5 grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))]">
+          <div
+            data-testid="dashboard-project-grid"
+            className="mt-8 grid gap-8 grid-cols-[repeat(auto-fill,minmax(min(100%,430px),1fr))]"
+          >
             {activeProjects.map((project) => (
               <DashboardProjectCard
                 key={project.id}
@@ -109,7 +139,9 @@ export default async function ProjectsPage() {
                 href={project.href}
                 createdAt={project.createdAt}
                 updatedAt={project.updatedAt}
-                showDelete
+                thumbnailUrl={project.thumbnailUrl}
+                thumbnailUnavailable={project.thumbnailUnavailable}
+                showActions
                 canDelete={allowanceStatus.planName.toLowerCase() !== "free"}
               />
             ))}

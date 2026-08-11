@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { AnchorNav } from "@/components/layout/anchor-nav"
 import { ScrollableContent } from "@/components/layout/scrollable-content"
@@ -42,6 +42,7 @@ import type {
   WorkspaceGenerationCounts,
 } from "./workspace-types"
 import { getAiPromptsReadiness } from "@/lib/ai-prompts-readiness"
+import { requestProjectRename } from "@/lib/project-rename-client"
 
 const VISIBLE_WORKSPACE_DOCUMENT_TYPES: DocumentType[] = Array.from(
   new Set(SCROLLABLE_NAV_ITEMS.map((item) => item.sourceType))
@@ -57,6 +58,8 @@ export function ProjectWorkspace({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [projectName, setProjectName] = useState(project.name)
+  const [isSavingProjectName, setIsSavingProjectName] = useState(false)
+  const projectNameSaveInFlightRef = useRef(false)
   const [isNameSet, setIsNameSet] = useState(
     project.name !== "Untitled" || !!project.description
   )
@@ -653,29 +656,28 @@ export function ProjectWorkspace({
   }
 
   const handleProjectNameUpdate = async (nextName: string) => {
-    const trimmedName = nextName.trim() || "Untitled"
-    const previousProjectName = projectName
-
-    if (trimmedName === projectName) {
+    if (nextName === projectName) {
       return
     }
 
-    setProjectName(trimmedName)
+    if (projectNameSaveInFlightRef.current) {
+      throw new Error("A project rename is already in progress")
+    }
 
+    projectNameSaveInFlightRef.current = true
+    setIsSavingProjectName(true)
     try {
-      const response = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmedName }),
+      const persistedName = await requestProjectRename({
+        projectId: project.id,
+        draft: nextName,
       })
-
-      if (!response.ok) {
-        throw new Error("Failed to update project name")
-      }
+      setProjectName(persistedName)
     } catch (error) {
-      setProjectName(previousProjectName)
       console.error("Error updating project name:", error)
       throw error
+    } finally {
+      projectNameSaveInFlightRef.current = false
+      setIsSavingProjectName(false)
     }
   }
 
@@ -893,7 +895,7 @@ export function ProjectWorkspace({
             await handleProjectNameUpdate(name)
             setIsNameSet(true)
           }}
-          isSavingName={false}
+          isSavingName={isSavingProjectName}
           user={user as { email?: string; full_name?: string; avatar_url?: string }}
           mobileChromeHidden={mobileChromeHidden}
         />
