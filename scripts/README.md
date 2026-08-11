@@ -25,6 +25,7 @@ No script spends reviewer tokens automatically: plan evaluation and diff review 
 | `run-brand-variety-batch.sh` | Drives the validation batch through Codex image generation, three ideas at a time, skipping completed ideas on re-run. | `scripts/run-brand-variety-batch.sh [batch-root] [max-parallel]` |
 | `build-brand-variety-sheet.mjs` | Builds the self-contained review contact sheet (embedded thumbnails, kit captions) from a completed batch. | `node scripts/build-brand-variety-sheet.mjs [--root <dir>]` |
 | `build-mockup-brand-bank.mjs` | Author-time generator for the mockup brand-direction bank: fifteen OKLCH-authored kits with gamut clamping, tinted neutrals, WCAG AA checks, and deterministic per-project triads. Emits `docs/plans/mockup-brand-bank.json` plus an HTML contact sheet for review. | `node scripts/build-mockup-brand-bank.mjs` |
+| `generate-pro-max-style-catalog.mjs` | Refreshes frozen outputs through the pinned skill's required `search.py --design-system` workflow, then compiles reviewed fields into the compact runtime catalog. Normal generation/checking uses frozen local fixtures only; no network, model, or paid API. | `node scripts/generate-pro-max-style-catalog.mjs [--check\|--refresh-fixtures]` |
 
 Git hooks (versioned in `.githooks/`, activated by `npm install` through the `prepare` script):
 

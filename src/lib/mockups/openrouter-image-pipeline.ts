@@ -20,9 +20,7 @@ import {
 } from "@/lib/mockups/openrouter-image-format"
 import {
   formatMockupAntiSlopRules,
-  formatMockupBrandKitForPrompt,
   isMockupBrandDirectionsEnabled,
-  selectMockupBrandKitForOption,
 } from "@/lib/mockups/brand-directions"
 import {
   MOCKUP_DESIGN_PLAN_SYSTEM_PROMPT,
@@ -35,6 +33,17 @@ import {
   type MockupDesignPlanScreen,
   type MockupPrimaryPlatform,
 } from "@/lib/mockups/design-plan"
+import {
+  buildMockupStyleProductContext,
+  formatMockupStyleTreatmentForPrompt,
+  isMockupProMaxEnabled,
+  selectLegacyMockupStyleSelection,
+  selectMockupStyleSelection,
+} from "@/lib/mockups/pro-max-style-selector"
+import {
+  PRO_MAX_TREATMENT_PROMPT_MAX_CHARS,
+  type MockupStyleSelection,
+} from "@/lib/mockups/pro-max-style-types"
 import type { Database, Json } from "@/types/database"
 import { logError, logInfo, logWarn } from "@/lib/logger"
 
@@ -46,6 +55,11 @@ const DEFAULT_IMAGE_MAX_TOKENS = 16_384
 const DEFAULT_PLANNER_MODEL = "openai/gpt-5.4-mini"
 const DEFAULT_PLANNER_MAX_TOKENS = 16_384
 const MOCKUP_STORYBOARD_FRAME_COUNT = 2
+const MAX_STYLE_PROMPT_DELTA_CHARS = 1_800
+
+type StyleAwareMockupDesignPlan = MockupDesignPlan & {
+  styleSelection?: MockupStyleSelection
+}
 
 interface MockupStoryboardSkeleton {
   label: string
@@ -203,14 +217,50 @@ export function getOpenRouterMockupPlannerModel() {
 }
 
 /**
- * Resolves the skeleton for a platform. With brand directions enabled the neutral-grey
- * variant is served and every "purple" mention becomes "grey": the indigo fill covers
- * ~63% of the canvas and measurably anchored image edits toward blue, which was one of
- * the root causes of every mockup landing in the same register.
+ * Resolves one immutable A/B/C treatment triad for a run. A persisted selection is
+ * authoritative even after either rollout flag changes. A supplied legacy plan that
+ * has no selection is deliberately kept on the legacy bank so partial retries cannot
+ * mix Pro Max and legacy treatments.
  */
-export function getMockupStoryboardSkeleton(platform: MockupPrimaryPlatform) {
+export function attachMockupStyleSelection({
+  designPlan,
+  projectId,
+  freshRun,
+  productContext,
+}: {
+  designPlan: StyleAwareMockupDesignPlan
+  projectId: string
+  freshRun: boolean
+  productContext?: string
+}): StyleAwareMockupDesignPlan {
+  if (designPlan.styleSelection) return designPlan
+  if (!isMockupBrandDirectionsEnabled()) return designPlan
+
+  const styleSelection = freshRun && isMockupProMaxEnabled()
+    ? selectMockupStyleSelection({ designPlan, projectId, productContext })
+    : selectLegacyMockupStyleSelection(projectId)
+
+  if (freshRun && isMockupProMaxEnabled() && styleSelection.source === "legacy-bank") {
+    logWarn("OpenRouterMockup", "mockup_promax_fallback", {
+      projectId,
+      reason: "unclassified_design_plan",
+    })
+  }
+
+  return { ...designPlan, styleSelection }
+}
+
+/**
+ * Resolves the skeleton for a platform. Styled runs use the neutral-grey variant so the
+ * indigo fill cannot anchor edits toward blue. The explicit override also keeps a
+ * persisted run on the same skeleton after a rollout flag changes.
+ */
+export function getMockupStoryboardSkeleton(
+  platform: MockupPrimaryPlatform,
+  useNeutralVariant = isMockupBrandDirectionsEnabled(),
+) {
   const skeleton = MOCKUP_STORYBOARD_SKELETONS[platform]
-  if (!isMockupBrandDirectionsEnabled()) return skeleton
+  if (!useNeutralVariant) return skeleton
 
   return {
     ...skeleton,
@@ -219,13 +269,19 @@ export function getMockupStoryboardSkeleton(platform: MockupPrimaryPlatform) {
   }
 }
 
-function getMockupStoryboardSkeletonFilePath(platform: MockupPrimaryPlatform) {
-  const skeleton = getMockupStoryboardSkeleton(platform)
+function getMockupStoryboardSkeletonFilePath(
+  platform: MockupPrimaryPlatform,
+  useNeutralVariant?: boolean,
+) {
+  const skeleton = getMockupStoryboardSkeleton(platform, useNeutralVariant)
   return join(process.cwd(), "public", skeleton.publicPath.replace(/^\//, ""))
 }
 
-export function buildMockupStoryboardSkeletonDataUrl(platform: MockupPrimaryPlatform) {
-  const skeletonPath = getMockupStoryboardSkeletonFilePath(platform)
+export function buildMockupStoryboardSkeletonDataUrl(
+  platform: MockupPrimaryPlatform,
+  useNeutralVariant?: boolean,
+) {
+  const skeletonPath = getMockupStoryboardSkeletonFilePath(platform, useNeutralVariant)
   const buffer = readFileSync(skeletonPath)
 
   return `data:image/png;base64,${buffer.toString("base64")}`
@@ -234,9 +290,11 @@ export function buildMockupStoryboardSkeletonDataUrl(platform: MockupPrimaryPlat
 export function buildOpenRouterMockupImageUserMessageContent({
   prompt,
   platform,
+  useNeutralSkeleton,
 }: {
   prompt: string
   platform: MockupPrimaryPlatform
+  useNeutralSkeleton?: boolean
 }): OpenAI.Chat.Completions.ChatCompletionUserMessageParam["content"] {
   return [
     {
@@ -246,7 +304,7 @@ export function buildOpenRouterMockupImageUserMessageContent({
     {
       type: "image_url",
       image_url: {
-        url: buildMockupStoryboardSkeletonDataUrl(platform),
+        url: buildMockupStoryboardSkeletonDataUrl(platform, useNeutralSkeleton),
         detail: "high",
       },
     },
@@ -339,7 +397,7 @@ export async function generateOpenRouterImageMockup({
     mvpPlan,
   })
 
-  const designPlan = await generateMockupDesignPlan({
+  const generatedDesignPlan = await generateMockupDesignPlan({
     openrouter,
     model: plannerModel,
     projectName,
@@ -348,6 +406,18 @@ export async function generateOpenRouterImageMockup({
     intakeContext,
     productPlan,
   })
+  const designPlan = attachMockupStyleSelection({
+    designPlan: generatedDesignPlan,
+    projectId,
+    freshRun: true,
+    productContext: buildMockupStyleProductContext({
+      projectName,
+      idea,
+      intakeContext,
+      productPlan,
+      mvpPlan,
+    }),
+  })
   logInfo("OpenRouterMockup", "design_plan_ready", {
     projectId,
     runId,
@@ -355,6 +425,8 @@ export async function generateOpenRouterImageMockup({
     primaryPlatform: designPlan.primaryPlatform,
     screenCount: designPlan.screens.length,
     directionCount: designPlan.directions.length,
+    styleSource: designPlan.styleSelection?.source ?? "disabled",
+    styleCatalogVersion: designPlan.styleSelection?.catalogVersion ?? null,
   })
 
   send?.({ type: "stage", message: "Generating 3 visual directions...", step: 2, totalSteps: 5 })
@@ -472,7 +544,7 @@ export async function generateOpenRouterImageMockupOption({
   const plannerModel = getOpenRouterMockupPlannerModel()
   const storageSupabase = createServiceClient() as ServerSupabaseClient
   const openrouter = getOpenRouterClient()
-  const designPlan = designPlanOverride ?? await generateMockupDesignPlan({
+  const generatedDesignPlan = designPlanOverride ?? await generateMockupDesignPlan({
     openrouter,
     model: plannerModel,
     projectName,
@@ -480,6 +552,20 @@ export async function generateOpenRouterImageMockupOption({
     idea,
     intakeContext,
     productPlan,
+  })
+  const designPlan = attachMockupStyleSelection({
+    designPlan: generatedDesignPlan,
+    projectId,
+    // A supplied plan without a selection can belong to a partially generated legacy
+    // run. Keep the whole remaining triad on the legacy bank instead of mixing sources.
+    freshRun: !designPlanOverride,
+    productContext: buildMockupStyleProductContext({
+      projectName,
+      idea,
+      intakeContext,
+      productPlan,
+      mvpPlan,
+    }),
   })
   logInfo("OpenRouterMockup", "single_option_started", {
     projectId,
@@ -489,6 +575,8 @@ export async function generateOpenRouterImageMockupOption({
     optionLabel: label,
     reusedDesignPlan: Boolean(designPlanOverride),
     primaryPlatform: designPlan.primaryPlatform,
+    styleSource: designPlan.styleSelection?.source ?? "disabled",
+    styleCatalogVersion: designPlan.styleSelection?.catalogVersion ?? null,
   })
 
   const option = await generateAndStoreOption({
@@ -555,9 +643,15 @@ async function generateAndStoreOption({
   if (!direction) {
     throw new Error(`Mockup design plan is missing direction ${config.label}`)
   }
-  const brandKit = isMockupBrandDirectionsEnabled()
-    ? selectMockupBrandKitForOption(projectId, config.label)
-    : null
+  const styleSelection = (designPlan as StyleAwareMockupDesignPlan).styleSelection
+  const useNeutralSkeleton = Boolean(styleSelection) || isMockupBrandDirectionsEnabled()
+  const styleTreatmentBlock = styleSelection
+    ? buildMockupStyleTreatmentBlock(
+        styleSelection,
+        config.label,
+        designPlan.primaryPlatform,
+      )
+    : undefined
   const storyboardPrompt = userPrompt || buildOpenRouterMockupImagePrompt({
     projectName,
     mvpPlan,
@@ -565,14 +659,14 @@ async function generateAndStoreOption({
     strategy: formatDirectionForPrompt(direction),
     label: config.label,
     designPlan,
-    brandKitBlock: brandKit
-      ? formatMockupBrandKitForPrompt(brandKit, designPlan.primaryPlatform)
-      : undefined,
+    styleTreatmentBlock,
+    useNeutralSkeleton,
   })
-  const skeleton = getMockupStoryboardSkeleton(designPlan.primaryPlatform)
+  const skeleton = getMockupStoryboardSkeleton(designPlan.primaryPlatform, useNeutralSkeleton)
   const userMessageContent = buildOpenRouterMockupImageUserMessageContent({
     prompt: storyboardPrompt,
     platform: designPlan.primaryPlatform,
+    useNeutralSkeleton,
   })
   const frameScreens = getMockupStoryboardFrameScreens(designPlan)
 
@@ -594,7 +688,10 @@ async function generateAndStoreOption({
       messages: [
         {
           role: "system",
-          content: systemPrompt || buildOpenRouterImageMockupSystemPrompt(),
+          content: systemPrompt || buildOpenRouterImageMockupSystemPrompt(
+            useNeutralSkeleton,
+            styleSelection?.source,
+          ),
         },
         {
           role: "user",
@@ -848,9 +945,47 @@ export const OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT =
  * card soup, uniform radius, emoji icons) that make generated UI read as AI output
  * regardless of palette.
  */
-export function buildOpenRouterImageMockupSystemPrompt() {
-  if (!isMockupBrandDirectionsEnabled()) return OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT
+export function buildOpenRouterImageMockupSystemPrompt(
+  useStyleEnrichment = isMockupBrandDirectionsEnabled(),
+  styleSource?: MockupStyleSelection["source"],
+) {
+  if (!useStyleEnrichment) return OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT
+  if (styleSource === "promax") {
+    return `${OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT}\n\n${formatProMaxStyleGuardrails()}`
+  }
   return `${OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT}\n\n${formatMockupAntiSlopRules()}`
+}
+
+function formatProMaxStyleGuardrails() {
+  return `Honor the selected visual treatment as one coherent system. Never produce:
+- a blend of unrelated catalog styles or unselected visual motifs
+- repetitive card soup or one uniform radius on every element
+- stacked soft shadows as the only hierarchy signal
+- emoji used as interface iconography
+- placeholder branding such as "Acme" or a generic abstract swoosh
+- decorative AI sparkle badges or marketing flourishes
+- status meaning conveyed by color alone
+- low-contrast text, controls, focus states, or data labels`
+}
+
+export function buildMockupStyleTreatmentBlock(
+  selection: MockupStyleSelection,
+  label: OpenRouterMockupOptionLabel,
+  platform: MockupPrimaryPlatform,
+) {
+  const treatment = selection.treatments[label]
+  const block = `${formatMockupStyleTreatmentForPrompt(treatment, platform)}
+Action semantics: use ${treatment.palette.accent} consistently for every primary CTA in both frames. Success green denotes only a completed state; never use it for an incomplete primary action unless ${treatment.palette.accent} itself is green.`
+
+  if (
+    block.length > PRO_MAX_TREATMENT_PROMPT_MAX_CHARS ||
+    block.length + 2 > MAX_STYLE_PROMPT_DELTA_CHARS
+  ) {
+    throw new Error(
+      `Mockup visual treatment block exceeds ${PRO_MAX_TREATMENT_PROMPT_MAX_CHARS} characters`,
+    )
+  }
+  return block
 }
 
 function getMockupStoryboardFrameScreens(designPlan?: MockupDesignPlan): MockupDesignPlanScreen[] {
@@ -943,6 +1078,8 @@ export function buildOpenRouterMockupImagePrompt({
   label,
   designPlan,
   brandKitBlock,
+  styleTreatmentBlock,
+  useNeutralSkeleton: neutralSkeletonOverride,
 }: {
   projectName: string
   mvpPlan: string
@@ -952,11 +1089,19 @@ export function buildOpenRouterMockupImagePrompt({
   designPlan?: MockupDesignPlan
   /** Pre-rendered brand kit prompt block; present only when brand directions are enabled. */
   brandKitBlock?: string
+  /** Resolved Pro Max or legacy-bank treatment for this option. */
+  styleTreatmentBlock?: string
+  /** Keeps persisted styled runs on the neutral skeleton even after a flag change. */
+  useNeutralSkeleton?: boolean
 }) {
   void _mvpPlan
 
   const platform = designPlan?.primaryPlatform ?? "desktop-web"
-  const skeleton = getMockupStoryboardSkeleton(platform)
+  const treatmentBlock = styleTreatmentBlock ?? brandKitBlock
+  const useNeutralSkeleton = neutralSkeletonOverride ?? (
+    Boolean(treatmentBlock) || isMockupBrandDirectionsEnabled()
+  )
+  const skeleton = getMockupStoryboardSkeleton(platform, useNeutralSkeleton)
   const frameScreens = getMockupStoryboardFrameScreens(designPlan)
   const foldedScreens = formatFoldedStoryboardScreens(designPlan)
   const frameLabels = frameScreens.map((screen, index) => `"${index + 1}. ${screen.name}"`).join("\n- ")
@@ -970,7 +1115,7 @@ Internal direction metadata only:
 
 Design strategy:
 ${strategy}
-${brandKitBlock ? `\n${brandKitBlock}\n` : ""}
+${treatmentBlock ? `\n${treatmentBlock}\n` : ""}
 Primary platform:
 ${platform}
 
@@ -983,7 +1128,7 @@ ${designPlan?.targetUser ?? "Primary MVP user"}
 Replace the existing "Text here" labels with exactly:
 - ${frameLabels}
 
-Frame content to place inside the existing ${isMockupBrandDirectionsEnabled() ? "grey" : "purple"} placeholders:
+Frame content to place inside the existing ${useNeutralSkeleton ? "grey" : "purple"} placeholders:
 ${formatMockupStoryboardFrameScreens(frameScreens)}
 ${foldedScreens ? `
 Later-flow details to fold into the second frame:
@@ -1045,24 +1190,35 @@ export function buildMockupImagePromptForOption({
   if (!direction) {
     throw new Error(`Mockup design plan is missing direction ${config.label}`)
   }
-  const brandKit = projectId && isMockupBrandDirectionsEnabled()
-    ? selectMockupBrandKitForOption(projectId, config.label)
-    : null
+  const resolvedDesignPlan = projectId
+      ? attachMockupStyleSelection({
+        designPlan,
+        projectId,
+        freshRun: true,
+        productContext: buildMockupStyleProductContext({ projectName, mvpPlan }),
+      })
+    : designPlan
+  const styleSelection = (resolvedDesignPlan as StyleAwareMockupDesignPlan).styleSelection
+  const useNeutralSkeleton = Boolean(styleSelection) || isMockupBrandDirectionsEnabled()
   const userPrompt = buildOpenRouterMockupImagePrompt({
     projectName,
     mvpPlan,
     title: direction.name,
     strategy: formatDirectionForPrompt(direction),
     label: config.label,
-    designPlan,
-    brandKitBlock: brandKit
-      ? formatMockupBrandKitForPrompt(brandKit, designPlan.primaryPlatform)
+    designPlan: resolvedDesignPlan,
+    styleTreatmentBlock: styleSelection
+      ? buildMockupStyleTreatmentBlock(styleSelection, config.label, designPlan.primaryPlatform)
       : undefined,
+    useNeutralSkeleton,
   })
-  const skeleton = getMockupStoryboardSkeleton(designPlan.primaryPlatform)
+  const skeleton = getMockupStoryboardSkeleton(designPlan.primaryPlatform, useNeutralSkeleton)
 
   return {
-    systemPrompt: systemPromptOverride || buildOpenRouterImageMockupSystemPrompt(),
+    systemPrompt: systemPromptOverride || buildOpenRouterImageMockupSystemPrompt(
+      useNeutralSkeleton,
+      styleSelection?.source,
+    ),
     userPrompt,
     skeletonAssetPath: skeleton.publicPath,
     skeletonLabel: skeleton.label,

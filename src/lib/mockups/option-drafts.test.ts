@@ -6,9 +6,12 @@ import {
   deleteMockupOptionDrafts,
   insertMockupOptionDraftIfMissing,
   normalizeMockupDraftOptionRows,
+  parseConsistentMockupDraftDesignPlan,
   type MockupDraftOptionLabel,
 } from "@/lib/mockups/option-drafts"
-import type { Database } from "@/types/database"
+import { selectMockupStyleSelection } from "@/lib/mockups/pro-max-style-selector"
+import type { MockupDesignPlan } from "@/lib/mockups/design-plan"
+import type { Database, Json } from "@/types/database"
 
 type MockupOptionDraftRow = Database["public"]["Tables"]["mockup_option_drafts"]["Row"]
 
@@ -128,6 +131,41 @@ test("insertMockupOptionDraftIfMissing: uses insert-only upsert semantics", asyn
     onConflict: "project_id,run_id,option_label",
     ignoreDuplicates: true,
   })
+})
+
+test("parseConsistentMockupDraftDesignPlan: preserves one authoritative resolved triad", () => {
+  const basePlan: MockupDesignPlan = {
+    version: "mockup-design-plan-v1",
+    primaryPlatform: "desktop-web",
+    happyPathScenario: "An agency lead approves a scope change.",
+    targetUser: "Agency operations manager",
+    screens: [
+      { name: "Change request", flowStep: 1, caption: "Review request", purpose: "Review scope", happyPathState: "Ready", dataToShow: ["Margin impact"], priority: "P0" },
+      { name: "Approval", flowStep: 2, caption: "Approve change", purpose: "Record decision", happyPathState: "Awaiting approval", dataToShow: ["Client response"], priority: "P0" },
+    ],
+    directions: [
+      { label: "A", name: "Foundation", layoutStrategy: "Stable grid", navigationPattern: "Left rail", density: "Balanced", visualTone: "Calm", reusableMotifs: ["Status rows"], consistencyNotes: "One CTA accent" },
+      { label: "B", name: "Distinctive", layoutStrategy: "Split workspace", navigationPattern: "Command bar", density: "Dense", visualTone: "Graphic", reusableMotifs: ["Impact blocks"], consistencyNotes: "One CTA accent" },
+      { label: "C", name: "Experimental", layoutStrategy: "Layered canvas", navigationPattern: "Context dock", density: "Airy", visualTone: "Bold", reusableMotifs: ["Decision seals"], consistencyNotes: "One CTA accent" },
+    ],
+  }
+  const designPlan = {
+    ...basePlan,
+    styleSelection: selectMockupStyleSelection({ designPlan: basePlan, projectId: "project-1" }),
+  }
+  const rows = [
+    { design_plan: designPlan as unknown as Json },
+    { design_plan: designPlan as unknown as Json },
+  ]
+
+  assert.deepEqual(parseConsistentMockupDraftDesignPlan(rows), designPlan)
+  assert.throws(
+    () => parseConsistentMockupDraftDesignPlan([
+      rows[0],
+      { design_plan: { ...designPlan, targetUser: "Different user" } as unknown as Json },
+    ]),
+    /inconsistent design plans/,
+  )
 })
 
 test("cleanupAbandonedMockupOptionDrafts: removes stale unreferenced draft rows and storage objects", async () => {

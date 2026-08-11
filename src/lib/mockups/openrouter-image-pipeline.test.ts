@@ -10,7 +10,10 @@ import {
   OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
   assertMockupImageMatchesSkeletonAspect,
   buildCanonicalMockupContentOption,
+  attachMockupStyleSelection,
+  buildMockupStyleTreatmentBlock,
   buildMockupStoryboardSkeletonDataUrl,
+  buildMockupImagePromptForOption,
   buildOpenRouterMockupImageUserMessageContent,
   buildMockupImageProxyUrl,
   buildOpenRouterImageMockupSystemPrompt,
@@ -26,6 +29,46 @@ import {
   parseImageDataUrl,
   parseOpenRouterImageMockupContent,
 } from "@/lib/mockups/openrouter-image-pipeline"
+import type { MockupDesignPlan } from "@/lib/mockups/design-plan"
+
+function buildStyleTestDesignPlan(): MockupDesignPlan {
+  return {
+    version: "mockup-design-plan-v1",
+    primaryPlatform: "desktop-web",
+    happyPathScenario: "A SaaS operator reviews subscription health and completes a workflow.",
+    targetUser: "Operations lead for a B2B software product",
+    screens: [
+      {
+        name: "Account Overview",
+        flowStep: 1,
+        caption: "Review account",
+        purpose: "Review subscription status and account health",
+        happyPathState: "The account is healthy and fully populated",
+        dataToShow: ["Subscription", "Health score", "Next action"],
+        priority: "P0",
+      },
+      {
+        name: "Workflow Detail",
+        flowStep: 2,
+        caption: "Complete workflow",
+        purpose: "Complete the primary software workflow",
+        happyPathState: "The workflow is ready to submit",
+        dataToShow: ["Status", "Owner", "Submit action"],
+        priority: "P0",
+      },
+    ],
+    directions: (["A", "B", "C"] as const).map((label, index) => ({
+      label,
+      name: `Direction ${label}`,
+      layoutStrategy: `Layout strategy ${index + 1}`,
+      navigationPattern: "Persistent product navigation",
+      density: index === 0 ? "balanced" : index === 1 ? "dense" : "spacious",
+      visualTone: `Visual tone ${index + 1}`,
+      reusableMotifs: ["Status chips"],
+      consistencyNotes: "Use one coherent component language.",
+    })),
+  }
+}
 
 test("parseImageDataUrl: decodes supported image data URLs", () => {
   const parsed = parseImageDataUrl("data:image/png;base64,aGVsbG8=")
@@ -615,6 +658,169 @@ test("brand directions flag: grey skeleton and kit block when on, byte-identical
   } finally {
     if (originalFlag === undefined) delete process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
     else process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = originalFlag
+  }
+})
+
+test("persisted style prompts keep the neutral skeleton after the global style flag is disabled", () => {
+  const originalFlag = process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+  try {
+    process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = "0"
+
+    assert.match(
+      getMockupStoryboardSkeleton("desktop-web", true).publicPath,
+      /desktop-web-storyboard-skeleton-grey\.png$/,
+    )
+    assert.match(
+      getMockupStoryboardSkeleton("desktop-web", true).interiorDescription,
+      /grey placeholder areas/,
+    )
+    assert.match(
+      getMockupStoryboardSkeleton("desktop-web", false).publicPath,
+      /desktop-web-storyboard-skeleton\.png$/,
+    )
+  } finally {
+    if (originalFlag === undefined) delete process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+    else process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = originalFlag
+  }
+})
+
+test("Pro Max system guardrails do not contradict selected Glassmorphism or Aurora styles", () => {
+  const prompt = buildOpenRouterImageMockupSystemPrompt(true, "promax")
+
+  assert.match(prompt, /one coherent system/)
+  assert.doesNotMatch(prompt, /Never produce any of the following/)
+  assert.doesNotMatch(prompt, /glassmorphism, frosted panels/)
+  assert.doesNotMatch(prompt, /aurora backgrounds/)
+})
+
+test("style selection flag matrix resolves one whole triad and preserves legacy partial runs", () => {
+  const originalBrandFlag = process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+  const originalProMaxFlag = process.env.MOCKUP_PROMAX_ENABLED
+  const designPlan = buildStyleTestDesignPlan()
+
+  try {
+    const cases = [
+      { brand: "0", proMax: "0", freshRun: true, source: undefined },
+      { brand: "0", proMax: "1", freshRun: true, source: undefined },
+      { brand: "1", proMax: "0", freshRun: true, source: "legacy-bank" },
+      { brand: "1", proMax: "1", freshRun: true, source: "promax" },
+      { brand: "1", proMax: "1", freshRun: false, source: "legacy-bank" },
+    ] as const
+
+    for (const testCase of cases) {
+      process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = testCase.brand
+      process.env.MOCKUP_PROMAX_ENABLED = testCase.proMax
+      const result = attachMockupStyleSelection({
+        designPlan,
+        projectId: "style-flag-project",
+        freshRun: testCase.freshRun,
+      })
+
+      assert.equal(result.styleSelection?.source, testCase.source)
+      if (result.styleSelection) {
+        assert.deepEqual(Object.keys(result.styleSelection.treatments), ["A", "B", "C"])
+        assert.equal(new Set(Object.values(result.styleSelection.treatments).map((item) => item.id)).size, 3)
+        if (testCase.source === "legacy-bank") {
+          assert.ok(Object.values(result.styleSelection.treatments).every((item) => item.id.startsWith("legacy-")))
+        } else {
+          assert.ok(Object.values(result.styleSelection.treatments).every((item) => !item.id.startsWith("legacy-")))
+        }
+      }
+    }
+  } finally {
+    if (originalBrandFlag === undefined) delete process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+    else process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = originalBrandFlag
+    if (originalProMaxFlag === undefined) delete process.env.MOCKUP_PROMAX_ENABLED
+    else process.env.MOCKUP_PROMAX_ENABLED = originalProMaxFlag
+  }
+})
+
+test("persisted selection wins across flag changes in planner-only prompts", () => {
+  const originalBrandFlag = process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+  const originalProMaxFlag = process.env.MOCKUP_PROMAX_ENABLED
+
+  try {
+    process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = "1"
+    process.env.MOCKUP_PROMAX_ENABLED = "1"
+    const selectedPlan = attachMockupStyleSelection({
+      designPlan: buildStyleTestDesignPlan(),
+      projectId: "persisted-style-project",
+      freshRun: true,
+    })
+    assert.equal(selectedPlan.styleSelection?.source, "promax")
+    const persistedSelection = selectedPlan.styleSelection
+
+    process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = "0"
+    process.env.MOCKUP_PROMAX_ENABLED = "0"
+    const reusedPlan = attachMockupStyleSelection({
+      designPlan: selectedPlan,
+      projectId: "different-project-id",
+      freshRun: false,
+    })
+    assert.equal(reusedPlan.styleSelection, persistedSelection)
+
+    const prompt = buildMockupImagePromptForOption({
+      projectName: "Persisted Style",
+      mvpPlan: "## First Version Plan\nComplete the workflow.",
+      label: "A",
+      designPlan: reusedPlan,
+      projectId: "different-project-id",
+    })
+    assert.match(prompt.userPrompt, /VISUAL TREATMENT — FOUNDATION/)
+    assert.ok(prompt.userPrompt.includes(persistedSelection?.treatments.A.palette.accent ?? "missing"))
+    assert.match(prompt.skeletonAssetPath, /desktop-web-storyboard-skeleton-grey\.png$/)
+    assert.match(prompt.systemPrompt, /one coherent system/)
+  } finally {
+    if (originalBrandFlag === undefined) delete process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+    else process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = originalBrandFlag
+    if (originalProMaxFlag === undefined) delete process.env.MOCKUP_PROMAX_ENABLED
+    else process.env.MOCKUP_PROMAX_ENABLED = originalProMaxFlag
+  }
+})
+
+test("style treatment prompt stays capped and pins primary CTA semantics", () => {
+  const originalBrandFlag = process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+  const originalProMaxFlag = process.env.MOCKUP_PROMAX_ENABLED
+  try {
+    process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = "1"
+    process.env.MOCKUP_PROMAX_ENABLED = "1"
+    const plan = attachMockupStyleSelection({
+      designPlan: buildStyleTestDesignPlan(),
+      projectId: "prompt-cap-project",
+      freshRun: true,
+    })
+    assert.ok(plan.styleSelection)
+    const treatment = plan.styleSelection.treatments.A
+    const block = buildMockupStyleTreatmentBlock(plan.styleSelection, "A", "desktop-web")
+    assert.ok(block.length <= 1_600)
+    assert.match(block, new RegExp(`use ${treatment.palette.accent} consistently for every primary CTA`, "i"))
+    assert.match(block, /Success green denotes only a completed state/)
+
+    const base = buildOpenRouterMockupImagePrompt({
+      projectName: "Prompt Cap",
+      mvpPlan: "## First Version Plan\nCore flow.",
+      title: "Direction A",
+      strategy: "Layout strategy 1",
+      label: "A",
+      designPlan: plan,
+      useNeutralSkeleton: true,
+    })
+    const styled = buildOpenRouterMockupImagePrompt({
+      projectName: "Prompt Cap",
+      mvpPlan: "## First Version Plan\nCore flow.",
+      title: "Direction A",
+      strategy: "Layout strategy 1",
+      label: "A",
+      designPlan: plan,
+      styleTreatmentBlock: block,
+      useNeutralSkeleton: true,
+    })
+    assert.ok(styled.length - base.length <= 1_800)
+  } finally {
+    if (originalBrandFlag === undefined) delete process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED
+    else process.env.MOCKUP_BRAND_DIRECTIONS_ENABLED = originalBrandFlag
+    if (originalProMaxFlag === undefined) delete process.env.MOCKUP_PROMAX_ENABLED
+    else process.env.MOCKUP_PROMAX_ENABLED = originalProMaxFlag
   }
 })
 

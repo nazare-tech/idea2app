@@ -8,7 +8,7 @@ import {
   type OpenRouterImageMockupOption,
   type OpenRouterImageMockupScreen,
 } from "@/lib/mockups/openrouter-image-format"
-import type { MockupDesignPlan } from "@/lib/mockups/design-plan"
+import { parseMockupDesignPlan, type MockupDesignPlan } from "@/lib/mockups/design-plan"
 import type { Database, Json } from "@/types/database"
 
 type ServerSupabaseClient = SupabaseClient<Database>
@@ -214,6 +214,53 @@ export async function getMockupOptionDrafts({
     projectId,
     runId,
   })
+}
+
+/**
+ * Loads the server-authored design plan saved with a run's option drafts. Client
+ * copies are never authoritative because style treatments become paid prompt input.
+ */
+export async function getMockupOptionDraftDesignPlan({
+  supabase,
+  projectId,
+  userId,
+  runId,
+}: {
+  supabase: ServerSupabaseClient
+  projectId: string
+  userId: string
+  runId: string
+}) {
+  const { data, error } = await supabase
+    .from("mockup_option_drafts")
+    .select("design_plan")
+    .eq("project_id", projectId)
+    .eq("user_id", userId)
+    .eq("run_id", runId)
+    .order("option_label", { ascending: true })
+
+  if (error) {
+    throw new Error(`Failed to load mockup draft design plan: ${error.message}`)
+  }
+
+  return parseConsistentMockupDraftDesignPlan(data ?? [])
+}
+
+export function parseConsistentMockupDraftDesignPlan(
+  rows: Array<{ design_plan: Json | null }>,
+): MockupDesignPlan | null {
+  const plans = rows
+    .filter((row) => row.design_plan !== null)
+    .map((row) => parseMockupDesignPlan(JSON.stringify(row.design_plan)))
+
+  if (plans.length === 0) return null
+
+  const canonical = JSON.stringify(plans[0])
+  if (plans.some((plan) => JSON.stringify(plan) !== canonical)) {
+    throw new Error("Mockup option drafts contain inconsistent design plans")
+  }
+
+  return plans[0]
 }
 
 export async function isMockupDraftImagePathOwned({

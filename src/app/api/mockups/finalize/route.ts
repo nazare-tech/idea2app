@@ -16,8 +16,15 @@ import {
   findLatestActiveDocument,
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
-import { parseMockupDesignPlan } from "@/lib/mockups/design-plan"
-import { deleteMockupOptionDrafts } from "@/lib/mockups/option-drafts"
+import {
+  parseMockupDesignPlan,
+  withoutMockupStyleSelection,
+} from "@/lib/mockups/design-plan"
+import {
+  deleteMockupOptionDrafts,
+  getMockupOptionDraftDesignPlan,
+} from "@/lib/mockups/option-drafts"
+import { isServerResolvedMockupStyleSelection } from "@/lib/mockups/pro-max-style-selector"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { Json } from "@/types/database"
@@ -115,10 +122,10 @@ export async function POST(request: Request) {
     const model = typeof body.model === "string" ? body.model.trim() : ""
     const runId = typeof body.runId === "string" ? body.runId.trim() : ""
     const rawOptions: unknown[] = Array.isArray(body.options) ? body.options : []
-    let designPlan: unknown = null
+    let clientDesignPlan: ReturnType<typeof parseMockupDesignPlan> | null = null
     if (body.designPlan && typeof body.designPlan === "object") {
       try {
-        designPlan = parseMockupDesignPlan(JSON.stringify(body.designPlan))
+        clientDesignPlan = parseMockupDesignPlan(JSON.stringify(body.designPlan))
       } catch {
         logWarn("MockupFinalize", "invalid_design_plan", userLogContext)
         return NextResponse.json({ error: "Invalid mockup design plan" }, { status: 400 })
@@ -134,7 +141,7 @@ export async function POST(request: Request) {
     logInfo("MockupFinalize", "request_started", {
       ...mockupLogContext,
       rawOptionCount: rawOptions.length,
-      hasDesignPlan: Boolean(designPlan),
+      hasDesignPlan: Boolean(clientDesignPlan),
     })
 
     if (!projectId || !model || !runId) {
@@ -172,6 +179,23 @@ export async function POST(request: Request) {
     if (!project) {
       logWarn("MockupFinalize", "project_not_found", mockupLogContext)
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
+    }
+
+    const draftDesignPlan = await getMockupOptionDraftDesignPlan({
+      supabase,
+      projectId,
+      userId: user.id,
+      runId,
+    })
+    const transportedSelectionIsControlled = Boolean(clientDesignPlan &&
+      isServerResolvedMockupStyleSelection({ designPlan: clientDesignPlan, projectId }))
+    const designPlan = draftDesignPlan ?? (clientDesignPlan
+      ? transportedSelectionIsControlled
+        ? clientDesignPlan
+        : withoutMockupStyleSelection(clientDesignPlan)
+      : null)
+    if (!draftDesignPlan && clientDesignPlan?.styleSelection && !transportedSelectionIsControlled) {
+      logWarn("MockupFinalize", "untrusted_style_selection_ignored", mockupLogContext)
     }
 
     if (isUuid(runId)) {
@@ -249,7 +273,7 @@ export async function POST(request: Request) {
       storage_bucket: MOCKUP_STORAGE_BUCKET,
       storage_run_id: runId,
       generated_at: generatedAt,
-      ...(designPlan ? { design_plan: designPlan as Json } : {}),
+      ...(designPlan ? { design_plan: designPlan as unknown as Json } : {}),
       generation_mode: "option_invocations",
     } satisfies Record<string, Json>
 

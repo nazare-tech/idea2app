@@ -30,6 +30,7 @@ import {
 import {
   OPENROUTER_IMAGE_MOCKUP_SYSTEM_PROMPT,
   OPENROUTER_MOCKUP_OPTION_CONFIGS,
+  attachMockupStyleSelection,
   buildMockupImagePromptForOption,
   buildOpenRouterMockupImagePrompt,
   generateOpenRouterImageMockupOption,
@@ -48,6 +49,7 @@ import {
   type MockupDesignPlan,
   type MockupPrimaryPlatform,
 } from "@/lib/mockups/design-plan"
+import { buildMockupStyleProductContext } from "@/lib/mockups/pro-max-style-selector"
 import {
   buildOpenRouterTimeoutMessage,
   createOpenRouterLongTextSignal,
@@ -306,7 +308,15 @@ export async function runPromptLabArtifact({
       }
 
       const parsedDesignPlan = parseMockupDesignPlan(plannerOutput)
-      const designPlan = applyPromptLabMockupPlatformOverride(parsedDesignPlan, mockupPlatform)
+      const designPlan = attachMockupStyleSelection({
+        designPlan: applyPromptLabMockupPlatformOverride(parsedDesignPlan, mockupPlatform),
+        projectId,
+        freshRun: true,
+        productContext: buildMockupStyleProductContext({
+          projectName,
+          mvpPlan: mockupMvpPlan || userPrompt,
+        }),
+      })
       const compactBrief = formatMockupGenerationBrief(buildMockupGenerationBrief({
         projectName,
         mvpPlan: mockupMvpPlan || userPrompt,

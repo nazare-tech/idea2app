@@ -10,8 +10,18 @@ import {
   findLatestActiveDocument,
   getActiveDocumentIdentity,
 } from "@/lib/active-document-policy"
-import { parseMockupDesignPlan } from "@/lib/mockups/design-plan"
-import { upsertMockupOptionDraft } from "@/lib/mockups/option-drafts"
+import {
+  parseMockupDesignPlan,
+  withoutMockupStyleSelection,
+} from "@/lib/mockups/design-plan"
+import {
+  getMockupOptionDraftDesignPlan,
+  upsertMockupOptionDraft,
+} from "@/lib/mockups/option-drafts"
+import {
+  buildMockupStyleProductContext,
+  isServerResolvedMockupStyleSelection,
+} from "@/lib/mockups/pro-max-style-selector"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 import { buildRequestLogContext, logError, logInfo, logWarn } from "@/lib/logger"
@@ -80,10 +90,10 @@ export async function POST(request: Request) {
     const label = parseOptionLabel(body.label)
     const idea = typeof body.idea === "string" ? body.idea : undefined
     const productPlan = typeof body.productPlan === "string" ? body.productPlan : undefined
-    let designPlan: ReturnType<typeof parseMockupDesignPlan> | undefined
+    let clientDesignPlan: ReturnType<typeof parseMockupDesignPlan> | undefined
     if (body.designPlan && typeof body.designPlan === "object") {
       try {
-        designPlan = parseMockupDesignPlan(JSON.stringify(body.designPlan))
+        clientDesignPlan = parseMockupDesignPlan(JSON.stringify(body.designPlan))
       } catch {
         logWarn("MockupOption", "invalid_design_plan", userLogContext)
         return NextResponse.json({ error: "Invalid mockup design plan" }, { status: 400 })
@@ -98,7 +108,7 @@ export async function POST(request: Request) {
     }
     logInfo("MockupOption", "request_started", {
       ...mockupLogContext,
-      hasDesignPlan: Boolean(designPlan),
+      hasDesignPlan: Boolean(clientDesignPlan),
       hasIdea: Boolean(idea),
       hasProductPlan: Boolean(productPlan),
     })
@@ -148,6 +158,37 @@ export async function POST(request: Request) {
     if (!project) {
       logWarn("MockupOption", "project_not_found", mockupLogContext)
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
+    }
+
+    const draftDesignPlan = runId
+      ? await getMockupOptionDraftDesignPlan({
+          supabase,
+          projectId,
+          userId: user.id,
+          runId,
+        })
+      : null
+    // A browser copy can recover the ordinary layout plan, but resolved treatments
+    // are paid prompt input and must come from the server-authored draft row.
+    const styleProductContext = buildMockupStyleProductContext({
+      projectName,
+      idea,
+      productPlan,
+      mvpPlan,
+    })
+    const transportedSelectionIsControlled = Boolean(clientDesignPlan &&
+      isServerResolvedMockupStyleSelection({
+        designPlan: clientDesignPlan,
+        projectId,
+        productContext: styleProductContext,
+      }))
+    const designPlan = draftDesignPlan ?? (clientDesignPlan
+      ? transportedSelectionIsControlled
+        ? clientDesignPlan
+        : withoutMockupStyleSelection(clientDesignPlan)
+      : undefined)
+    if (!draftDesignPlan && clientDesignPlan?.styleSelection && !transportedSelectionIsControlled) {
+      logWarn("MockupOption", "untrusted_style_selection_ignored", mockupLogContext)
     }
 
     const documentIdentity = getActiveDocumentIdentity("mockups")

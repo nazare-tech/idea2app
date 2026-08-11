@@ -1,4 +1,12 @@
 import { buildSecurePrompt } from "@/lib/prompts/sanitize"
+import {
+  PRO_MAX_FIELD_CAPS,
+  PRO_MAX_STYLE_SELECTION_MAX_BYTES,
+} from "@/lib/mockups/pro-max-style-types"
+import type {
+  MockupStyleSelection,
+  ProMaxVisualTreatment,
+} from "@/lib/mockups/pro-max-style-types"
 
 export const MOCKUP_DESIGN_PLAN_SCHEMA_VERSION = "mockup-design-plan-v1" as const
 
@@ -10,6 +18,7 @@ export const MOCKUP_PRIMARY_PLATFORMS = [
 ] as const
 
 export const MOCKUP_DESIGN_DIRECTION_LABELS = ["A", "B", "C"] as const
+export const MOCKUP_STYLE_SELECTION_MAX_BYTES = PRO_MAX_STYLE_SELECTION_MAX_BYTES
 
 export type MockupDesignPlanSchemaVersion = typeof MOCKUP_DESIGN_PLAN_SCHEMA_VERSION
 export type MockupPrimaryPlatform = typeof MOCKUP_PRIMARY_PLATFORMS[number]
@@ -43,6 +52,13 @@ export interface MockupDesignPlan {
   targetUser: string
   screens: MockupDesignPlanScreen[]
   directions: MockupDesignDirection[]
+  styleSelection?: MockupStyleSelection
+}
+
+export function withoutMockupStyleSelection(designPlan: MockupDesignPlan): MockupDesignPlan {
+  const copy = { ...designPlan }
+  delete copy.styleSelection
+  return copy
 }
 
 export interface MockupScreenLimit {
@@ -286,6 +302,9 @@ export function parseMockupDesignPlan(rawModelOutput: string): MockupDesignPlan 
   const primaryPlatform = normalizePrimaryPlatform(readString(parsed.primaryPlatform) || "desktop-web")
   const happyPathScenario = readString(parsed.happyPathScenario)
   const targetUser = readString(parsed.targetUser)
+  const styleSelection = parsed.styleSelection === undefined
+    ? undefined
+    : parseMockupStyleSelection(parsed.styleSelection)
 
   if (!happyPathScenario) {
     throw new Error("happyPathScenario is required")
@@ -311,6 +330,7 @@ export function parseMockupDesignPlan(rawModelOutput: string): MockupDesignPlan 
     targetUser,
     screens: normalizeMockupDesignPlanScreens(screensValue.map(parseScreen), primaryPlatform),
     directions,
+    ...(styleSelection ? { styleSelection } : {}),
   }
 }
 
@@ -407,9 +427,230 @@ function parseDirection(value: unknown, index: number): MockupDesignDirection {
   }
 }
 
+const STYLE_TIER_BY_DIRECTION: Record<MockupDesignDirectionLabel, ProMaxVisualTreatment["tier"]> = {
+  A: "foundation",
+  B: "distinctive",
+  C: "experimental",
+}
+
+const STYLE_SELECTION_SOURCES = ["promax", "legacy-bank"] as const
+const STYLE_DENSITIES = ["low", "medium", "high"] as const
+const STYLE_PALETTE_FIELDS = [
+  "background",
+  "surface",
+  "primary",
+  "accent",
+  "onAccent",
+  "text",
+  "muted",
+  "border",
+  "destructive",
+] as const
+const STYLE_TYPOGRAPHY_FIELDS = ["heading", "body", "data"] as const
+type StyleTreatmentListField = "motifs" | "effects" | "avoid"
+
+function parseMockupStyleSelection(value: unknown): MockupStyleSelection {
+  const record = asRecord(value)
+  if (!record || Array.isArray(value)) {
+    throw new Error("styleSelection must be an object")
+  }
+
+  if (new TextEncoder().encode(JSON.stringify(value)).byteLength > MOCKUP_STYLE_SELECTION_MAX_BYTES) {
+    throw new Error(`styleSelection must be at most ${MOCKUP_STYLE_SELECTION_MAX_BYTES} bytes`)
+  }
+
+  const source = readString(record.source)
+  if (!(STYLE_SELECTION_SOURCES as readonly string[]).includes(source)) {
+    throw new Error("styleSelection source must be promax or legacy-bank")
+  }
+
+  const catalogVersion = readRequiredBoundedString(
+    record.catalogVersion,
+    "styleSelection catalogVersion",
+    PRO_MAX_FIELD_CAPS.name,
+  )
+  const treatmentsRecord = asRecord(record.treatments)
+  const treatmentKeys = treatmentsRecord && !Array.isArray(record.treatments)
+    ? Object.keys(treatmentsRecord).sort()
+    : []
+  if (treatmentKeys.join(",") !== MOCKUP_DESIGN_DIRECTION_LABELS.join(",")) {
+    throw new Error("styleSelection treatments must include exactly A, B, and C")
+  }
+
+  const treatments = {
+    A: parseStyleTreatment(treatmentsRecord?.A, "A"),
+    B: parseStyleTreatment(treatmentsRecord?.B, "B"),
+    C: parseStyleTreatment(treatmentsRecord?.C, "C"),
+  }
+  const treatmentIds = Object.values(treatments).map((treatment) => treatment.id)
+  if (new Set(treatmentIds).size !== treatmentIds.length) {
+    throw new Error("styleSelection treatment IDs must be unique")
+  }
+
+  return {
+    source: source as MockupStyleSelection["source"],
+    catalogVersion,
+    treatments,
+  }
+}
+
+function parseStyleTreatment(
+  value: unknown,
+  label: MockupDesignDirectionLabel,
+): ProMaxVisualTreatment {
+  const record = asRecord(value)
+  if (!record || Array.isArray(value)) {
+    throw new Error(`styleSelection treatment ${label} must be an object`)
+  }
+
+  const tier = readString(record.tier)
+  const expectedTier = STYLE_TIER_BY_DIRECTION[label]
+  if (tier !== expectedTier) {
+    throw new Error(`styleSelection treatment ${label} must use tier ${expectedTier}`)
+  }
+
+  const density = readString(record.density)
+  if (!(STYLE_DENSITIES as readonly string[]).includes(density)) {
+    throw new Error(`styleSelection treatment ${label} density must be low, medium, or high`)
+  }
+
+  return {
+    id: readRequiredBoundedString(
+      record.id,
+      `styleSelection treatment ${label} id`,
+      PRO_MAX_FIELD_CAPS.id,
+    ),
+    tier: tier as ProMaxVisualTreatment["tier"],
+    name: readRequiredBoundedString(
+      record.name,
+      `styleSelection treatment ${label} name`,
+      PRO_MAX_FIELD_CAPS.name,
+    ),
+    style: readRequiredBoundedString(
+      record.style,
+      `styleSelection treatment ${label} style`,
+      PRO_MAX_FIELD_CAPS.style,
+    ),
+    rationale: readRequiredBoundedString(
+      record.rationale,
+      `styleSelection treatment ${label} rationale`,
+      PRO_MAX_FIELD_CAPS.rationale,
+    ),
+    palette: parseStylePalette(record.palette, label),
+    typography: parseStyleTypography(record.typography, label),
+    density: density as ProMaxVisualTreatment["density"],
+    layoutStrategy: readRequiredBoundedString(
+      record.layoutStrategy,
+      `styleSelection treatment ${label} layoutStrategy`,
+      PRO_MAX_FIELD_CAPS.guidance,
+    ),
+    navigationPattern: readRequiredBoundedString(
+      record.navigationPattern,
+      `styleSelection treatment ${label} navigationPattern`,
+      PRO_MAX_FIELD_CAPS.guidance,
+    ),
+    motifs: parseStyleStringList(record.motifs, label, "motifs"),
+    effects: parseStyleStringList(record.effects, label, "effects"),
+    avoid: parseStyleStringList(record.avoid, label, "avoid"),
+    mobileNotes: readRequiredBoundedString(
+      record.mobileNotes,
+      `styleSelection treatment ${label} mobileNotes`,
+      PRO_MAX_FIELD_CAPS.guidance,
+    ),
+    desktopNotes: readRequiredBoundedString(
+      record.desktopNotes,
+      `styleSelection treatment ${label} desktopNotes`,
+      PRO_MAX_FIELD_CAPS.guidance,
+    ),
+  }
+}
+
+function parseStylePalette(
+  value: unknown,
+  label: MockupDesignDirectionLabel,
+): ProMaxVisualTreatment["palette"] {
+  const record = asRecord(value)
+  if (!record || Array.isArray(value)) {
+    throw new Error(`styleSelection treatment ${label} palette must be an object`)
+  }
+
+  return Object.fromEntries(STYLE_PALETTE_FIELDS.map((field) => {
+    const color = readString(record[field])
+    if (!/^#[0-9a-f]{6}$/i.test(color)) {
+      throw new Error(
+        `styleSelection treatment ${label} palette ${field} must be a six-digit hex color`,
+      )
+    }
+    return [field, color]
+  })) as unknown as ProMaxVisualTreatment["palette"]
+}
+
+function parseStyleTypography(
+  value: unknown,
+  label: MockupDesignDirectionLabel,
+): ProMaxVisualTreatment["typography"] {
+  const record = asRecord(value)
+  if (!record || Array.isArray(value)) {
+    throw new Error(`styleSelection treatment ${label} typography must be an object`)
+  }
+
+  return Object.fromEntries(STYLE_TYPOGRAPHY_FIELDS.map((field) => [
+    field,
+    readRequiredBoundedString(
+      record[field],
+      `styleSelection treatment ${label} typography ${field}`,
+      PRO_MAX_FIELD_CAPS.font,
+    ),
+  ])) as unknown as ProMaxVisualTreatment["typography"]
+}
+
+function parseStyleStringList(
+  value: unknown,
+  label: MockupDesignDirectionLabel,
+  field: StyleTreatmentListField,
+) {
+  if (
+    !Array.isArray(value)
+    || value.length > PRO_MAX_FIELD_CAPS.maxArrayItems
+  ) {
+    throw new Error(
+      `styleSelection treatment ${label} ${field} must include 0-${PRO_MAX_FIELD_CAPS.maxArrayItems} items`,
+    )
+  }
+
+  return value.map((item, index) => readRequiredBoundedString(
+    item,
+    `styleSelection treatment ${label} ${field} item ${index + 1}`,
+    PRO_MAX_FIELD_CAPS.arrayItem,
+  ))
+}
+
+function readRequiredBoundedString(value: unknown, field: string, maxLength: number) {
+  const stringValue = readString(value)
+  if (!stringValue) {
+    throw new Error(`${field} is required`)
+  }
+  if (stringValue.length > maxLength) {
+    throw new Error(`${field} must be at most ${maxLength} characters`)
+  }
+  if (containsUnsafePersistedStyleText(stringValue)) {
+    throw new Error(`${field} contains unsafe text`)
+  }
+  return stringValue
+}
+
+function containsUnsafePersistedStyleText(value: string) {
+  return /[\u0000-\u001f\u007f]/.test(value)
+    || /(?:https?|ftp):\/\/|\bwww\./i.test(value)
+    || /^\s*(?:system|assistant|user|developer|tool)\s*:/i.test(value)
+    || /<\/?\s*(?:system|assistant|user|developer|tool)(?:\s|>|\/)/i.test(value)
+    || /```/.test(value)
+    || /\b(?:ignore|disregard|override|bypass|reveal|repeat)\s+(?:(?:all|any|the|previous|prior|system)\s+)*(?:instructions?|prompts?|rules?|messages?)\b/i.test(value)
+}
+
 function parseJsonObject(rawModelOutput: string): Record<string, unknown> {
   const trimmed = rawModelOutput.trim()
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)```\s*$/i)
   const candidate = fenced?.[1]?.trim() ?? trimmed.slice(
     Math.max(0, trimmed.indexOf("{")),
     trimmed.lastIndexOf("}") + 1,

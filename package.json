@@ -7,10 +7,11 @@
   },
   "scripts": {
     "dev": "next dev .",
+    "prebuild": "node ./scripts/generate-pro-max-style-catalog.mjs --check",
     "build": "next build && node ./scripts/guard-webpack-chunky.mjs",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test 'src/**/*.test.ts' 'src/**/*.test.tsx'",
+    "test": "node ./scripts/generate-pro-max-style-catalog.mjs --check && node --import tsx --test 'src/**/*.test.ts' 'src/**/*.test.tsx'",
     "typecheck": "tsc --noEmit",
     "guard:chunky": "node ./scripts/guard-webpack-chunky.mjs",
     "guard:chunky:dev": "CHECK_DEV_VENDOR=1 node ./scripts/guard-webpack-chunky.mjs",
