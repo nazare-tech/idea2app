@@ -54,8 +54,12 @@ OPENROUTER_MOCKUP_IMAGE_MODEL=openai/gpt-5.4-image-2
 # OPENROUTER_MOCKUP_IMAGE_ASPECT_RATIO=21:9
 # OPENROUTER_MOCKUP_IMAGE_SIZE=1K
 OPENROUTER_MOCKUP_IMAGE_MAX_TOKENS=16384
-# Brand-direction kits for mockup options (default on). Set 0 to restore the
-# pre-brand pipeline exactly: indigo skeletons, no kit block, no anti-slop rules.
+# Product-aware UI/UX Pro Max treatments for new mockup runs (default on).
+# Set 0 to use the prior deterministic brand-kit bank for fresh runs.
+MOCKUP_PROMAX_ENABLED=1
+# Master style-enrichment switch (default on). Set 0 to restore the pre-brand
+# pipeline for fresh runs: indigo skeletons, no treatment block or guardrails.
+# Existing runs still honor their server-authored persisted triad.
 MOCKUP_BRAND_DIRECTIONS_ENABLED=1
 OPENROUTER_MOCKUP_PLANNER_MAX_TOKENS=16384
 SUPABASE_MOCKUP_STORAGE_BUCKET=mockups

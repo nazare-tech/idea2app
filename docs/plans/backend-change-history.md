@@ -23,6 +23,45 @@ Do not record secrets, tokens, passwords, private keys, or raw credential values
 
 ## Entries
 
+## 2026-08-09: Owner-scoped dashboard project rename validation
+
+- Plan: `docs/plans/dashboard-project-card-actions-and-rename-plan.md`
+- Review: `docs/plans/dashboard-project-card-actions-and-rename-review.md`
+- Durable source of truth: `projects.name` remains authoritative. `src/lib/project-name.ts` defines dependency-free manual-name normalization and the shared 80 UTF-16 code-unit limit; `PATCH /api/projects/[id]` applies it before the existing owner-scoped Supabase update. Dashboard display and canonical UUID-plus-slug href use the valid `data.name` returned by that write.
+- Schema or data-shape changes: None. PATCH request `{ name }` and response `{ data }` shapes are unchanged.
+- Auth, RLS, or permission changes: None. PATCH still requires `auth.getUser()`, filters by both project id and `user_id`, and remains protected by existing projects RLS. Rename is available to every product tier; Delete entitlement is unchanged.
+- Runtime/API behavior changes: malformed JSON, non-object bodies, non-string project fields, blank names, unsafe formatting-only names, and normalized names over 80 UTF-16 code units now return 400 instead of reaching Supabase or falling through to 500. Valid names are NFKC-normalized, formatting controls removed without stripping language/emoji ZWNJ/ZWJ, and whitespace collapsed. Concurrent renames remain last-write-wins.
+- Migration or deployment steps: Code deploy only. No backfill or rewrite of legacy names.
+- Verification: Shared validator/request tests, typecheck, targeted lint, authenticated Playwright rename/reload/exact restoration and touch flows, full unit suite, and real-Chrome screenshots are recorded in the review artifact.
+- Rollback or recovery: Revert the shared helper, card/workspace clients, and PATCH validation. No database cleanup or migration rollback is required; the E2E mutation restores its captured original name byte-for-byte.
+- Follow-ups: Add a rate limit only if operational PATCH metrics show abuse; this cheap authenticated owner-scoped write has no AI, billing, or external provider cost.
+
+## 2026-08-09: UI/UX Pro Max treatment triads in existing mockup JSON
+
+- Plan: `docs/plans/ui-ux-pro-max-mockup-styles-plan.md`
+- Review: `docs/plans/ui-ux-pro-max-mockup-styles-review.md`
+- Approval: The user explicitly approved the server-side prompt integration and additive persistence change on 2026-08-09.
+- Durable source of truth: Each fresh mockup run resolves one controlled Foundation / Distinctive / Experimental triad and stores the exact capped payload in the existing `mockup_option_drafts.design_plan` JSON. Finalization carries the server-authored draft plan into existing `mockups.metadata.design_plan`. Draft rows must agree; browser-transported selections are accepted only when they exactly reconstruct from pinned server catalog constants for the owned project and current rollback state.
+- Schema or data-shape changes: No table, column, migration, API envelope, queue, billing, or client-state schema change. `MockupDesignPlan` adds one optional `styleSelection` object inside the existing JSON fields; legacy plans parse without it. Selection JSON is capped at 8 KB.
+- Auth, RLS, or permission changes: None. Existing project ownership checks and draft/mockup RLS remain authoritative. Prompt-facing treatment prose is locally allowlisted; raw upstream design-system output stays outside runtime imports.
+- Runtime behavior changes: New runs use pinned UI/UX Pro Max product matching and three materially different styles. `MOCKUP_PROMAX_ENABLED=0` selects the prior whole-triad brand bank for fresh runs. `MOCKUP_BRAND_DIRECTIONS_ENABLED=0` disables style enrichment for fresh runs. Persisted server-authored runs retain their triad across deployment flag changes.
+- Migration or deployment steps: Code deploy only. Set the flags explicitly only when overriding their default-on behavior. Normal test/build checks the frozen catalog for drift.
+- Verification: Catalog reproduction/drift check, 192-product invariants, the ten evaluated ideas, parser and authoritative-draft tests, flag/prompt/CTA tests, Prompt Lab parity, typecheck, lint, full tests, build/bundle guard, and no-OpenRouter visual/browser limitations are recorded in the review artifact.
+- Rollback or recovery: Set `MOCKUP_PROMAX_ENABLED=0` to restore the prior bank for fresh runs, or `MOCKUP_BRAND_DIRECTIONS_ENABLED=0` for the pre-bank prompt/skeleton path. No data rollback or cleanup is required; existing style selections remain readable.
+
+## 2026-08-09: Projects dashboard reads Version A mockup thumbnails
+
+- Plan: `docs/plans/dashboard-project-card-mockup-thumbnail-plan.md`
+- Review: `docs/plans/dashboard-project-card-mockup-thumbnail-review.md`
+- Durable source of truth: Canonical `mockups.content` remains authoritative. `src/lib/mockups/dashboard-thumbnail.ts` selects Version A from each authorized project's newest row and rebuilds the existing authenticated image proxy URL from its Storage path. The pre-existing no-credit fixture is accepted only when its model, project-scoped fixture path, and SVG data-URL prefix match the exact controlled shape.
+- Schema or data-shape changes: None. The projects page selects existing `mockups.id`, `project_id`, `created_at`, and `content` fields only.
+- Auth, RLS, or permission changes: None. The read uses the current session's existing Supabase server client, restricts rows to IDs from the already-owned projects result, remains protected by current mockup RLS, and filters derivation against that authorized ID set.
+- Runtime/API behavior changes: `/projects` performs one additional metadata-only Supabase read when projects exist. Query failures are logged and render a distinct unavailable preview state. The page does not call generation, mutate rows, or change API response contracts.
+- Migration or deployment steps: Code deploy only.
+- Verification: Focused derivation/rendering tests, typecheck, lint, full tests, and authenticated real-Chrome evidence are recorded in the review artifact.
+- Rollback or recovery: Revert the dashboard query, thumbnail helper/component, and card prop/layout. No database rollback or cleanup is required.
+- Follow-ups: Consider a stored thumbnail derivative only if real dashboard volume makes full-resolution lazy image requests materially expensive.
+
 ## 2026-07-11: Thermo-nuclear review remediation (webhook lease, queue partial clears, status payload contract)
 
 - Plan: docs/plans/thermo-nuclear-review-remediation-plan.md

@@ -52,10 +52,11 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 
 - `src/components/ui/mockup-generation-loader.test.tsx` — MockupGenerationLoader static fallback before WebGL detection and canCreateWebGLContext support/error handling
 - `src/components/ui/mockup-renderer.test.tsx` — MockupRenderer storyboard concept cards, draft placeholders, retry messages, pending media cells, and lightbox presentation
-- `src/lib/mockups/design-plan.test.ts` — parseMockupDesignPlan normalization and per-platform screen limits, mockup generation brief fields, storyboard planner system prompts
+- `src/lib/mockups/design-plan.test.ts` — design-plan normalization, backward-compatible optional style-selection parsing, 8 KB/field/prompt-injection bounds, screen limits, generation brief fields, and planner prompts
 - `src/lib/mockups/format-contract.test.ts` — extractMockupOptions and hasThreeOptionProsConsContract enforcement of the 3-option pros/cons mockup content contract
-- `src/lib/mockups/openrouter-image-pipeline.test.ts` — OpenRouter image pipeline: data-URL parsing/limits, proxy URL building, skeleton aspect enforcement, model/token/timeout config resolution
-- `src/lib/mockups/option-drafts.test.ts` — mockup option draft rows: normalization, insert-only upsert, cleanup of abandoned and finalized drafts without deleting canonical storage
+- `src/lib/mockups/pro-max-style-selector.test.ts` — pinned catalog integrity, all-product A/B/C divergence, ten evaluated idea matches, stable cross-platform categorization, rollback/fallback behavior, controlled transported selections, prompt bounds, and platform-safe styles
+- `src/lib/mockups/openrouter-image-pipeline.test.ts` — image pipeline data limits plus Pro Max/legacy/disabled flag matrix, persisted-selection precedence, neutral skeletons, treatment prompt caps, non-conflicting guardrails, and CTA/success color semantics
+- `src/lib/mockups/option-drafts.test.ts` — mockup draft normalization, insert-only upsert, authoritative resolved-plan consistency, and cleanup without deleting canonical storage
 - `src/lib/mockups/option-recovery.test.ts` — mockup option recovery merges DB draft rows with Storage-only files and ignores unsupported Storage files
 
 ## Billing / Credits / Stripe
@@ -81,8 +82,10 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 
 ## Workspace / UI Components
 
-- `src/app/page.test.tsx` — landing component contracts: ToolLogoMarquee duplicated pass accessibility, FeatureScrollytelling visible first-paint artwork, section-background dot-field layer, and absence of the retired footer compass watermark
-- `src/components/landing/hero-dot-field-core.test.ts` — deterministic clustered field layout, wedge spacing, compass angle damping, protected-zone falloff, lifecycle gating, and shared compass geometry
+- `src/app/page.test.tsx` — landing component contracts: ToolLogoMarquee duplicated pass accessibility, FeatureScrollytelling visible first-paint artwork, section-background dot-field layer with optional compass wedges, and absence of the retired footer compass watermark
+- `src/components/projects/dashboard-project-thumbnail.test.tsx` — dashboard card thumbnail derivation and rendering: deterministic newest-row Version A selection, malformed/unauthorized/missing-path rejection, controlled fixture support, distinct empty/query-unavailable states, and a white 24px-rounded, padded, 300px-capped lazy-image surface
+- `src/components/projects/dashboard-project-card-details.test.tsx` — Figma details-area contract: 160.6px transparent borderless surface, 8px/20px insets, 18px medium title, inert title action-space reservation, 72px hard-clipped natural description flow without CSS ellipsis, bottom-aligned italic date, and missing-description fallback
+- `src/components/landing/hero-dot-field-core.test.ts` — deterministic clustered field layout, wedge spacing and zero-wedge dashboard mode, compass angle damping, protected-zone falloff, lifecycle gating, and shared compass geometry
 - `src/lib/mockups/brand-directions.test.ts` — brand kit bank invariants (AA contrast, unique archetypes, blue underweighted, mobile archetypes free of desktop patterns), deterministic triad selection with 60-degree hue separation and bank-wide spread, prompt block content, env kill switch
 - `src/components/landing/hero-reel-arc.test.tsx` — landing hero reel (component now inactive, kept for restoration): ten unique shortlisted mobile screens repeated across 50 decorative image cards, with normalized RGBA PNG dimensions, alpha-capable color type, and SHA-256 integrity
 - `src/components/landing/hero-build-map.test.tsx` — active landing hero artwork: both breakpoint canvases render all five nodes, the first scenario paints server-side with panels already revealed, the tree stays decorative (one aria-hidden root, no alt text), mockup PNGs exist on disk, both layouts are complete and expressed in percentages, and every scenario fills all five node slots
@@ -122,6 +125,8 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 - `src/lib/contact.test.ts` — validateContactRequest field rules: name/email/message length limits and rejection of every email the DB constraint rejects
 - `src/lib/waitlist.test.ts` — isWaitlistMode 200-signup threshold behavior and validateWaitlistEmail format, emptiness, and length rules
 - `src/lib/project-name-generation.test.ts` — sanitizeGeneratedProjectName label/markdown/injection cleanup with six-word cap and buildFallbackProjectName title-case fallback
+- `src/lib/project-name.test.ts` — manual project-name NFKC/whitespace/control normalization, ZWNJ/ZWJ preservation, required/80-code-unit boundaries, expansion, and astral-character safety
+- `src/lib/project-rename-client.test.ts` — rename request normalized payload, response-derived persisted name, invalid-input short circuit, generic HTTP/network failure, malformed success rejection, and bounded timeout abort
 - `src/lib/prompt-lab/default-state.test.ts` — isPromptLabDefaultProductionState default badge shown only for untouched production-backed prompt state
 - `src/lib/prompt-lab/index.test.ts` — Prompt Lab gating (blocked in production), artifact and mockup option validation, default prompt building, model option filtering
 - `src/lib/generation-model-policy.test.ts` — billing plan to generation tier to model resolution, env overrides, routing kill switch, reasoning params, token headroom
@@ -134,7 +139,7 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 
 Playwright, Chromium, real dev server and real auth; tiers and writing rules in `docs/testing/e2e-guide.md`.
 
-- `e2e/smoke.spec.ts` — free tier: landing hero/idea-capture/sign-in entry render; idea validation floor disables the idea-capture Get Started; real sign-in via auth modal reaches `/projects` and wizard step 1 Next gating (stops before question generation)
+- `e2e/smoke.spec.ts` — free tier: landing hero/idea-capture/sign-in entry render; idea validation floor disables the idea-capture Get Started; real sign-in via auth modal reaches `/projects` and wizard step 1 Next gating (stops before question generation); pointer-inert projects dot field with compass wedges disabled; project-grid two-column desktop cap plus 32px row/column gaps; 500px project card with borderless transparent shell, 24px-rounded white media surface, approximately 299px image canvas, transparent 160.6px details area, medium title, natural 72px hard-clipped description flow, exact existing-overflow-icon alignment, desktop/narrow bounds, content containment, Rename modal cancel/pointer recovery, real rename/reload/canonical-href/long-title/restoration, preserved Delete flow, and touch tap-through prevention
 - `e2e/paid-intake.spec.ts` — paid tier (`E2E_PAID_FLOWS=1`): Idea 1.1 through real `/api/intake/questions` generation, asserts primary-platform option and ≥4 question mode labels; deliberately stops before Create project
 
 ## Maintenance

@@ -44,7 +44,12 @@ Stripe: /api/stripe/checkout, /api/stripe/portal, and /api/stripe/webhook handli
 - **PATCH /api/projects/[id]**: Update project fields
   - Body: `{ description?, name?, status? }` (any subset)
   - Returns: updated project row
-  - Used by the workspace header/description flows
+  - Project names are NFKC-normalized, stripped of unsafe invisible/bidirectional formatting controls while preserving ZWNJ/ZWJ, whitespace-collapsed, required, and limited to 80 UTF-16 code units; invalid JSON or field types return 400
+  - Used by the dashboard Rename modal and workspace header rename flow through the same client helper with a 15-second abort timeout; update remains authenticated and owner-scoped by project id plus user id
+
+- **DELETE /api/projects/[id]**: Permanently delete an owned project
+  - Free plans receive 403; paid plans may delete after UI confirmation
+  - Returns the deleted project id; the query is authenticated and owner-scoped
 
 - **GET /api/projects/[id]/workspace**: Lazy-load owned workspace payloads
   - Query: `docs=competitive,prd,mvp,mockups` and optional `tab`
@@ -168,4 +173,3 @@ Stripe: /api/stripe/checkout, /api/stripe/portal, and /api/stripe/webhook handli
     - `charge.refunded` — on a full refund, resolves the paid invoice through Stripe Invoice Payments and reverses the matching legacy period credit grant once via `reverse_subscription_credits_once()`; partial refunds do not revoke the whole grant
 
 ---
-

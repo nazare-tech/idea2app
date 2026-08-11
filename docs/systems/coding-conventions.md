@@ -3,7 +3,7 @@ Coding conventions: kebab-case file names, PascalCase components, camelCase func
 Component structure templates: CVA variant UI components (cva plus cn from @/lib/utils), "use client" interactive components, and async server components.
 API route pattern: createClient from @/lib/supabase/server, auth.getUser() 401 check, body validation 400, try/catch 500, and { error } JSON responses.
 Styling tokens from globals.css: bg-primary #DC2626, bg-background #FAFAFA, text-text-secondary #666666, text-muted-foreground #6B7280, sidebar-* dark tokens.
-Status badge colors (success green, info blue) and markdown renderer hard-coded #00d4ff cyan and #7c3aed purple for code and Mermaid blocks.
+Status colors and narrowly scoped hard-coded exceptions: markdown code/Mermaid #00d4ff/#7c3aed; Figma project-card geometry uses component-local exact dimensions.
 Error handling status codes (401/402/404/400/500), frontend fetch try/catch, TypeScript unions AnalysisType and DocumentType, const assertions, @/* path aliases.
 ---
 
@@ -197,6 +197,11 @@ The app uses CSS custom properties (defined in `globals.css`) rather than hard-c
 "#7c3aed"  // Purple — Mermaid secondary
 ```
 
+`DashboardProjectCard` keeps exact Figma geometry such as its 160.6px details height and
+24px media radius component-local. Its colors use existing semantic tokens: the card
+shell/details area are transparent, the media surface uses `bg-card`, and text uses
+`text-text-primary` / `text-text-secondary`.
+
 ### Error Handling
 
 #### API Error Responses
@@ -270,4 +275,3 @@ import type { Database } from "@/types/database"
 ```
 
 ---
-
