@@ -13,6 +13,10 @@ For substantial feature, refactor, bug-fix, architecture, product, or implementa
 
 Keep working on the current branch unless explicitly asked for a new branch.
 
+### Proportional workflow for iterative UI work
+
+Treat incremental Figma, layout, styling, and component-interaction revisions as medium work unless they introduce architecture, persistence/data-shape, auth/RLS, billing, migration, or similarly high-risk changes. Use one concise plan, at most one cross-model plan evaluation, targeted tests, one final code review, and real UI verification. Do not expand an incremental UI revision into repeated holistic planning or review loops merely because reviewer feedback adds implementation detail.
+
 ## Plan files
 
 Create a markdown plan in `docs/plans/` before implementation. Include:
@@ -38,9 +42,9 @@ Once the plan file is written and before implementation starts, run the opposite
 scripts/agent-review.sh --plan docs/plans/<task>-plan.md --out docs/plans/<task>-plan-eval.md
 ```
 
-This is the repo's one automatic cross-model step. Fold accepted findings into the plan (a plan is meant to change), record rejections with reasons, then implement. `NO FINDINGS` is a clean result; a reviewer outage means the plan is unevaluated and must be reported as such, never re-reviewed by the implementing model and called coverage. Skip it only for work small enough that it does not warrant a plan file at all. Lenses and routing: `docs/operating-system/review-personas.md`.
+This is the repo's one automatic cross-model step. Run it once by default. Fold accepted findings into the plan in one pass (a plan is meant to change), record rejections with reasons, then implement. Incorporating the reviewer's requested details does not itself trigger another evaluation. `NO FINDINGS` is a clean result; a reviewer outage means the plan is unevaluated and must be reported as such, never re-reviewed by the implementing model and called coverage. Skip it only for work small enough that it does not warrant a plan file at all. Lenses and routing: `docs/operating-system/review-personas.md`.
 
-Re-run the evaluation if the plan changes materially afterwards (new phase, reversed decision, widened scope): an evaluation of a superseded plan is not coverage of what you build.
+Re-run the evaluation only if the plan later changes materially beyond the reviewed scope (a genuinely new phase, reversed core decision, widened product scope, or newly introduced sensitive boundary). Do not re-run it for clarifications, implementation details, accepted reviewer findings, or ordinary UI measurement adjustments.
 
 Plan evaluation replaced per-commit cross-model review. Do not expect a reviewer verdict on individual commits. Risk is not measured in lines: diffs touching auth, RLS, webhooks, billing, or migrations get an on-demand cross-model diff review before push at any size (`docs/operating-system/review-personas.md` § sensitive paths).
 
