@@ -23,16 +23,10 @@ async function signInFromLanding(page: Page, email: string, password: string) {
 }
 
 async function expectProjectCardGeometry(page: Page, expectedColumnCount: 1 | 2) {
-  const dotFieldShell = page.getByTestId("dashboard-project-dot-field-shell");
-  const dotField = dotFieldShell.locator("[data-hero-dot-field='true']");
   const grid = page.getByTestId("dashboard-project-grid");
   const cards = page.getByTestId("dashboard-project-card");
   expect(await cards.count(), "authenticated E2E account must retain an existing project").toBeGreaterThan(0);
-  expect(await dotField.count()).toBe(1);
-  await expect(dotField).toHaveAttribute("data-dot-field-ready", "true");
-  await expect(dotField).toHaveAttribute("data-wedge-count", "0");
-  expect(await dotField.getAttribute("data-compass-wedges")).toBe("false");
-  expect(await dotField.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe("none");
+  expect(await page.getByTestId("dashboard-project-dot-field-shell").count()).toBe(0);
   expect(await grid.evaluate((element) => {
     const style = getComputedStyle(element);
     return [style.columnGap, style.rowGap];
@@ -64,13 +58,12 @@ async function expectProjectCardGeometry(page: Page, expectedColumnCount: 1 | 2)
   expect(actionBox).not.toBeNull();
   expect(actionIconBox).not.toBeNull();
   expect(Math.abs(cardBox!.height - 500)).toBeLessThanOrEqual(2);
-  expect(Math.abs(detailsBox!.height - 160.6)).toBeLessThanOrEqual(1);
-  expect(thumbnailCanvasBox!.height).toBeGreaterThanOrEqual(298);
-  expect(thumbnailCanvasBox!.height).toBeLessThanOrEqual(300);
-  expect(Math.abs(actionIconBox!.width - 16)).toBeLessThanOrEqual(1);
-  expect(Math.abs(actionIconBox!.height - 18)).toBeLessThanOrEqual(1);
-  expect(Math.abs(cardBox!.x + cardBox!.width - actionIconBox!.x - actionIconBox!.width - 8)).toBeLessThanOrEqual(1);
-  expect(Math.abs(actionIconBox!.y - detailsBox!.y - 21.8)).toBeLessThanOrEqual(1);
+  expect(Math.abs(detailsBox!.height - 122)).toBeLessThanOrEqual(1);
+  expect(Math.abs(thumbnailCanvasBox!.height - 336)).toBeLessThanOrEqual(1);
+  expect(Math.abs(actionIconBox!.width - 20)).toBeLessThanOrEqual(1);
+  expect(Math.abs(actionIconBox!.height - 20)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cardBox!.x + cardBox!.width - actionIconBox!.x - actionIconBox!.width - 18)).toBeLessThanOrEqual(1);
+  expect(Math.abs(actionIconBox!.y - cardBox!.y - 22)).toBeLessThanOrEqual(1);
   if (expectedColumnCount === 2) {
     expect(Math.abs(cardBox!.width - 648)).toBeLessThanOrEqual(2);
   } else {
@@ -89,8 +82,23 @@ async function expectProjectCardGeometry(page: Page, expectedColumnCount: 1 | 2)
       style.paddingRight,
       style.paddingBottom,
       style.paddingLeft,
+      style.borderTopWidth,
+      style.borderRightWidth,
+      style.borderBottomWidth,
+      style.borderLeftWidth,
     ];
-  })).toEqual(["rgb(255, 255, 255)", "24px", "20px", "20px", "20px", "20px"]);
+  })).toEqual([
+    "rgb(255, 255, 255)",
+    "24px",
+    "20px",
+    "20px",
+    "20px",
+    "20px",
+    "1px",
+    "1px",
+    "1px",
+    "1px",
+  ]);
   expect(await details.evaluate((element) => {
     const style = getComputedStyle(element);
     return [
@@ -112,13 +120,13 @@ async function expectProjectCardGeometry(page: Page, expectedColumnCount: 1 | 2)
     "rgba(0, 0, 0, 0)",
     "20px",
     "8px",
-    "20px",
+    "0px",
     "8px",
   ]);
   expect(await card.getByTestId("dashboard-project-card-title").evaluate((element) => {
     const style = getComputedStyle(element);
     return [style.fontSize, style.fontWeight, style.lineHeight, style.textOverflow];
-  })).toEqual(["18px", "500", "normal", "clip"]);
+  })).toEqual(["18px", "500", "normal", "ellipsis"]);
 
   const descriptionsUseFigmaClip = await page
     .getByTestId("dashboard-project-card-description-slot")
@@ -224,6 +232,7 @@ test("project cards expose navigation-safe rename and delete actions", async ({ 
   expect(projectId, "card href must contain the stable project UUID").toBeTruthy();
 
   const firstActions = page.getByRole("button", { name: `Project actions for ${originalName}` });
+  await firstCard.hover();
   await expect(firstActions).toBeVisible();
   expect(await firstActions.evaluate((button) => button.closest("a"))).toBeNull();
   expect(await firstCard.locator("[data-thumbnail-canvas='true'] button").count()).toBe(0);
@@ -244,6 +253,7 @@ test("project cards expose navigation-safe rename and delete actions", async ({ 
   await expect(firstActions).toBeFocused();
 
   const secondActions = page.getByTestId("dashboard-project-card-actions").nth(1);
+  await page.getByTestId("dashboard-project-card-shell").nth(1).hover();
   await secondActions.click();
   await expect(page.getByRole("menuitem", { name: "Rename", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
@@ -274,14 +284,15 @@ test("project cards expose navigation-safe rename and delete actions", async ({ 
       .first();
     await expect(renamedCard).toBeVisible();
     await expect(renamedCard).toHaveAttribute("href", getProjectUrl({ id: projectId!, name: markerName }));
+    await renamedCard.hover();
 
-    const [titleBox, actionBox] = await Promise.all([
+    const [titleBox, createdBox] = await Promise.all([
       renamedCard.getByTestId("dashboard-project-card-title").boundingBox(),
-      page.getByRole("button", { name: `Project actions for ${markerName}` }).boundingBox(),
+      renamedCard.getByTestId("dashboard-project-card-created").boundingBox(),
     ]);
     expect(titleBox).not.toBeNull();
-    expect(actionBox).not.toBeNull();
-    expect(titleBox!.x + titleBox!.width).toBeLessThanOrEqual(actionBox!.x + 0.5);
+    expect(createdBox).not.toBeNull();
+    expect(titleBox!.x + titleBox!.width + 59).toBeLessThanOrEqual(createdBox!.x + 0.5);
 
     await page.getByRole("button", { name: `Project actions for ${markerName}` }).click();
     await page.getByRole("menuitem", { name: "Rename", exact: true }).click();
@@ -289,9 +300,12 @@ test("project cards expose navigation-safe rename and delete actions", async ({ 
     await renameDialog.getByRole("button", { name: "Save", exact: true }).click();
     await expect(renameDialog).not.toBeVisible();
     await page.reload();
-    await expect(
-      page.getByRole("button", { name: `Project actions for ${originalName}` }),
-    ).toBeVisible();
+    const restoredCard = page
+      .getByTestId("dashboard-project-card")
+      .filter({ has: page.getByTestId("dashboard-project-card-title").filter({ hasText: originalName }) })
+      .first();
+    await restoredCard.hover();
+    await expect(page.getByRole("button", { name: `Project actions for ${originalName}` })).toBeVisible();
     cleanupRequired = false;
   } finally {
     if (cleanupRequired) {
@@ -335,6 +349,85 @@ test("project cards expose navigation-safe rename and delete actions", async ({ 
   expect(page.url()).toBe(projectsUrl);
 });
 
+test("project cards expose all three mockups through hover carousel controls", async ({ page }) => {
+  const email = process.env.E2E_TEST_EMAIL;
+  const password = process.env.E2E_TEST_PASSWORD;
+  test.skip(!email || !password, "E2E_TEST_EMAIL / E2E_TEST_PASSWORD not set in .env.e2e.local");
+
+  await signInFromLanding(page, email!, password!);
+  await page.setViewportSize({ width: 1600, height: 1000 });
+
+  const carousel = page
+    .getByTestId("dashboard-project-card-shell")
+    .filter({ has: page.locator('[data-thumbnail-count="3"]') })
+    .first();
+  expect(await carousel.count(), "authenticated E2E account must retain an A/B/C mockup").toBe(1);
+
+  const card = carousel.getByTestId("dashboard-project-card");
+  const thumbnail = card.locator('[data-thumbnail-count="3"]');
+  const action = carousel.getByTestId("dashboard-project-card-actions");
+  const actionLayer = action.locator("xpath=..");
+  const previous = carousel.getByTestId("dashboard-project-card-previous");
+  const next = carousel.getByTestId("dashboard-project-card-next");
+  const dots = carousel.getByTestId("dashboard-project-card-dot");
+  const projectsUrl = page.url();
+
+  await page.mouse.move(0, 0);
+  await expect(actionLayer).toHaveCSS("opacity", "0");
+  await expect(next).toHaveCSS("opacity", "0");
+  await expect(dots).toHaveCount(3);
+  const dotMetrics = await dots.evaluateAll((buttons) => buttons.map((button) => {
+    const targetBox = button.getBoundingClientRect();
+    const visualBox = button.querySelector("span")!.getBoundingClientRect();
+    return {
+      targetWidth: targetBox.width,
+      targetHeight: targetBox.height,
+      visualWidth: visualBox.width,
+      visualCenter: visualBox.x + visualBox.width / 2,
+    };
+  }));
+  expect(dotMetrics.map(({ targetWidth, targetHeight }) => [targetWidth, targetHeight])).toEqual([
+    [24, 24],
+    [24, 24],
+    [24, 24],
+  ]);
+  expect(dotMetrics.map(({ visualWidth }) => visualWidth)).toEqual([6, 6, 6]);
+  expect(dotMetrics.slice(1).map(({ visualCenter }, index) =>
+    visualCenter - dotMetrics[index].visualCenter,
+  )).toEqual([12, 12]);
+  await expect(dots.first()).toHaveAttribute("aria-current", "true");
+  await expect(thumbnail).toHaveAttribute("data-thumbnail-active-label", "A");
+  await expect(thumbnail).toHaveAttribute("data-thumbnail-state", "ready");
+
+  await carousel.hover();
+  await expect(actionLayer).toHaveCSS("opacity", "1");
+  await expect(next).toHaveCSS("opacity", "1");
+  await expect(previous).toHaveCSS("opacity", "0");
+
+  await next.click();
+  await expect(thumbnail).toHaveAttribute("data-thumbnail-active-label", "B");
+  await expect(thumbnail).toHaveAttribute("data-thumbnail-state", "ready");
+  await expect(dots.nth(1)).toHaveAttribute("aria-current", "true");
+  await expect(previous).toHaveCSS("opacity", "1");
+
+  await page.mouse.move(0, 0);
+  await expect(actionLayer).toHaveCSS("opacity", "0");
+  await expect(previous).toHaveCSS("opacity", "0");
+  await expect(next).toHaveCSS("opacity", "0");
+
+  await dots.nth(1).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(thumbnail).toHaveAttribute("data-thumbnail-active-label", "C");
+  await expect(thumbnail).toHaveAttribute("data-thumbnail-state", "ready");
+  await expect(dots.nth(2)).toBeFocused();
+  await expect(next).toHaveCSS("opacity", "0");
+
+  await dots.first().click();
+  await expect(thumbnail).toHaveAttribute("data-thumbnail-active-label", "A");
+  await expect(thumbnail).toHaveAttribute("data-thumbnail-state", "ready");
+  expect(page.url()).toBe(projectsUrl);
+});
+
 test("project card overflow opens without touch tap-through", async ({ browser }) => {
   const email = process.env.E2E_TEST_EMAIL;
   const password = process.env.E2E_TEST_PASSWORD;
@@ -349,8 +442,94 @@ test("project card overflow opens without touch tap-through", async ({ browser }
   try {
     await signInFromLanding(page, email!, password!);
     const projectsUrl = page.url();
-    const action = page.getByTestId("dashboard-project-card-actions").first();
+    expect(await page.evaluate(() => matchMedia("(hover: none) and (any-hover: none)").matches)).toBe(true);
+
+    const carousel = page
+      .getByTestId("dashboard-project-card-shell")
+      .filter({ has: page.locator('[data-thumbnail-count="3"]') })
+      .first();
+    expect(await carousel.count(), "touch carousel check needs an A/B/C mockup").toBe(1);
+    const card = carousel.getByTestId("dashboard-project-card");
+    const thumbnail = card.locator('[data-thumbnail-count="3"]');
+    const details = card.getByTestId("dashboard-project-card-details");
+    const action = carousel.getByTestId("dashboard-project-card-actions");
+    const actionLayer = action.locator("xpath=..");
+    const previous = carousel.getByTestId("dashboard-project-card-previous");
+    const next = carousel.getByTestId("dashboard-project-card-next");
+    const cdp = await context.newCDPSession(page);
+
     await expect(action).toBeVisible();
+    await expect(actionLayer).toHaveCSS("opacity", "1");
+    expect((await previous.boundingBox())?.width).toBe(1);
+    expect((await next.boundingBox())?.width).toBe(1);
+    await expect(thumbnail).toHaveAttribute("data-thumbnail-active-label", "A");
+
+    const dispatchTouchSwipe = async ({
+      startX,
+      startY,
+      endX,
+      endY,
+    }: {
+      startX: number;
+      startY: number;
+      endX: number;
+      endY: number;
+    }) => {
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x: startX, y: startY }],
+      });
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x: (startX + endX) / 2, y: (startY + endY) / 2 }],
+      });
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x: endX, y: endY }],
+      });
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchEnd",
+        touchPoints: [],
+      });
+    };
+
+    const mediaBox = await thumbnail.boundingBox();
+    const detailsBox = await details.boundingBox();
+    expect(mediaBox).not.toBeNull();
+    expect(detailsBox).not.toBeNull();
+    const mediaY = mediaBox!.y + mediaBox!.height / 2;
+    await dispatchTouchSwipe({
+      startX: mediaBox!.x + mediaBox!.width - 10,
+      startY: mediaY,
+      endX: mediaBox!.x + 10,
+      endY: mediaY,
+    });
+    await expect(thumbnail).toHaveAttribute("data-thumbnail-active-label", "B");
+    await expect(thumbnail).toHaveAttribute("data-thumbnail-state", "ready");
+    expect(page.url()).toBe(projectsUrl);
+
+    await dispatchTouchSwipe({
+      startX: mediaBox!.x + mediaBox!.width / 2,
+      startY: mediaBox!.y + 60,
+      endX: mediaBox!.x + mediaBox!.width / 2 + 10,
+      endY: mediaBox!.y + 180,
+    });
+    await expect(thumbnail).toHaveAttribute("data-thumbnail-active-label", "B");
+
+    await dispatchTouchSwipe({
+      startX: detailsBox!.x + detailsBox!.width - 30,
+      startY: detailsBox!.y + detailsBox!.height / 2,
+      endX: detailsBox!.x + 30,
+      endY: detailsBox!.y + detailsBox!.height / 2,
+    });
+    await expect(thumbnail).toHaveAttribute("data-thumbnail-active-label", "B");
+
+    const expectedCardUrl = await card.getAttribute("href");
+    expect(expectedCardUrl).toBeTruthy();
+    await card.tap({ position: { x: 20, y: 450 } });
+    await page.waitForURL((url) => url.pathname === new URL(expectedCardUrl!, projectsUrl).pathname);
+    await page.goto(projectsUrl);
+
     await action.tap();
     await expect(page.getByRole("menuitem", { name: "Rename", exact: true })).toBeVisible();
     expect(page.url()).toBe(projectsUrl);

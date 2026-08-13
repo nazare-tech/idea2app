@@ -1156,6 +1156,62 @@ body {
   to { opacity: 1; }
 }
 
+.dashboard-project-card-kebab,
+.dashboard-project-card-arrow {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dashboard-project-card-kebab button {
+  pointer-events: none;
+}
+
+.dashboard-project-card-shell:hover .dashboard-project-card-kebab,
+.dashboard-project-card-shell:has(:focus-visible) .dashboard-project-card-kebab,
+.dashboard-project-card-kebab[data-open="true"],
+.dashboard-project-card-shell:hover .dashboard-project-card-arrow,
+.dashboard-project-card-shell:has(:focus-visible) .dashboard-project-card-arrow {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dashboard-project-card-shell:hover .dashboard-project-card-kebab button,
+.dashboard-project-card-shell:has(:focus-visible) .dashboard-project-card-kebab button,
+.dashboard-project-card-kebab[data-open="true"] button {
+  pointer-events: auto;
+}
+
+.dashboard-project-card-arrow[data-available="false"] {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (hover: none) and (any-hover: none) {
+  .dashboard-project-card-kebab {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .dashboard-project-card-kebab button {
+    pointer-events: auto;
+  }
+
+  .dashboard-project-card-arrow,
+  .dashboard-project-card-arrow[data-available="false"] {
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
 /* Reduced-motion: show the final state immediately, no animation. */
 @media (prefers-reduced-motion: reduce) {
   *,

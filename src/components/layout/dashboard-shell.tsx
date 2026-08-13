@@ -1,7 +1,6 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { HeroDotField } from "@/components/landing/hero-dot-field"
 import { Header } from "@/components/layout/header"
 
 interface DashboardShellProps {
@@ -18,7 +17,6 @@ export function DashboardShell({
   user,
 }: DashboardShellProps) {
   const pathname = usePathname()
-  const showProjectDotField = pathname === "/projects"
   const shouldShowHeader = pathname
     ? pathname === "/projects/new" || !pathname.startsWith("/projects/")
     : true
@@ -47,14 +45,6 @@ export function DashboardShell({
           />
         )}
         <div className="relative flex-1 overflow-hidden bg-background">
-          {showProjectDotField && (
-            <div
-              data-testid="dashboard-project-dot-field-shell"
-              className="pointer-events-none absolute inset-0"
-            >
-              <HeroDotField showCompassWedges={false} />
-            </div>
-          )}
           <main className="relative h-full overflow-y-auto bg-transparent">
             {children}
           </main>

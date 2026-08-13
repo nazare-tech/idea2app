@@ -10,8 +10,14 @@ export interface DashboardMockupRow {
   created_at: string | null
 }
 
+export interface DashboardMockupPreview {
+  label: "A" | "B" | "C"
+  url: string
+}
+
 const FIXTURE_MODEL = "fixture/mockup-no-credit"
 const FIXTURE_SVG_DATA_URL_PREFIX = "data:image/svg+xml;charset=utf-8,"
+const DASHBOARD_MOCKUP_LABELS = ["A", "B", "C"] as const
 
 function getCreatedAtTimestamp(value: string | null) {
   if (!value) return 0
@@ -26,13 +32,67 @@ function compareNewestFirst(left: DashboardMockupRow, right: DashboardMockupRow)
   return timestampDifference || right.id.localeCompare(left.id)
 }
 
-export function deriveDashboardMockupThumbnailUrls({
+function isSafeProjectStoragePath({
+  projectId,
+  storagePath,
+}: {
+  projectId: string
+  storagePath: string
+}) {
+  if (
+    !projectId ||
+    projectId.includes("/") ||
+    projectId.includes("\\") ||
+    projectId.includes("..") ||
+    storagePath.includes("..") ||
+    storagePath.includes("\\")
+  ) {
+    return false
+  }
+
+  const pathParts = storagePath.split("/")
+  return (
+    pathParts.length >= 2 &&
+    pathParts[0] === projectId &&
+    pathParts.slice(1).every(
+      (part) => Boolean(part) && part !== "." && !/[\u0000-\u001f\u007f]/.test(part),
+    )
+  )
+}
+
+function getDashboardMockupOptionUrl({
+  label,
+  model,
+  projectId,
+  imageUrl,
+  storagePath,
+}: {
+  label: DashboardMockupPreview["label"]
+  model: string
+  projectId: string
+  imageUrl: string
+  storagePath: string
+}) {
+  const normalizedStoragePath = storagePath.trim()
+
+  if (model === FIXTURE_MODEL) {
+    const expectedPath = `fixture/${projectId}/option-${label.toLowerCase()}-storyboard.svg`
+    return normalizedStoragePath === expectedPath && imageUrl.startsWith(FIXTURE_SVG_DATA_URL_PREFIX)
+      ? imageUrl
+      : null
+  }
+
+  if (!isSafeProjectStoragePath({ projectId, storagePath: normalizedStoragePath })) return null
+  return buildMockupImageProxyUrl({ projectId, storagePath: normalizedStoragePath })
+}
+
+export function deriveDashboardMockupPreviews({
   authorizedProjectIds,
   rows,
 }: {
   authorizedProjectIds: string[]
   rows: DashboardMockupRow[]
-}) {
+}): Map<string, DashboardMockupPreview[]> {
   const authorizedIds = new Set(authorizedProjectIds)
   const newestRowsByProjectId = new Map<string, DashboardMockupRow>()
 
@@ -41,28 +101,32 @@ export function deriveDashboardMockupThumbnailUrls({
     newestRowsByProjectId.set(row.project_id, row)
   }
 
-  const thumbnailUrls = new Map<string, string>()
+  const previewsByProjectId = new Map<string, DashboardMockupPreview[]>()
   for (const [projectId, row] of newestRowsByProjectId) {
     const mockup = parseOpenRouterImageMockupContent(row.content)
-    const optionA = mockup?.options.find(
-      (option) => option.label.trim().toUpperCase() === "A",
-    )
-    const storagePath = optionA?.storagePath.trim()
+    if (!mockup) continue
 
-    // The no-credit fixture is a controlled local SVG and is intentionally not uploaded.
-    if (
-      mockup?.model === FIXTURE_MODEL &&
-      storagePath === `fixture/${projectId}/option-a-storyboard.svg` &&
-      optionA?.imageUrl.startsWith(FIXTURE_SVG_DATA_URL_PREFIX)
-    ) {
-      thumbnailUrls.set(projectId, optionA.imageUrl)
-      continue
+    const previews: DashboardMockupPreview[] = []
+    for (const label of DASHBOARD_MOCKUP_LABELS) {
+      for (const option of mockup.options) {
+        if (option.label.trim().toUpperCase() !== label) continue
+
+        const url = getDashboardMockupOptionUrl({
+          label,
+          model: mockup.model,
+          projectId,
+          imageUrl: option.imageUrl,
+          storagePath: option.storagePath,
+        })
+        if (!url) continue
+
+        previews.push({ label, url })
+        break
+      }
     }
 
-    if (!storagePath || !storagePath.startsWith(`${projectId}/`) || storagePath.includes("..")) continue
-
-    thumbnailUrls.set(projectId, buildMockupImageProxyUrl({ projectId, storagePath }))
+    if (previews.length > 0) previewsByProjectId.set(projectId, previews)
   }
 
-  return thumbnailUrls
+  return previewsByProjectId
 }

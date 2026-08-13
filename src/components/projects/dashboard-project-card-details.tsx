@@ -2,7 +2,6 @@ interface ProjectCardDetailsProps {
   name: string
   description: string | null
   createdLabel: string
-  reserveTitleActionSpace?: boolean
 }
 
 function getProjectCardDescription(description: string | null) {
@@ -14,32 +13,30 @@ export function ProjectCardDetails({
   name,
   description,
   createdLabel,
-  reserveTitleActionSpace = false,
 }: ProjectCardDetailsProps) {
   const displayDescription = getProjectCardDescription(description)
 
   return (
     <div
       data-testid="dashboard-project-card-details"
-      className="flex h-[160.6px] shrink-0 flex-col px-2 py-5"
+      className="h-[122px] shrink-0 overflow-hidden px-2 pt-5"
     >
-      <div className="flex flex-col gap-2">
-        <div className="flex h-[21.6px] items-center gap-2 overflow-hidden">
-          <h2
-            data-testid="dashboard-project-card-title"
-            title={name}
-            className="min-w-0 flex-1 overflow-hidden whitespace-nowrap text-[18px] font-medium leading-[normal] text-text-primary"
-          >
-            {name}
-          </h2>
-          {reserveTitleActionSpace && (
-            <span
-              data-testid="dashboard-project-card-title-action-space"
-              aria-hidden="true"
-              className="w-8 shrink-0 self-stretch"
-            />
-          )}
-        </div>
+      <div className="flex h-[22px] items-center gap-[60px] overflow-hidden whitespace-nowrap">
+        <h2
+          data-testid="dashboard-project-card-title"
+          title={name}
+          className="min-w-0 flex-1 truncate text-[18px] font-medium leading-[normal] text-text-primary"
+        >
+          {name}
+        </h2>
+        <p
+          data-testid="dashboard-project-card-created"
+          className="shrink-0 text-[14px] italic leading-[normal] text-text-secondary"
+        >
+          {createdLabel}
+        </p>
+      </div>
+      <div className="pt-2">
         <div
           data-testid="dashboard-project-card-description-slot"
           className="h-[72px] overflow-hidden"
@@ -52,12 +49,6 @@ export function ProjectCardDetails({
           </p>
         </div>
       </div>
-      <p
-        data-testid="dashboard-project-card-created"
-        className="mt-auto whitespace-nowrap text-[14px] italic leading-[1.3] text-text-secondary"
-      >
-        {createdLabel}
-      </p>
     </div>
   )
 }

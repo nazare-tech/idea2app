@@ -1,10 +1,18 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import * as Dialog from "@radix-ui/react-dialog"
-import { Ellipsis, Pencil, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, EllipsisVertical, Pencil, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { UpgradeCtaLink } from "@/components/analytics/upgrade-cta-link"
 import { ProjectCardDetails } from "@/components/projects/dashboard-project-card-details"
@@ -18,6 +26,7 @@ import {
 import { validateProjectName } from "@/lib/project-name"
 import { requestProjectRename } from "@/lib/project-rename-client"
 import { getProjectUrl } from "@/lib/project-routing"
+import type { DashboardMockupPreview } from "@/lib/mockups/dashboard-thumbnail"
 
 interface DashboardProjectCardProps {
   id: string
@@ -26,7 +35,7 @@ interface DashboardProjectCardProps {
   href: string
   createdAt: string | null
   updatedAt: string | null
-  thumbnailUrl: string | null
+  mockupPreviews: DashboardMockupPreview[]
   thumbnailUnavailable?: boolean
   showActions?: boolean
   canDelete?: boolean
@@ -39,7 +48,7 @@ export function DashboardProjectCard({
   href,
   createdAt,
   updatedAt,
-  thumbnailUrl,
+  mockupPreviews,
   thumbnailUnavailable = false,
   showActions = false,
   canDelete = false,
@@ -57,18 +66,25 @@ export function DashboardProjectCard({
   const [isDeleting, setIsDeleting] = useState(false)
   const [isDeleted, setIsDeleted] = useState(false)
   const [isOpening, setIsOpening] = useState(false)
+  const [activePreviewIndex, setActivePreviewIndex] = useState(0)
+  const [carouselAnnouncement, setCarouselAnnouncement] = useState("")
   const actionButtonRef = useRef<HTMLButtonElement>(null)
+  const dotButtonRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const previewSignature = useMemo(
+    () => JSON.stringify(mockupPreviews),
+    [mockupPreviews],
+  )
   const createdLabel = useMemo(() => {
     const timestamp = createdAt ?? updatedAt
 
     if (!timestamp) {
-      return "Created: recently"
+      return "Created recently"
     }
 
     try {
-      return `Created: ${formatDistanceToNow(new Date(timestamp))} ago`
+      return `Created ${formatDistanceToNow(new Date(timestamp))} ago`
     } catch {
-      return "Created: recently"
+      return "Created recently"
     }
   }, [createdAt, updatedAt])
 
@@ -76,6 +92,11 @@ export function DashboardProjectCard({
     setProjectName(name)
     setProjectHref(href)
   }, [href, name])
+
+  useEffect(() => {
+    setActivePreviewIndex(0)
+    setCarouselAnnouncement("")
+  }, [previewSignature])
 
   useEffect(() => {
     if (!isOpening) return
@@ -176,12 +197,69 @@ export function DashboardProjectCard({
     }
   }
 
+  const showPreview = (nextIndex: number, announce = false) => {
+    if (nextIndex < 0 || nextIndex >= mockupPreviews.length || nextIndex === activePreviewIndex) {
+      return false
+    }
+
+    const nextPreview = mockupPreviews[nextIndex]
+    setActivePreviewIndex(nextIndex)
+    if (announce) {
+      setCarouselAnnouncement(
+        `Mockup option ${nextPreview.label}, ${nextIndex + 1} of ${mockupPreviews.length}`,
+      )
+    }
+    return true
+  }
+
+  const handleDotKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    dotIndex: number,
+  ) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return
+    event.preventDefault()
+
+    const direction = event.key === "ArrowRight" ? 1 : -1
+    const nextIndex = Math.min(
+      mockupPreviews.length - 1,
+      Math.max(0, dotIndex + direction),
+    )
+    showPreview(nextIndex)
+    dotButtonRefs.current[nextIndex]?.focus()
+  }
+
+  const handleDotRailClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.detail === 0) return
+
+    const railBox = event.currentTarget.getBoundingClientRect()
+    const railCenter = railBox.width / 2
+    const relativeX = event.clientX - railBox.left
+    let nearestIndex = 0
+    let nearestDistance = Number.POSITIVE_INFINITY
+
+    mockupPreviews.forEach((_, index) => {
+      const dotCenter = railCenter + (index - (mockupPreviews.length - 1) / 2) * 12
+      const distance = Math.abs(relativeX - dotCenter)
+      if (distance < nearestDistance) {
+        nearestIndex = index
+        nearestDistance = distance
+      }
+    })
+
+    event.preventDefault()
+    event.stopPropagation()
+    showPreview(nearestIndex)
+  }
+
   if (isDeleted) {
     return null
   }
 
   return (
-    <div className="group relative h-full">
+    <div
+      data-testid="dashboard-project-card-shell"
+      className="dashboard-project-card-shell relative h-[500px]"
+    >
       <Link
         data-testid="dashboard-project-card"
         href={projectHref}
@@ -191,19 +269,25 @@ export function DashboardProjectCard({
         className="flex h-[500px] flex-col overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <ProjectCardThumbnail
-          thumbnailUrl={thumbnailUrl}
+          previews={mockupPreviews}
+          activeIndex={activePreviewIndex}
           unavailable={thumbnailUnavailable}
+          onSwipe={(direction) => {
+            showPreview(activePreviewIndex + direction, true)
+          }}
         />
         <ProjectCardDetails
           name={projectName}
           description={description}
           createdLabel={createdLabel}
-          reserveTitleActionSpace={showActions}
         />
       </Link>
 
       {showActions && (
-        <div className="pointer-events-none absolute bottom-0 right-0 z-10 h-[160.6px] py-5 pl-2">
+        <div
+          data-open={actionsOpen ? "true" : "false"}
+          className="dashboard-project-card-kebab pointer-events-none absolute right-3 top-4 z-20"
+        >
           <DropdownMenu open={actionsOpen} onOpenChange={setActionsOpen}>
             <DropdownMenuTrigger asChild>
               <button
@@ -211,9 +295,9 @@ export function DashboardProjectCard({
                 type="button"
                 data-testid="dashboard-project-card-actions"
                 aria-label={`Project actions for ${projectName}`}
-                className="pointer-events-auto -mt-[5px] inline-flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-black/5 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-primary transition-colors hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Ellipsis aria-hidden="true" className="h-[18px] w-4" />
+                <EllipsisVertical aria-hidden="true" className="h-5 w-5" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -250,6 +334,75 @@ export function DashboardProjectCard({
           </DropdownMenu>
         </div>
       )}
+
+      {mockupPreviews.length > 1 && (
+        <>
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[378px]">
+            <button
+              type="button"
+              data-testid="dashboard-project-card-previous"
+              data-available={activePreviewIndex > 0 ? "true" : "false"}
+              aria-label={`Previous mockup for ${projectName}`}
+              aria-disabled={activePreviewIndex === 0}
+              tabIndex={-1}
+              className="dashboard-project-card-arrow absolute left-[27px] top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#dbdbdb] bg-white text-text-primary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => showPreview(activePreviewIndex - 1, true)}
+            >
+              <ChevronLeft aria-hidden="true" className="h-[19.2px] w-[19.2px]" />
+            </button>
+            <button
+              type="button"
+              data-testid="dashboard-project-card-next"
+              data-available={activePreviewIndex < mockupPreviews.length - 1 ? "true" : "false"}
+              aria-label={`Next mockup for ${projectName}`}
+              aria-disabled={activePreviewIndex === mockupPreviews.length - 1}
+              tabIndex={-1}
+              className="dashboard-project-card-arrow absolute right-[27px] top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#dbdbdb] bg-white text-text-primary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => showPreview(activePreviewIndex + 1, true)}
+            >
+              <ChevronRight aria-hidden="true" className="h-[19.2px] w-[19.2px]" />
+            </button>
+          </div>
+
+          <div
+            role="group"
+            aria-label={`Mockup options for ${projectName}`}
+            className="pointer-events-none absolute left-1/2 top-[349px] z-10 flex h-6 -translate-x-1/2 items-center"
+            onClickCapture={handleDotRailClick}
+          >
+            {mockupPreviews.map((preview, index) => (
+              <button
+                key={`${preview.label}:${preview.url}`}
+                ref={(element) => {
+                  dotButtonRefs.current[index] = element
+                }}
+                type="button"
+                data-testid="dashboard-project-card-dot"
+                aria-label={`Show mockup option ${preview.label}, ${index + 1} of ${mockupPreviews.length}`}
+                aria-current={index === activePreviewIndex ? "true" : undefined}
+                tabIndex={index === activePreviewIndex ? 0 : -1}
+                className="pointer-events-auto inline-flex h-6 w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() => showPreview(index)}
+                onKeyDown={(event) => handleDotKeyDown(event, index)}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    index === activePreviewIndex ? "bg-black" : "bg-[#a2a2a2]"
+                  }`}
+                  style={{
+                    transform: `translateX(${6 * (mockupPreviews.length - 1 - 2 * index)}px)`,
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      <p aria-live="polite" aria-atomic="true" className="sr-only">
+        {carouselAnnouncement}
+      </p>
 
       <Dialog.Root
         open={showRename}

@@ -5,7 +5,10 @@ import { NewProjectButton } from "@/components/projects/project-limit-dialog"
 import { AppPageHeader, AppPageShell } from "@/components/layout/app-page-shell"
 import { getProjectUrl } from "@/lib/project-routing"
 import { getProjectAllowanceStatus } from "@/lib/project-allowance"
-import { deriveDashboardMockupThumbnailUrls } from "@/lib/mockups/dashboard-thumbnail"
+import {
+  deriveDashboardMockupPreviews,
+  type DashboardMockupPreview,
+} from "@/lib/mockups/dashboard-thumbnail"
 import { logError } from "@/lib/logger"
 import { getCurrentUser } from "@/lib/supabase/current-user"
 
@@ -16,7 +19,7 @@ type ActiveProject = {
   href: string
   createdAt: string | null
   updatedAt: string | null
-  thumbnailUrl: string | null
+  mockupPreviews: DashboardMockupPreview[]
   thumbnailUnavailable: boolean
 }
 
@@ -80,7 +83,7 @@ export default async function ProjectsPage() {
   const originalIdeaByProjectId = new Map(
     (projectIntakes ?? []).map((intake) => [intake.project_id, intake.original_idea])
   )
-  const thumbnailUrlsByProjectId = deriveDashboardMockupThumbnailUrls({
+  const mockupPreviewsByProjectId = deriveDashboardMockupPreviews({
     authorizedProjectIds: projectIds,
     rows: mockupRows,
   })
@@ -92,7 +95,7 @@ export default async function ProjectsPage() {
     href: getProjectUrl(project),
     createdAt: project.created_at,
     updatedAt: project.updated_at,
-    thumbnailUrl: thumbnailUrlsByProjectId.get(project.id) ?? null,
+    mockupPreviews: mockupPreviewsByProjectId.get(project.id) ?? [],
     thumbnailUnavailable: Boolean(mockupQueryError),
   }))
   const welcomeName = getWelcomeName({
@@ -139,7 +142,7 @@ export default async function ProjectsPage() {
                 href={project.href}
                 createdAt={project.createdAt}
                 updatedAt={project.updatedAt}
-                thumbnailUrl={project.thumbnailUrl}
+                mockupPreviews={project.mockupPreviews}
                 thumbnailUnavailable={project.thumbnailUnavailable}
                 showActions
                 canDelete={allowanceStatus.planName.toLowerCase() !== "free"}
