@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
+import { useDeferredValue, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 
 interface WorkspaceDocumentFrameProps {
   children: ReactNode
@@ -23,11 +23,11 @@ export function WorkspaceDocumentFrame({
   // 1. `measuredHeight`: a ResizeObserver keeps the frame's latest real
   //    content height, which replaces the static estimate as the containment
   //    placeholder once known.
-  // 2. `applyContain`: re-applying containment lags one commit behind
+  // 2. `deferredPerformanceContain`: re-applying containment lags one commit behind
   //    `performanceContain` so the height above is measured from real layout
   //    first. Removing containment stays synchronous because the scroll-sync
   //    layout effect measures the newly active document in the same commit.
-  const [applyContain, setApplyContain] = useState(performanceContain)
+  const deferredPerformanceContain = useDeferredValue(performanceContain)
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null)
 
   useEffect(() => {
@@ -48,11 +48,7 @@ export function WorkspaceDocumentFrame({
     return () => observer.disconnect()
   }, [])
 
-  useLayoutEffect(() => {
-    setApplyContain(performanceContain)
-  }, [performanceContain])
-
-  const containmentStyle: CSSProperties | undefined = performanceContain && applyContain
+  const containmentStyle: CSSProperties | undefined = performanceContain && deferredPerformanceContain
     ? {
         contentVisibility: "auto",
         containIntrinsicSize: measuredHeight ? `auto ${measuredHeight}px` : intrinsicSize,
