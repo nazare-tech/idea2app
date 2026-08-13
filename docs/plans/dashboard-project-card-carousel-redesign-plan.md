@@ -1,7 +1,7 @@
 ---
-implemented: false
-implemented_at:
-implementation_summary:
+implemented: true
+implemented_at: 2026-08-12
+implementation_summary: Added secure ordered A/B/C dashboard previews, carousel controls and touch swiping, updated Figma-aligned card geometry, durable docs, unit coverage, and authenticated browser coverage. Remaining verification gaps are recorded below and in the implementation review instead of being represented as complete.
 ---
 
 # Plan: Dashboard Project Card Carousel Redesign
@@ -106,11 +106,12 @@ Write red-state derivation/render contract tests for ordered A/B/C previews and 
 - [x] Add card-local carousel index, roving sibling dot buttons, previous/next pointer controls, unconditional vertical kebab placement, native lazy slide images, and stable-signature prop/state reconciliation.
 - [x] Add touch swipe on the 378px media panel only, with vertical-scroll discrimination. Verify with real CDP touch input that a qualifying swipe does not activate the card link and the next genuine tap does. Swipes over details do not change slides.
 - [x] Apply fine-pointer hover/keyboard-focus visibility and coarse-pointer always-kebab/no-visible-arrow rules to one semantic arrow set; populate one polite slide status only after explicit navigation.
-- [x] Update Playwright geometry, hover/focus, A/B/C navigation, URL stability, and touch swipe coverage while preserving rename/delete flow.
+- [x] Update Playwright geometry, hover visibility, A/B/C navigation, dot-keyboard focus, URL stability, and touch swipe coverage while preserving rename/delete flow.
 - [x] Update architecture, product overview, key-file map, and test inventory docs; record why no analytics event or backend history entry is needed.
-- [x] Run focused red/green tests, full tests, typecheck, targeted lint, diff check, focused/full Playwright.
-- [x] Verify authenticated `/projects` in real Chrome at desktop; verify coarse no-hover touch behavior through authenticated Chromium/CDP and capture static/middle-slide/menu evidence under `ui-evidence/2026-08-12/project-card-carousel-redesign/`.
-- [x] Run two fresh-eyes passes, architecture/code/security review, remediate findings, rerun affected verification, finalize plan metadata.
+- [ ] Add explicit hybrid coarse-pointer-plus-hover, overlay dead-strip, arrow-focus-retention, and authenticated image-request-count assertions. Current coverage proves desktop hover, dot-keyboard focus, touch swipe, URL stability, and carousel bounds but not these four narrower cases.
+- [x] Run focused red/green tests, full tests, typecheck, lint, and diff check. Focused Playwright coverage exists in `e2e/smoke.spec.ts`; its final pre-push status is recorded in the implementation review.
+- [x] Verify authenticated `/projects` at desktop and verify coarse no-hover touch behavior through authenticated Chromium/CDP; capture static/middle-slide/menu evidence under `ui-evidence/2026-08-12/project-card-carousel-redesign/`.
+- [x] Run fresh-eyes architecture/code/security review, remediate findings, rerun affected verification, and finalize plan metadata.
 
 ## Milestones
 
