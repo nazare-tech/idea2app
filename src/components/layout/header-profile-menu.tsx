@@ -56,7 +56,7 @@ export function HeaderProfileMenu({
           aria-label={`Open profile menu for ${profileLabel}`}
           className="inline-flex h-10 items-center gap-1 rounded-full text-text-primary transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2"
         >
-          <span className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-full border border-border-strong bg-white p-px">
+          <span className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-full border border-border-strong bg-card p-px">
             <Avatar className="h-8 w-8 rounded-full">
               <AvatarImage src={user?.avatar_url} alt={user?.full_name || "User"} />
               <AvatarFallback className="bg-foreground text-[11px] font-bold text-background">
@@ -69,7 +69,7 @@ export function HeaderProfileMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         aria-labelledby={triggerId}
-        className="w-[260px] border border-border-subtle bg-white p-2 text-text-primary"
+        className="w-[260px] border border-border-subtle bg-card p-2 text-text-primary"
         align="end"
       >
         <DropdownMenuItem asChild>

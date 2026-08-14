@@ -109,7 +109,7 @@ export default async function ProjectsPage() {
       <section className="text-text-primary">
         <AppPageHeader
           description={`Welcome, ${welcomeName}`}
-          descriptionClassName="text-xl font-semibold leading-tight text-text-primary sm:text-2xl"
+          descriptionClassName="editorial-display text-xl font-semibold leading-tight text-text-primary sm:text-2xl"
           actions={(
             <NewProjectButton
               allowance={allowanceStatus}

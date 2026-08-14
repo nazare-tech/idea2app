@@ -156,7 +156,7 @@ export function MobileDocumentBar({
                             "inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors",
                             showRetry
                               ? "border-destructive bg-destructive text-primary-foreground"
-                              : "border-[#D8CEC5] bg-card text-[#5D5551]",
+                              : "border-border-strong bg-card text-text-secondary",
                           )}
                         >
                           <ActionIcon aria-hidden="true" className="h-3 w-3" />
@@ -166,7 +166,7 @@ export function MobileDocumentBar({
                         <span
                           className={cn(
                             "shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
-                            status === "needs_retry" ? "text-destructive" : "text-[#8A8480]",
+                            status === "needs_retry" ? "text-destructive" : "text-muted-foreground",
                           )}
                         >
                           <StatusText
@@ -179,7 +179,7 @@ export function MobileDocumentBar({
                     </div>
 
                     {item.sections.length > 0 && (
-                      <div className="mb-1 ml-[15px] border-l border-[#E5DCD4] pl-2">
+                      <div className="mb-1 ml-[15px] border-l border-border pl-2">
                         {item.sections.map((section) => {
                           const isActiveSub = activeSectionId === section.id
                           return (
@@ -191,8 +191,8 @@ export function MobileDocumentBar({
                               className={cn(
                                 "block w-full rounded-sm px-2.5 py-[7px] text-left text-[13.5px] transition-colors",
                                 isActiveSub
-                                  ? "bg-[#1C1917] font-semibold text-[#FAFAFA]"
-                                  : "text-[#5D5551] hover:bg-[#F5F0EB] hover:text-[#1C1917]",
+                                  ? "bg-foreground font-semibold text-card"
+                                  : "text-text-secondary hover:bg-secondary hover:text-foreground",
                               )}
                             >
                               {section.label}

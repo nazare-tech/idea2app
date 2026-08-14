@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react"
 import { COMPASS_WEDGE_VIEWBOX, compassWedgePathD } from "@/lib/compass-geometry"
 
 const EXPO = "cubic-bezier(0.16, 1, 0.3, 1)"
-const MARK_COLOR = "#DC2626"
+const MARK_COLOR = "var(--primary)"
 
 /**
  * The brand mark above the bottom CTA: the bearing wedge from the 2026-07-30

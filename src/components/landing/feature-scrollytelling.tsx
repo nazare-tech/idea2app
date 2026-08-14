@@ -321,7 +321,7 @@ export function FeatureScrollytelling() {
         <div
           className="absolute bottom-0 left-[3px] top-0 w-[10px]"
           style={{
-            background: "repeating-linear-gradient(to bottom, #E8DDD5 0 2px, transparent 2px 18px)",
+            background: "repeating-linear-gradient(to bottom, var(--border-subtle) 0 2px, transparent 2px 18px)",
           }}
         />
         {["0", "25%", "50%", "75%", "calc(100% - 2px)"].map((top, i) => (
@@ -341,7 +341,7 @@ export function FeatureScrollytelling() {
         <div
           data-rail-dot
           className="absolute left-1 top-0 h-2 w-2 rounded-full bg-primary"
-          style={{ boxShadow: "0 0 10px rgba(220, 38, 38, 0.45)", transition: `opacity 300ms ${EXPO}` }}
+          style={{ boxShadow: "0 0 10px color-mix(in srgb, var(--primary) 45%, transparent)", transition: `opacity 300ms ${EXPO}` }}
         />
         <div
           data-rail-chip

@@ -7,6 +7,7 @@ export const APP_HEADER_LOGO_SIZE = 32
 
 interface HeaderLogoProps {
   href?: string
+  src?: string
   size?: number
   className?: string
   linked?: boolean
@@ -14,13 +15,14 @@ interface HeaderLogoProps {
 
 export function HeaderLogo({
   href = "/projects",
+  src = APP_BRAND_LOGO_SRC,
   size = APP_HEADER_LOGO_SIZE,
   className,
   linked = true,
 }: HeaderLogoProps) {
   const content = (
     <Image
-      src={APP_BRAND_LOGO_SRC}
+      src={src}
       alt={APP_BRAND_LOGO_ALT}
       width={size}
       height={size}

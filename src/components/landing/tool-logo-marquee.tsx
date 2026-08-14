@@ -5,7 +5,7 @@ import { Marquee } from "@/components/ui/marquee"
 /** Purely informational, not interactive: the visible text is the accessible name, so the logo image is decorative. */
 function ToolLogo({ name, src }: { name: string; src: string }) {
   return (
-    <div className="mr-3 flex h-[92px] w-[152px] shrink-0 flex-col items-center justify-center gap-3 border border-border-subtle bg-white px-4">
+    <div className="mr-3 flex h-[92px] w-[152px] shrink-0 flex-col items-center justify-center gap-3 border border-border-subtle bg-card px-4">
       <Image
         src={src}
         alt=""

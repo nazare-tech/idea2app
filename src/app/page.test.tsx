@@ -60,5 +60,5 @@ test("public footer does not render the retired compass watermark", () => {
 
   assert.doesNotMatch(html, /viewBox="0 0 47\.9971 33\.5966"/)
   assert.doesNotMatch(html, /-bottom-\[150px\]/)
-  assert.match(html, /bg-\[#F5F0EB\]\/80/)
+  assert.match(html, /bg-secondary\/80/)
 })

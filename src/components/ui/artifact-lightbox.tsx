@@ -22,7 +22,7 @@ export function ArtifactActionButton({
       type="button"
       aria-label={label}
       title={label}
-      className="grid h-8 w-8 place-items-center border border-[#E8DDD5] bg-white text-[#4A4040] transition-colors hover:border-[#D8CEC5] hover:bg-[#F8F4F1] hover:text-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+      className="grid h-8 w-8 place-items-center border border-border bg-card text-text-secondary transition-colors hover:border-border-strong hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       onClick={onClick}
     >
       {children}
@@ -91,17 +91,17 @@ export function ArtifactLightbox({
       onClick={onClose}
     >
       <div
-        className={`flex min-h-0 w-full ${resolvedMaxWidthClassName} flex-col overflow-hidden rounded-lg bg-white shadow-2xl ${
+        className={`flex min-h-0 w-full ${resolvedMaxWidthClassName} flex-col overflow-hidden rounded-lg bg-card shadow-2xl ${
           isMediaPresentation
             ? "h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)]"
             : "max-h-[calc(100vh-4rem)]"
         }`}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#E8DDD5] px-5 py-3">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-5 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <FileText aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.9} />
-            <span className="truncate font-mono text-[12px] tracking-[0.06em] text-[#1C1917]">
+            <span className="truncate font-mono text-[12px] tracking-[0.06em] text-foreground">
               {shownName}
             </span>
           </div>

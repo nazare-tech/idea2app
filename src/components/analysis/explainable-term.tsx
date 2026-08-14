@@ -63,7 +63,7 @@ export function ExplainTermButton({
               setIsPinnedOpen(false)
             }}
             className={cn(
-              "inline-grid shrink-0 place-items-center rounded-full border border-[#E8DDD5] bg-[#FAFAFA] text-[#8A8480] transition-colors hover:border-[#D8CEC5] hover:bg-[#F5F0EB] hover:text-[#4A4040] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+              "inline-grid shrink-0 place-items-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:border-border-strong hover:bg-secondary hover:text-text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
               compact ? "h-4 w-4" : "h-5 w-5",
               className,
             )}
@@ -108,7 +108,7 @@ export function ExplainableLabel({
 
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
-      <span className="border-b border-dotted border-[#8A8480]">
+      <span className="border-b border-dotted border-muted-foreground">
         {children}
       </span>
       <ExplainTermButton

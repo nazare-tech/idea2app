@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Hanken_Grotesk, Fira_Mono } from "next/font/google"
+import { Fira_Mono, Hanken_Grotesk, JetBrains_Mono, Newsreader, Public_Sans } from "next/font/google"
 import "./globals.css"
 
 const hankenGrotesk = Hanken_Grotesk({
@@ -14,6 +14,25 @@ const firaMono = Fira_Mono({
   variable: "--font-fira-mono",
   subsets: ["latin"],
   weight: ["400", "500", "700"],
+})
+
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  preload: false,
+})
+
+const publicSans = Public_Sans({
+  variable: "--font-public-sans",
+  subsets: ["latin"],
+  preload: false,
+})
+
+const jetBrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  preload: false,
 })
 
 // viewport-fit=cover lets the workspace's bottom chrome pad itself with
@@ -59,7 +78,7 @@ export default function RootLayout({
         {supabaseOrigin && <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />}
       </head>
       <body
-        className={`${hankenGrotesk.variable} ${firaMono.variable} antialiased min-h-screen bg-background`}
+        className={`${hankenGrotesk.variable} ${firaMono.variable} ${newsreader.variable} ${publicSans.variable} ${jetBrainsMono.variable} antialiased min-h-screen bg-background`}
       >
         {children}
       </body>

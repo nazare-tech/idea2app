@@ -279,7 +279,7 @@ export function TestimonialBand() {
           rx={DOT_RADIUS}
           ry={DOT_RADIUS}
           filter="url(#testimonial-dot-blur)"
-          className="drop-shadow-[0_0_10px_rgba(220,38,38,0.55)]"
+          style={{ filter: "drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 55%, transparent))" }}
           fill="var(--primary)"
         />
       </svg>

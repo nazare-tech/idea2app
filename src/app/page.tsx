@@ -106,14 +106,14 @@ export default async function LandingPage() {
   const waitlistMode = isWaitlistMode(userCount)
 
   return (
-    <div className="min-h-screen bg-background text-text-primary">
+    <div className="makercompass-editorial-theme min-h-screen bg-background text-text-primary">
       <div>
-        <header className="sticky top-0 z-50 border-b border-border-subtle bg-white/95 backdrop-blur-sm">
+        <header className="sticky top-0 z-50 border-b border-border-subtle bg-card/95 backdrop-blur-sm">
         {/* Landing-only header inset: content aligns with the 1320px box edges
             (1368 - 2x24 padding = 1320), wider than the hero text container.
             The dashboard header is a separate component and keeps its padding. */}
         <div className="mx-auto flex min-h-16 w-full max-w-[1368px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 md:flex-nowrap md:py-0">
-          <BrandWordmark href="/" logoSize={36} logoClassName="rounded-sm" labelClassName="text-lg font-semibold tracking-[0.01em]" />
+          <BrandWordmark href="/" logoSrc="/maker-compass-mark-blue.svg" logoSize={36} logoClassName="rounded-sm" labelClassName="text-lg font-semibold tracking-[0.01em]" />
 
           <div className="hidden items-center gap-8 md:flex">
             {navLinks.map((item) => (
@@ -126,7 +126,7 @@ export default async function LandingPage() {
           <div className="flex items-center gap-2 md:gap-3">
             {/* Sign In is always visible — existing users still need to log in */}
             <Link href="/?modal=auth&mode=signin" scroll={false}>
-              <Button variant="outline" className="h-10 px-4 rounded-md border-border-subtle bg-white text-text-primary sm:h-11 sm:px-6">
+              <Button variant="outline" className="h-10 px-4 rounded-md border-border-subtle bg-card text-text-primary sm:h-11 sm:px-6">
                 Sign In
               </Button>
             </Link>
@@ -251,7 +251,7 @@ export default async function LandingPage() {
       <div className="relative isolate">
         <HeroDotField seed={3761} />
         <div className="relative z-10">
-          <SiteFooter />
+          <SiteFooter logoSrc="/maker-compass-mark-blue.svg" />
         </div>
       </div>
 

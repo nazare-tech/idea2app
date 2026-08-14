@@ -64,7 +64,7 @@ function PersonaBody({
         </span>
         <div>
           <p className="font-display m-0 text-[28px] font-bold tracking-[-0.02em] text-text-primary">{name}</p>
-          <p className="mt-[3px] font-mono text-[17px] font-medium uppercase tracking-[0.14em] text-[#8A8480]">
+          <p className="mt-[3px] font-mono text-[17px] font-medium uppercase tracking-[0.14em] text-text-muted">
             {role}
           </p>
         </div>
@@ -77,7 +77,7 @@ function PersonaBody({
 function StepBody({ label, title, summary }: { label: string; title: string; summary: string }) {
   return (
     <>
-      <p className="m-0 font-mono text-[17px] font-medium uppercase tracking-[0.18em] text-[#8A8480]">{label}</p>
+      <p className="m-0 font-mono text-[17px] font-medium uppercase tracking-[0.18em] text-text-muted">{label}</p>
       <h4 className="font-display mt-3 text-[32px] font-bold tracking-[-0.03em] text-text-primary">{title}</h4>
       <p className="mt-[11px] text-[23px] leading-[1.5] text-text-secondary">{summary}</p>
     </>
@@ -98,7 +98,7 @@ function PromptBody({
   return (
     <>
       <div className="flex items-baseline justify-between gap-[15px]">
-        <p className="landing-stage-prompt-meta m-0 font-mono text-[13px] font-medium uppercase tracking-[0.18em] text-[#8A8480]">
+        <p className="landing-stage-prompt-meta m-0 font-mono text-[13px] font-medium uppercase tracking-[0.18em] text-text-muted">
           {label}
         </p>
         {badge ? (
@@ -112,7 +112,7 @@ function PromptBody({
       </h4>
       {/* Clipped on purpose: the card is a preview of a longer file. */}
       <div className="landing-stage-prompt-clip mt-[14px] max-h-[560px] overflow-hidden border border-border-subtle bg-secondary px-5 py-[18px]">
-        <p className="landing-stage-prompt-body m-0 whitespace-pre-wrap font-mono text-[15px] leading-[1.65] text-[#6B6259]">
+        <p className="landing-stage-prompt-body m-0 whitespace-pre-wrap font-mono text-[15px] leading-[1.65] text-text-secondary">
           {lines.join("\n")}
         </p>
       </div>
@@ -151,7 +151,7 @@ export function FeatureStageCard({
         // Image cards are the artwork; everything else is a paper card.
         ...(isImage
           ? {}
-          : { background: "#FFFFFF", border: "1.5px solid var(--border-subtle)", padding: "28px 32px" }),
+          : { background: "var(--card)", border: "1.5px solid var(--border-subtle)", padding: "28px 32px" }),
       }}
     >
       {card.body.kind === "competitor" ? (
@@ -174,7 +174,7 @@ export function FeatureStageCard({
           alt={card.body.alt}
           width={card.body.width}
           height={card.body.height}
-          className="block h-auto w-full border-[1.5px] border-[#E2DDD6]"
+          className="block h-auto w-full border-[1.5px] border-border-strong"
         />
       ) : null}
       {card.body.kind === "prompt" ? (

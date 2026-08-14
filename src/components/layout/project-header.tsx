@@ -191,7 +191,10 @@ export function ProjectHeader({
         profileMenuTriggerId="project-user-menu-trigger"
         className="hidden lg:grid"
       >
-        <HeaderBrand onClick={navigateToProjects} />
+        <HeaderBrand
+          logoSrc="/maker-compass-mark-blue.svg"
+          onClick={navigateToProjects}
+        />
       </Header>
     </>
   )

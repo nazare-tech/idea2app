@@ -51,14 +51,14 @@ function ProposedNameCard({ projectName }: { projectName?: string }) {
   if (!name || name === "Untitled") return null
 
   return (
-    <div className="border border-[#E8DDD5] bg-white px-5 py-4">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A8480]">
+    <div className="border border-border bg-card px-5 py-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
         Proposed Name
       </p>
       <p
         className={cn(
           displayFontClass,
-          "mt-1 text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]"
+          "mt-1 text-[22px] font-bold tracking-[-0.03em] text-foreground"
         )}
       >
         {name}
@@ -79,12 +79,12 @@ export function TopLevelDocumentHeader({
       <h1
         className={cn(
           displayFontClass,
-          "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]"
+          "text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-foreground md:text-[44px] md:leading-[66px]"
         )}
       >
         {title}
       </h1>
-      <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
+      <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-text-secondary">
         {description}
       </p>
     </header>
@@ -201,16 +201,16 @@ function WorkspaceSectionHeader({
   const termKey = getExplainableTermKeyByLabel(title)
 
   return (
-    <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
+    <div className="mb-8 flex items-end justify-between gap-6 border-b border-border pb-6">
       <div>
         <div className="flex items-center gap-2">
-          <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
+          <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-foreground")}>
             {title}
           </h2>
           <ExplainTermButton termKey={termKey} label={title} />
         </div>
       </div>
-      <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#8A8480]">
+      <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-muted-foreground">
         {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
       </p>
     </div>
@@ -257,7 +257,7 @@ function NumberedList({
           <span
             className={cn(
               "w-7 shrink-0 pt-0.5 font-mono text-[11px] font-medium",
-              dark ? "text-[#8A8480]" : "text-[#999999]"
+              dark ? "text-text-secondary" : "text-muted-foreground"
             )}
           >
             {String(index + 1).padStart(2, "0")}
@@ -265,7 +265,7 @@ function NumberedList({
           <p
             className={cn(
               "ui-type-body-sm",
-              dark ? "text-[#1C1917]" : "text-[#0A0A0A]"
+              dark ? "text-foreground" : "text-text-primary"
             )}
           >
             <CompetitorMentionText text={item} />
@@ -284,12 +284,12 @@ function MarketSignalStrip({ items }: { items: string[] }) {
       {items.slice(0, 3).map((item, index) => (
         <div
           key={`${item}-${index}`}
-          className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3"
+          className="border border-border bg-background px-4 py-3"
         >
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#999999]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             Signal {String(index + 1).padStart(2, "0")}
           </p>
-          <p className="mt-2 ui-type-body-sm text-[#0A0A0A]">
+          <p className="mt-2 ui-type-body-sm text-foreground">
             <CompetitorMentionText text={item} />
           </p>
         </div>
@@ -371,13 +371,13 @@ function CompetitorTableDetail({
 
   return (
     <div className="space-y-1">
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8A8480]">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {label}
       </p>
       <p
         className={cn(
           "ui-type-table",
-          emphasis ? "font-medium text-[#1C1917]" : "text-[#4A4040]"
+          emphasis ? "font-medium text-foreground" : "text-text-secondary"
         )}
       >
         <CompetitorMentionText text={value} />
@@ -402,16 +402,16 @@ function FastComparisonTable({
 }) {
   if (competitors.length === 0) {
     return (
-      <div className="border border-dashed border-[#D8CEC5] bg-[#FAFAFA] px-5 py-5">
+      <div className="border border-dashed border-border-strong bg-background px-5 py-5">
         <p
           className={cn(
             displayFontClass,
-            "text-[15px] font-semibold text-[#0A0A0A]"
+            "text-[15px] font-semibold text-foreground"
           )}
         >
           Competitor profiles not found
         </p>
-        <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
+        <p className="mt-2 max-w-3xl ui-type-body text-text-secondary">
           This report does not include enough competitor profile detail to
           build the comparison table.
         </p>
@@ -421,15 +421,15 @@ function FastComparisonTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-[clamp(960px,100%,1240px)] table-fixed border-collapse border border-[#E0E0E0]">
+      <table className="w-[clamp(960px,100%,1240px)] table-fixed border-collapse border border-border">
         <thead>
-          <tr className="bg-[#F5F0EB]">
+          <tr className="bg-secondary">
             {fastComparisonColumns.map(
               (column) => (
                 <th
                   key={column.label}
                   className={cn(
-                    "border border-[#D8CEC5] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]",
+                    "border border-border-strong px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-text-secondary",
                     column.className
                   )}
                 >
@@ -443,9 +443,9 @@ function FastComparisonTable({
           {competitors.map((competitor, index) => (
             <tr
               key={`${competitor.heading}-comparison`}
-              className={index % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"}
+              className={index % 2 === 0 ? "bg-card" : "bg-background"}
             >
-              <td className={cn("border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[0].className)}>
+              <td className={cn("border border-border px-4 py-4 align-top", fastComparisonColumns[0].className)}>
                 {/* Fall back to a web search when the document has no verified URL, so every competitor stays reachable without fabricating an official link. */}
                 <a
                   href={
@@ -462,15 +462,15 @@ function FastComparisonTable({
                   <span
                     className={cn(
                       displayFontClass,
-                      "text-[14px] font-semibold leading-5 text-[#0A0A0A]"
+                      "text-[14px] font-semibold leading-5 text-foreground"
                     )}
                   >
                     {competitor.heading}
                   </span>
-                  <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0A0A0A]" />
+                  <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" />
                 </a>
               </td>
-              <td className={cn("space-y-3 border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[1].className)}>
+              <td className={cn("space-y-3 border border-border px-4 py-4 align-top", fastComparisonColumns[1].className)}>
                 <CompetitorTableDetail
                   label="Overview"
                   value={competitor.fields["Overview"]}
@@ -484,7 +484,7 @@ function FastComparisonTable({
                   value={competitor.fields["Market Positioning"]}
                 />
               </td>
-              <td className={cn("space-y-3 border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[2].className)}>
+              <td className={cn("space-y-3 border border-border px-4 py-4 align-top", fastComparisonColumns[2].className)}>
                 <CompetitorTableDetail
                   label="Pricing"
                   value={competitor.fields["Pricing Model"] ?? "Unknown"}
@@ -494,7 +494,7 @@ function FastComparisonTable({
                   value={competitor.fields["Target Audience"] ?? "Unknown"}
                 />
               </td>
-              <td className={cn("space-y-3 border border-[#E0E0E0] px-4 py-4 align-top", fastComparisonColumns[3].className)}>
+              <td className={cn("space-y-3 border border-border px-4 py-4 align-top", fastComparisonColumns[3].className)}>
                 <CompetitorTableDetail
                   label="Key Edge"
                   value={getCompetitorKeyEdge(competitor)}
@@ -531,7 +531,7 @@ function CompetitorProfiles({
         kicker="Competitive Intelligence"
         showHeader={showHeader}
       >
-        <p className="mb-5 ui-type-body text-[#666666]">
+        <p className="mb-5 ui-type-body text-text-secondary">
           {competitors.length > 0
             ? "Compare each competitor once across product scope, buying fit, strengths, edges, and limitations."
             : "This report does not include direct competitor profiles."}
@@ -619,17 +619,17 @@ function PositioningLegend({
   if (axes.length === 0) return null
 
   return (
-    <div className="border border-[#EAE0D8] bg-[#FAFAFA] px-5 py-4">
-      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#777777]">
+    <div className="border border-border-subtle bg-background px-5 py-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
         How to read the scores
       </p>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         {axes.map((axis) => (
           <div key={axis.name}>
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#4A4040]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-secondary">
               <CompetitorMentionText text={axis.name} />
             </p>
-            <p className="mt-1 ui-type-caption text-[#777777]">
+            <p className="mt-1 ui-type-caption text-muted-foreground">
               0 = <CompetitorMentionText text={axis.lowLabel ?? ""} /> &middot; 10 ={" "}
               <CompetitorMentionText text={axis.highLabel ?? ""} />
             </p>
@@ -656,20 +656,20 @@ function PositioningScoreBar({
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
-        <p className="min-w-0 font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-[#777777]">
+        <p className="min-w-0 font-mono text-[10px] uppercase leading-4 tracking-[0.12em] text-muted-foreground">
           <CompetitorMentionText text={label} />
         </p>
-        <p className="shrink-0 font-mono text-[11px] tracking-[0.08em] text-[#4A4040]">
+        <p className="shrink-0 font-mono text-[11px] tracking-[0.08em] text-text-secondary">
           {score}/10
         </p>
       </div>
       <div
-        className="mt-1.5 h-1.5 w-full bg-[#EFE7E0]"
+        className="mt-1.5 h-1.5 w-full bg-muted"
         role="img"
         aria-label={`${label}: ${score} out of 10`}
       >
         <div
-          className={cn("h-full", accent ? "bg-primary" : "bg-[#4A4040]")}
+          className={cn("h-full", accent ? "bg-primary" : "bg-text-secondary")}
           style={{ width: `${(score / POSITIONING_SCORE_MAX) * 100}%` }}
         />
       </div>
@@ -703,7 +703,7 @@ function PositioningMap({
           yAxis={positioningMap.yAxis}
         />
         {scoredPoints.length > 0 ? (
-          <div className="grid gap-px border border-[#EAE0D8] bg-[#EAE0D8]">
+          <div className="grid gap-px border border-border-subtle bg-border-subtle">
             {scoredPoints.map((point, index) => {
               const accent = isOwnProductPoint(point)
               const pointSummary = `${point.competitor}: X ${point.x}/10, Y ${point.y}/10. ${point.rationale}${point.evidence ? ` Evidence: ${point.evidence}` : ""}`
@@ -714,14 +714,14 @@ function PositioningMap({
                   data-positioning-state="scored"
                   data-positioning-point={point.competitor}
                   aria-label={pointSummary}
-                  className="bg-white px-5 py-5"
+                  className="bg-card px-5 py-5"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p
                       className={cn(
                         displayFontClass,
                         "text-[15px] font-bold tracking-[-0.02em]",
-                        accent ? "text-primary" : "text-[#1C1917]"
+                        accent ? "text-primary" : "text-foreground"
                       )}
                     >
                       <CompetitorMentionText text={point.competitor} />
@@ -739,12 +739,12 @@ function PositioningMap({
                   </div>
 
                   {point.rationale ? (
-                    <p className="mt-4 ui-type-table text-[#0A0A0A]">
+                    <p className="mt-4 ui-type-table text-foreground">
                       <CompetitorMentionText text={point.rationale} />
                     </p>
                   ) : null}
                   {point.evidence ? (
-                    <p className="mt-2 ui-type-caption text-[#777777]">
+                    <p className="mt-2 ui-type-caption text-muted-foreground">
                       <CompetitorMentionText text={point.evidence} />
                     </p>
                   ) : null}
@@ -755,8 +755,8 @@ function PositioningMap({
         ) : null}
 
         {unscoredPoints.length > 0 ? (
-          <div className="border border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#777777]">
+          <div className="border border-border bg-background px-4 py-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Unscored placements
             </p>
             <div className="mt-3 space-y-2">
@@ -765,10 +765,10 @@ function PositioningMap({
                   key={`${point.competitor}-unscored`}
                   data-positioning-state="unscored"
                 >
-                  <p className="ui-type-table font-medium text-[#0A0A0A]">
+                  <p className="ui-type-table font-medium text-foreground">
                     <CompetitorMentionText text={point.competitor} />
                   </p>
-                  <p className="ui-type-caption text-[#777777]">
+                  <p className="ui-type-caption text-muted-foreground">
                     <CompetitorMentionText
                       text={point.rationale || "Missing a valid 0-10 X or Y score."}
                     />
@@ -834,7 +834,7 @@ function CompetitiveResearchPage({
 }) {
   return (
     <CompetitorMentionLinksProvider sources={structured.competitorSources}>
-      <div className="space-y-6 bg-white p-6 md:p-8 xl:p-10">
+      <div className="space-y-6 bg-card p-6 md:p-8 xl:p-10">
       <TopLevelDocumentHeader
         title="Market Research"
         description="Competitive landscape, customer segments, positioning, and recommended next moves."

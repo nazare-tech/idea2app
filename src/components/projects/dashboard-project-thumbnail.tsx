@@ -86,7 +86,7 @@ export function ProjectCardThumbnail({
       data-thumbnail-active-label={activePreview?.label}
       data-thumbnail-index={activePreview ? activeIndex : undefined}
       data-thumbnail-count={previews.length}
-      className="relative h-[378px] shrink-0 touch-pan-y overflow-hidden rounded-[24px] border border-[#dbdbdb] bg-white p-5"
+      className="relative h-[378px] shrink-0 touch-pan-y overflow-hidden rounded-[24px] border border-border-strong bg-white p-5"
       onTouchStart={(event) => {
         const touch = event.touches[0]
         if (!touch) return

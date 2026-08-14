@@ -345,7 +345,7 @@ export function DashboardProjectCard({
               aria-label={`Previous mockup for ${projectName}`}
               aria-disabled={activePreviewIndex === 0}
               tabIndex={-1}
-              className="dashboard-project-card-arrow absolute left-[27px] top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#dbdbdb] bg-white text-text-primary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="dashboard-project-card-arrow absolute left-[27px] top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border-strong bg-card text-text-primary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => showPreview(activePreviewIndex - 1, true)}
             >
               <ChevronLeft aria-hidden="true" className="h-[19.2px] w-[19.2px]" />
@@ -357,7 +357,7 @@ export function DashboardProjectCard({
               aria-label={`Next mockup for ${projectName}`}
               aria-disabled={activePreviewIndex === mockupPreviews.length - 1}
               tabIndex={-1}
-              className="dashboard-project-card-arrow absolute right-[27px] top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#dbdbdb] bg-white text-text-primary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="dashboard-project-card-arrow absolute right-[27px] top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border-strong bg-card text-text-primary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => showPreview(activePreviewIndex + 1, true)}
             >
               <ChevronRight aria-hidden="true" className="h-[19.2px] w-[19.2px]" />
@@ -388,7 +388,7 @@ export function DashboardProjectCard({
                 <span
                   aria-hidden="true"
                   className={`h-1.5 w-1.5 rounded-full ${
-                    index === activePreviewIndex ? "bg-black" : "bg-[#a2a2a2]"
+                    index === activePreviewIndex ? "bg-primary" : "bg-border-strong"
                   }`}
                   style={{
                     transform: `translateX(${6 * (mockupPreviews.length - 1 - 2 * index)}px)`,
@@ -416,7 +416,7 @@ export function DashboardProjectCard({
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
           <Dialog.Content
-            className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-white p-6 shadow-2xl focus:outline-none"
+            className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-card p-6 shadow-2xl focus:outline-none"
             onCloseAutoFocus={(event) => {
               event.preventDefault()
               actionButtonRef.current?.focus()
@@ -445,7 +445,7 @@ export function DashboardProjectCard({
                 aria-invalid={Boolean(renameError)}
                 aria-describedby={renameError ? `project-rename-error-${id}` : undefined}
                 disabled={isRenaming}
-                className="mt-2 h-11 w-full rounded-md border border-border-strong bg-white px-3 text-[14px] text-text-primary outline-none focus:border-ring focus:ring-2 focus:ring-ring-soft disabled:opacity-60"
+                className="mt-2 h-11 w-full rounded-md border border-border-strong bg-card px-3 text-[14px] text-text-primary outline-none focus:border-ring focus:ring-2 focus:ring-ring-soft disabled:opacity-60"
               />
               {renameError && (
                 <p
@@ -461,7 +461,7 @@ export function DashboardProjectCard({
                   <button
                     type="button"
                     disabled={isRenaming}
-                    className="h-11 rounded-md border border-border-strong bg-white px-5 text-[13px] font-semibold text-text-primary disabled:opacity-40"
+                    className="h-11 rounded-md border border-border-strong bg-card px-5 text-[13px] font-semibold text-text-primary disabled:opacity-40"
                   >
                     Cancel
                   </button>
@@ -488,7 +488,7 @@ export function DashboardProjectCard({
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
           <Dialog.Content
-            className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-white p-6 shadow-2xl focus:outline-none"
+            className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-card p-6 shadow-2xl focus:outline-none"
             onCloseAutoFocus={(event) => {
               event.preventDefault()
               actionButtonRef.current?.focus()
@@ -510,7 +510,7 @@ export function DashboardProjectCard({
                 <button
                   type="button"
                   disabled={isDeleting}
-                  className="h-11 rounded-md border border-border-strong bg-white px-5 text-[13px] ui-font-semibold text-text-primary disabled:opacity-40"
+                  className="h-11 rounded-md border border-border-strong bg-card px-5 text-[13px] ui-font-semibold text-text-primary disabled:opacity-40"
                 >
                   Cancel
                 </button>
@@ -534,7 +534,7 @@ export function DashboardProjectCard({
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
           <Dialog.Content
-            className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-white p-6 shadow-2xl focus:outline-none"
+            className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-strong bg-card p-6 shadow-2xl focus:outline-none"
             onCloseAutoFocus={(event) => {
               event.preventDefault()
               actionButtonRef.current?.focus()
@@ -550,7 +550,7 @@ export function DashboardProjectCard({
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="h-11 rounded-md border border-border-strong bg-white px-5 text-[13px] ui-font-semibold text-text-primary"
+                  className="h-11 rounded-md border border-border-strong bg-card px-5 text-[13px] ui-font-semibold text-text-primary"
                 >
                   Not now
                 </button>

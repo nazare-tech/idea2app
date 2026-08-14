@@ -60,19 +60,19 @@ export function AnchorNavTab({
   const ActionIcon = showRetryAction ? RotateCcw : Play
 
   const containerStyle = hasIssue
-      ? "bg-[#FFF4F1]"
-      : "bg-[#FFFFFE]"
+      ? "bg-destructive/5"
+      : "bg-card"
 
   const titleColor = hasIssue
       ? "text-destructive"
     : isPending
-      ? "text-[#8A8480]"
-      : "text-[#1C1917]"
+      ? "text-muted-foreground"
+      : "text-foreground"
 
   const subColor = isPending
-      ? "text-[#8A8480]"
-      : "text-[#5D5551]"
-  const connectorColor = "border-[#E5DCD4]"
+      ? "text-muted-foreground"
+      : "text-text-secondary"
+  const connectorColor = "border-border"
   const handleNavClick = (event: MouseEvent<HTMLButtonElement>, targetId: string) => {
     onNavClick?.()
     const nav = event.currentTarget.closest("nav")
@@ -124,7 +124,7 @@ export function AnchorNavTab({
             "inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
             hasIssue
               ? "border-destructive bg-destructive text-primary-foreground hover:bg-destructive/90"
-              : "border-[#D8CEC5] bg-[#FFFFFE] text-[#5D5551] hover:border-primary/50 hover:text-primary",
+              : "border-border-strong bg-card text-text-secondary hover:border-primary/50 hover:text-primary",
           )}
         >
           <ActionIcon aria-hidden="true" className="h-3 w-3" />
@@ -133,7 +133,7 @@ export function AnchorNavTab({
         ) : (
           <span className={cn(
             "shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
-            hasIssue ? "text-destructive" : "text-[#8A8480]",
+            hasIssue ? "text-destructive" : "text-muted-foreground",
           )}>
             <StatusText status={status} displayState={displayState} derived={item.derived} />
           </span>
@@ -157,9 +157,9 @@ export function AnchorNavTab({
               onClick={(event) => handleNavClick(event, section.id)}
               aria-current={isActiveSub ? "location" : undefined}
               className={cn(
-                "block w-full cursor-pointer rounded-sm px-2 py-1 text-left text-[13px] transition-[background-color,color] hover:bg-[#F5F0EB] hover:text-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0",
+                "block w-full cursor-pointer rounded-sm px-2 py-1 text-left text-[13px] transition-[background-color,color] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0",
                 isActiveSub
-                  ? "bg-[#1C1917] font-semibold text-[#FAFAFA] hover:bg-[#1C1917] hover:text-[#FAFAFA]"
+                  ? "bg-foreground font-semibold text-card hover:bg-foreground hover:text-card"
                   : cn(subColor, inProgressOpacity)
               )}
             >
@@ -230,7 +230,7 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
   return (
     <nav
       ref={setNavRef}
-      className="workspace-anchor-nav hidden shrink-0 bg-background lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-var(--workspace-desktop-header-height))] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-[#E2DDD6] lg:px-6 lg:py-5"
+      className="workspace-anchor-nav hidden shrink-0 bg-background lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-var(--workspace-desktop-header-height))] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-border lg:px-6 lg:py-5"
     >
       {/* Document tabs */}
       {navItems.map((item) => (

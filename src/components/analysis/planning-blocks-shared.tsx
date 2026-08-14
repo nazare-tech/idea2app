@@ -29,9 +29,9 @@ export const displayFontClass = "font-[family:var(--font-display)]"
 export function StreamingSkeletonBars() {
   return (
     <div className="space-y-3" aria-hidden="true">
-      <div className="h-3 w-[92%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-      <div className="h-3 w-[84%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
-      <div className="h-3 w-[55%] animate-pulse bg-[#F1ECE7] motion-reduce:animate-none" />
+      <div className="h-3 w-[92%] animate-pulse bg-muted motion-reduce:animate-none" />
+      <div className="h-3 w-[84%] animate-pulse bg-muted motion-reduce:animate-none" />
+      <div className="h-3 w-[55%] animate-pulse bg-muted motion-reduce:animate-none" />
     </div>
   )
 }
@@ -49,12 +49,12 @@ export function StreamingSkeletonSection({
 
   return (
     <section aria-hidden="true">
-      <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
-        <p className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#C9C1B8]")}>
+      <div className="mb-8 flex items-end justify-between gap-6 border-b border-border pb-6">
+        <p className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-muted-foreground/55")}>
           {title}
         </p>
         {showCounter ? (
-          <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#D8CEC5]">
+          <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-muted-foreground/45">
             {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
           </p>
         ) : null}
@@ -128,7 +128,7 @@ export function PencilCard({
                 className={cn(
                   displayFontClass,
                   "text-[22px] font-bold tracking-[-0.03em]",
-                  dark ? "text-[#1C1917]" : "text-[#0A0A0A]",
+                  dark ? "text-foreground" : "text-text-primary",
                 )}
               >
                 {title}
@@ -137,7 +137,7 @@ export function PencilCard({
             </div>
           ) : null}
           {description ? (
-            <p className="max-w-2xl ui-type-body-sm text-[#666666]">
+            <p className="max-w-2xl ui-type-body-sm text-text-secondary">
               {description}
             </p>
           ) : null}
@@ -161,12 +161,12 @@ export function PageHeader({
         <h1
           className={cn(
             displayFontClass,
-            "text-[36px] font-bold tracking-[-0.05em] text-[#0A0A0A] md:text-[44px]",
+            "text-[36px] font-bold tracking-[-0.05em] text-foreground md:text-[44px]",
           )}
         >
           {title}
         </h1>
-        <p className="mt-2 max-w-3xl ui-type-body text-[#666666]">
+        <p className="mt-2 max-w-3xl ui-type-body text-text-secondary">
           {description}
         </p>
       </div>
@@ -198,7 +198,7 @@ export function ParagraphStack({
             leadFirst && index === 0
               ? "text-[22px] font-medium leading-[33px] tracking-[-0.01em]"
               : "ui-type-body",
-            dark ? "text-[#4A4040]" : "text-[#666666]",
+            dark ? "text-foreground" : "text-text-secondary",
           )}
         >
           {renderText ? renderText(paragraph) : paragraph}
@@ -252,7 +252,7 @@ export function InlineLabeledText({
   const labeled = splitLabeledText(value)
 
   return (
-    <p className={cn("ui-type-body-sm", dark ? "text-[#1C1917]" : "text-[#0A0A0A]", className)}>
+    <p className={cn("ui-type-body-sm", dark ? "text-foreground" : "text-text-primary", className)}>
       {labeled ? (
         <>
           <span className="font-semibold">{labeled.label}: </span>
@@ -279,7 +279,7 @@ export function StructuredItemList({ items, dark = false }: { items: string[]; d
           return (
             <div key={key} className="space-y-2">
               {group.label ? (
-                <p className={cn("ui-type-body-sm font-semibold", dark ? "text-[#1C1917]" : "text-[#0A0A0A]")}>
+                <p className={cn("ui-type-body-sm font-semibold", dark ? "text-foreground" : "text-text-primary")}>
                   {group.label}
                 </p>
               ) : null}
@@ -319,14 +319,14 @@ export function DataTable({
   if (headers.length === 0) return null
 
   return (
-    <div className="overflow-x-auto border border-[#E0E0E0]">
+    <div className="overflow-x-auto border border-border">
       <table className="min-w-full border-collapse">
         <thead>
-          <tr className="bg-[#F5F0EB]">
+          <tr className="bg-secondary">
             {headers.map((header) => (
               <th
                 key={header}
-                className="border border-[#D8CEC5] px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[#4A4040]"
+                className="border border-border-strong px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-text-secondary"
               >
                 {renderText ? renderText(header) : header}
               </th>
@@ -335,11 +335,11 @@ export function DataTable({
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => (
-            <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"}>
+            <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? "bg-card" : "bg-background"}>
               {headers.map((header, cellIndex) => (
                 <td
                   key={`${header}-${cellIndex}`}
-                  className="border border-[#E0E0E0] px-4 py-3 align-top ui-type-table text-[#0A0A0A]"
+                  className="border border-border px-4 py-3 align-top ui-type-table text-foreground"
                 >
                   {renderText
                     ? renderText(row[cellIndex] ?? "")
@@ -371,7 +371,7 @@ export function NarrativeContent({
         <DataTable headers={narrative.table.headers} rows={narrative.table.rows} />
       ) : null}
       {!hasText && !narrative.table ? (
-        <p className="ui-type-body-sm text-[#999999]">No structured content available.</p>
+        <p className="ui-type-body-sm text-muted-foreground">No structured content available.</p>
       ) : null}
     </div>
   )

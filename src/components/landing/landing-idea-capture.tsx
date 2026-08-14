@@ -111,7 +111,7 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
   return (
     <div
       data-testid="landing-idea-capture"
-      className="relative w-full max-w-[652px] rounded-md border border-[#8A8480] bg-white p-3 text-left"
+      className="relative w-full max-w-[652px] rounded-md border border-border-strong bg-card p-3 text-left"
       onBlur={(event) => {
         // Collapse only when focus leaves the whole widget while empty, so
         // clicking Get Started never yanks the button out from under the pointer.
@@ -149,7 +149,7 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
         }}
         enterKeyHint="go"
         placeholder="Describe what you want to build in a few sentences..."
-        className="block min-h-0 resize-none overflow-hidden rounded-md border-border-strong bg-white px-[13px] py-3 text-[15px] leading-[1.25] text-text-primary placeholder:text-text-secondary transition-[height,width] duration-[350ms] ease-out-expo"
+        className="block min-h-0 resize-none overflow-hidden rounded-md border-border-strong bg-card px-[13px] py-3 text-[15px] leading-[1.25] text-text-primary placeholder:text-text-secondary transition-[height,width] duration-[350ms] ease-out-expo"
         style={{
           height: isOpen ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT,
           width: isOpen ? "100%" : `calc(100% - ${BUTTON_ZONE}px)`,
@@ -176,7 +176,7 @@ export function LandingIdeaCapture({ isAuthenticated = false }: LandingIdeaCaptu
         type="button"
         onClick={startFlow}
         disabled={isSubmitDisabled}
-        className="absolute bottom-3 right-3 h-[46px] rounded-md bg-[#1C1917] px-5 text-sm font-semibold text-white hover:bg-[#1C1917]/85"
+        className="absolute bottom-3 right-3 h-[46px] rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         data-testid="landing-idea-signup"
       >
         {loadingMode === "signin" ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

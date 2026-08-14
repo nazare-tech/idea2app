@@ -6,6 +6,7 @@ import { APP_BRAND_NAME } from "@/lib/app-brand"
 
 interface BrandWordmarkProps {
   href?: string
+  logoSrc?: string
   className?: string
   label?: string
   labelClassName?: string
@@ -16,6 +17,7 @@ interface BrandWordmarkProps {
 
 export function BrandWordmark({
   href = "/",
+  logoSrc,
   className,
   label = APP_BRAND_NAME,
   labelClassName,
@@ -25,7 +27,7 @@ export function BrandWordmark({
 }: BrandWordmarkProps) {
   return (
     <Link href={href} onClick={onClick} className={cn("inline-flex items-center gap-2.5", className)}>
-      <HeaderLogo href={href} size={logoSize} className={logoClassName} linked={false} />
+      <HeaderLogo href={href} src={logoSrc} size={logoSize} className={logoClassName} linked={false} />
       {label === APP_BRAND_NAME ? (
         // Brand wordmark per the 2026-07-30 kit: set solid, `Maker` at weight
         // 800 against `Compass` at 500, tracking -0.045em. The weight break is
@@ -48,16 +50,19 @@ export function BrandWordmark({
 // App-header preset of the wordmark: compact, truncating, links to /projects.
 export function HeaderBrand({
   href = "/projects",
+  logoSrc,
   onClick,
   className,
 }: {
   href?: string
+  logoSrc?: string
   onClick?: MouseEventHandler<HTMLAnchorElement>
   className?: string
 }) {
   return (
     <BrandWordmark
       href={href}
+      logoSrc={logoSrc}
       onClick={onClick}
       logoSize={APP_HEADER_LOGO_SIZE}
       className={cn("min-w-0 gap-2", className)}

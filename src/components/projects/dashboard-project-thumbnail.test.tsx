@@ -195,7 +195,7 @@ test("ProjectCardThumbnail renders a stable empty state", () => {
   assert.match(markup, /data-thumbnail-canvas="true"/)
   assert.match(markup, /rounded-\[24px\]/)
   assert.match(markup, /h-\[378px\]/)
-  assert.match(markup, /border-\[#dbdbdb\]/)
+  assert.match(markup, /border-border-strong/)
   assert.match(markup, /bg-white p-5/)
   assert.match(markup, /No mockup preview/)
   assert.doesNotMatch(markup, /<img/)

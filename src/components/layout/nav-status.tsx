@@ -70,7 +70,7 @@ export function StatusMarker({
       ? "bg-primary"
       : status === "needs_retry"
         ? "bg-destructive"
-      : "bg-[#C9C1B8]"
+      : "bg-border-strong"
 
   return <span aria-hidden="true" className={cn("h-4 w-1 shrink-0 rounded-sm", markerColor)} />
 }

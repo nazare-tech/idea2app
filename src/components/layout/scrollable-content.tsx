@@ -88,10 +88,10 @@ function DocumentSkeleton({
 
   return (
     <div className="flex flex-col gap-4 p-5 sm:p-8">
-      <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
-      <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
-      <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100" />
-      <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
+      <div className="h-6 w-48 animate-pulse rounded bg-muted" />
+      <div className="h-4 w-full animate-pulse rounded bg-secondary/70" />
+      <div className="h-4 w-3/4 animate-pulse rounded bg-secondary/70" />
+      <div className="h-4 w-5/6 animate-pulse rounded bg-secondary/70" />
       <p className="text-xs text-muted-foreground">{action} {label}...</p>
     </div>
   )
@@ -196,9 +196,9 @@ function GenerationStatusModule({
           showMockupLoader ? <MockupGenerationLoader images={state.mockupPreviewImages} /> : null
         ) : (
           <div className="space-y-3">
-            <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
-            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
-            <div className="h-4 w-2/3 animate-pulse rounded bg-gray-100" />
+            <div className="h-4 w-full animate-pulse rounded bg-secondary/70" />
+            <div className="h-4 w-5/6 animate-pulse rounded bg-secondary/70" />
+            <div className="h-4 w-2/3 animate-pulse rounded bg-secondary/70" />
           </div>
         )
       )}
@@ -382,10 +382,10 @@ function MockupsSection({ content, projectId }: { content: string; projectId: st
   return (
     <div>
       <header className="pb-8">
-        <h1 className="font-[family:var(--font-display)] text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-[#0A0A0A] md:text-[44px] md:leading-[66px]">
+        <h1 className="font-[family:var(--font-display)] text-[36px] font-bold leading-[1.12] tracking-[-0.05em] text-foreground md:text-[44px] md:leading-[66px]">
           Design Mockups
         </h1>
-        <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-[#666666]">
+        <p className="mt-1 max-w-3xl text-[16px] leading-[25.6px] text-text-secondary">
           Three visual concepts for the first version. Click a concept to view it full size.
         </p>
       </header>

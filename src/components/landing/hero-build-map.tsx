@@ -51,9 +51,9 @@ import {
 const EXPO = "cubic-bezier(0.16, 1, 0.3, 1)"
 
 /** Paper-stack and hairline shades. One-offs, no token equivalent. */
-const STACK_OUTER_BORDER = "#EFE7E0"
-const STACK_INNER_FILL = "#FCFAF8"
-const FILE_ROW_HAIRLINE = "#F0E9E2"
+const STACK_OUTER_BORDER = "var(--border-subtle)"
+const STACK_INNER_FILL = "var(--card)"
+const FILE_ROW_HAIRLINE = "var(--border-subtle)"
 
 const FIRST = BUILD_MAP_SCENARIOS[0]
 
@@ -155,7 +155,7 @@ function IdeaNode() {
           className="m-0 text-left text-text-primary"
           style={{ fontSize: sized("idea", 12), lineHeight: 1.45, letterSpacing: "-0.01em" }}
         >
-          <span className="font-mono text-[#8A8480]">&gt;&nbsp;</span>
+          <span className="font-mono text-text-muted">&gt;&nbsp;</span>
           <span data-bm-idea-text>{FIRST.idea}</span>
           <span
             className="hero-node-caret inline-block h-[0.9em] bg-primary align-[-0.08em]"
@@ -213,7 +213,7 @@ function ResearchNode() {
           </div>
         ))}
         <p
-          className="m-0 font-mono font-medium uppercase text-[#8A8480]"
+          className="m-0 font-mono font-medium uppercase text-text-muted"
           style={{
             marginTop: sized("research", 2),
             fontSize: sized("research", 9),
@@ -230,7 +230,7 @@ function ResearchNode() {
 function PlanKicker({ children }: { children: string }) {
   return (
     <p
-      className="m-0 font-mono font-medium uppercase text-[#8A8480]"
+      className="m-0 font-mono font-medium uppercase text-text-muted"
       style={{ fontSize: sized("plan", 9), letterSpacing: "0.18em" }}
     >
       {children}
@@ -271,7 +271,7 @@ function PlanNode() {
             </span>
             <span
               data-bm-persona-role
-              className="truncate font-mono font-medium uppercase text-[#8A8480]"
+              className="truncate font-mono font-medium uppercase text-text-muted"
               style={{ fontSize: sized("plan", 9), letterSpacing: "0.12em" }}
             >
               {FIRST.persona.role}
@@ -286,7 +286,7 @@ function PlanNode() {
         {FIRST.goals.map((goal, index) => (
           <div key={goal} className="flex items-baseline" style={{ gap: sized("plan", 8) }}>
             <span
-              className="flex-none font-mono font-medium text-[#8A8480]"
+              className="flex-none font-mono font-medium text-text-muted"
               style={{ fontSize: sized("plan", 10) }}
             >
               {`G${index + 1}`}
@@ -350,7 +350,7 @@ function FileIcon() {
       style={{ width: sized("prompt", 13), height: sized("prompt", 13) }}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#8A8480"
+      stroke="var(--text-muted)"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"

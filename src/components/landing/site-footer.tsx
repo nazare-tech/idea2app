@@ -13,12 +13,12 @@ const productLinks = [
  * contact/privacy/terms info pages. Sign-in / signup CTAs intentionally live
  * in the header and hero only, so the footer stays product + help + legal.
  */
-export function SiteFooter() {
+export function SiteFooter({ logoSrc }: { logoSrc?: string }) {
   return (
-    <footer className="relative isolate overflow-hidden border-t border-border-subtle bg-[#F5F0EB]/80">
+    <footer className="relative isolate overflow-hidden border-t border-border-subtle bg-secondary/80">
       <div className="relative z-[1] mx-auto grid w-full max-w-[1320px] gap-10 px-4 py-14 sm:grid-cols-2 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr] lg:px-14">
         <div>
-          <BrandWordmark href="/" logoSize={32} logoClassName="rounded-sm" labelClassName="text-base font-semibold tracking-[0.01em]" />
+          <BrandWordmark href="/" logoSrc={logoSrc} logoSize={32} logoClassName="rounded-sm" labelClassName="text-base font-semibold tracking-[0.01em]" />
           <p className="mt-4 max-w-[320px] text-sm leading-relaxed text-text-secondary">
             Turn a one-line idea into research, a product plan, mockups, and a first-version build plan you can hand to a coding agent.
           </p>

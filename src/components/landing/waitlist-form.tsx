@@ -56,7 +56,7 @@ export function WaitlistForm({ showSecondary = false }: WaitlistFormProps) {
           <Link href="#features">
             <Button
               variant="outline"
-              className="h-14 px-7 border-border-subtle text-base font-semibold bg-white text-text-primary"
+              className="h-14 px-7 border-border-subtle text-base font-semibold bg-card text-text-primary"
             >
               See How It Works
             </Button>
@@ -79,7 +79,7 @@ export function WaitlistForm({ showSecondary = false }: WaitlistFormProps) {
           placeholder="Enter your email"
           required
           disabled={status === "loading"}
-          className="h-14 flex-1 border-border-subtle bg-white text-base px-4"
+          className="h-14 flex-1 border-border-subtle bg-card text-base px-4"
         />
         <Button
           type="submit"
@@ -99,7 +99,7 @@ export function WaitlistForm({ showSecondary = false }: WaitlistFormProps) {
         <Link href="#features">
           <Button
             variant="outline"
-            className="h-14 px-7 border-border-subtle text-base font-semibold bg-white text-text-primary"
+            className="h-14 px-7 border-border-subtle text-base font-semibold bg-card text-text-primary"
           >
             See How It Works
           </Button>
