@@ -2,6 +2,7 @@
 title: Landing and Projects Cartographic Theme Trial
 status: complete
 implemented: true
+superseded_by: editorial-fonts-warm-horizon-plan.md
 implemented_at: 2026-08-13T05:38:05Z
 implementation_summary: Scoped the cartographic editorial theme to `/` and exact `/projects`, preserved landing content, and verified the result in real Chrome.
 date: 2026-08-12

@@ -181,48 +181,11 @@
   --ease-out-expo: var(--motion-ease-out-expo);
 }
 
-/* Reversible cartographic/editorial trial. Scope stays on the public landing,
-   projects dashboard, and individual project workspaces; creation and utility
-   routes keep the established Warm Horizon system. */
-.makercompass-editorial-theme,
-body:has(.makercompass-editorial-theme) {
-  --background: #F4F1E8;
-  --foreground: #18202A;
-  --card: #FCFBF7;
-  --card-foreground: #18202A;
-  --popover: #FCFBF7;
-  --popover-foreground: #18202A;
-  --primary: #2457E6;
-  --primary-foreground: #FFFFFF;
-  --secondary: #ECE8DD;
-  --secondary-foreground: #18202A;
-  --muted: #ECE8DD;
-  --muted-foreground: #4F5966;
-  --accent: #E4EBFF;
-  --accent-foreground: #173BA4;
-  --border: #D8D2C4;
-  --input: #A39B8B;
-  --ring: #2457E6;
-  --ring-soft: rgba(36, 87, 230, 0.34);
-  --ring-faint: rgba(36, 87, 230, 0.05);
-  --sidebar-bg: #18202A;
-  --sidebar-foreground: #FCFBF7;
-  --sidebar-muted: #B7BDC5;
-  --sidebar-border: #33404F;
-  --sidebar-active: #253244;
-  --text-primary: #18202A;
-  --text-secondary: #4F5966;
-  --text-muted: #5E6875;
-  --text-accent: #2457E6;
-  --border-subtle: #D8D2C4;
-  --border-strong: #A39B8B;
-  --accent-primary: rgba(36, 87, 230, 0.15);
-  --accent-primary-light: rgba(36, 87, 230, 0.4);
-  --accent-primary-mid: rgba(36, 87, 230, 0.3);
-  --accent-primary-soft: rgba(36, 87, 230, 0.2);
-  --accent-primary-subtle: rgba(36, 87, 230, 0.1);
-  --accent-primary-faint: rgba(36, 87, 230, 0.025);
-  --accent-primary-whisper: rgba(36, 87, 230, 0.06);
+/* Editorial typography trial. Landing, projects dashboard, and valid project
+   workspaces keep the established Warm Horizon color tokens while using the
+   new three-family type system. */
+.makercompass-editorial-type,
+body:has(.makercompass-editorial-type) {
   --font-sans: var(--font-public-sans);
   --font-display: var(--font-newsreader);
   --font-mono: var(--font-jetbrains-mono);
@@ -230,89 +193,25 @@ body:has(.makercompass-editorial-theme) {
   font-family: var(--font-public-sans), Arial, sans-serif;
 }
 
-.makercompass-editorial-theme :where(h1, h2, h3):not(.font-mono, .font-sans),
-body:has(.makercompass-editorial-theme) :where(h1, h2, h3):not(.font-mono, .font-sans),
-.makercompass-editorial-theme .editorial-display,
-body:has(.makercompass-editorial-theme) .editorial-display {
+/* Tailwind's inline theme compiles these utilities against the default font
+   variables, so scoped custom properties alone cannot swap them. */
+.makercompass-editorial-type .font-sans,
+body:has(.makercompass-editorial-type) .font-sans {
+  font-family: var(--font-public-sans), Arial, sans-serif;
+}
+
+.makercompass-editorial-type .font-mono,
+body:has(.makercompass-editorial-type) .font-mono {
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+
+.makercompass-editorial-type :where(h1, h2, h3):not(.font-mono, .font-sans),
+body:has(.makercompass-editorial-type) :where(h1, h2, h3):not(.font-mono, .font-sans),
+.makercompass-editorial-type .editorial-display,
+body:has(.makercompass-editorial-type) .editorial-display {
   font-family: var(--font-newsreader), Georgia, serif;
   font-optical-sizing: auto;
   letter-spacing: -0.025em;
-}
-
-/* Production planning documents predate the semantic-token layer and retain
-   literal neutral utility classes. Translate those legacy neutrals only while
-   the editorial trial is mounted, including portaled workspace chrome. This
-   keeps every workspace document coherent without changing its default-theme
-   rendering or treating success, warning, and destructive colors as branding. */
-body:has(.makercompass-editorial-theme) :is(
-  [class~="text-[#0A0A0A]"],
-  [class~="text-[#1C1917]"]
-) {
-  color: var(--foreground);
-}
-
-body:has(.makercompass-editorial-theme) :is(
-  [class~="text-[#4A4040]"],
-  [class~="text-[#666666]"],
-  [class~="text-[#6F6A66]"]
-) {
-  color: var(--text-secondary);
-}
-
-body:has(.makercompass-editorial-theme) :is(
-  [class~="text-[#777777]"],
-  [class~="text-[#8A8480]"],
-  [class~="text-[#999999]"],
-  [class~="text-[#B8B0AA]"],
-  [class~="text-[#C9C1B8]"]
-) {
-  color: var(--text-muted);
-}
-
-body:has(.makercompass-editorial-theme) [class~="bg-white"] {
-  background-color: var(--card);
-}
-
-body:has(.makercompass-editorial-theme) :is(
-  [class~="bg-[#FAFAFA]"],
-  [class~="bg-[#FFFFFE]"]
-) {
-  background-color: var(--background);
-}
-
-body:has(.makercompass-editorial-theme) :is(
-  [class~="bg-[#F1ECE7]"],
-  [class~="bg-[#F3F0EC]"],
-  [class~="bg-[#F5F0EB]"],
-  [class~="bg-[#EFE7E0]"]
-) {
-  background-color: var(--secondary);
-}
-
-body:has(.makercompass-editorial-theme) [class~="bg-[#E7DDD6]"] {
-  background-color: var(--accent);
-}
-
-body:has(.makercompass-editorial-theme) :is(
-  [class~="border-[#D8CEC5]"],
-  [class~="border-[#E0E0E0]"],
-  [class~="border-[#E2DDD6]"],
-  [class~="border-[#E5DCD4]"],
-  [class~="border-[#E8DDD5]"],
-  [class~="border-[#EAE0D8]"]
-) {
-  border-color: var(--border);
-}
-
-body:has(.makercompass-editorial-theme) :is(
-  [class~="divide-[#E8DDD5]"],
-  [class~="divide-[#EAE0D8]"]
-) > :not(:last-child) {
-  border-color: var(--border);
-}
-
-body:has(.makercompass-editorial-theme) [class~="shadow-[0_0_0_3px_#FFFFFF,0_0_0_5px_#DC2626]"] {
-  box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--primary);
 }
 
 * {

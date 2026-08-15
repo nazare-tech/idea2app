@@ -885,7 +885,7 @@ export function ProjectWorkspace({
         onStepComplete={handleGenerationStepComplete}
         getDocumentStatus={getDocumentStatus}
       />
-      <div className="makercompass-editorial-theme relative flex h-dvh flex-col">
+      <div className="makercompass-editorial-type relative flex h-dvh flex-col">
         <ProjectHeader
           projectName={projectName}
           isNameSet={isNameSet}

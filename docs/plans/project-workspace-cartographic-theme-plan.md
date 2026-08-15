@@ -2,6 +2,7 @@
 title: Project Workspace Cartographic Theme Trial
 status: complete
 implemented: true
+superseded_by: editorial-fonts-warm-horizon-plan.md
 implemented_at: 2026-08-13T06:08:00Z
 implementation_summary: Extended the scoped cartographic theme to valid project workspaces, semanticized visible workspace chrome and shared document surfaces, and added a theme-only compatibility layer for legacy planning-document neutrals.
 date: 2026-08-12

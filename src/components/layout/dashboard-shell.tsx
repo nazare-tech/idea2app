@@ -41,7 +41,7 @@ export function DashboardShell({
   return (
     <div className={cn(
       "flex h-dvh overflow-hidden bg-background",
-      isProjectsDashboard && "makercompass-editorial-theme",
+      isProjectsDashboard && "makercompass-editorial-type",
     )}>
       <div className="flex h-full flex-1 flex-col overflow-hidden">
         {shouldShowHeader && (
@@ -50,7 +50,7 @@ export function DashboardShell({
             pageTitle={pageTitle}
           >
             {isProjectsDashboard ? (
-              <HeaderBrand logoSrc="/maker-compass-mark-blue.svg" />
+              <HeaderBrand />
             ) : undefined}
           </Header>
         )}
