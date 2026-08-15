@@ -196,12 +196,6 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [src/app/api/projects/[id]/status/route.ts](src/app/api/projects/[id]/status/route.ts) | Lightweight document-count snapshot used by generation polling |
 | [src/app/dev/prompt-lab/page.tsx](src/app/dev/prompt-lab/page.tsx) | Local-development-only Prompt Lab page for isolated prompt iteration against existing projects |
 | [src/app/dev/mockup-renderer-preview/page.tsx](src/app/dev/mockup-renderer-preview/page.tsx) | Local-development-only visual fixture page for the OpenRouter storyboard mockup renderer |
-| [src/app/dev/spectral-signal/page.tsx](src/app/dev/spectral-signal/page.tsx) | Application-chrome-free local-development-only stage for the Figma-derived spectral radial-lens animation feasibility test |
-| [src/components/dev/spectral-signal-client.tsx](src/components/dev/spectral-signal-client.tsx) | Route-local owner for the spectral renderer lifecycle, deterministic capture seek events, reduced-motion handling, and exact static fallback |
-| [src/lib/spectral-signal-renderer.ts](src/lib/spectral-signal-renderer.ts) | Multipass Three.js ring, nested lens, bloom, and Figma-reference residual calibration renderer used by the spectral experiment |
-| [scripts/capture-spectral-signal.mjs](scripts/capture-spectral-signal.mjs) | Captures the exact four-second spectral canvas loop into 240 PNG frames plus lossless WebM and high-quality MP4 evidence |
-| [scripts/export-spectral-signal-spinners.mjs](scripts/export-spectral-signal-spinners.mjs) | Reconstructs alpha from the spectral stage matte and exports square, production-sized 30fps VP9 WebM spinner variants |
-| [public/experiments/spectral-signal/spinners/](public/experiments/spectral-signal/spinners/) | Transparent 64, 96, 128, 192, and 256px Spectral Signal WebM spinner assets plus export manifest |
 | [src/components/dev/prompt-lab-client.tsx](src/components/dev/prompt-lab-client.tsx) | Prompt Lab workbench UI with project/artifact selectors, prompt editors, saved drafts/runs, workspace-style preview, and lab-only renderer playground |
 | [src/app/api/dev/prompt-lab/context/route.ts](src/app/api/dev/prompt-lab/context/route.ts) | Dev-only endpoint that loads owned project context, upstream artifacts, and default prompts for one artifact |
 | [src/app/api/dev/prompt-lab/run/route.ts](src/app/api/dev/prompt-lab/run/route.ts) | Dev-only isolated generation endpoint that saves Prompt Lab run history without writing canonical artifacts |

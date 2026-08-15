@@ -1,6 +1,6 @@
 # Test Inventory
 Unit tests run with `npm test`: the Node built-in test runner via tsx (`node --import tsx --test 'src/**/*.test.ts' 'src/**/*.test.tsx'`), no Jest/Vitest.
-93 test files sit colocated beside their source under `src/`; component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
+91 test files sit colocated beside their source under `src/`; component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
 Heaviest coverage: intake question generation/validation, market research provider fallbacks (Exa/Perplexity/Tavily), streaming parsers, prompt contracts.
 Also covered: planning document renderers/requests, mockup image pipeline and drafts, Stripe checkout/webhooks/credits, product analytics, workspace UI policy.
 UNCOVERED: 32 of 34 API route handlers (only two deprecated 410 routes have tests), auth flows, Supabase clients/middleware, and dashboard/landing pages.
@@ -82,7 +82,6 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 
 ## Workspace / UI Components
 
-- `src/components/dev/spectral-signal-client.test.tsx` — development-only spectral signal renders the exact Figma composite fallback before WebGL becomes ready, keeps its canvas decorative, and exposes a stopped deterministic capture mode
 - `src/app/page.test.tsx` — landing component contracts: ToolLogoMarquee duplicated pass accessibility, FeatureScrollytelling visible first-paint artwork, section-background dot-field layer with optional compass wedges, and absence of the retired footer compass watermark
 - `src/components/projects/dashboard-project-thumbnail.test.tsx` — dashboard card preview derivation and rendering: deterministic newest-row A/B/C ordering, first-valid duplicate handling, independent malformed/unauthorized/missing-path rejection, exact three-option fixture support, distinct loading/empty/query-unavailable states, a per-active-slide accessible spinner, and a 378px white bordered media surface exposing lazy object-contained slides
 - `src/components/projects/dashboard-project-card-details.test.tsx` — Figma details-area contract: 122px transparent borderless surface, 8px horizontal/20px top inset, 22px title/date row with 60px gap and ellipsized 18px medium title, 72px hard-clipped natural description flow without CSS line clamping, inline italic date, and missing-description fallback
@@ -116,7 +115,6 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 - `src/lib/rate-limit.test.ts` — checkRateLimit in-memory fallback limiting and Redis REST usage when env vars are configured
 - `src/lib/read-request-body.test.ts` — readRequestTextWithLimit byte caps: rejects streamed overflow and oversized declared content-length before reading
 - `src/lib/safe-redirect.test.ts` — sanitizeInternalRedirect/getSafeAuthRedirect: path allowlist, dot-segment normalization, rejection of absolute URLs, backslashes, control chars
-- `src/lib/spectral-signal-motion.test.ts` — Figma-derived radial-lens envelope and ring-spin sampler: authored origin, exact nonuniform source timestamps, four-second periodicity, interpolation, and safe negative-time wrapping
 - `src/lib/visibility-aware-poller.test.ts` — createVisibilityAwarePoller schedule/stop/replace semantics and getDelayMs re-evaluation on every schedule
 - `src/lib/with-retry.test.ts` — withRetry logs retry attempts with structured context and does not log non-retryable failures
 
@@ -143,7 +141,6 @@ Playwright, Chromium, real dev server and real auth; tiers and writing rules in 
 
 - `e2e/smoke.spec.ts` — free tier: landing hero/idea-capture/sign-in entry render; idea validation floor disables the idea-capture Get Started; real sign-in via auth modal reaches `/projects` and wizard step 1 Next gating (stops before question generation); absence of the landing dot field on dashboard routes; project-grid two-column desktop cap plus 32px row/column gaps; 500px project card with borderless transparent shell, 378px bordered media surface, 336px image canvas, 122px details area, ellipsized title/inline date, natural 72px hard-clipped description flow, exact 20px-by-20px media-kebab alignment, desktop/narrow bounds and containment; A/B/C carousel dots, resolved per-slide loading states, hover-only available arrows/kebab, dot keyboard navigation, touch-visible kebab, visually hidden touch arrows, swipe navigation and card tap-through prevention; Rename modal cancel/pointer recovery, real rename/reload/canonical-href/long-title/restoration, and preserved Delete flow
 - `e2e/paid-intake.spec.ts` — paid tier (`E2E_PAID_FLOWS=1`): Idea 1.1 through real `/api/intake/questions` generation, asserts primary-platform option and ≥4 question mode labels; deliberately stops before Create project
-- `e2e/spectral-signal.spec.ts` — development-only spectral signal remains fully visible in short landscape viewports, switches to its static fallback on WebGL context loss, never starts WebGL under reduced motion, and seeks exact 680×711 frames without a live clock in capture mode
 
 ## Maintenance
 
