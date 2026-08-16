@@ -59,7 +59,7 @@ REQUIRED SECTION SHAPES
   - Keep every bullet concise and UI-ready; \`Key Edge\` should be a short differentiator phrase, not a paragraph
   - If live competitor research is unavailable or empty, do not invent fake URLs, exact pricing, or company-specific claims. Use "Verification needed" or "Evidence insufficient" only inside specific fields where details are not known.
   - Do not add a paragraph, note, banner, or disclaimer before the first Direct Competitors H3 profile.
-- \`Feature Comparison\`: a markdown table comparing competitors and the user's concept across workflow-critical dimensions
+- \`Feature Comparison\`: a markdown table comparing competitors and the user's concept across workflow-critical dimensions. Use \`Feature Dimension\` as the first column and use the exact column header \`Your Idea\` second, followed by competitor columns
 - \`Pricing Comparison\`: a markdown table comparing pricing model, free tier, packaging motion, and notable pricing gaps
 - \`Best Customer Segments\`: 3-5 short ranked bullets for the most important buyer/user segments, including who is well served vs under-served
 - \`Competitive Landscape Overview\`: 3-5 concise bullets on saturation, battlegrounds, trends, and what matters strategically

@@ -2,7 +2,17 @@
 "use client"
 
 import { forwardRef, useCallback, useEffect, useRef, type MouseEvent, type MutableRefObject } from "react"
-import { Play, RotateCcw } from "lucide-react"
+import {
+  Briefcase,
+  Brush,
+  ChartBar,
+  ClipboardList,
+  Play,
+  Rocket,
+  RotateCcw,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SCROLLABLE_NAV_ITEMS, type DocumentNavItem } from "@/lib/document-sections"
 import type { DocumentType } from "@/lib/document-definitions"
@@ -10,10 +20,18 @@ import type { DocumentGenerationDisplayState } from "@/lib/document-generation-d
 import {
   getDocumentAction,
   resolveNavStatus,
-  StatusMarker,
   StatusText,
   type NavStatus,
 } from "@/components/layout/nav-status"
+
+const NAV_ICONS: Partial<Record<DocumentNavItem["key"], LucideIcon>> = {
+  "executive-summary": Briefcase,
+  "market-research": ChartBar,
+  prd: ClipboardList,
+  mvp: Rocket,
+  mockups: Brush,
+  "ai-prompts": Sparkles,
+}
 
 interface AnchorNavProps {
   /** Navigation items after any document-pane visibility filtering */
@@ -58,10 +76,11 @@ export function AnchorNavTab({
   const hasIssue = status === "needs_retry"
   const { showRetry: showRetryAction, actionLabel } = getDocumentAction(item, status, displayState)
   const ActionIcon = showRetryAction ? RotateCcw : Play
+  const DocumentIcon = NAV_ICONS[item.key]
 
   const containerStyle = hasIssue
       ? "bg-destructive/5"
-      : "bg-card"
+      : "bg-transparent"
 
   const titleColor = hasIssue
       ? "text-destructive"
@@ -71,8 +90,8 @@ export function AnchorNavTab({
 
   const subColor = isPending
       ? "text-muted-foreground"
-      : "text-text-secondary"
-  const connectorColor = "border-border"
+      : "text-[#5d5551]"
+  const connectorColor = "border-[#b8b4b1]"
   const handleNavClick = (event: MouseEvent<HTMLButtonElement>, targetId: string) => {
     onNavClick?.()
     const nav = event.currentTarget.closest("nav")
@@ -99,49 +118,60 @@ export function AnchorNavTab({
   return (
     <div className={cn("min-w-0 shrink rounded-md p-2 transition-colors", containerStyle)}>
       {/* Tab title row */}
-      <div className="flex min-h-8 w-full items-center gap-2">
-        <StatusMarker status={status} />
+      <div className="flex min-h-[33px] w-full items-start gap-3 pb-3">
         <button
           type="button"
           data-nav-target={item.key}
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => handleNavClick(event, item.key)}
           aria-label={`${item.label}, ${status.replace("_", " ")}`}
-          className="min-w-0 flex-1 cursor-pointer rounded-sm text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0"
+          className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 rounded-sm text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0"
         >
-          <span className={cn("block truncate text-base font-bold", titleColor)}>
+          {DocumentIcon ? (
+            <DocumentIcon
+              aria-hidden="true"
+              className={cn("mt-0.5 size-5 shrink-0", titleColor)}
+              strokeWidth={2}
+            />
+          ) : null}
+          <span
+            className={cn(
+              "block min-w-0 flex-1 truncate whitespace-nowrap text-[17px] font-extrabold leading-[1.25]",
+              titleColor,
+            )}
+          >
             {item.label}
           </span>
         </button>
         {actionLabel && onGenerateDocument ? (
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation()
-            onGenerateDocument(item.sourceType)
-          }}
-          className={cn(
-            "inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-            hasIssue
-              ? "border-destructive bg-destructive text-primary-foreground hover:bg-destructive/90"
-              : "border-border-strong bg-card text-text-secondary hover:border-primary/50 hover:text-primary",
-          )}
-        >
-          <ActionIcon aria-hidden="true" className="h-3 w-3" />
-          <span>{actionLabel}</span>
-        </button>
-        ) : (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onGenerateDocument(item.sourceType)
+            }}
+            className={cn(
+              "inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded-sm border px-2 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+              hasIssue
+                ? "border-destructive bg-destructive text-primary-foreground hover:bg-destructive/90"
+                : "border-border-strong bg-card text-text-secondary hover:border-primary/50 hover:text-primary",
+            )}
+          >
+            <ActionIcon aria-hidden="true" className="h-3 w-3" />
+            <span>{actionLabel}</span>
+          </button>
+        ) : status !== "done" ? (
           <span className={cn(
-            "shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
+            "mt-1 shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em]",
             hasIssue ? "text-destructive" : "text-muted-foreground",
           )}>
             <StatusText status={status} displayState={displayState} derived={item.derived} />
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Sub-tabs */}
-      <div className={cn("mt-1 ml-[11px] border-l pl-2", connectorColor)}>
+      <div className="w-full">
         {item.sections.map((section, idx) => {
           const isActiveSub = activeSectionId === section.id
           // In-progress items: vary opacity by position
@@ -149,22 +179,40 @@ export function AnchorNavTab({
             ? idx < 3 ? "opacity-90" : idx < 6 ? "opacity-55" : "opacity-45"
             : ""
           return (
-            <button
-              key={section.id}
-              type="button"
-              data-nav-target={section.id}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={(event) => handleNavClick(event, section.id)}
-              aria-current={isActiveSub ? "location" : undefined}
-              className={cn(
-                "block w-full cursor-pointer rounded-sm px-2 py-1 text-left text-[13px] transition-[background-color,color] hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0",
-                isActiveSub
-                  ? "bg-foreground font-semibold text-card hover:bg-foreground hover:text-card"
-                  : cn(subColor, inProgressOpacity)
-              )}
-            >
-              {section.label}
-            </button>
+            <div key={section.id} className="relative w-full pl-8">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute left-[10px] top-0 border-l",
+                  idx === item.sections.length - 1 ? "h-[17px]" : "h-full",
+                  connectorColor,
+                )}
+              />
+              <span
+                aria-hidden="true"
+                data-nav-connector="branch"
+                className={cn(
+                  "absolute left-[10px] top-0 h-[17px] w-[18px] rounded-bl-[5px] border-b border-l",
+                  connectorColor,
+                )}
+              />
+              <button
+                type="button"
+                data-nav-target={section.id}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={(event) => handleNavClick(event, section.id)}
+                aria-current={isActiveSub ? "location" : undefined}
+                data-nav-active={isActiveSub ? "true" : undefined}
+                className={cn(
+                  "block min-h-[34px] w-full cursor-pointer rounded-[4px] px-2 py-2 text-left text-[14px] font-medium leading-[1.25] transition-[background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0",
+                  isActiveSub
+                    ? "bg-sidebar-bg text-sidebar-foreground hover:bg-sidebar-bg hover:text-sidebar-foreground"
+                    : cn("hover:bg-secondary/70 hover:text-foreground", subColor, inProgressOpacity),
+                )}
+              >
+                {section.label}
+              </button>
+            </div>
           )
         })}
       </div>
@@ -230,7 +278,8 @@ export const AnchorNav = forwardRef<HTMLElement, AnchorNavProps>(function Anchor
   return (
     <nav
       ref={setNavRef}
-      className="workspace-anchor-nav hidden shrink-0 bg-background lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-var(--workspace-desktop-header-height))] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r lg:border-border lg:px-6 lg:py-5"
+      aria-label="Project documents"
+      className="workspace-anchor-nav hidden shrink-0 bg-background lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-var(--workspace-desktop-header-height))] lg:w-[300px] lg:flex-col lg:gap-2.5 lg:overflow-y-auto lg:border-r-[0.667px] lg:border-border lg:px-6 lg:py-5"
     >
       {/* Document tabs */}
       {navItems.map((item) => (

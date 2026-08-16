@@ -121,6 +121,14 @@ test("competitive analysis prompt requires scored positioning evidence", () => {
   )
 })
 
+test("competitive analysis prompt requires the exact Your Idea feature column label", () => {
+  assert.match(
+    COMPETITIVE_ANALYSIS_SYSTEM_PROMPT,
+    /Feature Comparison.*exact column header `Your Idea`/s
+  )
+  assert.doesNotMatch(COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, /Your Solution/)
+})
+
 test("competitive analysis prompt omits market research risk sections", () => {
   assert.doesNotMatch(COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, /Risks & Competitor Responses/)
   assert.doesNotMatch(COMPETITIVE_ANALYSIS_SYSTEM_PROMPT, /\*\*Risk:\*\*.*\*\*Competitor response:\*\*/s)

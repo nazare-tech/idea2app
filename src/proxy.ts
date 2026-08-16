@@ -1,7 +1,10 @@
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === '/research' && process.env.RESEARCH_INBOX_URL) {
+    return NextResponse.redirect(new URL(process.env.RESEARCH_INBOX_URL))
+  }
   return await updateSession(request)
 }
 

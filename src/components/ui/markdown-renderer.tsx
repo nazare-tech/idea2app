@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm"
 import DOMPurify, { type Config } from "dompurify"
 import { Maximize2, RotateCcw } from "lucide-react"
 import { ArtifactLightbox } from "@/components/ui/artifact-lightbox"
+import { ReportTable } from "@/components/ui/report-table"
 
 interface LazySyntaxHighlighterModule {
   Highlighter: React.ComponentType<{
@@ -501,9 +502,6 @@ function MarkdownRendererImpl({
     [&_pre]:bg-muted/60 [&_pre]:border [&_pre]:border-border-subtle [&_pre]:rounded-lg [&_pre]:ui-p-4 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:ui-font-mono
     [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-text-primary [&_pre_code]:ui-font-mono [&_pre_code]:whitespace-pre [&_pre_code]:ui-type-table
     [&_blockquote]:border [&_blockquote]:border-border-subtle [&_blockquote]:bg-muted/40 [&_blockquote]:rounded-md [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:ui-type-body [&_blockquote]:text-text-secondary [&_blockquote]:my-3
-    [&_table]:w-full [&_table]:min-w-max [&_table]:table-auto [&_table]:border-collapse
-    [&_th]:border [&_th]:border-border-subtle [&_th]:bg-muted [&_th]:px-2 [&_th]:py-2 [&_th]:text-left [&_th]:align-top [&_th]:ui-font-semibold [&_th]:text-text-primary [&_th]:whitespace-normal [&_th]:break-words
-    [&_td]:border [&_td]:border-border-subtle [&_td]:px-2 [&_td]:py-2 [&_td]:align-top [&_td]:ui-type-table [&_td]:text-text-secondary [&_td]:whitespace-normal [&_td]:break-words [&_td]:[overflow-wrap:anywhere]
     [&_hr]:border-border-subtle [&_hr]:my-4
   `.trim()
 
@@ -534,23 +532,26 @@ function MarkdownRendererImpl({
       const headers = getHeaderTextsFromReactNode(children)
 
       return (
-        <div className="my-4 w-full overflow-x-auto rounded-lg border border-border-subtle">
-          <table {...props}>
-            {headers.length > 0 ? (
-              <colgroup>
-                {headers.map((header, index) => (
-                  <col
-                    key={`${header}-${index}`}
-                    style={getMarkdownTableColumnStyle(
-                      getMarkdownTableColumnKind(header)
-                    )}
-                  />
-                ))}
-              </colgroup>
-            ) : null}
-            {children}
-          </table>
-        </div>
+        <ReportTable
+          {...props}
+          wrapperClassName="my-4"
+          minWidthClassName="min-w-max table-auto"
+          className="[&_th]:whitespace-normal [&_th]:break-words [&_td]:whitespace-normal [&_td]:break-words [&_td]:[overflow-wrap:anywhere]"
+        >
+          {headers.length > 0 ? (
+            <colgroup>
+              {headers.map((header, index) => (
+                <col
+                  key={`${header}-${index}`}
+                  style={getMarkdownTableColumnStyle(
+                    getMarkdownTableColumnKind(header)
+                  )}
+                />
+              ))}
+            </colgroup>
+          ) : null}
+          {children}
+        </ReportTable>
       )
     },
   }), [])

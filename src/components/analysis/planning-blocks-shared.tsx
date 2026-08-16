@@ -5,6 +5,7 @@ import { AlertTriangle } from "lucide-react"
 
 import { ExplainTermButton } from "@/components/analysis/explainable-term"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
+import { ReportTable } from "@/components/ui/report-table"
 import { getExplainableTermKeyByLabel } from "@/lib/explainable-terms"
 import type {
   PlanningDocumentSection,
@@ -311,46 +312,64 @@ export function DataTable({
   headers,
   rows,
   renderText,
+  emphasisColumnIndex,
+  emphasisColumnLabel = "Your Idea",
 }: {
   headers: string[]
   rows: string[][]
   renderText?: (value: string) => React.ReactNode
+  emphasisColumnIndex?: number
+  emphasisColumnLabel?: string
 }) {
   if (headers.length === 0) return null
 
   return (
-    <div className="overflow-x-auto border border-border">
-      <table className="min-w-full border-collapse">
-        <thead>
-          <tr className="bg-secondary">
-            {headers.map((header) => (
-              <th
-                key={header}
-                className="border border-border-strong px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-text-secondary"
-              >
-                {renderText ? renderText(header) : header}
+    <ReportTable>
+      <thead>
+        <tr>
+          {headers.map((header, headerIndex) => {
+            const displayHeader = headerIndex === emphasisColumnIndex
+              ? emphasisColumnLabel
+              : header
+
+            return (
+              <th key={header}>
+                {renderText ? renderText(displayHeader) : displayHeader}
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, rowIndex) => (
-            <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? "bg-card" : "bg-background"}>
-              {headers.map((header, cellIndex) => (
+            )
+          })}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, rowIndex) => (
+          <tr key={`row-${rowIndex}`}>
+            {headers.map((header, cellIndex) => {
+              const content = renderText
+                ? renderText(row[cellIndex] ?? "")
+                : row[cellIndex] ?? ""
+              const isEmphasized = cellIndex === emphasisColumnIndex
+
+              return cellIndex === 0 ? (
+                <th
+                  key={`${header}-${cellIndex}`}
+                  scope="row"
+                  data-report-table-emphasis={isEmphasized || undefined}
+                >
+                  {content}
+                </th>
+              ) : (
                 <td
                   key={`${header}-${cellIndex}`}
-                  className="border border-border px-4 py-3 align-top ui-type-table text-foreground"
+                  data-report-table-emphasis={isEmphasized || undefined}
                 >
-                  {renderText
-                    ? renderText(row[cellIndex] ?? "")
-                    : row[cellIndex] ?? ""}
+                  {content}
                 </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+              )
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </ReportTable>
   )
 }
 

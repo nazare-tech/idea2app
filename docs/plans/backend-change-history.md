@@ -4,6 +4,44 @@ Use this file as the durable human-readable history for backend, database, Supab
 
 Do not record secrets, tokens, passwords, private keys, or raw credential values.
 
+## 2026-08-15: Local Research Inbox Article Studio
+
+- Plan: [docs/plans/research-inbox-article-studio-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/research-inbox-article-studio-plan.md)
+- Review: [docs/plans/research-inbox-article-studio-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/research-inbox-article-studio-review.md)
+- Durable source of truth: Optional `itemState.<itemId>.articleDraft` objects in `apps/research-inbox/.local/research-inbox.json`; no Supabase data or schema changed.
+- Schema or data-shape changes: Backward-compatible optional local JSON article draft with title, deck, plain-text body, and server timestamp. Repository writes now enforce the existing 2 MB read boundary before atomic rename.
+- Auth, RLS, or permission changes: None. Article generation uses the standalone loopback Host, exact Origin, and signed launch-token boundary. The browser can send only a stored item ID and explicit replace intent.
+- Runtime/API behavior changes: Eligible article-like web findings show Article Studio. `POST /api/article` runs fixed local Codex CLI generation, validates exact JSON and 850–1,050 words, then saves under the repository lock. Social findings retain fewer-than-100-word Reply Studio with no 500-character editor/storage cap.
+- Migration or deployment steps: None. Existing version-1 local JSON remains valid. Codex CLI must be locally available, as for reply generation.
+- Verification: 44 standalone tests, typecheck, lint, isolated production build, standalone trace inspection, one real 989-word Codex article, desktop/mobile Chrome screenshots, Escape close/focus restoration, and reload persistence.
+- Rollback or recovery: Remove the article route/components/policy and ignore optional `articleDraft` fields. Existing local article content may remain inert; no destructive cleanup is required.
+- Follow-ups: Article history, editing, publishing, and separate per-article files remain intentionally deferred.
+
+## 2026-08-15: Codex-driven Research Inbox reruns
+
+- Plan: [docs/plans/research-inbox-rerun-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/research-inbox-rerun-plan.md)
+- Review: [docs/plans/research-inbox-rerun-review.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/research-inbox-rerun-review.md)
+- Durable source of truth: `.local/research-run.json` owns the current job lifecycle; `.local/research-inbox.json` remains the merged evidence and interaction-state store.
+- Schema or data-shape changes: No database or Supabase change. The local job document records one queued/running/importing/succeeded/failed run with bounded counts and error state. Imported cards use the existing research document schema.
+- Auth, RLS, or permission changes: No auth or RLS. The endpoint remains loopback-only and launch-token gated; POST additionally requires exact same-origin and accepts no browser-provided topic, prompt, command, or path.
+- Runtime/API behavior changes: The standalone header can start one real last30days run through Codex CLI, poll durable status, and refresh after a validated locked merge. Duplicate active starts reuse the same job; failures and the 10-minute timeout leave inbox data unchanged.
+- Migration or deployment steps: None. Codex and the installed last30days skill must be available locally. `RESEARCH_CODEX_PATH` and `RESEARCH_LAST30DAYS_SKILL_PATH` may override their locations.
+- Verification: Focused parser and job-store tests, standalone suite/typecheck/lint/build, real Chrome start/completion states, and build-artifact inspection are recorded in the review.
+- Rollback or recovery: Remove the header control, route, runner, and job store. Existing merged cards remain ordinary local research items. A stale active job automatically becomes retryable failed.
+- Follow-ups: Public hosting requires a different authenticated job architecture; this design is intentionally local-only.
+
+## 2026-08-15: Standalone local Research Inbox
+
+- Plan: [docs/plans/research-inbox-standalone-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/research-inbox-standalone-plan.md)
+- Durable source of truth: `apps/research-inbox/.local/research-inbox.json`; [docs/systems/research-inbox.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/systems/research-inbox.md) defines the runtime boundary.
+- Schema or data-shape changes: No database migration and no Supabase research rows. Versioned JSON stores evidence, state, drafts, visible batches, browser choice, revision, and timestamps.
+- Auth, RLS, or permission changes: Research Inbox has no auth/RLS. It is loopback-only and protects mutation routes with canonical Host/Origin validation plus a signed launch-token header.
+- Runtime/API behavior changes: The active APIs moved to the independent port-4310 server. Maker `POST /api/research/reply` returns `410`; its navigation entry is removed. Posting stays a manual copy-and-open handoff.
+- Migration or deployment steps: Run `npm install --prefix apps/research-inbox`, then `npm run research-inbox:dev`. Existing browser-only state is deliberately not imported. Optional `RESEARCH_INBOX_URL` enables the old local URL redirect; never set it on hosted Maker deployments.
+- Verification: standalone test/typecheck/lint/build; root typecheck/lint; real UI save/filter/batch/reload and Codex-draft generation; JSON mode/content inspection; recursive import isolation.
+- Rollback or recovery: Stop the port-4310 process and unset `RESEARCH_INBOX_URL`. Corrupt JSON is preserved automatically; deleting the ignored `.local` directory resets the standalone workspace only when the user explicitly chooses to do so.
+- Follow-ups: Replace finite seed reveal with a real ingestion job before describing the button as a network crawl; public hosting requires an explicit abuse/cost/auth architecture.
+
 ## Entry Template
 
 ```markdown

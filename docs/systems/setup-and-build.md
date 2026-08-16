@@ -68,6 +68,11 @@ SUPABASE_MOCKUP_STORAGE_BUCKET=mockups
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
 
+# Optional local-only Research Inbox reply operator.
+# Must exactly match the signed-in Supabase user; ignored in production.
+# RESEARCH_CODEX_OPERATOR_USER_ID=00000000-0000-0000-0000-000000000000
+# RESEARCH_CODEX_CLI_PATH=codex
+
 # UI/browser testing login credentials live in .env.e2e.local, NOT in .env.local
 # (local only; never commit real values):
 #   E2E_TEST_EMAIL=test-user@example.com
@@ -130,6 +135,18 @@ npm run dev
 # Hot module reload enabled
 ```
 
+### Standalone Research Inbox
+
+The local Research Inbox is a separate package and server, not a Maker Compass route:
+
+```bash
+npm install --prefix apps/research-inbox
+npm run research-inbox:dev
+# http://127.0.0.1:4310
+```
+
+Its state is written to `apps/research-inbox/.local/research-inbox.json`. That directory, its independent `.next`, and its `node_modules` are ignored. Optional local compatibility redirect: set `RESEARCH_INBOX_URL=http://127.0.0.1:4310` for the Maker server; it is deliberately unset by default and must not be configured on hosted deployments.
+
 ### Git and PR Workflow
 
 - When asked to create a PR, keep using the current branch. Do not create a new branch unless explicitly requested.
@@ -150,6 +167,8 @@ npm start
 
 # Runs at http://localhost:3000
 ```
+
+Build the standalone app independently with `npm run research-inbox:build`. It uses Webpack because Turbopack's CSS worker is incompatible with the current Node 23 developer runtime; supported package engines remain Node 22 or 24.
 
 ### Linting
 

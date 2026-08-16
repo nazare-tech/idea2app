@@ -1,7 +1,9 @@
 import test from "node:test"
 import assert from "node:assert/strict"
+import React from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 
-import { sanitizeMermaidSvg } from "./markdown-renderer"
+import { MarkdownRenderer, sanitizeMermaidSvg } from "./markdown-renderer"
 
 test("sanitizeMermaidSvg fails closed when DOMPurify has no DOM", () => {
   const sanitized = sanitizeMermaidSvg(`
@@ -19,4 +21,21 @@ test("sanitizeMermaidSvg fails closed when DOMPurify has no DOM", () => {
   assert.doesNotMatch(sanitized, /foreignObject/i)
   assert.doesNotMatch(sanitized, /onclick/i)
   assert.doesNotMatch(sanitized, /href/i)
+})
+
+test("MarkdownRenderer routes GFM tables through the shared report table shell", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(MarkdownRenderer, {
+      content: `| Feature | Detail |
+|---|---|
+| Setup | Fast |`,
+    })
+  )
+
+  assert.match(html, /overflow-x-auto/)
+  assert.match(html, /rounded-lg/)
+  assert.match(html, /\[&amp;_thead\]:bg-foreground/)
+  assert.match(html, /min-w-max/)
+  assert.match(html, /<th>Feature<\/th>/)
+  assert.match(html, /<td>Fast<\/td>/)
 })

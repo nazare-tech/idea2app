@@ -21,6 +21,7 @@ Agent workflow rules (planning, UI verification, reviews, sweeps) live in AGENTS
 | [docs/systems/setup-and-build.md](docs/systems/setup-and-build.md) | Prerequisites, environment variables, installation, Supabase setup, dev/build/lint/test commands, git and PR workflow, deployment, scripts reference. |
 | [docs/systems/database-schema.md](docs/systems/database-schema.md) | Core tables (projects, project_intakes, analyses, prds, mvp_plans, generation_queues/items, product_events, plans/plan_prices, waitlist...). |
 | [docs/systems/api-endpoints.md](docs/systems/api-endpoints.md) | Route-by-route API reference: auth, intake, projects, analysis, generate-all, mockups, Stripe, dev prompt lab, deprecated 410 routes. |
+| [docs/systems/research-inbox.md](docs/systems/research-inbox.md) | Research triage workspace, local user-scoped state, adaptive discovery, reply generation, Codex operator mode, and browser handoff boundary. |
 | [docs/systems/credits-and-billing.md](docs/systems/credits-and-billing.md) | Credit costs and ledger, project allowances, subscription plans, Stripe integration details. |
 | [docs/systems/dev-tasks-and-troubleshooting.md](docs/systems/dev-tasks-and-troubleshooting.md) | Common development tasks (adding pages/endpoints/tables) and troubleshooting playbook. |
 

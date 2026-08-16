@@ -16,6 +16,15 @@ function countMatches(html: string, pattern: RegExp) {
   return html.match(pattern)?.length ?? 0
 }
 
+function getSectionHtml(html: string, sectionId: string, nextSectionId: string) {
+  const start = html.indexOf(`id="${sectionId}"`)
+  const end = html.indexOf(`id="${nextSectionId}"`, start)
+
+  assert.notEqual(start, -1, `Expected ${sectionId} section`)
+  assert.notEqual(end, -1, `Expected ${nextSectionId} section after ${sectionId}`)
+  return html.slice(start, end)
+}
+
 function buildV2Fixture(
   overrides: Partial<Record<CompetitiveAnalysisV2SectionName, string>> = {}
 ) {
@@ -301,6 +310,61 @@ test("competitive detail consolidates competitor profile cards into one quick co
   assert.doesNotMatch(html, /<colgroup>/)
   assert.doesNotMatch(html, /Competitor Profiles &amp; Fast Comparison/)
   assert.doesNotMatch(html, />PROFILE</)
+})
+
+test("Feature Comparison labels and outlines the idea column while preserving competitor links", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={buildV2Fixture({
+        "Feature Comparison":
+          "| Dimension | Example Product | Competitor One |\n|---|---|---|\n| Setup | Fast | Medium |\n| Collaboration | Focused | Strong |",
+      })}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+  const featureHtml = getSectionHtml(
+    html,
+    "market-research-feature-matrix",
+    "market-research-positioning"
+  )
+
+  assert.match(featureHtml, /Feature Comparison/)
+  assert.match(featureHtml, /<th[^>]*>Your Idea<\/th>/)
+  assert.equal(countMatches(featureHtml, /data-report-table-emphasis="true"/g), 2)
+  assert.equal(countMatches(featureHtml, /<td[^>]*data-report-table-emphasis="true"[^>]*>/g), 2)
+  assert.match(featureHtml, /\[&amp;_tbody_\[data-report-table-emphasis\]\]:italic/)
+  assert.match(featureHtml, /\[&amp;_tbody_\[data-report-table-emphasis\]\]:border-x/)
+  assert.match(
+    featureHtml,
+    /href="https:\/\/competitor-one\.example\.com\/"[^>]*target="_blank"[^>]*rel="noreferrer"/
+  )
+})
+
+test("Pricing Comparison keeps its authored row orientation without idea-column emphasis", () => {
+  const html = renderToStaticMarkup(
+    <CompetitiveDetailSection
+      content={buildV2Fixture({
+        "Pricing Comparison":
+          "| Product | Free Tier | Pricing Model |\n|---|---|---|\n| Example Product | Yes | Usage-based |\n| Competitor One | No | Per seat |",
+      })}
+      metadata={{ document_version: COMPETITIVE_ANALYSIS_V2_DOCUMENT_VERSION }}
+      projectId="project-1"
+    />
+  )
+  const pricingHtml = getSectionHtml(
+    html,
+    "market-research-pricing",
+    "market-research-audience"
+  )
+
+  assert.match(pricingHtml, /Pricing Comparison/)
+  assert.match(pricingHtml, /<th[^>]*>Product<\/th>/)
+  assert.match(pricingHtml, /<th[^>]*>Free Tier<\/th>/)
+  assert.match(pricingHtml, /<th[^>]*>Pricing Model<\/th>/)
+  assert.match(pricingHtml, /<tr[^>]*>[\s\S]*Example Product[\s\S]*Yes[\s\S]*Usage-based[\s\S]*<\/tr>/)
+  assert.doesNotMatch(pricingHtml, /Your Idea/)
+  assert.doesNotMatch(pricingHtml, /data-report-table-emphasis="true"/)
 })
 
 test("competitive detail shows fallback direct competitors without the fallback notice", () => {

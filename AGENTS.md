@@ -14,13 +14,22 @@ This file is a router: core rules and pointers only. Written addressing Codex; e
 - Never hardcode passwords or API keys; use environment variables.
 - Keep code simple and well-commented so the maintainer can learn from it.
 - If a request doesn't make sense, say so instead of doing it.
-- Use subagents for medium-or-larger parallelizable work (exploration, implementation, verification, review) whenever the runtime provides them; this is standing authorization. Skip them only for small tasks or when the tool is unavailable, and say so.
+- Use subagents only for concrete independent work that materially reduces elapsed time or risk. Routine UI changes, local refactors, focused bugs, docs, and small code changes do not require subagents. Default maximum: one scout and one verifier; exceed it only when the user asks for broad parallel work.
+
+## Lean default
+
+- Start ordinary implementation with a short working plan in commentary, then build.
+- Use focused tests while editing and one consolidated validation pass at the end.
+- Run one real-browser verification pass for UI changes, in Chrome by default. Add another browser only for browser-specific behavior, a discovered defect, or an explicit user request.
+- Run the production build once after implementation stabilizes; rerun only after a build-relevant fix.
+- Use one consolidated code/security review. Apply the security lens only when the change handles secrets, auth, untrusted input, external side effects, privileged processes, or sensitive data.
+- Update the smallest relevant system document. Create a detailed plan/review artifact only for high-risk work or when the user requests one.
 
 ## Router
 
 | When the task involves... | Read first |
 |---|---|
-| Substantial feature / refactor / bug fix / architecture | `docs/operating-system/planning-workflow.md` (plan files in `docs/plans/`, blocking cross-model plan evaluation, Recommendation A policy, `/holistic-implementation`) |
+| High-risk change: auth/RLS, billing, webhook, migration, destructive data operation, security-sensitive process execution, or broad cross-system architecture | `docs/operating-system/planning-workflow.md` (plan files in `docs/plans/`, blocking cross-model plan evaluation, Recommendation A policy, `/holistic-implementation`) |
 | Any UI, visual, user-flow, or user-visible backend change | `.agents/skills/ui-verification/SKILL.md` + `docs/operating-system/ui-verification.md` (real Chrome, `.env.e2e.local` auth, `ui-evidence/<date>/<task-slug>/`, Idea 1.1 intake test cases) |
 | Watching, diagnosing, fixing, or looping on pull-request CI | `.agents/skills/ci-operator/SKILL.md` (one front door for watch / fix / loop; `gh pr checks` is source of truth) |
 | Committing or wrap-up review | `.agents/skills/commit/SKILL.md` + `docs/operating-system/review-personas.md` (commits are not reviewed per commit; cross-model runs on the plan, Claude work → Codex and Codex work → Claude) |
@@ -37,11 +46,11 @@ This file is a router: core rules and pointers only. Written addressing Codex; e
 ## Automation already active
 
 - **Git hooks** (`.githooks/`, activated by `npm install` via `prepare`): pre-commit runs `eslint --fix` + typecheck; post-commit only prints the +1000 sweep notice. No hook spends reviewer tokens and no hook blocks a commit.
-- **Cross-model review runs on the plan, not the commit**: before implementing substantial work, `scripts/agent-review.sh --plan docs/plans/<task>-plan.md` gets a blocking opposite-CLI evaluation (Claude work → Codex, Codex work → Claude). Fold findings into the plan, record rejections, then build. A reviewer outage means the plan is unevaluated; say so, never self-evaluate and call it coverage. Diff-level cross-model review is on demand (`--range`), expected for auth, RLS, webhook, billing, and migration diffs.
+- **Cross-model review is risk-triggered, not size-triggered**: before auth/RLS, billing, webhook, migration, destructive-data, security-sensitive process-execution, or broad cross-system architecture work, `scripts/agent-review.sh --plan docs/plans/<task>-plan.md` gets a blocking opposite-CLI evaluation (Claude work → Codex, Codex work → Claude). Fold findings into the plan, record rejections, then build. For ordinary features, UI changes, local refactors, and focused bugs, skip blocking cross-model evaluation unless the user requests it. Diff-level cross-model review remains on demand (`--range`) and expected for auth, RLS, webhook, billing, and migration diffs.
 - **Thermonuclear sweep**: the only automatic code review. The active agent runs `commit-sweep` when net code growth is ≥1000 lines, before push. It fans the lens groups out across parallel read-only finder subagents; verification, triage, and every edit stay with the dispatching agent.
 - Branch discipline: keep working on the current branch unless explicitly asked otherwise.
 - Retired global `ci-watcher`, `fix-ci`, `loop-on-ci`, `run-smoke-tests`, and `control-ui` workflows are consolidated here. Route matching work through `ci-operator` or `ui-verification`; keep plugin-owned GitHub, Playwright, Browser, and Chrome drivers external.
 
 ## Skills
 
-Skills live in `.agents/skills/` (Codex) with symlinks in `.claude/skills/` (Claude Code); each self-describes in its `SKILL.md`. Invoke with `/skill-name` or by describing the need. Before refreshing a skill listed in `skills-overrides.json`, preserve and re-verify its deliberate local changes. Repo-critical: `/holistic-implementation` (default for substantial work), `commit`, `commit-sweep`, `thermo-nuclear-code-quality-review`, `ui-verification`, `ci-operator`, `marketing-idea-capture`.
+Skills live in `.agents/skills/` (Codex) with symlinks in `.claude/skills/` (Claude Code); each self-describes in its `SKILL.md`. Invoke with `/skill-name` or by describing the need. Before refreshing a skill listed in `skills-overrides.json`, preserve and re-verify its deliberate local changes. Repo-critical: `/holistic-implementation` (default for the high-risk categories above), `commit`, `commit-sweep`, `thermo-nuclear-code-quality-review`, `ui-verification`, `ci-operator`, `marketing-idea-capture`.

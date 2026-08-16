@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     "Design System/**",
     "tmp/**",
     ".tmp/**",
+    // Standalone products own their lint configuration and dependency tree.
+    "apps/**",
     // Generated brand kits: token snippets are paste-fragments, not modules.
     "brand/generated/**",
   ]),

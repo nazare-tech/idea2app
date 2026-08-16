@@ -48,3 +48,37 @@ test("AnchorNav never offers Retry for a derived incomplete item", () => {
   const retryCount = html.split(">Retry<").length - 1
   assert.equal(retryCount, 1)
 })
+
+test("AnchorNav renders the Figma desktop rail hierarchy", () => {
+  const html = renderToStaticMarkup(
+    <AnchorNav
+      documentStatuses={{ competitive: "done", prd: "done", mvp: "done", mockups: "done" }}
+      activeSectionId="prd-introduction-overview"
+      onNavigate={() => {}}
+    />,
+  )
+
+  assert.match(html, /aria-label="Project documents"/)
+  const iconOrder = [...html.matchAll(/lucide-(briefcase|chart-bar|clipboard-list|rocket|brush|sparkles)/g)]
+    .map((match) => match[1])
+  assert.deepEqual(iconOrder, [
+    "briefcase",
+    "chart-bar",
+    "clipboard-list",
+    "rocket",
+    "brush",
+    "sparkles",
+  ])
+  assert.match(
+    html,
+    /data-nav-target="executive-summary"[^>]*>.*lucide-briefcase.*Executive Summary<\/span><\/button>/,
+  )
+  assert.match(html, /text-\[17px\]/)
+  assert.match(html, /data-nav-connector="branch"/)
+  assert.match(
+    html,
+    /data-nav-target="prd-introduction-overview"[^>]*aria-current="location"[^>]*data-nav-active="true"/,
+  )
+  assert.match(html, /bg-sidebar-bg/)
+  assert.doesNotMatch(html, /#22C55E/)
+})

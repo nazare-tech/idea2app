@@ -1,6 +1,6 @@
 # Test Inventory
 Unit tests run with `npm test`: the Node built-in test runner via tsx (`node --import tsx --test 'src/**/*.test.ts' 'src/**/*.test.tsx'`), no Jest/Vitest.
-91 test files sit colocated beside their source under `src/`; component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
+92 test files sit colocated beside their source under `src/`; component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
 Heaviest coverage: intake question generation/validation, market research provider fallbacks (Exa/Perplexity/Tavily), streaming parsers, prompt contracts.
 Also covered: planning document renderers/requests, mockup image pipeline and drafts, Stripe checkout/webhooks/credits, product analytics, workspace UI policy.
 UNCOVERED: 32 of 34 API route handlers (only two deprecated 410 routes have tests), auth flows, Supabase clients/middleware, and dashboard/landing pages.
@@ -21,10 +21,10 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 
 ## Market Research / Competitive Analysis
 
-- `src/components/analysis/competitive-analysis-document.test.tsx` — competitive v2 document renderer: modules-first layout, verified source mention links, positioning scale, fallback profiles, legacy markdown fallback
+- `src/components/analysis/competitive-analysis-document.test.tsx` — competitive v2 document renderer: modules-first layout, verified source mention links, Feature Comparison `Your Idea` emphasis, Pricing Comparison orientation, positioning scale, fallback profiles, legacy markdown fallback
 - `src/components/analysis/competitive-streaming-document.test.tsx` — live Market Research streaming renderer: active designed blocks, verified source links, titled skeleton contract, and Executive Summary fill
 - `src/lib/analysis-pipelines.test.ts` — research orchestration: Exa-primary provider chain, Perplexity/Tavily fallback provenance, progress stages, live-research prompt context from search results
-- `src/lib/competitive-analysis-prompt.test.ts` — competitive analysis prompt contract: exec summary guidance, untrusted delimited excerpts, workspace section ownership, scored positioning evidence
+- `src/lib/competitive-analysis-prompt.test.ts` — competitive analysis prompt contract: exec summary guidance, untrusted delimited excerpts, workspace section ownership, exact `Your Idea` feature-column label, scored positioning evidence
 - `src/lib/competitive-analysis-streaming.test.ts` — streamed competitive markdown: H2-boundary section completion, alias headings, safe-tail withholding of partial tables/bold/headings
 - `src/lib/competitive-analysis-v2.test.ts` — parseCompetitiveAnalysisV2: v2 document validation, removed-section stripping, positioning axis/score parsing, markdown fallback on malformed metadata
 - `src/lib/competitor-mention-links.test.ts` — competitor mention linkifier: HTTP(S)-only source normalization, longest-name matching, hostile-input bounds, source metadata round-trip and streaming merge
@@ -82,6 +82,7 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 
 ## Workspace / UI Components
 
+- `src/components/ui/report-table.test.tsx` — reusable project-page report table shell: dark header, warm zebra rows, rounded horizontal overflow, custom sizing classes, and optional emphasis markers
 - `src/app/page.test.tsx` — landing component contracts: ToolLogoMarquee duplicated pass accessibility, FeatureScrollytelling visible first-paint artwork, section-background dot-field layer with optional compass wedges, and absence of the retired footer compass watermark
 - `src/components/projects/dashboard-project-thumbnail.test.tsx` — dashboard card preview derivation and rendering: deterministic newest-row A/B/C ordering, first-valid duplicate handling, independent malformed/unauthorized/missing-path rejection, exact three-option fixture support, distinct loading/empty/query-unavailable states, a per-active-slide accessible spinner, and a 378px white bordered media surface exposing lazy object-contained slides
 - `src/components/projects/dashboard-project-card-details.test.tsx` — Figma details-area contract: 122px transparent borderless surface, 8px horizontal/20px top inset, 22px title/date row with 60px gap and ellipsized 18px medium title, 72px hard-clipped natural description flow without CSS line clamping, inline italic date, and missing-description fallback
@@ -93,7 +94,7 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 - `src/components/layout/scrollable-content.test.tsx` — ScrollableContent workspace section order (AI Prompts after mockups) and below-fold containment of inactive document frames
 - `src/components/layout/workspace-document-frame.test.tsx` — WorkspaceDocumentFrame shell dimensions/padding and opt-in browser layout containment without changing anchors
 - `src/components/ui/artifact-lightbox.test.tsx` — ArtifactLightbox document vs media presentation modes and displayName replacing the file name in header/action labels
-- `src/components/ui/markdown-renderer.test.ts` — sanitizeMermaidSvg fails closed when DOMPurify has no DOM available
+- `src/components/ui/markdown-renderer.test.ts` — sanitizeMermaidSvg fails closed when DOMPurify has no DOM available; GFM tables use the shared report-table shell
 - `src/components/workspace/generate-all-block.test.tsx` — buildGenerateAllDisplayQueue appends the derived AI Prompts row without altering the real queue order and marks it done once PRD and MVP are ready
 - `src/hooks/use-smoothed-stream.test.ts` — advanceSmoothedReveal word-reveal pacing: baseline and cap rates, backlog ramp, restart on shrunken target, end-of-string clamping
 - `src/lib/active-document-policy.test.ts` — active document identity mapping for document/route types, newest-wins duplicate row dedup, skipped-duplicate payloads
@@ -120,6 +121,18 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 
 ## Other
 
+- `apps/research-inbox/src/lib/research/repository.test.ts` — standalone JSON initialization, persistence, stale-revision protection, and corrupt-file recovery
+- `apps/research-inbox/src/lib/research/article.test.ts` — article-candidate host policy plus strict JSON-only title/deck/body parsing, word/character bounds, plain-text safety, and server timestamps
+- `apps/research-inbox/src/lib/research/last30days-import.test.ts` — strict Codex JSON import bounds, source/URL validation, deterministic IDs, deduplication, warnings, and zero-valid-card rejection
+- `apps/research-inbox/src/lib/server/research-job-store.test.ts` — durable single-flight claims, cross-instance locking, ID-fenced transitions, terminal immutability, and stale-run recovery
+- `apps/research-inbox/src/lib/server/last30days-runner.test.ts` — fixed agent-mode operator prompt, configurable skill path, bounded topic delimiting, and JSON-only output contract
+- `apps/research-inbox/src/lib/server/codex-runner.test.ts` — configurable purpose/output/timeout policies, sandboxed prompt transport, and oversized-output rejection without truncation
+- `apps/research-inbox/src/lib/server/request-policy.test.ts` — canonical loopback access, hostile prompt delimiting, and HTTPS-only browser launch policy
+- `apps/research-inbox/src/lib/server/isolation.test.ts` — direct and recursive source-graph isolation from root Maker/Supabase imports
+- `apps/research-inbox/src/components/standalone-shell.test.tsx` — neutral identity with no Maker account/navigation chrome
+- `apps/research-inbox/src/components/research-card.test.tsx` — source-specific Reply/Article Studio actions, saved-article dialog trigger, word count, and absence of textarea character caps
+- `apps/research-inbox/src/components/article-sheet.test.tsx` — labeled modal article sheet, six-minute metadata, full plain-text rendering, copy/close controls, and closed state
+- `src/lib/research/state.test.ts` — inactive legacy Maker route state helpers retained pending deletion approval
 - `src/app/api/launch/plan/route.test.ts` — POST /api/launch/plan archived route returns 410 without consuming credits
 - `src/app/api/prompt-chat/route.test.ts` — GET and POST /api/prompt-chat deprecated route both return 410
 - `src/lib/contact.test.ts` — validateContactRequest field rules: name/email/message length limits and rejection of every email the DB constraint rejects

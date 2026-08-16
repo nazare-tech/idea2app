@@ -18,7 +18,12 @@
     "prepare": "git config core.hooksPath .githooks || exit 0",
     "sweep:check": "node ./scripts/sweep-check.mjs",
     "e2e": "playwright test",
-    "e2e:paid": "E2E_PAID_FLOWS=1 playwright test"
+    "e2e:paid": "E2E_PAID_FLOWS=1 playwright test",
+    "research-inbox:dev": "npm --prefix apps/research-inbox run dev",
+    "research-inbox:build": "npm --prefix apps/research-inbox run build",
+    "research-inbox:test": "npm --prefix apps/research-inbox test",
+    "research-inbox:typecheck": "npm --prefix apps/research-inbox run typecheck",
+    "research-inbox:lint": "npm --prefix apps/research-inbox run lint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

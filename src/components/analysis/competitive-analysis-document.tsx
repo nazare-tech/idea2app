@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ExplainTermButton } from "@/components/analysis/explainable-term"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
+import { ReportTable } from "@/components/ui/report-table"
 import {
   DataTable,
   ParagraphStack,
@@ -420,32 +421,20 @@ function FastComparisonTable({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-[clamp(960px,100%,1240px)] table-fixed border-collapse border border-border">
-        <thead>
-          <tr className="bg-secondary">
-            {fastComparisonColumns.map(
-              (column) => (
-                <th
-                  key={column.label}
-                  className={cn(
-                    "border border-border-strong px-4 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-text-secondary",
-                    column.className
-                  )}
-                >
-                  {column.label}
-                </th>
-              )
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {competitors.map((competitor, index) => (
-            <tr
-              key={`${competitor.heading}-comparison`}
-              className={index % 2 === 0 ? "bg-card" : "bg-background"}
-            >
-              <td className={cn("border border-border px-4 py-4 align-top", fastComparisonColumns[0].className)}>
+    <ReportTable minWidthClassName="w-[clamp(960px,100%,1240px)] table-fixed">
+      <thead>
+        <tr>
+          {fastComparisonColumns.map((column) => (
+            <th key={column.label} className={column.className}>
+              {column.label}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {competitors.map((competitor) => (
+          <tr key={`${competitor.heading}-comparison`}>
+            <th scope="row" className={fastComparisonColumns[0].className}>
                 {/* Fall back to a web search when the document has no verified URL, so every competitor stays reachable without fabricating an official link. */}
                 <a
                   href={
@@ -469,8 +458,8 @@ function FastComparisonTable({
                   </span>
                   <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" />
                 </a>
-              </td>
-              <td className={cn("space-y-3 border border-border px-4 py-4 align-top", fastComparisonColumns[1].className)}>
+            </th>
+            <td className={cn("space-y-3", fastComparisonColumns[1].className)}>
                 <CompetitorTableDetail
                   label="Overview"
                   value={competitor.fields["Overview"]}
@@ -483,8 +472,8 @@ function FastComparisonTable({
                   label="Positioning"
                   value={competitor.fields["Market Positioning"]}
                 />
-              </td>
-              <td className={cn("space-y-3 border border-border px-4 py-4 align-top", fastComparisonColumns[2].className)}>
+            </td>
+            <td className={cn("space-y-3", fastComparisonColumns[2].className)}>
                 <CompetitorTableDetail
                   label="Pricing"
                   value={competitor.fields["Pricing Model"] ?? "Unknown"}
@@ -493,8 +482,8 @@ function FastComparisonTable({
                   label="Audience"
                   value={competitor.fields["Target Audience"] ?? "Unknown"}
                 />
-              </td>
-              <td className={cn("space-y-3 border border-border px-4 py-4 align-top", fastComparisonColumns[3].className)}>
+            </td>
+            <td className={cn("space-y-3", fastComparisonColumns[3].className)}>
                 <CompetitorTableDetail
                   label="Key Edge"
                   value={getCompetitorKeyEdge(competitor)}
@@ -508,12 +497,11 @@ function FastComparisonTable({
                   label="Limitations"
                   value={competitor.fields["Limitations"]}
                 />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </ReportTable>
   )
 }
 
@@ -549,6 +537,7 @@ function CompactTableCard({
   headers,
   rows,
   showHeader = true,
+  emphasisColumnIndex,
 }: {
   title: string
   kicker?: string
@@ -556,6 +545,7 @@ function CompactTableCard({
   headers: string[]
   rows: string[][]
   showHeader?: boolean
+  emphasisColumnIndex?: number
 }) {
   return (
     <PencilCard title={title} kicker={kicker} showHeader={showHeader}>
@@ -569,6 +559,7 @@ function CompactTableCard({
           headers={headers}
           rows={rows}
           renderText={renderCompetitorMentionText}
+          emphasisColumnIndex={emphasisColumnIndex}
         />
       </div>
     </PencilCard>
@@ -851,6 +842,7 @@ function CompetitiveResearchPage({
         paragraphs={structured.featureMatrix.paragraphs}
         headers={structured.featureMatrix.table?.headers ?? []}
         rows={structured.featureMatrix.table?.rows ?? []}
+        emphasisColumnIndex={1}
       />
 
       <PositioningMap
@@ -952,6 +944,7 @@ export const COMPETITIVE_DETAIL_SECTION_CONFIGS: CompetitiveDetailSectionConfig[
         paragraphs={structured.featureMatrix.paragraphs}
         headers={structured.featureMatrix.table?.headers ?? []}
         rows={structured.featureMatrix.table?.rows ?? []}
+        emphasisColumnIndex={1}
         showHeader={false}
       />
     ),

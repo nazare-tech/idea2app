@@ -16,6 +16,13 @@
 # next.js
 /.next/
 /out/
+/apps/research-inbox/.next/
+/apps/research-inbox/node_modules/
+/apps/research-inbox/.local/
+/apps/research-inbox/next-env.d.ts
+/apps/research-inbox/test-results/
+/apps/research-inbox/playwright-report/
+/apps/research-inbox/*.corrupt*
 
 # production
 /build

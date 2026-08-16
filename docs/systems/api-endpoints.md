@@ -37,6 +37,12 @@ Stripe: /api/stripe/checkout, /api/stripe/portal, and /api/stripe/webhook handli
   - Body: `{ projectId, message, model, isInitial }`
   - Historical request shape retained only for compatibility notes; no generation or credit charge occurs
 
+### Research Inbox
+
+- **POST /api/research/reply** (Maker Compass): retired compatibility endpoint; returns `410 Gone`
+- The active Research Inbox APIs belong to the independent loopback server at `127.0.0.1:4310`: `GET /api/bootstrap`, `POST /api/state`, `POST /api/reply`, `POST /api/article`, `GET/POST /api/research-job`, and `POST /api/open-source`
+- Standalone routes use local JSON and a launch-token header. They have no Supabase/auth/billing dependency and never publish automatically
+
 ### Projects
 - **GET /api/projects/[id]**: Get project details
   - Returns: project row (owner-scoped via RLS)
