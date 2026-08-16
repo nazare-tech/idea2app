@@ -11,6 +11,7 @@ import { acquireFileLock } from "../server/file-lock"
 const DOCUMENT_NAME = "research-inbox.json"
 const LOCK_NAME = "research-inbox.lock"
 const MAX_DOCUMENT_BYTES = 2_000_000
+const MAX_RESEARCH_RUN_RECEIPTS = 100
 const BROWSERS = new Set<BrowserMode>(["default", "chrome", "safari", "firefox", "arc"])
 const SOURCES = new Set(["reddit", "x", "youtube", "hackernews", "github", "web"])
 const QUALITIES = new Set(["strong", "supporting", "thin"])
@@ -248,7 +249,10 @@ export function createResearchRepository(directory = path.join(process.cwd(), ".
         warningCount: result.warnings.length,
         mergedAt: next.updatedAt,
       }
-      next.researchRunReceipts = { ...(next.researchRunReceipts ?? {}), [runId]: receipt }
+      const receipts = Object.entries({ ...(next.researchRunReceipts ?? {}), [runId]: receipt })
+        .sort(([, left], [, right]) => Date.parse(right.mergedAt) - Date.parse(left.mergedAt))
+        .slice(0, MAX_RESEARCH_RUN_RECEIPTS)
+      next.researchRunReceipts = Object.fromEntries(receipts)
       await writeDocument(next)
       return { document: next, ...receipt, alreadyMerged: false }
     } finally {
