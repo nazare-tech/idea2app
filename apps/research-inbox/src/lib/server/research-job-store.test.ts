@@ -1,10 +1,10 @@
 import assert from "node:assert/strict"
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises"
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import test from "node:test"
 
-import { createResearchJobStore, type ResearchRunSnapshot, type StoredResearchRun } from "./research-job-store"
+import { createResearchJobStore, ResearchJobStoreBusyError, type ResearchRunSnapshot, type StoredResearchRun } from "./research-job-store"
 
 async function testDirectory(t: test.TestContext) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "research-job-store-test-"))
@@ -52,6 +52,28 @@ test("concurrent claims across store instances reuse one active job", async (t) 
   assert.equal(new Set(claims.map(({ job }) => job.id)).size, 1)
   assert.equal(claims.filter(({ reused }) => !reused).length, 1)
   assert.equal(nextId, 1)
+})
+
+test("reclaims a lock owned by a terminated process", async (t) => {
+  const directory = await testDirectory(t)
+  await writeFile(
+    path.join(directory, "research-run.lock"),
+    JSON.stringify({ pid: 2_147_483_647, nonce: "orphan", createdAt: "2026-08-15T00:00:00.000Z" }),
+    "utf8",
+  )
+
+  assert.deepEqual(await createResearchJobStore({ directory }).load(), { status: "idle" })
+})
+
+test("does not reclaim a lock owned by a live process", async (t) => {
+  const directory = await testDirectory(t)
+  await writeFile(
+    path.join(directory, "research-run.lock"),
+    JSON.stringify({ pid: process.pid, nonce: "live", createdAt: new Date().toISOString() }),
+    "utf8",
+  )
+
+  await assert.rejects(() => createResearchJobStore({ directory }).load(), ResearchJobStoreBusyError)
 })
 
 test("updates are fenced by job id and terminal jobs are immutable", async (t) => {
@@ -124,4 +146,20 @@ test("stale active jobs recover to retryable failure and release single flight",
   const retry = await createResearchJobStore(options).claim("Retry after interruption")
   assert.equal(retry.reused, false)
   assert.equal(retry.job.id, "job-2")
+})
+
+test("reconciles a matching failed job from a durable merge receipt", async (t) => {
+  const directory = await testDirectory(t)
+  const store = createResearchJobStore({ directory, createId: () => "merged-job" })
+  const claimed = await store.claim("Research topic")
+  await store.update(claimed.job.id, { status: "failed", error: "Completion write failed" })
+
+  const reconciled = await store.reconcileSucceeded(claimed.job.id, {
+    importedCount: 4,
+    warningCount: 1,
+    mergedAt: "2026-08-15T12:00:00.000Z",
+  })
+  assert.equal(reconciled.updated, true)
+  assert.equal(reconciled.job.status, "succeeded")
+  assert.equal(expectStored(reconciled.job).importedCount, 4)
 })

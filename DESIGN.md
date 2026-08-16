@@ -167,6 +167,8 @@ A tinted-neutral surface carrying one strong accent. Warm secondary accents (cor
 **Display + Body Font:** Hanken Grotesk (with system-ui, sans-serif fallback)
 **Label / Mono Font:** Fira Mono (with ui-monospace fallback)
 
+**Scoped Warm Horizon typography:** Landing, project dashboard, and valid project workspaces under `.makercompass-editorial-type` use Newsreader for display, Public Sans for body/UI, and JetBrains Mono for metadata. This is an approved content-rich surface treatment; auth, billing, and unscoped utility screens retain Hanken Grotesk and Fira Mono.
+
 **Character:** A single committed sans paired with a functional mono. Hanken Grotesk carries the entire type system, from hero display at weight 800 down to body at weight 400; the range is wide enough to build strong hierarchy within one family. Fira Mono handles kicker labels and metadata with quiet technical authority. The pairing skews toward the tech-minimal lane without the over-familiar associations of Inter or IBM Plex.
 
 ### Hierarchy

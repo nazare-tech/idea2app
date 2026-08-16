@@ -197,7 +197,7 @@ The app uses CSS custom properties (defined in `globals.css`) rather than hard-c
 "#7c3aed"  // Purple — Mermaid secondary
 ```
 
-`DashboardProjectCard` keeps exact Figma geometry such as its 160.6px details height and
+`DashboardProjectCard` keeps exact Figma geometry such as its 122px details height and
 24px media radius component-local. Its colors use existing semantic tokens: the card
 shell/details area are transparent, the media surface uses `bg-card`, and text uses
 `text-text-primary` / `text-text-secondary`.

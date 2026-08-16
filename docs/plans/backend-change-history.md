@@ -4,6 +4,19 @@ Use this file as the durable human-readable history for backend, database, Supab
 
 Do not record secrets, tokens, passwords, private keys, or raw credential values.
 
+## 2026-08-15: Research Inbox persistence sweep hardening
+
+- Plan: Automatic commit sweep for `3f80163f..20233634`; no separate feature plan.
+- Review: `docs/reviews/commit-sweep-2026-08-15.md`.
+- Durable source of truth: `.local/research-inbox.json` now owns optional per-job merge receipts; `.local/research-run.json` remains the current job lifecycle record.
+- Schema or data-shape changes: Backward-compatible optional `researchRunReceipts` map records imported/warning counts and merge timestamps by job ID. Full nested version-1 JSON validation now covers workspace, items, state, visible IDs, browser mode, article drafts, and receipts.
+- Auth, RLS, or permission changes: None. Both local JSON stores now share PID/nonce lock ownership and reclaim locks only when the recorded process is no longer alive; private file modes remain unchanged.
+- Runtime/API behavior changes: Stale workers abort when a fenced transition fails. Inbox merges are idempotent per job ID, and later status reads reconcile failed completion writes from durable receipts without rescanning or double-counting. URL deduplication lowercases host through `URL` parsing while preserving case-sensitive paths and query values.
+- Migration or deployment steps: None. Existing version-1 documents without receipts load unchanged.
+- Verification: Standalone suite 51/51, standalone and root typechecks, dedicated stale-worker/orphan-lock/schema/receipt/case-sensitive-URL tests, and final consolidated checks recorded in the sweep report.
+- Rollback or recovery: Revert helper, validator, receipt, and fencing changes together. Optional receipts may remain inert in local JSON; no destructive cleanup is required.
+- Follow-ups: None.
+
 ## 2026-08-15: Local Research Inbox Article Studio
 
 - Plan: [docs/plans/research-inbox-article-studio-plan.md](/Users/Mukul/Documents/GitHub/2026 projects/5_idea2app/docs/plans/research-inbox-article-studio-plan.md)

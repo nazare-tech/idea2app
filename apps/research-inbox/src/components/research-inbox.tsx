@@ -239,7 +239,7 @@ export function ResearchInbox() {
 
 function Metric({ value, label }: { value: number; label: string }) { return <div><strong>{value}</strong><span>{label}</span></div> }
 function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) { return <div className="filter-group"><p>{label}</p><div>{children}</div></div> }
-function FilterButton({ active, disabled, onClick, children }: { active: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode }) { return <button className={active ? "active" : ""} disabled={disabled} onClick={onClick}>{children}</button> }
+function FilterButton({ active, disabled, onClick, children }: { active: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode }) { return <button aria-pressed={active} className={active ? "active" : ""} disabled={disabled} onClick={onClick}>{children}</button> }
 
 export function ResearchCard({ item, state, generating, patch, generateReply, generateArticle, openArticle, openToReply }: { item: ResearchItem; state: ResearchItemState; generating: boolean; patch: (patch: ResearchItemState) => void; generateReply: () => void; generateArticle: (trigger: HTMLButtonElement) => void; openArticle: (trigger: HTMLButtonElement) => void; openToReply: (draft: string) => void }) {
   const [draft, setDraft] = useState(state.draft ?? "")

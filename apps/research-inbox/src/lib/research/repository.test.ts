@@ -4,7 +4,8 @@ import os from "node:os"
 import path from "node:path"
 import test from "node:test"
 
-import { ArticleConflictError, createResearchRepository, DocumentTooLargeError, RevisionConflictError } from "./repository"
+import { ArticleConflictError, createResearchRepository, DocumentTooLargeError, RepositoryBusyError, RevisionConflictError } from "./repository"
+import type { Last30DaysImportResult } from "./last30days-import"
 
 test("initializes a versioned local JSON document and persists item state", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "research-inbox-test-"))
@@ -39,6 +40,48 @@ test("preserves corrupt JSON before recovering a clean seed", async () => {
   assert.match(loaded.recovery?.message || "", /preserved/i)
 })
 
+test("recovers syntactically valid JSON with malformed nested item data", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "research-inbox-test-"))
+  const repository = createResearchRepository(directory)
+  const initial = (await repository.load()).document
+  await writeFile(
+    path.join(directory, "research-inbox.json"),
+    JSON.stringify({ ...initial, items: [{ ...initial.items[0], tags: null }] }),
+    "utf8",
+  )
+
+  const loaded = await repository.load()
+  assert.match(loaded.recovery?.message || "", /preserved/i)
+  assert.ok(Array.isArray(loaded.document.items[0].tags))
+})
+
+test("reclaims a lock owned by a terminated process", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "research-inbox-test-"))
+  const repository = createResearchRepository(directory)
+  const initial = (await repository.load()).document
+  await writeFile(
+    path.join(directory, "research-inbox.lock"),
+    JSON.stringify({ pid: 2_147_483_647, nonce: "orphan", createdAt: "2026-08-15T00:00:00.000Z" }),
+    "utf8",
+  )
+
+  const updated = await repository.update(initial.revision, { browserMode: "chrome" })
+  assert.equal(updated.browserMode, "chrome")
+})
+
+test("does not reclaim a lock owned by a live process", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "research-inbox-test-"))
+  const repository = createResearchRepository(directory)
+  const initial = (await repository.load()).document
+  await writeFile(
+    path.join(directory, "research-inbox.lock"),
+    JSON.stringify({ pid: process.pid, nonce: "live", createdAt: new Date().toISOString() }),
+    "utf8",
+  )
+
+  await assert.rejects(() => repository.update(initial.revision, { browserMode: "chrome" }), RepositoryBusyError)
+})
+
 test("handles simultaneous first bootstraps without sharing a temp filename", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "research-inbox-test-"))
   const repository = createResearchRepository(directory)
@@ -54,7 +97,7 @@ test("merges deduplicated research while preserving existing cards and user stat
   const existingId = initial.items[0].id
   await repository.update(initial.revision, { itemId: existingId, itemPatch: { saved: true, draft: "Keep this draft." } })
 
-  const merged = await repository.mergeResearchRun({
+  const result: Last30DaysImportResult = {
     rawItemCount: 12,
     availableSources: 7,
     missingSources: ["x"],
@@ -75,7 +118,8 @@ test("merges deduplicated research while preserving existing cards and user stat
         quality: "strong",
       },
     ],
-  })
+  }
+  const merged = await repository.mergeResearchRun("run-one", result)
 
   assert.equal(merged.importedCount, 1)
   assert.equal(merged.warningCount, 1)
@@ -85,6 +129,30 @@ test("merges deduplicated research while preserving existing cards and user stat
   assert.equal(merged.document.browserMode, initial.browserMode)
   assert.ok(merged.document.visibleIds.includes("last30days-web-new-card"))
   assert.equal(merged.document.workspace.rawItemCount, initial.workspace.rawItemCount + 12)
+
+  const replayed = await repository.mergeResearchRun("run-one", result)
+  assert.equal(replayed.alreadyMerged, true)
+  assert.equal(replayed.document.workspace.rawItemCount, merged.document.workspace.rawItemCount)
+})
+
+test("URL deduplication preserves case-sensitive paths", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "research-inbox-test-"))
+  const repository = createResearchRepository(directory)
+  const initial = (await repository.load()).document
+  const base = { ...initial.items[0], source: "web" as const, sourceLabel: "Example", publishedAt: "2026-08-15" }
+  const merged = await repository.mergeResearchRun("case-sensitive-run", {
+    rawItemCount: 2,
+    availableSources: 1,
+    missingSources: [],
+    dateRange: "August 2026",
+    warnings: [],
+    items: [
+      { ...base, id: "case-upper", title: "Upper path", url: "https://example.com/Report/A" },
+      { ...base, id: "case-lower", title: "Lower path", url: "https://EXAMPLE.com/report/a" },
+    ],
+  })
+
+  assert.equal(merged.importedCount, 2)
 })
 
 test("persists a sub-100-word reply without a 500-character truncation", async () => {

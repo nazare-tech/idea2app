@@ -40,7 +40,7 @@ What this must NOT look like:
 - **Generic AI-tool aesthetic.** Purple-to-blue gradient hero, glassmorphism cards, neon accent on dark, "Powered by AI" badges, sparkle emojis. The thing every Y Combinator AI startup ships in their first week.
 - **Stock SaaS template.** Rounded-card 3-column grid of icon + heading + paragraph, cartoon hero illustration of diverse people pointing at laptops, blue + white default palette. The Webflow-template look.
 - **Crypto / web3 aesthetic.** Dark-mode default, neon-on-black, animated mesh gradients, "futuristic" geometric display type, hero motion that doesn't serve a message.
-- **Editorial-magazine drift.** Display serif (Cormorant, Playfair) + italic drop caps + broadsheet grid on a builder tool. Editorial is a real lane, but it isn't this lane.
+- **Editorial-magazine cosplay.** The approved Warm Horizon workspace treatment may use Newsreader, Public Sans, and restrained italic subsection titles. Avoid ornamental drop caps, broadsheet grids, and decoration that competes with the artifact.
 
 If a screenshot of this product could be confidently labeled as any of the above, it has failed.
 

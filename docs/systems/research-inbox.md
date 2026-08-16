@@ -16,14 +16,14 @@ Coverage numbers are cumulative: “results scanned” counts all raw candidates
 - Package: `apps/research-inbox/package.json` with an independent lockfile
 - Build/runtime: independent Next.js app; root TypeScript and ESLint explicitly exclude `apps/`
 - Access: loopback host only, same-origin mutation requests only, no authentication
-- Compatibility: Maker Compass `POST /api/research/reply` returns `410 Gone`; `/research` redirects only when `RESEARCH_INBOX_URL` is explicitly configured
+- Compatibility: Maker Compass `POST /api/research/reply` returns `410 Gone`; `/research` redirects when `RESEARCH_INBOX_URL` is configured and otherwise renders a local-app handoff notice
 - Old Maker research files remain inactive pending explicit deletion approval
 
 ## JSON persistence
 
 `apps/research-inbox/src/lib/research/repository.ts` owns `.local/research-inbox.json`. The versioned document contains workspace metadata, sanitized evidence, item-state deltas, optional article drafts, visible IDs, browser mode, revision, and update time. It never contains a Supabase user/project ID.
 
-Writes use a private directory/file mode, an exclusive cross-process lock, an on-disk revision check, a 2 MB serialized-size guard, and temp-file rename. Stale generic writers receive `409` and reload. Article generation saves under the repository lock before returning, preventing a long generation from being lost to a client revision conflict. Invalid JSON is renamed to a timestamped `.corrupt-*` backup, with at most five retained, before a clean seed is restored and the UI shows a recovery notice.
+Writes use a private directory/file mode, a PID/nonce-owned exclusive cross-process lock with orphan recovery, an on-disk revision check, a 2 MB serialized-size guard, and temp-file rename. Stale generic writers receive `409` and reload. Article generation saves under the repository lock before returning, preventing a long generation from being lost to a client revision conflict. The full persisted schema is validated; invalid JSON or malformed nested data is renamed to a timestamped `.corrupt-*` backup, with at most five retained, before a clean seed is restored and the UI shows a recovery notice.
 
 Older port-3000 `localStorage` keys are not imported. The first-run banner says so explicitly.
 
@@ -49,7 +49,7 @@ The in-memory generation limit resets when the server restarts: replies allow 20
 
 The header action starts `POST /api/research-job` and polls `GET /api/research-job` only while its durable status is queued, running, or importing. Both routes require loopback Host and a valid launch token; POST also requires the exact same Origin and accepts only an empty JSON object. The research topic always comes from the server-owned workspace document.
 
-One active job is allowed across processes. Codex CLI runs ephemerally in a private temporary directory with a fixed operator prompt, invokes the installed last30days skill in quick agent mode, includes X when its browser-cookie adapter is available, and times out after 10 minutes. Its final JSON is untrusted: the importer applies byte, count, source, string, tag, and HTTPS URL bounds before a locked merge. Merge deduplicates by canonical URL and stable ID, preserves every existing item and user state, and reveals up to six new cards. Failures leave the inbox unchanged and surface a retryable generic error.
+One active job is allowed across processes. Codex CLI runs ephemerally in a private temporary directory with a fixed operator prompt, invokes the installed last30days skill in quick agent mode, includes X when its browser-cookie adapter is available, and times out after 10 minutes. Its final JSON is untrusted: the importer applies byte, count, source, string, tag, and HTTPS URL bounds before a locked merge. The job ID fences every transition; each merge records an idempotent receipt so a completion-write failure reconciles without double-counting a rerun. Merge deduplicates by canonical URL and stable ID, preserves case-sensitive URL paths, keeps every existing item and user state, and reveals up to six new cards.
 
 The optional `RESEARCH_CODEX_PATH` and `RESEARCH_LAST30DAYS_SKILL_PATH` environment variables make the local executable and installed skill location configurable. Runtime `.local` data is excluded from standalone build tracing.
 

@@ -68,11 +68,6 @@ SUPABASE_MOCKUP_STORAGE_BUCKET=mockups
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
 
-# Optional local-only Research Inbox reply operator.
-# Must exactly match the signed-in Supabase user; ignored in production.
-# RESEARCH_CODEX_OPERATOR_USER_ID=00000000-0000-0000-0000-000000000000
-# RESEARCH_CODEX_CLI_PATH=codex
-
 # UI/browser testing login credentials live in .env.e2e.local, NOT in .env.local
 # (local only; never commit real values):
 #   E2E_TEST_EMAIL=test-user@example.com
@@ -145,7 +140,7 @@ npm run research-inbox:dev
 # http://127.0.0.1:4310
 ```
 
-Its state is written to `apps/research-inbox/.local/research-inbox.json`. That directory, its independent `.next`, and its `node_modules` are ignored. Optional local compatibility redirect: set `RESEARCH_INBOX_URL=http://127.0.0.1:4310` for the Maker server; it is deliberately unset by default and must not be configured on hosted deployments.
+Its state is written to `apps/research-inbox/.local/research-inbox.json`. That directory, its independent `.next`, and its `node_modules` are ignored. `RESEARCH_CODEX_PATH` optionally overrides the local Codex executable; `RESEARCH_LAST30DAYS_SKILL_PATH` optionally overrides the installed last30days skill directory. Optional local compatibility redirect: set `RESEARCH_INBOX_URL=http://127.0.0.1:4310` for the Maker server; it is deliberately unset by default and must not be configured on hosted deployments.
 
 ### Git and PR Workflow
 

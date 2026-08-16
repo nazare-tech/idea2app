@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto"
-import { access, mkdir, open, readFile, rename, unlink, writeFile } from "node:fs/promises"
+import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises"
 import path from "node:path"
+
+import { acquireFileLock } from "./file-lock"
+import type { ResearchRunReceipt } from "../research/types"
 
 const DOCUMENT_NAME = "research-run.json"
 const LOCK_NAME = "research-run.lock"
@@ -111,15 +114,11 @@ export function createResearchJobStore(options: ResearchJobStoreOptions = {}) {
 
   async function acquireLock() {
     await initialize()
-    for (let attempt = 0; attempt < 100; attempt += 1) {
-      try {
-        return await open(lockPath, "wx", 0o600)
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error
-        await new Promise((resolve) => setTimeout(resolve, 5))
-      }
-    }
-    throw new ResearchJobStoreBusyError("Research job store is busy")
+    return acquireFileLock(lockPath, {
+      attempts: 100,
+      retryDelayMs: () => 5,
+      createBusyError: () => new ResearchJobStoreBusyError("Research job store is busy"),
+    })
   }
 
   async function readCurrent(): Promise<ResearchRunSnapshot> {
@@ -164,8 +163,7 @@ export function createResearchJobStore(options: ResearchJobStoreOptions = {}) {
     try {
       return await operation()
     } finally {
-      await lock.close()
-      await unlink(lockPath).catch(() => undefined)
+      await lock.release()
     }
   }
 
@@ -234,5 +232,26 @@ export function createResearchJobStore(options: ResearchJobStoreOptions = {}) {
     })
   }
 
-  return { filePath, claim, load, update }
+  async function reconcileSucceeded(id: string, receipt: ResearchRunReceipt): Promise<{ job: ResearchRunSnapshot; updated: boolean }> {
+    return withLock(async () => {
+      const current = await readCurrent()
+      if (current.status === "idle" || current.id !== id) return { job: current, updated: false }
+      if (current.status === "succeeded") return { job: current, updated: true }
+
+      const next: StoredResearchRun = {
+        ...current,
+        status: "succeeded",
+        updatedAt: receipt.mergedAt,
+        completedAt: receipt.mergedAt,
+        importedCount: receipt.importedCount,
+        warningCount: receipt.warningCount,
+        retryable: false,
+        error: null,
+      }
+      await writeCurrent(next)
+      return { job: next, updated: true }
+    })
+  }
+
+  return { filePath, claim, load, update, reconcileSucceeded }
 }

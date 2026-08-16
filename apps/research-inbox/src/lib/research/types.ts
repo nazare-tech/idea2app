@@ -52,6 +52,13 @@ export interface ResearchDocument {
   itemState: Record<string, ResearchItemState>
   visibleIds: string[]
   browserMode: BrowserMode
+  researchRunReceipts?: Record<string, ResearchRunReceipt>
+}
+
+export interface ResearchRunReceipt {
+  importedCount: number
+  warningCount: number
+  mergedAt: string
 }
 
 export interface ResearchUpdate {

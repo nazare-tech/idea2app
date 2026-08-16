@@ -1,6 +1,6 @@
 # Test Inventory
 Unit tests run with `npm test`: the Node built-in test runner via tsx (`node --import tsx --test 'src/**/*.test.ts' 'src/**/*.test.tsx'`), no Jest/Vitest.
-92 test files sit colocated beside their source under `src/`; component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
+106 root test files sit colocated beside their source under `src/`; 12 more belong to the standalone Research Inbox package. Component tests render HTML strings via react-dom/server renderToStaticMarkup, no jsdom.
 Heaviest coverage: intake question generation/validation, market research provider fallbacks (Exa/Perplexity/Tavily), streaming parsers, prompt contracts.
 Also covered: planning document renderers/requests, mockup image pipeline and drafts, Stripe checkout/webhooks/credits, product analytics, workspace UI policy.
 UNCOVERED: 32 of 34 API route handlers (only two deprecated 410 routes have tests), auth flows, Supabase clients/middleware, and dashboard/landing pages.
@@ -121,10 +121,11 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 
 ## Other
 
-- `apps/research-inbox/src/lib/research/repository.test.ts` — standalone JSON initialization, persistence, stale-revision protection, and corrupt-file recovery
+- `apps/research-inbox/src/lib/research/repository.test.ts` — standalone JSON initialization, full nested-schema recovery, orphan-lock recovery, revision protection, idempotent run receipts, and case-sensitive URL deduplication
 - `apps/research-inbox/src/lib/research/article.test.ts` — article-candidate host policy plus strict JSON-only title/deck/body parsing, word/character bounds, plain-text safety, and server timestamps
 - `apps/research-inbox/src/lib/research/last30days-import.test.ts` — strict Codex JSON import bounds, source/URL validation, deterministic IDs, deduplication, warnings, and zero-valid-card rejection
-- `apps/research-inbox/src/lib/server/research-job-store.test.ts` — durable single-flight claims, cross-instance locking, ID-fenced transitions, terminal immutability, and stale-run recovery
+- `apps/research-inbox/src/lib/server/research-job-store.test.ts` — durable single-flight claims, orphan-lock recovery, ID-fenced transitions, terminal immutability, stale-run recovery, and receipt reconciliation
+- `apps/research-inbox/src/lib/server/research-job-service.test.ts` — stale-worker merge fencing and failed-completion reconciliation from durable inbox receipts
 - `apps/research-inbox/src/lib/server/last30days-runner.test.ts` — fixed agent-mode operator prompt, configurable skill path, bounded topic delimiting, and JSON-only output contract
 - `apps/research-inbox/src/lib/server/codex-runner.test.ts` — configurable purpose/output/timeout policies, sandboxed prompt transport, and oversized-output rejection without truncation
 - `apps/research-inbox/src/lib/server/request-policy.test.ts` — canonical loopback access, hostile prompt delimiting, and HTTPS-only browser launch policy
@@ -133,6 +134,7 @@ UNCOVERED: most hooks (only use-smoothed-stream), interactive client behavior (e
 - `apps/research-inbox/src/components/research-card.test.tsx` — source-specific Reply/Article Studio actions, saved-article dialog trigger, word count, and absence of textarea character caps
 - `apps/research-inbox/src/components/article-sheet.test.tsx` — labeled modal article sheet, six-minute metadata, full plain-text rendering, copy/close controls, and closed state
 - `src/lib/research/state.test.ts` — inactive legacy Maker route state helpers retained pending deletion approval
+- `src/app/(dashboard)/research/page.test.tsx` — retired Maker research route renders a standalone-local-app handoff without dead generation actions
 - `src/app/api/launch/plan/route.test.ts` — POST /api/launch/plan archived route returns 410 without consuming credits
 - `src/app/api/prompt-chat/route.test.ts` — GET and POST /api/prompt-chat deprecated route both return 410
 - `src/lib/contact.test.ts` — validateContactRequest field rules: name/email/message length limits and rejection of every email the DB constraint rejects
