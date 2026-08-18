@@ -45,3 +45,17 @@ test("ReportTable applies the shared Figma shell and table treatment", () => {
   assert.match(html, /\[&amp;_tbody_\[data-report-table-emphasis\]\]:italic/)
   assert.match(html, /data-report-table-emphasis="true"/)
 })
+
+test("ReportTable supports the warm header used beneath comparison tabs", () => {
+  const html = renderToStaticMarkup(
+    <ReportTable headerTone="warm">
+      <thead><tr><th>Competitor</th></tr></thead>
+      <tbody><tr><td>Example</td></tr></tbody>
+    </ReportTable>
+  )
+
+  assert.match(html, /\[&amp;_thead\]:bg-secondary\/70/)
+  assert.match(html, /\[&amp;_thead_th\]:border-b/)
+  assert.match(html, /\[&amp;_thead_th\]:text-foreground/)
+  assert.doesNotMatch(html, /\[&amp;_thead\]:bg-foreground/)
+})

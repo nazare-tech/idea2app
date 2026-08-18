@@ -50,13 +50,13 @@ export function StreamingSkeletonSection({
 
   return (
     <section aria-hidden="true">
-      <div className="mb-8 flex items-end justify-between gap-6 border-b border-border pb-6">
-        <p className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-muted-foreground/55")}>
+      <div className="mb-6 flex items-end justify-between gap-6 border-t border-border pt-8">
+        <p className={cn(displayFontClass, "text-[32px] font-medium italic leading-[1.1] tracking-[-0.03em] text-muted-foreground/55")}>
           {title}
         </p>
         {showCounter ? (
-          <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-muted-foreground/45">
-            {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
+          <p className="shrink-0 font-sans text-[14px] font-semibold text-muted-foreground/45">
+            {String(index).padStart(2, "0")}/{String(total).padStart(2, "0")}
           </p>
         ) : null}
       </div>

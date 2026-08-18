@@ -74,8 +74,12 @@ test("competitive v2 document renders modules-first hybrid UI", () => {
   assert.match(html, /Assessment: Enter with a wedge/)
   assert.doesNotMatch(html, /Verdict: Enter with a wedge/)
   assert.match(html, /href="https:\/\/competitor-one\.example\.com\/"/)
-  assert.match(html, /Key Edge/)
-  assert.match(html, /Distribution engine/)
+  assert.match(html, /role="tablist"/)
+  assert.match(html, /aria-selected="true"[^>]*>Profile</)
+  assert.match(html, /Commercial Fit/)
+  assert.match(html, /Advantage \/ Risk/)
+  assert.match(html, /Core Capabilities/)
+  assert.match(html, /Workflow suite/)
   assert.doesNotMatch(html, /predates Market Research v2/)
   assert.doesNotMatch(html, /Markdown/)
 })
@@ -273,7 +277,7 @@ test("competitive detail renders positioning scale and does not plot invalid sco
   assert.doesNotMatch(html, /Positioning map with 0 to 10 X and Y score axes/)
 })
 
-test("competitive detail consolidates competitor profile cards into one quick comparison table", () => {
+test("competitive detail groups the direct competitor table into Figma-style tabs", () => {
   const html = renderToStaticMarkup(
     <CompetitiveDetailSection
       content={buildV2Fixture()}
@@ -281,26 +285,40 @@ test("competitive detail consolidates competitor profile cards into one quick co
       projectId="project-1"
     />
   )
+  const directHtml = getSectionHtml(
+    html,
+    "market-research-direct-competitors",
+    "market-research-landscape-overview"
+  )
 
-  assert.match(html, /Direct Competitors/)
-  assert.doesNotMatch(html, /Competitor Profiles &amp; Quick Comparison/)
-  assert.match(html, /w-\[clamp\(960px,100%,1240px\)\] table-fixed/)
-  assert.equal(countMatches(html, /max-w-\[310px\]/g), 12)
-  assert.match(html, /Commercial Fit/)
-  assert.match(html, /Advantage \/ Risk/)
-  assert.match(html, /Broad platform/)
-  assert.match(html, /Workflow suite/)
-  assert.match(html, /Generalist/)
-  assert.match(html, /Strong distribution/)
-  assert.match(html, /Distribution engine/)
-  assert.match(html, /Heavy onboarding/)
-  assert.match(html, /Per seat/)
-  assert.match(html, /Mid-market/)
-  assert.match(html, /Focused operator tool/)
-  assert.match(html, /Booking workflow automation/)
-  assert.match(html, /Usage-based/)
-  assert.match(html, /Solo service teams/)
-  assert.equal(countMatches(html, /href="https:\/\/competitor-one\.example\.com\//g), 4)
+  assert.match(directHtml, /Direct Competitors/)
+  assert.doesNotMatch(directHtml, /Competitor Profiles &amp; Quick Comparison/)
+  assert.match(directHtml, /role="tablist"/)
+  assert.equal(countMatches(directHtml, /role="tab"/g), 3)
+  assert.equal(countMatches(directHtml, /aria-selected="true"/g), 1)
+  assert.match(directHtml, /role="tabpanel"/)
+  assert.match(directHtml, /rounded-tl-none/)
+  assert.match(directHtml, /\[&amp;_thead\]:bg-secondary\/70/)
+  assert.match(directHtml, /\[&amp;_thead_th\]:text-foreground/)
+  assert.doesNotMatch(directHtml, /\[&amp;_thead\]:bg-foreground/)
+  assert.match(directHtml, /Commercial Fit/)
+  assert.match(directHtml, /Advantage \/ Risk/)
+  assert.match(directHtml, /Competitors/)
+  assert.match(directHtml, /Overview/)
+  assert.match(directHtml, /Core Capabilities/)
+  assert.match(directHtml, /Positioning/)
+  assert.match(directHtml, /Broad platform/)
+  assert.match(directHtml, /Workflow suite/)
+  assert.match(directHtml, /Generalist/)
+  assert.match(directHtml, /Focused operator tool/)
+  assert.match(directHtml, /Booking workflow automation/)
+  assert.doesNotMatch(directHtml, /Distribution engine/)
+  assert.doesNotMatch(directHtml, /Per seat/)
+  assert.equal(countMatches(directHtml, /href="https:\/\/competitor-one\.example\.com\//g), 1)
+  assert.match(directHtml, /border-t border-border pt-8/)
+  assert.match(directHtml, /text-\[32px\] font-medium italic/)
+  assert.match(directHtml, />01\/12</)
+  assert.doesNotMatch(directHtml, /border-b border-border pb-6/)
   // Positioning score profiles are the only allowed <article> elements;
   // competitor profiles must stay consolidated into the comparison table.
   assert.equal(
@@ -309,7 +327,7 @@ test("competitive detail consolidates competitor profile cards into one quick co
   )
   assert.doesNotMatch(html, /<colgroup>/)
   assert.doesNotMatch(html, /Competitor Profiles &amp; Fast Comparison/)
-  assert.doesNotMatch(html, />PROFILE</)
+  assert.match(directHtml, />Profile</)
 })
 
 test("Feature Comparison labels and outlines the idea column while preserving competitor links", () => {
@@ -385,7 +403,7 @@ test("competitive detail shows fallback direct competitors without the fallback 
   assert.doesNotMatch(html, /evidence-limited candidates/)
   assert.doesNotMatch(html, /no live competitor data was provided/)
   assert.match(html, /Inferred pet care incumbent/)
-  assert.match(html, /Marketplace liquidity/)
+  assert.match(html, /Core Capabilities/)
 })
 
 test("competitive markdown fallback hides saved direct competitor fallback notice", () => {

@@ -33,7 +33,9 @@ test("live Market Research stream fills active designed blocks and keeps later s
   assert.match(html, /Broad workflow suite/)
   assert.match(html, /href="https:\/\/competitor-one\.example\.com\//)
   assert.match(html, /Market Landscape/)
-  assert.match(html, /02 \/ 12/)
+  assert.match(html, /02\/12/)
+  assert.match(html, /border-t border-border pt-8/)
+  assert.match(html, /text-\[32px\] font-medium italic/)
 })
 
 test("live Executive Summary uses designed content after first body text", () => {

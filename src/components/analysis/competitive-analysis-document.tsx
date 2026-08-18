@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useId, useMemo, useState, type KeyboardEvent } from "react"
 import { AlertTriangle, ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ExplainTermButton } from "@/components/analysis/explainable-term"
@@ -92,12 +92,85 @@ export function TopLevelDocumentHeader({
   )
 }
 
-const fastComparisonColumns = [
-  { label: "Competitor", className: "min-w-[170px] max-w-[310px]" },
-  { label: "Profile", className: "min-w-[260px] max-w-[310px]" },
-  { label: "Commercial Fit", className: "min-w-[220px] max-w-[310px]" },
-  { label: "Advantage / Risk", className: "min-w-[260px] max-w-[310px]" },
-] as const
+type FastComparisonTabId = "profile" | "commercial-fit" | "advantage-risk"
+
+interface FastComparisonColumn {
+  label: string
+  className: string
+  getValue: (competitor: CompetitiveAnalysisCompetitorProfile) => string | undefined
+  emphasis?: boolean
+}
+
+const competitorColumnClassName = "w-[170px] min-w-[170px]"
+const fastComparisonTabs: Array<{
+  id: FastComparisonTabId
+  label: string
+  minWidthClassName: string
+  columns: FastComparisonColumn[]
+}> = [
+  {
+    id: "profile",
+    label: "Profile",
+    minWidthClassName: "min-w-[900px] table-fixed",
+    columns: [
+      {
+        label: "Overview",
+        className: "w-[28%]",
+        getValue: (competitor) => competitor.fields["Overview"],
+      },
+      {
+        label: "Core Capabilities",
+        className: "w-[32%]",
+        getValue: (competitor) => competitor.fields["Core Product/Service"],
+      },
+      {
+        label: "Positioning",
+        className: "w-[24%]",
+        getValue: (competitor) => competitor.fields["Market Positioning"],
+      },
+    ],
+  },
+  {
+    id: "commercial-fit",
+    label: "Commercial Fit",
+    minWidthClassName: "min-w-[720px] table-fixed",
+    columns: [
+      {
+        label: "Pricing Model",
+        className: "w-[42%]",
+        getValue: (competitor) => competitor.fields["Pricing Model"] ?? "Unknown",
+      },
+      {
+        label: "Target Audience",
+        className: "w-[42%]",
+        getValue: (competitor) => competitor.fields["Target Audience"] ?? "Unknown",
+      },
+    ],
+  },
+  {
+    id: "advantage-risk",
+    label: "Advantage / Risk",
+    minWidthClassName: "min-w-[900px] table-fixed",
+    columns: [
+      {
+        label: "Key Edge",
+        className: "w-[26%]",
+        getValue: getCompetitorKeyEdge,
+        emphasis: true,
+      },
+      {
+        label: "Strengths",
+        className: "w-[28%]",
+        getValue: (competitor) => competitor.fields["Strengths"],
+      },
+      {
+        label: "Limitations",
+        className: "w-[28%]",
+        getValue: (competitor) => competitor.fields["Limitations"],
+      },
+    ],
+  },
+]
 
 const fallbackMarketResearchSections = [
   { id: "market-research-direct-competitors", title: "Direct Competitors", headings: ["Direct Competitors"] },
@@ -182,6 +255,11 @@ function CompetitiveDetailFallback({
           title={section.title}
           index={index + 1}
           total={fallbackSections.length}
+          description={
+            section.id === "market-research-direct-competitors"
+              ? "Compare each competitor once across product scope, buying fit, strengths, edges, and limitations."
+              : undefined
+          }
         >
           <MarkdownRenderer content={section.content} projectId={projectId} />
         </WorkspaceDesignedSection>
@@ -190,29 +268,41 @@ function CompetitiveDetailFallback({
   )
 }
 
-function WorkspaceSectionHeader({
+export function WorkspaceSectionHeader({
   title,
   index,
   total,
+  description,
 }: {
   title: string
   index: number
   total: number
+  description?: string
 }) {
   const termKey = getExplainableTermKeyByLabel(title)
 
   return (
-    <div className="mb-8 flex items-end justify-between gap-6 border-b border-border pb-6">
-      <div>
+    <div className="mb-6 flex items-end justify-between gap-6 border-t border-border pt-8">
+      <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-foreground")}>
+          <h2
+            className={cn(
+              displayFontClass,
+              "text-[32px] font-medium italic leading-[1.1] tracking-[-0.03em] text-foreground"
+            )}
+          >
             {title}
           </h2>
           <ExplainTermButton termKey={termKey} label={title} />
         </div>
+        {description ? (
+          <p className="mt-1.5 max-w-3xl text-[13px] leading-5 text-text-secondary">
+            {description}
+          </p>
+        ) : null}
       </div>
-      <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-muted-foreground">
-        {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
+      <p className="shrink-0 font-sans text-[14px] font-semibold text-text-secondary">
+        {String(index).padStart(2, "0")}/{String(total).padStart(2, "0")}
       </p>
     </div>
   )
@@ -223,6 +313,7 @@ export function WorkspaceDesignedSection({
   title,
   index,
   total,
+  description,
   children,
 }: {
   id: string
@@ -230,6 +321,7 @@ export function WorkspaceDesignedSection({
   title: string
   index: number
   total: number
+  description?: string
   children: React.ReactNode
 }) {
   return (
@@ -238,6 +330,7 @@ export function WorkspaceDesignedSection({
         title={title}
         index={index}
         total={total}
+        description={description}
       />
       {children}
     </section>
@@ -359,34 +452,6 @@ function SnapshotHero({
   )
 }
 
-function CompetitorTableDetail({
-  label,
-  value,
-  emphasis = false,
-}: {
-  label: string
-  value?: string
-  emphasis?: boolean
-}) {
-  if (!value) return null
-
-  return (
-    <div className="space-y-1">
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        {label}
-      </p>
-      <p
-        className={cn(
-          "ui-type-table",
-          emphasis ? "font-medium text-foreground" : "text-text-secondary"
-        )}
-      >
-        <CompetitorMentionText text={value} />
-      </p>
-    </div>
-  )
-}
-
 function getCompetitorKeyEdge(competitor: CompetitiveAnalysisCompetitorProfile) {
   return (
     competitor.fields["Key Edge"] ??
@@ -401,6 +466,29 @@ function FastComparisonTable({
 }: {
   competitors: CompetitiveAnalysisCompetitorProfile[]
 }) {
+  const [activeTabId, setActiveTabId] = useState<FastComparisonTabId>("profile")
+  const tabSetId = useId()
+  const activeTab =
+    fastComparisonTabs.find((tab) => tab.id === activeTabId) ?? fastComparisonTabs[0]
+
+  function selectAdjacentTab(
+    event: KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number
+  ) {
+    let nextIndex: number | null = null
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % fastComparisonTabs.length
+    if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + fastComparisonTabs.length) % fastComparisonTabs.length
+    if (event.key === "Home") nextIndex = 0
+    if (event.key === "End") nextIndex = fastComparisonTabs.length - 1
+    if (nextIndex === null) return
+    event.preventDefault()
+    const nextTab = fastComparisonTabs[nextIndex]
+    setActiveTabId(nextTab.id)
+    event.currentTarget.parentElement
+      ?.querySelector<HTMLButtonElement>(`#${CSS.escape(`${tabSetId}-${nextTab.id}`)}`)
+      ?.focus()
+  }
+
   if (competitors.length === 0) {
     return (
       <div className="border border-dashed border-border-strong bg-background px-5 py-5">
@@ -421,87 +509,108 @@ function FastComparisonTable({
   }
 
   return (
-    <ReportTable minWidthClassName="w-[clamp(960px,100%,1240px)] table-fixed">
-      <thead>
-        <tr>
-          {fastComparisonColumns.map((column) => (
-            <th key={column.label} className={column.className}>
-              {column.label}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {competitors.map((competitor) => (
-          <tr key={`${competitor.heading}-comparison`}>
-            <th scope="row" className={fastComparisonColumns[0].className}>
+    <div>
+      <div
+        aria-label="Direct competitor comparison views"
+        className="flex gap-2 overflow-x-auto"
+        role="tablist"
+      >
+        {fastComparisonTabs.map((tab, index) => {
+          const active = tab.id === activeTab.id
+          return (
+            <button
+              aria-controls={`${tabSetId}-panel`}
+              aria-selected={active}
+              className={cn(
+                "relative z-10 shrink-0 rounded-t-lg border px-5 py-3 font-sans text-[12px] font-bold uppercase tracking-[1px]",
+                active
+                  ? "border-foreground bg-foreground text-white"
+                  : "border-border bg-card text-text-secondary hover:text-foreground",
+              )}
+              id={`${tabSetId}-${tab.id}`}
+              key={tab.id}
+              onClick={() => setActiveTabId(tab.id)}
+              onKeyDown={(event) => selectAdjacentTab(event, index)}
+              role="tab"
+              tabIndex={active ? 0 : -1}
+              type="button"
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+      <div
+        aria-labelledby={`${tabSetId}-${activeTab.id}`}
+        id={`${tabSetId}-panel`}
+        role="tabpanel"
+      >
+        <ReportTable
+          headerTone="warm"
+          minWidthClassName={activeTab.minWidthClassName}
+          scrollLabel={`${activeTab.label} direct competitor comparison`}
+          wrapperClassName="rounded-tl-none"
+        >
+          <thead>
+            <tr>
+              <th className={competitorColumnClassName}>Competitors</th>
+              {activeTab.columns.map((column) => (
+                <th key={column.label} className={column.className}>
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {competitors.map((competitor) => (
+              <tr key={`${competitor.heading}-comparison`}>
+                <th scope="row" className={competitorColumnClassName}>
                 {/* Fall back to a web search when the document has no verified URL, so every competitor stays reachable without fabricating an official link. */}
-                <a
-                  href={
-                    competitor.websiteUrl ??
-                    `https://www.google.com/search?q=${encodeURIComponent(competitor.heading)}`
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                  className={cn(
-                    competitorLinkClassName,
-                    "inline-flex items-start gap-1.5"
-                  )}
-                >
-                  <span
+                  <a
+                    href={
+                      competitor.websiteUrl ??
+                      `https://www.google.com/search?q=${encodeURIComponent(competitor.heading)}`
+                    }
+                    target="_blank"
+                    rel="noreferrer"
                     className={cn(
-                      displayFontClass,
-                      "text-[14px] font-semibold leading-5 text-foreground"
+                      competitorLinkClassName,
+                      "inline-flex items-start gap-1.5"
                     )}
                   >
-                    {competitor.heading}
-                  </span>
-                  <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" />
-                </a>
-            </th>
-            <td className={cn("space-y-3", fastComparisonColumns[1].className)}>
-                <CompetitorTableDetail
-                  label="Overview"
-                  value={competitor.fields["Overview"]}
-                />
-                <CompetitorTableDetail
-                  label="Core"
-                  value={competitor.fields["Core Product/Service"]}
-                />
-                <CompetitorTableDetail
-                  label="Positioning"
-                  value={competitor.fields["Market Positioning"]}
-                />
-            </td>
-            <td className={cn("space-y-3", fastComparisonColumns[2].className)}>
-                <CompetitorTableDetail
-                  label="Pricing"
-                  value={competitor.fields["Pricing Model"] ?? "Unknown"}
-                />
-                <CompetitorTableDetail
-                  label="Audience"
-                  value={competitor.fields["Target Audience"] ?? "Unknown"}
-                />
-            </td>
-            <td className={cn("space-y-3", fastComparisonColumns[3].className)}>
-                <CompetitorTableDetail
-                  label="Key Edge"
-                  value={getCompetitorKeyEdge(competitor)}
-                  emphasis
-                />
-                <CompetitorTableDetail
-                  label="Strengths"
-                  value={competitor.fields["Strengths"]}
-                />
-                <CompetitorTableDetail
-                  label="Limitations"
-                  value={competitor.fields["Limitations"]}
-                />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </ReportTable>
+                    <span
+                      className={cn(
+                        displayFontClass,
+                        "text-[14px] font-semibold leading-5 text-foreground"
+                      )}
+                    >
+                      {competitor.heading}
+                    </span>
+                    <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" />
+                  </a>
+                </th>
+                {activeTab.columns.map((column) => (
+                  <td className={column.className} key={column.label}>
+                    <p
+                      className={cn(
+                        "ui-type-table",
+                        column.emphasis
+                          ? "font-medium text-foreground"
+                          : "text-text-secondary"
+                      )}
+                    >
+                      <CompetitorMentionText
+                        text={column.getValue(competitor) ?? ""}
+                      />
+                    </p>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </ReportTable>
+      </div>
+    </div>
   )
 }
 
@@ -519,11 +628,13 @@ function CompetitorProfiles({
         kicker="Competitive Intelligence"
         showHeader={showHeader}
       >
-        <p className="mb-5 ui-type-body text-text-secondary">
-          {competitors.length > 0
-            ? "Compare each competitor once across product scope, buying fit, strengths, edges, and limitations."
-            : "This report does not include direct competitor profiles."}
-        </p>
+        {showHeader ? (
+          <p className="mb-5 ui-type-body text-text-secondary">
+            {competitors.length > 0
+              ? "Compare each competitor once across product scope, buying fit, strengths, edges, and limitations."
+              : "This report does not include direct competitor profiles."}
+          </p>
+        ) : null}
         <FastComparisonTable competitors={competitors} />
       </PencilCard>
     </div>
@@ -906,6 +1017,7 @@ export interface CompetitiveDetailSectionConfig {
   id: string
   kicker: string
   title: string
+  description?: string
   v2Sections: CompetitiveAnalysisV2SectionName[]
   render: (structured: CompetitiveAnalysisStructuredData) => React.ReactNode
 }
@@ -915,6 +1027,8 @@ export const COMPETITIVE_DETAIL_SECTION_CONFIGS: CompetitiveDetailSectionConfig[
     id: "market-research-direct-competitors",
     kicker: "Deep Analysis",
     title: "Direct Competitors",
+    description:
+      "Compare each competitor once across product scope, buying fit, strengths, edges, and limitations.",
     v2Sections: ["Direct Competitors"],
     render: (structured) => (
       <CompetitorProfiles competitors={structured.directCompetitors} showHeader={false} />
@@ -1159,6 +1273,7 @@ export function CompetitiveDetailSection({
             title={config.title}
             index={index + 1}
             total={COMPETITIVE_DETAIL_SECTION_CONFIGS.length}
+            description={config.description}
           >
             {config.render(structured)}
           </WorkspaceDesignedSection>

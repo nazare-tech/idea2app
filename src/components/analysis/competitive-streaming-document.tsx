@@ -19,6 +19,7 @@ import {
   COMPETITIVE_DETAIL_SECTION_CONFIGS,
   CompetitiveOverviewBody,
   TopLevelDocumentHeader,
+  WorkspaceSectionHeader,
   WorkspaceDesignedSection,
   type CompetitiveDetailSectionConfig,
 } from "@/components/analysis/competitive-analysis-document"
@@ -100,24 +101,17 @@ function buildStructuredData(
 function StreamingSectionHeader({
   title,
   index,
+  description,
 }: {
   title: string
   index?: number
+  description?: string
 }) {
-  return (
-    <div className="mb-8 flex items-end justify-between gap-6 border-b border-[#E8DDD5] pb-6">
-      <div className="flex items-center gap-3">
-        <h2 className={cn(displayFontClass, "text-[22px] font-bold tracking-[-0.03em] text-[#0A0A0A]")}>
-          {title}
-        </h2>
-      </div>
-      {typeof index === "number" ? (
-        <p className="shrink-0 font-mono text-[13px] tracking-[0.1em] text-[#8A8480]">
-          {String(index).padStart(2, "0")} / {String(TOTAL_SECTIONS).padStart(2, "0")}
-        </p>
-      ) : null}
-    </div>
-  )
+  if (typeof index === "number") {
+    return <WorkspaceSectionHeader description={description} index={index} title={title} total={TOTAL_SECTIONS} />
+  }
+
+  return <div className="mb-6 border-t border-border pt-8"><h2 className={cn(displayFontClass, "text-[32px] font-medium italic leading-[1.1] tracking-[-0.03em] text-foreground")}>{title}</h2></div>
 }
 
 function AssemblingChip({ label }: { label: string }) {
@@ -176,15 +170,17 @@ function liveSectionHasRenderableData(config: CompetitiveDetailSectionConfig | n
 function LiveFillSection({
   title,
   index,
+  description,
   children,
 }: {
   title: string
   index?: number
+  description?: string
   children: React.ReactNode
 }) {
   return (
     <section className="stream-snap-in">
-      <StreamingSectionHeader title={title} index={index} />
+      <StreamingSectionHeader title={title} index={index} description={description} />
       {children}
     </section>
   )
@@ -279,6 +275,7 @@ export function CompetitiveStreamingDocument({
                     id={`streaming-${config.id}`}
                     kicker={config.kicker}
                     title={config.title}
+                    description={config.description}
                     index={index + 1}
                     total={TOTAL_SECTIONS}
                   >
@@ -294,7 +291,7 @@ export function CompetitiveStreamingDocument({
               liveSectionHasRenderableData(config, activeSection.content)
             ) {
               return (
-                <LiveFillSection key={config.id} title={config.title} index={index + 1}>
+                <LiveFillSection key={config.id} title={config.title} index={index + 1} description={config.description}>
                   {config.render(structured)}
                 </LiveFillSection>
               )

@@ -6,6 +6,7 @@ interface ReportTableProps extends ComponentPropsWithoutRef<"table"> {
   wrapperClassName?: string
   minWidthClassName?: string
   scrollLabel?: string
+  headerTone?: "dark" | "warm"
 }
 
 /**
@@ -21,6 +22,7 @@ export function ReportTable({
   wrapperClassName,
   minWidthClassName = "min-w-[720px]",
   scrollLabel = "Scrollable report table",
+  headerTone = "dark",
   ...props
 }: ReportTableProps) {
   return (
@@ -36,10 +38,12 @@ export function ReportTable({
       <table
         className={cn(
           "w-full border-separate border-spacing-0 text-[13px] leading-[1.25] text-foreground",
-          "[&_thead]:bg-foreground [&_thead_th]:px-3 [&_thead_th]:py-4 [&_thead_th]:text-left",
+          "[&_thead_th]:px-3 [&_thead_th]:py-4 [&_thead_th]:text-left",
           "[&_thead_th]:font-sans [&_thead_th]:text-[12px] [&_thead_th]:font-bold [&_thead_th]:uppercase",
-          "[&_thead_th]:leading-[1.2] [&_thead_th]:tracking-[1px] [&_thead_th]:text-white",
-          "[&_thead_a]:text-white [&_thead_a]:decoration-white/60 [&_thead_a:hover]:text-white/80 [&_thead_a:hover]:decoration-white/80",
+          "[&_thead_th]:leading-[1.2] [&_thead_th]:tracking-[1px]",
+          headerTone === "dark"
+            ? "[&_thead]:bg-foreground [&_thead_th]:text-white [&_thead_a]:text-white [&_thead_a]:decoration-white/60 [&_thead_a:hover]:text-white/80 [&_thead_a:hover]:decoration-white/80"
+            : "[&_thead]:bg-secondary/70 [&_thead_th]:border-b [&_thead_th]:border-border [&_thead_th]:text-foreground [&_thead_a]:text-foreground",
           "[&_tbody_tr:nth-child(odd)]:bg-card [&_tbody_tr:nth-child(even)]:bg-secondary/70",
           "[&_tbody_td]:px-3 [&_tbody_td]:py-3 [&_tbody_td]:text-left [&_tbody_td]:align-top",
           "[&_tbody_th]:px-3 [&_tbody_th]:py-3 [&_tbody_th]:text-left [&_tbody_th]:align-top [&_tbody_th]:font-bold",
