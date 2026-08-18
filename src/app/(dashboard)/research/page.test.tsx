@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { renderToStaticMarkup } from "react-dom/server"
 
-import { ResearchInboxMovedNotice } from "./page"
+import { ResearchInboxMovedNotice } from "./research-inbox-moved-notice"
 
 test("retired Maker research route points to the standalone local app", () => {
   const html = renderToStaticMarkup(<ResearchInboxMovedNotice />)
