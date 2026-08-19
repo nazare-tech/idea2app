@@ -1,7 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { renderToStaticMarkup } from "react-dom/server"
-import { buildAiPromptFiles } from "./ai-prompt-files"
+import { buildAiPromptFiles } from "@/lib/ai-prompt-files"
 import {
   AiPromptsDocumentBlocks,
   MvpPlanDocumentBlocks,

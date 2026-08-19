@@ -46,9 +46,9 @@ import {
 } from "@/lib/mockups/pro-max-style-types"
 import type { Database, Json } from "@/types/database"
 import { logError, logInfo, logWarn } from "@/lib/logger"
+import { MOCKUP_STORAGE_BUCKET } from "@/lib/mockups/storage"
 
-export const MOCKUP_STORAGE_BUCKET =
-  process.env.SUPABASE_MOCKUP_STORAGE_BUCKET || "mockups"
+export { MOCKUP_STORAGE_BUCKET } from "@/lib/mockups/storage"
 const MAX_MOCKUP_IMAGE_BYTES = 10 * 1024 * 1024
 const DEFAULT_IMAGE_TIMEOUT_MS = 790_000
 const DEFAULT_IMAGE_MAX_TOKENS = 16_384

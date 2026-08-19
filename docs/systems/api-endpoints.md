@@ -58,12 +58,12 @@ Stripe: /api/stripe/checkout, /api/stripe/portal, and /api/stripe/webhook handli
   - Returns the deleted project id; the query is authenticated and owner-scoped
 
 - **GET /api/projects/[id]/export**: Download current visible project artifacts as ZIP
-  - Requires authentication and exact project ownership; rate-limited to 10 export requests per user/IP minute
+  - Requires authentication and exact project ownership; independently rate-limited to 10 export requests per user minute and 30 per IP minute
   - Returns `<project-name>-export-YYYY-MM-DD.zip` with `documents/`, `prompts/`, `mockups/`, and `README.md` beneath a sanitized project directory
   - Includes project brief/original idea/intake Q&A, latest Market Research, latest Product Plan, latest First Version Plan, the same derived AI Prompt files shown in the workspace, and images from the latest finalized canonical mockup row
   - Excludes hidden Tech Specs, deployments, deprecated prompt-chat and dev Prompt Lab data, queue partial content, and mockup option drafts
-  - Missing/query-failed/unsupported/oversized artifacts do not fail the whole export; remaining files download and `README.md` records controlled warnings. Text files are capped at 10 MB each, images at 20 MB each, and archive inputs at 80 MB total
-  - Mockup Storage reads use the service client only after owner lookup and server-derived canonical path validation; browser input cannot choose Storage paths
+  - Missing/query-failed/unsupported/oversized artifacts do not fail the whole export; remaining files download and `README.md` records controlled warnings. Text files are capped at 10 MB each, images at 20 MB each, and archive inputs at 80 MB total. ZIP records stream to avoid Vercel's buffered function-response limit
+  - Mockup Storage reads use the service client only after owner lookup and exact finalized-run path validation against immutable row metadata; browser-mutated mockup content cannot select a different Storage run
 
 - **GET /api/projects/[id]/workspace**: Lazy-load owned workspace payloads
   - Query: `docs=competitive,prd,mvp,mockups` and optional `tab`

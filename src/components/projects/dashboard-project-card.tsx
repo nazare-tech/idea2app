@@ -162,7 +162,7 @@ export function DashboardProjectCard({
     try {
       await downloadProjectExport({ projectId: id, projectName })
       trackClientProductEvent("project_export_completed", {}, { projectId: id })
-      showExportNotice("success", "Project export downloaded.")
+      showExportNotice("success", "Project export download started.")
     } catch (error) {
       const failureKind = error instanceof ProjectExportError ? error.kind : "download"
       trackClientProductEvent("project_export_failed", { failureKind }, { projectId: id })

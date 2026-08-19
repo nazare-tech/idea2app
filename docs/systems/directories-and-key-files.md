@@ -190,12 +190,13 @@ All AI system prompts live in `src/lib/prompts/`. Import everything through the 
 | [src/lib/mockups/dashboard-thumbnail.ts](src/lib/mockups/dashboard-thumbnail.ts) | RLS-bound newest-row reduction, strict canonical A/B/C proxy URL derivation, and exact three-option no-credit fixture handling |
 | [src/app/(dashboard)/projects/[projectRef]/page.tsx](src/app/(dashboard)/projects/[projectRef]/page.tsx) | Project page — parses slugged project refs, canonicalizes stale URLs, blocks deprecated prompt tabs, and passes the project shell to `ProjectWorkspace` |
 | [src/app/api/projects/[id]/route.ts](src/app/api/projects/[id]/route.ts) | PATCH/GET project details and ownership-scoped paid-plan DELETE |
-| [src/app/api/projects/[id]/export/route.ts](src/app/api/projects/[id]/export/route.ts) | Owner-scoped current-artifact ZIP export with canonical mockup Storage reads, partial-export manifest, and archive size bounds |
+| [src/app/api/projects/[id]/export/route.ts](src/app/api/projects/[id]/export/route.ts) | Owner-scoped streaming current-artifact ZIP export with finalized-run mockup Storage reads, partial-export manifest, and archive size bounds |
 | [src/lib/project-name.ts](src/lib/project-name.ts) | Dependency-free shared manual project-name normalization and 80-code-unit validation used by dashboard, workspace, and PATCH route |
 | [src/lib/project-export.ts](src/lib/project-export.ts) | Shared export filename, YAML front matter, project brief/intake Q&A, manifest, and image-format rules |
 | [src/lib/project-export-client.ts](src/lib/project-export-client.ts) | Browser export fetch, response/filename validation, and ZIP download trigger |
-| [src/lib/zip.ts](src/lib/zip.ts) | Dependency-free standards-compliant store-mode ZIP writer with CRC32, UTF-8 paths, and ZIP32 bounds |
+| [src/lib/zip.ts](src/lib/zip.ts) | Dependency-free standards-compliant store-mode ZIP writer/stream with CRC32, UTF-8 paths, and ZIP32 bounds |
 | [src/lib/ai-prompt-files.ts](src/lib/ai-prompt-files.ts) | Shared server/client builder for the exact derived AI Prompt Markdown files shown in the workspace and included in exports |
+| [src/lib/mockups/storage.ts](src/lib/mockups/storage.ts) | Small shared mockup Storage bucket configuration used without importing the image-generation pipeline into read routes |
 | [src/lib/project-rename-client.ts](src/lib/project-rename-client.ts) | Browser rename request helper that sends normalized names and accepts only a valid persisted response name |
 | [src/app/api/projects/[id]/workspace/route.ts](src/app/api/projects/[id]/workspace/route.ts) | Lazy workspace payload endpoint for requested document collections, project metadata, and structured-intake presence |
 | [src/app/api/projects/[id]/status/route.ts](src/app/api/projects/[id]/status/route.ts) | Lightweight document-count snapshot used by generation polling |

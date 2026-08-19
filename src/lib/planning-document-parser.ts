@@ -58,6 +58,17 @@ export function normalizeHeading(value: string) {
     .trim()
 }
 
+export function getSectionByAlias(
+  sections: PlanningDocumentSection[],
+  aliases: readonly string[],
+) {
+  const normalizedAliases = aliases.map(normalizeHeading)
+  return sections.find((section) => {
+    const heading = normalizeHeading(section.heading)
+    return normalizedAliases.some((alias) => heading === alias)
+  })
+}
+
 export function stripHorizontalRulesFromMarkdown(content: string) {
   return content
     .split("\n")

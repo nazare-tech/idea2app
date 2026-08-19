@@ -74,6 +74,8 @@ Records the landing page and waitlist gate, hero artwork, pricing-plans.ts, Stri
 - **Lazy Workspace Loading**: Project workspaces use slugged project refs at `/projects/[projectRef]` and lazy-load owned document collections through `/api/projects/[id]/workspace`. The workspace requests only the document types it needs, keeps section hash navigation in sync, defers below-the-fold rendering to avoid freezing large generated documents, and applies `content-visibility: auto` plus `contain-intrinsic-size` to inactive below-the-fold document frames while keeping the currently active source document fully visible for anchor navigation. `WorkspaceDocumentFrame` tracks each frame's real rendered height with a ResizeObserver and re-applies containment one commit after the active document changes, so the containment placeholder matches reality and scrolling back up through previously viewed documents cannot jump the viewport across sections.
 - **Prompt/Inline Edit Cleanup**: The Prompt tab remains deprecated and `/api/prompt-chat` returns `410 Gone`. The old inline "Edit with AI" client surface and `/api/document-edit` route are not present in the current app. The per-document PATCH routes (`/api/analyses/[id]`, `/api/prds/[id]`, `/api/mvp-plans/[id]`, `/api/tech-specs/[id]`) had no remaining callers and were removed on 2026-07-05.
 
+- **AI Prompt builder boundary**: `src/lib/ai-prompt-files.ts` is the canonical server/client builder for all derived prompt files used by both workspace cards and project exports. `src/components/analysis/ai-prompt-files.tsx` owns presentation only; its older client-assembly wording above is superseded by this shared boundary.
+
 ### User Workflow
 
 1. User starts from the landing idea box or a dashboard New Project action

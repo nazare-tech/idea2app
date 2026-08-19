@@ -17,11 +17,6 @@ import type {
   AiPromptFileDescriptor,
 } from "@/lib/ai-prompt-files"
 
-export {
-  AI_PROMPT_FILE_PLACEHOLDERS,
-  buildAiPromptFiles,
-} from "@/lib/ai-prompt-files"
-
 export function InlineMarkdown({ value }: { value: string }) {
   const nodes: React.ReactNode[] = []
   const pattern = /\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\)|\*[^*\s][^*]*\*/g

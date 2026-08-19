@@ -72,7 +72,7 @@ function concatenate(parts: Uint8Array[], totalLength: number) {
  * already compressed, so store mode avoids a runtime dependency and expensive
  * recompression while keeping one portable download.
  */
-export function createZipArchive(entries: ZipEntry[]) {
+function buildZipParts(entries: ZipEntry[]) {
   if (entries.length === 0) throw new Error("ZIP archive needs at least one file")
   if (entries.length > MAX_UINT16) throw new Error("ZIP archive has too many files")
 
@@ -151,8 +151,31 @@ export function createZipArchive(entries: ZipEntry[]) {
   endView.setUint32(16, localOffset, true)
   endView.setUint16(20, 0, true)
 
-  return concatenate(
-    [...localParts, ...centralParts, end],
-    localOffset + centralLength + end.byteLength,
-  )
+  return {
+    parts: [...localParts, ...centralParts, end],
+    totalLength: localOffset + centralLength + end.byteLength,
+  }
+}
+
+export function createZipArchive(entries: ZipEntry[]) {
+  const archive = buildZipParts(entries)
+  return concatenate(archive.parts, archive.totalLength)
+}
+
+/**
+ * Streams the prepared ZIP records one chunk at a time. Vercel exempts
+ * streaming function responses from its buffered 4.5 MB response limit.
+ */
+export function createZipArchiveStream(entries: ZipEntry[]) {
+  const iterator = buildZipParts(entries).parts[Symbol.iterator]()
+  return new ReadableStream<Uint8Array>({
+    pull(controller) {
+      const next = iterator.next()
+      if (next.done) {
+        controller.close()
+        return
+      }
+      controller.enqueue(next.value)
+    },
+  })
 }

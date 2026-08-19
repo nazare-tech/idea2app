@@ -17,7 +17,7 @@ Hidden Tech Specs, deployments, deprecated prompt chat, dev Prompt Lab data, que
 
 ## Verification
 
-- `npm test`: 770 passed, 0 failed.
+- `npm test`: 770 passed, 0 failed before sweep remediation; final count recorded in the commit-sweep report.
 - Final focused suite: 27 passed across ZIP records/path safety, export naming/front matter/intake Q&A/manifest/MIME rules, browser filename validation, product analytics contracts, and shared AI Prompt output.
 - `npm run typecheck`: passed.
 - `npm run lint`: changed files clean. Repository-wide lint passed with two unrelated existing warnings in `output/playwright/prod-full-flow.mjs` and old `ui-evidence` test material.
@@ -40,7 +40,7 @@ Primary route selected: real Google Chrome, required because dashboard state is 
 - Authorization: route first selects project by exact `id` plus authenticated `user_id`; artifact reads retain existing owner RLS.
 - Privileged Storage boundary: service access occurs only after parsing the latest canonical mockup row and validating each server-derived path under `<projectId>/` with no traversal.
 - Archive safety: entry paths are server-created, traversal/duplicates are rejected, UTF-8 names and CRC32 are encoded, ZIP32/file-count bounds are enforced.
-- Resource safety: text files cap at 10 MB each, images at 20 MB each, archive inputs at 80 MB total, and requests cap at 10 per user/IP minute.
+- Resource safety: text files cap at 10 MB each, images at 20 MB each, archive inputs at 80 MB total, and independent user/IP buckets cap abusive request rates.
 - Content safety: unsupported explicit MIME types are rejected even when a path has an image extension. Analytics contain no names, paths, contents, URLs, or raw errors.
 - Failure recovery: missing/query-failed/unsupported/oversized artifacts become manifest notes while remaining artifacts still download.
 - No secrets, schema changes, migration, dependency, billing, generation, or destructive operations were introduced.
@@ -49,7 +49,7 @@ Primary route selected: real Google Chrome, required because dashboard state is 
 
 - **Selected:** moved AI Prompt file construction from a client component into `src/lib/ai-prompt-files.ts`. Browser cards and server export now share one contract, preventing prompt-output drift.
 - **Selected:** isolated dependency-free ZIP creation, export formatting, and browser download behavior into focused modules with direct tests.
-- **Deferred:** streamed ZIP generation. Current bounded in-memory assembly is simpler and appropriate for three already-compressed mockup images plus Markdown. Revisit if measured exports approach the 80 MB cap.
+- **Selected during sweep:** ZIP records now stream through the response so valid image exports are not rejected by Vercel's 4.5 MB buffered-response limit; image inputs remain bounded in memory.
 - **Rejected:** adding JSZip/Archiver. Store-mode ZIP needs no dependency and avoids recompressing image formats that already carry compression.
 
 ## Remediation Applied During Review
@@ -59,6 +59,13 @@ Primary route selected: real Google Chrome, required because dashboard state is 
 - Rejected explicit unsupported MIME types instead of trusting a filename extension.
 - Added per-file manifest notes when only part of the current AI Prompt bundle can be derived.
 - Extracted the canonical mockup Storage-path boundary into a directly tested validator that rejects cross-project prefixes, traversal segments, empty segments, backslashes, and null bytes.
+- Streamed ZIP response records, split user/IP rate-limit buckets, and validated mockup paths against immutable finalized-run metadata after mandatory same-model and opposite-model review.
+- Added a five-minute browser timeout, delayed object-URL revocation, accurate "download started" copy, browser lifecycle/error tests, streaming ZIP parity coverage, and canonicalized shared heading matching.
+
+## Mandatory Review Outcome
+
+- Three parallel read-only sweep finders covered structure/duplication, contracts/correctness, tests/dead code/docs, and product UX.
+- Opposite-model range review ran for the authenticated route and service-role Storage boundary. Verified findings were remediated before push; rejected findings and rationale are recorded in the commit-sweep report.
 
 ## Rollback
 

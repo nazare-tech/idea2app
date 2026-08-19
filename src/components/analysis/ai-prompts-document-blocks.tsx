@@ -4,11 +4,13 @@ import { useMemo } from "react"
 import { ArrowUpRight } from "lucide-react"
 
 import {
-  AI_PROMPT_FILE_PLACEHOLDERS,
   AiPromptFileGrid,
   InlineMarkdown,
-  buildAiPromptFiles,
 } from "@/components/analysis/ai-prompt-files"
+import {
+  AI_PROMPT_FILE_PLACEHOLDERS,
+  buildAiPromptFiles,
+} from "@/lib/ai-prompt-files"
 import type { PlanningDocumentSection } from "@/lib/planning-document-parser"
 import { extractSectionsByHeading, stripInlineMarkdown } from "@/lib/planning-document-parser"
 import { getAiPromptsReadiness } from "@/lib/ai-prompts-readiness"

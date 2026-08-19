@@ -1,6 +1,7 @@
 import { buildProjectExportNames } from "@/lib/project-export"
+import type { ProjectExportFailureKind } from "@/lib/product-analytics/contracts"
 
-export type ProjectExportFailureKind = "request" | "archive" | "download"
+const PROJECT_EXPORT_TIMEOUT_MS = 5 * 60_000
 
 export class ProjectExportError extends Error {
   constructor(message: string, readonly kind: ProjectExportFailureKind) {
@@ -41,13 +42,23 @@ export async function downloadProjectExport({
   projectId: string
   projectName: string
 }) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), PROJECT_EXPORT_TIMEOUT_MS)
   let response: Response
   try {
     response = await fetch(`/api/projects/${projectId}/export`, {
       credentials: "same-origin",
+      signal: controller.signal,
     })
   } catch {
-    throw new ProjectExportError("Unable to reach the export service. Please try again.", "request")
+    throw new ProjectExportError(
+      controller.signal.aborted
+        ? "Project export took too long. Please try again."
+        : "Unable to reach the export service. Please try again.",
+      "request",
+    )
+  } finally {
+    clearTimeout(timeoutId)
   }
 
   if (!response.ok) {
@@ -70,18 +81,23 @@ export async function downloadProjectExport({
   const fallbackName = buildProjectExportNames(projectName, new Date()).archiveName
   const fileName = getAttachmentFileName(response.headers.get("content-disposition")) ?? fallbackName
   const url = URL.createObjectURL(blob)
+  let anchor: HTMLAnchorElement | null = null
   try {
-    const anchor = document.createElement("a")
+    anchor = document.createElement("a")
     anchor.href = url
     anchor.download = fileName
     document.body.appendChild(anchor)
     anchor.click()
-    document.body.removeChild(anchor)
   } catch {
+    URL.revokeObjectURL(url)
     throw new ProjectExportError("Browser could not start the download. Please try again.", "download")
   } finally {
-    URL.revokeObjectURL(url)
+    anchor?.remove()
   }
+
+  // Some browsers resolve blob URLs asynchronously after the synthetic click.
+  // Keep it alive long enough for the download manager to claim the bytes.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
 
   return fileName
 }

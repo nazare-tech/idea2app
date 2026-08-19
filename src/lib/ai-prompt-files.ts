@@ -1,19 +1,11 @@
 import type { PlanningDocumentSection } from "@/lib/planning-document-parser"
 import {
   extractSectionsByHeading,
-  normalizeHeading,
+  getSectionByAlias,
   parseListItems,
   splitLabeledText,
   stripHorizontalRulesFromMarkdown,
 } from "@/lib/planning-document-parser"
-
-function getSectionByAlias(sections: PlanningDocumentSection[], aliases: string[]) {
-  const normalizedAliases = aliases.map(normalizeHeading)
-  return sections.find((section) => {
-    const heading = normalizeHeading(section.heading)
-    return normalizedAliases.some((alias) => heading === alias)
-  })
-}
 
 /** One downloadable/copyable markdown file derived from the planning documents. */
 export interface AiPromptFile {

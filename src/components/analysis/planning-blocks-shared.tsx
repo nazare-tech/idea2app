@@ -67,6 +67,7 @@ export function StreamingSkeletonSection({
 
 export {
   getCurrentSectionTitle,
+  getSectionByAlias,
   getTableCell,
   splitLabeledText,
   stripHorizontalRulesFromMarkdown,
@@ -471,15 +472,6 @@ export function countRecognizedSections(sections: PlanningDocumentSection[], ali
     const heading = normalizeHeading(section.heading)
     return normalizedAliases.some((alias) => heading === alias)
   }).length
-}
-
-export function getSectionByAlias(sections: PlanningDocumentSection[], aliases: string[]) {
-  const normalizedAliases = aliases.map(normalizeHeading)
-
-  return sections.find((section) => {
-    const heading = normalizeHeading(section.heading)
-    return normalizedAliases.some((alias) => heading === alias)
-  })
 }
 
 export function isCurrentPromptDocument(content: string, aliases: string[]) {

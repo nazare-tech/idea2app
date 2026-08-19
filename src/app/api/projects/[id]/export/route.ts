@@ -17,15 +17,19 @@ import {
   isValidProjectExportMockupPath,
   type ProjectExportMetadata,
 } from "@/lib/project-export"
-import { MOCKUP_STORAGE_BUCKET } from "@/lib/mockups/openrouter-image-pipeline"
-import { parseOpenRouterImageMockupContent } from "@/lib/mockups/openrouter-image-format"
+import {
+  isValidDraftMockupImagePath,
+  parseOpenRouterImageMockupContent,
+} from "@/lib/mockups/openrouter-image-format"
+import { MOCKUP_STORAGE_BUCKET } from "@/lib/mockups/storage"
 import { extractSectionsByHeading } from "@/lib/planning-document-parser"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
-import { createZipArchive, type ZipEntry } from "@/lib/zip"
+import { createZipArchiveStream, type ZipEntry } from "@/lib/zip"
 
 export const runtime = "nodejs"
+export const maxDuration = 300
 
 type ArtifactResult<T> = {
   data: T | null
@@ -34,6 +38,23 @@ type ArtifactResult<T> = {
 
 function resultWarning(label: string, result: ArtifactResult<unknown>, warnings: string[]) {
   if (result.error) warnings.push(`${label} could not be loaded and was omitted.`)
+}
+
+function getStorageRunId(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null
+  const storageRunId = (metadata as Record<string, unknown>).storage_run_id
+  return typeof storageRunId === "string" && storageRunId.trim()
+    ? storageRunId.trim()
+    : null
+}
+
+function getLatestSourceDate(...values: Array<string | null | undefined>) {
+  const dates = values
+    .filter((value): value is string => Boolean(value))
+    .map((value) => new Date(value))
+    .filter((date) => Number.isFinite(date.getTime()))
+  if (dates.length === 0) return undefined
+  return new Date(Math.max(...dates.map((date) => date.getTime()))).toISOString()
 }
 
 export async function GET(
@@ -53,17 +74,29 @@ export async function GET(
   }
 
   const logContext = { ...requestLogContext, userId: user.id, projectId }
-  const rateLimit = await checkRateLimit({
-    key: `project-export:${user.id}:${getClientIp(request)}`,
-    limit: 10,
-    windowMs: 60_000,
-  })
-  if (rateLimit.limited) {
+  const [userRateLimit, ipRateLimit] = await Promise.all([
+    checkRateLimit({
+      key: `project-export:user:${user.id}`,
+      limit: 10,
+      windowMs: 60_000,
+    }),
+    checkRateLimit({
+      key: `project-export:ip:${getClientIp(request)}`,
+      limit: 30,
+      windowMs: 60_000,
+    }),
+  ])
+  if (userRateLimit.limited || ipRateLimit.limited) {
     return NextResponse.json(
       { error: "Too many exports. Please wait and try again." },
       {
         status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        headers: {
+          "Retry-After": String(Math.max(
+            userRateLimit.retryAfterSeconds,
+            ipRateLimit.retryAfterSeconds,
+          )),
+        },
       },
     )
   }
@@ -115,7 +148,7 @@ export async function GET(
         .maybeSingle(),
       supabase
         .from("mockups")
-        .select("content, created_at, updated_at")
+        .select("content, metadata, created_at, updated_at")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -235,7 +268,21 @@ export async function GET(
       prdSections: extractSectionsByHeading(productPlanResult.data?.content ?? "", 2),
       mvpSections: extractSectionsByHeading(firstVersionResult.data?.content ?? "", 2),
     })
+    const productPlanPromptFiles = new Set([
+      "functional-requirements.md",
+      "user-stories-and-acceptance-criteria.md",
+      "technical-considerations.md",
+      "sub-agents.md",
+    ])
+    const productPlanDate = productPlanResult.data?.created_at
+    const firstVersionDate = firstVersionResult.data?.updated_at ?? firstVersionResult.data?.created_at
+    const combinedPlanDate = getLatestSourceDate(productPlanDate, firstVersionDate)
     for (const promptFile of promptFiles) {
+      const promptSourceDate = productPlanPromptFiles.has(promptFile.fileName)
+        ? productPlanDate
+        : promptFile.fileName === "project-context.md"
+          ? combinedPlanDate
+          : firstVersionDate
       addTextFile(
         `prompts/${promptFile.fileName}`,
         buildExportMarkdown({
@@ -243,9 +290,9 @@ export async function GET(
           artifactType: "ai-prompt",
           content: promptFile.content,
           metadata,
-          sourceUpdatedAt: firstVersionResult.data?.updated_at ?? firstVersionResult.data?.created_at,
+          sourceUpdatedAt: promptSourceDate,
         }),
-        firstVersionResult.data?.updated_at ?? firstVersionResult.data?.created_at,
+        promptSourceDate,
       )
     }
     const exportedPromptFileNames = new Set(promptFiles.map((file) => file.fileName))
@@ -264,33 +311,45 @@ export async function GET(
 
     if (parsedMockup) {
       const storageSupabase = createServiceClient()
-      for (const [index, option] of parsedMockup.options.entries()) {
+      const storageRunId = getStorageRunId(mockupResult.data?.metadata)
+      const downloadedMockups = await Promise.all(parsedMockup.options.map(async (option, index) => {
         const path = option.storagePath
-        if (!isValidProjectExportMockupPath(projectId, path)) {
-          warnings.push(`Mockup Concept ${index + 1} had no valid stored image and was omitted.`)
-          continue
+        if (
+          !storageRunId ||
+          !isValidProjectExportMockupPath(projectId, path) ||
+          !isValidDraftMockupImagePath({ projectId, storagePath: path, draftRunId: storageRunId })
+        ) {
+          return { index, warning: `Mockup Concept ${index + 1} had no valid finalized image and was omitted.` }
         }
 
         const { data: blob, error } = await storageSupabase.storage
           .from(MOCKUP_STORAGE_BUCKET)
           .download(path)
         if (error || !blob) {
-          warnings.push(`Mockup Concept ${index + 1} could not be downloaded and was omitted.`)
-          continue
+          return { index, warning: `Mockup Concept ${index + 1} could not be downloaded and was omitted.` }
         }
 
         const contentType = blob.type || option.contentType
         const extension = getImageFileExtension(contentType, path)
         if (!extension) {
-          warnings.push(`Mockup Concept ${index + 1} used an unsupported image format and was omitted.`)
-          continue
+          return { index, warning: `Mockup Concept ${index + 1} used an unsupported image format and was omitted.` }
         }
 
         const bytes = new Uint8Array(await blob.arrayBuffer())
         if (bytes.byteLength > PROJECT_EXPORT_MAX_IMAGE_BYTES) {
-          warnings.push(`Mockup Concept ${index + 1} exceeded the per-image export limit and was omitted.`)
+          return { index, warning: `Mockup Concept ${index + 1} exceeded the per-image export limit and was omitted.` }
+        }
+
+        return { index, bytes, extension }
+      }))
+
+      for (const downloaded of downloadedMockups) {
+        if (downloaded.warning) {
+          warnings.push(downloaded.warning)
           continue
         }
+        const { bytes, extension, index } = downloaded
+        if (!bytes || !extension) continue
         if (totalBytes + bytes.byteLength > PROJECT_EXPORT_MAX_TOTAL_BYTES) {
           warnings.push(`Mockup Concept ${index + 1} exceeded the total export limit and was omitted.`)
           continue
@@ -320,8 +379,7 @@ export async function GET(
       false,
     )
 
-    const archive = createZipArchive(entries)
-    return new Response(archive, {
+    return new Response(createZipArchiveStream(entries), {
       headers: {
         "Content-Type": "application/zip",
         "Content-Disposition": `attachment; filename="${archiveName}"`,
