@@ -20,6 +20,9 @@ export const CLIENT_PRODUCT_EVENT_NAMES = [
   "prompt_file_opened",
   "prompt_file_copied",
   "prompt_file_downloaded",
+  "project_export_started",
+  "project_export_completed",
+  "project_export_failed",
   "upgrade_cta_viewed",
   "upgrade_cta_clicked",
 ] as const
@@ -45,6 +48,7 @@ export const VIEWPORT_CLASSES = ["mobile", "tablet", "desktop"] as const
 export const NAVIGATION_METHODS = ["initial", "scroll", "nav"] as const
 export const CONTENT_STATES = ["waiting", "partial", "ready", "incomplete", "failed"] as const
 export const ARTIFACT_SURFACES = ["card", "lightbox"] as const
+export const PROJECT_EXPORT_FAILURE_KINDS = ["request", "archive", "download"] as const
 export const PROMPT_FILE_NAMES = [
   "first-prompt.md",
   "ai-build-guardrails.md",
@@ -78,6 +82,7 @@ type ViewportClass = typeof VIEWPORT_CLASSES[number]
 type NavigationMethod = typeof NAVIGATION_METHODS[number]
 type ContentState = typeof CONTENT_STATES[number]
 type ArtifactSurface = typeof ARTIFACT_SURFACES[number]
+type ProjectExportFailureKind = typeof PROJECT_EXPORT_FAILURE_KINDS[number]
 type PromptFileName = typeof PROMPT_FILE_NAMES[number]
 type UpgradeSurface = typeof UPGRADE_SURFACES[number]
 type GenerationMode = typeof GENERATION_MODES[number]
@@ -107,6 +112,9 @@ export interface ProductEventPropertyMap {
   prompt_file_opened: { fileName: PromptFileName; surface: ArtifactSurface }
   prompt_file_copied: { fileName: PromptFileName; surface: ArtifactSurface }
   prompt_file_downloaded: { fileName: PromptFileName; surface: ArtifactSurface }
+  project_export_started: Record<string, never>
+  project_export_completed: Record<string, never>
+  project_export_failed: { failureKind: ProjectExportFailureKind }
   upgrade_cta_viewed: { surface: UpgradeSurface; experimentVariant?: string }
   upgrade_cta_clicked: { surface: UpgradeSurface; experimentVariant?: string }
   project_created: {
@@ -184,6 +192,9 @@ export const PRODUCT_EVENT_REGISTRY = {
   prompt_file_opened: client(true, promptActionRules()),
   prompt_file_copied: client(true, promptActionRules()),
   prompt_file_downloaded: client(true, promptActionRules()),
+  project_export_started: client(true, {}),
+  project_export_completed: client(true, {}),
+  project_export_failed: client(true, { failureKind: enumRule(PROJECT_EXPORT_FAILURE_KINDS) }),
   upgrade_cta_viewed: client(false, upgradeRules()),
   upgrade_cta_clicked: client(false, upgradeRules()),
   project_created: server(true, {

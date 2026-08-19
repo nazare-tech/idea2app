@@ -35,6 +35,9 @@ const clientProperties: { [N in ClientProductEventName]: ProductEventPropertyMap
   prompt_file_opened: { fileName: "build-steps.md", surface: "card" },
   prompt_file_copied: { fileName: "project-context.md", surface: "lightbox" },
   prompt_file_downloaded: { fileName: "sub-agents.md", surface: "lightbox" },
+  project_export_started: {},
+  project_export_completed: {},
+  project_export_failed: { failureKind: "archive" },
   upgrade_cta_viewed: { surface: "project_composer", experimentVariant: "control" },
   upgrade_cta_clicked: { surface: "billing" },
 }

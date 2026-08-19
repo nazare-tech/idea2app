@@ -51,6 +51,14 @@ This guide is the durable product contract for Maker Compass behavioral analytic
 | `prompt_file_copied` | Prompt-file content was successfully written to the clipboard. |
 | `prompt_file_downloaded` | A prompt-file download was successfully initiated. |
 
+### Project Export
+
+| Event | Meaning |
+|---|---|
+| `project_export_started` | User selected Export Project from an owned dashboard card. |
+| `project_export_completed` | ZIP response was validated and browser download was initiated. |
+| `project_export_failed` | Export failed with controlled `request`, `archive`, or `download` classification; no file names, content, paths, or raw errors are stored. |
+
 ### Upgrade And Billing
 
 | Event | Meaning |

@@ -12,7 +12,7 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import * as Dialog from "@radix-ui/react-dialog"
-import { ChevronLeft, ChevronRight, EllipsisVertical, Pencil, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Download, EllipsisVertical, LoaderCircle, Pencil, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { UpgradeCtaLink } from "@/components/analytics/upgrade-cta-link"
 import { ProjectCardDetails } from "@/components/projects/dashboard-project-card-details"
@@ -27,6 +27,11 @@ import { validateProjectName } from "@/lib/project-name"
 import { requestProjectRename } from "@/lib/project-rename-client"
 import { getProjectUrl } from "@/lib/project-routing"
 import type { DashboardMockupPreview } from "@/lib/mockups/dashboard-thumbnail"
+import { trackClientProductEvent } from "@/lib/product-analytics/client"
+import {
+  downloadProjectExport,
+  ProjectExportError,
+} from "@/lib/project-export-client"
 
 interface DashboardProjectCardProps {
   id: string
@@ -64,11 +69,17 @@ export function DashboardProjectCard({
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportNotice, setExportNotice] = useState<{
+    kind: "loading" | "success" | "error"
+    message: string
+  } | null>(null)
   const [isDeleted, setIsDeleted] = useState(false)
   const [isOpening, setIsOpening] = useState(false)
   const [activePreviewIndex, setActivePreviewIndex] = useState(0)
   const [carouselAnnouncement, setCarouselAnnouncement] = useState("")
   const actionButtonRef = useRef<HTMLButtonElement>(null)
+  const exportNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dotButtonRefs = useRef<Array<HTMLButtonElement | null>>([])
   const previewSignature = useMemo(
     () => JSON.stringify(mockupPreviews),
@@ -99,6 +110,12 @@ export function DashboardProjectCard({
   }, [previewSignature])
 
   useEffect(() => {
+    return () => {
+      if (exportNoticeTimeoutRef.current) clearTimeout(exportNoticeTimeoutRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
     if (!isOpening) return
 
     router.prefetch(projectHref)
@@ -126,6 +143,36 @@ export function DashboardProjectCard({
     setRenameDraft(projectName)
     setRenameError(null)
     setShowRename(true)
+  }
+
+  const showExportNotice = (kind: "success" | "error", message: string) => {
+    setExportNotice({ kind, message })
+    if (exportNoticeTimeoutRef.current) clearTimeout(exportNoticeTimeoutRef.current)
+    exportNoticeTimeoutRef.current = setTimeout(() => setExportNotice(null), 5_000)
+  }
+
+  const handleExport = async () => {
+    if (isExporting) return
+
+    setActionsOpen(false)
+    setIsExporting(true)
+    setExportNotice({ kind: "loading", message: "Preparing project export..." })
+    if (exportNoticeTimeoutRef.current) clearTimeout(exportNoticeTimeoutRef.current)
+    trackClientProductEvent("project_export_started", {}, { projectId: id })
+    try {
+      await downloadProjectExport({ projectId: id, projectName })
+      trackClientProductEvent("project_export_completed", {}, { projectId: id })
+      showExportNotice("success", "Project export downloaded.")
+    } catch (error) {
+      const failureKind = error instanceof ProjectExportError ? error.kind : "download"
+      trackClientProductEvent("project_export_failed", { failureKind }, { projectId: id })
+      showExportNotice(
+        "error",
+        error instanceof Error ? error.message : "Unable to export project. Please try again.",
+      )
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const handleRename = async (event: FormEvent<HTMLFormElement>) => {
@@ -304,7 +351,7 @@ export function DashboardProjectCard({
               align="end"
               sideOffset={6}
               collisionPadding={8}
-              className="w-36"
+              className="w-44"
               onCloseAutoFocus={(event) => {
                 if (showRename || showDeleteConfirmation || showUpgradePrompt) {
                   event.preventDefault()
@@ -319,6 +366,20 @@ export function DashboardProjectCard({
               >
                 <Pencil aria-hidden="true" />
                 Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={isExporting}
+                onSelect={(event) => {
+                  event.preventDefault()
+                  void handleExport()
+                }}
+              >
+                {isExporting ? (
+                  <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
+                ) : (
+                  <Download aria-hidden="true" />
+                )}
+                {isExporting ? "Preparing export..." : "Export Project"}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={(event) => {
@@ -566,6 +627,22 @@ export function DashboardProjectCard({
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {exportNotice ? (
+        <div
+          role={exportNotice.kind === "error" ? "alert" : "status"}
+          className={`fixed bottom-5 right-5 z-[70] flex max-w-sm items-center gap-2 border px-4 py-3 text-sm shadow-lg ${
+            exportNotice.kind === "error"
+              ? "border-destructive/30 bg-card text-destructive"
+              : "border-border-strong bg-foreground text-background"
+          }`}
+        >
+          {exportNotice.kind === "loading" ? (
+            <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+          ) : null}
+          {exportNotice.message}
+        </div>
+      ) : null}
     </div>
   )
 }
